@@ -35,11 +35,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
-use OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate;
-use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
-use OCA\Dossiq\Service\ZaakdossierService;
+use OCA\Dossiq\Kernel\Contracts\DocumentApprovalClearanceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentWriteGateInterface;
+use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\ZaakdossierServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,25 +57,25 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param ZaakdossierService $fileService The dossier orchestrator.
-	 * @param InformatieobjectReader $reader The clearance-gated document reader.
-	 * @param DossierUploadHandler $uploadHandler The upload decoding/screening collaborator.
+	 * @param ZaakdossierServiceInterface $fileService The dossier orchestrator.
+	 * @param InformatieobjectReaderInterface $reader The clearance-gated document reader.
+	 * @param DossierUploadHandlerInterface $uploadHandler The upload decoding/screening collaborator.
 	 * @param IUserSession $userSession The user session.
-	 * @param DocumentApprovalClearance $approvals Reads decidiq's approval chain for a document,
+	 * @param DocumentApprovalClearanceInterface $approvals Reads decidiq's approval chain for a document,
 	 *        so a document in an unfinished route cannot be made final.
-	 * @param DocumentWriteGate $writes What a document write passes before it runs: the change right
+	 * @param DocumentWriteGateInterface $writes What a document write passes before it runs: the change right
 	 *        on every case the document belongs to, the clearance over a bulk selection, and the bulk
 	 *        metadata run behind them.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZaakdossierService $fileService,
-		private readonly InformatieobjectReader $reader,
-		private readonly DossierUploadHandler $uploadHandler,
+		private readonly ZaakdossierServiceInterface $fileService,
+		private readonly InformatieobjectReaderInterface $reader,
+		private readonly DossierUploadHandlerInterface $uploadHandler,
 		private readonly IUserSession $userSession,
-		private readonly DocumentApprovalClearance $approvals,
-		private readonly DocumentWriteGate $writes,
+		private readonly DocumentApprovalClearanceInterface $approvals,
+		private readonly DocumentWriteGateInterface $writes,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

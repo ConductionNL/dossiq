@@ -46,6 +46,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\SavedMailImportInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -57,7 +58,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-email-integration/spec.md
  */
-class SavedMailImport {
+class SavedMailImport implements SavedMailImportInterface {
 
 	/**
 	 * integriq's parser, relative to integriq's own namespace.
@@ -73,11 +74,6 @@ class SavedMailImport {
 	 * The message was read and filed on the case.
 	 */
 	public const OUTCOME_IMPORTED = 'imported';
-
-	/**
-	 * The file is still there and nobody could read it.
-	 */
-	public const OUTCOME_KEPT = 'kept';
 
 	/**
 	 * Constructor.

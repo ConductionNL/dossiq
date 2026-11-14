@@ -33,6 +33,10 @@ use Psr\Log\LoggerInterface;
 /**
  * Tests for CaseChangesFeed and CaseChangesController.
  *
+ * @covers \OCA\Dossiq\Service\Board\CaseChangesFeed
+ * @covers \OCA\Dossiq\Controller\CaseChangesController
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ *
  * @spec openspec/specs/realtime-updates-ui/spec.md
  */
 class CaseChangesFeedTest extends TestCase {
@@ -153,6 +157,123 @@ class CaseChangesFeedTest extends TestCase {
 
 		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 	}//end testTheRouteAsksForTheReaderWithinADay()
+
+	/**
+	 * A board scoped to a group hears only that group's cases, matched by id or uuid.
+	 *
+	 * @return void
+	 */
+	public function testTheGroupScopeMatchesAnIdOrAUuid(): void {
+		$entries = [
+			$this->entry(uuid: 'e3', caseId: 'c1', user: 'piet', name: 'Piet', at: '2026-11-05T10:03:00+00:00'),
+			$this->entry(uuid: 'e2', caseId: 'c2', user: 'piet', name: 'Piet', at: '2026-11-05T10:02:00+00:00'),
+			$this->entry(uuid: 'e1', caseId: 'c3', user: 'piet', name: 'Piet', at: '2026-11-05T10:01:00+00:00'),
+		];
+		$cases = [
+			'c1' => ['assignedGroup' => ['uuid' => 'team-a']],
+			'c2' => ['assignedGroup' => 'team-b'],
+			'c3' => ['assignedGroup' => 'team-a'],
+		];
+
+		$answer = $this->feed(entries: $entries, cases: $cases)->since(
+			readerId: 'reader',
+			since: new DateTimeImmutable('2026-11-05T10:00:00+00:00'),
+			scope: ['assignedGroup' => ' team-a ']
+		);
+
+		$this->assertSame(expected: ['c1', 'c3'], actual: array_column($answer['changes'], 'objectId'));
+	}//end testTheGroupScopeMatchesAnIdOrAUuid()
+
+	/**
+	 * An entry without a case id is skipped, and an empty scope lets every readable case through.
+	 *
+	 * @return void
+	 */
+	public function testAnEntryWithoutACaseIsSkipped(): void {
+		$entries = [
+			$this->entry(uuid: 'e2', caseId: '', user: 'piet', name: 'Piet', at: '2026-11-05T10:02:00+00:00'),
+			$this->entry(uuid: 'e1', caseId: 'c1', user: 'piet', name: 'Piet', at: '2026-11-05T10:01:00+00:00'),
+		];
+
+		$answer = $this->feed(entries: $entries, cases: ['c1' => ['caseType' => 'vth']])->since(
+			readerId: 'reader',
+			since: new DateTimeImmutable('2026-11-05T10:00:00+00:00'),
+			scope: []
+		);
+
+		$this->assertSame(expected: ['e1'], actual: array_column($answer['changes'], 'id'));
+		$this->assertNotFalse(condition: date_create_immutable(datetime: $answer['now']));
+	}//end testAnEntryWithoutACaseIsSkipped()
+
+	/**
+	 * One answer names at most fifty cases.
+	 *
+	 * @return void
+	 */
+	public function testOneAnswerNamesAtMostFiftyCases(): void {
+		$entries = [];
+		$cases = [];
+		for ($i = 0; $i < 60; $i++) {
+			$entries[] = $this->entry(uuid: 'e' . $i, caseId: 'c' . $i, user: 'piet', name: 'Piet', at: '2026-11-05T11:00:00+00:00');
+			$cases['c' . $i] = [];
+		}
+
+		$answer = $this->feed(entries: $entries, cases: $cases)->since(
+			readerId: 'reader',
+			since: new DateTimeImmutable('2026-11-05T10:00:00+00:00'),
+			scope: []
+		);
+
+		$this->assertCount(expectedCount: 50, haystack: $answer['changes']);
+		$this->assertSame(expected: 'c49', actual: $answer['changes'][49]['objectId']);
+	}//end testOneAnswerNamesAtMostFiftyCases()
+
+	/**
+	 * Without a configured case schema the board hears nothing, and the trail is not read.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredSchemaMeansNoChanges(): void {
+		$mapper = new class {
+			public bool $read = false;
+
+			/**
+			 * @return list<object>
+			 */
+			public function findAll(): array {
+				$this->read = true;
+				return [];
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn($mapper);
+		$settings->method('getObjectService')->willReturn(new \stdClass());
+		$settings->method('getConfigValue')->willReturnMap([['register', '', '1'], ['case_schema', '', '']]);
+
+		$answer = (new CaseChangesFeed(settingsService: $settings, l10n: $this->l10n()))->since(
+			readerId: 'reader',
+			since: new DateTimeImmutable(),
+			scope: []
+		);
+
+		$this->assertSame(expected: [], actual: $answer['changes']);
+		$this->assertFalse(condition: $mapper->read);
+	}//end testAnUnconfiguredSchemaMeansNoChanges()
+
+	/**
+	 * A failing read answers a generic error, not the cause.
+	 *
+	 * @return void
+	 */
+	public function testAFailingReadAnswersAnInternalError(): void {
+		$feed = $this->createMock(originalClassName: CaseChangesFeed::class);
+		$feed->method('since')->willThrowException(new \RuntimeException('database gone'));
+
+		$response = $this->controller(feed: $feed, uid: 'reader')->index(since: '2026-11-05T10:00:00Z');
+
+		$this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $response->getStatus());
+		$this->assertSame(expected: ['message' => 'Internal error'], actual: $response->getData());
+	}//end testAFailingReadAnswersAnInternalError()
 
 	/**
 	 * The feed over a fake audit trail and object store.

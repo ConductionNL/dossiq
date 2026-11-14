@@ -52,6 +52,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class DsoCaseServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

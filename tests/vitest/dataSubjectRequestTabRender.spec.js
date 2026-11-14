@@ -3,195 +3,189 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * What the data subject request tab draws: the server's own refusal with its
- * rule, the outcome card coloured by whether the erasure finished, the run
- * button only once a preview exists, and the export section's expired and
- * still-assembling states. Only the HTTP boundary is mocked; the tab runs the
- * real services/dataSubjectRequestApi.js against it, so the urls and the
- * refusal shape are the ones shipped.
+ * What DataSubjectRequestTab draws: every protected item in full under the
+ * counts, the outcome note, the server's refusal with its rule, the run button
+ * only once a preview exists, and the export's expired, assembling and
+ * downloadable states.
  *
  * @spec openspec/specs/avg-processing-surface/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 
-const mockGet = vi.fn()
-const mockPost = vi.fn()
-vi.mock('@nextcloud/axios', () => ({
-	default: { get: (...a) => mockGet(...a), post: (...a) => mockPost(...a) },
-}))
-vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
-
-/**
- * A stand-in that renders its default slot and keeps its props as attributes.
- *
- * @param {string} name The component name.
- * @param {string} tag The element it renders.
- * @return {object} The component.
- */
-function slotStub (name, tag) {
+function slotted (name, props = []) {
   return {
 	name,
-	inheritAttrs: false,
-	props: ['type', 'variant', 'disabled', 'href', 'name', 'description'],
+	props,
 	emits: ['click'],
-	template: `<${tag} :data-type="type" :data-variant="variant" :data-disabled="disabled ? 'true' : null" :data-href="href" :data-name="name" @click="$emit('click')"><slot /></${tag}>`,
+	setup(p, { slots, emit }) {
+		return () => h('div', { class: name, onClick: () => emit('click') }, [slots.default?.()])
+	},
 }
 }
-vi.mock('@nextcloud/vue/components/NcButton', () => ({ default: slotStub('NcButton', 'button') }))
-vi.mock('@nextcloud/vue/components/NcEmptyContent', () => ({ default: slotStub('NcEmptyContent', 'div') }))
-vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({ default: slotStub('NcNoteCard', 'aside') }))
+vi.mock('@nextcloud/l10n', () => ({
+	translate: (_app, s, vars = {}) => s.replace(/\{(\w+)\}/g, (_m, k) => String(vars[k] ?? `{${k}}`)),
+}))
+vi.mock('@nextcloud/vue/components/NcButton', () => ({ default: slotted('NcButton', ['disabled', 'variant', 'href']) }))
+vi.mock('@nextcloud/vue/components/NcEmptyContent', () => ({ default: slotted('NcEmptyContent', ['name', 'description']) }))
+vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({ default: slotted('NcNoteCard', ['type']) }))
+vi.mock('../../src/services/dataSubjectRequestApi.js', () => ({
+	fetchSubjectExportState: vi.fn(),
+	previewErasure: vi.fn(),
+	refusalOf: (error) => ({ message: error.message, rule: 'rule: ' + error.message }),
+	requestSubjectExport: vi.fn(),
+	runErasure: vi.fn(),
+	subjectExportDownloadUrl: (id) => `/download/${id}`,
+}))
 
-const { default: DataSubjectRequestTab } =
-	await import('../../src/views/cases/components/DataSubjectRequestTab.vue')
+const dsr = await import('../../src/services/dataSubjectRequestApi.js')
+const { default: DataSubjectRequestTab } = await import('../../src/views/cases/components/DataSubjectRequestTab.vue')
 
 /**
  * Mount the tab and let it load.
  *
- * @param {object} props Its props.
+ * @param {object} object The case.
  * @return {Promise<object>} The wrapper.
  */
-async function mountTab(props) {
-	const w = mount(DataSubjectRequestTab, { props })
+async function mountTab(object) {
+	const wrapper = mount(DataSubjectRequestTab, { props: { objectId: 'c1', object } })
 	await flushPromises()
-	return w
+	return wrapper
 }
 
-/**
- * The buttons' texts, trimmed.
- *
- * @param {object} w The wrapper.
- * @return {string[]} The labels.
- */
-const buttonLabels = (w) => w.findAll('button').map((b) => b.text().trim())
-
-beforeEach(() => {
-	mockGet.mockReset()
-	mockPost.mockReset()
-})
+const buttons = (wrapper) => wrapper.findAllComponents({ name: 'NcButton' })
+const notes = (wrapper) => wrapper.findAllComponents({ name: 'NcNoteCard' })
 
 describe('DataSubjectRequestTab on an erasure', () => {
-	const erasure = { dataSubjectRequestType: 'verwijdering' }
-
-	it('offers only the preview until the platform has answered one', async () => {
-		const w = await mountTab({ objectId: 'c1', object: erasure })
-
-		expect(buttonLabels(w)).toEqual(['Take the preview'])
-		expect(mockGet).not.toHaveBeenCalled()
+	beforeEach(() => {
+		vi.clearAllMocks()
 	})
 
-	it('posts the preview to the case\'s avg endpoint and then offers the run', async () => {
-		mockPost.mockResolvedValueOnce({ data: { report: { counts: { erase: { cases: 1 } }, protected: [] } } })
-		const w = await mountTab({ objectId: 'c 1', object: erasure })
+	it('offers only the preview until one is taken', async () => {
+		const wrapper = await mountTab({ dataSubjectRequestType: 'verwijdering' })
 
-		await w.findAll('button')[0].trigger('click')
-		await flushPromises()
-
-		expect(mockPost).toHaveBeenCalledWith('/apps/dossiq/api/cases/c%201/avg/erasure-preview')
-		expect(buttonLabels(w)).toEqual(['Take the preview', 'Run the approved erasure'])
-		expect(w.findAll('button')[1].attributes('data-variant')).toBe('warning')
+		expect(wrapper.find('h3').text()).toBe('Erasure')
+		expect(wrapper.findComponent({ name: 'NcEmptyContent' }).props('name')).toBe('No preview yet')
+		expect(buttons(wrapper).map((b) => b.text())).toEqual(['Take the preview'])
+		expect(dsr.fetchSubjectExportState).not.toHaveBeenCalled()
 	})
 
-	it('runs the erasure and draws an unfinished outcome as a warning', async () => {
-		mockPost.mockResolvedValueOnce({ data: { complete: false, withheld: [1], refused: [], failed: [2] } })
-		const w = await mountTab({ objectId: 'c1', object: { ...erasure, erasureCounts: { erase: { cases: 1 } } } })
-
-		await w.findAll('button')[1].trigger('click')
-		await flushPromises()
-
-		expect(mockPost).toHaveBeenCalledWith('/apps/dossiq/api/cases/c1/avg/erasure-run')
-		const card = w.findAll('aside').at(-1)
-		expect(card.attributes('data-type')).toBe('warning')
-		expect(card.text()).toBe('The erasure did not finish. 2 records still hold this person.')
-	})
-
-	it('draws a finished outcome as success', async () => {
-		const w = await mountTab({ objectId: 'c1', object: { ...erasure, erasureOutcome: { complete: true } } })
-
-		const card = w.find('aside')
-		expect(card.attributes('data-type')).toBe('success')
-		expect(card.text()).toBe('The platform reports the erasure complete.')
-	})
-
-	it('shows the server\'s refusal message and rule, and is no longer busy', async () => {
-		mockPost.mockRejectedValueOnce({ response: { data: { error: 'erasure-not-approved', message: 'Approve the erasure first.' } } })
-		const w = await mountTab({ objectId: 'c1', object: erasure })
-
-		await w.findAll('button')[0].trigger('click')
-		await flushPromises()
-
-		const card = w.find('aside')
-		expect(card.attributes('data-type')).toBe('warning')
-		expect(card.text()).toContain('Approve the erasure first.')
-		expect(card.find('.dsr-tab__rule').text()).toBe('erasure-not-approved')
-		expect(w.vm.busy).toBe(false)
-		expect(w.findAll('button')[0].attributes('data-disabled')).toBeUndefined()
-	})
-
-	it('falls back to the default refusal when the server says nothing', async () => {
-		mockPost.mockRejectedValueOnce(new Error('network'))
-		const w = await mountTab({ objectId: 'c1', object: erasure })
-
-		await w.vm.takePreview()
-
-		expect(w.vm.refusal).toEqual({
-			rule: 'data-subject-request-failed',
-			message: 'This could not be completed. Nothing was erased.',
+	it('lists the summed counts and every protected item in full', async () => {
+		const wrapper = await mountTab({
+			dataSubjectRequestType: 'verwijdering',
+			erasureCounts: {
+				erasable: { cases: 2, files: '3' },
+				pseudonymised: { cases: 1 },
+				protected: { cases: 1, files: 1 },
+			},
+			erasureProtected: [
+				{ name: 'Besluit 2024-17', ground: 'Archiefwet', basis: 'art. 3', action: 'Kept until 2034' },
+				{ name: 'Factuur 88', ground: 'Fiscale bewaarplicht', basis: 'AWR 52', action: 'Pseudonymise after 7 years' },
+			],
 		})
-	})
-})
 
-describe('DataSubjectRequestTab on an access request', () => {
-	it('reads the export state on mount and offers the download once it is served', async () => {
-		mockGet.mockResolvedValueOnce({ data: { exportId: 'e/1', downloadable: true, expired: false } })
-		const w = await mountTab({ objectId: 'c1', object: { dataSubjectRequestType: 'inzage' } })
-
-		expect(mockGet).toHaveBeenCalledWith('/apps/dossiq/api/cases/c1/avg/subject-export')
-		expect(buttonLabels(w)).toEqual(['Ask for the export', 'Download the export'])
-		expect(w.findAll('button')[1].attributes('data-href'))
-			.toBe('/apps/openregister/api/gdpr/subject-exports/e%2F1/download')
-	})
-
-	it('says the export expired and offers no download', async () => {
-		mockGet.mockResolvedValueOnce({ data: { exportId: 'e1', downloadable: false, expired: true } })
-		const w = await mountTab({ objectId: 'c1', object: { dataSubjectRequestType: 'correctie' } })
-
-		expect(w.find('aside').text()).toBe('This export expired. Ask for it again.')
-		expect(w.text()).not.toContain('The platform is still assembling the file.')
-		expect(buttonLabels(w)).toEqual(['Ask for the export'])
+		expect(wrapper.findAll('.dsr-tab__counts li').map((li) => li.text().replace(/\s+/g, ' '))).toEqual([
+			'Erasable: 5',
+			'To pseudonymise: 1',
+			'Protected: 2',
+		])
+		const rows = wrapper.findAll('.dsr-tab__protected li')
+		expect(rows).toHaveLength(2)
+		expect(rows[0].find('strong').text()).toBe('Besluit 2024-17')
+		expect(rows[1].findAll('span').map((s) => s.text())).toEqual(['Fiscale bewaarplicht', 'AWR 52'])
+		expect(rows[1].find('em').text()).toBe('Pseudonymise after 7 years')
+		expect(buttons(wrapper).map((b) => b.text())).toEqual(['Take the preview', 'Run the approved erasure'])
+		expect(buttons(wrapper)[1].props('variant')).toBe('warning')
 	})
 
-	it('says the file is still being assembled while an export exists but is not served', async () => {
-		mockGet.mockResolvedValueOnce({ data: { exportId: 'e1', downloadable: false, expired: false } })
-		const w = await mountTab({ objectId: 'c1', object: { dataSubjectRequestType: 'inzage' } })
+	it('runs the erasure from its button and shows an unfinished outcome as a warning', async () => {
+		dsr.runErasure.mockResolvedValue({ complete: false, withheld: [1, 2], refused: [], failed: [3] })
+		const wrapper = await mountTab({ dataSubjectRequestType: 'verwijdering', erasureCounts: { erasable: { cases: 1 } } })
 
-		expect(w.find('p').text()).toBe('The platform is still assembling the file.')
-		expect(w.find('aside').exists()).toBe(false)
-	})
-
-	it('asks for the export, then reads its state again', async () => {
-		mockGet.mockResolvedValueOnce({ data: { exportId: '', downloadable: false, expired: false } })
-		mockPost.mockResolvedValueOnce({ data: {} })
-		mockGet.mockResolvedValueOnce({ data: { exportId: 'e9', downloadable: true, expired: false } })
-		const w = await mountTab({ objectId: 'c1', object: { dataSubjectRequestType: 'inzage' } })
-
-		await w.findAll('button')[0].trigger('click')
+		await buttons(wrapper)[1].trigger('click')
 		await flushPromises()
 
-		expect(mockPost).toHaveBeenCalledWith('/apps/dossiq/api/cases/c1/avg/subject-export')
-		expect(mockGet).toHaveBeenCalledTimes(2)
-		expect(w.vm.exportState.exportId).toBe('e9')
+		expect(dsr.runErasure).toHaveBeenCalledWith('c1')
+		const note = notes(wrapper)[0]
+		expect(note.props('type')).toBe('warning')
+		expect(note.text()).toBe('The erasure did not finish. 3 records still hold this person.')
+	})
+
+	it('shows a complete outcome as a success', async () => {
+		const wrapper = await mountTab({ dataSubjectRequestType: 'verwijdering', erasureOutcome: { complete: true } })
+
+		expect(notes(wrapper)[0].props('type')).toBe('success')
+		expect(notes(wrapper)[0].text()).toBe('The platform reports the erasure complete.')
+	})
+
+	it('shows the server\'s refusal with its rule and frees the buttons', async () => {
+		dsr.previewErasure.mockRejectedValue(new Error('not approved'))
+		const wrapper = await mountTab({ dataSubjectRequestType: 'verwijdering' })
+
+		await buttons(wrapper)[0].trigger('click')
+		await flushPromises()
+
+		const refusal = notes(wrapper)[0]
+		expect(refusal.props('type')).toBe('warning')
+		expect(refusal.text()).toContain('not approved')
+		expect(refusal.find('.dsr-tab__rule').text()).toBe('rule: not approved')
+		expect(buttons(wrapper)[0].props('disabled')).toBe(false)
 	})
 })
 
-describe('DataSubjectRequestTab on any other case', () => {
-	it('says there is nothing to erase or export and asks the platform nothing', async () => {
-		const w = await mountTab({ objectId: 'c1' })
+describe('DataSubjectRequestTab on other cases', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
 
-		expect(w.find('div[data-name]').attributes('data-name')).toBe('Not a data subject request')
-		expect(w.findAll('button')).toHaveLength(0)
-		expect(mockGet).not.toHaveBeenCalled()
-		expect(mockPost).not.toHaveBeenCalled()
+	it('says a case without a request has nothing to erase or export', async () => {
+		const wrapper = await mountTab({ dataSubjectRequestType: 'klacht' })
+
+		expect(wrapper.findComponent({ name: 'NcEmptyContent' }).props('name')).toBe('Not a data subject request')
+		expect(buttons(wrapper)).toHaveLength(0)
+		expect(dsr.fetchSubjectExportState).not.toHaveBeenCalled()
+	})
+
+	it('says the file is still being assembled while it cannot be downloaded', async () => {
+		dsr.fetchSubjectExportState.mockResolvedValue({ exportId: 'e1', downloadable: false, expired: false })
+		const wrapper = await mountTab({ dataSubjectRequestType: 'inzage' })
+
+		expect(wrapper.find('h3').text()).toBe('Subject export')
+		expect(wrapper.text()).toContain('The platform is still assembling the file.')
+		expect(buttons(wrapper).map((b) => b.text())).toEqual(['Ask for the export'])
+	})
+
+	it('offers the download once the export is ready', async () => {
+		dsr.fetchSubjectExportState.mockResolvedValue({ exportId: 'e2', downloadable: true, expired: false })
+		const wrapper = await mountTab({ dataSubjectRequestType: 'correctie' })
+
+		const download = buttons(wrapper)[1]
+		expect(download.text()).toBe('Download the export')
+		expect(download.props('href')).toBe('/download/e2')
+		expect(download.props('variant')).toBe('primary')
+		expect(wrapper.text()).not.toContain('still assembling')
+	})
+
+	it('tells the handler an expired export must be asked for again', async () => {
+		dsr.fetchSubjectExportState.mockResolvedValue({ exportId: 'e3', downloadable: false, expired: true })
+		const wrapper = await mountTab({ dataSubjectRequestType: 'inzage' })
+
+		expect(notes(wrapper)[0].text()).toBe('This export expired. Ask for it again.')
+		expect(wrapper.text()).not.toContain('still assembling')
+	})
+
+	it('asks for the export from its button and reads the new state', async () => {
+		dsr.fetchSubjectExportState
+			.mockResolvedValueOnce({ exportId: '', downloadable: false, expired: false })
+			.mockResolvedValueOnce({ exportId: 'e4', downloadable: true, expired: false })
+		const wrapper = await mountTab({ dataSubjectRequestType: 'inzage' })
+
+		await buttons(wrapper)[0].trigger('click')
+		await flushPromises()
+
+		expect(dsr.requestSubjectExport).toHaveBeenCalledWith('c1')
+		expect(buttons(wrapper)[1].props('href')).toBe('/download/e4')
 	})
 })

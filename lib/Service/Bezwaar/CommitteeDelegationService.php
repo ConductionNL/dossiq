@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
+use OCA\Dossiq\Kernel\Contracts\CommitteeDelegationServiceInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md
  */
-class CommitteeDelegationService {
+class CommitteeDelegationService implements CommitteeDelegationServiceInterface {
 
 	/**
 	 * Every spelling of the governance-body command event FQN, newest first.
@@ -359,7 +360,6 @@ class CommitteeDelegationService {
 
 	}//end rosterOf()
 
-
 	/**
 	 * The chair and secretary seats, when the committee names them.
 	 *
@@ -392,7 +392,6 @@ class CommitteeDelegationService {
 
 	}//end officers()
 
-
 	/**
 	 * Normalise `members[]` into roster entries, dropping the unusable.
 	 *
@@ -420,7 +419,6 @@ class CommitteeDelegationService {
 		return $entries;
 
 	}//end plainMembers()
-
 
 	/**
 	 * One `members[]` element as a roster entry, or null when unusable.

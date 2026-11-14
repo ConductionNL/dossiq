@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -48,11 +48,11 @@ class WooRequesterProperties {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the propertyDefinition schema.
+	 * @param SettingsServiceInterface $settingsService Names the propertyDefinition schema.
 	 * @param LoggerInterface $logger          Says when the definitions cannot be read.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

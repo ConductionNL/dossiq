@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
-use OCA\Dossiq\Service\Email\IntakePolicy;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IUserSession;
@@ -43,11 +43,11 @@ final class IntakeRoleGate {
 	 * Constructor.
 	 *
 	 * @param IUserSession $userSession The signed-in caller.
-	 * @param IntakePolicy $policy      Who may run intake.
+	 * @param IntakePolicyInterface $policy      Who may run intake.
 	 */
 	public function __construct(
 		private readonly IUserSession $userSession,
-		private readonly IntakePolicy $policy,
+		private readonly IntakePolicyInterface $policy,
 	) {
 	}//end __construct()
 

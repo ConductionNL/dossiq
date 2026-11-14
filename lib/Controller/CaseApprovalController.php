@@ -33,11 +33,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Cases\ApprovalRequest;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ApprovalRequestInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -60,19 +60,19 @@ class CaseApprovalController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request         The HTTP request.
-	 * @param ApprovalRequest $approvals       Starts the walk and records the link.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization, failing closed.
+	 * @param ApprovalRequestInterface $approvals       Starts the walk and records the link.
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession    $userSession     The current session.
 	 * @param LoggerInterface $logger          The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ApprovalRequest $approvals,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly ApprovalRequestInterface $approvals,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

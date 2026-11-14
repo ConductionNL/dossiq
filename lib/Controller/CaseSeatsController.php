@@ -36,10 +36,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\CaseCaller;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\People\CaseSeats;
-use OCA\Dossiq\Service\People\CoordinatorRequirement;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseSeatsInterface;
+use OCA\Dossiq\Kernel\Contracts\CoordinatorRequirementInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -65,10 +65,10 @@ class CaseSeatsController extends Controller {
 	 *
 	 * @param string                 $appName     The app name.
 	 * @param IRequest               $request     The request.
-	 * @param CaseSeats              $seats       The handler and the coordinator.
-	 * @param CoordinatorRequirement $requirement Whether this case type asks for a coordinator.
-	 * @param CaseAccessGuard        $accessGuard Per-case authorization, failing closed.
-	 * @param SettingsService        $settings    Bridge to OpenRegister.
+	 * @param CaseSeatsInterface              $seats       The handler and the coordinator.
+	 * @param CoordinatorRequirementInterface $requirement Whether this case type asks for a coordinator.
+	 * @param CaseAccessGuardInterface        $accessGuard Per-case authorization, failing closed.
+	 * @param SettingsServiceInterface        $settings    Bridge to OpenRegister.
 	 * @param IUserSession           $userSession The session.
 	 * @param LoggerInterface        $logger      The logger.
 	 *
@@ -79,10 +79,10 @@ class CaseSeatsController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseSeats $seats,
-		private readonly CoordinatorRequirement $requirement,
-		private readonly CaseAccessGuard $accessGuard,
-		private readonly SettingsService $settings,
+		private readonly CaseSeatsInterface $seats,
+		private readonly CoordinatorRequirementInterface $requirement,
+		private readonly CaseAccessGuardInterface $accessGuard,
+		private readonly SettingsServiceInterface $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

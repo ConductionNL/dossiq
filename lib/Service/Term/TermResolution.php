@@ -44,6 +44,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TermResolutionInterface;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermKind;
 
@@ -52,7 +53,7 @@ use OCA\Dossiq\Service\TermKind;
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
  */
-class TermResolution {
+class TermResolution implements TermResolutionInterface {
 	/**
 	 * The order, most specific first. It is a constant rather than a setting
 	 * because the point of the change is that there is ONE order and everybody

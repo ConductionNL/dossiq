@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeFormBindingCheckInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
  */
-class IntakeFormBindingCheck {
+class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 
 	/**
 	 * OpenRegister's validator of a form mapping against its destination schema.
@@ -56,13 +57,6 @@ class IntakeFormBindingCheck {
 	 * @var string
 	 */
 	public const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
-
-	/**
-	 * The rule a refused binding names.
-	 *
-	 * @var string
-	 */
-	public const RULE = 'intake-form-binding-invalid';
 
 	/**
 	 * The finding code for a property that must be filled and that the form does not fill.

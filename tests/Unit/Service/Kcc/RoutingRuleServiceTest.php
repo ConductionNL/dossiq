@@ -40,6 +40,8 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Service\Kcc\RoutingTableEvaluator
  * @uses   \OCA\Dossiq\Service\Kcc\RoutingRuleOrder
  * @uses   \OCA\Dossiq\Service\Kcc\RuleConditions
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class RoutingRuleServiceTest extends TestCase {
 

@@ -47,7 +47,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Flow;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use RuntimeException;
 
 /**
@@ -169,7 +169,7 @@ class PlannedFollowUpDocument {
 		return [
 			'name' => 'Planned follow-up: ' . $followUp->title,
 			'description' => $this->describe(followUp: $followUp),
-			'app' => Application::APP_ID,
+			'app' => AppIdentity::APP_ID,
 			'applicationSlug' => self::PLANNED_SLUG,
 			'trigger' => 'schedule',
 			'cron' => $cron,

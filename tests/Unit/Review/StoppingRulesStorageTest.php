@@ -94,7 +94,12 @@ class StoppingRulesStorageTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default=''): string => ($config[$key] ?? $default));
 
-		return new StoppingRules(settingsService: $settings, reviews: new DocumentRelevance(settingsService: $settings, logger: $this->logger), logger: $this->logger);
+		return new StoppingRules(
+			settingsService: $settings,
+			reviews: new DocumentRelevance(settingsService: $settings, logger: $this->logger),
+			logger: $this->logger,
+			writes: $this->createMock(originalClassName: \OCA\Dossiq\Review\ReviewWrites::class)
+		);
 	}//end rules()
 
 	/**

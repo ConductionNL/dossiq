@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Intake\CaseReceiptDates;
+use OCA\Dossiq\Kernel\Contracts\CaseReceiptDatesInterface;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCP\AppFramework\Utility\ITimeFactory;
 
@@ -39,12 +39,12 @@ final class ReceiptClock {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseReceiptDates $receiptDates The receipt and start dates a case is missing.
+	 * @param CaseReceiptDatesInterface $receiptDates The receipt and start dates a case is missing.
 	 * @param ReceiptMoment    $receipt      Tells a receipt from a draft save.
 	 * @param ITimeFactory     $time         The moment a draft is sent.
 	 */
 	public function __construct(
-		public readonly CaseReceiptDates $receiptDates,
+		public readonly CaseReceiptDatesInterface $receiptDates,
 		public readonly ReceiptMoment $receipt,
 		public readonly ITimeFactory $time,
 	) {

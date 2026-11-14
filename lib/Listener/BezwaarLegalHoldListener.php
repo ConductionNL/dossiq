@@ -36,9 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Service\HoldOrder;
 use OCP\EventDispatcher\Event;
@@ -97,12 +97,12 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The DI container (OR services resolved lazily).
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -204,7 +204,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			$this->logger->warning(
 				'Dossiq legal-hold: could not apply hold',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'caseId' => $caseId,
 					'place' => $place,
 					'error' => $e->getMessage(),
@@ -230,7 +230,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			$this->logger->warning(
 				'Dossiq legal-hold: NOT applied, collaborator or case unresolved',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'caseId' => $caseId,
 					'place' => $place,
 					'haveService' => ($legalHoldService !== null),
@@ -296,7 +296,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			$this->logger->warning(
 				'Dossiq legal-hold: could not resolve case object',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'caseId' => $caseId,
 					'error' => $e->getMessage(),
 				]
@@ -380,7 +380,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			$this->logger->warning(
 				'Dossiq legal-hold: could not resolve objection for case linkage',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'bezwaarId' => $objectionId,
 					'error' => $e->getMessage(),
 				]

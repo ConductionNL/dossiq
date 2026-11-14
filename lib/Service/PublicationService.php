@@ -30,9 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Publication\PublicationDateRule;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PublicationServiceInterface;
+use OCA\Dossiq\Service\Publication\PublicationDateRule;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
-class PublicationService {
+class PublicationService implements PublicationServiceInterface {
 	/**
 	 * Supported publication channels.
 	 */
@@ -223,7 +224,7 @@ class PublicationService {
 	 */
 	private function requestDelivery(array $case, array $entry): array {
 		$requestedAt = date(format: 'c');
-		$where = ['app' => Application::APP_ID, 'caseId' => $entry['caseId'], 'channel' => $entry['channel']];
+		$where = ['app' => AppIdentity::APP_ID, 'caseId' => $entry['caseId'], 'channel' => $entry['channel']];
 		if (class_exists('\\' . self::DELIVERY_EVENT) === false) {
 			$this->logger->warning('Publication delivery refused: integriq is not installed', $where);
 			return ['status' => 'refused', 'reason' => 'integriq_not_installed', 'requestedAt' => $requestedAt];
@@ -255,7 +256,7 @@ class PublicationService {
 		$eventClass = '\\' . self::DELIVERY_EVENT;
 
 		return new $eventClass(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			subjectRegister: (string)$entry['register'],
 			subjectSchema: (string)$entry['schema'],
 			subjectId: $entry['caseId'],
@@ -342,7 +343,7 @@ class PublicationService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'PublicationService::publish find failed',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 			throw new RuntimeException('Case not found: ' . $caseId);
 		}

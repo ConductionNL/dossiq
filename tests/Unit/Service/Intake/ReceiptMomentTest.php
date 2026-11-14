@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Intake\ReceiptMoment
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class ReceiptMomentTest extends TestCase {
 
@@ -255,4 +257,25 @@ class ReceiptMomentTest extends TestCase {
 
 		$this->assertNull($receipt->objectBeingReceived(event: new ObjectCreatedEvent($active)), 'Already stored: nothing is being received any more.');
 	}//end testAnyOtherSaveReceivesNothing()
+
+	/**
+	 * An object with no isDraft() of its own is read through what it serialises to.
+	 *
+	 * @return void
+	 */
+	public function testIsDraftReadsAnObjectThroughItsSerialisation(): void {
+		$receipt = new ReceiptMoment();
+		$serialisable = static fn (?string $status): \JsonSerializable => new class($status) implements \JsonSerializable {
+			public function __construct(private readonly ?string $status) {
+			}
+
+			public function jsonSerialize(): array {
+				return ['@self' => ['status' => $this->status]];
+			}
+		};
+
+		$this->assertTrue($receipt->isDraft(object: $serialisable('draft')));
+		$this->assertFalse($receipt->isDraft(object: $serialisable('active')));
+		$this->assertFalse($receipt->isDraft(object: new \stdClass()));
+	}//end testIsDraftReadsAnObjectThroughItsSerialisation()
 }//end class

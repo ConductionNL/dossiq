@@ -244,4 +244,82 @@ class StatusDwellTimerTest extends TestCase {
 		);
 		self::assertSame(expected: 0, actual: $this->timer()->cancel(caseId: 'case-1'));
 	}//end testARefusingEngineDoesNotHoldTheCase()
+
+	/**
+	 * A timer whose settings find no OpenRegister engine.
+	 *
+	 * @return StatusDwellTimer
+	 */
+	private function timerWithoutEngine(): StatusDwellTimer {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getOpenRegisterClass')
+			->with(TermijnTimerService::ENGINE_CLASS)
+			->willReturn(null);
+
+		return new StatusDwellTimer(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+	}//end timerWithoutEngine()
+
+	/**
+	 * No case, or no positive maximum, arms nothing and never reaches the engine.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testNothingIsArmedWithoutACaseOrAMaximum(): void {
+		$timer = $this->timer();
+
+		self::assertNull(actual: $timer->arm(caseId: '', statusTypeId: 'review', maximumDwell: 5));
+		self::assertNull(actual: $timer->arm(caseId: 'case-1', statusTypeId: 'review', maximumDwell: 0));
+		self::assertSame(expected: 0, actual: $timer->cancel(caseId: ''));
+		self::assertSame(expected: [], actual: $this->engine->calls);
+	}//end testNothingIsArmedWithoutACaseOrAMaximum()
+
+	/**
+	 * Without OpenRegister's timer engine the arm and the cancel are no-ops.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testAnAbsentEngineArmsAndCancelsNothing(): void {
+		$timer = $this->timerWithoutEngine();
+
+		self::assertNull(actual: $timer->arm(caseId: 'case-1', statusTypeId: 'review', maximumDwell: 5));
+		self::assertSame(expected: 0, actual: $timer->cancel(caseId: 'case-1'));
+	}//end testAnAbsentEngineArmsAndCancelsNothing()
+
+	/**
+	 * A status without a name is titled by its id, and the timer uuid comes back.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testAnUnnamedStatusIsTitledByItsId(): void {
+		$uuid = $this->timer()->arm(caseId: 'case-1', statusTypeId: 'review-uuid', maximumDwell: 3);
+
+		self::assertSame(expected: 'timer-1', actual: $uuid);
+		$config = $this->engine->calls['arm'][0]['config'];
+		self::assertSame(expected: 'Maximum dwell review-uuid', actual: $config['title']);
+		self::assertSame(expected: 'case-1', actual: $config['subjectUuid']);
+		self::assertSame(expected: StatusDwellTimer::ANCHOR_EVENT, actual: $config['anchorEvent']);
+		self::assertSame(
+			expected: StatusDwellTimer::BREACH_MESSAGE,
+			actual: $config['escalationRules'][0]['message'],
+		);
+		self::assertSame(
+			expected: [
+				'source' => StatusDwellTimer::METADATA_SOURCE,
+				'kind' => StatusDwellTimer::KIND_STATUS_DWELL,
+				'caseId' => 'case-1',
+				'statusTypeId' => 'review-uuid',
+				'maximumDwell' => 3,
+			],
+			actual: $config['metadata'],
+		);
+	}//end testAnUnnamedStatusIsTitledByItsId()
 }//end class

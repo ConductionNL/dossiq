@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\BezwaarSubscriptionRegistrar;
+use OCA\Dossiq\Listener\Registrar\BezwaarSubscriptionRegistrar;
 use OCA\Dossiq\Listener\BezwaarLegalHoldListener;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -141,7 +141,7 @@ class BezwaarLegalHoldSchemaCoverageTest extends TestCase {
 	 */
 	public function testLegalHoldSubscriptionUsesTheGuardedConstant(): void {
 		$source = file_get_contents(
-			filename: __DIR__ . '/../../../lib/AppInfo/Registrar/BezwaarSubscriptionRegistrar.php'
+			filename: __DIR__ . '/../../../lib/Listener/Registrar/BezwaarSubscriptionRegistrar.php'
 		);
 		$this->assertIsString(actual: $source);
 

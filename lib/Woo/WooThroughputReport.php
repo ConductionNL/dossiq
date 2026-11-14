@@ -23,9 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
 use OCA\Dossiq\Service\Csv\CsvWriter;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserManager;
 use Throwable;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
-class WooThroughputReport {
+class WooThroughputReport implements WooThroughputReportInterface {
 
 	use SearchesObjects;
 
@@ -65,15 +66,15 @@ class WooThroughputReport {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param CaseDateNormaliser $caseDates Reads a moment as a day in the instance's zone.
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
+	 * @param CaseDateNormaliserInterface $caseDates Reads a moment as a day in the instance's zone.
 	 * @param IUserManager $userManager The user manager, for display names.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseDateNormaliser $caseDates,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseDateNormaliserInterface $caseDates,
 		private readonly IUserManager $userManager,
 	) {
 	}//end __construct()

@@ -29,12 +29,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\EmailTemplateService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\EmailTemplateServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SenderBlocklistInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
-use OCA\Dossiq\Service\Email\SenderBlocklist;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -89,27 +89,27 @@ class EmailTemplateController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Inbound request.
-	 * @param EmailTemplateService $templateService Backend templating service.
-	 * @param SettingsService $settingsService Settings resolver (registers).
+	 * @param EmailTemplateServiceInterface $templateService Backend templating service.
+	 * @param SettingsServiceInterface $settingsService Settings resolver (registers).
 	 * @param IAppConfig $appConfig App config (IMAP settings).
 	 * @param IUserSession $userSession Current user session.
 	 * @param IGroupManager $groupManager Group manager (admin check on config writes).
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 * @param MailGatewayInterface $mailGateway The mail gateway (the accounts intake can read).
-	 * @param SenderBlocklist $blocklist Who may not open a case by mail, normalised as it is stored.
+	 * @param SenderBlocklistInterface $blocklist Who may not open a case by mail, normalised as it is stored.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly EmailTemplateService $templateService,
-		private readonly SettingsService $settingsService,
+		private readonly EmailTemplateServiceInterface $templateService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly MailGatewayInterface $mailGateway,
-		private readonly SenderBlocklist $blocklist,
+		private readonly SenderBlocklistInterface $blocklist,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -282,7 +282,7 @@ class EmailTemplateController extends Controller {
 
 		$values = [];
 		foreach (self::IMAP_KEYS as $key) {
-			$values[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+			$values[$key] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		}
 
 		return new JSONResponse($values);
@@ -327,7 +327,7 @@ class EmailTemplateController extends Controller {
 			// capitals and the trailing space — matches nothing and the surface
 			// still shows the address as blocked. Normalising on the way in is
 			// the only place that can be true for every reader.
-			if ($key === SenderBlocklist::BLOCKLIST_KEY) {
+			if ($key === SenderBlocklistInterface::BLOCKLIST_KEY) {
 				$this->blocklist->replace(entries: explode(',', (string)$value));
 				continue;
 			}
@@ -338,7 +338,7 @@ class EmailTemplateController extends Controller {
 			// placeholder that meant "unchanged" went with it: a form that still
 			// understood it would accept three asterisks as a value for a key
 			// that is no longer a credential.
-			$this->appConfig->setValueString(Application::APP_ID, $key, (string)$value);
+			$this->appConfig->setValueString(AppIdentity::APP_ID, $key, (string)$value);
 		}//end foreach
 
 		return new JSONResponse(['saved' => true]);

@@ -45,6 +45,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
+ * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class SubjectLinkRuleTest extends TestCase {
 

@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Setup;
 
+use OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
 use OCP\IAppConfig;
@@ -64,7 +65,7 @@ class CaseTypePackageChoiceTest extends TestCase {
 			}
 		);
 
-		return new CaseTypePackageChoice(packages: $packages, appConfig: $appConfig);
+		return new CaseTypePackageChoice(packages: $packages, appConfig: $appConfig, examples: $this->createMock(InstalledPackageExamples::class));
 
 	}//end choice()
 
@@ -179,4 +180,51 @@ class CaseTypePackageChoiceTest extends TestCase {
 		$this->assertFalse($choice->install('none')['success']);
 
 	}//end testAPackageTheStepDoesNotOfferIsRefused()
+
+	/**
+	 * The examples of the installed packages are written through the example
+	 * writer, and its outcomes are handed back as they are.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testTheExamplesOfInstalledPackagesAreWrittenThroughTheWriter(): void {
+		$outcomes = [['status' => PackageInstaller::INSTALLED, 'package' => 'woo', 'version' => '1.1.0', 'message' => 'ok', 'written' => 3]];
+		$examples = $this->createMock(InstalledPackageExamples::class);
+		$examples->expects($this->once())->method('forInstalled')->willReturn($outcomes);
+
+		$choice = new CaseTypePackageChoice(
+			packages: $this->createMock(PackageInstaller::class),
+			appConfig: $this->createMock(IAppConfig::class),
+			examples: $examples
+		);
+
+		$this->assertSame($outcomes, $choice->writeExamplesOfInstalled());
+
+	}//end testTheExamplesOfInstalledPackagesAreWrittenThroughTheWriter()
+
+	/**
+	 * A writer that throws is answered as one failed outcome, not thrown on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testAThrowingExampleWriterIsAnsweredAsAFailedOutcome(): void {
+		$examples = $this->createMock(InstalledPackageExamples::class);
+		$examples->method('forInstalled')->willThrowException(new \RuntimeException('the register is gone'));
+
+		$choice = new CaseTypePackageChoice(
+			packages: $this->createMock(PackageInstaller::class),
+			appConfig: $this->createMock(IAppConfig::class),
+			examples: $examples
+		);
+
+		$this->assertSame(
+			[['status' => PackageInstaller::FAILED, 'package' => '', 'version' => '', 'message' => 'the register is gone']],
+			$choice->writeExamplesOfInstalled()
+		);
+
+	}//end testAThrowingExampleWriterIsAnsweredAsAFailedOutcome()
 }//end class

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 
 /**
  * Where a workflow backfill writes: the object service, the register and its schemas.
@@ -40,11 +40,11 @@ final class BackfillTarget {
 	 * Read the configured register and schemas.
 	 *
 	 * @param object          $objectService OpenRegister's object service.
-	 * @param SettingsService $settings      The app settings.
+	 * @param SettingsServiceInterface $settings      The app settings.
 	 */
 	public function __construct(
 		public readonly object $objectService,
-		SettingsService $settings,
+		SettingsServiceInterface $settings,
 	) {
 		$this->register = $settings->getConfigValue('register');
 		$this->schemas = new BackfillSchemas(

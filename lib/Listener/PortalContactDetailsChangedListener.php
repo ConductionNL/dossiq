@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -66,13 +66,13 @@ class PortalContactDetailsChangedListener implements IEventListener {
 	private const LIMIT = 500;
 
 	/**
-	 * @param SettingsService $settingsService OpenRegister access and the configured register.
-	 * @param CaseTimeline    $timeline        The one seam that writes a timeline entry.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
+	 * @param CaseTimelineInterface    $timeline        The one seam that writes a timeline entry.
 	 * @param LoggerInterface $logger          Where a failure is reported.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTimeline $timeline,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTimelineInterface $timeline,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -225,10 +225,10 @@ class PortalContactDetailsChangedListener implements IEventListener {
 	private function tell(string $caseId, string $message, string $channel): void {
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::APPLICANT_RESPONSE,
+			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
 			message: $message,
 			fields: ['act' => 'contact-channel', 'channel' => $channel],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
 	}//end tell()
 }//end class

@@ -39,8 +39,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -86,12 +86,12 @@ class PublishSeededCaseTypes implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister.
 	 * @param IAppConfig $appConfig Where the step records that it ran.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -121,7 +121,7 @@ class PublishSeededCaseTypes implements IRepairStep {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === '1') {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === '1') {
 			$output->info('Seeded case types were published before; skipping.');
 			return;
 		}
@@ -179,7 +179,7 @@ class PublishSeededCaseTypes implements IRepairStep {
 		);
 
 		if ($tally['failed'] === 0 && $tally['unreadable'] === false) {
-			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, '1');
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, '1');
 		}
 	}//end reportPublication()
 
@@ -207,7 +207,7 @@ class PublishSeededCaseTypes implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not read the case types to publish the seeded ones',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			$publication->unreadable = true;
 			return $publication->tally();
@@ -279,7 +279,7 @@ class PublishSeededCaseTypes implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not publish a seeded case type',
-				['app' => Application::APP_ID, 'slug' => $identity[0], 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'slug' => $identity[0], 'exception' => $e->getMessage()]
 			);
 			$publication->failed++;
 		}

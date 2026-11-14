@@ -264,4 +264,39 @@ class CaseToolsTest extends TestCase {
 
 		$this->assertSame('required_field:besluitDatum', $this->tools->completeTask(taskId: 'task-1')['message']);
 	}//end testARequiredFieldIsNamedBack()
+
+	// ── refusals before any service call ─────────────────────────────
+
+	public function testNoSessionTransitionsNothing(): void {
+		$this->session->method('getUser')->willReturn(null);
+		$this->guard->expects($this->never())->method('hasCaseMutationAccess');
+		$this->transitions->expects($this->never())->method('execute');
+
+		$this->assertSame(
+			['error' => 'not_authenticated', 'message' => 'No user session.'],
+			$this->tools->transitionCase(caseId: 'c-1', transitionId: 't-1')
+		);
+	}//end testNoSessionTransitionsNothing()
+
+	public function testABlankTransitionIsRefusedBeforeTheEngine(): void {
+		$this->user(uid: 'henk');
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->transitions->expects($this->never())->method('execute');
+
+		$this->assertSame(
+			['error' => 'transition_required', 'message' => 'Name the transition to make.'],
+			$this->tools->transitionCase(caseId: 'c-1', transitionId: '   ')
+		);
+	}//end testABlankTransitionIsRefusedBeforeTheEngine()
+
+	public function testNoSessionReassignsNothing(): void {
+		$this->session->method('getUser')->willReturn(null);
+		$this->groups->expects($this->never())->method('isAdmin');
+		$this->assignment->expects($this->never())->method('reassign');
+
+		$this->assertSame(
+			['error' => 'not_authenticated', 'message' => 'No user session.'],
+			$this->tools->reassignCase(caseId: 'c-1', toUser: 'fatima')
+		);
+	}//end testNoSessionReassignsNothing()
 }//end class

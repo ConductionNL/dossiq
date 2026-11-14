@@ -43,8 +43,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Notification\Notifier;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAssignmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Service\Support\CaseReadAndPatch;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseAssignmentService {
+class CaseAssignmentService implements CaseAssignmentServiceInterface {
 
 	/**
 	 * Reads and patches the case, naming this service in its warnings.
@@ -192,7 +193,7 @@ class CaseAssignmentService {
 
 		$this->logger->info(
 			'Dossiq CaseAssignmentService: case reassigned',
-			['app' => Application::APP_ID, 'caseId' => $caseId, 'from' => $previous, 'to' => $toUser, 'actor' => $actorId]
+			['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'from' => $previous, 'to' => $toUser, 'actor' => $actorId]
 		);
 
 		return (['previousAssignee' => $previous] + $this->describe(caseId: $caseId, userId: $actorId, assignee: $toUser));
@@ -217,16 +218,16 @@ class CaseAssignmentService {
 
 		try {
 			$notification = $this->notificationManager->createNotification();
-			$notification->setApp(Application::APP_ID)
+			$notification->setApp(AppIdentity::APP_ID)
 				->setUser($toUser)
 				->setDateTime(new DateTime())
 				->setObject('case', $caseId)
-				->setSubject(Notifier::SUBJECT_CASES_REASSIGNED, ['fromUser' => $fromUser, 'count' => 1]);
+				->setSubject(NotifierInterface::SUBJECT_CASES_REASSIGNED, ['fromUser' => $fromUser, 'count' => 1]);
 			$this->notificationManager->notify($notification);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAssignmentService: reassignment notification failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'toUser' => $toUser]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'toUser' => $toUser]
 			);
 		}
 	}//end notifyReceiver()

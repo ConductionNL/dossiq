@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\ShippedConfigurationServiceInterface;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use Psr\Log\LoggerInterface;
 
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-class ShippedConfigurationService {
+class ShippedConfigurationService implements ShippedConfigurationServiceInterface {
 
 	/**
 	 * The app config key naming the provenance ledger's schema.
@@ -564,8 +565,6 @@ class ShippedConfigurationService {
 		];
 	}//end refreshTarget()
 
-
-
 	/**
 	 * Take the newer shipped version over a change somebody made here.
 	 *
@@ -596,8 +595,6 @@ class ShippedConfigurationService {
 			how: ['overLocalChange' => true, 'version' => null, 'rows' => $this->store],
 		);
 	}//end adoptOverLocalChange()
-
-
 
 	/**
 	 * Whether a shipped object is untouched since its ledger stamp, as

@@ -38,7 +38,7 @@ namespace OCA\Dossiq\Service\Flow;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -126,15 +126,15 @@ class PlannedSeriesLedger {
 			$stamp = $lastRunAt->format('Y-m-d H:i:s');
 		}
 
-		$seen = $this->appConfig->getValueString(Application::APP_ID, (self::SEEN_KEY . $flowId), '');
-		$fired = (int)$this->appConfig->getValueString(Application::APP_ID, (self::FIRED_KEY . $flowId), '0');
+		$seen = $this->appConfig->getValueString(AppIdentity::APP_ID, (self::SEEN_KEY . $flowId), '');
+		$fired = (int)$this->appConfig->getValueString(AppIdentity::APP_ID, (self::FIRED_KEY . $flowId), '0');
 		if ($seen === $stamp) {
 			return $fired;
 		}
 
 		$fired++;
-		$this->appConfig->setValueString(Application::APP_ID, (self::SEEN_KEY . $flowId), $stamp);
-		$this->appConfig->setValueString(Application::APP_ID, (self::FIRED_KEY . $flowId), (string)$fired);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, (self::SEEN_KEY . $flowId), $stamp);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, (self::FIRED_KEY . $flowId), (string)$fired);
 
 		return $fired;
 	}//end firedCount()

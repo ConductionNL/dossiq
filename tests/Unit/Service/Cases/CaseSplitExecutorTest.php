@@ -60,6 +60,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
  *
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CaseSplitExecutorTest extends TestCase {
 

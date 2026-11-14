@@ -34,7 +34,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Drafts;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentDraftsInterface;
 use OCA\Dossiq\Service\Access\CaseRecordLookup;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-a-case-type-names-the-template-it-drafts-a-document-from-req-cdd-001
  */
-class CaseDocumentDrafts {
+class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 
 	use SearchesObjects;
 
@@ -239,7 +240,7 @@ class CaseDocumentDrafts {
 				],
 				'metadata' => $this->metadata(declaration: $declaration),
 			],
-			requestingApp: Application::APP_ID
+			requestingApp: AppIdentity::APP_ID
 		);
 	}//end requestEvent()
 

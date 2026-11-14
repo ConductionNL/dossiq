@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\ConnectionTestServiceInterface;
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
  */
-class ConnectionTestService {
+class ConnectionTestService implements ConnectionTestServiceInterface {
 
 	/**
 	 * Nobody has probed this connection.
@@ -56,11 +57,6 @@ class ConnectionTestService {
 	 * The endpoint answered.
 	 */
 	public const REACHABLE = 'reachable';
-
-	/**
-	 * The endpoint did not answer, or answered an error.
-	 */
-	public const FAILED = 'failed';
 
 	/**
 	 * How long to wait, in seconds, before calling it a timeout.

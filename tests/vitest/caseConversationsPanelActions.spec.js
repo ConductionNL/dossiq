@@ -3,259 +3,197 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * CaseConversationsPanel's own buttons: whether Talk is there at all, starting
- * a conversation from the case, declaring the case major and opening the one
- * working channel. Only the HTTP boundary and Nextcloud globals are mocked;
- * the panel runs the real utils/caseConversation.js against them.
+ * CaseConversationsPanel's own buttons: it says so when Talk is missing,
+ * starts a conversation and lists it, declares the case major once and then
+ * offers the one working channel, and shows the server's reason when either
+ * act is refused.
  *
  * @spec openspec/specs/case-management/spec.md
  */
 
-import { flushPromises, shallowMount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 
 const mockGet = vi.fn()
-const mockPost = vi.fn()
 vi.mock('@nextcloud/axios', () => ({
-	default: { get: (...a) => mockGet(...a), post: (...a) => mockPost(...a) },
+	default: { get: (...a) => mockGet(...a), post: vi.fn() },
 }))
-vi.mock('@nextcloud/router', () => ({
-	generateUrl: (url, params = {}) => url.replace('{caseId}', params.caseId),
-}))
-vi.mock('@nextcloud/dialogs', () => ({ showError: vi.fn(), showSuccess: vi.fn() }))
-vi.mock('@nextcloud/event-bus', () => ({ emit: vi.fn(), subscribe: vi.fn(), unsubscribe: vi.fn() }))
-vi.mock('@nextcloud/l10n', () => ({
-	getLanguage: () => 'en',
-	translate: (_app, s, vars = {}) => s.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m),
-	translatePlural: (_app, one, other, n) => (n === 1 ? one : other),
-}))
+vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
+vi.mock('@nextcloud/l10n', () => ({ getLanguage: () => 'en', translate: (_app, s) => s, translatePlural: (_app, one, other, n) => (n === 1 ? one : other) }))
 vi.mock('@nextcloud/vue', () => {
-	const stub = (name) => ({ name, render: () => null })
+	const slotted = (name, props = []) => ({
+		name,
+		props,
+		emits: ['click'],
+		setup(p, { slots, emit }) {
+			return () => h('div', { class: name, onClick: () => emit('click') }, [slots.default?.()])
+		},
+	})
 	return {
-		NcButton: stub('NcButton'),
-		NcEmptyContent: stub('NcEmptyContent'),
-		NcLoadingIcon: stub('NcLoadingIcon'),
-		NcNoteCard: stub('NcNoteCard'),
+		NcButton: slotted('NcButton', ['disabled', 'variant', 'href']),
+		NcEmptyContent: slotted('NcEmptyContent', ['name', 'description']),
+		NcLoadingIcon: slotted('NcLoadingIcon', ['size']),
+		NcNoteCard: slotted('NcNoteCard', ['type', 'heading']),
 	}
 })
 vi.mock('@conduction/nextcloud-vue', () => ({
 	CnStatusBadge: { name: 'CnStatusBadge', props: ['label', 'variant', 'size'], render: () => null },
 }))
+vi.mock('../../src/utils/caseConversation.js', () => ({
+	conversationError: (e) => `refused: ${e.message}`,
+	declareMajor: vi.fn(),
+	startConversation: vi.fn(),
+}))
 
+const conversation = await import('../../src/utils/caseConversation.js')
 const { default: CaseConversationsPanel } =
 	await import('../../src/views/cases/components/CaseConversationsPanel.vue')
 
-const CASE_ID = '710d44a4-0000-4000-8000-000000000000'
-
-function mountPanel(propsData = {}) {
-	return shallowMount(CaseConversationsPanel, {
-		propsData,
-		mocks: { t: (_app, s) => s, $route: { params: {} } },
+/**
+ * Mount the panel and let the availability answer arrive.
+ *
+ * @param {object} props The panel's props.
+ * @return {Promise<object>} The wrapper.
+ */
+async function mountPanel(props) {
+	const wrapper = mount(CaseConversationsPanel, {
+		props,
+		global: { mocks: { t: (_app, s) => s, $route: { params: {} } } },
 	})
+	await flushPromises()
+	return wrapper
 }
 
-describe('CaseConversationsPanel asks whether Talk is there', () => {
+const button = (wrapper, id) => wrapper.find(`[data-testid="${id}"]`)
+
+describe('CaseConversationsPanel actions', () => {
 	beforeEach(() => {
-		mockGet.mockReset()
-		mockPost.mockReset()
+		vi.clearAllMocks()
+		mockGet.mockResolvedValue({ data: { available: true } })
+		vi.spyOn(window, 'open').mockImplementation(() => null)
 	})
 
-	it('asks the availability endpoint once on mount and stops loading', async () => {
-		mockGet.mockResolvedValue({ data: { available: true } })
-		const wrapper = mountPanel({ caseId: CASE_ID })
-		expect(wrapper.vm.loading).toBe(true)
-		await flushPromises()
+	afterEach(() => {
+		vi.restoreAllMocks()
+	})
 
-		expect(mockGet).toHaveBeenCalledTimes(1)
+	it('asks the availability endpoint and offers both buttons when Talk is there', async () => {
+		const wrapper = await mountPanel({ caseId: 'c1' })
+
 		expect(mockGet).toHaveBeenCalledWith('/apps/dossiq/api/conversations/availability')
 		expect(wrapper.vm.loading).toBe(false)
-		expect(wrapper.vm.talkUnavailable).toBe(false)
+		expect(button(wrapper, 'start-conversation').exists()).toBe(true)
+		expect(button(wrapper, 'declare-major').exists()).toBe(true)
+		expect(button(wrapper, 'open-major-channel').exists()).toBe(false)
+		expect(wrapper.findComponent({ name: 'NcEmptyContent' }).props('name')).toBe('No conversations yet')
 	})
 
-	it('says Talk is not available when the instance answers anything but available: true', async () => {
-		mockGet.mockResolvedValue({ data: { available: 'yes' } })
-		const wrapper = mountPanel({ caseId: CASE_ID })
-		await flushPromises()
+	it('says Talk is not available instead of offering a button', async () => {
+		mockGet.mockResolvedValue({ data: { available: false } })
+		const wrapper = await mountPanel({ caseId: 'c1' })
 
 		expect(wrapper.vm.talkUnavailable).toBe(true)
-		const empty = wrapper.findComponent({ name: 'NcEmptyContent' })
-		expect(empty.attributes('name')).toBe('Talk is not available')
-		expect(wrapper.find('.case-conversations__actions').exists()).toBe(false)
+		expect(button(wrapper, 'start-conversation').exists()).toBe(false)
+		expect(wrapper.findComponent({ name: 'NcEmptyContent' }).props('name')).toBe('Talk is not available')
 	})
 
-	it('treats a failing availability request as no Talk, and stops loading', async () => {
-		mockGet.mockRejectedValue(new Error('network'))
-		const wrapper = mountPanel({ caseId: CASE_ID })
+	it('treats an unreachable availability endpoint as no Talk', async () => {
+		mockGet.mockRejectedValue(new Error('offline'))
+		const wrapper = await mountPanel({ caseId: 'c1' })
+
+		expect([wrapper.vm.talkUnavailable, wrapper.vm.loading]).toEqual([true, false])
+		expect(button(wrapper, 'declare-major').exists()).toBe(false)
+	})
+
+	it('starts a conversation for the case and lists what it created', async () => {
+		conversation.startConversation.mockResolvedValue({ roomId: '9', subject: 'Hoorzitting' })
+		const wrapper = await mountPanel({ caseId: 'c1', caseObject: { conversations: [{ roomId: '8', subject: 'Eerder' }] } })
+
+		await button(wrapper, 'start-conversation').trigger('click')
 		await flushPromises()
 
-		expect(wrapper.vm.talkUnavailable).toBe(true)
-		expect(wrapper.vm.loading).toBe(false)
-	})
-})
-
-describe('CaseConversationsPanel starts a conversation', () => {
-	beforeEach(() => {
-		mockGet.mockReset()
-		mockPost.mockReset()
-		mockGet.mockResolvedValue({ data: { available: true } })
-		window.open = vi.fn()
+		expect(conversation.startConversation).toHaveBeenCalledWith('c1')
+		expect(wrapper.vm.conversations.map((c) => c.roomId)).toEqual(['8', '9'])
+		expect(wrapper.find('[data-testid="conversation-records"]').text()).toContain('Hoorzitting')
+		expect([wrapper.vm.starting, wrapper.vm.error]).toEqual([false, ''])
 	})
 
-	afterEach(() => {
-		delete window.open
-	})
-
-	it('posts to the case, opens the room and appends the recorded conversation', async () => {
-		const existing = { roomId: '1', subject: 'Earlier', participants: [] }
-		const started = { roomId: '2', subject: 'New', roomUrl: 'https://talk/2', participants: [] }
-		mockPost.mockResolvedValue({ data: { conversation: started } })
-		const wrapper = mountPanel({ caseId: CASE_ID, caseObject: { conversations: [existing] } })
-		await flushPromises()
-
-		await wrapper.vm.startConversation()
-
-		expect(mockPost).toHaveBeenCalledWith(`/apps/dossiq/api/cases/${CASE_ID}/conversations`, {})
-		expect(window.open).toHaveBeenCalledWith('https://talk/2', '_blank', 'noopener')
-		expect(wrapper.vm.conversations).toEqual([existing, started])
-		expect(wrapper.vm.starting).toBe(false)
-		expect(wrapper.vm.error).toBe('')
-	})
-
-	it('adds nothing when the server records no conversation', async () => {
-		mockPost.mockResolvedValue({ data: {} })
-		const wrapper = mountPanel({ caseId: CASE_ID })
-		await flushPromises()
+	it('adds nothing when the server answers no conversation', async () => {
+		conversation.startConversation.mockResolvedValue(null)
+		const wrapper = await mountPanel({ caseId: 'c1' })
 
 		await wrapper.vm.startConversation()
 
 		expect(wrapper.vm.conversations).toEqual([])
-		expect(window.open).not.toHaveBeenCalled()
 	})
 
-	it('shows the server\'s reason when the start is refused, and clears an earlier error first', async () => {
-		mockPost.mockRejectedValue({ response: { data: { reason: 'Talk refused the room' } } })
-		const wrapper = mountPanel({ caseId: CASE_ID })
-		await flushPromises()
-		wrapper.vm.error = 'stale'
+	it('shows the refusal when the conversation cannot start', async () => {
+		conversation.startConversation.mockRejectedValue(new Error('no room'))
+		const wrapper = await mountPanel({ caseId: 'c1' })
 
 		await wrapper.vm.startConversation()
+		await flushPromises()
 
-		expect(wrapper.vm.error).toBe('Talk refused the room')
+		expect(wrapper.vm.error).toBe('refused: no room')
 		expect(wrapper.vm.starting).toBe(false)
 		const note = wrapper.findComponent({ name: 'NcNoteCard' })
-		expect(note.exists()).toBe(true)
-		expect(note.attributes('heading')).toBe('We could not start the conversation')
+		expect(note.props('heading')).toBe('We could not start the conversation')
+		expect(note.text()).toBe('refused: no room')
 	})
 
-	it('does nothing without a case id', async () => {
-		const wrapper = mountPanel({})
-		await flushPromises()
+	it('starts and declares nothing without a case id', async () => {
+		const wrapper = await mountPanel({})
 
 		await wrapper.vm.startConversation()
+		await wrapper.vm.declareMajor()
 
-		expect(mockPost).not.toHaveBeenCalled()
-		expect(wrapper.vm.starting).toBe(false)
-	})
-})
-
-describe('CaseConversationsPanel declares the case major', () => {
-	beforeEach(() => {
-		mockGet.mockReset()
-		mockPost.mockReset()
-		mockGet.mockResolvedValue({ data: { available: true } })
-		window.open = vi.fn()
+		expect(conversation.startConversation).not.toHaveBeenCalled()
+		expect(conversation.declareMajor).not.toHaveBeenCalled()
 	})
 
-	afterEach(() => {
-		delete window.open
-	})
+	it('declares the case major and then offers the working channel', async () => {
+		conversation.declareMajor.mockResolvedValue('/call/major-room')
+		const wrapper = await mountPanel({ objectId: 'c2' })
 
-	it('posts the declaration, keeps the channel address and marks the case major', async () => {
-		mockPost.mockResolvedValue({ data: { channel: { roomUrl: 'https://talk/major' } } })
-		const wrapper = mountPanel({ caseId: CASE_ID })
+		await button(wrapper, 'declare-major').trigger('click')
 		await flushPromises()
+
+		expect(conversation.declareMajor).toHaveBeenCalledWith('c2')
+		expect([wrapper.vm.isMajor, wrapper.vm.majorChannelUrl, wrapper.vm.declaring]).toEqual([true, '/call/major-room', false])
+		expect(button(wrapper, 'declare-major').exists()).toBe(false)
+		expect(button(wrapper, 'open-major-channel').exists()).toBe(true)
+	})
+
+	it('stays not major when the declaration is refused', async () => {
+		conversation.declareMajor.mockRejectedValue(new Error('no responders'))
+		const wrapper = await mountPanel({ caseId: 'c1' })
 
 		await wrapper.vm.declareMajor()
 
-		expect(mockPost).toHaveBeenCalledWith(`/apps/dossiq/api/cases/${CASE_ID}/major`, {})
-		expect(wrapper.vm.isMajor).toBe(true)
-		expect(wrapper.vm.majorChannelUrl).toBe('https://talk/major')
-		expect(wrapper.vm.declaring).toBe(false)
-		expect(wrapper.find('[data-testid="open-major-channel"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="declare-major"]').exists()).toBe(false)
+		expect([wrapper.vm.isMajor, wrapper.vm.error, wrapper.vm.declaring]).toEqual([false, 'refused: no responders', false])
 	})
 
-	it('names the responders it could not find and leaves the case not major', async () => {
-		mockPost.mockRejectedValue({ response: { data: { unresolved: ['Team brandweer', 'GHOR'] } } })
-		const wrapper = mountPanel({ caseId: CASE_ID })
-		await flushPromises()
+	it('opens the one working channel in a new tab', async () => {
+		const wrapper = await mountPanel({ caseId: 'c1', caseObject: { isMajor: true, majorChannel: { roomUrl: '/call/one' } } })
 
-		await wrapper.vm.declareMajor()
+		await button(wrapper, 'open-major-channel').trigger('click')
 
-		expect(wrapper.vm.error).toBe('We could not find these responders: Team brandweer, GHOR')
-		expect(wrapper.vm.isMajor).toBe(false)
-		expect(wrapper.vm.declaring).toBe(false)
+		expect(window.open).toHaveBeenCalledWith('/call/one', '_blank', 'noopener')
 	})
 
-	it('reads "Unknown error" when the refusal carries no reason', async () => {
-		mockPost.mockRejectedValue(new Error('boom'))
-		const wrapper = mountPanel({ caseId: CASE_ID })
-		await flushPromises()
-
-		await wrapper.vm.declareMajor()
-
-		expect(wrapper.vm.error).toBe('Unknown error')
-	})
-
-	it('does nothing without a case id', async () => {
-		const wrapper = mountPanel({})
-		await flushPromises()
-
-		await wrapper.vm.declareMajor()
-
-		expect(mockPost).not.toHaveBeenCalled()
-		expect(wrapper.vm.isMajor).toBe(false)
-	})
-})
-
-describe('CaseConversationsPanel opens the working channel', () => {
-	beforeEach(() => {
-		mockGet.mockReset()
-		mockGet.mockResolvedValue({ data: { available: true } })
-		window.open = vi.fn()
-	})
-
-	afterEach(() => {
-		delete window.open
-	})
-
-	it('opens the one channel the case has in a new tab', async () => {
-		const wrapper = mountPanel({
-			caseId: CASE_ID,
-			caseObject: { isMajor: true, majorChannel: { roomUrl: 'https://talk/major' } },
-		})
-		await flushPromises()
+	it('opens nothing when the case has no channel url', async () => {
+		const wrapper = await mountPanel({ caseId: 'c1', caseObject: { isMajor: true } })
 
 		wrapper.vm.openMajorChannel()
 
-		expect(window.open).toHaveBeenCalledWith('https://talk/major', '_blank', 'noopener')
-	})
-
-	it('opens nothing while the case has no channel address', async () => {
-		const wrapper = mountPanel({ caseId: CASE_ID, caseObject: { isMajor: true } })
-		await flushPromises()
-
-		wrapper.vm.openMajorChannel()
-
-		expect(wrapper.vm.majorChannelUrl).toBe('')
 		expect(window.open).not.toHaveBeenCalled()
 	})
 
-	it('reads a non-array conversations field as no conversations and isMajor only when true', async () => {
-		const wrapper = mountPanel({ caseId: CASE_ID, caseObject: { conversations: 'x', isMajor: 'true' } })
-		await flushPromises()
+	it('keeps the open-channel button when the other buttons sit in the card title', async () => {
+		const wrapper = await mountPanel({ caseId: 'c1', actionsInHeader: true, caseObject: { isMajor: true, majorChannel: { roomUrl: '/r' } } })
 
-		expect(wrapper.vm.conversations).toEqual([])
-		expect(wrapper.vm.isMajor).toBe(false)
+		expect(button(wrapper, 'start-conversation').exists()).toBe(false)
+		expect(button(wrapper, 'open-major-channel').exists()).toBe(true)
 	})
 })

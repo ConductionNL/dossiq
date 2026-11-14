@@ -50,6 +50,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\SilenceCloseServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -61,7 +62,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-status-machinery/spec.md
  */
-class SilenceCloseService {
+class SilenceCloseService implements SilenceCloseServiceInterface {
 
 	/**
 	 * The journal entry a warning writes.

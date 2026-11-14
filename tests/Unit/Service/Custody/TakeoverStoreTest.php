@@ -29,6 +29,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Custody\TakeoverStore
  * @uses   \OCA\Dossiq\Exception\RefusedException
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class TakeoverStoreTest extends TestCase {
 
@@ -170,4 +171,34 @@ class TakeoverStoreTest extends TestCase {
 
 		$this->store()->writeCase(case: ['id' => 'case-1'], changes: ['handler' => 'piet']);
 	}//end testAFailedCaseWriteIsLoggedNotThrown()
+	public function testARegisterThatStoresNothingIsAnIndeterminateRefusal(): void {
+		$register = new class {
+			/**
+			 * @param array       $object   The object.
+			 * @param mixed       $register The register.
+			 * @param mixed       $schema   The schema.
+			 * @param string|null $uuid     The uuid.
+			 *
+			 * @return mixed
+			 */
+			public function saveObject(array $object, mixed $register='', mixed $schema='', ?string $uuid=null): mixed {
+				return 'stored somewhere';
+			}
+		};
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => (['register' => 'dossiq', 'case_takeover_schema' => 'takeover'][$key] ?? '')
+		);
+
+		try {
+			(new TakeoverStore(settingsService: $settings, logger: $this->logger))->write(record: ['caseId' => 'case-1'], uuid: null);
+			self::fail('must refuse');
+		} catch (RefusedException $e) {
+			self::assertSame(CaseTakeoverRequest::UNWRITABLE, $e->getRule());
+			self::assertSame('The request could not be recorded, so nobody was asked.', $e->getSentence());
+			self::assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+			self::assertNull($e->getPrevious());
+		}
+	}//end testARegisterThatStoresNothingIsAnIndeterminateRefusal()
 }//end class

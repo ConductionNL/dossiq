@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\DomainCopyServiceInterface;
 use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use Psr\Log\LoggerInterface;
@@ -55,7 +56,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-class DomainCopyService {
+class DomainCopyService implements DomainCopyServiceInterface {
 	/**
 	 * The answer of a copy that did not happen; its reason is filled in.
 	 *
@@ -68,7 +69,6 @@ class DomainCopyService {
 		'notCarried' => [],
 		'reason' => '',
 	];
-
 
 	/**
 	 * The app config key naming the domain (case type group) schema.

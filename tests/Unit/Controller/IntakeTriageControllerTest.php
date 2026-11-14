@@ -79,6 +79,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Intake\DuplicatePolicy
  * @uses \OCA\Dossiq\Service\Intake\TriageChannel
+ * @uses \OCA\Dossiq\Controller\Support\IntakeRoleGate
  */
 final class IntakeTriageControllerTest extends TestCase {
 

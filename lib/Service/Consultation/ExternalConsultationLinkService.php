@@ -35,9 +35,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Consultation;
 
+use OCA\Dossiq\Kernel\Contracts\ExternalConsultationLinkServiceInterface;
 use OCA\Dossiq\Service\CaseSharingService;
-use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\ConsultationService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -50,7 +51,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
  */
-class ExternalConsultationLinkService {
+class ExternalConsultationLinkService implements ExternalConsultationLinkServiceInterface {
 	/**
 	 * The actor type OpenRegister writes on a comment made through a link.
 	 *

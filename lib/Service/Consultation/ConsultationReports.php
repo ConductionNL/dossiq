@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Consultation;
 
+use OCA\Dossiq\Kernel\Contracts\ConsultationReportsInterface;
+
 /**
  * Reads the due-soon list and the bottleneck report.
  *
  * @spec openspec/specs/consultation-management/spec.md
  */
-class ConsultationReports {
+class ConsultationReports implements ConsultationReportsInterface {
 
 	/**
 	 * Constructor.

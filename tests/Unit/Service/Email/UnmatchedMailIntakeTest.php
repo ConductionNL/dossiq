@@ -45,6 +45,8 @@ use RuntimeException;
  *
  * @uses \OCA\Dossiq\Service\AssigneeResolver
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class UnmatchedMailIntakeTest extends TestCase {
 

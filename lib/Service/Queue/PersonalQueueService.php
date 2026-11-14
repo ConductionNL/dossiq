@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\PersonalQueueServiceInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class PersonalQueueService {
+class PersonalQueueService implements PersonalQueueServiceInterface {
 	/**
 	 * Constructor.
 	 *

@@ -27,6 +27,7 @@ use PHPUnit\Framework\TestCase;
  * The typed link properties, the relatedCases list, and the pair edits.
  *
  * @covers \OCA\Dossiq\Service\Relation\CaseRelationCodec
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class CaseRelationCodecTest extends TestCase {
 

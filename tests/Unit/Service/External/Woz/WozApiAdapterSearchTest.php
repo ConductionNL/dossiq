@@ -32,6 +32,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\External\Woz\WozResponseMapper
  * @uses \OCA\Dossiq\Service\External\Woz\WozLookupResult
  * @uses \OCA\Dossiq\Service\External\RegisterValues
+ * @uses \OCA\Dossiq\Service\External\HalResponseBody
  */
 class WozApiAdapterSearchTest extends TestCase {
 

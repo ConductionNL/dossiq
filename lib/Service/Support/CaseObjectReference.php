@@ -30,7 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReferenceInterface;
 use OCA\Dossiq\Service\SettingsService;
 
 /**
@@ -38,7 +39,7 @@ use OCA\Dossiq\Service\SettingsService;
  *
  * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
-class CaseObjectReference {
+class CaseObjectReference implements CaseObjectReferenceInterface {
 
 	/**
 	 * The case schema's shipped slug.
@@ -77,7 +78,7 @@ class CaseObjectReference {
 		$ownRegister = strtolower($this->settingsService->getConfigValue(key: 'register'));
 		$ownSchema = strtolower($this->settingsService->getConfigValue(key: 'case_schema'));
 
-		$registerMatches = ($this->same(candidate: $register, configured: $ownRegister) === true || $register === Application::APP_ID);
+		$registerMatches = ($this->same(candidate: $register, configured: $ownRegister) === true || $register === AppIdentity::APP_ID);
 		if ($registerMatches === false) {
 			return false;
 		}

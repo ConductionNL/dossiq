@@ -298,8 +298,22 @@ record. OpenRegister refuses a parent that references another schema
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.
-- [ ] 6.3 Every Woo route on these records checks `CaseAccessGuard` for the case (REQ-WRT-006).
+- [x] 6.3 Every Woo route on these records checks `CaseAccessGuard` for the case (REQ-WRT-006).
   - unit: one test per controller, `testAUserWithoutAGrantOnTheCaseIsRefused`.
+  - Built across the earlier rounds; checked in the second pass. Every controller that serves a Woo record of a
+    case guards it through `CaseAccessGuard` and has a refusal test:
+    `DocumentReviewControllerTest::testAUserWithoutAGrantOnTheCaseIsRefused`,
+    `TriageRuleControllerTest::testAUserWithoutAGrantOnTheCaseIsRefused`,
+    `WOOAssessmentControllerAuthorizationTest::testAuthenticatedNonAssigneeIsRejectedFromEveryMutationEndpoint`
+    (every mutation endpoint) and `testANonHandlerIsRefusedPublicationWithA403` (publish, withdraw),
+    `WooCollectionControllerTest::testTheReportRefusesAUserWithoutCaseAccess`,
+    `WooDeliveredSetControllerTest::testVerifyRefusesAUserWithoutCaseAccess` and
+    `testTheCompareReadsRefuseAUserWithoutCaseAccess`,
+    `WooSourcesControllerTest::testTheSourcesRefuseACallerWhoCannotReadTheCase`,
+    `testTheSearchRefusesACallerWithoutCaseAccess` and `testTheAddRefusesNoPicksAndACallerWithoutCaseAccess`.
+    Not per case, so not this guard: `CaseReviewerAccessController` (administrators only),
+    `WooReportController` (a cross-case report behind its group check), and the portal controllers (the
+    requester's own request).
 - [ ] 6.4 Live check after merge on the dev instance, with two Woo cases and a reviewer in a batch
   of one: list `wooDocumentReview` through the OpenRegister API and through dossiq's routes, and
   record both answers in the PR. Both must hold only that batch's reviews. Then create a batch as a

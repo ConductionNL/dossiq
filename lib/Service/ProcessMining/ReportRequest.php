@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\ProcessMining;
 
+use OCA\Dossiq\Kernel\Contracts\ReportRequestInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Reporting\ReportPeriod;
 
@@ -31,7 +32,7 @@ use OCA\Dossiq\Service\Reporting\ReportPeriod;
  *
  * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  */
-final class ReportRequest {
+final class ReportRequest implements ReportRequestInterface {
 
 	/**
 	 * Constructor.
