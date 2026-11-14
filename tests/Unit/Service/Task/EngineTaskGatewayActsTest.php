@@ -31,6 +31,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\EngineTaskGateway
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskPayload
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskRow
  */
 class EngineTaskGatewayActsTest extends TestCase {
 

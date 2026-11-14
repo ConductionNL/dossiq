@@ -37,7 +37,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\DeadlineReportingServiceInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
-use OCA\Dossiq\Service\Money\PayoutReader;
+use OCA\Dossiq\Service\Reporting\AnnualPayoutStatement;
 use OCA\Dossiq\Service\Reporting\PerTypeRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -50,19 +50,16 @@ use RuntimeException;
 /**
  * Quarterly KPI + annual dwangsom audit + dashboard KPI reports.
  *
+ * The annual payout statement is AnnualPayoutStatement and the KPI counters
+ * are TermDashboardFigures::tally(); this service reads the instances and
+ * puts the reports together.
+ *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/termijn-reporting/spec.md
  */
 class DeadlineReportingService implements DeadlineReportingServiceInterface {
-	/**
-	 * The annual statement when the payouts cannot be read.
-	 *
-	 * @var array<string, mixed>
-	 */
-	private const EMPTY_AUDIT_REPORT = ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
-
 	use SearchesObjects;
 
 	/**
@@ -121,25 +118,40 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	private readonly TermDashboardFigures $figures;
 
 	/**
+	 * The annual statement of the payouts paid in a year.
+	 *
+	 * @var AnnualPayoutStatement
+	 */
+	private readonly AnnualPayoutStatement $statements;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService           $settingsService Settings.
 	 * @param TermCaseTypeResolver|null $caseTypes       The case-type resolver; built from the settings when absent.
 	 * @param DayCount                  $days            Counts the days between two moments.
-	 * @param PayoutReader|null         $payouts         Reads the payouts from the finance app, beside the rows it does not hold.
+	 * @param AnnualPayoutStatement|null $statements     The annual payout statement (it reads the finance app's payouts
+	 *                                                   too); built from the settings, without the finance app, when absent.
 	 * @param IL10N|null                $l10n            Words the KPI notes; without it they are empty.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		?TermCaseTypeResolver $caseTypes = null,
 		private readonly DayCount $days = new DayCount(),
-		private readonly ?PayoutReader $payouts = null,
+		?AnnualPayoutStatement $statements = null,
 		?IL10N $l10n = null,
 	) {
 		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
 		$this->outcomes = new TermOutcome();
 		$this->perTypeRows = new PerTypeRows();
-		$this->figures = new TermDashboardFigures(settingsService: $settingsService, caseTypes: $this->caseTypes, l10n: $l10n);
+		$this->figures = new TermDashboardFigures(
+			settingsService: $settingsService,
+			caseTypes: $this->caseTypes,
+			l10n: $l10n,
+			outcomes: $this->outcomes,
+			days: $days
+		);
+		$this->statements = ($statements ?? new AnnualPayoutStatement(settingsService: $settingsService));
 	}//end __construct()
 
 	/**
@@ -485,148 +497,14 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function generateDwangsomAuditReport(int $year): array {
-		$source = $this->payoutSource();
-		if ($source === null) {
-			return self::EMPTY_AUDIT_REPORT;
-		}
+		$statement = $this->statements->forYear(year: $year);
+		$statement['rows'] = array_map(static fn (array $row): array => $row + self::genericKeys(row: $row), $statement['rows']);
 
-		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $source[0], register: $source[1], schema: $source[2], filters: []);
-		} catch (\Throwable $e) {
-			return self::EMPTY_AUDIT_REPORT;
-		}
-
-		$paid = $this->paidInYear(rows: ($this->payouts?->mergedRows(storedRows: $rows, paidInYear: $year) ?? $rows), year: $year);
-
-		return $this->statementOf(year: $year, paid: $paid);
+		return $statement;
 	}//end generateDwangsomAuditReport()
-
-	/**
-	 * Where the payouts are stored, or null when OpenRegister or a setting is missing.
-	 *
-	 * @return array{0: object, 1: string, 2: string}|null The object service, register and payout schema.
-	 */
-	private function payoutSource(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		if ($objectService === null || $register === '' || $uSchema === '') {
-			return null;
-		}
-
-		return [$objectService, $register, $uSchema];
-	}//end payoutSource()
-
-	/**
-	 * The payouts paid in the year, in order.
-	 *
-	 * @param array<int, array<string, mixed>> $rows The payouts.
-	 * @param int                              $year The year.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function paidInYear(array $rows, int $year): array {
-		$yearPrefix = (string)$year;
-
-		return array_values(
-			array_filter(
-				$rows,
-				static fn (array $row): bool => str_starts_with((string)($row['actualPaymentDate'] ?? ''), $yearPrefix)
-			)
-		);
-	}//end paidInYear()
-
-	/**
-	 * One payout as the statement lists it, with the generic keys beside the old ones.
-	 *
-	 * @param array<string, mixed> $row A payout.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function statementRow(array $row): array {
-		$outRow = $this->payoutRow(row: $row);
-
-		return $outRow + self::genericKeys(row: $outRow);
-	}//end statementRow()
-
-	/**
-	 * A warning for each payout that carries no payment reference.
-	 *
-	 * @param array<int, array<string, mixed>> $paid The payouts of the year.
-	 *
-	 * @return array<int, string>
-	 */
-	private function missingReferenceWarnings(array $paid): array {
-		$warnings = [];
-		foreach ($paid as $row) {
-			if (($row['betalingsreferentie'] ?? '') === '') {
-				$warnings[] = 'Missing betalingsreferentie for ' . ((string)($row['reference'] ?? ''));
-			}
-		}
-
-		return $warnings;
-	}//end missingReferenceWarnings()
-
-	/**
-	 * One payout as the statement lists it.
-	 *
-	 * @param array<string, mixed> $row A payout.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function payoutRow(array $row): array {
-		return [
-			'reference' => (string)($row['reference'] ?? ''),
-			'bedragCents' => (int)($row['amount'] ?? 0),
-			'actualPaymentDate' => (string)($row['actualPaymentDate'] ?? ''),
-			'betalingsreferentie' => (string)($row['betalingsreferentie'] ?? ''),
-			'status' => (string)($row['status'] ?? ''),
-			'legalBasis' => (string)($row['legalBasis'] ?? ''),
-			'iban' => (string)($row['iban'] ?? ''),
-		];
-	}//end payoutRow()
-
-	/**
-	 * The statement of the payouts paid in a year.
-	 *
-	 * @param int                              $year The year.
-	 * @param array<int, array<string, mixed>> $paid The payouts paid in it.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function statementOf(int $year, array $paid): array {
-		$outRows = array_map(fn (array $row): array => $this->statementRow(row: $row), $paid);
-		$warnings = $this->missingReferenceWarnings(paid: $paid);
-
-		return [
-			'year' => $year,
-			'jaar' => $year,
-			'rows' => $outRows,
-			'summary' => $this->statementSummary(rows: $outRows, warnings: $warnings),
-			'warnings' => $warnings,
-		];
-	}//end statementOf()
-
-	/**
-	 * The statement's count, totals and warning count.
-	 *
-	 * @param array<int, array<string, mixed>> $rows     The statement's rows.
-	 * @param array<int, string>               $warnings Its warnings.
-	 *
-	 * @return array{count: int, totalCents: int, totalEuros: float, warningCount: int}
-	 */
-	private function statementSummary(array $rows, array $warnings): array {
-		$total = (int)array_sum(array_column($rows, 'bedragCents'));
-
-		return [
-			'count' => count($rows),
-			'totalCents' => $total,
-			'totalEuros' => round($total / 100, 2),
-			'warningCount' => count($warnings),
-		];
-	}//end statementSummary()
 
 	/**
 	 * Compute a snapshot KPI summary for the dashboard widget.
@@ -643,7 +521,7 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	public function getTermijnKpi(array $filters = [], ?DateTimeImmutable $today = null, ?string $from = null, ?string $until = null): array {
 		$rows = $this->listInstances(from: '1970-01-01', until: '2999-12-31');
 
-		$totals = $this->collectKpiTotals(rows: $rows, filters: $filters);
+		$totals = $this->figures->tally(rows: $rows, filters: $filters);
 		$kpi = $this->kpiFigures(totals: $totals);
 
 		return $kpi + self::genericKeys(row: $kpi) + $this->dashboardFigures(
@@ -697,82 +575,6 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 			),
 		];
 	}//end dashboardFigures()
-
-	/**
-	 * Tally the dashboard KPI counters over the instance rows.
-	 *
-	 * @param array<int, array<string, mixed>> $rows Instance rows.
-	 * @param array<string, mixed> $filters Optional filters (afdeling, zaaktype).
-	 *
-	 * @return array{total:int,within:int,missed:int,overrun:int,durations:array<int,int>} Counters plus the collected doorlooptijden.
-	 */
-	private function collectKpiTotals(array $rows, array $filters): array {
-		$totals = [
-			'total' => 0,
-			'within' => 0,
-			'missed' => 0,
-			'overrun' => 0,
-			'durations' => [],
-		];
-		foreach ($rows as $row) {
-			if (isset($filters['caseType']) === true && (string)($row['caseType'] ?? '') !== $filters['caseType']) {
-				continue;
-			}
-
-			$totals = $this->countKpiRow(totals: $totals, row: $row);
-		}
-
-		return $totals;
-	}//end collectKpiTotals()
-
-	/**
-	 * Count one instance row into the KPI counters.
-	 *
-	 * @param array{total:int,within:int,missed:int,overrun:int,durations:array<int,int>} $totals The counters so far.
-	 * @param array<string, mixed>                                                           $row    An instance row.
-	 *
-	 * @return array{total:int,within:int,missed:int,overrun:int,durations:array<int,int>} The counters.
-	 */
-	private function countKpiRow(array $totals, array $row): array {
-		$totals['total']++;
-		$outcome = $this->outcomes->classify(row: $row);
-		if ($outcome === TermOutcome::MET) {
-			$totals['within']++;
-		}
-
-		if ($outcome === TermOutcome::MISSED) {
-			$totals['missed']++;
-		}
-
-		if ((string)($row['status'] ?? '') === 'exceeded') {
-			$totals['overrun']++;
-		}
-
-		$duration = $this->durationOf(row: $row);
-		if ($duration !== null) {
-			$totals['durations'][] = $duration;
-		}
-
-		return $totals;
-	}//end countKpiRow()
-
-	/**
-	 * The days from an instance's start to its current end, or null when
-	 * either is missing.
-	 *
-	 * @param array<string, mixed> $row An instance row.
-	 *
-	 * @return int|null
-	 */
-	private function durationOf(array $row): ?int {
-		$start = (string)($row['startDate'] ?? '');
-		$end = (string)($row['endDateCurrent'] ?? '');
-		if ($start === '' || $end === '') {
-			return null;
-		}
-
-		return $this->days->between(from: new DateTimeImmutable(substr($start, 0, 10)), to: new DateTimeImmutable($end));
-	}//end durationOf()
 
 	/**
 	 * The generic names of a row's procedure-named keys, with their values.
