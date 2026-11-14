@@ -83,7 +83,7 @@ class DerivedStatusService implements DerivedStatusServiceInterface {
 
 		$verdicts = [];
 		foreach (array_filter($this->caseTypes->statusTypesFor(caseTypeId: $caseTypeId), 'is_array') as $row) {
-			$verdict = $this->verdictOf(row: $row, case: $case);
+			$verdict = $this->verdictOf(row: $row, caseData: $case);
 			if ($verdict !== null) {
 				$verdicts[] = $verdict;
 			}
@@ -95,20 +95,20 @@ class DerivedStatusService implements DerivedStatusServiceInterface {
 	/**
 	 * The verdict on one status type, or null when it is no derived status.
 	 *
-	 * @param array<string, mixed> $row  The status type.
-	 * @param array<string, mixed> $case The case.
+	 * @param array<string, mixed> $row      The status type.
+	 * @param array<string, mixed> $caseData The case.
 	 *
 	 * @return array{statusId: string, name: string, order: int, satisfied: bool, unmet: array<int, string>}|null
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function verdictOf(array $row, array $case): ?array {
+	private function verdictOf(array $row, array $caseData): ?array {
 		$statusId = (string)($row['id'] ?? ($row['uuid'] ?? ''));
 		if ($statusId === '' || $this->declaration->isDerived(statusType: $row) === false) {
 			return null;
 		}
 
-		$verdict = $this->evaluator->evaluate(statusType: $row, case: $case);
+		$verdict = $this->evaluator->evaluate(statusType: $row, case: $caseData);
 		return [
 			'statusId' => $statusId,
 			'name' => $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null))),
