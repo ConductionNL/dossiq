@@ -167,7 +167,12 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 			[$caseUuid, $caseConfig, $caseData] = $loaded;
 
 			if ($final === true) {
-				$this->closeCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig, body: $body, objectData: $objectData);
+				$this->closeCase(
+					caseUuid: $caseUuid,
+					caseData: $caseData,
+					caseConfig: $caseConfig,
+					submitted: ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null)),
+				);
 			}
 
 			// 🔑 Only a status type that says FALSE reopens. A flag stored as
@@ -275,14 +280,12 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	 * @param string $caseUuid The zaak.
 	 * @param array $caseData The zaak, ready to re-save.
 	 * @param array $caseConfig The case mapping.
-	 * @param array $body The status body.
-	 * @param array $objectData The stored status.
+	 * @param mixed $submitted The datumStatusGezet of the status body, else of the stored status, else null.
 	 *
 	 * @return void
 	 */
-	private function closeCase(string $caseUuid, array $caseData, array $caseConfig, array $body, array $objectData): void {
+	private function closeCase(string $caseUuid, array $caseData, array $caseConfig, mixed $submitted): void {
 		// Zrc-007a: the submitted datumStatusGezet, or today, through the one date write path.
-		$submitted = ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null));
 		$dateStatusGezet = $this->dates->todayAsCalendarDate();
 		if ($submitted !== null && $submitted !== '') {
 			$dateStatusGezet = $this->dates->toCalendarDate($submitted, 'datumStatusGezet');
