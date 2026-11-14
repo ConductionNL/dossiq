@@ -40,6 +40,7 @@ use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
+use OCA\Dossiq\Service\Intake\SpecialCategoryClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
 use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
@@ -61,6 +62,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Listener\IntakeDeclarations
  * @uses \OCA\Dossiq\Service\Intake\AssigneeNarrowing
  * @uses \OCA\Dossiq\Service\Intake\CaseClassification
+ * @uses \OCA\Dossiq\Service\Intake\SpecialCategoryClassification
  * @uses \OCA\Dossiq\Service\Intake\ClassificationSchemes
  * @uses \OCA\Dossiq\Service\Intake\IntakeRequirements
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -432,4 +434,30 @@ class IntakeRequirementsListenerTest extends TestCase {
 		$this->assertTrue($event->isPropagationStopped());
 		$this->assertStringContainsString('communicationChannel', (string)$event->getErrors()['message']);
 	}//end testSendingADraftMissingTheChannelIsStopped()
+
+	/**
+	 * A case type that requires its special categories refuses a case without them, at intake
+	 * (social-domain-consent-and-safeguards 3.1, REQ-SDC-SAFE-01), and lets a classified one through.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	public function testACaseWithoutItsSpecialCategoryIsStopped(): void {
+		$this->caseType = [
+			'intakeRequirements' => ['requiredBeforeCreation' => []],
+			'requiresSpecialCategory' => true,
+			'specialDataCategories' => ['health'],
+		];
+		$refused = new ObjectCreatingEvent($this->entity(payload: ['caseType' => 'ct-1']));
+		$this->listener->handle($refused);
+
+		$this->assertTrue($refused->isPropagationStopped());
+		$this->assertSame(SpecialCategoryClassification::RULE_REQUIRED, $refused->getErrors()['error']);
+
+		$classified = new ObjectCreatingEvent($this->entity(payload: ['caseType' => 'ct-1', 'gdprClassification' => ['health']]));
+		$this->listener->handle($classified);
+
+		$this->assertFalse($classified->isPropagationStopped());
+	}//end testACaseWithoutItsSpecialCategoryIsStopped()
 }//end class

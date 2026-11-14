@@ -29,6 +29,7 @@ use OCA\Dossiq\Kernel\Contracts\AssigneeNarrowingInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseClassificationInterface;
 use OCA\Dossiq\Kernel\Contracts\DuplicatePolicyInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeRequirementsInterface;
+use OCA\Dossiq\Service\Intake\SpecialCategoryClassification;
 
 /**
  * What a case type declares about intake: its requirements, classification, assignee narrowing and duplicate policy.
@@ -44,12 +45,14 @@ final class IntakeDeclarations {
 	 * @param CaseClassificationInterface $classification The facets and the access rule.
 	 * @param AssigneeNarrowingInterface  $narrowing      Who may hold the case.
 	 * @param DuplicatePolicyInterface    $duplicates     What this case type does about a case that already exists.
+	 * @param SpecialCategoryClassification $specialCategory Whether the case type requires its special categories classified (REQ-SDC-SAFE-01).
 	 */
 	public function __construct(
 		public readonly IntakeRequirementsInterface $requirements,
 		public readonly CaseClassificationInterface $classification,
 		public readonly AssigneeNarrowingInterface $narrowing,
 		public readonly DuplicatePolicyInterface $duplicates,
+		public readonly SpecialCategoryClassification $specialCategory = new SpecialCategoryClassification(),
 	) {
 	}//end __construct()
 }//end class

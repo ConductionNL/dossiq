@@ -14,6 +14,7 @@
 ## 3. Classification and team-only access
 
 - [ ] 3.1 The create form requires a `gdprClassification` when `requiresSpecialCategory`; the case page shows it as a pill; the processing log records the category.
+  - Server side done: the case carries `gdprClassification` (the article 9 and 10 categories, case 1.63.0, register 0.20.97), and the intake refuses a case of a type with `requiresSpecialCategory` without it, or with a category the case type's `specialDataCategories` does not list, naming the field (`SpecialCategoryClassification` in `IntakeRequirementsListener`, 422), so the create form, the mail intake and the API are held alike. Tests: `tests/Unit/Service/Intake/SpecialCategoryClassificationTest.php`, `IntakeRequirementsListenerTest::testACaseWithoutItsSpecialCategoryIsStopped`. Open: the field on the create form, the pill on the case page, and the processing-log row for the category.
 - [ ] 3.2 `handlingTeamOnly`: the case read rule in OpenRegister RBAC narrows to the case type's handling-team groups (configuration on the schema's authorisation, as `case-access-by-handling-team` did); no admin bypass unless in the team. Check with the OpenRegister RBAC lane if the rule needs an OpenRegister change (decision 156: build it there).
 
 ## 4. Anonymised export

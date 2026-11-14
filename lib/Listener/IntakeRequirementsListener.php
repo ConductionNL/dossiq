@@ -225,6 +225,7 @@ class IntakeRequirementsListener implements IEventListener {
 	private function assertCreatable(array $payload, array $caseType): void {
 		$this->declarations->requirements->assertCreatable(case: $payload, caseType: $caseType);
 		$this->declarations->classification->assertCreatable(case: $payload, caseType: $caseType);
+		$this->declarations->specialCategory->assertCreatable(case: $payload, caseType: $caseType);
 		$this->declarations->duplicates->assertCreatable(
 			case: $payload,
 			caseType: $caseType,

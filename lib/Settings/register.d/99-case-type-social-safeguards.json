@@ -1,5 +1,5 @@
 {
-  "_note": "social-domain-consent-and-safeguards task 1.1 (openspec/changes/social-domain-consent-and-safeguards): four safeguards a case type switches on as configuration (decision 182), so the consent, classification, team-only and anonymised-export capabilities stay generic and a procedure only sets flags. The flags are declared here and set by the social packages; their readers land with tasks 2 to 4 of that change (the consent check on the share paths, the classification at intake, the read rule, the anonymised export). caseType moves to 1.48.0 (1.47.0 is overview-sections) so an existing instance re-imports the schema. A fragment per ADR-037.",
+  "_note": "social-domain-consent-and-safeguards task 1.1 (openspec/changes/social-domain-consent-and-safeguards): four safeguards a case type switches on as configuration (decision 182), so the consent, classification, team-only and anonymised-export capabilities stay generic and a procedure only sets flags. The flags are declared here and set by the social packages; their readers land with tasks 2 to 4 of that change (the consent check on the share paths, the classification at intake, the read rule, the anonymised export). caseType moves to 1.48.0 (1.47.0 is overview-sections) so an existing instance re-imports the schema. A fragment per ADR-037. Task 3.1 adds the case's gdprClassification (case 1.63.0), which the intake refuses to leave empty on a case type with requiresSpecialCategory (SpecialCategoryClassification in IntakeRequirementsListener).",
   "_meta": {
     "spdx-license": "EUPL-1.2",
     "spdx-copyright": "2026 Conduction B.V."
@@ -35,6 +35,27 @@
               "type": "string",
               "maxLength": 128
             }
+          }
+        }
+      },
+      "case": {
+        "version": "1.63.0",
+        "properties": {
+          "gdprClassification": {
+            "type": "array",
+            "title": "Special categories of personal data",
+            "description": "The special categories of personal data (GDPR articles 9 and 10) this case processes. Required at intake when its case type sets requiresSpecialCategory, and within the case type's specialDataCategories when it lists them.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "health",
+                "ethnicity",
+                "religion",
+                "politicalOpinion",
+                "criminal"
+              ]
+            },
+            "facetable": true
           }
         }
       }
