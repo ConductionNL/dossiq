@@ -171,71 +171,138 @@ class ZrcController extends ZgwController {
 		}
 
 		try {
-			$originalBody = $this->zgwService->getRequestBody($this->request);
-			$ruleResult = $this->validateCreate(resource: $resource, body: $originalBody, mappingConfig: $mappingConfig);
-			if ($ruleResult['valid'] === false) {
-				return new JSONResponse(
-					data: $this->zgwService->buildValidationError($ruleResult),
-					statusCode: $ruleResult['status']
-				);
-			}
-
-			$body = $ruleResult['enrichedBody'];
-			$englishData = $this->zgwService->applyInboundMapping(
-				body: $body,
-				mapping: $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig),
-				mappingConfig: $mappingConfig
-			);
-
-			$beforeSave = $this->beforeCreateSave(resource: $resource, originalBody: $originalBody, body: $body);
-			if ($beforeSave !== null) {
-				return $beforeSave;
-			}
-
-			$objectData = $this->objectToArray(
-				row: $this->zgwService->getObjectService()->saveObject(
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema'],
-					object: $englishData
-				)
-			);
-			$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
-
-			$afterSave = $this->afterCreateSave(resource: $resource, objectUuid: (string)$objectUuid, originalBody: $originalBody, objectData: $objectData);
-			if ($afterSave !== null) {
-				return $afterSave;
-			}
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$mapped = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig),
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
-			if ($resource === 'zaakinformatieobjecten') {
-				$mapped = $this->completeCreatedJoin(mapped: $mapped, originalBody: $originalBody, body: $body);
-			}
-
-			$this->zgwService->publishNotification(
-				self::ZGW_API,
-				$resource,
-				$baseUrl . '/' . $objectUuid,
-				'create'
-			);
-
-			return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
+			return $this->createValidated(resource: $resource, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'ZRC create error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->createFailure(e: $e);
 		}//end try
 	}//end create()
+
+	/**
+	 * Log a failed create and answer it as 400 with the failure's message.
+	 *
+	 * @param \Throwable $e The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function createFailure(\Throwable $e): JSONResponse {
+		$this->zgwService->getLogger()->error(
+			'ZRC create error: ' . $e->getMessage(),
+			['exception' => $e]
+		);
+		return new JSONResponse(
+			data: ['detail' => $e->getMessage()],
+			statusCode: Http::STATUS_BAD_REQUEST
+		);
+	}//end createFailure()
+
+	/**
+	 * Validate the request body, then create the resource from the enriched body.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param array $mappingConfig The resource mapping.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws \Throwable When validating, saving or a side effect fails.
+	 */
+	private function createValidated(string $resource, array $mappingConfig): JSONResponse {
+		$originalBody = $this->zgwService->getRequestBody($this->request);
+		$ruleResult = $this->validateCreate(resource: $resource, body: $originalBody, mappingConfig: $mappingConfig);
+		if ($ruleResult['valid'] === false) {
+			return new JSONResponse(
+				data: $this->zgwService->buildValidationError($ruleResult),
+				statusCode: $ruleResult['status']
+			);
+		}
+
+		return $this->createFromBody(resource: $resource, mappingConfig: $mappingConfig, originalBody: $originalBody, body: $ruleResult['enrichedBody']);
+	}//end createValidated()
+
+	/**
+	 * Save a validated resource with its before- and after-save side effects, and answer it.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param array $mappingConfig The resource mapping.
+	 * @param array $originalBody The request body as sent.
+	 * @param array $body The enriched body.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws \Throwable When saving or a side effect fails.
+	 */
+	private function createFromBody(string $resource, array $mappingConfig, array $originalBody, array $body): JSONResponse {
+		$englishData = $this->zgwService->applyInboundMapping(
+			body: $body,
+			mapping: $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig),
+			mappingConfig: $mappingConfig
+		);
+
+		$beforeSave = $this->beforeCreateSave(resource: $resource, originalBody: $originalBody, body: $body);
+		if ($beforeSave !== null) {
+			return $beforeSave;
+		}
+
+		[$objectData, $objectUuid] = $this->saveCreatedObject(englishData: $englishData, mappingConfig: $mappingConfig);
+
+		$afterSave = $this->afterCreateSave(resource: $resource, objectUuid: (string)$objectUuid, originalBody: $originalBody, objectData: $objectData);
+		if ($afterSave !== null) {
+			return $afterSave;
+		}
+
+		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
+		$mapped = $this->mapCreatedOut(objectData: $objectData, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
+		if ($resource === 'zaakinformatieobjecten') {
+			$mapped = $this->completeCreatedJoin(mapped: $mapped, originalBody: $originalBody, body: $body);
+		}
+
+		$this->zgwService->publishNotification(
+			self::ZGW_API,
+			$resource,
+			$baseUrl . '/' . $objectUuid,
+			'create'
+		);
+
+		return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
+	}//end createFromBody()
+
+	/**
+	 * Save a new object and read back its data and uuid.
+	 *
+	 * @param array $englishData The mapped object.
+	 * @param array $mappingConfig The resource mapping.
+	 *
+	 * @return array{0: array, 1: mixed} The saved object data and its uuid.
+	 */
+	private function saveCreatedObject(array $englishData, array $mappingConfig): array {
+		$objectData = $this->objectToArray(
+			row: $this->zgwService->getObjectService()->saveObject(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema'],
+				object: $englishData
+			)
+		);
+		$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
+
+		return [$objectData, $objectUuid];
+	}//end saveCreatedObject()
+
+	/**
+	 * Map a created object back to its ZGW shape.
+	 *
+	 * @param array $objectData The saved object.
+	 * @param array $mappingConfig The resource mapping.
+	 * @param string $baseUrl The collection URL.
+	 *
+	 * @return array The ZGW resource.
+	 */
+	private function mapCreatedOut(array $objectData, array $mappingConfig, string $baseUrl): array {
+		return $this->zgwService->applyOutboundMapping(
+			objectData: $objectData,
+			mapping: $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig),
+			mappingConfig: $mappingConfig,
+			baseUrl: $baseUrl
+		);
+	}//end mapCreatedOut()
 
 	/**
 	 * Why this consumer may not create this resource now, or null.
@@ -1064,26 +1131,20 @@ class ZrcController extends ZgwController {
 		}
 
 		// Check vertrouwelijkheidaanduiding of the zaak.
+		return $this->checkCaseConfidentialityFailClosed(uuid: $uuid, lezenAuths: $lezenAuths);
+	}//end checkCaseReadAccess()
+
+	/**
+	 * Check the zaak's vertrouwelijkheidaanduiding, denying when the check itself fails.
+	 *
+	 * @param string $uuid The zaak UUID.
+	 * @param array $lezenAuths The consumer's read autorisaties.
+	 *
+	 * @return JSONResponse|null Permission denied response, or null if access is allowed.
+	 */
+	private function checkCaseConfidentialityFailClosed(string $uuid, array $lezenAuths): ?JSONResponse {
 		try {
-			$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'zaken');
-			if ($mappingConfig === null) {
-				return null;
-			}
-
-			$caseData = $this->objectToArray(
-				row: $this->zgwService->getObjectService()->find(
-					$uuid,
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema']
-				)
-			);
-			$caseVa = $caseData['confidentiality'] ?? ($caseData['vertrouwelijkheidaanduiding'] ?? 'openbaar');
-			if ($this->confidentialityAllowed(lezenAuths: $lezenAuths, confidentiality: $caseVa) === true) {
-				return null;
-			}
-
-			// No matching autorisatie allows this vertrouwelijkheidaanduiding.
-			return $this->permissionDeniedResponse();
+			return $this->checkCaseConfidentiality(uuid: $uuid, lezenAuths: $lezenAuths);
 		} catch (\InvalidArgumentException $e) {
 			// Expected: zaak or mapping config not found — deny to be safe.
 			$this->zgwService->getLogger()->warning(
@@ -1098,7 +1159,39 @@ class ZrcController extends ZgwController {
 			);
 			return $this->permissionDeniedResponse();
 		}//end try
-	}//end checkCaseReadAccess()
+	}//end checkCaseConfidentialityFailClosed()
+
+	/**
+	 * Check the zaak's vertrouwelijkheidaanduiding against the consumer's read autorisaties.
+	 *
+	 * @param string $uuid The zaak UUID.
+	 * @param array $lezenAuths The consumer's read autorisaties.
+	 *
+	 * @return JSONResponse|null Permission denied response, or null if access is allowed.
+	 *
+	 * @throws \Throwable When the zaak cannot be read.
+	 */
+	private function checkCaseConfidentiality(string $uuid, array $lezenAuths): ?JSONResponse {
+		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'zaken');
+		if ($mappingConfig === null) {
+			return null;
+		}
+
+		$caseData = $this->objectToArray(
+			row: $this->zgwService->getObjectService()->find(
+				$uuid,
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			)
+		);
+		$caseVa = $caseData['confidentiality'] ?? ($caseData['vertrouwelijkheidaanduiding'] ?? 'openbaar');
+		if ($this->confidentialityAllowed(lezenAuths: $lezenAuths, confidentiality: $caseVa) === true) {
+			return null;
+		}
+
+		// No matching autorisatie allows this vertrouwelijkheidaanduiding.
+		return $this->permissionDeniedResponse();
+	}//end checkCaseConfidentiality()
 
 	/**
 	 * Filter zaken results based on consumer's vertrouwelijkheidaanduiding (zrc-006a).
@@ -1371,6 +1464,27 @@ class ZrcController extends ZgwController {
 		array $producten,
 		string $caseTypeUrl,
 	): ?JSONResponse {
+		$ztData = $this->caseTypeDataFor(caseTypeUrl: $caseTypeUrl);
+		if ($ztData === null) {
+			return null;
+		}
+
+		$allowed = $this->allowedProductsOf(ztData: $ztData);
+		if ($allowed === null) {
+			return null;
+		}
+
+		return $this->refuseUnlistedProduct(producten: $producten, allowed: $allowed);
+	}//end preValidateProductenOfDiensten()
+
+	/**
+	 * The stored zaaktype a zaaktype URL points at, or null when it cannot be found.
+	 *
+	 * @param string $caseTypeUrl The zaaktype URL.
+	 *
+	 * @return array|null The zaaktype data.
+	 */
+	private function caseTypeDataFor(string $caseTypeUrl): ?array {
 		$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
 		if (preg_match($uuidPattern, $caseTypeUrl, $matches) !== 1) {
 			return null;
@@ -1392,6 +1506,17 @@ class ZrcController extends ZgwController {
 			return null;
 		}
 
+		return $ztData;
+	}//end caseTypeDataFor()
+
+	/**
+	 * The productenOfDiensten a zaaktype allows, or null when it lists none.
+	 *
+	 * @param array $ztData The zaaktype data.
+	 *
+	 * @return array|null The allowed products.
+	 */
+	private function allowedProductsOf(array $ztData): ?array {
 		$allowed = $ztData['productsOrServices'] ?? ($ztData['productsAndServices'] ?? ($ztData['productenOfDiensten'] ?? []));
 		if (is_string($allowed) === true) {
 			$allowed = json_decode($allowed, true) ?? [];
@@ -1401,6 +1526,18 @@ class ZrcController extends ZgwController {
 			return null;
 		}
 
+		return $allowed;
+	}//end allowedProductsOf()
+
+	/**
+	 * Refuse the first product the zaaktype does not allow.
+	 *
+	 * @param array $producten The productenOfDiensten URLs.
+	 * @param array $allowed The products the zaaktype allows.
+	 *
+	 * @return JSONResponse|null A 400 response if a product is not allowed, null if all are.
+	 */
+	private function refuseUnlistedProduct(array $producten, array $allowed): ?JSONResponse {
 		foreach ($producten as $product) {
 			if (in_array($product, $allowed, true) === false) {
 				return new JSONResponse(
@@ -1420,7 +1557,7 @@ class ZrcController extends ZgwController {
 		}
 
 		return null;
-	}//end preValidateProductenOfDiensten()
+	}//end refuseUnlistedProduct()
 
 	/**
 	 * Delete a zaak with cascade delete of all sub-resources (zrc-023).
@@ -1545,7 +1682,42 @@ class ZrcController extends ZgwController {
 			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, 'zaken');
 		}
 
+		return $this->storedCaseDeleteRefusal(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+	}//end caseDeleteRefusal()
+
+	/**
+	 * Refuse deleting a zaak that cannot be found, or an archived one without the forced-delete scope.
+	 *
+	 * @param object $objectService The object service.
+	 * @param array $mappingConfig The zaken mapping.
+	 * @param string $uuid The zaak.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function storedCaseDeleteRefusal(object $objectService, array $mappingConfig, string $uuid): ?JSONResponse {
 		// C4: a find() that throws or answers null is not-found.
+		$caseObj = $this->findCaseOrNull(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+
+		if ($caseObj === null) {
+			return new JSONResponse(
+				data: ['detail' => 'Not found'],
+				statusCode: Http::STATUS_NOT_FOUND
+			);
+		}
+
+		return $this->archivedCaseDeleteRefusal(caseObj: $caseObj);
+	}//end storedCaseDeleteRefusal()
+
+	/**
+	 * Find a zaak, answering null when the find throws.
+	 *
+	 * @param object $objectService The object service.
+	 * @param array $mappingConfig The zaken mapping.
+	 * @param string $uuid The zaak.
+	 *
+	 * @return mixed The zaak, or null.
+	 */
+	private function findCaseOrNull(object $objectService, array $mappingConfig, string $uuid): mixed {
 		try {
 			$caseObj = $objectService->find(
 				$uuid,
@@ -1556,13 +1728,17 @@ class ZrcController extends ZgwController {
 			$caseObj = null;
 		}
 
-		if ($caseObj === null) {
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
-		}
+		return $caseObj;
+	}//end findCaseOrNull()
 
+	/**
+	 * Refuse deleting an archived zaak without the zaken.geforceerd-verwijderen scope.
+	 *
+	 * @param mixed $caseObj The zaak.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function archivedCaseDeleteRefusal(mixed $caseObj): ?JSONResponse {
 		$archiefstatus = ($this->objectToArray(row: $caseObj)['archiefstatus'] ?? '');
 		if ($archiefstatus !== '' && $archiefstatus !== 'nog_te_archiveren'
 			&& $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.geforceerd-verwijderen') === false
@@ -1577,7 +1753,7 @@ class ZrcController extends ZgwController {
 		}
 
 		return null;
-	}//end caseDeleteRefusal()
+	}//end archivedCaseDeleteRefusal()
 
 	/**
 	 * Refuse the delete when the OIO cascade cannot even look (zrc-023).
@@ -2041,47 +2217,76 @@ class ZrcController extends ZgwController {
 		}
 
 		try {
-			$oioConfig = $this->zgwService->getZgwMappingService()->getMapping('objectinformatieobject');
-			if ($oioConfig === null) {
-				$this->zgwService->getLogger()->debug(
-					'zrc-005a: objectinformatieobject mapping not configured'
-				);
-				return;
-			}
-
-			$oioData = [
-				'object' => $caseUrl,
-				'objectType' => 'case',
-				'informatieobject' => $ioUrl,
-			];
-
-			$inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $oioConfig);
-			$englishData = $this->zgwService->applyInboundMapping(
-				body: $oioData,
-				mapping: $inboundMapping,
-				mappingConfig: $oioConfig
-			);
-
-			// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
-			if (is_array($englishData) === false) {
-				$englishData = $oioData;
-			}
-
-			$this->zgwService->getObjectService()->saveObject(
-				register: $oioConfig['sourceRegister'],
-				schema: $oioConfig['sourceSchema'],
-				object: $englishData
-			);
-
-			$this->zgwService->getLogger()->info(
-				'zrc-005a: Created ObjectInformatieObject for zaak/io sync'
-			);
+			$this->createObjectInformatieObject(caseUrl: $caseUrl, ioUrl: $ioUrl);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(
 				'zrc-005a: Failed to create ObjectInformatieObject: ' . $e->getMessage()
 			);
 		}//end try
 	}//end syncCreateObjectInformatieObject()
+
+	/**
+	 * Save the ObjectInformatieObject linking a zaak and an informatieobject, when its mapping is configured.
+	 *
+	 * @param string $caseUrl The zaak URL.
+	 * @param string $ioUrl The informatieobject URL.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When mapping or saving fails.
+	 */
+	private function createObjectInformatieObject(string $caseUrl, string $ioUrl): void {
+		$oioConfig = $this->zgwService->getZgwMappingService()->getMapping('objectinformatieobject');
+		if ($oioConfig === null) {
+			$this->zgwService->getLogger()->debug(
+				'zrc-005a: objectinformatieobject mapping not configured'
+			);
+			return;
+		}
+
+		$englishData = $this->oioEnglishData(oioConfig: $oioConfig, caseUrl: $caseUrl, ioUrl: $ioUrl);
+
+		$this->zgwService->getObjectService()->saveObject(
+			register: $oioConfig['sourceRegister'],
+			schema: $oioConfig['sourceSchema'],
+			object: $englishData
+		);
+
+		$this->zgwService->getLogger()->info(
+			'zrc-005a: Created ObjectInformatieObject for zaak/io sync'
+		);
+	}//end createObjectInformatieObject()
+
+	/**
+	 * Map the ObjectInformatieObject of a zaak and an informatieobject to English field names.
+	 *
+	 * @param array $oioConfig The objectinformatieobject mapping.
+	 * @param string $caseUrl The zaak URL.
+	 * @param string $ioUrl The informatieobject URL.
+	 *
+	 * @return array The object to save.
+	 */
+	private function oioEnglishData(array $oioConfig, string $caseUrl, string $ioUrl): array {
+		$oioData = [
+			'object' => $caseUrl,
+			'objectType' => 'case',
+			'informatieobject' => $ioUrl,
+		];
+
+		$inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $oioConfig);
+		$englishData = $this->zgwService->applyInboundMapping(
+			body: $oioData,
+			mapping: $inboundMapping,
+			mappingConfig: $oioConfig
+		);
+
+		// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
+		if (is_array($englishData) === false) {
+			$englishData = $oioData;
+		}
+
+		return $englishData;
+	}//end oioEnglishData()
 
 	/**
 	 * Get ZaakInformatieObject data needed for OIO sync before deletion.
@@ -2092,35 +2297,7 @@ class ZrcController extends ZgwController {
 	 */
 	private function getZioDataForOioSync(string $uuid): ?array {
 		try {
-			$zioConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'zaakinformatieobjecten');
-			if ($zioConfig === null) {
-				return null;
-			}
-
-			$zioObj = $this->zgwService->getObjectService()->find(
-				$uuid,
-				register: $zioConfig['sourceRegister'],
-				schema: $zioConfig['sourceSchema']
-			);
-			$zioData = $this->objectToArray(row: $zioObj);
-
-			// The ZIO stores 'case' as a UUID (format: uuid with $ref) and
-			// 'document' as a full URL (format: uri). Build the zaak URL from
-			// the case UUID, and use the document URL directly.
-			$zaakUuid = $zioData['case'] ?? ($zioData['zaak'] ?? '');
-			$ioUrl = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
-
-			if ($zaakUuid === '' || $ioUrl === '') {
-				return null;
-			}
-
-			// Build zaak URL from the UUID (case field stores UUID).
-			$caseBaseUrl = $this->zgwService->buildBaseUrl($this->request, 'zaken', 'zaken');
-
-			return [
-				'zaakUrl' => $caseBaseUrl . '/' . $zaakUuid,
-				'ioUrl' => $ioUrl,
-			];
+			return $this->readZioDataForOioSync(uuid: $uuid);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->debug(
 				'zrc-005b: Could not get ZIO data for OIO sync: ' . $e->getMessage()
@@ -2130,63 +2307,161 @@ class ZrcController extends ZgwController {
 	}//end getZioDataForOioSync()
 
 	/**
+	 * Read a ZaakInformatieObject and answer the zaak and informatieobject URLs it links.
+	 *
+	 * @param string $uuid The ZaakInformatieObject UUID.
+	 *
+	 * @return array|null The zaakUrl and ioUrl, or null if not found.
+	 *
+	 * @throws \Throwable When the ZaakInformatieObject cannot be read.
+	 */
+	private function readZioDataForOioSync(string $uuid): ?array {
+		$zioConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'zaakinformatieobjecten');
+		if ($zioConfig === null) {
+			return null;
+		}
+
+		$zioObj = $this->zgwService->getObjectService()->find(
+			$uuid,
+			register: $zioConfig['sourceRegister'],
+			schema: $zioConfig['sourceSchema']
+		);
+		$zioData = $this->objectToArray(row: $zioObj);
+
+		return $this->zioLinkUrls(zioData: $zioData);
+	}//end readZioDataForOioSync()
+
+	/**
+	 * The zaak and informatieobject URLs a ZaakInformatieObject links, or null when either is missing.
+	 *
+	 * @param array $zioData The ZaakInformatieObject data.
+	 *
+	 * @return array|null The zaakUrl and ioUrl.
+	 */
+	private function zioLinkUrls(array $zioData): ?array {
+		// The ZIO stores 'case' as a UUID (format: uuid with $ref) and
+		// 'document' as a full URL (format: uri). Build the zaak URL from
+		// the case UUID, and use the document URL directly.
+		$zaakUuid = $zioData['case'] ?? ($zioData['zaak'] ?? '');
+		$ioUrl = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
+
+		if ($zaakUuid === '' || $ioUrl === '') {
+			return null;
+		}
+
+		// Build zaak URL from the UUID (case field stores UUID).
+		$caseBaseUrl = $this->zgwService->buildBaseUrl($this->request, 'zaken', 'zaken');
+
+		return [
+			'zaakUrl' => $caseBaseUrl . '/' . $zaakUuid,
+			'ioUrl' => $ioUrl,
+		];
+	}//end zioLinkUrls()
+
+	/**
 	 * Delete the ObjectInformatieObject in DRC when a ZaakInformatieObject is deleted (zrc-005b).
 	 *
 	 * @param string $caseUrl The zaak URL
 	 * @param string $ioUrl The informatieobject URL
 	 *
 	 * @return void
-	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
-	 *  constructor on a value object, not a service call. Injecting it would put a
-	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function syncDeleteObjectInformatieObject(string $caseUrl, string $ioUrl): void {
 		try {
-			$oioConfig = $this->zgwService->getZgwMappingService()->getMapping('objectinformatieobject');
-			if ($oioConfig === null) {
-				return;
-			}
-
-			// The OIO schema (documentLink) stores 'object' and 'document' as
-			// full URLs (format: uri). Search by the full URL values directly.
-			if ($caseUrl === '' || $ioUrl === '') {
-				return;
-			}
-
-			// An unsearchable scope answers with an empty page and no error
-			// ({@see ZgwSearchScope}), which reads as "there is no OIO to
-			// delete" and leaves the DRC link behind. Name it instead.
-			$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioConfig);
-			if ($oioScope === null) {
-				$this->zgwService->getLogger()->error(
-					'zrc-005b: objectinformatieobject mapping has no searchable register/schema, '
-					. 'so the OIO for ' . $ioUrl . ' is being left behind as an orphan'
-				);
-				return;
-			}
-
-			$query = $this->zgwService->getObjectService()->buildSearchQuery(
-				requestParams: ['object' => $caseUrl, 'document' => $ioUrl],
-				register: $oioScope->register,
-				schema: $oioScope->schema
-			);
-			$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
-
-			foreach (($result['results'] ?? []) as $oioObj) {
-				$oioData = $this->objectToArray(row: $oioObj);
-
-				$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
-				if ($oioUuid !== '') {
-					$this->zgwService->getObjectService()->deleteObject(uuid: $oioUuid);
-					$this->zgwService->getLogger()->info(
-						'zrc-005b: Deleted ObjectInformatieObject ' . $oioUuid
-					);
-				}
-			}
+			$this->deleteObjectInformatieObjects(caseUrl: $caseUrl, ioUrl: $ioUrl);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(
 				'zrc-005b: Failed to delete ObjectInformatieObject: ' . $e->getMessage()
 			);
 		}//end try
 	}//end syncDeleteObjectInformatieObject()
+
+	/**
+	 * Delete the ObjectInformatieObjecten linking a zaak and an informatieobject, when they can be searched.
+	 *
+	 * @param string $caseUrl The zaak URL.
+	 * @param string $ioUrl The informatieobject URL.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When searching or deleting fails.
+	 */
+	private function deleteObjectInformatieObjects(string $caseUrl, string $ioUrl): void {
+		$oioConfig = $this->zgwService->getZgwMappingService()->getMapping('objectinformatieobject');
+		if ($oioConfig === null) {
+			return;
+		}
+
+		// The OIO schema (documentLink) stores 'object' and 'document' as
+		// full URLs (format: uri). Search by the full URL values directly.
+		if ($caseUrl === '' || $ioUrl === '') {
+			return;
+		}
+
+		$oioScope = $this->oioDeleteScope(oioConfig: $oioConfig, ioUrl: $ioUrl);
+		if ($oioScope === null) {
+			return;
+		}
+
+		$this->deleteMatchingOios(oioScope: $oioScope, caseUrl: $caseUrl, ioUrl: $ioUrl);
+	}//end deleteObjectInformatieObjects()
+
+	/**
+	 * The searchable ObjectInformatieObject scope, or null (logged) when the mapping cannot be searched.
+	 *
+	 * @param array $oioConfig The objectinformatieobject mapping.
+	 * @param string $ioUrl The informatieobject URL.
+	 *
+	 * @return ZgwSearchScope|null
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
+	 */
+	private function oioDeleteScope(array $oioConfig, string $ioUrl): ?ZgwSearchScope {
+		// An unsearchable scope answers with an empty page and no error
+		// ({@see ZgwSearchScope}), which reads as "there is no OIO to
+		// delete" and leaves the DRC link behind. Name it instead.
+		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioConfig);
+		if ($oioScope === null) {
+			$this->zgwService->getLogger()->error(
+				'zrc-005b: objectinformatieobject mapping has no searchable register/schema, '
+				. 'so the OIO for ' . $ioUrl . ' is being left behind as an orphan'
+			);
+			return null;
+		}
+
+		return $oioScope;
+	}//end oioDeleteScope()
+
+	/**
+	 * Delete every ObjectInformatieObject that links the zaak and the informatieobject.
+	 *
+	 * @param ZgwSearchScope $oioScope The ObjectInformatieObject scope.
+	 * @param string $caseUrl The zaak URL.
+	 * @param string $ioUrl The informatieobject URL.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When searching or deleting fails.
+	 */
+	private function deleteMatchingOios(ZgwSearchScope $oioScope, string $caseUrl, string $ioUrl): void {
+		$query = $this->zgwService->getObjectService()->buildSearchQuery(
+			requestParams: ['object' => $caseUrl, 'document' => $ioUrl],
+			register: $oioScope->register,
+			schema: $oioScope->schema
+		);
+		$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+
+		foreach (($result['results'] ?? []) as $oioObj) {
+			$oioData = $this->objectToArray(row: $oioObj);
+
+			$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
+			if ($oioUuid !== '') {
+				$this->zgwService->getObjectService()->deleteObject(uuid: $oioUuid);
+				$this->zgwService->getLogger()->info(
+					'zrc-005b: Deleted ObjectInformatieObject ' . $oioUuid
+				);
+			}
+		}
+	}//end deleteMatchingOios()
 }//end class

@@ -141,26 +141,40 @@ class CaseRebindController extends Controller {
 		}
 
 		try {
-			$answer = $this->rebind->options(caseId: $caseId);
-
-			$target = trim((string)$this->request->getParam('target', ''));
-			if ($target !== '') {
-				$answer['preview'] = $this->rebind->preview(
-					caseId: $caseId,
-					targetCaseTypeId: $target,
-					targetStatusId: trim((string)$this->request->getParam('status', '')),
-					remap: $this->arrayParam(name: 'remap'),
-					properties: $this->arrayParam(name: 'properties'),
-				);
-			}
-
-			return new JSONResponse($answer);
+			return new JSONResponse($this->rebindOptionsOf(caseId: $caseId));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'rebind-options', e: $e);
 		} catch (Throwable $e) {
 			return $this->broke(op: 'rebind-options', e: $e);
 		}
 	}//end options()
+
+	/**
+	 * The rebind options of a case, with a preview when the request names a target case type.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array The options, and the preview when a target was named.
+	 *
+	 * @throws RefusedException When the rebind is refused.
+	 * @throws Throwable When reading the options fails.
+	 */
+	private function rebindOptionsOf(string $caseId): array {
+		$answer = $this->rebind->options(caseId: $caseId);
+
+		$target = trim((string)$this->request->getParam('target', ''));
+		if ($target !== '') {
+			$answer['preview'] = $this->rebind->preview(
+				caseId: $caseId,
+				targetCaseTypeId: $target,
+				targetStatusId: trim((string)$this->request->getParam('status', '')),
+				remap: $this->arrayParam(name: 'remap'),
+				properties: $this->arrayParam(name: 'properties'),
+			);
+		}
+
+		return $answer;
+	}//end rebindOptionsOf()
 
 	/**
 	 * Rebind this case onto another case type.
