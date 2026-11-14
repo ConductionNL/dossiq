@@ -177,7 +177,7 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		$run->today = $run->now->format('Y-m-d');
 		$run->monthStart = $run->now->format('Y-m-01');
 		$run->monthEnd = $run->now->format('Y-m-t');
-		$run->closed = $this->closedThisMonth(ids: $ids, monthStart: $run->monthStart, monthEnd: $run->monthEnd);
+		$run->closed = $this->closedThisMonth(run: $run);
 		$run->openCases = $this->rows(
 			ids: $ids,
 			schema: $ids['case'],
@@ -218,10 +218,9 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		$lastMonth = $run->now->modify('first day of last month');
 
 		return [
-			'myCompletedCount' => $this->myClosed(ids: $run->ids, userId: $run->userId, from: $run->monthStart, to: $run->monthEnd),
+			'myCompletedCount' => $this->myClosed(run: $run, from: $run->monthStart, to: $run->monthEnd),
 			'myCompletedLastMonth' => $this->myClosed(
-				ids: $run->ids,
-				userId: $run->userId,
+				run: $run,
 				from: $lastMonth->format('Y-m-d'),
 				to: $run->now->modify('last day of last month')->format('Y-m-d')
 			),
@@ -439,18 +438,17 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	/**
 	 * How many cases this user closed between two days, both included.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $userId The assignee.
+	 * @param KpiRun $run  The computation: the register and schema ids, and the assignee.
 	 * @param string $from The first day, Y-m-d.
-	 * @param string $to The last day, Y-m-d.
+	 * @param string $to   The last day, Y-m-d.
 	 *
 	 * @return int The count.
 	 */
-	private function myClosed(array $ids, string $userId, string $from, string $to): int {
+	private function myClosed(KpiRun $run, string $from, string $to): int {
 		return $this->countCases(
-			ids: $ids,
+			ids: $run->ids,
 			filters: [
-				'assignee' => $userId,
+				'assignee' => $run->userId,
 				'isFinalStatus' => 1,
 				'endDate' => ['gte' => $from, 'lte' => $to],
 			]
@@ -489,17 +487,15 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	/**
 	 * The cases that reached a final status during the current calendar month.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $monthStart First day of this month, as Y-m-d.
-	 * @param string $monthEnd Last day of this month, as Y-m-d.
+	 * @param KpiRun $run The computation: the register and schema ids, and this month's first and last day.
 	 *
 	 * @return array<int, array> The closed cases.
 	 */
-	private function closedThisMonth(array $ids, string $monthStart, string $monthEnd): array {
+	private function closedThisMonth(KpiRun $run): array {
 		return $this->rows(
-			ids: $ids,
-			schema: $ids['case'],
-			filters: ['endDate' => ['gte' => $monthStart, 'lte' => $monthEnd]]
+			ids: $run->ids,
+			schema: $run->ids['case'],
+			filters: ['endDate' => ['gte' => $run->monthStart, 'lte' => $run->monthEnd]]
 		);
 	}//end closedThisMonth()
 

@@ -136,7 +136,8 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 				$this->loadTemplates(objects: $objects, register: $register);
 				foreach (array_keys(InspectionRunCarryOver::SOURCES) as $schema) {
 					foreach ($this->read(objects: $objects, register: $register, schema: $schema) as $object) {
-						$this->carryOne(tasks: $tasks, schema: $schema, object: $object, counts: $counts, output: $output);
+						$outcome = $this->carryOne(tasks: $tasks, schema: $schema, object: $object, output: $output);
+						$counts[$outcome]++;
 					}
 				}
 			}
@@ -153,31 +154,28 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	 * @param object               $tasks  OpenRegister's TaskService.
 	 * @param string               $schema The source schema slug.
 	 * @param array<string, mixed> $object The source run.
-	 * @param array<string, int>   $counts The running counts.
 	 * @param IOutput              $output The output.
 	 *
-	 * @return void
+	 * @return string The count it adds to: `already`, `failed` or `carried`.
 	 */
-	private function carryOne(object $tasks, string $schema, array $object, array &$counts, IOutput $output): void {
+	private function carryOne(object $tasks, string $schema, array $object, IOutput $output): string {
 		$ref = $this->carry->legacyRef(schema: $schema, object: $object);
 		$caseId = (string)($object['case'] ?? '');
 		if (isset($this->carriedFor(caseId: $caseId)[$ref]) === true) {
-			$counts['already']++;
-			return;
+			return 'already';
 		}
 
 		$template = ($this->templates[$this->carry->templateRef(schema: $schema, object: $object)] ?? null);
 		try {
 			$tasks->import(data: $this->withLocation(data: $this->carry->taskData(schema: $schema, object: $object, template: $template)), actor: self::ACTOR);
 		} catch (Throwable $e) {
-			$counts['failed']++;
 			$this->logger->warning('Inspection run carry-over refused', ['source' => $ref, 'exception' => $e->getMessage()]);
 			$output->warning(sprintf('Inspection run %s was not carried over: %s', $ref, $e->getMessage()));
-			return;
+			return 'failed';
 		}
 
 		$this->carried[$caseId][$ref] = true;
-		$counts['carried']++;
+		return 'carried';
 	}//end carryOne()
 
 	/**

@@ -106,9 +106,11 @@ class ComplaintPatternNotes {
 			'withinAwbNote' => $this->noted(
 				value: $withinAwb,
 				none: $noneHandled,
-				note: $this->l10n->t('Target: more than %s %%.', [(string)$awbTarget]),
-				onTarget: ($withinAwb ?? 0) > $awbTarget,
-				over: false
+				target: new TargetNote(
+					note: $this->l10n->t('Target: more than %s %%.', [(string)$awbTarget]),
+					onTarget: ($withinAwb ?? 0) > $awbTarget,
+					over: false
+				)
 			),
 		];
 	}//end withinAwbKpi()
@@ -132,9 +134,11 @@ class ComplaintPatternNotes {
 			'upheldNote' => $this->noted(
 				value: $upheld,
 				none: $noneHandled,
-				note: $this->l10n->t('Target: less than %s %%.', [(string)$upheldTarget]),
-				onTarget: ($upheld ?? 0) < $upheldTarget,
-				over: true
+				target: new TargetNote(
+					note: $this->l10n->t('Target: less than %s %%.', [(string)$upheldTarget]),
+					onTarget: ($upheld ?? 0) < $upheldTarget,
+					over: true
+				)
 			),
 		];
 	}//end upheldKpi()
@@ -157,9 +161,11 @@ class ComplaintPatternNotes {
 			'averageDaysNote' => $this->noted(
 				value: $averageDays,
 				none: $noneHandled,
-				note: $this->l10n->t('Awb term 6 weeks (%s d).', [(string)ComplaintPatternFigures::AWB_TERM_DAYS]),
-				onTarget: ($averageDays ?? 0) <= ComplaintPatternFigures::AWB_TERM_DAYS,
-				over: true
+				target: new TargetNote(
+					note: $this->l10n->t('Awb term 6 weeks (%s d).', [(string)ComplaintPatternFigures::AWB_TERM_DAYS]),
+					onTarget: ($averageDays ?? 0) <= ComplaintPatternFigures::AWB_TERM_DAYS,
+					over: true
+				)
 			),
 		];
 	}//end averageDaysKpi()
@@ -167,20 +173,18 @@ class ComplaintPatternNotes {
 	/**
 	 * A note for a figure that may be absent.
 	 *
-	 * @param int|null $value    The figure.
-	 * @param string   $none     The note when there is no figure.
-	 * @param string   $note     The target sentence.
-	 * @param bool     $onTarget Whether the figure meets its target.
-	 * @param bool     $over     Whether missing the target means being above it.
+	 * @param int|null   $value  The figure.
+	 * @param string     $none   The note when there is no figure.
+	 * @param TargetNote $target The target sentence, and where the figure stands against it.
 	 *
 	 * @return string
 	 */
-	private function noted(?int $value, string $none, string $note, bool $onTarget, bool $over): string {
+	private function noted(?int $value, string $none, TargetNote $target): string {
 		if ($value === null) {
 			return $none;
 		}
 
-		return $note.' '.$this->verdict(onTarget: $onTarget, over: $over);
+		return $target->note.' '.$this->verdict(onTarget: $target->onTarget, over: $target->over);
 	}//end noted()
 
 	/**

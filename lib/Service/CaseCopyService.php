@@ -164,12 +164,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function requireSource(array $context, string $caseId): array {
-		$source = $this->fetch(
-			objectService: $context['objectService'],
-			register: $context['register'],
-			schema: $context['caseSchema'],
-			id: $caseId
-		);
+		$source = $this->fetch(context: $context, schema: $context['caseSchema'], id: $caseId);
 
 		if ($source === null) {
 			throw new RuntimeException('case_not_found');
@@ -232,12 +227,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	private function linkIfAsked(array $context, string $caseId, string $newId, array $options): int {
 		$linked = 0;
 		if (($options['documents'] ?? false) === true) {
-			$linked = $this->linkDocuments(
-				objectService: $context['objectService'],
-				register: $context['register'],
-				sourceId: $caseId,
-				newId: $newId
-			);
+			$linked = $this->linkDocuments(context: $context, sourceId: $caseId, newId: $newId);
 		}
 
 		return $linked;
@@ -318,12 +308,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 			return '';
 		}
 
-		$type = $this->fetch(
-			objectService: $context['objectService'],
-			register: $context['register'],
-			schema: $schema,
-			id: $caseType
-		);
+		$type = $this->fetch(context: $context, schema: $schema, id: $caseType);
 
 		return (string)($type['initialStatus'] ?? '');
 	}//end initialStatusOf()
@@ -379,25 +364,25 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	 * so a document the copier may not read is not among them and is therefore
 	 * never linked onto a case they can write.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register slug.
+	 * @param array{objectService: object, register: string, caseSchema: string} $context  The object service and register.
 	 * @param string $sourceId The source case's id.
-	 * @param string $newId The copy's id.
+	 * @param string $newId    The copy's id.
 	 *
 	 * @return integer How many documents were linked.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function linkDocuments(object $objectService, string $register, string $sourceId, string $newId): int {
+	private function linkDocuments(array $context, string $sourceId, string $newId): int {
 		$schema = $this->settingsService->getConfigValue('case_document_schema');
 		if ($schema === '') {
 			return 0;
 		}
 
+		$store  = new DocumentLinkStore(objectService: $context['objectService'], register: $context['register'], schema: $schema);
 		$linked = 0;
-		$links  = $this->documentsOf(objectService: $objectService, register: $register, schema: $schema, caseId: $sourceId);
+		$links  = $this->documentsOf(store: $store, caseId: $sourceId);
 		foreach ($this->linkRows(links: $links, newId: $newId) as $row) {
-			if ($this->saveLink(objectService: $objectService, register: $register, schema: $schema, row: $row) === true) {
+			if ($this->saveLink(store: $store, row: $row) === true) {
 				$linked++;
 			}
 		}
@@ -436,19 +421,17 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	/**
 	 * Save one link row onto the copy, logging when it cannot be saved.
 	 *
-	 * @param object                $objectService OpenRegister's ObjectService.
-	 * @param string                $register      The register slug.
-	 * @param string                $schema        The caseDocument schema.
-	 * @param array<string, string> $row           The link row.
+	 * @param DocumentLinkStore     $store Where the link rows are written.
+	 * @param array<string, string> $row   The link row.
 	 *
 	 * @return bool Whether the row was saved.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function saveLink(object $objectService, string $register, string $schema, array $row): bool {
+	private function saveLink(DocumentLinkStore $store, array $row): bool {
 		$row['registrationDate'] = date('Y-m-d');
 		try {
-			$objectService->saveObject(object: $row, register: $register, schema: $schema);
+			$store->objectService->saveObject(object: $row, register: $store->register, schema: $store->schema);
 			return true;
 		} catch (\Throwable $e) {
 			$this->logger->warning(
@@ -462,16 +445,14 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	/**
 	 * The source case's document links.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register slug.
-	 * @param string $schema The caseDocument schema.
-	 * @param string $caseId The source case's id.
+	 * @param DocumentLinkStore $store  Where the link rows are read.
+	 * @param string            $caseId The source case's id.
 	 *
 	 * @return array<int, array<string, mixed>> The link rows.
 	 */
-	private function documentsOf(object $objectService, string $register, string $schema, string $caseId): array {
+	private function documentsOf(DocumentLinkStore $store, string $caseId): array {
 		try {
-			$results = $objectService->findAll($this->documentsQuery(register: $register, schema: $schema, caseId: $caseId));
+			$results = $store->objectService->findAll($this->documentsQuery(store: $store, caseId: $caseId));
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'CaseCopyService: could not read the source case documents',
@@ -487,17 +468,16 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	/**
 	 * The findAll query for one case's document links.
 	 *
-	 * @param string $register The register slug.
-	 * @param string $schema   The caseDocument schema.
-	 * @param string $caseId   The source case's id.
+	 * @param DocumentLinkStore $store  The register and caseDocument schema.
+	 * @param string            $caseId The source case's id.
 	 *
 	 * @return array<string, mixed> The query.
 	 */
-	private function documentsQuery(string $register, string $schema, string $caseId): array {
+	private function documentsQuery(DocumentLinkStore $store, string $caseId): array {
 		return [
 			'filters' => [
-				'register' => $register,
-				'schema' => $schema,
+				'register' => $store->register,
+				'schema' => $store->schema,
 				'case' => $caseId,
 			],
 			'limit' => 200,
@@ -545,20 +525,19 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	/**
 	 * Fetch one object, tolerating a fail-closed miss.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
-	 * @param string $id The object id.
+	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service and register.
+	 * @param string $schema  The schema slug.
+	 * @param string $id      The object id.
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	private function fetch(object $objectService, string $register, string $schema, string $id): ?array {
+	private function fetch(array $context, string $schema, string $id): ?array {
 		if ($id === '') {
 			return null;
 		}
 
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $context['objectService']->find($id, register: $context['register'], schema: $schema);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseCopyService: object lookup failed',

@@ -140,14 +140,9 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 		$summary['total'] = count($templates);
 		unset($summary['note']);
 
+		$pass = new FlowMigrationPass(flowService: $flowService, existing: $existing, statusNames: $statusNames, dryRun: $dryRun);
 		foreach ($templates as $template) {
-			$row = $this->migrateOne(
-				template: $template,
-				existing: $existing,
-				flowService: $flowService,
-				dryRun: $dryRun,
-				statusNames: $statusNames,
-			);
+			$row = $this->migrateOne(template: $template, pass: $pass);
 			$summary[$row['outcome']] = ($summary[$row['outcome']] + 1);
 			$summary['rows'][] = $row;
 		}
@@ -159,15 +154,13 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 	/**
 	 * Project one template, returning the row that describes what happened.
 	 *
-	 * @param array<string, mixed>  $template    The stored workflowTemplate.
-	 * @param array<string, string> $existing    Marker to flow uuid.
-	 * @param object                $flowService OpenRegister's FlowService.
-	 * @param boolean               $dryRun      Report only.
-	 * @param array<string, string> $statusNames statusType uuid => name.
+	 * @param array<string, mixed> $template The stored workflowTemplate.
+	 * @param FlowMigrationPass    $pass     The flow service, existing flows, status names and dry-run flag.
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
 	 */
-	private function migrateOne(array $template, array $existing, object $flowService, bool $dryRun, array $statusNames = []): array {
+	private function migrateOne(array $template, FlowMigrationPass $pass): array {
+		$existing = $pass->existing;
 		$id = (string)($template['id'] ?? ($template['@self']['id'] ?? ''));
 		$marker = (self::MARKER_PREFIX . $id);
 
@@ -175,7 +168,7 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => 'the template has no id'];
 		}
 
-		$graph = $this->graphOf(template: $template, statusNames: $statusNames);
+		$graph = $this->graphOf(template: $template, statusNames: $pass->statusNames);
 		if ($graph === null) {
 			// A template with no transitions is not a state machine; projecting
 			// it would produce a flow with nodes and no way between them, which
@@ -183,7 +176,7 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 			return ['outcome' => 'skipped', 'marker' => $marker, 'detail' => 'no usable transitions'];
 		}
 
-		if ($dryRun === true) {
+		if ($pass->dryRun === true) {
 			return [
 				'outcome' => $this->outcomeFor(uuid: ($existing[$marker] ?? null)),
 				'marker' => $marker,
@@ -192,7 +185,7 @@ class WorkflowTemplateFlowMigrator implements WorkflowTemplateFlowMigratorInterf
 		}
 
 		return $this->writeFlow(
-			flowService: $flowService,
+			flowService: $pass->flowService,
 			document: $this->flowDocument(template: $template, graph: $graph, marker: $marker),
 			marker: $marker,
 			uuid: ($existing[$marker] ?? null),

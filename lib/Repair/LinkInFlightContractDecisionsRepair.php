@@ -137,12 +137,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 		foreach (self::CONTRACT_DECISION_CASE_TYPES as $caseTypeSlug) {
 			foreach ($this->casesOfType(run: $run, caseTypeSlug: $caseTypeSlug) as $case) {
 				$run->count(
-					outcome: $this->linkCase(
-						objectService: $run->objectService,
-						case: $case,
-						caseTypeSlug: $caseTypeSlug,
-						output: $run->output,
-					)
+					outcome: $this->linkCase(run: $run, case: $case, caseTypeSlug: $caseTypeSlug)
 				);
 			}
 		}
@@ -210,14 +205,14 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	/**
 	 * Link a single in-flight case forward to a decidesk Decision.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $case The case row.
-	 * @param string $caseTypeSlug The dossiq case type slug.
-	 * @param IOutput $output The migration output interface.
+	 * @param InFlightDecisionLinkRun $run          The run: its object service and output.
+	 * @param array<string, mixed>    $case         The case row.
+	 * @param string                  $caseTypeSlug The dossiq case type slug.
 	 *
 	 * @return string One of the self::RESULT_* constants.
 	 */
-	private function linkCase(object $objectService, array $case, string $caseTypeSlug, IOutput $output): string {
+	private function linkCase(InFlightDecisionLinkRun $run, array $case, string $caseTypeSlug): string {
+		$output = $run->output;
 		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
 		$precheck = $this->precheckOf(case: $case);
 		if ($precheck !== null) {
@@ -226,7 +221,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 
 		// Open case with no decision yet — link forward to decidesk.
 		try {
-			$newDecisionRef = $this->raiseAndPersistDecision(objectService: $objectService, case: $case, caseTypeSlug: $caseTypeSlug);
+			$newDecisionRef = $this->raiseAndPersistDecision(objectService: $run->objectService, case: $case, caseTypeSlug: $caseTypeSlug);
 			$output->info('Linked case ' . $caseUuid . ' → decidesk Decision ' . $newDecisionRef);
 		} catch (RuntimeException $e) {
 			// Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.

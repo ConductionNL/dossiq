@@ -147,15 +147,13 @@ class CaseTimeline implements CaseTimelineInterface {
 			return '';
 		}
 
-		[$objectService, $register, $schema] = $coordinates;
-
 		$data = [
 			'message' => $message,
 			'kind' => $kind,
 			'fields' => $fields,
 			'visibility' => $visibility,
-			'register' => (string)$register,
-			'schema' => (string)$schema,
+			'register' => (string)$coordinates->register,
+			'schema' => (string)$coordinates->schema,
 		];
 
 		try {
@@ -163,7 +161,7 @@ class CaseTimeline implements CaseTimelineInterface {
 			// nobody signed in, and OpenRegister refuses the case read to
 			// "Anonymous"; a signed-in caller keeps their own rights.
 			return (string)$this->asSystemWithoutUser(
-				objectService: $objectService,
+				objectService: $coordinates->objectService,
 				userSession: $this->userSession,
 				operation: fn (): string => $this->writeEntry(
 					coordinates: $coordinates,
@@ -195,29 +193,26 @@ class CaseTimeline implements CaseTimelineInterface {
 	/**
 	 * Write one entry on a case and its related cases.
 	 *
-	 * @param array{0: object, 1: string, 2: string} $coordinates    The object service, register and case schema.
-	 * @param string                                 $caseId         The case the entry hangs on.
-	 * @param array<string, mixed>                   $data           The entry.
-	 * @param array<int, string>                     $relatedCaseIds Further cases the same entry belongs on.
+	 * @param TimelineCoordinates  $coordinates    The object service, register and case schema.
+	 * @param string               $caseId         The case the entry hangs on.
+	 * @param array<string, mixed> $data           The entry.
+	 * @param array<int, string>   $relatedCaseIds Further cases the same entry belongs on.
 	 *
 	 * @return string The entry uuid, or '' when nothing was written.
 	 *
 	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
-	private function writeEntry(array $coordinates, string $caseId, array $data, array $relatedCaseIds): string {
-		[$objectService, $register, $schema] = $coordinates;
+	private function writeEntry(TimelineCoordinates $coordinates, string $caseId, array $data, array $relatedCaseIds): string {
 		$writer = $this->writer();
 
-		$object = $objectService->find($caseId, register: $register, schema: $schema);
+		$object = $coordinates->objectService->find($caseId, register: $coordinates->register, schema: $coordinates->schema);
 		if ($object === null) {
 			$this->soften(caseId: $caseId, kind: (string)$data['kind'], reason: 'the case could not be read');
 			return '';
 		}
 
 		$related = $this->relatedObjects(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			coordinates: $coordinates,
 			caseId: $caseId,
 			relatedCaseIds: $relatedCaseIds,
 		);
@@ -298,16 +293,8 @@ class CaseTimeline implements CaseTimelineInterface {
 			return [];
 		}
 
-		[$objectService, $register, $schema] = $coordinates;
-
 		try {
-			$entries = $this->readPublicEntries(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				caseId: $caseId,
-				limit: $limit
-			);
+			$entries = $this->readPublicEntries(coordinates: $coordinates, caseId: $caseId, limit: $limit);
 		} catch (Throwable $e) {
 			// LOGGED AND RETHROWN, NOT SWALLOWED. "I could not read" and
 			// "there are nothing public here" are different facts, and a
@@ -339,26 +326,24 @@ class CaseTimeline implements CaseTimelineInterface {
 	/**
 	 * Read the public entries of one case, unscoped.
 	 *
-	 * @param object  $objectService OpenRegister's object service.
-	 * @param mixed   $register      The register.
-	 * @param mixed   $schema        The case schema.
-	 * @param string  $caseId        The case to read.
-	 * @param integer $limit         How many entries at most, newest first.
+	 * @param TimelineCoordinates $coordinates The object service, register and case schema.
+	 * @param string              $caseId      The case to read.
+	 * @param integer             $limit       How many entries at most, newest first.
 	 *
 	 * @return mixed The entries as OpenRegister answered them, or an empty list when the case is not there.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
-	private function readPublicEntries(object $objectService, mixed $register, mixed $schema, string $caseId, int $limit): mixed {
+	private function readPublicEntries(TimelineCoordinates $coordinates, string $caseId, int $limit): mixed {
 		// UNSCOPED, FOR THIS ONE CASE. The portal asks with no Nextcloud
 		// user, so OpenRegister's RBAC answered nothing and the resident's
 		// timeline was always empty. The caller proves the case is the
 		// reader's before asking (see the docblock), and only the public
 		// entries of the case asked for come back.
-		$object = $objectService->find(
+		$object = $coordinates->objectService->find(
 			$caseId,
-			register: $register,
-			schema: $schema,
+			register: $coordinates->register,
+			schema: $coordinates->schema,
 			_rbac: false,
 			_multitenancy: false
 		);
@@ -440,21 +425,13 @@ class CaseTimeline implements CaseTimelineInterface {
 	 * the note on some of the cases and fail on the rest, which is the exact
 	 * half-write the endpoint's own contract refuses.
 	 *
-	 * @param object             $objectService  OpenRegister's object service.
-	 * @param mixed              $register       The register as configured.
-	 * @param mixed              $schema         The case schema as configured.
-	 * @param string             $caseId         The case already resolved, never repeated.
-	 * @param array<int, string> $relatedCaseIds The further cases.
+	 * @param TimelineCoordinates $coordinates    The object service, register and case schema.
+	 * @param string              $caseId         The case already resolved, never repeated.
+	 * @param array<int, string>  $relatedCaseIds The further cases.
 	 *
 	 * @return array<int, object> The resolved objects.
 	 */
-	private function relatedObjects(
-		object $objectService,
-		$register,
-		$schema,
-		string $caseId,
-		array $relatedCaseIds,
-	): array {
+	private function relatedObjects(TimelineCoordinates $coordinates, string $caseId, array $relatedCaseIds): array {
 		$resolved = [];
 		$seen = [$caseId => true];
 
@@ -466,7 +443,7 @@ class CaseTimeline implements CaseTimelineInterface {
 
 			$seen[$relatedId] = true;
 
-			$object = $this->readRelated(objectService: $objectService, register: $register, schema: $schema, relatedId: $relatedId);
+			$object = $this->readRelated(coordinates: $coordinates, relatedId: $relatedId);
 			if ($object === null) {
 				continue;
 			}
@@ -480,16 +457,14 @@ class CaseTimeline implements CaseTimelineInterface {
 	/**
 	 * Read one further case, or log and answer null when it cannot be read.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param mixed  $register      The register as configured.
-	 * @param mixed  $schema        The case schema as configured.
-	 * @param string $relatedId     The further case.
+	 * @param TimelineCoordinates $coordinates The object service, register and case schema.
+	 * @param string              $relatedId   The further case.
 	 *
 	 * @return mixed The case object, or null.
 	 */
-	private function readRelated(object $objectService, $register, $schema, string $relatedId): mixed {
+	private function readRelated(TimelineCoordinates $coordinates, string $relatedId): mixed {
 		try {
-			$object = $objectService->find($relatedId, register: $register, schema: $schema);
+			$object = $coordinates->objectService->find($relatedId, register: $coordinates->register, schema: $coordinates->schema);
 		} catch (Throwable $e) {
 			$object = null;
 		}
@@ -527,9 +502,9 @@ class CaseTimeline implements CaseTimelineInterface {
 	/**
 	 * The object service, register and case schema, or null when unconfigured.
 	 *
-	 * @return array{0: object, 1: mixed, 2: mixed}|null The three, or null.
+	 * @return TimelineCoordinates|null The three, or null.
 	 */
-	private function coordinates(): ?array {
+	private function coordinates(): ?TimelineCoordinates {
 		$objectService = $this->settings->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -541,7 +516,7 @@ class CaseTimeline implements CaseTimelineInterface {
 			return null;
 		}
 
-		return [$objectService, $register, $schema];
+		return new TimelineCoordinates(objectService: $objectService, register: $register, schema: $schema);
 	}//end coordinates()
 
 	/**

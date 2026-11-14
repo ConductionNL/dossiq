@@ -29,7 +29,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
-use DateTimeZone;
 use OCA\Dossiq\Kernel\Contracts\EndOfDayServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
@@ -146,20 +145,20 @@ class EndOfDayService implements EndOfDayServiceInterface {
 	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
 	 */
 	private function partitionByToday(array $candidates, string $userId, DateTimeImmutable $now): array {
-		$today = $now->format('Y-m-d');
+		$day = new ReaderDay(userId: $userId, today: $now->format('Y-m-d'), zone: $now->getTimezone());
 		$open = [];
 		$recorded = [];
 		$untouched = [];
 		foreach ($candidates as $item) {
 			$row = $this->rowOf(item: $item);
-			$note = $this->noteOfToday(item: $item, userId: $userId, today: $today, zone: $now->getTimezone());
+			$note = $this->noteOfToday(item: $item, day: $day);
 			if ($note !== null) {
 				$facts = $this->rowMeta->factsOf(item: $item);
 				$recorded[] = $row + $note + ['recordedMeta' => $this->rowMeta->recordedLine(facts: $facts, time: $note['recordedTime'])];
 				continue;
 			}
 
-			if ($this->openedToday(item: $item, userId: $userId, today: $today, zone: $now->getTimezone()) === true) {
+			if ($this->openedToday(item: $item, day: $day) === true) {
 				$open[] = $row + ['meta' => $this->rowMeta->openLine(facts: $this->rowMeta->factsOf(item: $item))];
 				continue;
 			}
@@ -234,16 +233,14 @@ class EndOfDayService implements EndOfDayServiceInterface {
 	/**
 	 * Whether OpenRegister's read state says the reader opened this item today.
 	 *
-	 * @param array<string, mixed> $item   The queue item.
-	 * @param string               $userId The reader.
-	 * @param string               $today  Today, `Y-m-d` in the reader's zone.
-	 * @param DateTimeZone         $zone   The reader's zone.
+	 * @param array<string, mixed> $item The queue item.
+	 * @param ReaderDay            $day  The reader, and today in their zone.
 	 *
 	 * @return bool
 	 */
-	private function openedToday(array $item, string $userId, string $today, DateTimeZone $zone): bool {
+	private function openedToday(array $item, ReaderDay $day): bool {
 		try {
-			$state = $this->readStateOf(item: $item, userId: $userId);
+			$state = $this->readStateOf(item: $item, userId: $day->userId);
 		} catch (Throwable $e) {
 			// The read state is the register's to answer; an item it cannot
 			// answer for has not been opened, as far as anyone can tell.
@@ -256,7 +253,7 @@ class EndOfDayService implements EndOfDayServiceInterface {
 			$seen = (string)($state->jsonSerialize()['lastSeenAt'] ?? '');
 		}
 
-		return $this->isToday(moment: $seen, today: $today, zone: $zone);
+		return $this->isToday(moment: $seen, day: $day);
 	}//end openedToday()
 
 	/**
@@ -295,14 +292,12 @@ class EndOfDayService implements EndOfDayServiceInterface {
 	 * The reader's latest note of today on this item, as the fields the
 	 * "Recorded today" list shows, or null.
 	 *
-	 * @param array<string, mixed> $item   The queue item.
-	 * @param string               $userId The reader.
-	 * @param string               $today  Today, `Y-m-d` in the reader's zone.
-	 * @param DateTimeZone         $zone   The reader's zone.
+	 * @param array<string, mixed> $item The queue item.
+	 * @param ReaderDay            $day  The reader, and today in their zone.
 	 *
 	 * @return array{note: string, recordedAt: string, recordedTime: string}|null
 	 */
-	private function noteOfToday(array $item, string $userId, string $today, DateTimeZone $zone): ?array {
+	private function noteOfToday(array $item, ReaderDay $day): ?array {
 		$notes = $this->settings->getOpenRegisterClass(class: self::NOTES);
 		if ($notes === null) {
 			return null;
@@ -317,31 +312,29 @@ class EndOfDayService implements EndOfDayServiceInterface {
 			$this->logger->warning('Dossiq: the notes of end-of-day candidate ' . (string)$item['id'] . ' could not be read: ' . $e->getMessage());
 		}
 
-		$latest = $this->latestNoteOfToday(list: (array)$list, userId: $userId, today: $today, zone: $zone);
+		$latest = $this->latestNoteOfToday(list: (array)$list, day: $day);
 
 		if ($latest === null) {
 			return null;
 		}
 
-		$time = (new DateTimeImmutable((string)$latest['createdAt']))->setTimezone($zone)->format('H:i');
+		$time = (new DateTimeImmutable((string)$latest['createdAt']))->setTimezone($day->zone)->format('H:i');
 		return ['note' => (string)($latest['message'] ?? ''), 'recordedAt' => (string)$latest['createdAt'], 'recordedTime' => $time];
 	}//end noteOfToday()
 
 	/**
 	 * The reader's latest note of today among an item's notes, or null.
 	 *
-	 * @param array<int|string, mixed> $list   The item's notes.
-	 * @param string                   $userId The reader.
-	 * @param string                   $today  Today, `Y-m-d` in the reader's zone.
-	 * @param DateTimeZone             $zone   The reader's zone.
+	 * @param array<int|string, mixed> $list The item's notes.
+	 * @param ReaderDay                $day  The reader, and today in their zone.
 	 *
 	 * @return mixed The latest note, or null.
 	 */
-	private function latestNoteOfToday(array $list, string $userId, string $today, DateTimeZone $zone): mixed {
+	private function latestNoteOfToday(array $list, ReaderDay $day): mixed {
 		$latest = null;
 		foreach ($list as $note) {
 			$created = (string)($note['createdAt'] ?? '');
-			if ($this->isOtherNote(note: $note, created: $created, userId: $userId, today: $today, zone: $zone) === true) {
+			if ($this->isOtherNote(note: $note, created: $created, day: $day) === true) {
 				continue;
 			}
 
@@ -356,16 +349,14 @@ class EndOfDayService implements EndOfDayServiceInterface {
 	/**
 	 * Whether a note was written by someone else than the reader, or not today.
 	 *
-	 * @param mixed        $note    The note.
-	 * @param string       $created When it was created.
-	 * @param string       $userId  The reader.
-	 * @param string       $today   Today, `Y-m-d` in the reader's zone.
-	 * @param DateTimeZone $zone    The reader's zone.
+	 * @param mixed     $note    The note.
+	 * @param string    $created When it was created.
+	 * @param ReaderDay $day     The reader, and today in their zone.
 	 *
 	 * @return bool True when the note is not the reader's of today.
 	 */
-	private function isOtherNote(mixed $note, string $created, string $userId, string $today, DateTimeZone $zone): bool {
-		return (($note['actorId'] ?? '') !== $userId || $this->isToday(moment: $created, today: $today, zone: $zone) === false);
+	private function isOtherNote(mixed $note, string $created, ReaderDay $day): bool {
+		return (($note['actorId'] ?? '') !== $day->userId || $this->isToday(moment: $created, day: $day) === false);
 	}//end isOtherNote()
 
 	/**
@@ -392,19 +383,18 @@ class EndOfDayService implements EndOfDayServiceInterface {
 	/**
 	 * Whether a moment falls on today in the reader's zone.
 	 *
-	 * @param string       $moment An ISO 8601 moment, or ''.
-	 * @param string       $today  Today, `Y-m-d`.
-	 * @param DateTimeZone $zone   The reader's zone.
+	 * @param string    $moment An ISO 8601 moment, or ''.
+	 * @param ReaderDay $day    Today, `Y-m-d`, and the reader's zone.
 	 *
 	 * @return bool
 	 */
-	private function isToday(string $moment, string $today, DateTimeZone $zone): bool {
+	private function isToday(string $moment, ReaderDay $day): bool {
 		if ($moment === '') {
 			return false;
 		}
 
 		try {
-			return (new DateTimeImmutable($moment))->setTimezone($zone)->format('Y-m-d') === $today;
+			return (new DateTimeImmutable($moment))->setTimezone($day->zone)->format('Y-m-d') === $day->today;
 		} catch (Throwable $e) {
 			return false;
 		}
