@@ -55,6 +55,8 @@ use Throwable;
  * Keeps one of the two versions a conflict record holds.
  *
  * @spec openspec/changes/inspection-conflict-card/tasks.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	use SearchesObjects;
@@ -112,6 +114,44 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			);
 		}
 
+		$data = $this->openConflict(objectService: $objectService, register: $register, id: $id);
+		if ($data instanceof ConflictResolutionOutcome) {
+			return $data;
+		}
+
+		$refusal = $this->applyResolution(
+			objectService: $objectService,
+			register: $register,
+			id: $id,
+			resolution: $resolution,
+			data: $data
+		);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->markResolved(
+			objectService: $objectService,
+			register: $register,
+			id: $id,
+			resolution: $resolution,
+			userId: $userId,
+			data: $data
+		);
+	}//end resolve()
+
+	/**
+	 * Read the conflict record, refusing when it is missing or already resolved.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register of the conflict record.
+	 * @param string $id            The conflict record's id.
+	 *
+	 * @return array<string, mixed>|ConflictResolutionOutcome The conflict record, or the refusal.
+	 *
+	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 */
+	private function openConflict(object $objectService, string $register, string $id): array|ConflictResolutionOutcome {
 		try {
 			$record = $this->read(objectService: $objectService, register: $register, schema: self::CONFLICT_SCHEMA, id: $id);
 		} catch (Throwable $e) {
@@ -123,6 +163,29 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			return ConflictResolutionOutcome::refused(status: Http::STATUS_CONFLICT, message: 'Dit conflict is al opgelost.');
 		}
 
+		return $data;
+	}//end openConflict()
+
+	/**
+	 * Apply the chosen side: for `client_wins`, write the device's values.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register of the conflict record.
+	 * @param string               $id            The conflict record's id.
+	 * @param string               $resolution    `client_wins` or `server_wins`.
+	 * @param array<string, mixed> $data          The conflict record.
+	 *
+	 * @return ConflictResolutionOutcome|null The refusal, or null once applied.
+	 *
+	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 */
+	private function applyResolution(
+		object $objectService,
+		string $register,
+		string $id,
+		string $resolution,
+		array $data,
+	): ?ConflictResolutionOutcome {
 		if ($resolution === self::CLIENT_WINS) {
 			$refusal = $this->writeDeviceValues(objectService: $objectService, register: $register, id: $id, data: $data);
 			if ($refusal !== null) {
@@ -130,6 +193,31 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			}
 		}
 
+		return null;
+	}//end applyResolution()
+
+	/**
+	 * Mark the conflict record resolved and its queue row synced.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register of the conflict record.
+	 * @param string               $id            The conflict record's id.
+	 * @param string               $resolution    `client_wins` or `server_wins`.
+	 * @param string               $userId        The session user's uid.
+	 * @param array<string, mixed> $data          The conflict record.
+	 *
+	 * @return ConflictResolutionOutcome The status and body to answer with.
+	 *
+	 * @spec openspec/changes/inspection-conflict-card/tasks.md
+	 */
+	private function markResolved(
+		object $objectService,
+		string $register,
+		string $id,
+		string $resolution,
+		string $userId,
+		array $data,
+	): ConflictResolutionOutcome {
 		$resolvedAt = $this->time->now()->format(DATE_ATOM);
 		try {
 			$this->patchObjectAsArray(
@@ -156,7 +244,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			status: Http::STATUS_OK,
 			body: ['id' => $id, 'resolution' => $resolution, 'resolvedBy' => $userId, 'resolvedAt' => $resolvedAt]
 		);
-	}//end resolve()
+	}//end markResolved()
 
 	/**
 	 * Write the device's values onto the target, after every check.

@@ -265,17 +265,7 @@ abstract class ZgwRulesBase {
 	protected function validateTypeUrl(string $typeUrl, string $fieldName, string $schemaKey): ?array {
 		$extractedUuid = $this->extractUuid(url: $typeUrl);
 		if ($extractedUuid === null) {
-			return $this->error(
-				status: 400,
-				detail: "De {$fieldName} URL is ongeldig.",
-				invalidParams: [
-					$this->fieldError(
-						fieldName: $fieldName,
-						code: 'bad-url',
-						reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
-					),
-				]
-			);
+			return $this->badTypeUrlError(fieldName: $fieldName);
 		}
 
 		$register = $this->mappingConfig['sourceRegister'] ?? '';
@@ -292,19 +282,46 @@ abstract class ZgwRulesBase {
 				schema: $schema
 			);
 		} catch (\Throwable $e) {
-			return $this->error(
-				status: 400,
-				detail: "De {$fieldName} URL is ongeldig.",
-				invalidParams: [
-					$this->fieldError(
-						fieldName: $fieldName,
-						code: 'bad-url',
-						reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
-					),
-				]
-			);
+			return $this->badTypeUrlError(fieldName: $fieldName);
 		}
 
+		return $this->draftTypeError(typeObject: $typeObject, fieldName: $fieldName);
+	}//end validateTypeUrl()
+
+	/**
+	 * The error for a type URL that is malformed or names no type.
+	 *
+	 * @param string $fieldName The field name for error reporting
+	 *
+	 * @return array The validation error
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function badTypeUrlError(string $fieldName): array {
+		return $this->error(
+			status: 400,
+			detail: "De {$fieldName} URL is ongeldig.",
+			invalidParams: [
+				$this->fieldError(
+					fieldName: $fieldName,
+					code: 'bad-url',
+					reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
+				),
+			]
+		);
+	}//end badTypeUrlError()
+
+	/**
+	 * The error for a type that is still a draft, or null when it is published.
+	 *
+	 * @param mixed $typeObject The stored type
+	 * @param string $fieldName The field name for error reporting
+	 *
+	 * @return array|null Validation error, or null if published
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function draftTypeError(mixed $typeObject, string $fieldName): ?array {
 		$typeData = $typeObject;
 		if (is_array($typeObject) === false) {
 			$typeData = $typeObject->jsonSerialize();
@@ -326,7 +343,7 @@ abstract class ZgwRulesBase {
 		}
 
 		return null;
-	}//end validateTypeUrl()
+	}//end draftTypeError()
 
 	/**
 	 * Validate an informatieobject URL resolves to an existing document.
@@ -373,6 +390,21 @@ abstract class ZgwRulesBase {
 		// If the document is not found locally, that is acceptable — it may
 		// be an external informatieobject managed by another DRC instance.
 		// We only reject when the URL is syntactically invalid (checked above).
+		$this->probeLocalInformatieobject(ioUuid: $ioUuid);
+
+		return null;
+	}//end validateInformatieobjectUrl()
+
+	/**
+	 * Look the informatieobject up in the own register; a miss is not an error.
+	 *
+	 * @param string $ioUuid The informatieobject UUID
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function probeLocalInformatieobject(string $ioUuid): void {
 		if ($this->objectService !== null) {
 			$register = $this->mappingConfig['sourceRegister'] ?? '';
 			$docSchema = $this->settingsService->getConfigValue(key: 'document_schema');
@@ -391,9 +423,7 @@ abstract class ZgwRulesBase {
 				}
 			}
 		}
-
-		return null;
-	}//end validateInformatieobjectUrl()
+	}//end probeLocalInformatieobject()
 
 	/**
 	 * Validate an external URL is reachable (basic URL + UUID format check).
