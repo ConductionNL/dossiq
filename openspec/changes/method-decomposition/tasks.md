@@ -586,3 +586,11 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `CaseModelSearchHitsTest` (2); breaking the sentry position, the `required` flag or the
         undecodable-text fallback turns them red (checked).
         Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8m `ZtcCrossReferenceEnricher` (1: ExcessiveClassComplexity 52 against 50). Turning a
+        stored uuid list (an array or a JSON string) into Catalogi URLs moved to the new
+        `Zgw/ZtcStoredUuidUrls` (`urls()`, with `storedIds()` and `prefixedUrls()`); the enricher
+        builds it in its constructor, so its constructor, interface and container binding are
+        unchanged, and the swallowing catch in `enrichBesluittype()` stays where the allowlist has it.
+        Characterisation: the existing `ZtcCrossReferenceTest` (8), `ZtcRelatedTypeLookupTest` and
+        `ZtcWriteGateGoldenTest`, green before and after. Own test: `ZtcStoredUuidUrlsTest` (2).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
