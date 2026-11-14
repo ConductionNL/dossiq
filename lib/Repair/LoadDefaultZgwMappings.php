@@ -359,7 +359,20 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			return;
 		}
 
-		$defaults = $this->getDefaultApplicaties();
+		[$created, $updated] = $this->upsertApplicaties(consumerMapper: $consumerMapper, defaults: $this->getDefaultApplicaties());
+
+		$output->info("Created {$created}, updated {$updated} default test applicaties.");
+	}//end createDefaultApplicaties()
+
+	/**
+	 * Create each default applicatie, or update the one that already exists by name.
+	 *
+	 * @param object                           $consumerMapper OpenRegister's ConsumerMapper.
+	 * @param array<int, array<string, mixed>> $defaults       The default applicaties.
+	 *
+	 * @return array{0: int, 1: int} The number created and the number updated.
+	 */
+	private function upsertApplicaties(object $consumerMapper, array $defaults): array {
 		$created = 0;
 
 		$updated = 0;
@@ -367,25 +380,47 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		foreach ($defaults as $applicatie) {
 			$existing = $consumerMapper->findAll(filters: ['name' => $applicatie['name']]);
 			if (count(value: $existing) > 0) {
-				// Update existing consumer's authorization configuration
-				// to ensure new scopes are applied.
-				$consumer = $existing[0];
-				$newConfig = $applicatie['authorizationConfiguration'] ?? [];
-				$consumer->setAuthorizationConfiguration($newConfig);
-				$consumer->setUpdated(new DateTime());
-				$consumerMapper->update($consumer);
+				$this->updateApplicatie(consumerMapper: $consumerMapper, consumer: $existing[0], applicatie: $applicatie);
 				$updated++;
 				continue;
 			}
 
-			$applicatie['created'] = new DateTime();
-			$applicatie['updated'] = new DateTime();
-			$consumerMapper->createFromArray(object: $applicatie);
+			$this->createApplicatie(consumerMapper: $consumerMapper, applicatie: $applicatie);
 			$created++;
 		}
 
-		$output->info("Created {$created}, updated {$updated} default test applicaties.");
-	}//end createDefaultApplicaties()
+		return [$created, $updated];
+	}//end upsertApplicaties()
+
+	/**
+	 * Update an existing consumer's authorization configuration so new scopes are applied.
+	 *
+	 * @param object               $consumerMapper OpenRegister's ConsumerMapper.
+	 * @param object               $consumer       The existing consumer.
+	 * @param array<string, mixed> $applicatie     The default applicatie.
+	 *
+	 * @return void
+	 */
+	private function updateApplicatie(object $consumerMapper, object $consumer, array $applicatie): void {
+		$newConfig = $applicatie['authorizationConfiguration'] ?? [];
+		$consumer->setAuthorizationConfiguration($newConfig);
+		$consumer->setUpdated(new DateTime());
+		$consumerMapper->update($consumer);
+	}//end updateApplicatie()
+
+	/**
+	 * Create a default applicatie with fresh timestamps.
+	 *
+	 * @param object               $consumerMapper OpenRegister's ConsumerMapper.
+	 * @param array<string, mixed> $applicatie     The default applicatie.
+	 *
+	 * @return void
+	 */
+	private function createApplicatie(object $consumerMapper, array $applicatie): void {
+		$applicatie['created'] = new DateTime();
+		$applicatie['updated'] = new DateTime();
+		$consumerMapper->createFromArray(object: $applicatie);
+	}//end createApplicatie()
 
 	/**
 	 * Get default test applicatie configurations.

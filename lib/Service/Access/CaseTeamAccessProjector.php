@@ -419,23 +419,7 @@ class CaseTeamAccessProjector implements CaseTeamAccessProjectorInterface {
 		}
 
 		try {
-			$baselines = $this->container->get(self::BASELINE_STORE);
-			$subject = $baselines->schemaSubject(slug: self::CASE_SCHEMA_SLUG);
-			$baseline = $baselines->read(subject: $subject);
-			if (is_array($baseline['definition'] ?? null) === false || ($baseline['definition']['authorization'] ?? null) === $block) {
-				return;
-			}
-
-			$definition = $baseline['definition'];
-			$definition['authorization'] = $block;
-			$recorded = $baselines->record(
-				subject: $subject,
-				shipped: new ShippedDefinition(
-					definition: $definition,
-					app: $baseline['app'],
-					appVersion: $baseline['appVersion'],
-				),
-			);
+			$recorded = $this->recordAlignedBaseline(block: $block);
 		} catch (Throwable) {
 			$recorded = false;
 		}
@@ -444,4 +428,27 @@ class CaseTeamAccessProjector implements CaseTeamAccessProjectorInterface {
 			$this->logger->warning('Dossiq: the case schema\'s shipped baseline was not aligned with the handling team rules');
 		}
 	}//end alignShippedBaseline()
+
+	/**
+	 * Record the shipped baseline with the derived authorization block.
+	 *
+	 * @param array<string, mixed> $block The block the projector derives.
+	 *
+	 * @return bool False when the record failed; true when it succeeded or there was nothing to align.
+	 */
+	private function recordAlignedBaseline(array $block): bool {
+		$baselines = $this->container->get(self::BASELINE_STORE);
+		$subject = $baselines->schemaSubject(slug: self::CASE_SCHEMA_SLUG);
+		$baseline = $baselines->read(subject: $subject);
+		if (is_array($baseline['definition'] ?? null) === false || ($baseline['definition']['authorization'] ?? null) === $block) {
+			return true;
+		}
+
+		$definition = $baseline['definition'];
+		$definition['authorization'] = $block;
+		return $baselines->record(
+			subject: $subject,
+			shipped: new ShippedDefinition(definition: $definition, app: $baseline['app'], appVersion: $baseline['appVersion']),
+		);
+	}//end recordAlignedBaseline()
 }//end class

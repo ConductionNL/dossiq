@@ -351,14 +351,7 @@ class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 	private function closeInadmissible(array $judgement): array {
 		$declaration = $judgement['declaration'];
 		$record = $judgement['record'];
-		if ($declaration['inadmissibleResultType'] === '') {
-			throw new RefusedException(
-				rule: 'admissibility-result-not-declared',
-				sentence: 'This case type names no result for an inadmissible aanvraag, so the '
-					. 'case cannot be closed with one. Name it on the case type first.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->requireDeclaredResult(declaration: $declaration);
 
 		$closed = $this->endings->finish(
 			caseId: $judgement['caseId'],
@@ -368,6 +361,40 @@ class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 
 		$told = $this->tellApplicant(judgement: $judgement);
 
+		return $this->closedResult(record: $record, closed: $closed, told: $told, moment: $declaration['moment']);
+	}//end closeInadmissible()
+
+	/**
+	 * Refuse to close when the case type names no result for an inadmissible aanvraag.
+	 *
+	 * @param array<string, mixed> $declaration The case type's declaration.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case type names no result for an inadmissible aanvraag.
+	 */
+	private function requireDeclaredResult(array $declaration): void {
+		if ($declaration['inadmissibleResultType'] === '') {
+			throw new RefusedException(
+				rule: 'admissibility-result-not-declared',
+				sentence: 'This case type names no result for an inadmissible aanvraag, so the '
+					. 'case cannot be closed with one. Name it on the case type first.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end requireDeclaredResult()
+
+	/**
+	 * What was recorded, what the close did and what happened to the message.
+	 *
+	 * @param array<string, mixed> $record The recorded verdict.
+	 * @param mixed                $closed What the close did.
+	 * @param array<string, mixed> $told   What happened to the message.
+	 * @param mixed                $moment The declaration's moment.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function closedResult(array $record, mixed $closed, array $told, mixed $moment): array {
 		return [
 			'verdict' => $record['verdict'],
 			'record' => $record,
@@ -378,9 +405,9 @@ class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 			// carries no address" instead of leaving it to be discovered.
 			'applicantTold' => $told['sent'],
 			'applicantMessage' => $told,
-			'moment' => $declaration['moment'],
+			'moment' => $moment,
 		];
-	}//end closeInadmissible()
+	}//end closedResult()
 
 	/**
 	 * Tell the applicant through the declared moment, after the close.

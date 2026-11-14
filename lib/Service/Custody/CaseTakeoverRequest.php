@@ -491,14 +491,21 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 			return self::DEFAULT_ANSWER_DAYS;
 		}
 
+		return $this->declaredAnswerDays(caseTypeId: $caseTypeId);
+	}//end answerPeriodDays()
+
+	/**
+	 * The answer period the case type declares, or the default.
+	 *
+	 * @param string $caseTypeId The case type.
+	 *
+	 * @return int The number of days.
+	 */
+	private function declaredAnswerDays(string $caseTypeId): int {
 		try {
 			[$objectService, $register] = $this->store->context();
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->store->schema(key: 'case_type_schema'),
-				id: $caseTypeId,
-			);
+			$schema = $this->store->schema(key: 'case_type_schema');
+			$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId);
 		} catch (Throwable $e) {
 			return self::DEFAULT_ANSWER_DAYS;
 		}
@@ -509,7 +516,7 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 		}
 
 		return $declared;
-	}//end answerPeriodDays()
+	}//end declaredAnswerDays()
 
 	/**
 	 * Raise the engine task that carries the request to the holder.
