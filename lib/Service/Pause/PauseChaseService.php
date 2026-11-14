@@ -282,7 +282,7 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			return false;
 		}
 
-		$this->recordChased(step: $step, reason: $reason, moment: $moment);
+		$this->recordChased(step: $step, reason: $reason);
 
 		return true;
 	}//end chase()
@@ -304,18 +304,17 @@ class PauseChaseService implements PauseChaseServiceInterface {
 	/**
 	 * Write down that a reminder went: on the instance, as a step, on the case and in the log.
 	 *
-	 * @param PauseStep            $step   The step, numbered.
+	 * @param PauseStep            $step   The step, numbered, carrying when this is happening.
 	 * @param array<string, mixed> $reason The normalised reason in force.
-	 * @param DateTimeImmutable    $moment When this is happening.
 	 *
 	 * @return void
 	 */
-	private function recordChased(PauseStep $step, array $reason, DateTimeImmutable $moment): void {
+	private function recordChased(PauseStep $step, array $reason): void {
 		$this->termService->updateTermijnInstance(
 			$step->instanceId,
 			[
 				'chasesSent' => $step->number,
-				'lastChasedAt' => $moment->format('c'),
+				'lastChasedAt' => $step->moment->format('c'),
 			]
 		);
 
