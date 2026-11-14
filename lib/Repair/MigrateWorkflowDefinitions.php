@@ -188,6 +188,18 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return self::OUTCOME_SKIPPED;
 		}
 
+		return $this->migrateType(target: $target, type: $type);
+	}//end migrateCaseType()
+
+	/**
+	 * Give a caseType without a flow a basis template and pin it to it.
+	 *
+	 * @param BackfillTarget   $target The register and schemas.
+	 * @param BackfillCaseType $type   The caseType with its versions.
+	 *
+	 * @return string One of the OUTCOME_* constants.
+	 */
+	private function migrateType(BackfillTarget $target, BackfillCaseType $type): string {
 		$template = $this->buildTemplateFor(target: $target, caseType: $type);
 		if ($template === null) {
 			return self::OUTCOME_NONE;
@@ -204,7 +216,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		}
 
 		return self::OUTCOME_MIGRATED;
-	}//end migrateCaseType()
+	}//end migrateType()
 
 	/**
 	 * Save a new basis template.
