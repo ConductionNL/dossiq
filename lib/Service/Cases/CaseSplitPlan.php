@@ -81,7 +81,8 @@ class CaseSplitPlan {
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function forSelection(string $sourceId, string $newId, array $chosen): array {
-		[$moves, $references, $refused] = $this->partition(plans: $this->itemPlans(sourceId: $sourceId, newId: $newId, chosen: $chosen));
+		$cases = new SplitCases(sourceId: $sourceId, newId: $newId);
+		[$moves, $references, $refused] = $this->partition(plans: $this->itemPlans(cases: $cases, chosen: $chosen));
 
 		return [
 			'moves' => $moves,
@@ -98,17 +99,16 @@ class CaseSplitPlan {
 	/**
 	 * The plan of every chosen item, part by part.
 	 *
-	 * @param string                                          $sourceId The case being split.
-	 * @param string                                          $newId    The case being split off.
-	 * @param array<string, array<int, array<string, mixed>>> $chosen   The items the handler picked, by part.
+	 * @param SplitCases                                      $cases  The case being split and the case being split off.
+	 * @param array<string, array<int, array<string, mixed>>> $chosen The items the handler picked, by part.
 	 *
 	 * @return array<int, array<string, mixed>> The item plans.
 	 */
-	private function itemPlans(string $sourceId, string $newId, array $chosen): array {
+	private function itemPlans(SplitCases $cases, array $chosen): array {
 		$plans = [];
 		foreach (CaseSplitPolicy::PARTS as $part) {
 			foreach (($chosen[$part] ?? []) as $item) {
-				$plans[] = $this->itemPlan(part: $part, item: $item, sourceId: $sourceId, newId: $newId);
+				$plans[] = $this->itemPlan(part: $part, item: $item, cases: $cases);
 			}
 		}
 
@@ -143,10 +143,9 @@ class CaseSplitPlan {
 	/**
 	 * What one chosen item becomes: a move with its reference, a refusal, or nothing.
 	 *
-	 * @param string $part     The part the item was chosen from.
-	 * @param mixed  $item     The chosen item.
-	 * @param string $sourceId The case being split.
-	 * @param string $newId    The case being split off.
+	 * @param string     $part  The part the item was chosen from.
+	 * @param mixed      $item  The chosen item.
+	 * @param SplitCases $cases The case being split and the case being split off.
 	 *
 	 * @return array{
 	 *     refused: array<string, string>|null,
@@ -156,7 +155,7 @@ class CaseSplitPlan {
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
-	private function itemPlan(string $part, mixed $item, string $sourceId, string $newId): array {
+	private function itemPlan(string $part, mixed $item, SplitCases $cases): array {
 		if (is_array($item) === false) {
 			return ['refused' => null, 'move' => null, 'reference' => null];
 		}
@@ -176,24 +175,24 @@ class CaseSplitPlan {
 		// selection that half happened with no word about the rest is
 		// the state nobody can reconstruct afterwards.
 		$owner = trim((string)($item['case'] ?? ''));
-		if ($owner !== '' && $owner !== $sourceId) {
+		if ($owner !== '' && $owner !== $cases->sourceId) {
 			return ['refused' => ['part' => $part, 'id' => $id, 'case' => $owner], 'move' => null, 'reference' => null];
 		}
 
-		return $this->movePlan(part: $part, id: $id, item: $item, newId: $newId);
+		return $this->movePlan(part: $part, item: $item, newId: $cases->newId);
 	}//end itemPlan()
 
 	/**
 	 * The plan that moves an item of this case to the new one.
 	 *
 	 * @param string               $part  The part the item was chosen from.
-	 * @param string               $id    The item id.
-	 * @param array<string, mixed> $item  The chosen item.
+	 * @param array<string, mixed> $item  The chosen item, with its id.
 	 * @param string               $newId The case being split off.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function movePlan(string $part, string $id, array $item, string $newId): array {
+	private function movePlan(string $part, array $item, string $newId): array {
+		$id = trim((string)($item['id'] ?? ''));
 		return [
 			'refused' => null,
 			// The item itself is repointed: after the split the new
