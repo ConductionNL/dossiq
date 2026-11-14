@@ -75,31 +75,74 @@ class ZrcUsageRights {
 			return null;
 		}
 
-		foreach ($zios as $zioObj) {
-			$docUuid = $this->documentUuidOf(zio: $zioObj);
-			if ($docUuid === null) {
-				continue;
-			}
-
-			$docData = $this->objectToArray(row: $this->find(uuid: $docUuid, config: $docConfig));
-			if ($this->usageRightsOf(docData: $docData) === null) {
-				$detail = 'Zaak kan niet afgesloten worden: niet alle informatieobjecten hebben indicatieGebruiksrecht gezet.';
-				return [
-					'detail' => $detail,
-					'code' => 'indicatiegebruiksrecht-unset',
-					'invalidParams' => [
-						[
-							'name' => 'nonFieldErrors',
-							'code' => 'indicatiegebruiksrecht-unset',
-							'reason' => $detail,
-						],
-					],
-				];
-			}
-		}//end foreach
+		if ($this->anyLacksUsageRights(zios: $zios, docConfig: $docConfig) === true) {
+			return $this->unsetRefusal();
+		}
 
 		return null;
 	}//end firstUnsetRefusal()
+
+	/**
+	 * Whether any linked document has no indicatieGebruiksrecht.
+	 *
+	 * @param iterable<mixed>      $zios      The zaak's ZIO rows.
+	 * @param array<string, mixed> $docConfig The document mapping configuration.
+	 *
+	 * @return bool True at the first document without one.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function anyLacksUsageRights(iterable $zios, array $docConfig): bool {
+		foreach ($zios as $zioObj) {
+			if ($this->lacksUsageRights(zio: $zioObj, docConfig: $docConfig) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end anyLacksUsageRights()
+
+	/**
+	 * Whether the document a ZIO links has no indicatieGebruiksrecht.
+	 *
+	 * @param mixed                $zio       The ZIO row.
+	 * @param array<string, mixed> $docConfig The document mapping configuration.
+	 *
+	 * @return bool True when the linked document has none; false when the ZIO links no document.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function lacksUsageRights(mixed $zio, array $docConfig): bool {
+		$docUuid = $this->documentUuidOf(zio: $zio);
+		if ($docUuid === null) {
+			return false;
+		}
+
+		$docData = $this->objectToArray(row: $this->find(uuid: $docUuid, config: $docConfig));
+		return $this->usageRightsOf(docData: $docData) === null;
+	}//end lacksUsageRights()
+
+	/**
+	 * The zrc-007q 400 body.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function unsetRefusal(): array {
+		$detail = 'Zaak kan niet afgesloten worden: niet alle informatieobjecten hebben indicatieGebruiksrecht gezet.';
+		return [
+			'detail' => $detail,
+			'code' => 'indicatiegebruiksrecht-unset',
+			'invalidParams' => [
+				[
+					'name' => 'nonFieldErrors',
+					'code' => 'indicatiegebruiksrecht-unset',
+					'reason' => $detail,
+				],
+			],
+		];
+	}//end unsetRefusal()
 
 	/**
 	 * Set indicatieGebruiksrecht on every document linked to the zaak that has none (zrc-007b).
