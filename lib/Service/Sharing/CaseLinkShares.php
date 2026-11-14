@@ -43,6 +43,8 @@ use Psr\Log\LoggerInterface;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseLinkShares implements CaseLinkSharesInterface {
 
@@ -198,13 +200,12 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function markCollected(string $shareId, int $noteId): bool {
-		$objectService = $this->gateway->objectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
-		if ($objectService === null || empty($register) === true || empty($shareSchema) === true) {
+		$store = $this->shareStore();
+		if ($store === null) {
 			return false;
 		}
 
+		[$objectService, $register, $shareSchema] = $store;
 		try {
 			$share = $this->gateway->toArray(
 				$objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema)
@@ -225,6 +226,22 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 
 		return true;
 	}//end markCollected()
+
+	/**
+	 * The object service, register and share schema, when all three are there.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The store, or null when it is not configured.
+	 */
+	private function shareStore(): array|null {
+		$objectService = $this->gateway->objectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
+		if ($objectService === null || empty($register) === true || empty($shareSchema) === true) {
+			return null;
+		}
+
+		return [$objectService, $register, $shareSchema];
+	}//end shareStore()
 
 	/**
 	 * Write the share record that points at a minted link.
