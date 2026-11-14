@@ -38,6 +38,7 @@ use RuntimeException;
  * The commit hand-off, register slug resolution and what the job answers as.
  *
  * @covers \OCA\Dossiq\Service\Bulk\BulkJobHandoff
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\People\CoordinatorRequirement
  * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
