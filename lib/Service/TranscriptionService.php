@@ -258,6 +258,42 @@ class TranscriptionService implements TranscriptionServiceInterface {
 			return $evidence;
 		}
 
+		$this->saveEvidence(objectService: $objectService, evidence: $evidence, register: $register, schema: $schema);
+
+		return $evidence;
+	}//end persist()
+
+	/**
+	 * Save an evidence record under its own uuid, logging when the save fails.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $evidence      The evidence record.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The field evidence schema.
+	 *
+	 * @return void
+	 */
+	private function saveEvidence(object $objectService, array $evidence, string $register, string $schema): void {
+		$uuid = $this->evidenceUuid(evidence: $evidence);
+
+		try {
+			$objectService->saveObject(object: $evidence, register: $register, schema: $schema, uuid: $uuid);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'TranscriptionService::persist failed: ' . $e->getMessage(),
+				['app' => AppIdentity::APP_ID]
+			);
+		}
+	}//end saveEvidence()
+
+	/**
+	 * The evidence record's uuid, or null when it has none yet.
+	 *
+	 * @param array<string, mixed> $evidence The evidence record.
+	 *
+	 * @return string|null The uuid.
+	 */
+	private function evidenceUuid(array $evidence): ?string {
 		// 🔴 THE UUID TRAVELS, OR EVERY TRANSITION IS A NEW RECORD. saveObject()
 		// creates when it is given no uuid, and this method is called on every
 		// step a memo takes: queued, running, done. Without it one memo became
@@ -269,20 +305,6 @@ class TranscriptionService implements TranscriptionServiceInterface {
 			$uuid = null;
 		}
 
-		try {
-			$objectService->saveObject(
-				object: $evidence,
-				register: $register,
-				schema: $schema,
-				uuid: $uuid,
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'TranscriptionService::persist failed: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID]
-			);
-		}
-
-		return $evidence;
-	}//end persist()
+		return $uuid;
+	}//end evidenceUuid()
 }//end class

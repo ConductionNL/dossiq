@@ -101,12 +101,24 @@ class AdviceController extends Controller {
 		$to = (string)($data['to'] ?? '');
 
 		if ($to === '') {
-			return new JSONResponse(
-				['error' => 'to status is required'],
-				Http::STATUS_BAD_REQUEST,
-			);
+			return new JSONResponse(['error' => 'to status is required'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->transition(id: $id, to: $to, data: $data);
+	}//end transitionStatus()
+
+	/**
+	 * Move an advice request to a status, answering the record or the error.
+	 *
+	 * @param string               $id   The advice UUID
+	 * @param string               $to   The target status.
+	 * @param array<string, mixed> $data The request body.
+	 *
+	 * @return JSONResponse Updated record
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function transition(string $id, string $to, array $data): JSONResponse {
 		try {
 			$advice = $this->adviceService->transitionStatus($id, $to, $data);
 			return new JSONResponse($advice);
@@ -117,12 +129,9 @@ class AdviceController extends Controller {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error('Dossiq: advice transition failed: ' . $e->getMessage());
-			return new JSONResponse(
-				['error' => 'Could not transition advice request'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
+			return new JSONResponse(['error' => 'Could not transition advice request'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
-	}//end transitionStatus()
+	}//end transition()
 
 	/**
 	 * Dispatch a manual reminder notification to the adviseur.

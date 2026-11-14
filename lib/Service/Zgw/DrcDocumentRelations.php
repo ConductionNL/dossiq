@@ -122,17 +122,24 @@ class DrcDocumentRelations {
 		try {
 			$duplicate = $this->relationExists(register: $register, ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
 		} catch (\Throwable $e) {
-			return $this->results->notVerified(
-				rule: 'drc-003',
-				object: 'document ' . $ioUrl . ' on ' . $objectUrl,
-				cause: $e->getMessage()
-			);
+			return $this->results->notVerified(rule: 'drc-003', object: 'document ' . $ioUrl . ' on ' . $objectUrl, cause: $e->getMessage());
 		}
 
 		if ($duplicate === false) {
 			return null;
 		}
 
+		return $this->duplicateRelationError();
+	}//end checkOioUniqueness()
+
+	/**
+	 * The refusal of an informatieobject + object + objectType combination that exists already.
+	 *
+	 * @return array The refusal.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function duplicateRelationError(): array {
 		return $this->results->error(
 			status: 400,
 			detail: 'De combinatie informatieobject + object + objectType bestaat al.',
@@ -144,7 +151,7 @@ class DrcDocumentRelations {
 				),
 			]
 		);
-	}//end checkOioUniqueness()
+	}//end duplicateRelationError()
 
 	/**
 	 * Whether the relation is stored already, as an OIO or as its ZIO or BIO.
