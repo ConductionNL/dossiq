@@ -198,27 +198,12 @@ trait SearchesObjects {
 		string $id,
 	): ?array {
 		try {
-			$object = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema
-			);
+			$object = $objectService->find(id: $id, register: $register, schema: $schema);
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
 			return null;
 		}
 
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return $this->objectToArrayOrNull(value: $object);
 	}//end findObjectAsArray()
 
 	/**

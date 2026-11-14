@@ -114,6 +114,17 @@ class RoleResolverService implements RoleResolverServiceInterface {
 			];
 		}
 
+		return $this->orSetRule(entry: $entry);
+	}//end normaliseRule()
+
+	/**
+	 * The or-set rule a legacy `allowedRoles` array declares, or null.
+	 *
+	 * @param array<string, mixed> $entry The step or transition payload
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function orSetRule(array $entry): ?array {
 		$allowedRoles = $entry['allowedRoles'] ?? null;
 		if (is_array($allowedRoles) === true && $allowedRoles !== []) {
 			return [
@@ -128,7 +139,7 @@ class RoleResolverService implements RoleResolverServiceInterface {
 		}
 
 		return null;
-	}//end normaliseRule()
+	}//end orSetRule()
 
 	/**
 	 * Resolve a routing rule against a case.
