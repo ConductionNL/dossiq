@@ -271,17 +271,7 @@ class EndOfDayService implements EndOfDayServiceInterface {
 			$this->logger->warning('Dossiq: the notes of end-of-day candidate ' . (string)$item['id'] . ' could not be read: ' . $e->getMessage());
 		}
 
-		$latest = null;
-		foreach ((array)$list as $note) {
-			$created = (string)($note['createdAt'] ?? '');
-			if (($note['actorId'] ?? '') !== $userId || $this->isToday(moment: $created, today: $today, zone: $zone) === false) {
-				continue;
-			}
-
-			if ($latest === null || strcmp($created, (string)$latest['createdAt']) > 0) {
-				$latest = $note;
-			}
-		}
+		$latest = $this->latestNoteOfToday(list: (array)$list, userId: $userId, today: $today, zone: $zone);
 
 		if ($latest === null) {
 			return null;
@@ -290,6 +280,47 @@ class EndOfDayService implements EndOfDayServiceInterface {
 		$time = (new DateTimeImmutable((string)$latest['createdAt']))->setTimezone($zone)->format('H:i');
 		return ['note' => (string)($latest['message'] ?? ''), 'recordedAt' => (string)$latest['createdAt'], 'recordedTime' => $time];
 	}//end noteOfToday()
+
+	/**
+	 * The reader's latest note of today among an item's notes, or null.
+	 *
+	 * @param array<int|string, mixed> $list   The item's notes.
+	 * @param string                   $userId The reader.
+	 * @param string                   $today  Today, `Y-m-d` in the reader's zone.
+	 * @param DateTimeZone             $zone   The reader's zone.
+	 *
+	 * @return mixed The latest note, or null.
+	 */
+	private function latestNoteOfToday(array $list, string $userId, string $today, DateTimeZone $zone): mixed {
+		$latest = null;
+		foreach ($list as $note) {
+			$created = (string)($note['createdAt'] ?? '');
+			if ($this->isOtherNote(note: $note, created: $created, userId: $userId, today: $today, zone: $zone) === true) {
+				continue;
+			}
+
+			if ($latest === null || strcmp($created, (string)$latest['createdAt']) > 0) {
+				$latest = $note;
+			}
+		}
+
+		return $latest;
+	}//end latestNoteOfToday()
+
+	/**
+	 * Whether a note was written by someone else than the reader, or not today.
+	 *
+	 * @param mixed        $note    The note.
+	 * @param string       $created When it was created.
+	 * @param string       $userId  The reader.
+	 * @param string       $today   Today, `Y-m-d` in the reader's zone.
+	 * @param DateTimeZone $zone    The reader's zone.
+	 *
+	 * @return bool True when the note is not the reader's of today.
+	 */
+	private function isOtherNote(mixed $note, string $created, string $userId, string $today, DateTimeZone $zone): bool {
+		return (($note['actorId'] ?? '') !== $userId || $this->isToday(moment: $created, today: $today, zone: $zone) === false);
+	}//end isOtherNote()
 
 	/**
 	 * The items the reader did not open today whose term ends by tomorrow, soonest first.
