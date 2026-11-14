@@ -38,7 +38,6 @@ use OCA\Dossiq\Kernel\Contracts\ZtcCrossReferenceEnricherInterface;
  * Builds the cross-reference URL lists of ZTC zaaktypen and besluittypen.
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 
@@ -74,6 +73,13 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	private readonly ZtcRelatedTypeLookup $lookup;
 
 	/**
+	 * Turns the stored uuid lists into URLs.
+	 *
+	 * @var ZtcStoredUuidUrls
+	 */
+	private readonly ZtcStoredUuidUrls $uuidUrls;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ZgwServiceInterface $zgwService Supplies the ObjectService and the ZGW mappings
@@ -81,7 +87,8 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	public function __construct(
 		private readonly ZgwServiceInterface $zgwService,
 	) {
-		$this->lookup = new ZtcRelatedTypeLookup(zgwService: $zgwService);
+		$this->lookup   = new ZtcRelatedTypeLookup(zgwService: $zgwService);
+		$this->uuidUrls = new ZtcStoredUuidUrls();
 	}//end __construct()
 
 	/**
@@ -151,12 +158,12 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 		try {
 			$objectData = $this->lookup->findIn(objectService: $objectService, mapping: $mappingConfig, id: $uuid);
 
-			$iotUrls = $this->uuidListUrls(stored: $objectData['documentTypes'] ?? '', prefix: $baseUrl.'/informatieobjecttypen/');
+			$iotUrls = $this->uuidUrls->urls(stored: $objectData['documentTypes'] ?? '', prefix: $baseUrl.'/informatieobjecttypen/');
 			if ($iotUrls !== null) {
 				$data['informatieobjecttypen'] = $iotUrls;
 			}
 
-			$caseTypeUrls = $this->uuidListUrls(stored: $objectData['caseTypes'] ?? '', prefix: $baseUrl.'/zaaktypen/');
+			$caseTypeUrls = $this->uuidUrls->urls(stored: $objectData['caseTypes'] ?? '', prefix: $baseUrl.'/zaaktypen/');
 			if ($caseTypeUrls !== null) {
 				$data['zaaktypen'] = $caseTypeUrls;
 			}
@@ -167,61 +174,6 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 
 		return $data;
 	}//end enrichBesluittype()
-
-	/**
-	 * Turn a stored uuid list (array or JSON string) into URLs.
-	 *
-	 * @param mixed $stored The stored list
-	 * @param string $prefix The URL each uuid is appended to
-	 *
-	 * @return array<string>|null The URLs, or null when the stored list is empty
-	 */
-	private function uuidListUrls(mixed $stored, string $prefix): ?array {
-		$ids = $this->storedIds(stored: $stored);
-		if (empty($ids) === true) {
-			return null;
-		}
-
-		return $this->prefixedUrls(ids: $ids, prefix: $prefix);
-	}//end uuidListUrls()
-
-	/**
-	 * The uuids a stored list holds: a JSON string decoded, an array as it is, anything else none.
-	 *
-	 * @param mixed $stored The stored list
-	 *
-	 * @return mixed The decoded list
-	 */
-	private function storedIds(mixed $stored): mixed {
-		if (is_string($stored) === true && $stored !== '') {
-			return json_decode($stored, true);
-		}
-
-		if (is_array($stored) === true) {
-			return $stored;
-		}
-
-		return [];
-	}//end storedIds()
-
-	/**
-	 * The URL of every non-empty string uuid in the list.
-	 *
-	 * @param mixed  $ids    The decoded list
-	 * @param string $prefix The URL each uuid is appended to
-	 *
-	 * @return array<string> The URLs
-	 */
-	private function prefixedUrls(mixed $ids, string $prefix): array {
-		$urls = [];
-		foreach ($ids as $id) {
-			if (is_string($id) === true && $id !== '') {
-				$urls[] = $prefix.$id;
-			}
-		}
-
-		return $urls;
-	}//end prefixedUrls()
 
 	/**
 	 * Fill a zaaktype's lists: deelzaaktypen, besluittypen, gerelateerdeZaaktypen,
@@ -408,7 +360,7 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	private function besluittypenOf(array $objectData, string $baseUrl): array {
 		$decTypes = $objectData['decisionTypes'] ?? [];
 		if (is_array($decTypes) === true && empty($decTypes) === false) {
-			return ['besluittypen' => $this->uuidListUrls(stored: $decTypes, prefix: $baseUrl.'/besluittypen/')];
+			return ['besluittypen' => $this->uuidUrls->urls(stored: $decTypes, prefix: $baseUrl.'/besluittypen/')];
 		}
 
 		return [];
