@@ -23,8 +23,14 @@ const dialog = fs.readFileSync(path.join(ROOT, 'src/modals/DocumentMetadataDialo
 
 describe('the decisions tab of the case page', () => {
 	it('is the library integration widget on the decisions leaf, naming decidiq when it is absent', () => {
-		const tab = panels.caseWidget('case-decisions-panel')
+		// The tab is a group since the advice a decision table gave joined it
+		// (enforcement-intervention-from-the-case 3.3); decidiq's leaf is its
+		// first section, unchanged.
+		const group = panels.caseWidget('case-decisions-panel')
+		expect(group.type).toBe('sections')
+		const tab = group.content.sections[0].widget
 		expect(tab).toMatchObject({
+			id: 'case-decidiq-decisions',
 			type: 'integration',
 			integrationId: 'decidesk-decisions',
 			appName: 'Decidiq',

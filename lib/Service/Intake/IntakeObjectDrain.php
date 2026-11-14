@@ -77,16 +77,46 @@ class IntakeObjectDrain implements IntakeObjectDrainInterface {
 	 */
 	public function caseFor(array $source, array $plan): array {
 		$kind = trim((string)($source[(string)($plan['caseTypeField'] ?? '')] ?? ''));
+		$caseType = $this->caseTypeOf(plan: $plan, kind: $kind);
+		if ($caseType === '') {
+			return ['findings' => [['property' => 'caseType', 'code' => 'case-type-unknown', 'message' => 'No case type is configured for "' . $kind . '".']]];
+		}
+
+		$case = $this->mappedFields(source: $source, plan: $plan);
+		$case['title'] = $this->titleOf(source: $source, plan: $plan, kind: $kind);
+		$case['caseType'] = $caseType;
+		$case['externalReference'] = $this->idOf(source: $source);
+
+		return ['case' => $case];
+	}//end caseFor()
+
+	/**
+	 * The case type configured for a kind of source.
+	 *
+	 * @param array<string, mixed> $plan The plan.
+	 * @param string               $kind The source's kind.
+	 *
+	 * @return string The case type, or the empty string when none is configured.
+	 */
+	private function caseTypeOf(array $plan, string $kind): string {
 		$path = (string)(($plan['caseTypes'] ?? [])[$kind] ?? '');
 		$caseType = '';
 		if ($path !== '') {
 			$caseType = $this->caseTypes->caseTypeFor(path: $path);
 		}
 
-		if ($caseType === '') {
-			return ['findings' => [['property' => 'caseType', 'code' => 'case-type-unknown', 'message' => 'No case type is configured for "' . $kind . '".']]];
-		}
+		return $caseType;
+	}//end caseTypeOf()
 
+	/**
+	 * The plan's fixed values, with every non-empty mapped source field added.
+	 *
+	 * @param array<string, mixed> $source The source object.
+	 * @param array<string, mixed> $plan   The plan.
+	 *
+	 * @return array<string, mixed> The case so far.
+	 */
+	private function mappedFields(array $source, array $plan): array {
 		$case = (array)($plan['fixed'] ?? []);
 		foreach ((array)($plan['fields'] ?? []) as $from => $to) {
 			$value = ($source[(string)$from] ?? null);
@@ -95,17 +125,26 @@ class IntakeObjectDrain implements IntakeObjectDrainInterface {
 			}
 		}
 
+		return $case;
+	}//end mappedFields()
+
+	/**
+	 * The case title: the source's title field, else the kind's configured title, else the kind.
+	 *
+	 * @param array<string, mixed> $source The source object.
+	 * @param array<string, mixed> $plan   The plan.
+	 * @param string               $kind   The source's kind.
+	 *
+	 * @return string The title.
+	 */
+	private function titleOf(array $source, array $plan, string $kind): string {
 		$title = trim((string)($source[(string)($plan['titleField'] ?? '')] ?? ''));
 		if ($title === '') {
 			$title = (string)(($plan['titles'] ?? [])[$kind] ?? $kind);
 		}
 
-		$case['title'] = $title;
-		$case['caseType'] = $caseType;
-		$case['externalReference'] = $this->idOf(source: $source);
-
-		return ['case' => $case];
-	}//end caseFor()
+		return $title;
+	}//end titleOf()
 
 	/**
 	 * Drain every source object.

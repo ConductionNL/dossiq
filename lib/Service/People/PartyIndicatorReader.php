@@ -151,12 +151,23 @@ class PartyIndicatorReader implements PartyIndicatorReaderInterface {
 			return null;
 		}
 
+		return $this->labelOf(label: $label);
+	}//end sendRefusalFor()
+
+	/**
+	 * The refusal label OpenRegister gave, null when it gave none.
+	 *
+	 * @param mixed $label What the guard answered.
+	 *
+	 * @return string|null
+	 */
+	private function labelOf(mixed $label): ?string {
 		if (is_string($label) === false || trim($label) === '') {
 			return null;
 		}
 
 		return $label;
-	}//end sendRefusalFor()
+	}//end labelOf()
 
 	/**
 	 * The party uuid a person link names, '' when it names none.

@@ -330,17 +330,12 @@ class BelplanRoutingService implements BelplanRoutingServiceInterface {
 	 * @return array<int, array<string, mixed>> The belplan records.
 	 */
 	private function loadBelplannen(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$source = $this->belplanSource();
+		if ($source === null) {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('belplan_schema');
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
+		[$objectService, $register, $schema] = $source;
 		try {
 			$results = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 200]);
 		} catch (Throwable $e) {
@@ -351,13 +346,44 @@ class BelplanRoutingService implements BelplanRoutingServiceInterface {
 			return [];
 		}
 
+		return $this->belplanRecords(results: $results);
+	}//end loadBelplannen()
+
+	/**
+	 * The object service, register and belplan schema, when all are configured.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null Null when one is missing.
+	 */
+	private function belplanSource(): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('belplan_schema');
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end belplanSource()
+
+	/**
+	 * Every belplan search result as a plain array.
+	 *
+	 * @param mixed $results The search results.
+	 *
+	 * @return array<int, array<string, mixed>> The belplan records.
+	 */
+	private function belplanRecords(mixed $results): array {
 		$records = [];
 		foreach ((array)$results as $result) {
 			$records[] = $this->toArray(result: $result);
 		}
 
 		return $records;
-	}//end loadBelplannen()
+	}//end belplanRecords()
 
 	/**
 	 * Normalise an ObjectService result into a plain array.

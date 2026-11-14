@@ -471,27 +471,53 @@ class RequesterNoticeSender {
 		}
 
 		try {
-			$dispatch = $this->email->send(
-				template: $notice['template'],
-				instanceId: $notice['instanceId'],
-				recipient: $address,
-				caseRef: (string)($case['id'] ?? ''),
-				subject: $notice['subject'],
-				body: $notice['body'],
-				dedupeKey: $notice['dedupeKey'],
-				case: $case,
-			);
+			$dispatch = $this->dispatchEmail(caseRow: $case, notice: $notice, address: $address);
 		} catch (NoticeNotSentException $e) {
 			return $this->refused(code: $e->getReasonCode(), reason: $e->getMessage());
 		}
 
+		return $this->emailAnswer(dispatch: $dispatch);
+	}//end emailTo()
+
+	/**
+	 * Send the notice through TermNoticeSender to one address.
+	 *
+	 * @param array<string, mixed> $caseRow The case row.
+	 * @param array<string, mixed> $notice  The notice.
+	 * @param string               $address The e-mail address.
+	 *
+	 * @return array<string, mixed> The dispatch answer.
+	 *
+	 * @throws NoticeNotSentException When the notice is not sent.
+	 */
+	private function dispatchEmail(array $caseRow, array $notice, string $address): array {
+		return $this->email->send(
+			template: $notice['template'],
+			instanceId: $notice['instanceId'],
+			recipient: $address,
+			caseRef: (string)($caseRow['id'] ?? ''),
+			subject: $notice['subject'],
+			body: $notice['body'],
+			dedupeKey: $notice['dedupeKey'],
+			case: $caseRow,
+		);
+	}//end dispatchEmail()
+
+	/**
+	 * The sent answer for an e-mail dispatch.
+	 *
+	 * @param array<string, mixed> $dispatch The dispatch answer.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function emailAnswer(array $dispatch): array {
 		return [
 			'sent' => true,
 			'messageId' => (string)($dispatch['messageId'] ?? ''),
 			'sentAt' => (string)($dispatch['sentOn'] ?? (new DateTimeImmutable())->format('c')),
 			'duplicate' => (($dispatch['duplicate'] ?? false) === true),
 		];
-	}//end emailTo()
+	}//end emailAnswer()
 
 	/**
 	 * The e-mail address: the caller's, the Woo requester's, a contact's, the mail intake sender's.

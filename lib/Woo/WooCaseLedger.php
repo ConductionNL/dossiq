@@ -173,25 +173,65 @@ class WooCaseLedger {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	public function resolveWooDecision(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$ids = [];
-		if ($objectService !== null) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue('decision_schema'),
-				filters: ['case' => $caseId, '_limit' => 50],
-			);
-			foreach ($rows as $row) {
-				if ((string)($row['case'] ?? '') !== $caseId || empty($row['wooSummary']) === true) {
-					continue;
-				}
-
-				$ids[] = (string)($row['@self']['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
-			}
-		}
+		$ids = $this->wooDecisionIds(caseId: $caseId);
 
 		$ids = array_values(array_filter(array_unique($ids)));
+
+		return $this->wooDecisionAnswer(ids: $ids);
+	}//end resolveWooDecision()
+
+	/**
+	 * The ids of the decisions on the case that carry a `wooSummary`.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<int, string> The ids, as read; empty when OpenRegister is unavailable.
+	 */
+	private function wooDecisionIds(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		$rows = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $this->settingsService->getConfigValue('decision_schema'),
+			filters: ['case' => $caseId, '_limit' => 50],
+		);
+
+		return $this->wooSummaryIds(rows: $rows, caseId: $caseId);
+	}//end wooDecisionIds()
+
+	/**
+	 * The ids of the rows that belong to the case and carry a `wooSummary`.
+	 *
+	 * @param array<int, array<string, mixed>> $rows   The decision rows.
+	 * @param string                           $caseId The case UUID.
+	 *
+	 * @return array<int, string>
+	 */
+	private function wooSummaryIds(array $rows, string $caseId): array {
+		$ids = [];
+		foreach ($rows as $row) {
+			if ((string)($row['case'] ?? '') !== $caseId || empty($row['wooSummary']) === true) {
+				continue;
+			}
+
+			$ids[] = (string)($row['@self']['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
+		}
+
+		return $ids;
+	}//end wooSummaryIds()
+
+	/**
+	 * The one decision id, or the refusal for none or several.
+	 *
+	 * @param array<int, string> $ids The distinct, non-empty decision ids.
+	 *
+	 * @return array{decisionId: string, refusal: array<string, mixed>}
+	 */
+	private function wooDecisionAnswer(array $ids): array {
 		if (count($ids) === 1) {
 			return ['decisionId' => $ids[0], 'refusal' => []];
 		}
@@ -201,7 +241,7 @@ class WooCaseLedger {
 		}
 
 		return ['decisionId' => '', 'refusal' => ['available' => false, 'reason' => 'several_woo_decisions', 'decisionIds' => $ids]];
-	}//end resolveWooDecision()
+	}//end wooDecisionAnswer()
 
 	/**
 	 * Mirror the publication state onto the case (design D-2), through the PATCH seam.

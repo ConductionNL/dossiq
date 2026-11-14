@@ -320,14 +320,15 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			return $this->tallyOutcomes(outcomes: []);
 		}
 
-		$objects = $this->listSurface(objectService: $objectService, output: $output, schemaSlug: $schemaSlug);
+		$surface = new SurfaceLink(objectService: $objectService, output: $output, schemaSlug: $schemaSlug, raise: $raise);
+		$objects = $this->listSurface(surface: $surface);
 		if ($objects === null) {
 			return $this->tallyOutcomes(outcomes: []);
 		}
 
 		$outcomes = [];
 		foreach ($objects as $obj) {
-			$outcomes[] = $this->linkObject(objectService: $objectService, output: $output, schemaSlug: $schemaSlug, raise: $raise, obj: $obj);
+			$outcomes[] = $this->linkObject(surface: $surface, obj: $obj);
 		}
 
 		return $this->tallyOutcomes(outcomes: $outcomes);
@@ -382,13 +383,12 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	/**
 	 * List the objects of one surface schema.
 	 *
-	 * @param object  $objectService The OpenRegister object service.
-	 * @param IOutput $output        The migration output interface.
-	 * @param string  $schemaSlug    The surface schema's slug in dossiq's register.
+	 * @param SurfaceLink $surface The object service, the output and the surface schema's slug.
 	 *
 	 * @return array<int, array<string, mixed>>|null The rows, or null when listing failed.
 	 */
-	private function listSurface(object $objectService, IOutput $output, string $schemaSlug): ?array {
+	private function listSurface(SurfaceLink $surface): ?array {
+		$schemaSlug = $surface->schemaSlug;
 		try {
 			// ObjectService::findAll() takes a single $config array — the
 			// previous named-argument call (register:/schema:/limit:) threw
@@ -397,13 +397,13 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			// the associative arrays this loop expects. BOTH identifiers are
 			// slugs: see SURFACE_SCHEMA_SLUGS for what mixing them cost.
 			$objects = $this->searchObjectsAsArrays(
-				objectService: $objectService,
+				objectService: $surface->objectService,
 				register: AppIdentity::REGISTER_SLUG,
 				schema: $schemaSlug,
 				filters: ['_limit' => 500],
 			);
 		} catch (Throwable $e) {
-			$output->warning('Could not list objects for schema ' . $schemaSlug . ': ' . $e->getMessage());
+			$surface->output->warning('Could not list objects for schema ' . $schemaSlug . ': ' . $e->getMessage());
 			$this->logger->warning(
 				'LinkInFlightRemainingDecisionsRepair: list failed',
 				['schema' => $schemaSlug, 'error' => $e->getMessage()]
@@ -417,22 +417,15 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	/**
 	 * Link a single in-flight object forward to a decidesk Decision.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param IOutput $output The migration output interface.
-	 * @param string $schemaSlug The surface schema's slug in dossiq's register.
-	 * @param callable $raise Callback raising the decidesk Decision.
+	 * @param SurfaceLink $surface The object service, the output, the schema slug and the raise callback.
 	 * @param array<string, mixed> $obj The object row to link.
 	 *
 	 * @return string The counter to increment: 'linked', 'skipped', 'errors',
 	 *                or '' when the row is not countable.
 	 */
-	private function linkObject(
-		object $objectService,
-		IOutput $output,
-		string $schemaSlug,
-		callable $raise,
-		array $obj,
-	): string {
+	private function linkObject(SurfaceLink $surface, array $obj): string {
+		$output = $surface->output;
+		$schemaSlug = $surface->schemaSlug;
 		$objUuid = (string)($obj['uuid'] ?? ($obj['id'] ?? ''));
 		$skip = $this->skipOutcomeOf(obj: $obj);
 		if ($skip !== null) {
@@ -440,12 +433,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 		}
 
 		try {
-			$newRef = $this->raiseAndPersist(
-				objectService: $objectService,
-				schemaSlug: $schemaSlug,
-				raise: $raise,
-				obj: $obj,
-			);
+			$newRef = $this->raiseAndPersist(surface: $surface, obj: $obj);
 			$output->info('Linked ' . $schemaSlug . ' ' . $objUuid . ' → decidesk Decision ' . $newRef);
 			return 'linked';
 		} catch (RuntimeException $e) {
@@ -488,25 +476,24 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	/**
 	 * Raise the decidesk Decision for an object and persist its reference.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $schemaSlug    The surface schema's slug in dossiq's register.
-	 * @param callable             $raise         Callback raising the decidesk Decision.
-	 * @param array<string, mixed> $obj           The object row to link.
+	 * @param SurfaceLink          $surface The object service, the schema slug and the raise callback.
+	 * @param array<string, mixed> $obj     The object row to link.
 	 *
 	 * @return string The new decision reference.
 	 *
 	 * @throws RuntimeException When the decidesk leaf is unavailable.
 	 */
-	private function raiseAndPersist(object $objectService, string $schemaSlug, callable $raise, array $obj): string {
+	private function raiseAndPersist(SurfaceLink $surface, array $obj): string {
+		$schemaSlug = $surface->schemaSlug;
 		$objUuid = (string)($obj['uuid'] ?? ($obj['id'] ?? ''));
-		$newRef = $raise($obj);
+		$newRef = ($surface->raise)($obj);
 
 		// Persist the decisionRef so the outcome can complete in
 		// decidesk. Merge the existing object — no field is dropped.
 		// A loaded object carries a JSON-encoded property DECODED while
 		// the schema still declares it a string, so a bare array_merge
 		// writes an array into it and OpenRegister refuses the save.
-		$objectService->saveObject(
+		$surface->objectService->saveObject(
 			object: $this->jsonProperties->mergeForWrite(
 				stored: $obj,
 				updates: ['decisionRef' => $newRef],

@@ -84,6 +84,13 @@ class CaseTransferConsentGate {
 	public const CONSENT_UNCHECKED = 'consent-unchecked';
 
 	/**
+	 * The case type flag that makes every share with an outside party need a consent naming it.
+	 *
+	 * @var string
+	 */
+	public const SHARING_FLAG = 'requiresConsentForSharing';
+
+	/**
 	 * How many consents one case read takes at most.
 	 *
 	 * @var int
@@ -313,6 +320,53 @@ class CaseTransferConsentGate {
 	}//end scopeOf()
 
 	/**
+	 * Whether the case may be shared with this outside party.
+	 *
+	 * Only a case whose case type sets `requiresConsentForSharing` asks for a
+	 * consent; it then needs one that names the party and covers today, read
+	 * exactly as a hand-off reads it. A case type that cannot be read refuses:
+	 * a share that cannot be checked does not leave.
+	 *
+	 * @param string $caseId The case.
+	 * @param string $party  Who it would be shared with.
+	 *
+	 * @return array{
+	 *     allowed: bool,
+	 *     rule: string,
+	 *     sentence: string,
+	 *     consent: array<string, mixed>|null,
+	 *     scope: array<int, string>,
+	 *     until: string,
+	 *     crossesOrganisation: bool
+	 * } The verdict, worded for a share.
+	 *
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-consent-is-recorded-and-revoked-on-the-case-req-sdc-consent-01
+	 */
+	public function assessSharing(string $caseId, string $party): array {
+		try {
+			$required = $this->caseTypeFlag(caseId: trim($caseId), flag: self::SHARING_FLAG);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq consent: the case type could not be read for the sharing rule',
+				['caseId' => $caseId, 'exception' => $e->getMessage()],
+			);
+
+			return $this->verdict(outcome: $this->refusals->notShared(refusal: $this->refusals->unchecked()), crosses: true);
+		}
+
+		if ($required === false) {
+			return $this->verdict(outcome: $this->granted(consent: null), crosses: true);
+		}
+
+		$verdict = $this->assess(caseId: $caseId, sourceOrganisation: '', receivingOrg: $party);
+		if ($verdict['allowed'] === true) {
+			return $verdict;
+		}
+
+		return array_replace($verdict, ['sentence' => $this->refusals->notShared(refusal: $verdict)['sentence']]);
+	}//end assessSharing()
+
+	/**
 	 * Whether this case's type demands consent for a move inside the organisation.
 	 *
 	 * Declared on the case type rather than decided here, under ADR-031: an
@@ -344,6 +398,22 @@ class CaseTransferConsentGate {
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	private function readInsideRule(string $caseId): bool {
+		return $this->caseTypeFlag(caseId: $caseId, flag: 'consentRequiredInsideOrganisation');
+	}//end readInsideRule()
+
+	/**
+	 * One boolean flag of the case's case type.
+	 *
+	 * @param string $caseId The case.
+	 * @param string $flag   The case type property.
+	 *
+	 * @return bool Whether the case type sets it to true.
+	 *
+	 * @throws RuntimeException When the case or its case type cannot be read.
+	 *
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/tasks.md
+	 */
+	private function caseTypeFlag(string $caseId, string $flag): bool {
 		if ($caseId === '') {
 			throw new RuntimeException('No case id');
 		}
@@ -356,8 +426,8 @@ class CaseTransferConsentGate {
 			throw new RuntimeException('Case has no case type');
 		}
 
-		return $this->caseTypeInsideRule(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
-	}//end readInsideRule()
+		return $this->caseTypeRule(objectService: $objectService, register: $register, caseTypeId: $caseTypeId, flag: $flag);
+	}//end caseTypeFlag()
 
 	/**
 	 * Read the case.
@@ -387,19 +457,20 @@ class CaseTransferConsentGate {
 	}//end readCase()
 
 	/**
-	 * Read the case type and answer its internal-move rule.
+	 * Read the case type and answer one of its boolean rules.
 	 *
 	 * @param object $objectService The OpenRegister object service.
 	 * @param string $register      The dossier register.
 	 * @param string $caseTypeId    The case type id.
+	 * @param string $flag          The case type property.
 	 *
-	 * @return bool Whether the case type requires consent inside the organisation.
+	 * @return bool Whether the case type sets the flag to true.
 	 *
 	 * @throws RuntimeException When the case type is not found.
 	 *
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
-	private function caseTypeInsideRule(object $objectService, string $register, string $caseTypeId): bool {
+	private function caseTypeRule(object $objectService, string $register, string $caseTypeId, string $flag): bool {
 		$caseType = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
@@ -410,8 +481,8 @@ class CaseTransferConsentGate {
 			throw new RuntimeException('Case type not found');
 		}
 
-		return (($caseType['consentRequiredInsideOrganisation'] ?? false) === true);
-	}//end caseTypeInsideRule()
+		return (($caseType[$flag] ?? false) === true);
+	}//end caseTypeRule()
 
 	/**
 	 * The consents recorded for a case that name this receiver.

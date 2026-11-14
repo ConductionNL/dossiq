@@ -130,9 +130,11 @@ class OptOutGate implements OptOutGateInterface {
 			return $this->decision(send: true, code: self::CODE_CHECK_OFF, reason: '');
 		}
 
+		$question = new OptOutQuestion(recipient: $recipient, category: $category, caseRef: $caseRef);
+
 		$eventClass = FleetAppId::resolveClass(canonical: 'integriq', relative: $this->eventRelative);
 		if ($eventClass === null) {
-			return $this->unavailable(category: $category, caseRef: $caseRef, why: 'integriq or its decision event is not installed');
+			return $this->unavailable(question: $question, why: 'integriq or its decision event is not installed');
 		}
 
 		try {
@@ -144,38 +146,37 @@ class OptOutGate implements OptOutGateInterface {
 				bin2hex(random_bytes(8)),
 			);
 			if (($event instanceof Event) === false) {
-				return $this->unavailable(category: $category, caseRef: $caseRef, why: 'the decision event is not an event');
+				return $this->unavailable(question: $question, why: 'the decision event is not an event');
 			}
 
 			$this->dispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
-			return $this->unavailable(category: $category, caseRef: $caseRef, why: 'the question failed: ' . $e->getMessage());
+			return $this->unavailable(question: $question, why: 'the question failed: ' . $e->getMessage());
 		}
 
-		return $this->read(event: $event, recipient: $recipient, category: $category, caseRef: $caseRef);
+		return $this->read(event: $event, question: $question);
 	}//end ask()
 
 	/**
 	 * Read integriq's answer for one recipient out of the event.
 	 *
-	 * @param Event  $event     The answered event.
-	 * @param string $recipient The address as given.
-	 * @param string $category  The category.
-	 * @param string $caseRef   The case.
+	 * @param Event          $event    The answered event.
+	 * @param OptOutQuestion $question The address as given, the category and the case.
 	 *
 	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
 	 */
-	private function read(Event $event, string $recipient, string $category, string $caseRef): array {
+	private function read(Event $event, OptOutQuestion $question): array {
+		$category = $question->category;
 		$answer = null;
 		if (method_exists($event, 'isHandled') === true
 			&& $event->isHandled() === true
 			&& method_exists($event, 'getDecision') === true
 		) {
-			$answer = $event->getDecision($recipient);
+			$answer = $event->getDecision($question->recipient);
 		}
 
 		if (is_array($answer) === false || array_key_exists('send', $answer) === false) {
-			return $this->unavailable(category: $category, caseRef: $caseRef, why: 'integriq did not answer for this recipient');
+			return $this->unavailable(question: $question, why: 'integriq did not answer for this recipient');
 		}
 
 		$unsubscribe = null;
@@ -194,14 +195,13 @@ class OptOutGate implements OptOutGateInterface {
 	/**
 	 * The fail-closed answer: exempt goes out without a link, the rest is refused.
 	 *
-	 * @param string $category The category.
-	 * @param string $caseRef  The case, for the log.
-	 * @param string $why      What went wrong, for the log.
+	 * @param OptOutQuestion $question The category, and the case for the log.
+	 * @param string         $why      What went wrong, for the log.
 	 *
 	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
 	 */
-	private function unavailable(string $category, string $caseRef, string $why): array {
-		$exempt  = self::isExempt(category: $category);
+	private function unavailable(OptOutQuestion $question, string $why): array {
+		$exempt  = self::isExempt(category: $question->category);
 		$outcome = 'not sent';
 		if ($exempt === true) {
 			$outcome = 'sent, the category is exempt';
@@ -211,8 +211,8 @@ class OptOutGate implements OptOutGateInterface {
 			'Dossiq: integriq could not say whether this person may be messaged; ' . $outcome,
 			[
 				'app' => AppIdentity::APP_ID,
-				'caseRef' => $caseRef,
-				'category' => $category,
+				'caseRef' => $question->caseRef,
+				'category' => $question->category,
 				'why' => $why,
 			]
 		);

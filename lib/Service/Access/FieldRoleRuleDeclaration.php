@@ -336,28 +336,59 @@ class FieldRoleRuleDeclaration {
 
 		$rules = [];
 		foreach ($declared as $rule) {
-			if (is_array($rule) === false) {
-				continue;
+			$normalised = $this->normalisedRule(rule: $rule);
+			if ($normalised !== null) {
+				$rules[] = $normalised;
 			}
-
-			$kind = (string)($rule['rule'] ?? '');
-			$field = trim((string)($rule['field'] ?? ''));
-			if (in_array($kind, self::RULES, true) === false || $field === '') {
-				continue;
-			}
-
-			$rules[] = [
-				'field' => $field,
-				'rule' => $kind,
-				'reason' => trim((string)($rule['reason'] ?? '')),
-				'groups' => ($rule['groups'] ?? null),
-				'heldBy' => ($rule['heldBy'] ?? null),
-				'statuses' => $this->names(value: ($rule['statuses'] ?? null)),
-			];
 		}
 
 		return $rules;
 	}//end rulesOf()
+
+	/**
+	 * One declared rule normalised, or null when it is dropped.
+	 *
+	 * @param mixed $rule One declared rule.
+	 *
+	 * @return array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed, statuses: array<int, string>}|null The rule, or null.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function normalisedRule(mixed $rule): ?array {
+		if (is_array($rule) === false) {
+			return null;
+		}
+
+		$kind = (string)($rule['rule'] ?? '');
+		$field = trim((string)($rule['field'] ?? ''));
+		if (in_array($kind, self::RULES, true) === false || $field === '') {
+			return null;
+		}
+
+		return $this->ruleEntry(rule: $rule, kind: $kind, field: $field);
+	}//end normalisedRule()
+
+	/**
+	 * The normalised form of a known rule naming a field.
+	 *
+	 * @param array<string, mixed> $rule  One declared rule.
+	 * @param string               $kind  The rule's kind.
+	 * @param string               $field The field it names.
+	 *
+	 * @return array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed, statuses: array<int, string>} The rule.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function ruleEntry(array $rule, string $kind, string $field): array {
+		return [
+			'field' => $field,
+			'rule' => $kind,
+			'reason' => trim((string)($rule['reason'] ?? '')),
+			'groups' => ($rule['groups'] ?? null),
+			'heldBy' => ($rule['heldBy'] ?? null),
+			'statuses' => $this->names(value: ($rule['statuses'] ?? null)),
+		];
+	}//end ruleEntry()
 
 	/**
 	 * The groups one rule takes the field away from.

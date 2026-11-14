@@ -94,7 +94,9 @@ class PortalCaseMessages {
 		try {
 			return (array)$this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				operation: fn (): array => $this->entries(objectService: $objectService, register: $register, caseId: $caseId)
+				operation: fn (): array => $this->entries(
+					scope: new PortalCaseScope(objectService: $objectService, register: $register, caseId: $caseId)
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the portal messages of a case could not be read', ['reason' => $e->getMessage()]);
@@ -128,26 +130,25 @@ class PortalCaseMessages {
 	/**
 	 * The entries, read inside the system context.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register.
-	 * @param string $caseId        The case.
+	 * @param PortalCaseScope $scope The object service, register and case.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function entries(object $objectService, string $register, string $caseId): array {
+	private function entries(PortalCaseScope $scope): array {
+		$caseId = $scope->caseId;
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 		$messageSchema = $this->settingsService->getConfigValue('portaal_bericht_schema');
 		if ($caseSchema === '' || $messageSchema === '') {
 			return [];
 		}
 
-		$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
+		$case = $this->findObjectAsArray(objectService: $scope->objectService, register: $scope->register, schema: $caseSchema, id: $caseId);
 		$resident = (string)($case['portalSubject'] ?? '');
 		if ($resident === '') {
 			return [];
 		}
 
-		$messages = $this->messagesOf(objectService: $objectService, register: $register, messageSchema: $messageSchema, caseId: $caseId);
+		$messages = $this->messagesOf(scope: $scope, messageSchema: $messageSchema);
 
 		return $this->residentEntries(messages: $messages, caseId: $caseId, resident: $resident);
 	}//end entries()
@@ -155,19 +156,17 @@ class PortalCaseMessages {
 	/**
 	 * The portaalBerichten stored against the case, unscoped.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register.
-	 * @param string $messageSchema The portaalBericht schema.
-	 * @param string $caseId The case.
+	 * @param PortalCaseScope $scope         The object service, register and case.
+	 * @param string          $messageSchema The portaalBericht schema.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function messagesOf(object $objectService, string $register, string $messageSchema, string $caseId): array {
+	private function messagesOf(PortalCaseScope $scope, string $messageSchema): array {
 		return $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
+			objectService: $scope->objectService,
+			register: $scope->register,
 			schema: $messageSchema,
-			filters: ['caseId' => $caseId, '_limit' => self::LIMIT]
+			filters: ['caseId' => $scope->caseId, '_limit' => self::LIMIT]
 		);
 	}//end messagesOf()
 

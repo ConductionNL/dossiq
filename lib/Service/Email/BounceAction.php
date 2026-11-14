@@ -107,10 +107,11 @@ class BounceAction implements BounceActionInterface {
 
 		$recorded = self::recordedResults(results: $results);
 		$verdict = FilterVerdict::forward(filterName: self::NAME, reason: $reason, forwardTo: $recipient);
-		$noted = $this->recordedReason(recipient: $recipient, reason: $reason, actorId: $actorId, sent: $sent);
+		$bounce = new Bounce(recipient: $recipient, reason: $reason, actorId: $actorId);
+		$noted = $this->recordedReason(bounce: $bounce, sent: $sent);
 		$entryId = $this->log->record(message: $message, verdict: $verdict, results: $recorded, outcome: IntakeLog::OUTCOME_FORWARDED, reason: $noted);
 
-		$this->amendForwarded(entryId: $entryId, recipient: $recipient, actorId: $actorId, reason: $reason);
+		$this->amendForwarded(entryId: $entryId, bounce: $bounce);
 
 		return ['sent' => $sent, 'entryId' => $entryId];
 	}//end bounce()
@@ -159,23 +160,21 @@ class BounceAction implements BounceActionInterface {
 	/**
 	 * Write where a bounce went, by whom and why onto its log entry, when there is one.
 	 *
-	 * @param string $entryId   The log entry, or ''.
-	 * @param string $recipient The address it went to.
-	 * @param string $actorId   Who bounced it.
-	 * @param string $reason    The handler's reason.
+	 * @param string $entryId The log entry, or ''.
+	 * @param Bounce $bounce  The address it went to, who bounced it and the handler's reason.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function amendForwarded(string $entryId, string $recipient, string $actorId, string $reason): void {
+	private function amendForwarded(string $entryId, Bounce $bounce): void {
 		if ($entryId !== '') {
 			$this->log->amend(
 				entryId: $entryId,
 				changes: [
-					'forwardedTo' => $recipient,
-					'forwardedBy' => $actorId,
-					'forwardedReason' => $reason,
+					'forwardedTo' => $bounce->recipient,
+					'forwardedBy' => $bounce->actorId,
+					'forwardedReason' => $bounce->reason,
 				]
 			);
 		}
@@ -208,24 +207,23 @@ class BounceAction implements BounceActionInterface {
 			return false;
 		}
 
-		return $this->send(message: $message, recipient: $recipient, fromAddress: $fromAddress, fromName: $fromName);
+		return $this->send(message: $message, recipient: $recipient, sender: new BounceSender(fromAddress: $fromAddress, fromName: $fromName));
 	}//end forward()
 
 	/**
 	 * Build the outbound copy and hand it to the mailer.
 	 *
-	 * @param InboundMessage $message     The message.
-	 * @param string         $recipient   The address it goes to.
-	 * @param string         $fromAddress The configured from-address.
-	 * @param string         $fromName    The configured from-name.
+	 * @param InboundMessage $message   The message.
+	 * @param string         $recipient The address it goes to.
+	 * @param BounceSender   $sender    The configured from-address and from-name.
 	 *
 	 * @return boolean True when the mailer accepted it.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function send(InboundMessage $message, string $recipient, string $fromAddress, string $fromName): bool {
+	private function send(InboundMessage $message, string $recipient, BounceSender $sender): bool {
 		try {
-			$outbound = $this->outboundCopy(message: $message, recipient: $recipient, fromAddress: $fromAddress, fromName: $fromName);
+			$outbound = $this->outboundCopy(message: $message, recipient: $recipient, sender: $sender);
 			$this->mailer->send($outbound);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -241,18 +239,17 @@ class BounceAction implements BounceActionInterface {
 	/**
 	 * The outbound copy: the covering note, with the original attached when its source was read.
 	 *
-	 * @param InboundMessage $message     The message.
-	 * @param string         $recipient   The address it goes to.
-	 * @param string         $fromAddress The configured from-address.
-	 * @param string         $fromName    The configured from-name.
+	 * @param InboundMessage $message   The message.
+	 * @param string         $recipient The address it goes to.
+	 * @param BounceSender   $sender    The configured from-address and from-name.
 	 *
 	 * @return IMessage The message to send.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function outboundCopy(InboundMessage $message, string $recipient, string $fromAddress, string $fromName): IMessage {
+	private function outboundCopy(InboundMessage $message, string $recipient, BounceSender $sender): IMessage {
 		$outbound = $this->mailer->createMessage();
-		$outbound->setFrom([$fromAddress => $fromName]);
+		$outbound->setFrom([$sender->fromAddress => $sender->fromName]);
 		$outbound->setTo([$recipient]);
 		$outbound->setSubject('Doorgezonden: ' . mb_substr($message->subject, 0, 200));
 		$outbound->setPlainBody($this->coveringNote(message: $message));
@@ -296,16 +293,17 @@ class BounceAction implements BounceActionInterface {
 	/**
 	 * What the log says about this bounce.
 	 *
-	 * @param string  $recipient The address it went to.
-	 * @param string  $reason    The handler's reason.
-	 * @param string  $actorId   Who bounced it.
-	 * @param boolean $sent      Whether the mailer accepted it.
+	 * @param Bounce  $bounce The address it went to, the handler's reason and who bounced it.
+	 * @param boolean $sent   Whether the mailer accepted it.
 	 *
 	 * @return string The recorded reason.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function recordedReason(string $recipient, string $reason, string $actorId, bool $sent): string {
+	private function recordedReason(Bounce $bounce, bool $sent): string {
+		$recipient = $bounce->recipient;
+		$reason = $bounce->reason;
+		$actorId = $bounce->actorId;
 		$who = 'the intake pipeline';
 		if ($actorId !== '') {
 			$who = $actorId;

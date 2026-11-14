@@ -84,8 +84,6 @@ class CallbackService implements CallbackServiceInterface {
 			throw new OCSBadRequestException('customerPhone is required');
 		}
 
-		$scheduledFor = $this->scheduledFor(data: $data);
-
 		$payload = [
 			'customerPhone' => $phone,
 			'reason' => trim((string)($data['reason'] ?? '')),
@@ -94,7 +92,7 @@ class CallbackService implements CallbackServiceInterface {
 			'preferredAgent' => trim((string)($data['preferredAgent'] ?? $agentId)),
 		];
 
-		return $this->withOptionalFields(payload: $payload, scheduledFor: $scheduledFor, data: $data);
+		return $this->withOptionalFields(payload: $payload, data: $data);
 	}//end buildPayload()
 
 	/**
@@ -124,15 +122,17 @@ class CallbackService implements CallbackServiceInterface {
 	/**
 	 * Add the moment and the contactmoment reference to the payload when they are given.
 	 *
-	 * @param array<string, mixed> $payload      The payload so far.
-	 * @param string               $scheduledFor The moment, or ''.
-	 * @param array<string, mixed> $data         The request data.
+	 * @param array<string, mixed> $payload The payload so far.
+	 * @param array<string, mixed> $data    The request data.
 	 *
 	 * @return array<string, mixed> The callback payload.
 	 *
+	 * @throws OCSBadRequestException When the moment cannot be read.
+	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
 	 */
-	private function withOptionalFields(array $payload, string $scheduledFor, array $data): array {
+	private function withOptionalFields(array $payload, array $data): array {
+		$scheduledFor = $this->scheduledFor(data: $data);
 		if ($scheduledFor !== '') {
 			$payload['scheduledFor'] = $scheduledFor;
 		}
@@ -225,9 +225,7 @@ class CallbackService implements CallbackServiceInterface {
 	public function cancel(string $id, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
 		$existing = $this->findOwned(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			store: new CallbackStore(objectService: $objectService, register: $register, schema: $schema),
 			id: $id,
 			agentId: $agentId,
 			isPrivileged: $isPrivileged,
@@ -309,9 +307,7 @@ class CallbackService implements CallbackServiceInterface {
 	/**
 	 * Find a callback by id and enforce ownership.
 	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema The schema id.
+	 * @param CallbackStore $store Where the callbacks live.
 	 * @param string $id The callback id.
 	 * @param string $agentId The authenticated agent's user id.
 	 * @param bool $isPrivileged Whether ownership is bypassed.
@@ -320,9 +316,9 @@ class CallbackService implements CallbackServiceInterface {
 	 *
 	 * @throws OCSBadRequestException When not found or not owned.
 	 */
-	private function findOwned(object $objectService, string $register, string $schema, string $id, string $agentId, bool $isPrivileged): array {
+	private function findOwned(CallbackStore $store, string $id, string $agentId, bool $isPrivileged): array {
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $store->objectService->find($id, register: $store->register, schema: $store->schema);
 		} catch (\Throwable $e) {
 			throw new OCSBadRequestException('Callback request not found');
 		}

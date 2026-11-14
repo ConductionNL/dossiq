@@ -133,6 +133,7 @@ class CaseFederationController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/tasks.md
 	 */
 	public function createFederatedShare(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -154,6 +155,14 @@ class CaseFederationController extends Controller {
 			$wanted['permissionLevel'],
 			$user->getUID(),
 		);
+
+		if (isset($share['rule']) === true && $share['rule'] !== '') {
+			// A refused consent is this instance deciding, not upstream breaking.
+			return new JSONResponse(
+				['success' => false, 'error' => $share['error'], 'rule' => $share['rule']],
+				Http::STATUS_CONFLICT
+			);
+		}
 
 		if (isset($share['error']) === true) {
 			return new JSONResponse(['success' => false, 'error' => $share['error']], Http::STATUS_BAD_GATEWAY);

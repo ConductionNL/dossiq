@@ -37,12 +37,14 @@ final class CaseContentGuards {
 	 * @param RequiredFieldGuard    $requiredField    Built-in required-field evaluator.
 	 * @param RequiredDocumentGuard $requiredDocument Built-in required-document evaluator.
 	 * @param StatusChecklistGuard  $statusChecklist  Required-items-of-the-current-status evaluator.
+	 * @param DateReachedGuard|null $dateReached      Date-reached evaluator (a closing date, a standstill term).
 	 */
 	public function __construct(
 		public readonly ChecklistGuard $checklist,
 		public readonly RequiredFieldGuard $requiredField,
 		public readonly RequiredDocumentGuard $requiredDocument,
 		public readonly StatusChecklistGuard $statusChecklist,
+		public readonly ?DateReachedGuard $dateReached = null,
 	) {
 	}//end __construct()
 }//end class

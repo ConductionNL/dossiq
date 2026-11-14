@@ -1544,7 +1544,7 @@
         "digest": "741410186bc4660b177865856a3a90313d8164e1f6c0125e503cad9b519b53ae"
     },
     "lib/Settings/register.d/86-woo-delivered-set.json::wooDeliveredSet": {
-        "version": "1.1.0",
+        "version": "1.1.1",
         "digest": "0c37e60f4dd4e501ad65d1de0313f3cfa5decfbefce590c3dc43001beb863de3"
     },
     "lib/Settings/register.d/87-case-type-sessions.json::caseType": {
@@ -1898,6 +1898,10 @@
     "lib/Settings/register.d/99-case-type-whole-list-export.json::caseType": {
         "version": "1.34.0",
         "digest": "28eec69afa9b55bf5cc426042868782ef4120c9615a46848fb65fd411cf2c6aa"
+    },
+    "lib/Settings/register.d/99-decision-advice.json::decisionAdvice": {
+        "version": "1.0.0",
+        "digest": "ee792bb771d3a4b6f60560e195b1a966f4ab6def4249417f919c31e6f62da6ba"
     },
     "lib/Settings/register.d/99-document-access-exception.json::informatieobject": {
         "version": "1.7.0",

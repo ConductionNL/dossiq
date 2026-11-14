@@ -86,11 +86,7 @@ class ImportCaseRecordsCommand extends Command {
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$caseType = (string)$input->getArgument('caseType');
-		$importKey = (string)$input->getOption('import');
-		$answer = match ((bool)$input->getOption('dry-run')) {
-			true => $this->import->dryRun(caseType: $caseType, importKey: $importKey),
-			false => $this->import->run(caseType: $caseType, importKey: $importKey),
-		};
+		$answer = $this->answerFor(input: $input, caseType: $caseType);
 
 		if ($answer['caseType'] === '') {
 			$output->writeln('<error>Case type ' . $caseType . ' was not found, or OpenRegister is not available.</error>');
@@ -102,8 +98,36 @@ class ImportCaseRecordsCommand extends Command {
 			return 0;
 		}
 
+		return $this->reportAll(output: $output, imports: $answer['imports']);
+	}//end execute()
+
+	/**
+	 * Run the imports, or only count them on a dry run.
+	 *
+	 * @param InputInterface $input    The input.
+	 * @param string         $caseType The case type argument.
+	 *
+	 * @return array<string, mixed> The import service's answer.
+	 */
+	private function answerFor(InputInterface $input, string $caseType): array {
+		$importKey = (string)$input->getOption('import');
+		return match ((bool)$input->getOption('dry-run')) {
+			true => $this->import->dryRun(caseType: $caseType, importKey: $importKey),
+			false => $this->import->run(caseType: $caseType, importKey: $importKey),
+		};
+	}//end answerFor()
+
+	/**
+	 * Print every import's numbers.
+	 *
+	 * @param OutputInterface                   $output  The output.
+	 * @param array<int, array<string, mixed>> $imports The imports' answers.
+	 *
+	 * @return int 0, or 1 when a record failed.
+	 */
+	private function reportAll(OutputInterface $output, array $imports): int {
 		$failed = false;
-		foreach ($answer['imports'] as $import) {
+		foreach ($imports as $import) {
 			$failed = ($this->report(output: $output, import: $import) || $failed);
 		}
 
@@ -112,7 +136,7 @@ class ImportCaseRecordsCommand extends Command {
 		}
 
 		return 0;
-	}//end execute()
+	}//end reportAll()
 
 	/**
 	 * Print one import's numbers.

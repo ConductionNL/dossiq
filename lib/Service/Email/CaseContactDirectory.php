@@ -133,6 +133,22 @@ class CaseContactDirectory {
 	 * @return array<string> Lowercase email addresses
 	 */
 	private function collectContactListEmails(array $caseData): array {
+		$emails = [];
+		foreach ($this->contactLists(caseData: $caseData) as $contacts) {
+			$emails = array_merge($emails, $this->contactEmails(contacts: $contacts));
+		}
+
+		return $emails;
+	}//end collectContactListEmails()
+
+	/**
+	 * The contact lists a case carries: its betrokkenen, then its contacts.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return array<int, array<mixed>>
+	 */
+	private function contactLists(array $caseData): array {
 		$contactArrays = [];
 		if (is_array($caseData['betrokkenen'] ?? null) === true) {
 			$contactArrays[] = $caseData['betrokkenen'];
@@ -142,24 +158,33 @@ class CaseContactDirectory {
 			$contactArrays[] = $caseData['contacts'];
 		}
 
-		$emails = [];
-		foreach ($contactArrays as $contacts) {
-			foreach ($contacts as $contact) {
-				if (is_array($contact) === false) {
-					continue;
-				}
+		return $contactArrays;
+	}//end contactLists()
 
-				$addr = $this->normalizeContactEmail(
-					value: (string)($contact['email'] ?? ($contact['emailadres'] ?? ''))
-				);
-				if ($addr !== null) {
-					$emails[] = $addr;
-				}
+	/**
+	 * The usable email addresses in one contact list, in list order.
+	 *
+	 * @param array<mixed> $contacts The contacts.
+	 *
+	 * @return array<int, string>
+	 */
+	private function contactEmails(array $contacts): array {
+		$emails = [];
+		foreach ($contacts as $contact) {
+			if (is_array($contact) === false) {
+				continue;
+			}
+
+			$addr = $this->normalizeContactEmail(
+				value: (string)($contact['email'] ?? ($contact['emailadres'] ?? ''))
+			);
+			if ($addr !== null) {
+				$emails[] = $addr;
 			}
 		}
 
 		return $emails;
-	}//end collectContactListEmails()
+	}//end contactEmails()
 
 	/**
 	 * Normalise a raw contact value to a lowercase, validated email address.

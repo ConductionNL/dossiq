@@ -156,11 +156,7 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 
 		$record = $this->storeRequest(
 			case: $case,
-			caseId: $caseId,
-			requestedBy: $requestedBy,
-			holder: $holder,
-			unit: $unit,
-			reason: $reason,
+			ask: new TakeoverAsk(caseId: $caseId, requestedBy: $requestedBy, holder: $holder, unit: $unit, reason: $reason),
 		);
 
 		$this->logger->info(
@@ -240,12 +236,8 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 	/**
 	 * Write the pending request, and again with its task when one was raised.
 	 *
-	 * @param array<string, mixed> $case        The case being asked for.
-	 * @param string               $caseId      The case id.
-	 * @param string               $requestedBy Who wants it.
-	 * @param string               $holder      Who holds it.
-	 * @param string               $unit        The holding unit.
-	 * @param string               $reason      Why they should have it.
+	 * @param array<string, mixed> $case The case being asked for.
+	 * @param TakeoverAsk          $ask  The case id, who wants it, who holds it, the holding unit and why.
 	 *
 	 * @return array<string, mixed> The request as stored.
 	 *
@@ -253,22 +245,15 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
-	private function storeRequest(
-		array $case,
-		string $caseId,
-		string $requestedBy,
-		string $holder,
-		string $unit,
-		string $reason,
-	): array {
+	private function storeRequest(array $case, TakeoverAsk $ask): array {
 		$now = (new DateTimeImmutable())->format('c');
 		$record = $this->store->write(
 			record: [
-				'caseId' => $caseId,
-				'requestedBy' => $requestedBy,
-				'holder' => $holder,
-				'holdingUnit' => $unit,
-				'reason' => $reason,
+				'caseId' => $ask->caseId,
+				'requestedBy' => $ask->requestedBy,
+				'holder' => $ask->holder,
+				'holdingUnit' => $ask->unit,
+				'reason' => $ask->reason,
 				'status' => 'pending',
 				'requestedAt' => $now,
 			],

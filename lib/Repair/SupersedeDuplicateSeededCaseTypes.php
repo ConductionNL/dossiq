@@ -104,9 +104,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 		$superseded = $this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): int => $this->supersede(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				store: new CaseTypeStore(objectService: $objectService, register: $register, schema: $schema),
 			),
 		);
 
@@ -116,17 +114,15 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	/**
 	 * Supersede the older copies in every group of one slug, version and organisation.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $schema        The case type schema id.
+	 * @param CaseTypeStore $store Where the case types live.
 	 *
 	 * @return integer How many copies were superseded.
 	 *
 	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
-	private function supersede(object $objectService, string $register, string $schema): int {
+	private function supersede(CaseTypeStore $store): int {
 		try {
-			$rows = $this->caseTypeRows(objectService: $objectService, register: $register, schema: $schema);
+			$rows = $this->caseTypeRows(store: $store);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not read the case types to supersede seeded duplicates',
@@ -135,15 +131,13 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 			return 0;
 		}
 
-		return $this->supersedeGroups(objectService: $objectService, register: $register, schema: $schema, rows: $rows);
+		return $this->supersedeGroups(store: $store, rows: $rows);
 	}//end supersede()
 
 	/**
 	 * Read the stored case types.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $schema        The case type schema id.
+	 * @param CaseTypeStore $store Where the case types live.
 	 *
 	 * @return array<int, array<string, mixed>> The stored case types.
 	 *
@@ -151,11 +145,11 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	 *
 	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
-	private function caseTypeRows(object $objectService, string $register, string $schema): array {
+	private function caseTypeRows(CaseTypeStore $store): array {
 		return $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->schema,
 			filters: ['_limit' => 1000],
 		);
 	}//end caseTypeRows()
@@ -163,23 +157,19 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	/**
 	 * Supersede every older copy by the newest of its group.
 	 *
-	 * @param object                           $objectService OpenRegister's ObjectService.
-	 * @param string                           $register      The register id.
-	 * @param string                           $schema        The case type schema id.
-	 * @param array<int, array<string, mixed>> $rows          The stored case types.
+	 * @param CaseTypeStore                    $store Where the case types live.
+	 * @param array<int, array<string, mixed>> $rows  The stored case types.
 	 *
 	 * @return integer How many copies were superseded.
 	 *
 	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
-	private function supersedeGroups(object $objectService, string $register, string $schema, array $rows): int {
+	private function supersedeGroups(CaseTypeStore $store, array $rows): int {
 		$superseded = 0;
 		foreach ($this->duplicateGroups(rows: $rows) as $group) {
 			$current = array_pop($group);
 			foreach ($group as $older) {
-				$superseded += $this->supersedeOne(
-					objectService: $objectService, register: $register, schema: $schema, olderId: $older['id'], currentId: $current['id'],
-				);
+				$superseded += $this->supersedeOne(store: $store, olderId: $older['id'], currentId: $current['id']);
 			}
 		}
 
@@ -284,22 +274,20 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	/**
 	 * Point one older copy at the current one.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $schema        The case type schema id.
-	 * @param string $olderId       The copy to supersede.
-	 * @param string $currentId     The copy that stays current.
+	 * @param CaseTypeStore $store     Where the case types live.
+	 * @param string        $olderId   The copy to supersede.
+	 * @param string        $currentId The copy that stays current.
 	 *
 	 * @return integer 1 when written, 0 when the write failed.
 	 *
 	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
-	private function supersedeOne(object $objectService, string $register, string $schema, string $olderId, string $currentId): int {
+	private function supersedeOne(CaseTypeStore $store, string $olderId, string $currentId): int {
 		try {
 			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $store->objectService,
+				register: $store->register,
+				schema: $store->schema,
 				id: $olderId,
 				changes: ['supersededBy' => $currentId],
 			);

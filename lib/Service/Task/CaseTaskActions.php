@@ -290,6 +290,22 @@ class CaseTaskActions implements CaseTaskActionsInterface {
 	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private static function requiredFields(array $task): array {
+		$fields = self::formFields(task: $task);
+		if (is_array($fields) === false) {
+			return [];
+		}
+
+		return self::requiredNames(fields: $fields);
+	}//end requiredFields()
+
+	/**
+	 * The fields of the form the task's metadata carries.
+	 *
+	 * @param array<string, mixed> $task The engine task.
+	 *
+	 * @return mixed The fields, [] when the task carries no form.
+	 */
+	private static function formFields(array $task): mixed {
 		$metadata = ($task['metadata'] ?? []);
 		$form = [];
 		if (is_array($metadata) === true) {
@@ -301,10 +317,17 @@ class CaseTaskActions implements CaseTaskActionsInterface {
 			$fields = ($form['fields'] ?? []);
 		}
 
-		if (is_array($fields) === false) {
-			return [];
-		}
+		return $fields;
+	}//end formFields()
 
+	/**
+	 * The names of the required form fields.
+	 *
+	 * @param array<mixed> $fields The form fields.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function requiredNames(array $fields): array {
 		$required = [];
 		foreach ($fields as $field) {
 			if (is_array($field) === false || ($field['required'] ?? false) !== true) {
@@ -318,7 +341,7 @@ class CaseTaskActions implements CaseTaskActionsInterface {
 		}
 
 		return $required;
-	}//end requiredFields()
+	}//end requiredNames()
 
 	/**
 	 * Whether an answer is no answer at all.

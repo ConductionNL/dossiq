@@ -375,9 +375,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 		}
 
 		return $this->exportProofs(
-			objectService: $objectService,
-			register: $register,
-			docSchema: $docSchema,
+			target: new ProofDocumentTarget(objectService: $objectService, register: $register, docSchema: $docSchema),
 			proofs: $proofs
 		);
 	}//end exportProofRecords()
@@ -409,22 +407,15 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	/**
 	 * Export every proof record as a caseDocument.
 	 *
-	 * @param object                           $objectService OpenRegister's object service.
-	 * @param string                           $register      Register slug or id.
-	 * @param string                           $docSchema     The case document schema.
-	 * @param array<int, array<string, mixed>> $proofs        The proof records.
+	 * @param ProofDocumentTarget              $target The object service, register and case document schema.
+	 * @param array<int, array<string, mixed>> $proofs The proof records.
 	 *
 	 * @return int Number of proof records exported.
 	 */
-	private function exportProofs(object $objectService, string $register, string $docSchema, array $proofs): int {
+	private function exportProofs(ProofDocumentTarget $target, array $proofs): int {
 		$exported = 0;
 		foreach ($proofs as $proof) {
-			$exported += $this->exportProof(
-				objectService: $objectService,
-				register: $register,
-				docSchema: $docSchema,
-				proof: $proof
-			);
+			$exported += $this->exportProof(target: $target, proof: $proof);
 		}
 
 		return $exported;
@@ -433,14 +424,12 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	/**
 	 * Export one proof record as a caseDocument.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      Register slug or id.
-	 * @param string               $docSchema     The case document schema.
-	 * @param array<string, mixed> $proof         The proof record.
+	 * @param ProofDocumentTarget  $target The object service, register and case document schema.
+	 * @param array<string, mixed> $proof  The proof record.
 	 *
 	 * @return int 1 when exported, 0 otherwise.
 	 */
-	private function exportProof(object $objectService, string $register, string $docSchema, array $proof): int {
+	private function exportProof(ProofDocumentTarget $target, array $proof): int {
 		$caseId = (string)($proof['caseId'] ?? '');
 		if ($caseId === '') {
 			return 0;
@@ -448,7 +437,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 
 		$payload = $this->proofDocument(caseId: $caseId, proof: $proof);
 
-		return $this->saveProofDocument(objectService: $objectService, register: $register, docSchema: $docSchema, payload: $payload);
+		return $this->saveProofDocument(target: $target, payload: $payload);
 	}//end exportProof()
 
 	/**
@@ -473,16 +462,14 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	/**
 	 * Save a proof's caseDocument, logging a failure and leaving the source in place.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      Register slug or id.
-	 * @param string               $docSchema     The case document schema.
-	 * @param array<string, mixed> $payload       The caseDocument payload, with its `case`.
+	 * @param ProofDocumentTarget  $target  The object service, register and case document schema.
+	 * @param array<string, mixed> $payload The caseDocument payload, with its `case`.
 	 *
 	 * @return int 1 when exported, 0 otherwise.
 	 */
-	private function saveProofDocument(object $objectService, string $register, string $docSchema, array $payload): int {
+	private function saveProofDocument(ProofDocumentTarget $target, array $payload): int {
 		try {
-			$objectService->saveObject(object: $payload, register: $register, schema: $docSchema);
+			$target->objectService->saveObject(object: $payload, register: $target->register, schema: $target->docSchema);
 			return 1;
 		} catch (\Throwable $e) {
 			$this->logger->error(

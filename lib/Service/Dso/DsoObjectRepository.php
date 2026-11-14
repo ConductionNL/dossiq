@@ -71,24 +71,7 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 	 */
 	public function findZaak(string $caseId): ?array {
 		try {
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return null;
-			}
-
-			$register = $this->settingsService->getConfigValue(key: 'register');
-			$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-
-			if ($register === '' || $caseSchema === '') {
-				return null;
-			}
-
-			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				id: $caseId
-			);
+			return $this->loadZaak(caseId: $caseId);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq DsoObjectRepository: could not load zaak ' . $caseId . ': ' . $e->getMessage()
@@ -96,6 +79,29 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 			return null;
 		}//end try
 	}//end findZaak()
+
+	/**
+	 * Read a zaak, when the store and the case schema are configured.
+	 *
+	 * @param string $caseId The zaak UUID.
+	 *
+	 * @return array<string,mixed>|null The zaak, or null when unresolvable.
+	 */
+	private function loadZaak(string $caseId): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
+
+		if ($register === '' || $caseSchema === '') {
+			return null;
+		}
+
+		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
+	}//end loadZaak()
 
 	/**
 	 * Load a samenwerkverzoek by ID from the ObjectService.
@@ -108,24 +114,7 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 	 */
 	public function findSamenwerkverzoek(string $samenwerkId): ?array {
 		try {
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return null;
-			}
-
-			$register = $this->settingsService->getConfigValue(key: 'register');
-			$samenwerkSchema = $this->settingsService->getConfigValue(key: 'dso_samenwerkverzoek_schema');
-
-			if ($register === '' || $samenwerkSchema === '') {
-				$samenwerkSchema = 'samenwerkverzoek';
-			}
-
-			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $samenwerkSchema,
-				id: $samenwerkId
-			);
+			return $this->loadSamenwerkverzoek(samenwerkId: $samenwerkId);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq DsoObjectRepository: could not load samenwerkverzoek ' . $samenwerkId . ': ' . $e->getMessage()
@@ -133,6 +122,29 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 			return null;
 		}//end try
 	}//end findSamenwerkverzoek()
+
+	/**
+	 * Read a samenwerkverzoek, from the configured schema or the default slug.
+	 *
+	 * @param string $samenwerkId The samenwerkverzoek UUID.
+	 *
+	 * @return array<string,mixed>|null The samenwerkverzoek, or null when unresolvable.
+	 */
+	private function loadSamenwerkverzoek(string $samenwerkId): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$samenwerkSchema = $this->settingsService->getConfigValue(key: 'dso_samenwerkverzoek_schema');
+
+		if ($register === '' || $samenwerkSchema === '') {
+			$samenwerkSchema = 'samenwerkverzoek';
+		}
+
+		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $samenwerkSchema, id: $samenwerkId);
+	}//end loadSamenwerkverzoek()
 
 	/**
 	 * Run the dashboard query and apply the in-memory filters.
@@ -162,7 +174,8 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 		}
 
 		return $this->filteredDashboard(
-			cases: $cases['results'], activiteitgroep: $activiteitgroep, regelkwalificatie: $regelkwalificatie, location: $location
+			cases: $cases['results'],
+			filters: new DashboardFilters(activiteitgroep: $activiteitgroep, regelkwalificatie: $regelkwalificatie, location: $location),
 		);
 	}//end fetchDashboard()
 
@@ -197,23 +210,16 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 	 * The dashboard outcome with the in-memory filters applied.
 	 *
 	 * @param array<int,mixed> $cases The zaken.
-	 * @param string $activiteitgroep Filter by activiteitgroep.
-	 * @param string $regelkwalificatie Filter by regelkwalificatie.
-	 * @param string $location Filter by locatie substring.
+	 * @param DashboardFilters $filters The activiteitgroep, regelkwalificatie and locatie filters.
 	 *
 	 * @return array{error: null, results: array<int,array<string,mixed>>} The query outcome.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
-	private function filteredDashboard(array $cases, string $activiteitgroep, string $regelkwalificatie, string $location): array {
+	private function filteredDashboard(array $cases, DashboardFilters $filters): array {
 		return [
 			'error' => null,
-			'results' => $this->applyInMemoryFilters(
-				cases: $cases,
-				activiteitgroep: $activiteitgroep,
-				regelkwalificatie: $regelkwalificatie,
-				location: $location
-			),
+			'results' => $this->applyInMemoryFilters(cases: $cases, filters: $filters),
 		];
 	}//end filteredDashboard()
 
@@ -221,21 +227,15 @@ class DsoObjectRepository implements DsoObjectRepositoryInterface {
 	 * Apply in-memory filters that cannot be pushed to ObjectService params.
 	 *
 	 * @param array<int,mixed> $cases The zaken array (elements come from ObjectService and are not guaranteed to be arrays)
-	 * @param string $activiteitgroep Filter by activiteitgroep
-	 * @param string $regelkwalificatie Filter by regelkwalificatie
-	 * @param string $location Filter by locatie substring
+	 * @param DashboardFilters $filters The activiteitgroep, regelkwalificatie and locatie substring filters
 	 *
 	 * @return array<int,array<string,mixed>> The filtered zaken.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
-	private function applyInMemoryFilters(
-		array $cases,
-		string $activiteitgroep,
-		string $regelkwalificatie,
-		string $location,
-	): array {
-		if ($activiteitgroep === '' && $regelkwalificatie === '' && $location === '') {
+	private function applyInMemoryFilters(array $cases, DashboardFilters $filters): array {
+		$location = $filters->location;
+		if ($filters->activiteitgroep === '' && $filters->regelkwalificatie === '' && $location === '') {
 			return $cases;
 		}
 

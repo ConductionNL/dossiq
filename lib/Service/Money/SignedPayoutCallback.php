@@ -144,6 +144,28 @@ class SignedPayoutCallback implements SignedPayoutCallbackInterface {
 			throw new InvalidArgumentException('Invalid JSON body');
 		}
 
+		[$reference, $status] = $this->referenceAndStatus(body: $body);
+		$bankReference = $this->bankReferenceOf(body: $body);
+
+		return [
+			'reference' => $reference,
+			'status' => self::STATUS_MAP[$status],
+			'actualPaymentDate' => trim((string)($body['actualPaymentDate'] ?? '')),
+			'bankReference' => $bankReference,
+			'payableId' => (string)($body['payableId'] ?? ''),
+		];
+	}//end read()
+
+	/**
+	 * The reference and the lower-cased status, both required and the status known.
+	 *
+	 * @param array<mixed> $body The decoded callback body.
+	 *
+	 * @return array{0: string, 1: string}
+	 *
+	 * @throws InvalidArgumentException When the reference or status is missing, or the status is unknown.
+	 */
+	private function referenceAndStatus(array $body): array {
 		$reference = trim((string)($body['reference'] ?? ''));
 		$status = strtolower(trim((string)($body['status'] ?? '')));
 		if ($reference === '' || $status === '') {
@@ -154,19 +176,24 @@ class SignedPayoutCallback implements SignedPayoutCallbackInterface {
 			throw new InvalidArgumentException('Unknown payout status: ' . $status);
 		}
 
+		return [$reference, $status];
+	}//end referenceAndStatus()
+
+	/**
+	 * The bank reference, under either of its two names.
+	 *
+	 * @param array<mixed> $body The decoded callback body.
+	 *
+	 * @return string
+	 */
+	private function bankReferenceOf(array $body): string {
 		$bankReference = (string)($body['bankReference'] ?? '');
 		if ($bankReference === '') {
 			$bankReference = (string)($body['betalingsreferentie'] ?? '');
 		}
 
-		return [
-			'reference' => $reference,
-			'status' => self::STATUS_MAP[$status],
-			'actualPaymentDate' => trim((string)($body['actualPaymentDate'] ?? '')),
-			'bankReference' => $bankReference,
-			'payableId' => (string)($body['payableId'] ?? ''),
-		];
-	}//end read()
+		return $bankReference;
+	}//end bankReferenceOf()
 
 	/**
 	 * The configured secret, from the legacy key while the current one is missing.

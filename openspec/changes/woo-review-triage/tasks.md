@@ -179,7 +179,11 @@ record. OpenRegister refuses a parent that references another schema
     stay public until their writers (`DocumentRelevance::mark`, triage apply, `WooCollection::record`,
     `WooSearchPlans::record`, `WooCollectionQueries` save) call `CaseReviewerAccess::reconcile()`: RBAC-scoped reads
     would otherwise hide a record from everyone but its author (a plan recorded by a coordinator would read as no
-    plan to the gatherer). `wooDeliveredSet` is not on this branch (lane L10). Named tests, generic (decision
+    plan to the gatherer). `wooDeliveredSet` is not on this branch (lane L10).
+    Built (pass 2): the four above are private on `development` now, their writers reconciling; `wooDeliveredSet` (lane L10
+    landed) carries the private block too (1.1.1, register 0.20.96) and the `woo-verzoek` case type (both versions) lists
+    it under `reviewerAccess.records` with `readers: assignee` and no `assigneeMay`, so the assignee reads and never
+    updates it. The generic `CaseTypePrivateRecordsTest` now covers it. Open: the Newman folder (needs an instance). Named tests, generic (decision
     182/185): `tests/Unit/Settings/CaseTypePrivateRecordsTest.php` `testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy`
     and `testNoListedRecordIsReadableByAllUsers`, over every seeded case type's `reviewerAccess.records`, read from
     the merged register. Open: the four above, and the Newman folder (needs an instance, decision 139).
@@ -194,6 +198,9 @@ record. OpenRegister refuses a parent that references another schema
     `testTheDeliveredSetIsNeverGrantedUpdate`, `testNoGrantReachesAnotherCase`,
     `testAGrantTheCallerMayNotSetIsCountedAndNotRetried` (the sharing double throws
     `NotAuthorizedException`, built with `environmentAwareDouble()` from the real signature).
+  - Built (pass 2): `WooDeliveredSetWriter::open()` reconciles the case after the set is stored, so publishing grants the
+    assignee read in the same request (`tests/Unit/Woo/WooDeliveredSetAccessTest.php`). Open: the gather add creates no
+    `documentReview` yet (1.1), so it has nothing of the seven to reconcile.
   - Through the caller: `DocumentReviewControllerTest::testCreateBatchGrantsTheReviewerTheirReviews`,
     `testCreateRuleGrantsTheAssignee`; `WooSourcesControllerTest::testTheAddGrantsTheCaseRecords`;
     `WooPublicationServiceTest::testTheDeliveredSetIsGrantedToTheAssignee`;

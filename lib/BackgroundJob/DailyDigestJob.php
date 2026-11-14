@@ -129,6 +129,23 @@ class DailyDigestJob extends TimedJob {
 			return;
 		}
 
+		$sent = $this->sendDigests(account: $account);
+
+		if ($sent > 0) {
+			$this->logger->info('Dossiq: sent ' . $sent . ' work digests.');
+		}
+	}//end run()
+
+	/**
+	 * Send the due digests to every seen user but the service account.
+	 *
+	 * @param IUser $account The background service account.
+	 *
+	 * @return int How many digests were sent.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function sendDigests(IUser $account): int {
 		$now = new DateTimeImmutable();
 		$hour = (int)$now->format('G');
 		$today = $now->format('Y-m-d');
@@ -148,10 +165,8 @@ class DailyDigestJob extends TimedJob {
 			}
 		);
 
-		if ($sent > 0) {
-			$this->logger->info('Dossiq: sent ' . $sent . ' work digests.');
-		}
-	}//end run()
+		return $sent;
+	}//end sendDigests()
 
 	/**
 	 * One person's digest, if they are due one and have something waiting.

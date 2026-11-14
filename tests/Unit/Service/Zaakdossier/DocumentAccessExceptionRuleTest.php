@@ -182,4 +182,48 @@ class DocumentAccessExceptionRuleTest extends TestCase {
 
 		$this->assertSame(['doc-a' => true, 'doc-b' => false, 'doc-c' => true], $verdicts);
 	}//end testTheListingSaysPerDocumentWhetherTheCallerMayChangeItAskingEachCaseOnce()
+
+	/**
+	 * A user without a uid is never admitted to a document with an exception.
+	 *
+	 * @return void
+	 */
+	public function testAUserWithoutAUidIsRefused(): void {
+		$this->store->expects(self::never())->method('caseIdsOf');
+
+		self::assertFalse($this->rule->admits($this->user(''), $this->record));
+	}//end testAUserWithoutAUidIsRefused()
+
+	/**
+	 * A group lookup that fails counts as no groups: the case handler still reads, anyone else does not.
+	 *
+	 * @return void
+	 */
+	public function testAFailingGroupLookupFallsBackToTheCaseHandler(): void {
+		$cases = $this->createMock(CaseAccessGuard::class);
+		$cases->method('hasCaseMutationAccess')->willReturnCallback(
+			static fn (string $caseId, IUser $user): bool => $user->getUID() === 'hanna'
+		);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('getUserGroupIds')->willThrowException(new RuntimeException('ldap down'));
+		$rule = new DocumentAccessExceptionRule(caseIds: $this->store, cases: $cases, groupManager: $groupManager);
+
+		self::assertFalse($rule->admits($this->user('kees'), $this->record), 'the group that would admit kees cannot be read');
+		self::assertTrue($rule->admits($this->user('hanna'), $this->record));
+		self::assertTrue($rule->admits($this->user('pieter'), $this->record), 'a listed user needs no group lookup');
+	}//end testAFailingGroupLookupFallsBackToTheCaseHandler()
+
+	/**
+	 * A record without a usable id cannot be traced to a case, so only listed people read it.
+	 *
+	 * @return void
+	 */
+	public function testARecordWithoutAnIdAdmitsOnlyListedPeople(): void {
+		$this->store->expects(self::never())->method('caseIdsOf');
+		$exception = ['users' => ['pieter'], 'groups' => ['woo-team'], 'reason' => 'Prijzen'];
+
+		self::assertFalse($this->rule->admits($this->user('hanna'), ['accessException' => $exception]));
+		self::assertFalse($this->rule->admits($this->user('hanna'), ['id' => ['not', 'scalar'], 'accessException' => $exception]));
+		self::assertTrue($this->rule->admits($this->user('kees'), ['accessException' => $exception]));
+	}//end testARecordWithoutAnIdAdmitsOnlyListedPeople()
 }//end class

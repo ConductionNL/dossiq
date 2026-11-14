@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Zgw\ApiCredentialResolver;
 use OCA\Dossiq\Service\Zgw\ResourceRoute;
 use OCA\Dossiq\Service\Zgw\ResourceWrite;
 use OCA\Dossiq\Service\Zgw\RuleFlags;
@@ -206,7 +207,7 @@ class ZgwService implements ZgwServiceInterface {
 	 * @param ZgwDocumentService $documentService The document storage service
 	 * @param NotificatieService $notificationService The notification service
 	 * @param ZgwBusinessRulesService $businessRulesService The business rules service
-	 * @param ZgwJwtValidator $jwtValidator The ZGW JWT validator
+	 * @param ApiCredentialResolver $credentials Resolves a JWT, API key or certificate to a consumer
 	 * @param LoggerInterface $logger The logger
 	 * @param CommunicationChannel|null $channels Maps a zaak's communicatiekanaal onto a channel slug (decision 171)
 	 *
@@ -218,7 +219,7 @@ class ZgwService implements ZgwServiceInterface {
 		private readonly ZgwDocumentService $documentService,
 		private readonly NotificatieService $notificationService,
 		private readonly ZgwBusinessRulesService $businessRulesService,
-		private readonly ZgwJwtValidator $jwtValidator,
+		private readonly ApiCredentialResolver $credentials,
 		private readonly LoggerInterface $logger,
 		private readonly ?CommunicationChannel $channels = null,
 	) {
@@ -805,7 +806,10 @@ class ZgwService implements ZgwServiceInterface {
 	}//end buildBaseUrl()
 
 	/**
-	 * Validate JWT-ZGW authentication from the Authorization header.
+	 * Authenticate a ZGW request: a bearer JWT, an API key or a certificate
+	 * forwarded by a trusted proxy, resolved to an OpenRegister consumer.
+	 *
+	 * Kept under its old name because every ZGW controller calls it.
 	 *
 	 * @param IRequest $request The request object
 	 *
@@ -814,46 +818,57 @@ class ZgwService implements ZgwServiceInterface {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function validateJwtAuth(IRequest $request): ?JSONResponse {
-		$authHeader = $request->getHeader('Authorization');
-
-		if ($authHeader === '') {
-			return $this->notAuthenticated(title: 'Authenticatiegegevens zijn niet opgegeven.', status: 401, statusCode: Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->jwtValidator->validate(authorization: $authHeader);
-		} catch (\Throwable $e) {
-			// M3: Log detail server-side but never surface internal JWT validation
-			// messages in the HTTP response — they aid algorithm/issuer enumeration.
-			$this->logger->warning('ZGW JWT validation failed: ' . $e->getMessage(), ['app' => 'dossiq']);
-
-			return $this->notAuthenticated(title: 'Authenticatiegegevens zijn niet geldig.', status: 403, statusCode: Http::STATUS_FORBIDDEN);
-		}//end try
-
-		return null;
+		return $this->credentialRefusal(request: $request);
 	}//end validateJwtAuth()
 
 	/**
-	 * The NotAuthenticated problem response, with the title repeated as detail.
+	 * The 401 answer for a request whose caller does not resolve, or null when
+	 * it resolves.
 	 *
-	 * @param string $title The problem title
-	 * @param int $status The status the body names
-	 * @param int $statusCode The HTTP status
+	 * Asks the same resolver the ZGW middleware asks, so a caller the
+	 * middleware let through with an API key or certificate is accepted here
+	 * too; within one request the consumer is resolved and bound once.
 	 *
-	 * @return JSONResponse The problem response
+	 * @param IRequest $request The request object
 	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @return JSONResponse|null 401 response on failure, null on success
+	 *
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-the-caller-may-present-a-jwt-an-api-key-or-a-client-certificate-req-paa-02
 	 */
-	private function notAuthenticated(string $title, int $status, int $statusCode): JSONResponse {
+	private function credentialRefusal(IRequest $request): ?JSONResponse {
+		try {
+			$consumer = $this->credentials->resolve(request: $request);
+		} catch (\Throwable $e) {
+			$this->logger->warning('ZGW authentication failed: ' . $e->getMessage(), ['app' => 'dossiq']);
+			return self::notAuthenticated(detail: ApiCredentialResolver::refusalMessage(failure: $e));
+		}
+
+		if ($consumer === null) {
+			return self::notAuthenticated(detail: 'Authenticatiegegevens zijn niet opgegeven.');
+		}
+
+		return null;
+	}//end credentialRefusal()
+
+	/**
+	 * A 401 answer in the ZGW error shape.
+	 *
+	 * @param string $detail What the caller is told.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/public-api-access-with-keys-and-certificates/specs/public-api-access/spec.md#requirement-a-calling-system-is-an-openregister-consumer-req-paa-01
+	 */
+	private static function notAuthenticated(string $detail): JSONResponse {
 		return new JSONResponse(
 			data: [
 				'type' => 'NotAuthenticated',
 				'code' => 'not_authenticated',
-				'title' => $title,
-				'status' => $status,
-				'detail' => $title,
+				'title' => 'Authenticatiegegevens zijn niet geldig.',
+				'status' => 401,
+				'detail' => $detail,
 			],
-			statusCode: $statusCode
+			statusCode: Http::STATUS_UNAUTHORIZED
 		);
 	}//end notAuthenticated()
 
@@ -1077,7 +1092,8 @@ class ZgwService implements ZgwServiceInterface {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handleIndex(IRequest $request, string $zgwApi, string $resource): JSONResponse {
-		$mappingConfig = $this->mappingOrRefusal(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource));
+		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource);
+		$mappingConfig = $this->mappingOrRefusal(route: $route);
 		if ($mappingConfig instanceof JSONResponse) {
 			return $mappingConfig;
 		}
@@ -1090,7 +1106,7 @@ class ZgwService implements ZgwServiceInterface {
 		}
 
 		try {
-			return $this->listMapped(request: $request, zgwApi: $zgwApi, resource: $resource, mappingConfig: $mappingConfig);
+			return $this->listMapped(route: $route, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ZGW list error: ' . $e->getMessage(),
@@ -1106,17 +1122,15 @@ class ZgwService implements ZgwServiceInterface {
 	/**
 	 * Search one page of a resource and map it outbound.
 	 *
-	 * @param IRequest $request The request object
-	 * @param string $zgwApi The ZGW API group
-	 * @param string $resource The ZGW resource name
+	 * @param ResourceRoute $route The request, API group and resource
 	 * @param array $mappingConfig The mapping configuration
 	 *
 	 * @return JSONResponse The paginated list
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function listMapped(IRequest $request, string $zgwApi, string $resource, array $mappingConfig): JSONResponse {
-		$params = $request->getParams();
+	private function listMapped(ResourceRoute $route, array $mappingConfig): JSONResponse {
+		$params = $route->request->getParams();
 		$filters = $this->translateQueryParams(params: $params, mappingConfig: $mappingConfig);
 
 		[$page, $pageSize] = $this->pageWindow(params: $params);
@@ -1125,7 +1139,7 @@ class ZgwService implements ZgwServiceInterface {
 		$result = $this->searchPage(searchParams: $searchParams, mappingConfig: $mappingConfig);
 
 		$objects = $result['results'] ?? [];
-		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
+		$baseUrl = $this->buildBaseUrl(request: $route->request, zgwApi: $route->api, resource: $route->resource);
 		$mapped = $this->mapListObjects(objects: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
 
 		return $this->pageResponse(mapped: $mapped, totalCount: $result['total'] ?? count($objects), params: $params, baseUrl: $baseUrl);
@@ -1459,13 +1473,7 @@ class ZgwService implements ZgwServiceInterface {
 	 */
 	private function showMappedOrNotFound(ResourceRoute $route, array $mappingConfig, mixed $object): JSONResponse {
 		try {
-			return $this->showMapped(
-				request: $route->request,
-				zgwApi: $route->api,
-				resource: $route->resource,
-				mappingConfig: $mappingConfig,
-				object: $object
-			);
+			return $this->showMapped(route: $route, mappingConfig: $mappingConfig, object: $object);
 		} catch (\Throwable $e) {
 			$this->logger->error('ZGW show error: ' . $e->getMessage(), ['exception' => $e]);
 			return new JSONResponse(data: ['detail' => 'Not found'], statusCode: Http::STATUS_NOT_FOUND);
@@ -1475,9 +1483,7 @@ class ZgwService implements ZgwServiceInterface {
 	/**
 	 * Map one stored object outbound.
 	 *
-	 * @param IRequest $request The request object
-	 * @param string $zgwApi The ZGW API group
-	 * @param string $resource The ZGW resource name
+	 * @param ResourceRoute $route The request, API group and resource
 	 * @param array $mappingConfig The mapping configuration
 	 * @param mixed $object The stored object
 	 *
@@ -1485,14 +1491,8 @@ class ZgwService implements ZgwServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function showMapped(
-		IRequest $request,
-		string $zgwApi,
-		string $resource,
-		array $mappingConfig,
-		mixed $object,
-	): JSONResponse {
-		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
+	private function showMapped(ResourceRoute $route, array $mappingConfig, mixed $object): JSONResponse {
+		$baseUrl = $this->buildBaseUrl(request: $route->request, zgwApi: $route->api, resource: $route->resource);
 		$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
 
 		$objectData = $object;
@@ -1578,7 +1578,7 @@ class ZgwService implements ZgwServiceInterface {
 			return $mappingConfig;
 		}
 
-		$existingData = $this->readExisting(uuid: $route->uuid, mappingConfig: $mappingConfig, operation: $operation, resource: $route->resource);
+		$existingData = $this->readExisting(route: $route, mappingConfig: $mappingConfig, operation: $operation);
 		if ($existingData instanceof JSONResponse) {
 			return $existingData;
 		}
@@ -1714,18 +1714,17 @@ class ZgwService implements ZgwServiceInterface {
 	/**
 	 * The stored object an update or delete acts on, or the answer when it cannot be read.
 	 *
-	 * @param string $uuid The object uuid
+	 * @param ResourceRoute $route The route: the object uuid, and the resource for the log
 	 * @param array $mappingConfig The ZGW mapping (`sourceRegister`, `sourceSchema`)
 	 * @param string $operation What the request asks (`ZGW delete`), for the log
-	 * @param string $resource The ZGW resource name, for the log
 	 *
 	 * @return array|JSONResponse The object as an array, or the 404, 403 or 503 answer
 	 */
-	private function readExisting(string $uuid, array $mappingConfig, string $operation, string $resource): array|JSONResponse {
+	private function readExisting(ResourceRoute $route, array $mappingConfig, string $operation): array|JSONResponse {
 		try {
-			$existing = $this->findSerialized(uuid: $uuid, mappingConfig: $mappingConfig);
+			$existing = $this->findSerialized(uuid: $route->uuid, mappingConfig: $mappingConfig);
 		} catch (\Throwable $e) {
-			return $this->storeFailureResponse(error: $e, operation: $operation, object: $resource . ' ' . $uuid);
+			return $this->storeFailureResponse(error: $e, operation: $operation, object: $route->objectLabel());
 		}
 
 		return $existing ?? $this->notFoundResponse();

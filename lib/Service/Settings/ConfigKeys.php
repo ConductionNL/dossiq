@@ -161,6 +161,7 @@ class ConfigKeys {
 		'lhsMatrix',
 		'lhs_matrix_schema',
 		'lhs_recommendation_schema',
+		'decision_advice_schema',
 		// AI-Assisted Processing settings.
 		'ai_audit_entry_schema',
 		'ai_enabled',
@@ -426,5 +427,42 @@ class ConfigKeys {
 		// the client certificate's SHA-256 fingerprint in. Empty switches
 		// certificate access off (ApiCredentialResolver, REQ-PAA-02).
 		'public_api_client_cert_header',
+		// The administrator's own text per notification kind (REQ-CRS-13);
+		// Notifier::customText() reads them.
+		...self::NOTIFICATION_TEXT_KEYS,
+	];
+
+	/**
+	 * One key per notification kind whose text an administrator may set
+	 * (REQ-CRS-13): `notification_text_` and the Notifier subject. Empty keeps
+	 * the shipped, translated wording.
+	 *
+	 * @var string[]
+	 *
+	 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/admin-settings/spec.md#requirement-an-administrator-edits-the-text-of-each-notification-req-crs-13
+	 */
+	public const NOTIFICATION_TEXT_KEYS = [
+		'notification_text_note_mention',
+		'notification_text_case_status_changed',
+		'notification_text_case_role_notified',
+		'notification_text_milestone_bottleneck',
+		'notification_text_cases_reassigned',
+		'notification_text_advice_requested',
+		'notification_text_advies_ontvangen',
+		'notification_text_advies_herinnering',
+		'notification_text_woo_deadline_warning',
+		'notification_text_woo_deadline_overdue',
+		'notification_text_dso_deadline_warning',
+		'notification_text_dso_deadline_critical',
+		'notification_text_dso_deadline_overdue',
+		'notification_text_term_nearing',
+		'notification_text_term_exceeded',
+		'notification_text_applicant_responded',
+		'notification_text_applicant_withdrew',
+		'notification_text_stuf_circuit_open',
+		'notification_text_stuf_timeout',
+		'notification_text_stuf_permanent_error',
+		'notification_text_background_service_account_missing',
+		'notification_text_tenant_quota_soft_limit',
 	];
 }//end class

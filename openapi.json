@@ -132,6 +132,10 @@
             "description": "Finish, abort, archive, hold, draft, promote and record incompleteness."
         },
         {
+            "name": "case-anonymised-export",
+            "description": "Exports a filtered case list with its identifying fields removed or generalised."
+        },
+        {
             "name": "case-approval",
             "description": "Starts the approval walk for one gated act of one case."
         },
@@ -370,6 +374,10 @@
         {
             "name": "deadline-reporting",
             "description": "Reporting REST surface."
+        },
+        {
+            "name": "decision-advice",
+            "description": "Advice on an enforcement intervention for a case, and the outcome chosen on it."
         },
         {
             "name": "deelzaak",
@@ -630,6 +638,10 @@
         {
             "name": "settings",
             "description": "Controller for managing Dossiq application settings."
+        },
+        {
+            "name": "settlement",
+            "description": "The settlements of a case, for a reader of that case."
         },
         {
             "name": "setup",
@@ -7455,6 +7467,57 @@
                 }
             }
         },
+        "/cases/anonymised-export": {
+            "post": {
+                "operationId": "case-anonymised-export-export",
+                "summary": "Export the listed cases anonymised",
+                "description": "Export the listed cases with every field their case type marks as identifying removed or generalised: an address to its postcode area, a date to its year, anything else removed. Each case is read as the calling user, so a case the caller may not read is not exported. A case type that cannot be read refuses the whole export. The export is written to the processing log. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "case-anonymised-export"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "caseIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "The cases of the filtered list, at most 1000."
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Nothing was listed, too much was, or a case type could not be read."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    }
+                }
+            }
+        },
         "/cases/bulk-jobs": {
             "post": {
                 "operationId": "bulk-job-handoff-create",
@@ -9743,6 +9806,51 @@
                 "description": "The instalments and totals of the case's payment schedules. A case the user may not read answers 403 before anything is read. Needs a signed-in Nextcloud user.",
                 "tags": [
                     "payment-schedule"
+                ],
+                "parameters": [
+                    {
+                        "name": "caseId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The case UUID.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            }
+        },
+        "/cases/{caseId}/settlements": {
+            "get": {
+                "operationId": "settlement-for-case",
+                "summary": "The settlements of the case",
+                "description": "The settlements of the case, reached through its applications and their executions. A case the user may not read answers 403 before anything is read. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "settlement"
                 ],
                 "parameters": [
                     {
@@ -16402,6 +16510,134 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"
+                    }
+                }
+            }
+        },
+        "/decision-advice/case/{caseId}/form": {
+          "get": {
+            "operationId": "decision-advice-form",
+            "summary": "Read what the advice dialog asks on a case",
+            "description": "The decision table the case type names (`caseType.adviceDecisionTable`), the inputs it declares with the values its rules use, and the outcomes a handler can choose. `available` is false when the case type names no table. Needs a signed-in Nextcloud user who may read the case.",
+            "tags": [
+              "decision-advice"
+            ],
+            "parameters": [
+              {
+                "name": "caseId",
+                "in": "path",
+                "required": true,
+                "description": "The case UUID.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "The request succeeded.",
+                "headers": {
+                  "API-Version": {
+                    "$ref": "#/components/headers/API-Version"
+                  }
+                },
+                "content": {
+                  "application/json": {
+                    "schema": {}
+                  }
+                }
+              },
+              "400": {
+                "$ref": "#/components/responses/Problem400"
+              },
+              "401": {
+                "$ref": "#/components/responses/Problem401"
+              },
+              "403": {
+                "$ref": "#/components/responses/Problem403"
+              },
+              "404": {
+                "$ref": "#/components/responses/Problem404"
+              },
+              "409": {
+                "$ref": "#/components/responses/Problem409"
+              }
+            }
+          }
+        },
+        "/decision-advice/override": {
+            "post": {
+                "operationId": "decision-advice-override",
+                "summary": "Choose an outcome on a stored advice",
+                "description": "Record the outcome chosen on a stored advice, with a reason when it departs from the advice. Body: `adviceId`, `outcome` and `reason`. An advice that was already decided is refused with 409. Needs a signed-in Nextcloud user who may act on the case.",
+                "tags": [
+                    "decision-advice"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Problem409"
+                    }
+                }
+            }
+        },
+        "/decision-advice/recommend": {
+            "post": {
+                "operationId": "decision-advice-recommend",
+                "summary": "Recommend an enforcement intervention for a case",
+                "description": "Compute and store an intervention advice for a case from its inputs. Body: `caseId` and `inputs`. Needs a signed-in Nextcloud user who may act on the case.",
+                "tags": [
+                    "decision-advice"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
                     }
                 }
             }

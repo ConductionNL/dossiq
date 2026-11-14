@@ -600,6 +600,7 @@ class CaseSharingService implements CaseSharingServiceInterface {
 	 * @return array The created federated share data, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/tasks.md
 	 */
 	public function createFederatedShare(
 		string $caseId,
@@ -609,6 +610,13 @@ class CaseSharingService implements CaseSharingServiceInterface {
 		string $permissionLevel,
 		string $createdBy,
 	): array {
+		// A case type that requires consent for sharing lets the case reach
+		// another organisation only when a valid consent names that receiver.
+		$verdict = $this->consent->assessSharing(caseId: $caseId, party: $remoteCloudId);
+		if ($verdict['allowed'] === false) {
+			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];
+		}
+
 		return $this->federatedShares->createFederatedShare(
 			caseId: $caseId,
 			remoteCloudId: $remoteCloudId,

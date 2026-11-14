@@ -66,6 +66,40 @@
       }
     ]
   },
+  "propertyDefinitions": [
+    {
+      "id": "a4936ffd-1ac0-53b7-81b1-c361e68b13a3",
+      "name": "sluiting",
+      "definition": "Sluitingsdatum",
+      "description": "De dag waarop de inschrijving sluit. Inschrijvingen op deze dag tellen nog mee; de beoordeling start pas daarna.",
+      "category": "Aanbesteding",
+      "propertyType": "string",
+      "format": "date",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
+    },
+    {
+      "id": "64b93bb3-7391-5183-ba5a-8196077459a1",
+      "name": "gunningsdatum",
+      "definition": "Datum gunningsbeslissing",
+      "description": "De dag waarop de gunningsbeslissing aan alle inschrijvers is verstuurd. Daarmee begint de opschortende termijn.",
+      "category": "Aanbesteding",
+      "propertyType": "string",
+      "format": "date",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "hideOnCreate": true
+    },
+    {
+      "id": "2c8f83ac-a7e2-5817-8570-dac4ae7e861e",
+      "name": "opschortendeTermijnEinde",
+      "definition": "Einde opschortende termijn",
+      "description": "De dag waarop de opschortende termijn na de gunningsbeslissing is verstreken. Vanaf die dag kan de gunning definitief worden; eerder weigert de overgang naar Gegund met deze datum.",
+      "category": "Aanbesteding",
+      "propertyType": "string",
+      "format": "date",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "hideOnCreate": true
+    }
+  ],
   "statusTypes": [
     {
       "id": "775cbdfe-31e7-5ec8-8405-f2ff35d32fa4",

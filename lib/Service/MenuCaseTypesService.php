@@ -48,6 +48,8 @@ use OCP\IUserManager;
  * Reads and writes the per-user list of case types in the menu.
  *
  * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 
@@ -158,21 +160,9 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 	public function offeredCaseTypes(string $userId): array {
 		$rows = $this->currentCaseTypes();
 
-		$userGroups = [];
-		$user = $this->userManager->get($userId);
-		if ($user !== null) {
-			$userGroups = array_flip($this->groupManager->getUserGroupIds($user));
-		}
+		$userGroups = $this->groupsOf(userId: $userId);
 
-		$handled = [];
-		foreach ($rows as $row) {
-			foreach ($row['teams'] as $team) {
-				if (isset($userGroups[$team]) === true) {
-					$handled[] = $row;
-					break;
-				}
-			}
-		}
+		$handled = $this->handledBy(rows: $rows, userGroups: $userGroups);
 
 		if (count($handled) === 0) {
 			$handled = $rows;
@@ -183,6 +173,45 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 			$handled
 		);
 	}//end offeredCaseTypes()
+
+	/**
+	 * The Nextcloud groups a user is in, as a set.
+	 *
+	 * @param string $userId The user.
+	 *
+	 * @return array<string, int> The group ids as keys; empty for an unknown user.
+	 */
+	private function groupsOf(string $userId): array {
+		$userGroups = [];
+		$user = $this->userManager->get($userId);
+		if ($user !== null) {
+			$userGroups = array_flip($this->groupManager->getUserGroupIds($user));
+		}
+
+		return $userGroups;
+	}//end groupsOf()
+
+	/**
+	 * The case types one of whose handling teams is a group the user is in.
+	 *
+	 * @param array<int, array<string, mixed>> $rows       The current case types.
+	 * @param array<string, int>               $userGroups The user's groups, as a set.
+	 *
+	 * @return array<int, array<string, mixed>> The handled case types.
+	 */
+	private function handledBy(array $rows, array $userGroups): array {
+		$handled = [];
+		foreach ($rows as $row) {
+			foreach ($row['teams'] as $team) {
+				if (isset($userGroups[$team]) === true) {
+					$handled[] = $row;
+					break;
+				}
+			}
+		}
+
+		return $handled;
+	}//end handledBy()
 
 	/**
 	 * The current case types the current user may see, sorted by title.

@@ -150,6 +150,17 @@ class HermiqAiFeatureClient implements HermiqAiFeatureClientInterface {
 			return [];
 		}
 
+		return $this->rowsBySlug(decoded: $decoded);
+	}//end featureResidency()
+
+	/**
+	 * The residency rows that name a feature slug, keyed by it.
+	 *
+	 * @param array<string, mixed> $decoded The decoded residency answer.
+	 *
+	 * @return array<string, array<string, mixed>> The rows, by feature slug.
+	 */
+	private function rowsBySlug(array $decoded): array {
 		$rows = [];
 		foreach (($decoded['results'] ?? []) as $row) {
 			if (is_array($row) === false) {
@@ -165,7 +176,7 @@ class HermiqAiFeatureClient implements HermiqAiFeatureClientInterface {
 		}
 
 		return $rows;
-	}//end featureResidency()
+	}//end rowsBySlug()
 
 	/**
 	 * The prompts hermiq holds for one record type, in the administrator's order.

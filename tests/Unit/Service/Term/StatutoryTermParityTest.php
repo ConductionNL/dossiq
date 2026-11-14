@@ -90,6 +90,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
  * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
+ * @uses \OCA\Dossiq\Service\Reporting\AnnualPayoutStatement
  * @uses \OCA\Dossiq\Service\InformationRequestRun
  * @uses \OCA\Dossiq\Service\PauseRegistrationRun
  * @uses \OCA\Dossiq\Service\Termijn\TermLookups

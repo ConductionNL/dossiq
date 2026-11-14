@@ -257,24 +257,7 @@ class StatusDwellService {
 		$seen = false;
 
 		if (is_array($totals) === true) {
-			foreach ($totals as $entry) {
-				if (is_array($entry) === false) {
-					continue;
-				}
-
-				$id = (string)($entry['statusType'] ?? '');
-				if ($id === '') {
-					continue;
-				}
-
-				$days = (int)($entry['workingDays'] ?? 0);
-				if ($id === $statusTypeId) {
-					$days += $workingDays;
-					$seen = true;
-				}
-
-				$rebuilt[] = ['statusType' => $id, 'workingDays' => $days];
-			}
+			[$rebuilt, $seen] = $this->rebuiltTotals(totals: $totals, statusTypeId: $statusTypeId, workingDays: $workingDays);
 		}
 
 		if ($seen === false) {
@@ -283,4 +266,52 @@ class StatusDwellService {
 
 		return $rebuilt;
 	}//end addTo()
+
+	/**
+	 * The readable entries of the totals list, with the days added to the status's entry.
+	 *
+	 * @param array<mixed> $totals       The stored list.
+	 * @param string       $statusTypeId The status the time was spent in.
+	 * @param int          $workingDays  The days to add.
+	 *
+	 * @return array{0: array<int, array{statusType: string, workingDays: int}>, 1: bool} The entries, and whether the status had one.
+	 */
+	private function rebuiltTotals(array $totals, string $statusTypeId, int $workingDays): array {
+		[$rebuilt, $seen] = [[], false];
+		foreach ($totals as $entry) {
+			$total = $this->totalEntry(entry: $entry);
+			if ($total === null) {
+				continue;
+			}
+
+			if ($total['statusType'] === $statusTypeId) {
+				$total['workingDays'] += $workingDays;
+				$seen = true;
+			}
+
+			$rebuilt[] = $total;
+		}
+
+		return [$rebuilt, $seen];
+	}//end rebuiltTotals()
+
+	/**
+	 * One stored totals entry, read.
+	 *
+	 * @param mixed $entry The stored entry.
+	 *
+	 * @return array{statusType: string, workingDays: int}|null The entry, or null when it names no status.
+	 */
+	private function totalEntry(mixed $entry): array|null {
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$id = (string)($entry['statusType'] ?? '');
+		if ($id === '') {
+			return null;
+		}
+
+		return ['statusType' => $id, 'workingDays' => (int)($entry['workingDays'] ?? 0)];
+	}//end totalEntry()
 }//end class

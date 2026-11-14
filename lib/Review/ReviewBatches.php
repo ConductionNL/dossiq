@@ -47,6 +47,7 @@ use Throwable;
  * batch and its reviews when the case type keeps them private.
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ReviewBatches implements ReviewBatchesInterface {
 
@@ -156,7 +157,10 @@ class ReviewBatches implements ReviewBatchesInterface {
 
 		$this->stampReviews(caseId: $caseId, batchId: $batchId, documents: $documents);
 
-		$taskId = $this->handTask(caseId: $caseId, batchId: $batchId, name: $name, assignee: $assignee, count: count($documents), userId: $userId);
+		$taskId = $this->handTask(
+			assignment: ['caseId' => $caseId, 'batchId' => $batchId, 'name' => $name, 'assignee' => $assignee, 'count' => count($documents)],
+			userId: $userId,
+		);
 		$batch = $this->withTask(batch: $batch, taskId: $taskId);
 
 		$access = $this->reconcile(caseId: $caseId, batchId: $batchId);
@@ -266,7 +270,10 @@ class ReviewBatches implements ReviewBatchesInterface {
 			]
 		);
 		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
-		$taskId = $this->handTask(caseId: $caseId, batchId: $batchId, name: $name, assignee: $assignee, count: count($documents), userId: $userId);
+		$taskId = $this->handTask(
+			assignment: ['caseId' => $caseId, 'batchId' => $batchId, 'name' => $name, 'assignee' => $assignee, 'count' => count($documents)],
+			userId: $userId,
+		);
 		if ($taskId !== '') {
 			$batch['task'] = $taskId;
 			$batch = $this->save(batch: $batch);
@@ -327,33 +334,29 @@ class ReviewBatches implements ReviewBatchesInterface {
 	/**
 	 * Hand the reviewer a task for the batch through the engine; '' when the engine did not take it.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $batchId The batch.
-	 * @param string $name The batch's name.
-	 * @param string $assignee The reviewer.
-	 * @param int $count How many documents the batch holds.
-	 * @param string $userId Who made the batch.
+	 * @param array{caseId: string, batchId: string, name: string, assignee: string, count: int} $assignment The batch and its reviewer.
+	 * @param string                                                                          $userId     Who made the batch.
 	 *
 	 * @return string The engine task uuid, or ''.
 	 */
-	private function handTask(string $caseId, string $batchId, string $name, string $assignee, int $count, string $userId): string {
+	private function handTask(array $assignment, string $userId): string {
 		$taskId = $this->tasks->mirrorImport(
 			task: [
-				'id' => self::TASK_KIND.':'.$batchId,
-				'title' => $this->l10n->t('Review the batch "%s"', [$name]),
-				'description' => $this->l10n->t('%1$d documents to review in the batch "%2$s".', [$count, $name]),
+				'id' => self::TASK_KIND.':'.$assignment['batchId'],
+				'title' => $this->l10n->t('Review the batch "%s"', [$assignment['name']]),
+				'description' => $this->l10n->t('%1$d documents to review in the batch "%2$s".', [$assignment['count'], $assignment['name']]),
 				'status' => 'available',
-				'assignee' => $assignee,
+				'assignee' => $assignment['assignee'],
 				'priority' => 'normal',
-				'metadata' => ['dossiq' => ['kind' => self::TASK_KIND, 'batch' => $batchId]],
+				'metadata' => ['dossiq' => ['kind' => self::TASK_KIND, 'batch' => $assignment['batchId']]],
 			],
-			caseId: $caseId,
+			caseId: $assignment['caseId'],
 			actor: $userId,
 		);
 		if ($taskId === '') {
 			$this->logger->warning(
 				'Dossiq: a Review batch was created but the engine did not take its task',
-				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'batch' => $batchId]
+				['app' => AppIdentity::APP_ID, 'case' => $assignment['caseId'], 'batch' => $assignment['batchId']]
 			);
 		}
 
@@ -399,6 +402,22 @@ class ReviewBatches implements ReviewBatchesInterface {
 	 * @throws RefusedException When something is missing, unknown or taken.
 	 */
 	private function validate(string $caseId, string $name, string $assignee, array $documents): void {
+		$this->assertNamedAndAssigned(name: $name, assignee: $assignee);
+		$this->assertReviewerAdmitted(assignee: $assignee);
+		$this->assertDocumentsFree(caseId: $caseId, documents: $documents);
+	}//end validate()
+
+	/**
+	 * Refuse a batch while batches cannot be stored, or one without a name or a known reviewer.
+	 *
+	 * @param string $name     The batch name.
+	 * @param string $assignee The reviewer's user id.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When batches cannot be stored, the name is empty or the reviewer is unknown.
+	 */
+	private function assertNamedAndAssigned(string $name, string $assignee): void {
 		if ($this->isAvailable() === false) {
 			throw $this->refusal(rule: 'review-batch-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE);
 		}
@@ -410,9 +429,19 @@ class ReviewBatches implements ReviewBatchesInterface {
 		if ($assignee === '' || $this->userManager->userExists($assignee) === false) {
 			throw $this->refusal(rule: 'review-batch-assignee-unknown', sentence: 'Choose the reviewer of the batch.');
 		}
+	}//end assertNamedAndAssigned()
 
-		$this->assertReviewerAdmitted(assignee: $assignee);
-
+	/**
+	 * Refuse a batch without documents, with a document of another case, or with one already in an open batch.
+	 *
+	 * @param string        $caseId    The case uuid.
+	 * @param array<string> $documents The document ids.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the documents cannot form this batch.
+	 */
+	private function assertDocumentsFree(string $caseId, array $documents): void {
 		if ($documents === []) {
 			throw $this->refusal(rule: 'review-batch-empty', sentence: 'Put at least one document in the batch.');
 		}
@@ -428,7 +457,7 @@ class ReviewBatches implements ReviewBatchesInterface {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
-	}//end validate()
+	}//end assertDocumentsFree()
 
 	/**
 	 * Whether the batch schema can be written.

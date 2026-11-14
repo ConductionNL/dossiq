@@ -137,14 +137,7 @@ class ApprovalGate {
 	public function verdictFor(array $case, string $act, string $userId): array {
 		$caseType = $this->caseTypeOf(case: $case);
 		if ($caseType === null) {
-			// The declaration could not be read, so whether this act is gated
-			// is unknown. Unknown is a refusal with a status, not an allow:
-			// ADR-102, and the same reading the unreadable outcome gets below.
-			return $this->refused(
-				rule: self::RULE_UNREADABLE,
-				sentence: $this->l10n->t('We could not read this case type, so we cannot tell whether this act needs an approval. Try again shortly.'),
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
+			return $this->unreadable();
 		}
 
 		$gate = ApprovalGateDeclaration::gateFor(caseType: $caseType, act: $act);
@@ -152,18 +145,48 @@ class ApprovalGate {
 			return $this->ungated();
 		}
 
-		$reference = ApprovalGateDeclaration::referenceFor(case: $case, act: $act);
+		return $this->gatedVerdict(caseRow: $case, gate: $gate, act: $act, userId: $userId);
+	}//end verdictFor()
+
+	/**
+	 * The refusal when the case type's approval declaration could not be read.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function unreadable(): array {
+		// The declaration could not be read, so whether this act is gated
+		// is unknown. Unknown is a refusal with a status, not an allow:
+		// ADR-102, and the same reading the unreadable outcome gets below.
+		return $this->refused(
+			rule: self::RULE_UNREADABLE,
+			sentence: $this->l10n->t('We could not read this case type, so we cannot tell whether this act needs an approval. Try again shortly.'),
+			status: RefusedException::STATUS_INDETERMINATE,
+		);
+	}//end unreadable()
+
+	/**
+	 * The verdict on a gated act: outstanding until decidiq was asked, else decidiq's answer.
+	 *
+	 * @param array<string, mixed> $caseRow The case.
+	 * @param array<string, mixed> $gate    The gate the act is behind.
+	 * @param string               $act     The act.
+	 * @param string               $userId  The acting user.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function gatedVerdict(array $caseRow, array $gate, string $act, string $userId): array {
+		$reference = ApprovalGateDeclaration::referenceFor(case: $caseRow, act: $act);
 		if ($reference === '') {
 			return $this->refused(
 				rule: self::RULE_OUTSTANDING,
 				sentence: $this->l10n->t('%s has not been asked for yet. Start it in decidiq, then come back to this act.', [$gate['label']]),
 				status: RefusedException::STATUS_UNPROCESSABLE,
-				label: $gate['label'],
+				answer: new DecidiqAnswer(gate: $gate, reference: '', approvers: []),
 			);
 		}
 
 		return $this->verdictFromDecidiq(gate: $gate, reference: $reference, userId: $userId);
-	}//end verdictFor()
+	}//end gatedVerdict()
 
 	/**
 	 * What this case is waiting for, and on whom.
@@ -219,12 +242,13 @@ class ApprovalGate {
 		$state = (string)($read['state'] ?? '');
 		$approvers = $this->approversIn(envelope: (array)($read['envelope'] ?? []));
 
+		$answer = new DecidiqAnswer(gate: $gate, reference: $reference, approvers: $approvers);
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_DECIDED) {
-			return $this->decided(gate: $gate, status: (string)($read['status'] ?? ''), reference: $reference, approvers: $approvers);
+			return $this->decided(answer: $answer, status: (string)($read['status'] ?? ''));
 		}
 
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_OPEN) {
-			return $this->stillOpen(gate: $gate, reference: $reference, approvers: $approvers);
+			return $this->stillOpen(answer: $answer);
 		}
 
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_WITHDRAWN) {
@@ -241,20 +265,16 @@ class ApprovalGate {
 	/**
 	 * The verdict on a decision decidiq still has open.
 	 *
-	 * @param array{act: string, decisionType: string, label: string} $gate      The declared gate.
-	 * @param string                                                  $reference The decidiq decision id.
-	 * @param array<int, string>                                      $approvers Who decidiq named.
+	 * @param DecidiqAnswer $answer The declared gate, the decidiq decision id and who decidiq named.
 	 *
 	 * @return array<string, mixed> The verdict.
 	 */
-	private function stillOpen(array $gate, string $reference, array $approvers): array {
+	private function stillOpen(DecidiqAnswer $answer): array {
 		return $this->refused(
 			rule: self::RULE_OUTSTANDING,
-			sentence: $this->l10n->t('%1$s is still open. %2$s', [$gate['label'], $this->onWhom(approvers: $approvers)]),
+			sentence: $this->l10n->t('%1$s is still open. %2$s', [$answer->gate['label'], $this->onWhom(approvers: $answer->approvers)]),
 			status: RefusedException::STATUS_UNPROCESSABLE,
-			label: $gate['label'],
-			reference: $reference,
-			approvers: $approvers,
+			answer: $answer,
 		);
 	}//end stillOpen()
 
@@ -271,22 +291,19 @@ class ApprovalGate {
 			rule: self::RULE_OUTSTANDING,
 			sentence: $this->l10n->t('%s was withdrawn without an answer. Ask for it again in decidiq.', [$gate['label']]),
 			status: RefusedException::STATUS_UNPROCESSABLE,
-			label: $gate['label'],
-			reference: $reference,
+			answer: new DecidiqAnswer(gate: $gate, reference: $reference, approvers: []),
 		);
 	}//end withdrawn()
 
 	/**
 	 * The verdict on a decision decidiq has concluded.
 	 *
-	 * @param array{act: string, decisionType: string, label: string} $gate      The declared gate.
-	 * @param string                                                  $status    decidiq's own status word.
-	 * @param string                                                  $reference The decidiq decision id.
-	 * @param array<int, string>                                      $approvers Who decidiq named.
+	 * @param DecidiqAnswer $answer The declared gate, the decidiq decision id and who decidiq named.
+	 * @param string        $status decidiq's own status word.
 	 *
 	 * @return array<string, mixed> The verdict.
 	 */
-	private function decided(array $gate, string $status, string $reference, array $approvers): array {
+	private function decided(DecidiqAnswer $answer, string $status): array {
 		if ($status === 'approved') {
 			return [
 				'gated' => true,
@@ -294,19 +311,17 @@ class ApprovalGate {
 				'rule' => '',
 				'sentence' => '',
 				'status' => 0,
-				'label' => $gate['label'],
-				'decisionRef' => $reference,
-				'approvers' => $approvers,
+				'label' => $answer->gate['label'],
+				'decisionRef' => $answer->reference,
+				'approvers' => $answer->approvers,
 			];
 		}
 
 		return $this->refused(
 			rule: self::RULE_REJECTED,
-			sentence: $this->l10n->t('%s was refused. This act stays closed while that stands.', [$gate['label']]),
+			sentence: $this->l10n->t('%s was refused. This act stays closed while that stands.', [$answer->gate['label']]),
 			status: RefusedException::STATUS_REFUSED,
-			label: $gate['label'],
-			reference: $reference,
-			approvers: $approvers,
+			answer: $answer,
 		);
 	}//end decided()
 
@@ -342,8 +357,7 @@ class ApprovalGate {
 			rule: self::RULE_UNREADABLE,
 			sentence: $sentence,
 			status: RefusedException::STATUS_INDETERMINATE,
-			label: $gate['label'],
-			reference: $reference,
+			answer: new DecidiqAnswer(gate: $gate, reference: $reference, approvers: []),
 		);
 	}//end cannotRead()
 
@@ -435,32 +449,23 @@ class ApprovalGate {
 	/**
 	 * One refusal shape, so no caller has to interpret an absent key.
 	 *
-	 * @param string             $rule      The rule slug for the `error` field (ADR-050).
-	 * @param string             $sentence  The sentence a handler reads.
-	 * @param integer            $status    The HTTP status the refusal answers with.
-	 * @param string             $label     What the approval is called.
-	 * @param string             $reference The decidiq decision id, when there is one.
-	 * @param array<int, string> $approvers Who it waits on, when decidiq named them.
+	 * @param string             $rule     The rule slug for the `error` field (ADR-050).
+	 * @param string             $sentence The sentence a handler reads.
+	 * @param integer            $status   The HTTP status the refusal answers with.
+	 * @param DecidiqAnswer|null $answer   The gate, decision id and approvers, when there is a gate.
 	 *
 	 * @return array<string, mixed> The verdict.
 	 */
-	private function refused(
-		string $rule,
-		string $sentence,
-		int $status,
-		string $label = '',
-		string $reference = '',
-		array $approvers = [],
-	): array {
+	private function refused(string $rule, string $sentence, int $status, ?DecidiqAnswer $answer = null): array {
 		return [
 			'gated' => true,
 			'allowed' => false,
 			'rule' => $rule,
 			'sentence' => $sentence,
 			'status' => $status,
-			'label' => $label,
-			'decisionRef' => $reference,
-			'approvers' => $approvers,
+			'label' => ($answer->gate['label'] ?? ''),
+			'decisionRef' => ($answer->reference ?? ''),
+			'approvers' => ($answer->approvers ?? []),
 		];
 	}//end refused()
 

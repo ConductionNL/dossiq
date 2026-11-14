@@ -198,35 +198,67 @@ class RecordImportReferences {
 	public function repoint(object $objectService, array $import, array $oldValues, string $caseId): int {
 		$moved = 0;
 		foreach ((array)($import['references'] ?? []) as $reference) {
-			$register = (string)($reference['register'] ?? ($import['sourceRegister'] ?? ''));
-			$schema = (string)($reference['schema'] ?? '');
-			$field = (string)($reference['field'] ?? '');
-			if ($schema === '' || $field === '') {
+			$where = $this->referenceWhere(reference: $reference, import: $import);
+			if ($where === null) {
 				continue;
 			}
 
 			$old = array_values(array_unique(array_filter($oldValues, static fn (string $value): bool => trim($value) !== '')));
 			if (($reference['list'] ?? false) === true) {
-				$moved += $this->repointLists(objectService: $objectService, where: [$register, $schema, $field], oldValues: $old, caseId: $caseId);
+				$moved += $this->repointLists(objectService: $objectService, where: $where, oldValues: $old, caseId: $caseId);
 				continue;
 			}
 
-			foreach ($old as $value) {
-				foreach ($this->store->listAll(objectService: $objectService, register: $register, schema: $schema, filters: [$field => $value]) as $row) {
-					$this->patchObjectAsArray(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						id: $this->store->idOf(row: $row),
-						changes: [$field => $caseId]
-					);
-					$moved++;
-				}
-			}
+			$moved += $this->repointRows(objectService: $objectService, where: $where, oldValues: $old, caseId: $caseId);
 		}
 
 		return $moved;
 	}//end repoint()
+
+	/**
+	 * The register, schema and field one `references` entry names.
+	 *
+	 * @param mixed                $reference The `references` entry.
+	 * @param array<string, mixed> $import    The declaration.
+	 *
+	 * @return array<int, string>|null Register, schema and field, or null when the schema or field is missing.
+	 */
+	private function referenceWhere(mixed $reference, array $import): array|null {
+		$register = (string)($reference['register'] ?? ($import['sourceRegister'] ?? ''));
+		$schema = (string)($reference['schema'] ?? '');
+		$field = (string)($reference['field'] ?? '');
+		if ($schema === '' || $field === '') {
+			return null;
+		}
+
+		return [$register, $schema, $field];
+	}//end referenceWhere()
+
+	/**
+	 * Point every row whose field holds one of the old values at the case.
+	 *
+	 * @param object             $objectService The OpenRegister ObjectService.
+	 * @param array<int, string> $where         Register, schema and field.
+	 * @param array<int, string> $oldValues     The moved record's id and slug.
+	 * @param string             $caseId        The case.
+	 *
+	 * @return int How many references moved.
+	 *
+	 * @throws Throwable When a referencing record cannot be read or written.
+	 */
+	private function repointRows(object $objectService, array $where, array $oldValues, string $caseId): int {
+		[$register, $schema, $field] = $where;
+		$moved = 0;
+		foreach ($oldValues as $value) {
+			foreach ($this->store->listAll(objectService: $objectService, register: $register, schema: $schema, filters: [$field => $value]) as $row) {
+				$id = $this->store->idOf(row: $row);
+				$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id, changes: [$field => $caseId]);
+				$moved++;
+			}
+		}
+
+		return $moved;
+	}//end repointRows()
 
 	/**
 	 * Replace the moved record's entry in a list of references, keeping the

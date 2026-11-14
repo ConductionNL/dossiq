@@ -268,7 +268,7 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 		$slug = trim((string)($row['slug'] ?? ''));
 
 		try {
-			return $this->migratePartner(mapper: $mapper, row: $row, partnerUuid: $partnerUuid, slug: $slug);
+			return $this->migratePartner(mapper: $mapper, partner: new PartnerRow(row: $row, partnerUuid: $partnerUuid, slug: $slug));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: partner migration failed for one row', ['partner' => $partnerUuid, 'slug' => $slug, 'exception' => $e->getMessage()],
@@ -311,10 +311,8 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 	/**
 	 * Find the partner's Organisation, or create it.
 	 *
-	 * @param object               $mapper      OR OrganisationMapper.
-	 * @param array<string, mixed> $row         The partner object.
-	 * @param string               $partnerUuid The partner's uuid.
-	 * @param string               $slug        The partner's slug.
+	 * @param object     $mapper  OR OrganisationMapper.
+	 * @param PartnerRow $partner The partner object, its uuid and its slug.
 	 *
 	 * @return array{created:bool, partnerUuid:string, organisationUuid:string} Result.
 	 *
@@ -322,13 +320,15 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 	 *
 	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
-	private function migratePartner(object $mapper, array $row, string $partnerUuid, string $slug): array {
+	private function migratePartner(object $mapper, PartnerRow $partner): array {
+		$partnerUuid = $partner->partnerUuid;
+		$slug = $partner->slug;
 		$existing = OrganisationLookup::byUuid(mapper: $mapper, uuid: $partnerUuid);
 		if ($existing !== null) {
 			return $this->migrationResult(created: false, partnerUuid: $partnerUuid, organisationUuid: (string)$existing->getUuid());
 		}
 
-		$saved = $mapper->insert($this->buildOrganisation(row: $row, slug: $slug, partnerUuid: $partnerUuid));
+		$saved = $mapper->insert($this->buildOrganisation(partner: $partner));
 
 		$this->logger->info(
 			'Dossiq: migrated partner to OR Organisation',
@@ -365,15 +365,15 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 	 * qualityStatus — are the reason dossiq kept its own copy, and are why this
 	 * migration could not have been written before Organisation grew them.
 	 *
-	 * @param array<string, mixed> $row         The partner object.
-	 * @param string               $slug        The partner slug.
-	 * @param string               $partnerUuid The partner uuid, preserved.
+	 * @param PartnerRow $partner The partner object, its slug and its uuid, preserved.
 	 *
 	 * @return Organisation The unsaved Organisation.
 	 *
 	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
-	private function buildOrganisation(array $row, string $slug, string $partnerUuid): Organisation {
+	private function buildOrganisation(PartnerRow $partner): Organisation {
+		$row = $partner->row;
+		$partnerUuid = $partner->partnerUuid;
 		$organisation = new Organisation();
 
 		// Preserved so anything already pointing at the partner by id keeps
@@ -383,7 +383,7 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 			$organisation->setUuid($partnerUuid);
 		}
 
-		[$resolvedSlug, $name] = $this->slugAndName(row: $row, slug: $slug, partnerUuid: $partnerUuid);
+		[$resolvedSlug, $name] = $this->slugAndName(partner: $partner);
 
 		$organisation->setSlug($resolvedSlug);
 		$organisation->setName($name);
@@ -403,13 +403,14 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 	/**
 	 * The slug and the name the Organisation gets.
 	 *
-	 * @param array<string, mixed> $row         The partner object.
-	 * @param string               $slug        The partner slug.
-	 * @param string               $partnerUuid The partner uuid.
+	 * @param PartnerRow $partner The partner object, its uuid and its slug.
 	 *
 	 * @return array{0: string, 1: string} The resolved slug and the name.
 	 */
-	private function slugAndName(array $row, string $slug, string $partnerUuid): array {
+	private function slugAndName(PartnerRow $partner): array {
+		$row = $partner->row;
+		$slug = $partner->slug;
+		$partnerUuid = $partner->partnerUuid;
 		// A partner may carry no slug. Organisation wants one, so it is derived
 		// from the uuid rather than the name: derived-from-name collides for
 		// two partners sharing a name, and a collision here is a merge.

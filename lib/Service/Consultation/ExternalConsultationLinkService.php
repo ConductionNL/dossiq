@@ -334,6 +334,20 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			throw new RuntimeException('This instance cannot read the comments on a case, so advice cannot be collected');
 		}
 
+		return $this->newestOf(rows: $this->commentRows(notes: $notes, caseId: $caseId), actorId: $actorId, after: $after);
+	}//end newestComment()
+
+	/**
+	 * The comments on a case, within the note window.
+	 *
+	 * @param object $notes  OpenRegister's note service.
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return mixed The comment rows.
+	 *
+	 * @throws RuntimeException When the comments could not be read.
+	 */
+	private function commentRows(object $notes, string $caseId): mixed {
 		try {
 			$rows = $notes->getNotesForObject($caseId, self::NOTE_WINDOW);
 		} catch (\Throwable $failure) {
@@ -344,19 +358,44 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			throw new RuntimeException('The comments on this case could not be read, so advice cannot be collected');
 		}
 
+		return $rows;
+	}//end commentRows()
+
+	/**
+	 * The newest link comment not collected yet.
+	 *
+	 * @param mixed  $rows    The comment rows.
+	 * @param string $actorId The consultation link's actor id.
+	 * @param int    $after   The id the last collected comment had.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function newestOf(mixed $rows, string $actorId, int $after): ?array {
 		$newest = null;
 		foreach ((array)$rows as $row) {
 			if ($this->isUncollectedLinkComment(row: $row, actorId: $actorId, after: $after) === false) {
 				continue;
 			}
 
-			if ($newest === null || (int)$row['id'] > (int)$newest['id']) {
+			if ($this->isNewer(row: $row, newest: $newest) === true) {
 				$newest = $row;
 			}
 		}
 
 		return $newest;
-	}//end newestComment()
+	}//end newestOf()
+
+	/**
+	 * Whether a comment is newer than the newest one found so far.
+	 *
+	 * @param array<string, mixed>      $row    The comment.
+	 * @param array<string, mixed>|null $newest The newest so far, null when none.
+	 *
+	 * @return bool
+	 */
+	private function isNewer(array $row, ?array $newest): bool {
+		return $newest === null || (int)$row['id'] > (int)$newest['id'];
+	}//end isNewer()
 
 	/**
 	 * Whether one comment is this link's, and newer than the one already

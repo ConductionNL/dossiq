@@ -143,7 +143,7 @@ class DomainCopyService implements DomainCopyServiceInterface {
 	 */
 	private function copyContent(DomainCopy $copy): array {
 		$notCarried = [];
-		$map = $this->copyCaseTypes(sourceDomainId: $copy->sourceId, newDomainId: $copy->newId, notCarried: $notCarried);
+		$map = $this->copyCaseTypes(domain: $copy, notCarried: $notCarried);
 
 		$templates = $this->copyTemplates(map: $map, notCarried: $notCarried);
 
@@ -216,16 +216,16 @@ class DomainCopyService implements DomainCopyServiceInterface {
 	/**
 	 * Copy every case type of the source domain.
 	 *
-	 * @param string             $sourceDomainId The domain being copied.
-	 * @param string             $newDomainId    The new domain.
-	 * @param array<int, string> $notCarried     Collected reasons, by reference.
+	 * @param DomainCopy         $domain     The domain being copied and the new domain.
+	 * @param array<int, string> $notCarried Collected reasons, by reference.
 	 *
 	 * @return array<string, string> Old case type id to new case type id.
 	 */
-	private function copyCaseTypes(string $sourceDomainId, string $newDomainId, array &$notCarried): array {
+	private function copyCaseTypes(DomainCopy $domain, array &$notCarried): array {
+		$newDomainId = $domain->newId;
 		$sources = $this->store->rows(
 			configKey: self::CASE_TYPES,
-			filters: ['caseTypeGroup' => $sourceDomainId],
+			filters: ['caseTypeGroup' => $domain->sourceId],
 		);
 
 		if ($sources === null) {

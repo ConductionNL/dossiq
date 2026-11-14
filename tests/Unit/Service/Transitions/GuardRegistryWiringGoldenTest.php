@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 use OCA\Dossiq\Service\Transitions\ApprovalGuard;
 use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
+use OCA\Dossiq\Service\Transitions\DateReachedGuard;
 use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard;
 use OCA\Dossiq\Service\Transitions\GuardEvaluatorInterface;
@@ -57,11 +58,11 @@ class GuardRegistryWiringGoldenTest extends TestCase {
 	 */
 	private const TYPES = [
 		'checklist', 'requiredField', 'requiredDocument', 'roleGuard', 'delegatedAuthorityGuard', 'mandaatGuard',
-		'statusChecklist', 'statusCapacity', 'approvalGate', 'documentAssessment', 'statusEntryRequirements', 'nobodysGuard',
+		'statusChecklist', 'statusCapacity', 'approvalGate', 'documentAssessment', 'statusEntryRequirements', 'dateReached', 'nobodysGuard',
 	];
 
 	/**
-	 * Every evaluator present, and the three optional ones left out.
+	 * Every evaluator present, and the optional ones left out.
 	 *
 	 * @return array<string, array{0: bool}>
 	 */
@@ -151,6 +152,7 @@ class GuardRegistryWiringGoldenTest extends TestCase {
 			'approvalGuard' => $withOptional ? $this->evaluator(class: ApprovalGuard::class, name: 'approval') : null,
 			'documentAssessment' => $withOptional ? $this->evaluator(class: DocumentAssessmentGuard::class, name: 'documentAssessment') : null,
 			'entryRequirements' => $withOptional ? $this->evaluator(class: StatusEntryRequirementsGuard::class, name: 'entryRequirements') : null,
+			'dateReached' => $withOptional ? $this->evaluator(class: DateReachedGuard::class, name: 'dateReached') : null,
 		];
 
 		$parameters = (new ReflectionClass(GuardRegistry::class))->getConstructor()->getParameters();

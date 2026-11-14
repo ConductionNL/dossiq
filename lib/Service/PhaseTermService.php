@@ -167,30 +167,58 @@ class PhaseTermService implements PhaseTermServiceInterface {
 
 		$stopped = 0;
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			if (TermKind::ofInstance($row) !== TermKind::PHASE) {
+			if ($this->isRunningPhase(row: $row, except: $except) === false) {
 				continue;
 			}
 
-			if ((string)($row['statusType'] ?? '') === $except) {
-				continue;
-			}
-
-			if (in_array((string)($row['status'] ?? ''), ['lopend', 'verlengd', 'paused'], true) === false) {
-				continue;
-			}
-
-			$this->termService->updateTermijnInstance(
-				termInstanceId: (string)($row['id'] ?? ''),
-				patch: [
-					'status' => self::STATUS_COMPLETED,
-					'voltooiDatum' => $moment->format('Y-m-d'),
-				]
-			);
+			$this->completePhase(row: $row, moment: $moment);
 			$stopped++;
-		}//end foreach
+		}
 
 		return $stopped;
 	}//end stopRunningPhases()
+
+	/**
+	 * Whether a term instance is a running phase clock other than the one to leave running.
+	 *
+	 * @param array<string, mixed> $row    The term instance.
+	 * @param string               $except A phase to leave running.
+	 *
+	 * @return bool
+	 */
+	private function isRunningPhase(array $row, string $except): bool {
+		if (TermKind::ofInstance($row) !== TermKind::PHASE) {
+			return false;
+		}
+
+		if ((string)($row['statusType'] ?? '') === $except) {
+			return false;
+		}
+
+		if (in_array((string)($row['status'] ?? ''), ['lopend', 'verlengd', 'paused'], true) === false) {
+			return false;
+		}
+
+		return true;
+	}//end isRunningPhase()
+
+	/**
+	 * Mark one phase clock completed on the given day.
+	 *
+	 * @param array<string, mixed> $row    The term instance.
+	 * @param DateTimeImmutable    $moment When it stopped.
+	 *
+	 * @return void
+	 */
+	private function completePhase(array $row, DateTimeImmutable $moment): void {
+		$this->termService->updateTermijnInstance(
+			termInstanceId: (string)($row['id'] ?? ''),
+			patch: [
+				'status' => self::STATUS_COMPLETED,
+				'voltooiDatum' => $moment->format('Y-m-d'),
+			]
+		);
+	}//end completePhase()
 
 	/**
 	 * How many days this phase gets.

@@ -198,6 +198,20 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 			return null;
 		}
 
+		return $this->typeMismatch(typeUrl: $typeUrl, fieldName: $fieldName, typeSchemaKey: $typeSchemaKey, zaaktypeUuid: $zaaktypeUuid);
+	}//end validateSubResourceType()
+
+	/**
+	 * The error when the type object the URL points at does not reference the zaaktype.
+	 *
+	 * @param string $typeUrl       The sub-resource type URL (statustype, roltype, etc.)
+	 * @param string $fieldName     The field name for error reporting
+	 * @param string $typeSchemaKey Settings key for the type's schema
+	 * @param string $zaaktypeUuid  The zaak's zaaktype uuid
+	 *
+	 * @return array|null Validation error, or null if valid or the type URL holds no uuid
+	 */
+	private function typeMismatch(string $typeUrl, string $fieldName, string $typeSchemaKey, string $zaaktypeUuid): array|null {
 		// Extract UUID from the provided type URL.
 		$typeUuid = $this->extractUuid(url: $typeUrl);
 		if ($typeUuid === null) {
@@ -216,7 +230,7 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 			detail: $detail,
 			invalidParams: [$this->fieldError(fieldName: 'nonFieldErrors', code: 'zaaktype-mismatch', reason: $detail)]
 		);
-	}//end validateSubResourceType()
+	}//end typeMismatch()
 
 	/**
 	 * The uuid of the zaaktype a zaak URL's zaak points at.

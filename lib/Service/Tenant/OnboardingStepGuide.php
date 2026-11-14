@@ -110,7 +110,7 @@ class OnboardingStepGuide implements OnboardingStepGuideInterface {
 	 */
 	private function guided(array $row, bool $isNext, bool $waiting): array {
 		$row['isNext'] = $isNext;
-		$row['note'] = $this->noteFor(row: $row, isNext: $isNext, waiting: $waiting);
+		$row['note'] = $this->noteFor(row: $row, waiting: $waiting);
 		$row['action'] = null;
 		$section = (self::SECTIONS[(string)$row['step']] ?? '');
 		if ($isNext === true && $section !== '') {
@@ -126,13 +126,13 @@ class OnboardingStepGuide implements OnboardingStepGuideInterface {
 	/**
 	 * The line under a step.
 	 *
-	 * @param array<string, mixed> $row     The step.
-	 * @param bool                 $isNext  Whether it is the next step.
+	 * @param array<string, mixed> $row     The step, with its `isNext` flag set.
 	 * @param bool                 $waiting Whether an earlier step is still open.
 	 *
 	 * @return string
 	 */
-	private function noteFor(array $row, bool $isNext, bool $waiting): string {
+	private function noteFor(array $row, bool $waiting): string {
+		$isNext = $row['isNext'];
 		$status = (string)($row['status'] ?? '');
 		if ($status === 'skipped') {
 			return $this->l10n->t('Skipped');

@@ -216,18 +216,11 @@ class BelplanController extends Controller {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('belplan_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($this->isConfigured(hasObjects: $objectService !== null, register: $register, schema: $schema) === false) {
 			return new JSONResponse(['error' => 'Belplan schema not configured'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$patch = [];
-		foreach (['name', 'triggerNumber', 'routingSteps', 'openingHours', 'fallbackAction', 'priority', 'isActive'] as $field) {
-			$value = $this->request->getParam($field, null);
-			if ($value !== null) {
-				$patch[$field] = $value;
-			}
-		}
-
+		$patch = $this->requestedPatch();
 		try {
 			$updated = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id, changes: $patch);
 		} catch (Throwable $e) {
@@ -236,6 +229,36 @@ class BelplanController extends Controller {
 
 		return new JSONResponse($this->toArray(result: $updated));
 	}//end update()
+
+	/**
+	 * Whether the object service, register and belplan schema are all there.
+	 *
+	 * @param bool   $hasObjects Whether OpenRegister's object service is there.
+	 * @param string $register   The register id.
+	 * @param string $schema     The belplan schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(bool $hasObjects, string $register, string $schema): bool {
+		return $hasObjects === true && $register !== '' && $schema !== '';
+	}//end isConfigured()
+
+	/**
+	 * The belplan fields the request sets.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function requestedPatch(): array {
+		$patch = [];
+		foreach (['name', 'triggerNumber', 'routingSteps', 'openingHours', 'fallbackAction', 'priority', 'isActive'] as $field) {
+			$value = $this->request->getParam($field, null);
+			if ($value !== null) {
+				$patch[$field] = $value;
+			}
+		}
+
+		return $patch;
+	}//end requestedPatch()
 
 	/**
 	 * Resolve a routing destination for a dialed number and menu selection.

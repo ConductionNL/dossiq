@@ -247,19 +247,26 @@ class WooThroughputReport implements WooThroughputReportInterface {
 			throw $this->unavailable(previous: null);
 		}
 
+		return $this->pagedAssessments(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
+	}//end readAssessments()
+
+	/**
+	 * Page through the assessments in the register, up to the page cap.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The assessment schema.
+	 * @param array<string, mixed> $filters       The object filters.
+	 *
+	 * @return array{rows: list<array<string, mixed>>, truncated: bool} The rows, and whether the page cap cut them short.
+	 *
+	 * @throws RefusedException When OpenRegister cannot be read.
+	 */
+	private function pagedAssessments(object $objectService, string $register, string $schema, array $filters): array {
 		$rows = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			try {
-				$batch = $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: $filters + ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)],
-				);
-			} catch (Throwable $e) {
-				throw $this->unavailable(previous: $e);
-			}
-
+			$pageFilters = $filters + ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)];
+			$batch = $this->assessmentPage(objectService: $objectService, register: $register, schema: $schema, filters: $pageFilters);
 			array_push($rows, ...$batch);
 			if (count($batch) < self::PAGE) {
 				return ['rows' => $rows, 'truncated' => false];
@@ -267,7 +274,34 @@ class WooThroughputReport implements WooThroughputReportInterface {
 		}
 
 		return ['rows' => $rows, 'truncated' => true];
-	}//end readAssessments()
+	}//end pagedAssessments()
+
+	/**
+	 * Read one page of assessments.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The assessment schema.
+	 * @param array<string, mixed> $filters       The object filters with the page's limit and offset.
+	 *
+	 * @return list<array<string, mixed>> The page.
+	 *
+	 * @throws RefusedException When OpenRegister cannot be read.
+	 */
+	private function assessmentPage(object $objectService, string $register, string $schema, array $filters): array {
+		try {
+			$batch = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: $filters,
+			);
+		} catch (Throwable $e) {
+			throw $this->unavailable(previous: $e);
+		}
+
+		return $batch;
+	}//end assessmentPage()
 
 	/**
 	 * The refusal when the assessments cannot be read.

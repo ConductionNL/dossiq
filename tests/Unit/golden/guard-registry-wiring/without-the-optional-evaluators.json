@@ -142,6 +142,19 @@
             }
         ]
     },
+    "dateReached": {
+        "knows": false,
+        "answer": [
+            {
+                "type": "dateReached",
+                "passed": false,
+                "failureMessage": "Onbekende guard",
+                "details": {
+                    "unknown": true
+                }
+            }
+        ]
+    },
     "nobodysGuard": {
         "knows": false,
         "answer": [

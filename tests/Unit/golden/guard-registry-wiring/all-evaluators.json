@@ -142,6 +142,19 @@
             }
         ]
     },
+    "dateReached": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "dateReached",
+                "passed": false,
+                "failureMessage": "dateReached for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
     "nobodysGuard": {
         "knows": false,
         "answer": [

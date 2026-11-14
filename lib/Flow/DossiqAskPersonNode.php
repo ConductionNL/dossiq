@@ -425,21 +425,21 @@ class DossiqAskPersonNode implements IFlowNode {
         $this->validateConfig(config: $config);
 
         $resume = $this->resumeSlot(context: $context);
+        $run    = new AskPersonRun(items: $items, config: $config, context: $context, resume: $resume);
 
         $taskId = trim((string) $resume->get(key: 'taskId', default: ''));
         if ($taskId === '') {
-            $this->createTask(items: $items, config: $config, context: $context, resume: $resume);
+            $this->createTask(run: $run);
 
             throw $this->suspension(config: $config);
         }
 
-        $task = $this->readTask(taskId: $taskId, config: $config, resume: $resume);
+        $task = $this->readTask(taskId: $taskId, run: $run);
         $this->assertCompleted(task: $task, taskId: $taskId, config: $config);
 
         return $this->placeAnswer(
-            items: $items,
-            config: $config,
-            answer: $this->answerFor(task: $task, taskId: $taskId, context: $context, resume: $resume)
+            run: $run,
+            answer: $this->answerFor(task: $task, taskId: $taskId, run: $run)
         );
 
     }//end execute()
@@ -469,16 +469,15 @@ class DossiqAskPersonNode implements IFlowNode {
     /**
      * Read the task this run is waiting on.
      *
-     * @param string              $taskId The task id.
-     * @param array               $config The step configuration.
-     * @param FlowNodeResumeState $resume This node's resume slot.
+     * @param string       $taskId The task id.
+     * @param AskPersonRun $run    The step configuration and this node's resume slot.
      *
      * @return array The task.
      *
      * @throws FlowSuspension When the task store is unreachable.
      * @throws RuntimeException When the task is gone.
      */
-    private function readTask(string $taskId, array $config, FlowNodeResumeState $resume): array {
+    private function readTask(string $taskId, AskPersonRun $run): array {
         try {
             $task = $this->tasks->find(taskId: $taskId);
         } catch (Throwable $failure) {
@@ -487,10 +486,10 @@ class DossiqAskPersonNode implements IFlowNode {
             // a case whose task is sitting there answered.
             $this->logger->warning(
                 'Dossiq askPerson: could not read task ' . $taskId . '; waiting another heartbeat',
-                ['error' => $failure->getMessage(), 'node' => $resume->nodeId()]
+                ['error' => $failure->getMessage(), 'node' => $run->resume->nodeId()]
             );
 
-            throw $this->suspension(config: $config);
+            throw $this->suspension(config: $run->config);
         }//end try
 
         if ($task === null) {
@@ -539,27 +538,24 @@ class DossiqAskPersonNode implements IFlowNode {
     /**
      * Create the task, once, and remember which one it is.
      *
-     * @param array               $items   The input items; the first carries the case.
-     * @param array               $config  The step configuration.
-     * @param array               $context Run-level metadata.
-     * @param FlowNodeResumeState $resume  This node's resume slot.
+     * @param AskPersonRun $run The items, step configuration, run context and resume slot.
      *
      * @return void
      *
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
-    private function createTask(array $items, array $config, array $context, FlowNodeResumeState $resume): void {
-        $caseId   = $this->caseIdFrom(items: $items);
-        $assignee = $this->renderedAssignee(config: $config, items: $items);
+    private function createTask(AskPersonRun $run): void {
+        $caseId   = $this->caseIdFrom(items: $run->items);
+        $assignee = $this->renderedAssignee(config: $run->config, items: $run->items);
         $taskId   = $this->tasks->create(
-            task: $this->buildTask(caseId: $caseId, assignee: $assignee, config: $config, context: $context, resume: $resume)
+            task: $this->buildTask(caseId: $caseId, assignee: $assignee, run: $run)
         );
 
-        $resume->merge(
+        $run->resume->merge(
             values: [
                 'taskId'   => $taskId,
                 'askedAt'  => (new DateTime())->format('c'),
-                'question' => trim((string) ($config['question'] ?? '')),
+                'question' => trim((string) ($run->config['question'] ?? '')),
                 // Read back by OpenRegister's resume guard, which refuses a
                 // signal from anyone but this person or their group. The
                 // RENDERED name, never the raw template: the guard compares
@@ -571,7 +567,7 @@ class DossiqAskPersonNode implements IFlowNode {
 
         $this->logger->info(
             'Dossiq askPerson: created task ' . $taskId . ' and suspended the run',
-            ['case' => $caseId, 'node' => $resume->nodeId()]
+            ['case' => $caseId, 'node' => $run->resume->nodeId()]
         );
 
     }//end createTask()
@@ -611,17 +607,16 @@ class DossiqAskPersonNode implements IFlowNode {
      * there is no payload at all, and `recovered` says so, because a run that
      * advanced without its wake is worth being able to find afterwards.
      *
-     * @param array               $task    The terminal task.
-     * @param string              $taskId  The task id held in the slot.
-     * @param array               $context Run-level metadata.
-     * @param FlowNodeResumeState $resume  This node's resume slot.
+     * @param array        $task   The terminal task.
+     * @param string       $taskId The task id held in the slot.
+     * @param AskPersonRun $run    The run context and this node's resume slot.
      *
      * @return array The answer bag.
      *
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
-    private function answerFor(array $task, string $taskId, array $context, FlowNodeResumeState $resume): array {
-        $signal = ($context[FlowRunService::SIGNAL_CONTEXT_KEY] ?? null);
+    private function answerFor(array $task, string $taskId, AskPersonRun $run): array {
+        $signal = ($run->context[FlowRunService::SIGNAL_CONTEXT_KEY] ?? null);
         if (is_array($signal) === false) {
             $signal = [];
         }
@@ -631,7 +626,7 @@ class DossiqAskPersonNode implements IFlowNode {
             $this->logger->info(
                 'Dossiq askPerson: a heartbeat delivered the answer to task ' . $taskId
                     . '; its completion signal never reached the run',
-                ['node' => $resume->nodeId(), 'case' => (string) ($task['case'] ?? '')]
+                ['node' => $run->resume->nodeId(), 'case' => (string) ($task['case'] ?? '')]
             );
         }
 
@@ -641,7 +636,7 @@ class DossiqAskPersonNode implements IFlowNode {
                 'decision'      => self::STATUS_COMPLETED,
                 'status'        => self::STATUS_COMPLETED,
                 'taskId'        => $taskId,
-                'node'          => $resume->nodeId(),
+                'node'          => $run->resume->nodeId(),
                 'completedDate' => (string) ($task['completedDate'] ?? ''),
                 'recovered'     => $recovered,
             ]
@@ -656,22 +651,21 @@ class DossiqAskPersonNode implements IFlowNode {
      * Onto every item, not into the run: the steps after this route per item,
      * and a switch cannot branch on something only the run holds.
      *
-     * @param array $items  The items to pass on.
-     * @param array $config The step configuration.
-     * @param array $answer The answer bag.
+     * @param AskPersonRun $run    The items to pass on and the step configuration.
+     * @param array        $answer The answer bag.
      *
      * @return array The items, each carrying the answer.
      *
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
-    private function placeAnswer(array $items, array $config, array $answer): array {
-        $key = trim((string) ($config['signalKey'] ?? ''));
+    private function placeAnswer(AskPersonRun $run, array $answer): array {
+        $key = trim((string) ($run->config['signalKey'] ?? ''));
         if ($key === '') {
             $key = 'answer';
         }
 
         $out = [];
-        foreach ($items as $item) {
+        foreach ($run->items as $item) {
             if (is_array($item) === true) {
                 $json         = (array) ($item['json'] ?? []);
                 $json[$key]   = $answer;
@@ -801,18 +795,19 @@ class DossiqAskPersonNode implements IFlowNode {
     /**
      * The task record this step asks somebody to complete.
      *
-     * @param string              $caseId   The case the task belongs to.
-     * @param string              $assignee The RENDERED assignee, never the raw template.
-     * @param array               $config   The step configuration.
-     * @param array               $context  Run-level metadata.
-     * @param FlowNodeResumeState $resume   This node's resume slot, which knows its id.
+     * @param string       $caseId   The case the task belongs to.
+     * @param string       $assignee The RENDERED assignee, never the raw template.
+     * @param AskPersonRun $run      The step configuration, run context and resume slot.
      *
      * @return array The task to persist.
      *
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
-    private function buildTask(string $caseId, string $assignee, array $config, array $context, FlowNodeResumeState $resume): array {
-        $task = [
+    private function buildTask(string $caseId, string $assignee, AskPersonRun $run): array {
+        $config  = $run->config;
+        $context = $run->context;
+        $resume  = $run->resume;
+        $task    = [
             'title'       => trim((string) ($config['question'] ?? '')),
             'description' => trim((string) ($config['details'] ?? '')),
             'case'        => $caseId,

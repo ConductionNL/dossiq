@@ -265,8 +265,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 		$term = $this->terms->termService->getTermijnInstanceForZaak(caseId: $ack['caseId']);
 
 		$context = $this->contextFor(
-			case: $ack['case'],
-			caseType: $ack['caseType'],
+			ack: $ack,
 			term: $term,
 			channel: $channel,
 			withheld: $withheld,
@@ -693,21 +692,16 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	/**
 	 * The render context the template reads.
 	 *
-	 * @param array<string, mixed>      $case     The case row.
-	 * @param array<string, mixed>      $caseType The effective case type.
-	 * @param array<string, mixed>|null $term     The bound statutory term, when there is one.
-	 * @param string                    $channel  The channel it goes out through.
-	 * @param boolean                   $withheld Whether the content stays on the platform.
+	 * @param array{caseId: string, case: array<string, mixed>, caseType: array<string, mixed>} $ack      The case row and its effective case type.
+	 * @param array<string, mixed>|null                                                    $term     The bound statutory term, when there is one.
+	 * @param string                                                                       $channel  The channel it goes out through.
+	 * @param boolean                                                                      $withheld Whether the content stays on the platform.
 	 *
 	 * @return array<string, mixed> The context.
 	 */
-	private function contextFor(
-		array $case,
-		array $caseType,
-		?array $term,
-		string $channel,
-		bool $withheld,
-	): array {
+	private function contextFor(array $ack, ?array $term, string $channel, bool $withheld): array {
+		$case = $ack['case'];
+		$caseType = $ack['caseType'];
 		$quotable = $this->quotableFieldsOf(case: $case);
 
 		return [
@@ -836,7 +830,7 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($this->isConfigured(objectService: $objectService, register: $register, schema: $schema) === false) {
 			$this->logger->error(
 				'Dossiq acknowledgement: the register is not configured, so case {case} records nothing',
 				['case' => $caseId],
@@ -860,4 +854,17 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 			);
 		}
 	}//end write()
+
+	/**
+	 * Whether the object service, register and case schema are all there to write to.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param string      $register      The register id.
+	 * @param string      $schema        The case schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(?object $objectService, string $register, string $schema): bool {
+		return $objectService !== null && $register !== '' && $schema !== '';
+	}//end isConfigured()
 }//end class

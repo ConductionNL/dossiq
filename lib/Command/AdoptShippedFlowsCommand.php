@@ -156,21 +156,8 @@ class AdoptShippedFlowsCommand extends Command {
 			return Command::SUCCESS;
 		}
 
-		$prefix = 'dossiq:flows:adopt';
-		if ($dryRun === true) {
-			$prefix .= ' (dry run — nothing was written)';
-		}
-
-		$failed = 0;
-		foreach ($summary['rows'] as $row) {
-			if ($row['outcome'] === 'failed') {
-				$failed++;
-			}
-
-			$output->writeln(
-				sprintf('  %-9s %s — %s', $row['outcome'], $row['name'], $row['detail'])
-			);
-		}
+		$prefix = $this->reportPrefix(dryRun: $dryRun);
+		$failed = $this->printRows(rows: $summary['rows'], output: $output);
 
 		$output->writeln(
 			sprintf('%s: %d flow(s), %d failed.', $prefix, count($summary['rows']), $failed)
@@ -182,4 +169,43 @@ class AdoptShippedFlowsCommand extends Command {
 
 		return Command::SUCCESS;
 	}//end report()
+
+	/**
+	 * The command name the summary line starts with, marked on a dry run.
+	 *
+	 * @param bool $dryRun Whether this was a dry run.
+	 *
+	 * @return string
+	 */
+	private function reportPrefix(bool $dryRun): string {
+		$prefix = 'dossiq:flows:adopt';
+		if ($dryRun === true) {
+			$prefix .= ' (dry run — nothing was written)';
+		}
+
+		return $prefix;
+	}//end reportPrefix()
+
+	/**
+	 * Print one line per outcome row, and count the failed ones.
+	 *
+	 * @param array<int, array{name: string, uuid: string, outcome: string, detail: string}> $rows   The outcome rows.
+	 * @param OutputInterface                                                                $output Console output.
+	 *
+	 * @return int How many rows failed.
+	 */
+	private function printRows(array $rows, OutputInterface $output): int {
+		$failed = 0;
+		foreach ($rows as $row) {
+			if ($row['outcome'] === 'failed') {
+				$failed++;
+			}
+
+			$output->writeln(
+				sprintf('  %-9s %s — %s', $row['outcome'], $row['name'], $row['detail'])
+			);
+		}
+
+		return $failed;
+	}//end printRows()
 }//end class

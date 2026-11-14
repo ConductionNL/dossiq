@@ -125,7 +125,10 @@ class DossierCompiler {
 		// documents within the same rank.
 		$caseUuids = $this->resolveDossierCaseUuids(case: $case, caseId: $caseId);
 
-		$documents = $this->documentsOf(objectService: $objectService, register: $schemas['register'], docSchema: $schemas['docSchema'], uuids: $caseUuids);
+		$documents = $this->documentsOf(
+			source: new CaseDocumentSource(objectService: $objectService, register: $schemas['register'], docSchema: $schemas['docSchema']),
+			uuids: $caseUuids
+		);
 
 		return $this->orderDocuments(documents: $documents);
 	}//end compile()
@@ -199,26 +202,19 @@ class DossierCompiler {
 	/**
 	 * The caseDocument records of every case in the dossier, case by case.
 	 *
-	 * @param object             $objectService The OpenRegister ObjectService.
-	 * @param string             $register      The register id.
-	 * @param string             $docSchema     The caseDocument schema id.
-	 * @param array<int, string> $uuids         The cases whose documents belong in the dossier.
+	 * @param CaseDocumentSource $source The object service, register and caseDocument schema.
+	 * @param array<int, string> $uuids  The cases whose documents belong in the dossier.
 	 *
 	 * @return array<int, array<string, mixed>> The documents, unordered.
 	 *
 	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
 	 */
-	private function documentsOf(object $objectService, string $register, string $docSchema, array $uuids): array {
+	private function documentsOf(CaseDocumentSource $source, array $uuids): array {
 		$documents = [];
 		foreach ($uuids as $uuid) {
 			$documents = array_merge(
 				$documents,
-				$this->collectCaseDocuments(
-					objectService: $objectService,
-					register: $register,
-					docSchema: $docSchema,
-					caseUuid: $uuid
-				)
+				$this->collectCaseDocuments(source: $source, caseUuid: $uuid)
 			);
 		}
 
@@ -280,16 +276,16 @@ class DossierCompiler {
 	/**
 	 * Collect caseDocument records for a single case UUID.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register Register id.
-	 * @param string $docSchema case_document schema id.
-	 * @param string $caseUuid The case UUID to filter on.
+	 * @param CaseDocumentSource $source   The object service, register and case_document schema.
+	 * @param string             $caseUuid The case UUID to filter on.
 	 *
 	 * @return array<int, array<string, mixed>> Normalised caseDocument records.
 	 */
-	private function collectCaseDocuments(object $objectService, string $register, string $docSchema, string $caseUuid): array {
+	private function collectCaseDocuments(CaseDocumentSource $source, string $caseUuid): array {
 		try {
-			$results = $objectService->findAll(['filters' => ['register' => $register, 'schema' => $docSchema, 'case' => $caseUuid]]);
+			$results = $source->objectService->findAll(
+				['filters' => ['register' => $source->register, 'schema' => $source->docSchema, 'case' => $caseUuid]]
+			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'DossierCompiler: failed to list case documents',

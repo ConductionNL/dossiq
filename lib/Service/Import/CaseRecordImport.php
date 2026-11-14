@@ -214,25 +214,55 @@ class CaseRecordImport implements CaseRecordImportInterface {
 		return (array)$this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: function () use ($objectService, $caseType, $importKey, $dryRun): array {
-				$type = $this->steps->store->caseType(objectService: $objectService, caseType: $caseType);
-				if ($type === null) {
-					return ['caseType' => '', 'imports' => []];
-				}
-
-				$imports = [];
-				foreach ((array)($type['recordImports'] ?? []) as $import) {
-					$import = (array)$import;
-					if ($importKey !== '' && (string)($import['key'] ?? '') !== $importKey) {
-						continue;
-					}
-
-					$imports[] = $this->runOne(run: ['objectService' => $objectService, 'caseType' => $type, 'import' => $import, 'dryRun' => $dryRun]);
-				}
-
-				return ['caseType' => $this->steps->store->idOf(row: $type), 'imports' => $imports];
+				return $this->importAll(objectService: $objectService, caseType: $caseType, importKey: $importKey, dryRun: $dryRun);
 			}
 		);
 	}//end runAll()
+
+	/**
+	 * Run the case type's declared imports, or the one the key names.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $caseType      The case type.
+	 * @param string $importKey     The import key, or ''.
+	 * @param bool   $dryRun        Count only.
+	 *
+	 * @return array{caseType: string, imports: list<array<string, mixed>>}
+	 */
+	private function importAll(object $objectService, string $caseType, string $importKey, bool $dryRun): array {
+		$type = $this->steps->store->caseType(objectService: $objectService, caseType: $caseType);
+		if ($type === null) {
+			return ['caseType' => '', 'imports' => []];
+		}
+
+		$imports = $this->runImports(objectService: $objectService, type: $type, importKey: $importKey, dryRun: $dryRun);
+
+		return ['caseType' => $this->steps->store->idOf(row: $type), 'imports' => $imports];
+	}//end importAll()
+
+	/**
+	 * Run each declared import the key selects.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $type          The case type row.
+	 * @param string               $importKey     The import key, or ''.
+	 * @param bool                 $dryRun        Count only.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function runImports(object $objectService, array $type, string $importKey, bool $dryRun): array {
+		$imports = [];
+		foreach ((array)($type['recordImports'] ?? []) as $import) {
+			$import = (array)$import;
+			if ($importKey !== '' && (string)($import['key'] ?? '') !== $importKey) {
+				continue;
+			}
+
+			$imports[] = $this->runOne(run: ['objectService' => $objectService, 'caseType' => $type, 'import' => $import, 'dryRun' => $dryRun]);
+		}
+
+		return $imports;
+	}//end runImports()
 
 	/**
 	 * Run one declared import.
@@ -423,7 +453,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return $failed($placed['reason']);
 		}
 
-		$moved = $this->moveAndStamp(run: $run, source: $source, sourceId: $sourceId, caseId: $placed['caseId']);
+		$moved = $this->moveAndStamp(run: $run, source: $source, caseId: $placed['caseId']);
 		if (isset($moved['reason']) === true) {
 			return $failed($moved['reason']);
 		}
@@ -435,14 +465,14 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Move the records pointing at the source onto the case, then stamp the source as moved.
 	 *
-	 * @param array<string, mixed> $run      The run: objectService, caseType, import, existing.
-	 * @param array<string, mixed> $source   The source record.
-	 * @param string               $sourceId The source record's id.
-	 * @param string               $caseId   The case written for it.
+	 * @param array<string, mixed> $run    The run: objectService, caseType, import, existing.
+	 * @param array<string, mixed> $source The source record.
+	 * @param string               $caseId The case written for it.
 	 *
 	 * @return array{repointed?: mixed, reason?: string} How many references moved, or why the record is not moved.
 	 */
-	private function moveAndStamp(array $run, array $source, string $sourceId, string $caseId): array {
+	private function moveAndStamp(array $run, array $source, string $caseId): array {
+		$sourceId = $this->steps->store->idOf(row: $source);
 		// References are moved before the stamp: a record whose references
 		// could not all be moved stays unstamped, so the next run tries again.
 		try {

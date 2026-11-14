@@ -155,10 +155,12 @@ class BackfillWooPublicationState implements IRepairStep {
 		return (array)$this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): array => $this->backfill(
-				objectService: $objectService,
-				register: $register,
-				decisionSchema: $decisionSchema,
-				caseSchema: $caseSchema
+				store: new WooBackfillStore(
+					objectService: $objectService,
+					register: $register,
+					decisionSchema: $decisionSchema,
+					caseSchema: $caseSchema,
+				)
 			)
 		);
 	}//end backfillAsSystem()
@@ -220,25 +222,13 @@ class BackfillWooPublicationState implements IRepairStep {
 	/**
 	 * Walk every decision and write the cases whose state differs.
 	 *
-	 * @param object $objectService  OpenRegister's object service.
-	 * @param string $register       The register.
-	 * @param string $decisionSchema The decision schema.
-	 * @param string $caseSchema     The case schema.
+	 * @param WooBackfillStore $store The object service, register, decision schema and case schema.
 	 *
 	 * @return array{written: int, unchanged: int, missing: int, failed: int, readable: bool} The tally.
 	 */
-	private function backfill(object $objectService, string $register, string $decisionSchema, string $caseSchema): array {
-		$read = fn (int $page): ?array => $this->readDecisionPage(
-			objectService: $objectService, register: $register,
-			decisionSchema: $decisionSchema, page: $page
-		);
-		$write = fn (string $caseId, array $state): string => $this->writeOne(
-			objectService: $objectService,
-			register: $register,
-			caseSchema: $caseSchema,
-			caseId: $caseId,
-			state: $state
-		);
+	private function backfill(WooBackfillStore $store): array {
+		$read = fn (int $page): ?array => $this->readDecisionPage(store: $store, page: $page);
+		$write = fn (string $caseId, array $state): string => $this->writeOne(store: $store, caseId: $caseId, state: $state);
 
 		return $this->walkDecisions(read: $read, write: $write);
 	}//end backfill()
@@ -273,19 +263,17 @@ class BackfillWooPublicationState implements IRepairStep {
 	/**
 	 * Read one page of decisions, or null when the read fails.
 	 *
-	 * @param object $objectService  OpenRegister's object service.
-	 * @param string $register       The register.
-	 * @param string $decisionSchema The decision schema.
-	 * @param int    $page           The zero-based page.
+	 * @param WooBackfillStore $store The object service, register and decision schema.
+	 * @param int              $page  The zero-based page.
 	 *
 	 * @return array<int, array<string, mixed>>|null The decisions, or null when unreadable.
 	 */
-	private function readDecisionPage(object $objectService, string $register, string $decisionSchema, int $page): ?array {
+	private function readDecisionPage(WooBackfillStore $store, int $page): ?array {
 		try {
 			return $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $decisionSchema,
+				objectService: $store->objectService,
+				register: $store->register,
+				schema: $store->decisionSchema,
 				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
 			);
 		} catch (Throwable $e) {
@@ -321,15 +309,16 @@ class BackfillWooPublicationState implements IRepairStep {
 	/**
 	 * Write one case when its state differs, and say which tally it belongs to.
 	 *
-	 * @param object                $objectService OpenRegister's object service.
-	 * @param string                $register      The register.
-	 * @param string                $caseSchema    The case schema.
-	 * @param string                $caseId        The case UUID.
-	 * @param array<string, string> $state         The fields to show, before the result link.
+	 * @param WooBackfillStore      $store  The object service, register and case schema.
+	 * @param string                $caseId The case UUID.
+	 * @param array<string, string> $state  The fields to show, before the result link.
 	 *
 	 * @return string One of written|unchanged|missing|failed.
 	 */
-	private function writeOne(object $objectService, string $register, string $caseSchema, string $caseId, array $state): string {
+	private function writeOne(WooBackfillStore $store, string $caseId, array $state): string {
+		$objectService = $store->objectService;
+		$register = $store->register;
+		$caseSchema = $store->caseSchema;
 		try {
 			$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
 			if ($case === null) {

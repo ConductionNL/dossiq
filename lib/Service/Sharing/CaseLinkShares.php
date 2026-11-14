@@ -43,6 +43,8 @@ use Psr\Log\LoggerInterface;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseLinkShares implements CaseLinkSharesInterface {
 
@@ -198,13 +200,12 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function markCollected(string $shareId, int $noteId): bool {
-		$objectService = $this->gateway->objectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
-		if ($objectService === null || empty($register) === true || empty($shareSchema) === true) {
+		$store = $this->shareStore();
+		if ($store === null) {
 			return false;
 		}
 
+		[$objectService, $register, $shareSchema] = $store;
 		try {
 			$share = $this->gateway->toArray(
 				$objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema)
@@ -225,6 +226,22 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 
 		return true;
 	}//end markCollected()
+
+	/**
+	 * The object service, register and share schema, when all three are there.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The store, or null when it is not configured.
+	 */
+	private function shareStore(): array|null {
+		$objectService = $this->gateway->objectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
+		if ($objectService === null || empty($register) === true || empty($shareSchema) === true) {
+			return null;
+		}
+
+		return [$objectService, $register, $shareSchema];
+	}//end shareStore()
 
 	/**
 	 * Write the share record that points at a minted link.
@@ -260,18 +277,19 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		}
 
 		$capabilities = (array)($link['capabilities'] ?? []);
+		$share = new MintedShare(
+			caseId: $caseId,
+			label: $label,
+			createdBy: $createdBy,
+			link: $link,
+			capabilities: $capabilities,
+			documents: $documents,
+			extra: $extra
+		);
 
 		try {
 			$result = $objectService->saveObject(
-				object: $this->recordFor(
-					caseId: $caseId,
-					label: $label,
-					createdBy: $createdBy,
-					link: $link,
-					capabilities: $capabilities,
-					documents: $documents,
-					extra: $extra
-				),
+				object: $this->recordFor(share: $share),
 				register: (int)$register,
 				schema: (int)$schema,
 			);
@@ -478,83 +496,64 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 	/**
 	 * The share record to write for one minted link.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $label What the share is called.
-	 * @param string $createdBy Who minted it.
-	 * @param array<string, mixed> $link The minted link.
-	 * @param array<int, string> $capabilities What the link grants.
-	 * @param array<int, array<string, mixed>> $documents The file links minted beside it.
-	 * @param array<string, mixed> $extra Extra fields to record.
+	 * @param MintedShare $share The minted share.
 	 *
 	 * @return array<string, mixed> The record.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
-	private function recordFor(
-		string $caseId,
-		string $label,
-		string $createdBy,
-		array $link,
-		array $capabilities,
-		array $documents,
-		array $extra,
-	): array {
+	private function recordFor(MintedShare $share): array {
 		return array_merge(
-			$extra,
-			$this->ownFields(caseId: $caseId, label: $label, createdBy: $createdBy, capabilities: $capabilities),
-			$this->linkFields(link: $link, capabilities: $capabilities, documents: $documents)
+			$share->extra,
+			$this->ownFields(share: $share),
+			$this->linkFields(share: $share)
 		);
 	}//end recordFor()
 
 	/**
 	 * The share record's own fields: the case, the grant level, the label and who minted it.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $label What the share is called.
-	 * @param string $createdBy Who minted it.
-	 * @param array<int, string> $capabilities What the link grants.
+	 * @param MintedShare $share The minted share.
 	 *
 	 * @return array<string, mixed> The fields.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
-	private function ownFields(string $caseId, string $label, string $createdBy, array $capabilities): array {
+	private function ownFields(MintedShare $share): array {
 		// The permission level is the zaak-domain word for the same grant, kept
 		// because the partner surface and the stored rows already speak it.
 		$permissionLevel = 'bekijken';
-		if (in_array('comment', $capabilities, true) === true) {
+		if (in_array('comment', $share->capabilities, true) === true) {
 			$permissionLevel = 'bekijken_reageren';
 		}
 
 		return [
-			'caseId' => $caseId,
+			'caseId' => $share->caseId,
 			'shareType' => 'link',
 			'permissionLevel' => $permissionLevel,
-			'label' => $label,
+			'label' => $share->label,
 			'status' => 'active',
-			'createdBy' => $createdBy,
+			'createdBy' => $share->createdBy,
 		];
 	}//end ownFields()
 
 	/**
 	 * The share record's fields that describe the minted link and the files beside it.
 	 *
-	 * @param array<string, mixed> $link The minted link.
-	 * @param array<int, string> $capabilities What the link grants.
-	 * @param array<int, array<string, mixed>> $documents The file links minted beside it.
+	 * @param MintedShare $share The minted share.
 	 *
 	 * @return array<string, mixed> The fields.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
-	private function linkFields(array $link, array $capabilities, array $documents): array {
+	private function linkFields(MintedShare $share): array {
 		return [
-			'accessLinkId' => (int)($link['id'] ?? 0),
-			'accessLinkUuid' => (string)($link['uuid'] ?? ''),
-			'accessLinkUrl' => (string)($link['url'] ?? ''),
-			'capabilities' => implode(',', $capabilities),
-			'expiresAt' => (string)($link['expiresAt'] ?? ''),
-			'sharedDocuments' => json_encode($documents),
+			'accessLinkId' => (int)($share->link['id'] ?? 0),
+			'accessLinkUuid' => (string)($share->link['uuid'] ?? ''),
+			'accessLinkUrl' => (string)($share->link['url'] ?? ''),
+			'capabilities' => implode(',', $share->capabilities),
+			'expiresAt' => (string)($share->link['expiresAt'] ?? ''),
+			'sharedDocuments' => json_encode($share->documents),
 		];
 	}//end linkFields()
 

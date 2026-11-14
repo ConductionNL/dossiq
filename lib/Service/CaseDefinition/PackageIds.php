@@ -50,6 +50,20 @@ class PackageIds {
 	 * @return array<int, string> The ids.
 	 */
 	public function idsCarriedBy(\ZipArchive $zip, array $components): array {
+		$ids = array_merge($this->componentIds(zip: $zip, components: $components), $this->workflowIds(zip: $zip));
+
+		return array_values(array_unique($ids));
+	}//end idsCarriedBy()
+
+	/**
+	 * The ids the named component files carry.
+	 *
+	 * @param \ZipArchive  $zip        The package.
+	 * @param array<mixed> $components The component file names, without .json.
+	 *
+	 * @return array<int, string>
+	 */
+	private function componentIds(\ZipArchive $zip, array $components): array {
 		$ids = [];
 
 		foreach ($components as $component) {
@@ -66,6 +80,18 @@ class PackageIds {
 			$this->collectIds(value: $data, ids: $ids);
 		}
 
+		return $ids;
+	}//end componentIds()
+
+	/**
+	 * The ids the package's workflow files carry.
+	 *
+	 * @param \ZipArchive $zip The package.
+	 *
+	 * @return array<int, string>
+	 */
+	private function workflowIds(\ZipArchive $zip): array {
+		$ids = [];
 		for ($i = 0; $i < $zip->numFiles; $i++) {
 			$name = $zip->getNameIndex($i);
 			if ($name === false || str_starts_with($name, 'workflows/') === false) {
@@ -78,8 +104,8 @@ class PackageIds {
 			}
 		}
 
-		return array_values(array_unique($ids));
-	}//end idsCarriedBy()
+		return $ids;
+	}//end workflowIds()
 
 	/**
 	 * Collect every `id` and `@self.uuid` a decoded structure carries.

@@ -133,12 +133,16 @@ class OutboundCaseMail {
 		?string $plain = null,
 	): array {
 		if ($sender['transport'] === MailTransportPolicy::TRANSPORT_MAIL_ACCOUNT) {
+			$bodies = $this->transport->optOut->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain);
 			return $this->throughAccount(
 				account: (array)$sender['account'],
-				to: $to,
-				subject: $subject,
-				bodies: $this->transport->optOut->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain),
-				attachments: $attachments
+				message: [
+					'to' => [$to],
+					'subject' => $subject,
+					'html' => $bodies['html'],
+					'plain' => $bodies['plain'],
+					'attachments' => array_values(array_map('strval', $attachments)),
+				]
 			);
 		}
 
@@ -220,27 +224,16 @@ class OutboundCaseMail {
 	/**
 	 * Hand one message to the Mail account.
 	 *
-	 * @param array<string, mixed>               $account     The account.
-	 * @param string                             $to          The recipient.
-	 * @param string                             $subject     The subject.
-	 * @param array{html: string, plain: string} $bodies      The bodies, link included.
-	 * @param array<int, string>                 $attachments Paths in the sending user's own files.
+	 * @param array<string, mixed> $account The account.
+	 * @param array{to: list<string>, subject: string, html: string, plain: string, attachments: list<string>} $message The recipient,
+	 *        the subject, the bodies with the link included, and paths in the sending user's own files.
 	 *
 	 * @return array{state: string, outboxId: int|null} SENT, SENT_NOT_FILED or QUEUED.
 	 *
 	 * @throws RefusedException mail-account-unavailable when the mail app took nothing.
 	 */
-	private function throughAccount(array $account, string $to, string $subject, array $bodies, array $attachments): array {
-		$result = $this->gateway->sendMessage(
-			accountId: (int)($account['id'] ?? 0),
-			message: [
-				'to' => [$to],
-				'subject' => $subject,
-				'html' => $bodies['html'],
-				'plain' => $bodies['plain'],
-				'attachments' => array_values(array_map('strval', $attachments)),
-			]
-		);
+	private function throughAccount(array $account, array $message): array {
+		$result = $this->gateway->sendMessage(accountId: (int)($account['id'] ?? 0), message: $message);
 
 		if ($result['state'] === OutboundState::UNAVAILABLE) {
 			throw new RefusedException(

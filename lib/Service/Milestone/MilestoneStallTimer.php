@@ -39,7 +39,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Milestone;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\MilestoneStallTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
@@ -134,41 +133,39 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 			return self::DUE;
 		}
 
-		return $this->arm(caseId: $caseId, waiting: $waiting, anchor: $today, slaDays: $this->days->between(from: $today, to: $stall));
+		return $this->arm(
+			span: new MilestoneStallSpan(caseId: $caseId, waiting: $waiting, anchor: $today, slaDays: $this->days->between(from: $today, to: $stall))
+		);
 	}//end sync()
 
 	/**
 	 * Arm the timer.
 	 *
-	 * @param string               $caseId  The case id.
-	 * @param array<string, mixed> $waiting The milestone row.
-	 * @param DateTimeImmutable    $anchor  Midnight today.
-	 * @param int                  $slaDays Calendar days to the day after the deadline.
+	 * @param MilestoneStallSpan $span The case id, the milestone row, midnight today and the days to the stall day.
 	 *
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
-	private function arm(string $caseId, array $waiting, DateTimeImmutable $anchor, int $slaDays): string {
+	private function arm(MilestoneStallSpan $span): string {
 		$engine = $this->engine();
 		if ($engine === null) {
 			return self::UNAVAILABLE;
 		}
 
-		$config = $this->timerConfig(caseId: $caseId, waiting: $waiting, anchor: $anchor, slaDays: $slaDays);
+		$config = $this->timerConfig(span: $span);
 
-		return $this->armOn(engine: $engine, config: $config, caseId: $caseId);
+		return $this->armOn(engine: $engine, config: $config, caseId: $span->caseId);
 	}//end arm()
 
 	/**
 	 * The timer configuration for the engine.
 	 *
-	 * @param string               $caseId  The case id.
-	 * @param array<string, mixed> $waiting The milestone row.
-	 * @param DateTimeImmutable    $anchor  Midnight today.
-	 * @param int                  $slaDays Calendar days to the day after the deadline.
+	 * @param MilestoneStallSpan $span The case id, the milestone row, midnight today and the days to the stall day.
 	 *
 	 * @return array<string, mixed> The timer configuration.
 	 */
-	private function timerConfig(string $caseId, array $waiting, DateTimeImmutable $anchor, int $slaDays): array {
+	private function timerConfig(MilestoneStallSpan $span): array {
+		$caseId = $span->caseId;
+		$waiting = $span->waiting;
 		return [
 			'subjectType'     => 'object',
 			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
@@ -176,10 +173,10 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 			'title'           => 'Mijlpaal '.(string) ($waiting['milestoneLabel'] ?? ''),
 			'purpose'         => 'due',
 			'legalEffect'     => 'none',
-			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
+			'sla'             => ['value' => $span->slaDays, 'unit' => 'calendarDays'],
 			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'milestone_waiting',
-			'anchorEventAt'   => $anchor,
+			'anchorEventAt'   => $span->anchor,
 			'metadata'        => $this->timerMetadata(caseId: $caseId, waiting: $waiting),
 		];
 	}//end timerConfig()

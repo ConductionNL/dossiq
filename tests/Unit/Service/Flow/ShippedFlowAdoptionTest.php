@@ -286,6 +286,38 @@ class ShippedFlowAdoptionTest extends TestCase {
 	}
 
 	/**
+	 * A flow store that fails to read is reported as unavailable, with its reason.
+	 *
+	 * @return void
+	 */
+	public function testAFailingFlowStoreIsReportedWithItsReason(): void {
+		$mapper = new class {
+			/**
+			 * @param string $app   The app.
+			 * @param int    $limit The page.
+			 *
+			 * @return array<int, object> Never.
+			 */
+			public function findAllFlows(string $app, int $limit): array {
+				throw new RuntimeException('table missing');
+			}
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($mapper);
+
+		$census = (new ShippedFlowAdoption(
+			container: $container,
+			settingsService: $this->createMock(SettingsService::class),
+			logger: new NullLogger()
+		))->census();
+
+		self::assertSame(
+			['available' => false, 'note' => 'The flow store could not be read: table missing', 'flows' => []],
+			$census
+		);
+	}
+
+	/**
 	 * Build the service over a fake flow mapper.
 	 *
 	 * @param array<int, array{uuid: string, name: string, enabled: bool, owner: string|null}> $flows Stored rows.

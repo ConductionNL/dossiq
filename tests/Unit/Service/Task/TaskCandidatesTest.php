@@ -43,6 +43,8 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\EngineTaskGateway
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskPayload
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskRow
  */
 class TaskCandidatesTest extends TestCase {
 

@@ -108,14 +108,15 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 		}
 
 		[$objectService, $register, $schema] = $target;
+		$store = new PayoutRowStore(objectService: $objectService, register: $register, schema: $schema);
 		try {
-			$rows = $this->readRows(objectService: $objectService, register: $register, schema: $schema);
+			$rows = $this->readRows(store: $store);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the payout rows could not be read for the move to finance', ['error' => $e->getMessage()]);
 			return;
 		}
 
-		$moved = $this->moveAll(objectService: $objectService, register: $register, schema: $schema, rows: $rows);
+		$moved = $this->moveAll(store: $store, rows: $rows);
 		$this->reportMoved(output: $output, moved: $moved);
 	}//end run()
 
@@ -140,21 +141,19 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 	/**
 	 * Read every payout row, elevated.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register.
-	 * @param string $schema        The payout schema.
+	 * @param PayoutRowStore $store The object service, register and payout schema.
 	 *
 	 * @return array<int|string, mixed> The rows.
 	 *
 	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
 	 */
-	private function readRows(object $objectService, string $register, string $schema): array {
+	private function readRows(PayoutRowStore $store): array {
 		return (array)$this->runAsSystemIfAvailable(
-			objectService: $objectService,
+			objectService: $store->objectService,
 			operation: fn (): array => $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $store->objectService,
+				register: $store->register,
+				schema: $store->schema,
 				filters: ['_limit' => 10000]
 			)
 		);
@@ -163,19 +162,17 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 	/**
 	 * Hand every row to finance.
 	 *
-	 * @param object                   $objectService The OpenRegister object service.
-	 * @param string                   $register      The register.
-	 * @param string                   $schema        The payout schema.
-	 * @param array<int|string, mixed> $rows          The stored rows.
+	 * @param PayoutRowStore           $store The object service, register and payout schema.
+	 * @param array<int|string, mixed> $rows  The stored rows.
 	 *
 	 * @return int How many rows were handed over.
 	 *
 	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
 	 */
-	private function moveAll(object $objectService, string $register, string $schema, array $rows): int {
+	private function moveAll(PayoutRowStore $store, array $rows): int {
 		$moved = 0;
 		foreach ($rows as $row) {
-			if ($this->moveRow(objectService: $objectService, register: $register, schema: $schema, row: $row) === true) {
+			if ($this->moveRow(store: $store, row: $row) === true) {
 				$moved++;
 			}
 		}
@@ -202,14 +199,12 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 	/**
 	 * Hand one row to finance and keep the payable id on it.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register.
-	 * @param string $schema The payout schema.
+	 * @param PayoutRowStore $store The object service, register and payout schema.
 	 * @param array<string, mixed> $row The stored row.
 	 *
 	 * @return bool True when finance took the row now.
 	 */
-	private function moveRow(object $objectService, string $register, string $schema, array $row): bool {
+	private function moveRow(PayoutRowStore $store, array $row): bool {
 		$status = (string)($row['status'] ?? '');
 		if ((string)($row['payableId'] ?? '') !== '' || array_key_exists($status, self::STATES) === false) {
 			return false;
@@ -224,9 +219,9 @@ class MigratePayoutRowsToFinance implements IRepairStep {
 			}
 
 			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $store->objectService,
+				register: $store->register,
+				schema: $store->schema,
 				id: (string)($row['id'] ?? ''),
 				changes: ['payableId' => $raised['payableId']],
 			);

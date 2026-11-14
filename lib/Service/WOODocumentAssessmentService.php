@@ -135,13 +135,19 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function bulkUpsert(string $caseId, array $assessments): array {
-		$target = $this->assessmentTarget();
-		$target['userId'] = ($this->userSession->getUser()?->getUID() ?? 'system');
+		$location = $this->assessmentTarget();
+		$target = new AssessmentBatchTarget(
+			objectService: $location['objectService'],
+			register: $location['register'],
+			schema: $location['schema'],
+			userId: ($this->userSession->getUser()?->getUID() ?? 'system'),
+			caseId: $caseId
+		);
 
-		$tally = $this->upsertAll(caseId: $caseId, assessments: $assessments, target: $target);
+		$tally = $this->upsertAll(assessments: $assessments, target: $target);
 
 		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $tally['created']);
-		$this->markJudgedInScope(caseId: $caseId, documentRefs: $tally['judged'], userId: $target['userId']);
+		$this->markJudgedInScope(target: $target, documentRefs: $tally['judged']);
 
 		$outstanding = $this->getOutstanding(caseId: $caseId);
 
@@ -156,18 +162,17 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	/**
 	 * Upsert each assessment in turn, tallying what was saved, created and judged, and what failed.
 	 *
-	 * @param string                           $caseId      The case UUID
 	 * @param array<int, array<string, mixed>> $assessments Array of assessment payloads
-	 * @param array<string, mixed>             $target      Where assessments are stored, and by whom
+	 * @param AssessmentBatchTarget            $target      Where assessments are stored, on which case, and by whom
 	 *
 	 * @return array{saved: array<int, mixed>, errors: array<int, mixed>, created: int, judged: array<int, mixed>} The tally.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 */
-	private function upsertAll(string $caseId, array $assessments, array $target): array {
+	private function upsertAll(array $assessments, AssessmentBatchTarget $target): array {
 		$tally = ['saved' => [], 'errors' => [], 'created' => 0, 'judged' => []];
 		foreach ($assessments as $assessment) {
-			$result = $this->upsertAssessment(caseId: $caseId, assessment: (array)$assessment, target: $target);
+			$result = $this->upsertAssessment(assessment: (array)$assessment, target: $target);
 			if (isset($result['error']) === true) {
 				$tally['errors'][] = $result['error'];
 				continue;
@@ -207,13 +212,13 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	/**
 	 * Validate, stamp and store one assessment.
 	 *
-	 * @param string               $caseId     The case UUID.
-	 * @param array<string, mixed> $assessment The assessment payload.
-	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 * @param array<string, mixed>  $assessment The assessment payload.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
 	 *
 	 * @return array<string, mixed> `{error}` or `{saved, created, documentRef}`.
 	 */
-	private function upsertAssessment(string $caseId, array $assessment, array $target): array {
+	private function upsertAssessment(array $assessment, AssessmentBatchTarget $target): array {
+		$caseId = $target->caseId;
 		[$assessment, $unseen] = [array_diff_key($assessment, self::CALLER_IDENTITY), []];
 		if ($this->reviews !== null) {
 			$unseen = $this->reviews->pages()->refusalFor(caseId: $caseId, assessment: $assessment);
@@ -226,10 +231,10 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 
 		$assessment['caseRef'] = $caseId;
 		$assessment['groundsListVersion'] = WooRefusalGrounds::LIST_VERSION;
-		$assessment['assessedBy'] = $target['userId'];
+		$assessment['assessedBy'] = $target->userId;
 		$assessment['assessedAt'] = date('Y-m-d\TH:i:s');
 
-		return $this->storeAssessment(caseId: $caseId, assessment: $assessment, target: $target);
+		return $this->storeAssessment(assessment: $assessment, target: $target);
 	}//end upsertAssessment()
 
 	/**
@@ -239,18 +244,17 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * assessment the caller cannot see is never assessed a second time
 	 * (REQ-CRA-003); only its uuid and owner are used, nothing of it is answered.
 	 *
-	 * @param string               $caseId     The case UUID.
-	 * @param array<string, mixed> $assessment The stamped assessment.
-	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 * @param array<string, mixed>  $assessment The stamped assessment.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
 	 *
 	 * @return array<string, mixed> `{error}` or `{saved, created, documentRef}`.
 	 */
-	private function storeAssessment(string $caseId, array $assessment, array $target): array {
-		$existing = $this->existingAssessments(caseId: $caseId, assessment: $assessment, target: $target);
+	private function storeAssessment(array $assessment, AssessmentBatchTarget $target): array {
+		$existing = $this->existingAssessments(assessment: $assessment, target: $target);
 
 		$uuid = null;
 		if (count($existing) > 0) {
-			$refusal = $this->refusalOn(caseId: $caseId, record: $existing[0], assessment: $assessment, target: $target);
+			$refusal = $this->refusalOn(record: $existing[0], assessment: $assessment, target: $target);
 			if ($refusal !== null) {
 				return ['error' => $refusal];
 			}
@@ -264,36 +268,34 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	/**
 	 * The case's stored assessments of the document, whoever can see them.
 	 *
-	 * @param string               $caseId     The case UUID.
-	 * @param array<string, mixed> $assessment The stamped assessment.
-	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 * @param array<string, mixed>  $assessment The stamped assessment.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
 	 *
 	 * @return array<int, array<string, mixed>> At most one assessment.
 	 */
-	private function existingAssessments(string $caseId, array $assessment, array $target): array {
+	private function existingAssessments(array $assessment, AssessmentBatchTarget $target): array {
 		return $this->searchObjectsAsArraysUnscoped(
-			objectService: $target['objectService'],
-			register: $target['register'],
-			schema: $target['schema'],
-			filters: ['caseRef' => $caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schema,
+			filters: ['caseRef' => $target->caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
 		);
 	}//end existingAssessments()
 
 	/**
 	 * Why the acting user may not change the stored assessment, or null when they may.
 	 *
-	 * @param string               $caseId     The case UUID.
-	 * @param array<string, mixed> $record     The stored assessment.
-	 * @param array<string, mixed> $assessment The stamped assessment.
-	 * @param array<string, mixed> $target     The storage target and the acting user id.
+	 * @param array<string, mixed>  $record     The stored assessment.
+	 * @param array<string, mixed>  $assessment The stamped assessment.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
 	 *
 	 * @return mixed The refusal, or null.
 	 */
-	private function refusalOn(string $caseId, array $record, array $assessment, array $target): mixed {
+	private function refusalOn(array $record, array $assessment, AssessmentBatchTarget $target): mixed {
 		return $this->reviewerAccess?->refusalFor(
-			caseId: $caseId,
+			caseId: $target->caseId,
 			record: $record,
-			userId: $target['userId'],
+			userId: $target->userId,
 			reference: (string)$assessment['documentRef']
 		);
 	}//end refusalOn()
@@ -301,17 +303,17 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	/**
 	 * Save the assessment, new or over the stored one.
 	 *
-	 * @param array<string, mixed> $assessment The stamped assessment.
-	 * @param array<string, mixed> $target     The storage target and the acting user id.
-	 * @param string|null          $uuid       The stored assessment's uuid, or null to create.
+	 * @param array<string, mixed>  $assessment The stamped assessment.
+	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
+	 * @param string|null           $uuid       The stored assessment's uuid, or null to create.
 	 *
 	 * @return array<string, mixed> `{saved, created, documentRef}`.
 	 */
-	private function saveAssessment(array $assessment, array $target, ?string $uuid): array {
-		$saved = $target['objectService']->saveObject(
+	private function saveAssessment(array $assessment, AssessmentBatchTarget $target, ?string $uuid): array {
+		$saved = $target->objectService->saveObject(
 			object: $assessment,
-			register: $target['register'],
-			schema: $target['schema'],
+			register: $target->register,
+			schema: $target->schema,
 			uuid: $uuid,
 		);
 
@@ -324,21 +326,21 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * A review that cannot be written leaves the verdict saved and the
 	 * document outstanding, which the answer's outstanding list then says.
 	 *
-	 * @param string       $caseId       The case UUID.
-	 * @param list<string> $documentRefs The documents with a saved verdict.
-	 * @param string       $userId       Who gave the verdict.
+	 * @param AssessmentBatchTarget $target       The case and who gave the verdict.
+	 * @param list<string>          $documentRefs The documents with a saved verdict.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/a-verdict-marks-its-document-in-scope/specs/document-review/spec.md#requirement-a-verdict-on-an-unmarked-document-marks-it-in-scope-req-wrt-006
 	 */
-	private function markJudgedInScope(string $caseId, array $documentRefs, string $userId): void {
+	private function markJudgedInScope(AssessmentBatchTarget $target, array $documentRefs): void {
+		$caseId = $target->caseId;
 		if ($this->reviews === null) {
 			return;
 		}
 
 		try {
-			$this->reviews->markInScopeWhereUnmarked(caseId: $caseId, documentRefs: $documentRefs, userId: $userId);
+			$this->reviews->markInScopeWhereUnmarked(caseId: $caseId, documentRefs: $documentRefs, userId: $target->userId);
 		} catch (RefusedException $e) {
 			$this->logger->warning(
 				'WOO bulk-upsert: the judged documents could not be marked in scope for case ' . $caseId,

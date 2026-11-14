@@ -315,6 +315,20 @@ class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInte
 			return new ActionResult(succeeded: false, error: 'once_key_unverifiable');
 		}
 
+		return $this->takenResult(taken: $taken, onceKey: $onceKey);
+	}//end addedBefore()
+
+	/**
+	 * The result for what the engine said about a once-key, or null to go on.
+	 *
+	 * @param mixed  $taken   True when added before, false when not, anything else when unknown.
+	 * @param string $onceKey The task's once-key.
+	 *
+	 * @return ActionResult|null
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	private function takenResult(mixed $taken, string $onceKey): ActionResult|null {
 		if ($taken === false) {
 			return null;
 		}
@@ -329,7 +343,7 @@ class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInte
 		);
 
 		return new ActionResult(succeeded: false, error: 'once_key_unverifiable');
-	}//end addedBefore()
+	}//end takenResult()
 
 	/**
 	 * Apply the case type's per-task declaration to the task being created.

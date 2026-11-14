@@ -121,6 +121,17 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 			return 'The pattern does not compile.';
 		}
 
+		return $this->captureGroupProblem(pattern: $pattern);
+	}//end validatePattern()
+
+	/**
+	 * Why a compiled pattern has no usable capture group, or null.
+	 *
+	 * @param string $pattern A full PCRE pattern, delimiters included.
+	 *
+	 * @return string|null The reason it is unusable, or null.
+	 */
+	private function captureGroupProblem(string $pattern): ?string {
 		$delimiter = $pattern[0];
 		$closing = (['(' => ')', '{' => '}', '[' => ']', '<' => '>'][$delimiter] ?? $delimiter);
 		$end = strrpos($pattern, $closing);
@@ -129,6 +140,18 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 		}
 
 		$probe = $delimiter . '(?:' . substr($pattern, 1, ($end - 1)) . "\n)|" . $closing . substr($pattern, ($end + 1));
+
+		return $this->probeProblem(probe: $probe);
+	}//end captureGroupProblem()
+
+	/**
+	 * Why the empty-matching probe reports no capture group, or null.
+	 *
+	 * @param string $probe The pattern wrapped as `(?:body)|`.
+	 *
+	 * @return string|null The reason it is unusable, or null.
+	 */
+	private function probeProblem(string $probe): ?string {
 		$groups = [];
 		$probed = $this->withoutWarnings(
 			operation: static function () use ($probe, &$groups): int|false {
@@ -140,7 +163,7 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 		}
 
 		return null;
-	}//end validatePattern()
+	}//end probeProblem()
 
 	/**
 	 * The recognizer this instance uses, validated, or null when it must not run.
@@ -220,15 +243,10 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function resolveCases(array $candidates, object $objectService, string $register, string $schema, IUser $owner): array {
+		$scope = new CaseSearchScope(objectService: $objectService, register: $register, schema: $schema, owner: $owner);
 		$cases = [];
 		foreach ($candidates as $identifier) {
-			$case = $this->resolveCase(
-				identifier: $identifier,
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				owner: $owner
-			);
+			$case = $this->resolveCase(identifier: $identifier, scope: $scope);
 			if ($case !== null) {
 				$cases[$case['uuid']] = $case;
 			}
@@ -240,35 +258,58 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 	/**
 	 * Resolve one identifier to exactly one case the owner may read, or nothing.
 	 *
-	 * @param string $identifier    The candidate identifier.
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The configured register.
-	 * @param string $schema        The configured case schema.
-	 * @param IUser  $owner         The mailbox owner.
+	 * @param string          $identifier The candidate identifier.
+	 * @param CaseSearchScope $scope      Where to look, and the mailbox owner.
 	 *
 	 * @return array{uuid: string, identifier: string, registerId: int, schemaId: int}|null The case, or null.
 	 */
-	private function resolveCase(string $identifier, object $objectService, string $register, string $schema, IUser $owner): ?array {
-		$hits = $this->exactMatches(identifier: $identifier, objectService: $objectService, register: $register, schema: $schema);
+	private function resolveCase(string $identifier, CaseSearchScope $scope): ?array {
+		$hits = $this->exactMatches(identifier: $identifier, scope: $scope);
 		if (count($hits) !== 1) {
-			if (count($hits) > 1) {
-				$this->logger->warning(
-					'Dossiq: a case number resolves to more than one case; the mail is linked to none of them',
-					['app' => AppIdentity::APP_ID, 'case' => $identifier, 'matches' => count($hits)]
-				);
-			}
+			$this->warnIfAmbiguous(identifier: $identifier, hits: $hits);
 
 			return null;
 		}
 
 		$uuid = $this->idOf(row: $hits[0]);
-		if ($uuid === '' || $this->caseAccess->hasCaseReadAccess(caseId: $uuid, user: $owner) === false) {
+		if ($uuid === '' || $this->caseAccess->hasCaseReadAccess(caseId: $uuid, user: $scope->owner) === false) {
 			return null;
 		}
 
-		$self = $this->selfOf(row: $hits[0]);
-		$registerId = $this->numericId(fromRow: $self['register'] ?? null, fromConfig: $register);
-		$schemaId = $this->numericId(fromRow: $self['schema'] ?? null, fromConfig: $schema);
+		return $this->locatedCase(hit: $hits[0], identifier: $identifier, uuid: $uuid, scope: $scope);
+	}//end resolveCase()
+
+	/**
+	 * Log when an identifier resolves to more than one case.
+	 *
+	 * @param string            $identifier The candidate identifier.
+	 * @param array<int, mixed> $hits       The exact matches.
+	 *
+	 * @return void
+	 */
+	private function warnIfAmbiguous(string $identifier, array $hits): void {
+		if (count($hits) > 1) {
+			$this->logger->warning(
+				'Dossiq: a case number resolves to more than one case; the mail is linked to none of them',
+				['app' => AppIdentity::APP_ID, 'case' => $identifier, 'matches' => count($hits)]
+			);
+		}
+	}//end warnIfAmbiguous()
+
+	/**
+	 * The readable case with its numeric register and schema ids, or null when either is missing.
+	 *
+	 * @param array<string, mixed> $hit The one exact match.
+	 * @param string          $identifier The candidate identifier.
+	 * @param string          $uuid       The case UUID.
+	 * @param CaseSearchScope $scope      Where to look, and the mailbox owner.
+	 *
+	 * @return array{uuid: string, identifier: string, registerId: int, schemaId: int}|null The case, or null.
+	 */
+	private function locatedCase(array $hit, string $identifier, string $uuid, CaseSearchScope $scope): ?array {
+		$self = $this->selfOf(row: $hit);
+		$registerId = $this->numericId(fromRow: $self['register'] ?? null, fromConfig: $scope->register);
+		$schemaId = $this->numericId(fromRow: $self['schema'] ?? null, fromConfig: $scope->schema);
 		if ($registerId <= 0 || $schemaId <= 0) {
 			$this->logger->warning(
 				'Dossiq: a matched case carries no numeric register or schema id; it is not linked rather than linked to id 0',
@@ -278,7 +319,7 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 		}
 
 		return ['uuid' => $uuid, 'identifier' => $identifier, 'registerId' => $registerId, 'schemaId' => $schemaId];
-	}//end resolveCase()
+	}//end locatedCase()
 
 	/**
 	 * The cases the owner can see whose identifier is exactly this one.
@@ -286,19 +327,17 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 	 * The rows are held to exact equality on `identifier` after the search: a
 	 * filter that matched loosely must not become a link.
 	 *
-	 * @param string $identifier    The candidate identifier.
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The configured register.
-	 * @param string $schema        The configured case schema.
+	 * @param string          $identifier The candidate identifier.
+	 * @param CaseSearchScope $scope      Where to look.
 	 *
 	 * @return array<int, array<string, mixed>> The exact matches.
 	 */
-	private function exactMatches(string $identifier, object $objectService, string $register, string $schema): array {
+	private function exactMatches(string $identifier, CaseSearchScope $scope): array {
 		try {
 			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $scope->objectService,
+				register: $scope->register,
+				schema: $scope->schema,
 				filters: [
 					'identifier' => $identifier,
 					'_limit' => 10,

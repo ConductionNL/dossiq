@@ -247,6 +247,21 @@ final class StepConfigValidator {
 			return [self::entryError(path: $path, code: 'malformed_sla')];
 		}
 
+		return array_merge(
+			self::slaValueErrors(sla: $sla, path: $path),
+			self::slaUnitErrors(sla: $sla, path: $path)
+		);
+	}//end validateSla()
+
+	/**
+	 * Validate `config.sla.value`.
+	 *
+	 * @param array<string, mixed> $sla The sla object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function slaValueErrors(array $sla, string $path): array {
 		$errors = [];
 
 		$value = ($sla['value'] ?? null);
@@ -259,6 +274,20 @@ final class StepConfigValidator {
 			);
 		}
 
+		return $errors;
+	}//end slaValueErrors()
+
+	/**
+	 * Validate `config.sla.unit`.
+	 *
+	 * @param array<string, mixed> $sla The sla object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function slaUnitErrors(array $sla, string $path): array {
+		$errors = [];
+
 		$unit = ($sla['unit'] ?? null);
 		if (is_string($unit) === false || in_array($unit, self::SLA_UNITS, true) === false) {
 			$errors[] = self::error(
@@ -269,7 +298,7 @@ final class StepConfigValidator {
 		}
 
 		return $errors;
-	}//end validateSla()
+	}//end slaUnitErrors()
 
 	/**
 	 * Validate `config.requiredFields`.
@@ -331,24 +360,65 @@ final class StepConfigValidator {
 			return [self::entryError(path: $path, code: 'malformed_auto_actions')];
 		}
 
+		return self::actionErrors(actions: $actions, path: $path, actionCatalog: $actionCatalog);
+	}//end validateAutoActions()
+
+	/**
+	 * Validate each entry of `config.autoActions`.
+	 *
+	 * @param array<mixed> $actions The autoActions list.
+	 * @param string $path The path prefix for any error.
+	 * @param array<int, string> $actionCatalog The known action keys.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function actionErrors(array $actions, string $path, array $actionCatalog): array {
 		$errors = [];
 		foreach ($actions as $index => $action) {
-			if (is_array($action) === false) {
-				$errors[] = self::entryError(path: $path . "[$index]", code: 'malformed_action_ref');
-				continue;
+			$error = self::actionRefError(action: $action, entryPath: $path . "[$index]", actionCatalog: $actionCatalog);
+			if ($error !== null) {
+				$errors[] = $error;
 			}
-
-			$key = ($action['key'] ?? null);
-			if (is_string($key) === false || $key === '') {
-				$errors[] = self::entryError(path: $path . "[$index].key", code: 'malformed_action_key');
-				continue;
-			}
-
-			if (in_array($key, $actionCatalog, true) === false) {
-				$errors[] = self::entryError(path: $path . "[$index].key", code: 'unknown_action_key');
-			}
-		}//end foreach
+		}
 
 		return $errors;
-	}//end validateAutoActions()
+	}//end actionErrors()
+
+	/**
+	 * Validate one entry of `config.autoActions`.
+	 *
+	 * @param mixed $action The action reference.
+	 * @param string $entryPath The entry's path.
+	 * @param array<int, string> $actionCatalog The known action keys.
+	 *
+	 * @return array{path: string, code: string, message: string}|null The error, or null.
+	 */
+	private static function actionRefError(mixed $action, string $entryPath, array $actionCatalog): ?array {
+		if (is_array($action) === false) {
+			return self::entryError(path: $entryPath, code: 'malformed_action_ref');
+		}
+
+		return self::actionKeyError(key: ($action['key'] ?? null), keyPath: $entryPath . '.key', actionCatalog: $actionCatalog);
+	}//end actionRefError()
+
+	/**
+	 * Validate the key of one `config.autoActions` entry.
+	 *
+	 * @param mixed $key The action key.
+	 * @param string $keyPath The key's path.
+	 * @param array<int, string> $actionCatalog The known action keys.
+	 *
+	 * @return array{path: string, code: string, message: string}|null The error, or null.
+	 */
+	private static function actionKeyError(mixed $key, string $keyPath, array $actionCatalog): ?array {
+		if (is_string($key) === false || $key === '') {
+			return self::entryError(path: $keyPath, code: 'malformed_action_key');
+		}
+
+		if (in_array($key, $actionCatalog, true) === false) {
+			return self::entryError(path: $keyPath, code: 'unknown_action_key');
+		}
+
+		return null;
+	}//end actionKeyError()
 }//end class

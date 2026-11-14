@@ -159,13 +159,14 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 		}
 
 		$results = $this->checks->verdicts->forMessage(message: $message);
+		$screened = new ScreenedMessage(message: $message, verdict: $verdict, results: $results);
 
-		$filtered = $this->filterOutcome(message: $message, verdict: $verdict, results: $results);
+		$filtered = $this->filterOutcome(screened: $screened);
 		if ($filtered !== null) {
 			return $filtered;
 		}
 
-		return $this->place(message: $message, verdict: $verdict, results: $results);
+		return $this->place(screened: $screened);
 	}//end process()
 
 	/**
@@ -192,21 +193,19 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	/**
 	 * Settle a message a filter quarantined or wants sent on.
 	 *
-	 * @param InboundMessage        $message The message.
-	 * @param FilterVerdict         $verdict The pipeline's verdict.
-	 * @param array<string, string> $results The four authentication results.
+	 * @param ScreenedMessage $screened The message, the pipeline's verdict and the four authentication results.
 	 *
 	 * @return string|null The outcome, or null when the message goes on to be placed.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function filterOutcome(InboundMessage $message, FilterVerdict $verdict, array $results): ?string {
-		if ($verdict->outcome === FilterOutcome::QUARANTINE) {
-			return $this->quarantineByFilter(message: $message, verdict: $verdict, results: $results);
+	private function filterOutcome(ScreenedMessage $screened): ?string {
+		if ($screened->verdict->outcome === FilterOutcome::QUARANTINE) {
+			return $this->quarantineByFilter(screened: $screened);
 		}
 
-		if ($verdict->outcome === FilterOutcome::FORWARD) {
-			return $this->inboxForward(message: $message, verdict: $verdict, results: $results);
+		if ($screened->verdict->outcome === FilterOutcome::FORWARD) {
+			return $this->inboxForward(screened: $screened);
 		}
 
 		return null;
@@ -215,21 +214,19 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	/**
 	 * Record a message a filter quarantined.
 	 *
-	 * @param InboundMessage        $message The message.
-	 * @param FilterVerdict         $verdict The pipeline's verdict.
-	 * @param array<string, string> $results The four authentication results.
+	 * @param ScreenedMessage $screened The message, the pipeline's verdict and the four authentication results.
 	 *
 	 * @return string The quarantined outcome.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function quarantineByFilter(InboundMessage $message, FilterVerdict $verdict, array $results): string {
+	private function quarantineByFilter(ScreenedMessage $screened): string {
 		$this->log->record(
-			message: $message,
-			verdict: $verdict,
-			results: $results,
+			message: $screened->message,
+			verdict: $screened->verdict,
+			results: $screened->results,
 			outcome: IntakeLog::OUTCOME_QUARANTINED,
-			reason: $verdict->reason
+			reason: $screened->verdict->reason
 		);
 		return IntakeLog::OUTCOME_QUARANTINED;
 	}//end quarantineByFilter()
@@ -237,26 +234,24 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	/**
 	 * Record a message a filter wants sent on as an inbox entry.
 	 *
-	 * @param InboundMessage        $message The message.
-	 * @param FilterVerdict         $verdict The pipeline's verdict.
-	 * @param array<string, string> $results The four authentication results.
+	 * @param ScreenedMessage $screened The message, the pipeline's verdict and the four authentication results.
 	 *
 	 * @return string The inbox outcome.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function inboxForward(InboundMessage $message, FilterVerdict $verdict, array $results): string {
+	private function inboxForward(ScreenedMessage $screened): string {
 		// A filter that wants a message sent on says so, and the act itself
 		// belongs to BounceAction. Recorded as an inbox entry rather than a
 		// forward until somebody performs it, because a forward nobody sent
 		// is not a forward.
 		$this->log->record(
-			message: $message,
-			verdict: $verdict,
-			results: $results,
+			message: $screened->message,
+			verdict: $screened->verdict,
+			results: $screened->results,
 			outcome: IntakeLog::OUTCOME_INBOX,
-			reason: 'A filter asked for this to be sent on to ' . $verdict->forwardTo
-				. '. Reason: ' . $verdict->reason
+			reason: 'A filter asked for this to be sent on to ' . $screened->verdict->forwardTo
+				. '. Reason: ' . $screened->verdict->reason
 		);
 		return IntakeLog::OUTCOME_INBOX;
 	}//end inboxForward()
@@ -264,27 +259,25 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	/**
 	 * Put an accepted message where it belongs.
 	 *
-	 * @param InboundMessage        $message The message.
-	 * @param FilterVerdict         $verdict The pipeline's verdict.
-	 * @param array<string, string> $results The four authentication results.
+	 * @param ScreenedMessage $screened The message, the pipeline's verdict and the four authentication results.
 	 *
 	 * @return string One of the {@see IntakeLog} outcome values.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function place(InboundMessage $message, FilterVerdict $verdict, array $results): string {
-		$caseId = $this->matchedCaseId(message: $message, results: $results);
-		$policy = $this->policyFor(caseId: $caseId, results: $results);
+	private function place(ScreenedMessage $screened): string {
+		$caseId = $this->matchedCaseId(message: $screened->message, results: $screened->results);
+		$policy = $this->policyFor(caseId: $caseId, results: $screened->results);
 
 		if ($policy === IntakePolicy::REFUSE) {
-			return $this->refuseByPolicy(message: $message, verdict: $verdict, results: $results, caseId: $caseId);
+			return $this->refuseByPolicy(screened: $screened, caseId: $caseId);
 		}
 
 		if ($policy === IntakePolicy::QUARANTINE) {
-			return $this->quarantineByPolicy(message: $message, verdict: $verdict, results: $results, caseId: $caseId);
+			return $this->quarantineByPolicy(screened: $screened, caseId: $caseId);
 		}
 
-		return $this->fileOnCase(message: $message, verdict: $verdict, results: $results, caseId: $caseId);
+		return $this->fileOnCase(message: $screened->message, verdict: $screened->verdict, results: $screened->results, caseId: $caseId);
 	}//end place()
 
 	/**
@@ -312,20 +305,18 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	/**
 	 * Record a message the case type refuses.
 	 *
-	 * @param InboundMessage        $message The message.
-	 * @param FilterVerdict         $verdict The pipeline's verdict.
-	 * @param array<string, string> $results The four authentication results.
-	 * @param string                $caseId  The case the subject named, or ''.
+	 * @param ScreenedMessage $screened The message, the pipeline's verdict and the four authentication results.
+	 * @param string          $caseId   The case the subject named, or ''.
 	 *
 	 * @return string The refused outcome.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function refuseByPolicy(InboundMessage $message, FilterVerdict $verdict, array $results, string $caseId): string {
+	private function refuseByPolicy(ScreenedMessage $screened, string $caseId): string {
 		$this->log->record(
-			message: $message,
-			verdict: $verdict,
-			results: $results,
+			message: $screened->message,
+			verdict: $screened->verdict,
+			results: $screened->results,
 			outcome: IntakeLog::OUTCOME_REFUSED,
 			reason: 'The case type refuses a message whose sender could not be authenticated.',
 			caseId: $caseId
@@ -336,20 +327,18 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	/**
 	 * Record a message the case type holds in quarantine.
 	 *
-	 * @param InboundMessage        $message The message.
-	 * @param FilterVerdict         $verdict The pipeline's verdict.
-	 * @param array<string, string> $results The four authentication results.
-	 * @param string                $caseId  The case the subject named, or ''.
+	 * @param ScreenedMessage $screened The message, the pipeline's verdict and the four authentication results.
+	 * @param string          $caseId   The case the subject named, or ''.
 	 *
 	 * @return string The quarantined outcome.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function quarantineByPolicy(InboundMessage $message, FilterVerdict $verdict, array $results, string $caseId): string {
+	private function quarantineByPolicy(ScreenedMessage $screened, string $caseId): string {
 		$this->log->record(
-			message: $message,
-			verdict: $verdict,
-			results: $results,
+			message: $screened->message,
+			verdict: $screened->verdict,
+			results: $screened->results,
 			outcome: IntakeLog::OUTCOME_QUARANTINED,
 			reason: 'The case type holds a message whose sender could not be authenticated '
 				. 'until the intake role releases it.',
@@ -379,7 +368,7 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 		[$onCase, $reason] = $this->caseAndReason(message: $message, caseId: $caseId);
 
 		if ($onCase === '') {
-			return $this->parkInInbox(message: $message, verdict: $verdict, results: $results);
+			return $this->parkInInbox(screened: new ScreenedMessage(message: $message, verdict: $verdict, results: $results));
 		}
 
 		$this->archiveOnCase(message: $message, onCase: $onCase);
@@ -423,23 +412,21 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 	/**
 	 * Record a message no case claimed as waiting in the intake inbox.
 	 *
-	 * @param InboundMessage        $message The message.
-	 * @param FilterVerdict         $verdict The pipeline's verdict.
-	 * @param array<string, string> $results The four authentication results.
+	 * @param ScreenedMessage $screened The message, the pipeline's verdict and the four authentication results.
 	 *
 	 * @return string The inbox outcome.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function parkInInbox(InboundMessage $message, FilterVerdict $verdict, array $results): string {
+	private function parkInInbox(ScreenedMessage $screened): string {
 		// 🔴 THE ONE BRANCH THAT USED TO BE A SILENT `continue`. A message
 		// matching no case and no case type lands in the intake inbox with
 		// its verdict on it, and somebody has to empty that inbox. A
 		// message that vanished is not a problem anyone can see.
 		$this->log->record(
-			message: $message,
-			verdict: $verdict,
-			results: $results,
+			message: $screened->message,
+			verdict: $screened->verdict,
+			results: $screened->results,
 			outcome: IntakeLog::OUTCOME_INBOX,
 			reason: 'No case and no case type claimed this message, so it is waiting in the intake inbox.'
 		);

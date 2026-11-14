@@ -330,6 +330,32 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	 * @return array{error: array|null, body: array} The refusal, or the (possibly cleared) body
 	 */
 	private function applyBetalingsindicatie(array $body, ?array $existingObject): array {
+		[$betalingsindicatie, $lastPaid] = $this->effectivePayment(body: $body, existingObject: $existingObject);
+
+		if ($this->noNvtDateConflict(betalingsindicatie: $betalingsindicatie, lastPaid: $lastPaid) === true) {
+			return ['error' => null, 'body' => $body];
+		}
+
+		// On create: reject (cannot set date with nvt).
+		if ($existingObject === null) {
+			return $this->nvtWithDateRefused(body: $body);
+		}
+
+		// On update/patch: clear laatsteBetaaldatum when switching to nvt.
+		$body['laatsteBetaaldatum'] = null;
+
+		return ['error' => null, 'body' => $body];
+	}//end applyBetalingsindicatie()
+
+	/**
+	 * The betalingsindicatie and laatsteBetaaldatum that count, the stored ones filling what the body leaves out.
+	 *
+	 * @param array $body The request body
+	 * @param array|null $existingObject The existing zaak, null on create
+	 *
+	 * @return array{0: mixed, 1: mixed} The betalingsindicatie and laatsteBetaaldatum.
+	 */
+	private function effectivePayment(array $body, ?array $existingObject): array {
 		$betalingsindicatie = $body['betalingsindicatie'] ?? null;
 		$lastPaid           = $body['laatsteBetaaldatum'] ?? null;
 
@@ -339,30 +365,41 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 			$lastPaid           ??= $existingObject['lastPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
 		}
 
-		if ($betalingsindicatie !== 'nvt' || $lastPaid === null || $lastPaid === '') {
-			return ['error' => null, 'body' => $body];
-		}
+		return [$betalingsindicatie, $lastPaid];
+	}//end effectivePayment()
 
-		// On create: reject (cannot set date with nvt).
-		if ($existingObject === null) {
-			$error = $this->error(
-				status: 400,
-				detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
-				invalidParams: [$this->fieldError(
-					fieldName: 'laatsteBetaaldatum',
-					code: 'betaling-nvt',
-					reason: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.'
-				)
-				]
-			);
-			return ['error' => $error, 'body' => $body];
-		}
+	/**
+	 * Whether the pair leaves nothing to refuse: no "nvt", or no laatsteBetaaldatum.
+	 *
+	 * @param mixed $betalingsindicatie The betalingsindicatie that counts.
+	 * @param mixed $lastPaid The laatsteBetaaldatum that counts.
+	 *
+	 * @return bool True when the pair goes together.
+	 */
+	private function noNvtDateConflict(mixed $betalingsindicatie, mixed $lastPaid): bool {
+		return $betalingsindicatie !== 'nvt' || $lastPaid === null || $lastPaid === '';
+	}//end noNvtDateConflict()
 
-		// On update/patch: clear laatsteBetaaldatum when switching to nvt.
-		$body['laatsteBetaaldatum'] = null;
-
-		return ['error' => null, 'body' => $body];
-	}//end applyBetalingsindicatie()
+	/**
+	 * Refuse a laatsteBetaaldatum alongside betalingsindicatie "nvt" on create.
+	 *
+	 * @param array $body The request body
+	 *
+	 * @return array{error: array|null, body: array} The refusal and the body
+	 */
+	private function nvtWithDateRefused(array $body): array {
+		$error = $this->error(
+			status: 400,
+			detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
+			invalidParams: [$this->fieldError(
+				fieldName: 'laatsteBetaaldatum',
+				code: 'betaling-nvt',
+				reason: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.'
+			)
+			]
+		);
+		return ['error' => $error, 'body' => $body];
+	}//end nvtWithDateRefused()
 
 	/**
 	 * Zrc-022: an archiefstatus past nog_te_archiveren needs archiefnominatie and archiefactiedatum.
