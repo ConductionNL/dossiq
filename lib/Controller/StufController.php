@@ -231,16 +231,27 @@ class StufController extends Controller {
 		try {
 			return new JSONResponse($this->bridge->vrijBericht(endpoint: $endpoint, name: $messageName, payload: $payload));
 		} catch (StufException $e) {
-			$status = Http::STATUS_BAD_REQUEST;
-			$code   = 'STUF_VALIDATION';
-			if ($e->getCode() === Http::STATUS_SERVICE_UNAVAILABLE) {
-				$status = Http::STATUS_SERVICE_UNAVAILABLE;
-				$code   = 'INTEGRIQ_UNAVAILABLE';
-			}
-
-			return new JSONResponse(['error' => $e->getMessage(), 'errorCode' => $code], $status);
+			return $this->outboundFailure(e: $e);
 		}
 	}//end outbound()
+
+	/**
+	 * Answer a failed outbound message: 503 when Integriq is unavailable, else 400.
+	 *
+	 * @param StufException $e The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function outboundFailure(StufException $e): JSONResponse {
+		$status = Http::STATUS_BAD_REQUEST;
+		$code   = 'STUF_VALIDATION';
+		if ($e->getCode() === Http::STATUS_SERVICE_UNAVAILABLE) {
+			$status = Http::STATUS_SERVICE_UNAVAILABLE;
+			$code   = 'INTEGRIQ_UNAVAILABLE';
+		}
+
+		return new JSONResponse(['error' => $e->getMessage(), 'errorCode' => $code], $status);
+	}//end outboundFailure()
 
 	/**
 	 * Receive an async confirmation from the zaaksysteem and hand it to integriq.
