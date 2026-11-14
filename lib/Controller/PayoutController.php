@@ -35,6 +35,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Throwable;
 
@@ -82,21 +83,10 @@ class PayoutController extends Controller {
 	 */
 	public function prepare(string $id): JSONResponse {
 		$user = $this->userSession->getUser();
-		$caseId = null;
-		if ($user !== null) {
-			$caseId = $this->owningCase->resolveVia(
-				objectId: $id,
-				schemaKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
-				linkField: 'deadlineInstance',
-				viaSchemaKey: 'termijn_instance_schema',
-				caseField: 'case'
-			);
-		}
+		$caseId = $this->owningCaseOf(user: $user, id: $id);
 
 		// Fails closed: no user, no owning case, or no mutation access all deny.
-		if ($user === null || $caseId === null
-			|| $this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user) === false
-		) {
+		if ($this->isDenied(user: $user, caseId: $caseId) === true) {
 			return new JSONResponse(['message' => 'Not authorized for calculation ' . $id], Http::STATUS_FORBIDDEN);
 		}
 
@@ -108,6 +98,42 @@ class PayoutController extends Controller {
 
 		return new JSONResponse($row, Http::STATUS_CREATED);
 	}//end prepare()
+
+	/**
+	 * The case that owns a calculation, read only for a signed-in user.
+	 *
+	 * @param IUser|null $user The signed-in user.
+	 * @param string     $id   The calculation id.
+	 *
+	 * @return string|null The case uuid, null when there is no user or no owning case.
+	 */
+	private function owningCaseOf(?IUser $user, string $id): ?string {
+		$caseId = null;
+		if ($user !== null) {
+			$caseId = $this->owningCase->resolveVia(
+				objectId: $id,
+				schemaKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
+				linkField: 'deadlineInstance',
+				viaSchemaKey: 'termijn_instance_schema',
+				caseField: 'case'
+			);
+		}
+
+		return $caseId;
+	}//end owningCaseOf()
+
+	/**
+	 * Whether preparing is denied: no user, no owning case, or no mutation access.
+	 *
+	 * @param IUser|null  $user   The signed-in user.
+	 * @param string|null $caseId The owning case.
+	 *
+	 * @return bool
+	 */
+	private function isDenied(?IUser $user, ?string $caseId): bool {
+		return $user === null || $caseId === null
+			|| $this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user) === false;
+	}//end isDenied()
 
 	/**
 	 * Deprecated alias of /api/accruing-amounts/{id}/payout, kept for clients of the old URL.
