@@ -121,10 +121,11 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 			return $this->answer(status: 'refused', reason: $e->getMessage());
 		}
 
-		$event = $this->requestEvent(caseId: $caseId, case: $case, declaration: $declaration, built: $built);
+		$draft = ['caseId' => $caseId, 'case' => $case, 'declaration' => $declaration, 'built' => $built];
+		$event = $this->requestEvent(draft: $draft);
 		$this->events->dispatchTyped($event);
 
-		return $this->outcome(caseId: $caseId, event: $event, declaration: $declaration);
+		return $this->outcome(draft: $draft, event: $event);
 	}//end draft()
 
 	/**
@@ -202,16 +203,13 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 	/**
 	 * The request filinq's published contract takes.
 	 *
-	 * @param string               $caseId      The case uuid.
-	 * @param array<string, mixed> $case        The case row.
-	 * @param array<string, mixed> $declaration The draft declaration.
-	 * @param array<string, mixed> $built       The declared data.
+	 * @param array{caseId: string, case: array<string, mixed>, declaration: array<string, mixed>, built: array<string, mixed>} $draft The draft.
 	 *
 	 * @return DocumentGenerationRequestedEvent The request event.
 	 */
-	private function requestEvent(string $caseId, array $case, array $declaration, array $built): DocumentGenerationRequestedEvent {
+	private function requestEvent(array $draft): DocumentGenerationRequestedEvent {
 		return new DocumentGenerationRequestedEvent(
-			request: $this->generationRequest(caseId: $caseId, case: $case, declaration: $declaration, built: $built),
+			request: $this->generationRequest(draft: $draft),
 			requestingApp: AppIdentity::APP_ID
 		);
 	}//end requestEvent()
@@ -219,15 +217,13 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 	/**
 	 * The request body of the generation event.
 	 *
-	 * @param string               $caseId      The case uuid.
-	 * @param array<string, mixed> $case        The case row.
-	 * @param array<string, mixed> $declaration The draft declaration.
-	 * @param array<string, mixed> $built       The declared data.
+	 * @param array{caseId: string, case: array<string, mixed>, declaration: array<string, mixed>, built: array<string, mixed>} $draft The draft.
 	 *
 	 * @return array<string, mixed> The request.
 	 */
-	private function generationRequest(string $caseId, array $case, array $declaration, array $built): array {
-		$data = $this->templateData(case: $case, declaration: $declaration, built: $built);
+	private function generationRequest(array $draft): array {
+		$declaration = $draft['declaration'];
+		$data = $this->templateData(draft: $draft);
 		$title = $this->filename(declaration: $declaration);
 
 		return [
@@ -237,7 +233,7 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 			'filename' => $title,
 			'storeFile' => true,
 			'data' => $data,
-			'object' => $this->caseObject(caseId: $caseId),
+			'object' => $this->caseObject(caseId: $draft['caseId']),
 			'metadata' => $this->metadata(declaration: $declaration),
 		];
 	}//end generationRequest()
@@ -245,21 +241,19 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 	/**
 	 * The data the template is rendered with: the case, and the declared data.
 	 *
-	 * @param array<string, mixed> $case        The case row.
-	 * @param array<string, mixed> $declaration The draft declaration.
-	 * @param array<string, mixed> $built       The declared data.
+	 * @param array{caseId: string, case: array<string, mixed>, declaration: array<string, mixed>, built: array<string, mixed>} $draft The draft.
 	 *
 	 * @return array<string, mixed> The data.
 	 */
-	private function templateData(array $case, array $declaration, array $built): array {
-		$dataKey = trim((string)($declaration['dataKey'] ?? ''));
-		$data = ['case' => $case];
+	private function templateData(array $draft): array {
+		$dataKey = trim((string)($draft['declaration']['dataKey'] ?? ''));
+		$data = ['case' => $draft['case']];
 		if ($dataKey === '') {
-			$data = array_merge($data, $built);
+			$data = array_merge($data, $draft['built']);
 		}
 
 		if ($dataKey !== '') {
-			$data[$dataKey] = $built;
+			$data[$dataKey] = $draft['built'];
 		}
 
 		return $data;
@@ -299,13 +293,13 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 	/**
 	 * What filinq answered, with the document filed on the case.
 	 *
-	 * @param string               $caseId      The case uuid.
+	 * @param array{caseId: string, case: array<string, mixed>, declaration: array<string, mixed>, built: array<string, mixed>} $draft The draft.
 	 * @param DocumentGenerationRequestedEvent $event The dispatched event.
-	 * @param array<string, mixed> $declaration The draft declaration.
 	 *
 	 * @return array{status: string, reason: string, informatieobject: string, fileId: int}
 	 */
-	private function outcome(string $caseId, DocumentGenerationRequestedEvent $event, array $declaration): array {
+	private function outcome(array $draft, DocumentGenerationRequestedEvent $event): array {
+		$declaration = $draft['declaration'];
 		$error = (string)($event->getError() ?? '');
 		if ($error !== '') {
 			return $this->answer(status: 'failed', reason: $error);
@@ -323,7 +317,7 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 
 		try {
 			$created = $this->filer->file(
-				caseId: $caseId,
+				caseId: $draft['caseId'],
 				fileId: $fileId,
 				title: (string)($result['name'] ?? $declaration['templateSlug']),
 				mime: (string)($result['mime'] ?? 'application/pdf'),
