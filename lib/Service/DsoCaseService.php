@@ -468,26 +468,7 @@ class DsoCaseService implements DsoCaseServiceInterface {
 	private function syncPermitApplicationStatus(object $objectService, array $change): void {
 		try {
 			$requestSchema = $this->config(key: 'dso_vergunningaanvraag_schema');
-			$request = null;
-			if ($requestSchema !== '') {
-				$request = $this->findObjectAsArray(
-					objectService: $objectService,
-					register: 'dso',
-					schema: $requestSchema,
-					id: $change['requestRef']
-				);
-			}
-
-			if ($request === null) {
-				return;
-			}
-
-			$request['status'] = $change['newStatus'];
-			if ($change['besluitdatum'] !== null) {
-				$request['besluitdatum'] = $change['besluitdatum'];
-			}
-
-			$objectService->saveObject(register: 'dso', schema: $requestSchema, object: $request);
+			$this->syncRequest(objectService: $objectService, requestSchema: $requestSchema, change: $change);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq DsoCaseService: could not sync vergunningaanvraag status: ' . $e->getMessage(),
@@ -495,4 +476,50 @@ class DsoCaseService implements DsoCaseServiceInterface {
 			);
 		}//end try
 	}//end syncPermitApplicationStatus()
+
+	/**
+	 * Write the new status, and the besluitdatum when given, onto the vergunningaanvraag.
+	 *
+	 * @param object                     $objectService The ObjectService instance.
+	 * @param string                     $requestSchema The vergunningaanvraag schema, or '' when not configured.
+	 * @param array<string, string|null> $change        The requestRef, newStatus and the optional besluitdatum.
+	 *
+	 * @return void
+	 */
+	private function syncRequest(object $objectService, string $requestSchema, array $change): void {
+		$request = $this->permitRequest(objectService: $objectService, requestSchema: $requestSchema, requestRef: $change['requestRef']);
+		if ($request === null) {
+			return;
+		}
+
+		$request['status'] = $change['newStatus'];
+		if ($change['besluitdatum'] !== null) {
+			$request['besluitdatum'] = $change['besluitdatum'];
+		}
+
+		$objectService->saveObject(register: 'dso', schema: $requestSchema, object: $request);
+	}//end syncRequest()
+
+	/**
+	 * The vergunningaanvraag, or null when the schema is not configured or it is not found.
+	 *
+	 * @param object      $objectService The ObjectService instance.
+	 * @param string      $requestSchema The vergunningaanvraag schema.
+	 * @param string|null $requestRef    The vergunningaanvraag UUID.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function permitRequest(object $objectService, string $requestSchema, ?string $requestRef): ?array {
+		$request = null;
+		if ($requestSchema !== '') {
+			$request = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: 'dso',
+				schema: $requestSchema,
+				id: $requestRef
+			);
+		}
+
+		return $request;
+	}//end permitRequest()
 }//end class
