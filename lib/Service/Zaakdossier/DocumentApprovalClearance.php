@@ -178,24 +178,7 @@ class DocumentApprovalClearance implements DocumentApprovalClearanceInterface {
 				continue;
 			}
 
-			$route = trim((string)($entry['routeName'] ?? ($entry['route'] ?? '')));
-			$step = trim((string)($entry['stageName'] ?? ''));
-			$actor = trim((string)($entry['actor'] ?? ''));
-
-			$part = $route;
-			if ($part === '') {
-				$part = 'an approval route';
-			}
-
-			if ($step !== '') {
-				$part .= ', step "' . $step . '"';
-			}
-
-			if ($actor !== '') {
-				$part .= ', waiting on ' . $actor;
-			}
-
-			$parts[] = $part;
+			$parts[] = $this->waitingPart(entry: $entry);
 		}
 
 		if ($parts === []) {
@@ -204,4 +187,34 @@ class DocumentApprovalClearance implements DocumentApprovalClearanceInterface {
 
 		return implode('; ', $parts);
 	}//end describe()
+
+	/**
+	 * One waiting entry as a phrase: the route, the step and who it waits on.
+	 *
+	 * @param array<string, mixed> $entry The waiting entry.
+	 *
+	 * @return string The phrase.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
+	 */
+	private function waitingPart(array $entry): string {
+		$route = trim((string)($entry['routeName'] ?? ($entry['route'] ?? '')));
+		$step = trim((string)($entry['stageName'] ?? ''));
+		$actor = trim((string)($entry['actor'] ?? ''));
+
+		$part = $route;
+		if ($part === '') {
+			$part = 'an approval route';
+		}
+
+		if ($step !== '') {
+			$part .= ', step "' . $step . '"';
+		}
+
+		if ($actor !== '') {
+			$part .= ', waiting on ' . $actor;
+		}
+
+		return $part;
+	}//end waitingPart()
 }//end class
