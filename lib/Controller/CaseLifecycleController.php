@@ -264,24 +264,35 @@ class CaseLifecycleController extends Controller {
 		try {
 			$objectService->deleteObject(uuid: $caseId, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
-			if (is_a($e, 'OCA\\OpenRegister\\Exception\\HookStoppedException') === true) {
-				$this->logger->info(
-					'CaseLifecycleController: the delete guard refused',
-					['caseId' => $caseId, 'errors' => $e->getErrors()]
-				);
-
-				throw new RuntimeException('case_held');
-			}
-
-			throw $e;
+			$this->rethrowDeleteFailure(e: $e, caseId: $caseId);
 		}
 
-		return [
-			'success' => true,
-			'caseId' => $caseId,
-			'state' => 'deleted',
-		];
+		return ['success' => true, 'caseId' => $caseId, 'state' => 'deleted'];
 	}//end recycle()
+
+	/**
+	 * Rethrow a failed delete: a refusal by the delete guard as `case_held`, anything else as it is.
+	 *
+	 * @param \Throwable $e      What the delete threw
+	 * @param string     $caseId The case UUID
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException `case_held` when the guard refused.
+	 * @throws \Throwable       Anything else the delete threw.
+	 */
+	private function rethrowDeleteFailure(\Throwable $e, string $caseId): void {
+		if (is_a($e, 'OCA\\OpenRegister\\Exception\\HookStoppedException') === true) {
+			$this->logger->info(
+				'CaseLifecycleController: the delete guard refused',
+				['caseId' => $caseId, 'errors' => $e->getErrors()]
+			);
+
+			throw new RuntimeException('case_held');
+		}
+
+		throw $e;
+	}//end rethrowDeleteFailure()
 
 	/**
 	 * Run one gesture behind the session and per-case guards.
