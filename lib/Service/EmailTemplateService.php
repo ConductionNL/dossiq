@@ -142,9 +142,24 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 			throw new RuntimeException('Template not found');
 		}
 
-		$currentVersion = (int)($existing['version'] ?? 1);
+		$this->deactivate(existing: $existing, templateId: $templateId);
 
-		// Mark the prior version inactive so the active filter only sees the new copy.
+		$payload = $this->nextVersion(existing: $existing, data: $data);
+
+		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: $existing));
+	}//end updateTemplate()
+
+	/**
+	 * Mark the prior version inactive so the active filter only sees the new copy; a failure is logged.
+	 *
+	 * @param array<string, mixed> $existing   The current version.
+	 * @param string               $templateId Existing template id/slug.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function deactivate(array $existing, string $templateId): void {
 		$previous = $existing;
 		$previous['isActive'] = false;
 		try {
@@ -155,8 +170,22 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 				['template' => $templateId, 'error' => $e->getMessage()]
 			);
 		}
+	}//end deactivate()
 
-		$payload = [
+	/**
+	 * The next version's payload: the edit over the current version, one version up and active.
+	 *
+	 * @param array<string, mixed> $existing The current version.
+	 * @param array<string, mixed> $data     New payload.
+	 *
+	 * @return array<string, mixed> The new version, before its delivery fields.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
+	 */
+	private function nextVersion(array $existing, array $data): array {
+		$currentVersion = (int)($existing['version'] ?? 1);
+
+		return [
 			'caseType' => $existing['caseType'] ?? '',
 			'name' => (string)($data['name'] ?? ($existing['name'] ?? '')),
 			'subject' => (string)($data['subject'] ?? ($existing['subject'] ?? '')),
@@ -165,9 +194,7 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 			'isActive' => true,
 			'previousVersion' => $existing['id'] ?? null,
 		];
-
-		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: $existing));
-	}//end updateTemplate()
+	}//end nextVersion()
 
 	/**
 	 * Add when and how a template goes out: `moment` (a case event),
