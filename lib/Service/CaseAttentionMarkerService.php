@@ -399,15 +399,10 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 		$caseTypeId = $this->referenceId(value: ($case['caseType'] ?? null));
 		$standing = $this->standing(case: $case);
 
+		$judged = new CaseUnderJudgement(case: $case, now: $now, context: $context, standing: $standing);
 		$raised = [];
 		foreach ($this->declarationsFor(caseTypeId: $caseTypeId) as $declaration) {
-			$marker = $this->markerFor(
-				declaration: $declaration,
-				case: $case,
-				now: $now,
-				context: $context,
-				standing: $standing,
-			);
+			$marker = $this->markerFor(declaration: $declaration, judged: $judged);
 			if ($marker !== null) {
 				$raised[] = $marker;
 			}
@@ -419,23 +414,16 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 	/**
 	 * The marker one declaration raises on this case, or null when it raises none.
 	 *
-	 * @param array<string, mixed>  $declaration The marker declaration.
-	 * @param array<string, mixed>  $case        The case being judged.
-	 * @param DateTimeImmutable     $now         Today, for the conditions that ask.
-	 * @param array<string, mixed>  $context     The related rows, from `contextFor()`.
-	 * @param array<string, string> $standing    The raisedAt of each standing marker, by id.
+	 * @param array<string, mixed> $declaration The marker declaration.
+	 * @param CaseUnderJudgement   $judged      The case, today, its related rows and its standing markers.
 	 *
 	 * @return array<string, mixed>|null The raised marker, or null.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function markerFor(
-		array $declaration,
-		array $case,
-		DateTimeImmutable $now,
-		array $context,
-		array $standing,
-	): ?array {
+	private function markerFor(array $declaration, CaseUnderJudgement $judged): ?array {
+		$case = $judged->case;
+		$context = $judged->context;
 		$condition = (string)$declaration['raiseWhen'];
 		$id = (string)$declaration['id'];
 
@@ -451,7 +439,7 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 		$reason = $this->conditions->reasonFor(
 			condition: $condition,
 			case: $case,
-			now: $now,
+			now: $judged->now,
 			context: $context
 		);
 
@@ -459,22 +447,21 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 			return null;
 		}
 
-		return $this->raisedMarker(declaration: $declaration, reason: $reason, standing: $standing, now: $now);
+		return $this->raisedMarker(declaration: $declaration, reason: $reason, judged: $judged);
 	}//end markerFor()
 
 	/**
 	 * The marker a declaration raises for a reason.
 	 *
-	 * @param array<string, mixed>  $declaration The marker declaration.
-	 * @param string                $reason      Why the marker stands.
-	 * @param array<string, string> $standing    The raisedAt of each standing marker, by id.
-	 * @param DateTimeImmutable     $now         Today.
+	 * @param array<string, mixed> $declaration The marker declaration.
+	 * @param string               $reason      Why the marker stands.
+	 * @param CaseUnderJudgement   $judged      Today, and the raisedAt of each standing marker by id.
 	 *
 	 * @return array<string, mixed> The raised marker.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function raisedMarker(array $declaration, string $reason, array $standing, DateTimeImmutable $now): array {
+	private function raisedMarker(array $declaration, string $reason, CaseUnderJudgement $judged): array {
 		$id = (string)$declaration['id'];
 
 		return [
@@ -484,7 +471,7 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 			// A marker that is still standing keeps the moment it FIRST
 			// became true. Restamping it on every save would make a
 			// three-week-old problem read as new on each edit.
-			'raisedAt' => ($standing[$id] ?? $now->format('c')),
+			'raisedAt' => ($judged->standing[$id] ?? $judged->now->format('c')),
 		];
 	}//end raisedMarker()
 
