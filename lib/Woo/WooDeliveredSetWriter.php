@@ -171,31 +171,8 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 	public function open(string $caseId, string $decisionId, array $delivered): array {
 		[$objectService, $register, $schema] = $this->store();
 
-		$items = [];
-		foreach ($delivered as $entry) {
-			$bytes = (string)base64_decode((string)($entry['content'] ?? ''), true);
-			$items[] = [
-				'assessment' => (string)($entry['assessment'] ?? ''),
-				'classification' => (string)($entry['classification'] ?? ''),
-				'deliveredRef' => (string)($entry['deliveredRef'] ?? ''),
-				'originalRef' => (string)($entry['originalRef'] ?? ''),
-				'fileName' => (string)($entry['fileName'] ?? ''),
-				'size' => strlen($bytes),
-				'sha256' => hash('sha256', $bytes),
-			];
-		}
-
-		$previous = $this->latestFrozen(caseId: $caseId);
-		$set = [
-			'case' => $caseId,
-			'decision' => $decisionId,
-			'status' => self::STATUS_PENDING,
-			'deliveredAt' => (new DateTimeImmutable())->format('c'),
-			'deliveredBy' => (string)($this->userSession?->getUser()?->getUID() ?? ''),
-			'supersedes' => $this->idOf(row: ($previous ?? [])),
-			'items' => $items,
-			'setHash' => $this->setHash(items: $items),
-		];
+		$items = self::itemsOf(delivered: $delivered);
+		$set = $this->pendingSet(caseId: $caseId, decisionId: $decisionId, items: $items);
 
 		$stored = $this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $set);
 		if ($stored === null || $this->idOf(row: $stored) === '') {
@@ -206,6 +183,71 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 
 		return $stored;
 	}//end open()
+
+	/**
+	 * The manifest items of a delivery, one per delivered document.
+	 *
+	 * @param array<int, array<string, mixed>> $delivered One entry per delivered document.
+	 *
+	 * @return array<int, array<string, mixed>> The items.
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	private static function itemsOf(array $delivered): array {
+		$items = [];
+		foreach ($delivered as $entry) {
+			$items[] = self::itemOf(entry: $entry);
+		}
+
+		return $items;
+	}//end itemsOf()
+
+	/**
+	 * The manifest item of one delivered document: its references, size and hash.
+	 *
+	 * @param array<string, mixed> $entry The delivered document.
+	 *
+	 * @return array<string, mixed> The item.
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	private static function itemOf(array $entry): array {
+		$bytes = (string)base64_decode((string)($entry['content'] ?? ''), true);
+		return [
+			'assessment' => (string)($entry['assessment'] ?? ''),
+			'classification' => (string)($entry['classification'] ?? ''),
+			'deliveredRef' => (string)($entry['deliveredRef'] ?? ''),
+			'originalRef' => (string)($entry['originalRef'] ?? ''),
+			'fileName' => (string)($entry['fileName'] ?? ''),
+			'size' => strlen($bytes),
+			'sha256' => hash('sha256', $bytes),
+		];
+	}//end itemOf()
+
+	/**
+	 * The pending set of one delivery, superseding the case's latest frozen set.
+	 *
+	 * @param string                           $caseId     The Woo case.
+	 * @param string                           $decisionId The Woo decision.
+	 * @param array<int, array<string, mixed>> $items      The manifest items.
+	 *
+	 * @return array<string, mixed> The set.
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	private function pendingSet(string $caseId, string $decisionId, array $items): array {
+		$previous = $this->latestFrozen(caseId: $caseId);
+		return [
+			'case' => $caseId,
+			'decision' => $decisionId,
+			'status' => self::STATUS_PENDING,
+			'deliveredAt' => (new DateTimeImmutable())->format('c'),
+			'deliveredBy' => (string)($this->userSession?->getUser()?->getUID() ?? ''),
+			'supersedes' => $this->idOf(row: ($previous ?? [])),
+			'items' => $items,
+			'setHash' => $this->setHash(items: $items),
+		];
+	}//end pendingSet()
 
 	/**
 	 * Copy the bytes that go out into the set's own folder.
@@ -357,37 +399,77 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
 	 */
 	public function markWithdrawn(string $caseId, string $publicationId): void {
-		[$objectService, $register, $schema] = $this->store();
+		$store = $this->store();
 		foreach ($this->frozenSets(caseId: $caseId) as $set) {
 			if ((string)($set['publication'] ?? '') !== $publicationId || empty($set['withdrawnAt']) === false) {
 				continue;
 			}
 
-			$setId = $this->idOf(row: $set);
-			$lifted = false;
-			$this->quietly(what: 'lift OpenRegister\'s freeze for the withdraw stamp', operation: function () use ($setId, &$lifted): void {
-				$lifted = $this->platformUnfreeze(setId: $setId);
-			});
-
-			try {
-				$this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: $setId,
-					changes: ['withdrawnAt' => (new DateTimeImmutable())->format('c')]
-				);
-			} finally {
-				if ($lifted === true) {
-					$publicationId = (string)($set['publication'] ?? '');
-					$this->quietly(
-						what: 'set OpenRegister\'s freeze again after the withdraw stamp',
-						operation: fn () => $this->platformFreeze(setId: $setId, publicationId: $publicationId)
-					);
-				}
-			}
+			$this->stampWithdrawn(store: $store, set: $set);
 		}
 	}//end markWithdrawn()
+
+	/**
+	 * Stamp `withdrawnAt` on one frozen set, lifting OpenRegister's freeze around the stamp.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store The object service, the register and the schema.
+	 * @param array<string, mixed>                   $set   The frozen set.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function stampWithdrawn(array $store, array $set): void {
+		[$objectService, $register, $schema] = $store;
+		$setId = $this->idOf(row: $set);
+		$lifted = $this->liftFreeze(setId: $setId);
+
+		try {
+			$changes = ['withdrawnAt' => (new DateTimeImmutable())->format('c')];
+			$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $setId, changes: $changes);
+		} finally {
+			$this->refreeze(lifted: $lifted, setId: $setId, set: $set);
+		}
+	}//end stampWithdrawn()
+
+	/**
+	 * Lift OpenRegister's freeze on a set, quietly.
+	 *
+	 * @param string $setId The set.
+	 *
+	 * @return bool True when the freeze was lifted.
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function liftFreeze(string $setId): bool {
+		$lifted = false;
+		$this->quietly(what: 'lift OpenRegister\'s freeze for the withdraw stamp', operation: function () use ($setId, &$lifted): void {
+			$lifted = $this->platformUnfreeze(setId: $setId);
+		});
+
+		return $lifted;
+	}//end liftFreeze()
+
+	/**
+	 * Set OpenRegister's freeze on a set again, quietly, when it was lifted.
+	 *
+	 * @param bool                 $lifted Whether the freeze was lifted.
+	 * @param string               $setId  The set.
+	 * @param array<string, mixed> $set    The frozen set, for its publication.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function refreeze(bool $lifted, string $setId, array $set): void {
+		if ($lifted === true) {
+			$publicationId = (string)($set['publication'] ?? '');
+			$this->quietly(
+				what: 'set OpenRegister\'s freeze again after the withdraw stamp',
+				operation: fn () => $this->platformFreeze(setId: $setId, publicationId: $publicationId)
+			);
+		}
+	}//end refreeze()
 
 	/**
 	 * The frozen sets of a case, oldest first.
