@@ -98,12 +98,11 @@ class CaseReassignmentService implements CaseReassignmentServiceInterface {
 		$fromUser = $this->requiredUser(fromUser: $fromUser);
 
 		[$objectService, $register] = $this->context();
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
 		$caseType = $this->caseTypeFilter(filter: $filter);
 
 		$finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
 
-		$caseResults = $this->assignedCases(objectService: $objectService, register: $register, caseSchema: $caseSchema, fromUser: $fromUser);
+		$caseResults = $this->assignedCases(objectService: $objectService, register: $register, fromUser: $fromUser);
 		$cases = $this->filterOpenCases(caseResults: $caseResults, finalIds: $finalIds, caseType: $caseType);
 
 		$tasks = $this->openTasksOf(fromUser: $fromUser, cases: $cases, caseType: $caseType);
@@ -149,13 +148,13 @@ class CaseReassignmentService implements CaseReassignmentServiceInterface {
 	 * The cases assigned to the departing handler, unfiltered; none when no case schema is configured.
 	 *
 	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register id.
-	 * @param string $caseSchema The case schema id, or ''.
-	 * @param string $fromUser The departing handler user id.
+	 * @param string $register      The register id.
+	 * @param string $fromUser      The departing handler user id.
 	 *
 	 * @return array<int, array<string, mixed>> The raw case search results.
 	 */
-	private function assignedCases(object $objectService, string $register, string $caseSchema, string $fromUser): array {
+	private function assignedCases(object $objectService, string $register, string $fromUser): array {
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
 		if ($caseSchema === '') {
 			return [];
 		}
