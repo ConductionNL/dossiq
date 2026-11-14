@@ -339,34 +339,54 @@ class MilestoneService implements MilestoneServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function reverseMilestone(
-		string $caseId,
-		string $definitionId,
-		string $userId,
-		string $reason,
-	): bool {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+	public function reverseMilestone(string $caseId, string $definitionId, string $userId, string $reason): bool {
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('milestone_record_schema');
 
-		$records = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'case' => $caseId,
-				'milestoneDefinition' => $definitionId,
-			],
-		);
+		$filters = ['case' => $caseId, 'milestoneDefinition' => $definitionId];
+		$records = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 
 		if (empty($records) === true) {
 			return false;
 		}
 
+		$this->deleteRecords(objectService: $objectService, register: $register, schema: $schema, records: $records);
+
+		$message = 'Milestone reversed: ' . $definitionId . ' on case ' . $caseId . ' by ' . $userId . ' reason: ' . $reason;
+		$this->logger->info($message, ['app' => AppIdentity::APP_ID]);
+
+		return true;
+	}//end reverseMilestone()
+
+	/**
+	 * Resolve the OpenRegister ObjectService.
+	 *
+	 * @return object The OpenRegister ObjectService
+	 *
+	 * @throws \RuntimeException If OpenRegister unavailable
+	 */
+	private function requireObjectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * Delete the given milestone records.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param string $register The register id
+	 * @param string $schema The milestone record schema id
+	 * @param array<int, array<string, mixed>> $records The milestone records to delete
+	 *
+	 * @return void
+	 */
+	private function deleteRecords(object $objectService, string $register, string $schema, array $records): void {
 		// Delete the milestone record.
 		foreach ($records as $record) {
 			$recordId = $record['id'] ?? $record['uuid'] ?? '';
@@ -374,15 +394,7 @@ class MilestoneService implements MilestoneServiceInterface {
 				$objectService->deleteObject(uuid: $recordId, register: $register, schema: $schema);
 			}
 		}
-
-		$this->logger->info(
-			'Milestone reversed: ' . $definitionId . ' on case ' . $caseId
-			. ' by ' . $userId . ' reason: ' . $reason,
-			['app' => AppIdentity::APP_ID],
-		);
-
-		return true;
-	}//end reverseMilestone()
+	}//end deleteRecords()
 
 	/**
 	 * Calculate average duration between milestones for a case type.
