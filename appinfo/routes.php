@@ -621,6 +621,8 @@ $extra = [
         //
         // The two `bulk-transition` routes this replaces looped in dossiq.
     ['name' => 'bulkJobHandoff#create', 'url' => '/api/cases/bulk-jobs', 'verb' => 'POST'],
+        // The anonymised variant of the list export (social-domain-consent-and-safeguards, REQ-SDC-ANON-01).
+    ['name' => 'caseAnonymisedExport#export', 'url' => '/api/cases/anonymised-export', 'verb' => 'POST'],
 
         // The tenant CRUD + lifecycle routes retired with the tenant admin store
         // (tenancy-onto-openregister-organisation 6.9): a tenant is an OpenRegister

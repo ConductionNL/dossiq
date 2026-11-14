@@ -132,6 +132,10 @@
             "description": "Finish, abort, archive, hold, draft, promote and record incompleteness."
         },
         {
+            "name": "case-anonymised-export",
+            "description": "Exports a filtered case list with its identifying fields removed or generalised."
+        },
+        {
             "name": "case-approval",
             "description": "Starts the approval walk for one gated act of one case."
         },
@@ -7448,6 +7452,57 @@
                                 "schema": {}
                             }
                         }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    }
+                }
+            }
+        },
+        "/cases/anonymised-export": {
+            "post": {
+                "operationId": "case-anonymised-export-export",
+                "summary": "Export the listed cases anonymised",
+                "description": "Export the listed cases with every field their case type marks as identifying removed or generalised: an address to its postcode area, a date to its year, anything else removed. Each case is read as the calling user, so a case the caller may not read is not exported. A case type that cannot be read refuses the whole export. The export is written to the processing log. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "case-anonymised-export"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "caseIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "The cases of the filtered list, at most 1000."
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Nothing was listed, too much was, or a case type could not be read."
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"

@@ -68,6 +68,10 @@ class NoBulkLoopOverCasesTest extends TestCase {
 			. 'draw a badge. It writes nothing and changes nothing, and the '
 			. 'loop is over rows already read in ONE search rather than one '
 			. 'search per case, which is the cost a job would exist to avoid.',
+		'lib/Service/Export/AnonymisedCaseExport.php::listedIds' =>
+			'Normalises the ids of an anonymised list export, which then READS each listed case '
+			. 'once and answers it with its identifying fields removed. It changes no case; its '
+			. 'one write is a single processing-log entry for the whole export (REQ-SDC-ANON-01).',
 		'lib/Woo/WooReportReadLog.php::recordThroughputRead' =>
 			'Records a READ: one audit entry on each Woo case a throughput report counted, '
 			. 'in the request of the reader, before the answer is sent. It changes no case, '
