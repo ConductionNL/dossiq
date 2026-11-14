@@ -127,6 +127,31 @@ class MilestoneRepository implements MilestoneRepositoryInterface {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function findCaseTypeId(string $caseId): ?string {
+		$source = $this->caseSource();
+		if ($source === null) {
+			return null;
+		}
+
+		[$objectService, $register, $schema] = $source;
+
+		try {
+			$objectService->setRegister($register);
+			$objectService->setSchema($schema);
+			$objectService->setObject($caseId);
+			$case = $objectService->getObject();
+		} catch (\Throwable $e) {
+			return null;
+		}
+
+		return $this->caseTypeOf(case: $case);
+	}//end findCaseTypeId()
+
+	/**
+	 * The object service with the configured register and case schema.
+	 *
+	 * @return array{0: object, 1: mixed, 2: mixed}|null The service, register and schema, or null when one is missing.
+	 */
+	private function caseSource(): array|null {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -139,15 +164,17 @@ class MilestoneRepository implements MilestoneRepositoryInterface {
 			return null;
 		}
 
-		try {
-			$objectService->setRegister($register);
-			$objectService->setSchema($schema);
-			$objectService->setObject($caseId);
-			$case = $objectService->getObject();
-		} catch (\Throwable $e) {
-			return null;
-		}
+		return [$objectService, $register, $schema];
+	}//end caseSource()
 
+	/**
+	 * The case type uuid a read case carries.
+	 *
+	 * @param mixed $case The case entity, or null when it was not found.
+	 *
+	 * @return string|null The case type UUID, or null when the case or its type is missing.
+	 */
+	private function caseTypeOf(mixed $case): string|null {
 		if ($case === null) {
 			return null;
 		}
@@ -160,7 +187,7 @@ class MilestoneRepository implements MilestoneRepositoryInterface {
 		}
 
 		return $caseTypeId;
-	}//end findCaseTypeId()
+	}//end caseTypeOf()
 
 	/**
 	 * Get the milestone records recorded against a case.

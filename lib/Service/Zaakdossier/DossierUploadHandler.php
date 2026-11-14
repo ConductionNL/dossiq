@@ -103,34 +103,73 @@ class DossierUploadHandler implements DossierUploadHandlerInterface {
 	 */
 	public function uploadOne(string $caseId, array $file, array $metadata): array {
 		$name = (string)($file['name'] ?? '');
-		$tmpName = (string)($file['tmp_name'] ?? '');
 		try {
-			if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
-				throw new RuntimeException('Executable files are not permitted: ' . $name);
-			}
-
-			$content = '';
-			if ($tmpName !== '') {
-				$content = (string)file_get_contents($tmpName);
-			}
-
-			$meta = $metadata;
-			if (isset($file['type']) === true && $file['type'] !== '') {
-				$meta['format'] = $file['type'];
-			}
-
-			$created = $this->fileService->uploadDocument(
-				caseId: $caseId,
-				fileName: $name,
-				content: $content,
-				metadata: $meta,
-			);
-
-			return ['name' => $name, 'success' => true, 'informatieobject' => $created];
+			return $this->uploadFile(caseId: $caseId, file: $file, metadata: $metadata);
 		} catch (\Throwable $e) {
 			return ['name' => $name, 'success' => false, 'error' => $e->getMessage()];
 		}//end try
 	}//end uploadOne()
+
+	/**
+	 * Refuse an executable, then store the file's bytes as a document of the case.
+	 *
+	 * @param string               $caseId   The case (zaak) UUID.
+	 * @param array<string, mixed> $file     One normalised uploaded-file entry.
+	 * @param array<string, mixed> $metadata The shared document metadata.
+	 *
+	 * @return array<string, mixed> The per-file result entry.
+	 *
+	 * @throws \Throwable When the file is executable or cannot be stored.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
+	 */
+	private function uploadFile(string $caseId, array $file, array $metadata): array {
+		$name = (string)($file['name'] ?? '');
+		$tmpName = (string)($file['tmp_name'] ?? '');
+		if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
+			throw new RuntimeException('Executable files are not permitted: ' . $name);
+		}
+
+		$content = $this->uploadedContent(tmpName: $tmpName);
+		$meta = $this->uploadMetadata(file: $file, metadata: $metadata);
+
+		$created = $this->fileService->uploadDocument(caseId: $caseId, fileName: $name, content: $content, metadata: $meta);
+
+		return ['name' => $name, 'success' => true, 'informatieobject' => $created];
+	}//end uploadFile()
+
+	/**
+	 * The uploaded bytes, '' when there is no temporary file.
+	 *
+	 * @param string $tmpName The temporary file path.
+	 *
+	 * @return string
+	 */
+	private function uploadedContent(string $tmpName): string {
+		$content = '';
+		if ($tmpName !== '') {
+			$content = (string)file_get_contents($tmpName);
+		}
+
+		return $content;
+	}//end uploadedContent()
+
+	/**
+	 * The shared metadata, with the file's MIME type as its format when the upload gave one.
+	 *
+	 * @param array<string, mixed> $file     One normalised uploaded-file entry.
+	 * @param array<string, mixed> $metadata The shared document metadata.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function uploadMetadata(array $file, array $metadata): array {
+		$meta = $metadata;
+		if (isset($file['type']) === true && $file['type'] !== '') {
+			$meta['format'] = $file['type'];
+		}
+
+		return $meta;
+	}//end uploadMetadata()
 
 	/**
 	 * Decode the shared metadata JSON body into an array.

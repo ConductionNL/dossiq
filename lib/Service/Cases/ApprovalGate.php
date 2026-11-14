@@ -137,14 +137,7 @@ class ApprovalGate {
 	public function verdictFor(array $case, string $act, string $userId): array {
 		$caseType = $this->caseTypeOf(case: $case);
 		if ($caseType === null) {
-			// The declaration could not be read, so whether this act is gated
-			// is unknown. Unknown is a refusal with a status, not an allow:
-			// ADR-102, and the same reading the unreadable outcome gets below.
-			return $this->refused(
-				rule: self::RULE_UNREADABLE,
-				sentence: $this->l10n->t('We could not read this case type, so we cannot tell whether this act needs an approval. Try again shortly.'),
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
+			return $this->unreadable();
 		}
 
 		$gate = ApprovalGateDeclaration::gateFor(caseType: $caseType, act: $act);
@@ -152,7 +145,37 @@ class ApprovalGate {
 			return $this->ungated();
 		}
 
-		$reference = ApprovalGateDeclaration::referenceFor(case: $case, act: $act);
+		return $this->gatedVerdict(caseRow: $case, gate: $gate, act: $act, userId: $userId);
+	}//end verdictFor()
+
+	/**
+	 * The refusal when the case type's approval declaration could not be read.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function unreadable(): array {
+		// The declaration could not be read, so whether this act is gated
+		// is unknown. Unknown is a refusal with a status, not an allow:
+		// ADR-102, and the same reading the unreadable outcome gets below.
+		return $this->refused(
+			rule: self::RULE_UNREADABLE,
+			sentence: $this->l10n->t('We could not read this case type, so we cannot tell whether this act needs an approval. Try again shortly.'),
+			status: RefusedException::STATUS_INDETERMINATE,
+		);
+	}//end unreadable()
+
+	/**
+	 * The verdict on a gated act: outstanding until decidiq was asked, else decidiq's answer.
+	 *
+	 * @param array<string, mixed> $caseRow The case.
+	 * @param array<string, mixed> $gate    The gate the act is behind.
+	 * @param string               $act     The act.
+	 * @param string               $userId  The acting user.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function gatedVerdict(array $caseRow, array $gate, string $act, string $userId): array {
+		$reference = ApprovalGateDeclaration::referenceFor(case: $caseRow, act: $act);
 		if ($reference === '') {
 			return $this->refused(
 				rule: self::RULE_OUTSTANDING,
@@ -163,7 +186,7 @@ class ApprovalGate {
 		}
 
 		return $this->verdictFromDecidiq(gate: $gate, reference: $reference, userId: $userId);
-	}//end verdictFor()
+	}//end gatedVerdict()
 
 	/**
 	 * What this case is waiting for, and on whom.

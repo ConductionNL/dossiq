@@ -162,6 +162,20 @@ class CaseTypeVersionWindow implements CaseTypeVersionWindowInterface {
 			return;
 		}
 
+		$this->closeVersion(previous: $previous, caseTypeId: $caseTypeId, previousId: $previousId, takesEffect: $takesEffect);
+	}//end closePrevious()
+
+	/**
+	 * Mark the previous version superseded, close it on the day the new one takes effect, and store it.
+	 *
+	 * @param array<string, mixed> $previous    The previous version.
+	 * @param string               $caseTypeId  The version just published.
+	 * @param string               $previousId  The previous version's id.
+	 * @param string               $takesEffect The day the new version is valid from.
+	 *
+	 * @return void
+	 */
+	private function closeVersion(array $previous, string $caseTypeId, string $previousId, string $takesEffect): void {
 		$previous['supersededBy'] = $caseTypeId;
 
 		if (trim((string)($previous['validUntil'] ?? '')) === '' && $takesEffect !== '') {
@@ -174,7 +188,7 @@ class CaseTypeVersionWindow implements CaseTypeVersionWindowInterface {
 				['caseType' => $caseTypeId, 'previousVersion' => $previousId]
 			);
 		}
-	}//end closePrevious()
+	}//end closeVersion()
 
 	/**
 	 * Close a published version for new cases, as a deliberate act.

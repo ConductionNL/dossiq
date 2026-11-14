@@ -201,24 +201,7 @@ class AdviceAuthorizationGuard {
 			return false;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return false;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($caseSchema) === true) {
-			return false;
-		}
-
-		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			id: $caseId
-		);
-
+		$case = $this->linkedCase(caseId: $caseId);
 		if ($case === null) {
 			return false;
 		}
@@ -227,4 +210,28 @@ class AdviceAuthorizationGuard {
 
 		return ($assignee !== '' && $assignee === $uid);
 	}//end isHandlerOfLinkedCase()
+
+	/**
+	 * Read the case an advice links to.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed>|null The case, or null when OpenRegister, the config or the case is missing.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function linkedCase(string $caseId): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		if (empty($register) === true || empty($caseSchema) === true) {
+			return null;
+		}
+
+		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
+	}//end linkedCase()
 }//end class

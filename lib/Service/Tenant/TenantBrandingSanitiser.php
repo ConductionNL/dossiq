@@ -101,31 +101,9 @@ class TenantBrandingSanitiser {
 	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function sanitiseBranding(array $branding): array {
-		$out = [];
-		if (isset($branding['logo']) === true) {
-			// Fail closed: when the upload carries MIME/size metadata, enforce
-			// the logo MIME-type + 5 MB guard before accepting it.
-			// validateLogoUpload() throws InvalidArgumentException on a
-			// disallowed MIME type or an oversized file.
-			$logoMime = (string)($branding['logoMimeType'] ?? '');
-			$logoBytes = (int)($branding['logoBytes'] ?? 0);
-			if ($logoMime !== '' || $logoBytes > 0) {
-				$this->validateLogoUpload(mimeType: $logoMime, bytes: $logoBytes);
-			}
-
-			$out['logo'] = (string)$branding['logo'];
-		}
-
-		foreach (['primaryColor', 'secondaryColor'] as $colorField) {
-			if (isset($branding[$colorField]) === true) {
-				$val = (string)$branding[$colorField];
-				if ($this->isHexColor(val: $val) === false) {
-					throw new InvalidArgumentException('Invalid hex color for ' . $colorField . ': ' . $val);
-				}
-
-				$out[$colorField] = $val;
-			}
-		}
+		$out  = [];
+		$out += $this->sanitisedLogo(branding: $branding);
+		$out += $this->sanitisedColors(branding: $branding);
 
 		if (isset($branding['fontFamily']) === true) {
 			$out['fontFamily'] = (string)$branding['fontFamily'];
@@ -137,6 +115,58 @@ class TenantBrandingSanitiser {
 
 		return $out;
 	}//end sanitiseBranding()
+
+	/**
+	 * The branding's logo, once the upload passed the MIME/size guard.
+	 *
+	 * @param array<string,mixed> $branding Input.
+	 *
+	 * @return array<string,string> The `logo` entry, or empty when none is given.
+	 *
+	 * @throws InvalidArgumentException When the logo upload fails the MIME/size guard.
+	 */
+	private function sanitisedLogo(array $branding): array {
+		if (isset($branding['logo']) === false) {
+			return [];
+		}
+
+		// Fail closed: when the upload carries MIME/size metadata, enforce
+		// the logo MIME-type + 5 MB guard before accepting it.
+		// validateLogoUpload() throws InvalidArgumentException on a
+		// disallowed MIME type or an oversized file.
+		$logoMime = (string)($branding['logoMimeType'] ?? '');
+		$logoBytes = (int)($branding['logoBytes'] ?? 0);
+		if ($logoMime !== '' || $logoBytes > 0) {
+			$this->validateLogoUpload(mimeType: $logoMime, bytes: $logoBytes);
+		}
+
+		return ['logo' => (string)$branding['logo']];
+	}//end sanitisedLogo()
+
+	/**
+	 * The branding's primary and secondary colors, each a valid hex color.
+	 *
+	 * @param array<string,mixed> $branding Input.
+	 *
+	 * @return array<string,string> The color entries given.
+	 *
+	 * @throws InvalidArgumentException When a hex color is invalid.
+	 */
+	private function sanitisedColors(array $branding): array {
+		$out = [];
+		foreach (['primaryColor', 'secondaryColor'] as $colorField) {
+			if (isset($branding[$colorField]) === true) {
+				$val = (string)$branding[$colorField];
+				if ($this->isHexColor(val: $val) === false) {
+					throw new InvalidArgumentException('Invalid hex color for ' . $colorField . ': ' . $val);
+				}
+
+				$out[$colorField] = $val;
+			}
+		}
+
+		return $out;
+	}//end sanitisedColors()
 
 	/**
 	 * Whitelist-based CSS sanitiser. Strips any rule with a property not in

@@ -113,14 +113,38 @@ class BelplanRoutingService {
 
 		// Numeric selection: 1-based index into routeringStappen[].
 		if (is_int($menuSelection) === true || ctype_digit((string)$menuSelection) === true) {
-			$idx = ((int)$menuSelection) - 1;
-			if (isset($steps[$idx]) === true && is_array($steps[$idx]) === true) {
-				return (string)($steps[$idx]['vaardigheid'] ?? '');
-			}
-
-			return '';
+			return $this->byIndex(steps: $steps, menuSelection: $menuSelection);
 		}
 
+		return $this->byLabel(steps: $steps, menuSelection: $menuSelection);
+	}//end resolveVaardigheid()
+
+	/**
+	 * The vaardigheid of the routing step a numeric menu choice picks.
+	 *
+	 * @param array      $steps         The belplan's routing steps.
+	 * @param string|int $menuSelection The 1-based menu choice.
+	 *
+	 * @return string The vaardigheid, or '' when no step has that number.
+	 */
+	private function byIndex(array $steps, string|int $menuSelection): string {
+		$idx = ((int)$menuSelection) - 1;
+		if (isset($steps[$idx]) === true && is_array($steps[$idx]) === true) {
+			return (string)($steps[$idx]['vaardigheid'] ?? '');
+		}
+
+		return '';
+	}//end byIndex()
+
+	/**
+	 * The vaardigheid of the routing step whose label matches the choice, ignoring case.
+	 *
+	 * @param array      $steps         The belplan's routing steps.
+	 * @param string|int $menuSelection The menu choice.
+	 *
+	 * @return string The vaardigheid, or '' when no label matches.
+	 */
+	private function byLabel(array $steps, string|int $menuSelection): string {
 		// Otherwise, match the option label case-insensitively.
 		$needle = mb_strtolower((string)$menuSelection);
 		foreach ($steps as $step) {
@@ -135,7 +159,7 @@ class BelplanRoutingService {
 		}
 
 		return '';
-	}//end resolveVaardigheid()
+	}//end byLabel()
 
 	/**
 	 * Pick the best specialist for a given vaardigheid from the supplied pool.

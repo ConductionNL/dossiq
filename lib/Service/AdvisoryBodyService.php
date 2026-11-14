@@ -264,20 +264,7 @@ class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 		$rest = [];
 
 		foreach ($all as $body) {
-			$specializations = $body['specializations'] ?? [];
-			if (is_array($specializations) === false) {
-				$specializations = [];
-			}
-
-			$hasMatch = false;
-			foreach ($specializations as $tag) {
-				if (str_contains(mb_strtolower((string)$tag), $lowerQuery) === true) {
-					$hasMatch = true;
-					break;
-				}
-			}
-
-			if ($hasMatch === true) {
+			if ($this->hasSpecialization(body: $body, lowerQuery: $lowerQuery) === true) {
 				$matching[] = $body;
 				continue;
 			}
@@ -287,6 +274,31 @@ class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 
 		return array_merge($matching, $rest);
 	}//end searchBySpecialization()
+
+	/**
+	 * Whether one of a body's specialization tags contains the query.
+	 *
+	 * @param array<string, mixed> $body       The advisory body.
+	 * @param string               $lowerQuery The query, lowercased.
+	 *
+	 * @return bool True when a tag matches.
+	 */
+	private function hasSpecialization(array $body, string $lowerQuery): bool {
+		$specializations = $body['specializations'] ?? [];
+		if (is_array($specializations) === false) {
+			$specializations = [];
+		}
+
+		$hasMatch = false;
+		foreach ($specializations as $tag) {
+			if (str_contains(mb_strtolower((string)$tag), $lowerQuery) === true) {
+				$hasMatch = true;
+				break;
+			}
+		}
+
+		return $hasMatch;
+	}//end hasSpecialization()
 
 	/*
 	 * NO issueSecureToken() / sendExternalNotification() HERE.

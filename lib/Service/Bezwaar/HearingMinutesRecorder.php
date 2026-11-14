@@ -194,34 +194,52 @@ class HearingMinutesRecorder {
 	 * @spec openspec/specs/bezwaar-hearing/spec.md
 	 */
 	public function buildMinutesUpdate(array $payload, string $summary, string $document): array {
-		$minutesSummary = null;
-		if ($summary !== '') {
-			$minutesSummary = $summary;
-		}
-
-		$minutesDocument = null;
-		if ($document !== '') {
-			$minutesDocument = $document;
-		}
-
 		$update = [
-			'minutesSummary' => $minutesSummary,
-			'minutesDocument' => $minutesDocument,
+			'minutesSummary' => $this->nullWhenEmpty(value: $summary),
+			'minutesDocument' => $this->nullWhenEmpty(value: $document),
 			'status' => 'executed',
 		];
 
+		return array_merge($update, $this->recordingFields(payload: $payload));
+	}//end buildMinutesUpdate()
+
+	/**
+	 * The value, or null when it is empty.
+	 *
+	 * @param string $value The resolved value.
+	 *
+	 * @return string|null
+	 */
+	private function nullWhenEmpty(string $value): string|null {
+		$result = null;
+		if ($value !== '') {
+			$result = $value;
+		}
+
+		return $result;
+	}//end nullWhenEmpty()
+
+	/**
+	 * The audio recording and consent fields a minutes payload sets.
+	 *
+	 * @param array<string, mixed> $payload Minutes payload.
+	 *
+	 * @return array<string, string>
+	 */
+	private function recordingFields(array $payload): array {
+		$fields = [];
 		if (isset($payload['audioRecording']) === true
 			&& (string)$payload['audioRecording'] !== ''
 		) {
-			$update['audioRecording'] = (string)$payload['audioRecording'];
+			$fields['audioRecording'] = (string)$payload['audioRecording'];
 		}
 
 		if (isset($payload['recordingConsent']) === true) {
-			$update['recordingConsent'] = (string)$payload['recordingConsent'];
+			$fields['recordingConsent'] = (string)$payload['recordingConsent'];
 		}
 
-		return $update;
-	}//end buildMinutesUpdate()
+		return $fields;
+	}//end recordingFields()
 
 	/**
 	 * The payload of an awb-art-7:7 entry for an attendance correction made

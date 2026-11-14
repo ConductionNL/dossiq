@@ -59,6 +59,7 @@ use OCA\Dossiq\Service\Support\LanguageMapText;
  * Computes process-mining bottleneck metrics from recorded status history.
  *
  * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ProcessMiningService implements ProcessMiningServiceInterface {
 	/**
@@ -532,26 +533,54 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 		$holder = trim((string)($case['assignee'] ?? ''));
 		$records = [];
 		foreach ((array)$history as $entry) {
-			if (is_array($entry) === false) {
-				continue;
+			$record = $this->recordOf(entry: $entry, caseId: $caseId, holder: $holder);
+			if ($record !== null) {
+				$records[] = $record;
 			}
-
-			$status = (string)($entry['status'] ?? '');
-			$moment = (string)($entry['enteredAt'] ?? '');
-			if ($status === '' || $moment === '') {
-				continue;
-			}
-
-			$actor = trim((string)($entry['actor'] ?? ($entry['by'] ?? '')));
-			if ($actor === '') {
-				$actor = $holder;
-			}
-
-			$records[] = ['case' => $caseId, 'statusType' => $status, 'createdAt' => $moment, 'actor' => $actor];
 		}
 
 		return $records;
 	}//end recordsFromHistory()
+
+	/**
+	 * One status history entry as a process record, null when it names no status or moment.
+	 *
+	 * @param mixed  $entry  The history entry.
+	 * @param string $caseId The case uuid.
+	 * @param string $holder The case's assignee, the actor when the entry names none.
+	 *
+	 * @return array{case: string, statusType: string, createdAt: string, actor: string}|null
+	 */
+	private function recordOf(mixed $entry, string $caseId, string $holder): ?array {
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$status = (string)($entry['status'] ?? '');
+		$moment = (string)($entry['enteredAt'] ?? '');
+		if ($status === '' || $moment === '') {
+			return null;
+		}
+
+		return ['case' => $caseId, 'statusType' => $status, 'createdAt' => $moment, 'actor' => $this->actorOf(entry: $entry, holder: $holder)];
+	}//end recordOf()
+
+	/**
+	 * Who made a history entry: its actor or by, else the case's assignee.
+	 *
+	 * @param array<string, mixed> $entry  The history entry.
+	 * @param string               $holder The case's assignee.
+	 *
+	 * @return string
+	 */
+	private function actorOf(array $entry, string $holder): string {
+		$actor = trim((string)($entry['actor'] ?? ($entry['by'] ?? '')));
+		if ($actor === '') {
+			$actor = $holder;
+		}
+
+		return $actor;
+	}//end actorOf()
 
 	/**
 	 * Extract a record's creation timestamp — either the flattened

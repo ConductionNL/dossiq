@@ -147,24 +147,13 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	 * @return string 'changed', 'failed' (logged, and left for the next run) or 'skipped'.
 	 */
 	private function recolourOne(RepairSchema $target, array $row): string {
-		$self = ($row['@self'] ?? []);
-		if (is_array($self) === false || ($self['owner'] ?? null) !== self::SYSTEM_OWNER) {
+		$recolour = $this->boardColour(row: $row);
+		if ($recolour === null) {
 			return 'skipped';
 		}
 
-		$colour = $this->palette->recolour(row: $row);
-		$rowId = (string)($row['id'] ?? ($self['id'] ?? ''));
-		if ($colour === null || $rowId === '') {
-			return 'skipped';
-		}
-
-		try {
-			$target->patch(id: $rowId, changes: ['colour' => $colour]);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq status colours: status ' . $rowId . ' could not be recoloured and keeps its colour until the next run',
-				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()],
-			);
+		[$rowId, $colour] = $recolour;
+		if ($this->patchColour(target: $target, rowId: $rowId, colour: $colour) === false) {
 			return 'failed';
 		}
 
@@ -175,4 +164,49 @@ class RecolourShippedStatusTypes implements IRepairStep {
 
 		return 'changed';
 	}//end recolourOne()
+
+	/**
+	 * The id and board colour of a system-owned row that should change colour.
+	 *
+	 * @param array<string, mixed> $row One stored row.
+	 *
+	 * @return array{0: string, 1: string}|null The row id and its colour, null when it is skipped.
+	 */
+	private function boardColour(array $row): array|null {
+		$self = ($row['@self'] ?? []);
+		if (is_array($self) === false || ($self['owner'] ?? null) !== self::SYSTEM_OWNER) {
+			return null;
+		}
+
+		$colour = $this->palette->recolour(row: $row);
+		$rowId = (string)($row['id'] ?? ($self['id'] ?? ''));
+		if ($colour === null || $rowId === '') {
+			return null;
+		}
+
+		return [$rowId, $colour];
+	}//end boardColour()
+
+	/**
+	 * Write the colour on one row, logging when it fails.
+	 *
+	 * @param RepairSchema $target The schema it walks.
+	 * @param string       $rowId  The row id.
+	 * @param string       $colour The board colour.
+	 *
+	 * @return bool False when the write failed.
+	 */
+	private function patchColour(RepairSchema $target, string $rowId, string $colour): bool {
+		try {
+			$target->patch(id: $rowId, changes: ['colour' => $colour]);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq status colours: status ' . $rowId . ' could not be recoloured and keeps its colour until the next run',
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()],
+			);
+			return false;
+		}
+
+		return true;
+	}//end patchColour()
 }//end class

@@ -288,10 +288,19 @@ class InspectionTemplateMapper {
 			'photoRequired' => $this->photoGate(value: ($item['photoRequired'] ?? $item['fotoRequired'] ?? false)),
 		];
 
-		$choices = ($item['choices'] ?? $item['options'] ?? null);
-		if (is_array($choices) === true && $choices !== []) {
-			$out['choices'] = array_values(array_map(static fn ($choice): string => (string)$choice, $choices));
-		}
+		return $this->withOptionalFields(item: $item, out: $out);
+	}//end item()
+
+	/**
+	 * The template item with the source item's choices, help text, parent and weight, when it has them.
+	 *
+	 * @param array<string, mixed> $item The source item.
+	 * @param array<string, mixed> $out  The template item so far.
+	 *
+	 * @return array<string, mixed> The item.
+	 */
+	private function withOptionalFields(array $item, array $out): array {
+		$out = $this->withChoices(item: $item, out: $out);
 
 		foreach (['helpText', 'parent'] as $key) {
 			if (trim((string)($item[$key] ?? '')) !== '') {
@@ -304,7 +313,24 @@ class InspectionTemplateMapper {
 		}
 
 		return $out;
-	}//end item()
+	}//end withOptionalFields()
+
+	/**
+	 * The template item with the source item's choices, when it has any.
+	 *
+	 * @param array<string, mixed> $item The source item.
+	 * @param array<string, mixed> $out  The template item so far.
+	 *
+	 * @return array<string, mixed> The item.
+	 */
+	private function withChoices(array $item, array $out): array {
+		$choices = ($item['choices'] ?? $item['options'] ?? null);
+		if (is_array($choices) === true && $choices !== []) {
+			$out['choices'] = array_values(array_map(static fn ($choice): string => (string)$choice, $choices));
+		}
+
+		return $out;
+	}//end withChoices()
 
 	/**
 	 * The photo gate from an older boolean or a template value.

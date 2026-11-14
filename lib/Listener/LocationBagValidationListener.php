@@ -254,6 +254,17 @@ class LocationBagValidationListener implements IEventListener {
 			return self::NOT_CHECKED;
 		}
 
+		return $this->bagOutcome(id: $id);
+	}//end validate()
+
+	/**
+	 * The outcome of asking the BAG for a nummeraanduiding.
+	 *
+	 * @param string $id The nummeraanduiding id.
+	 *
+	 * @return string
+	 */
+	private function bagOutcome(string $id): string {
 		$answer = $this->bagReader->read('nummeraanduiding', $id);
 		if ($answer['available'] === false || $answer['simulated'] === true) {
 			$this->logger->warning(
@@ -268,7 +279,7 @@ class LocationBagValidationListener implements IEventListener {
 		}
 
 		return self::CHECKED;
-	}//end validate()
+	}//end bagOutcome()
 
 	/**
 	 * The refusal code for a check that got no clear answer.

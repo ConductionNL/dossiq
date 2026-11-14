@@ -217,28 +217,36 @@ class DeelzaakController extends Controller {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$parent = (string)$this->request->getParam('parentCaseUuid', '');
-		$child  = (string)$this->request->getParam('childCaseTypeId', '');
-		$object = $this->request->getParam('object', []);
-		if ($parent === '' || $child === '' || is_array($object) === false) {
-			return new JSONResponse(
-				['message' => 'parentCaseUuid, childCaseTypeId and object are required'],
-				Http::STATUS_BAD_REQUEST
-			);
+		$params = $this->createParams();
+		if ($params === null) {
+			return new JSONResponse(['message' => 'parentCaseUuid, childCaseTypeId and object are required'], Http::STATUS_BAD_REQUEST);
 		}
 
+		[$parent, $child, $object] = $params;
 		if ($this->mayReadParent(parent: $parent, user: $user) === false) {
 			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$result = $this->deelzaakService->createSubCase(
-			parentCaseUuid: $parent,
-			childCaseTypeId: $child,
-			childData: $object,
-		);
+		$result = $this->deelzaakService->createSubCase(parentCaseUuid: $parent, childCaseTypeId: $child, childData: $object);
 
 		return $this->answered(result: $result, okStatus: Http::STATUS_CREATED);
 	}//end create()
+
+	/**
+	 * The parent case, the child case type and the object the request names.
+	 *
+	 * @return array{0: string, 1: string, 2: array}|null The three, or null when one is missing.
+	 */
+	private function createParams(): array|null {
+		$parent = (string)$this->request->getParam('parentCaseUuid', '');
+		$child  = (string)$this->request->getParam('childCaseTypeId', '');
+		$object = $this->request->getParam('object', []);
+		if ($parent === '' || $child === '' || is_array($object) === false) {
+			return null;
+		}
+
+		return [$parent, $child, $object];
+	}//end createParams()
 
 	/**
 	 * Whether the caller may read the parent a sub-case would hang off.

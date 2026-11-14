@@ -78,23 +78,15 @@ class RequesterProjection implements RequesterProjectionInterface {
 	 * @spec openspec/specs/initiator-display/spec.md
 	 */
 	public function forRequester(string $uuid): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		if (trim($uuid) === '' || $objectService === null || $register === '') {
+		$source = $this->requesterSource(uuid: $uuid);
+		if ($source === null) {
 			return [];
 		}
 
+		[$objectService, $register] = $source;
 		foreach (self::SETS as $schema => $type) {
 			try {
-				// The projection stores the requester's BSN, which OpenRegister shows only on request.
-				$rows = (new TrustedRevealRead())->run(
-					fn () => $this->searchObjectsAsArrays(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						filters: ['_ids' => [$uuid], '_limit' => 1],
-					)
-				);
+				$rows = $this->revealedRows(objectService: $objectService, register: $register, schema: $schema, uuid: $uuid);
 			} catch (Throwable) {
 				continue;
 			}
@@ -106,6 +98,47 @@ class RequesterProjection implements RequesterProjectionInterface {
 
 		return [];
 	}//end forRequester()
+
+	/**
+	 * The object service and register, when both are in hand and the uuid is not blank.
+	 *
+	 * @param string $uuid The requester uuid.
+	 *
+	 * @return array{0: object, 1: mixed}|null Null when one is missing.
+	 */
+	private function requesterSource(string $uuid): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if (trim($uuid) === '' || $objectService === null || $register === '') {
+			return null;
+		}
+
+		return [$objectService, $register];
+	}//end requesterSource()
+
+	/**
+	 * The rows of one register set holding the requester, with the BSN revealed.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param mixed  $register      The register.
+	 * @param string $schema        The schema of the set.
+	 * @param string $uuid          The requester uuid.
+	 *
+	 * @return mixed The rows.
+	 *
+	 * @throws Throwable When the read fails.
+	 */
+	private function revealedRows(object $objectService, mixed $register, string $schema, string $uuid): mixed {
+		// The projection stores the requester's BSN, which OpenRegister shows only on request.
+		return (new TrustedRevealRead())->run(
+			fn () => $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['_ids' => [$uuid], '_limit' => 1],
+			)
+		);
+	}//end revealedRows()
 
 	/**
 	 * The projection of one register row.

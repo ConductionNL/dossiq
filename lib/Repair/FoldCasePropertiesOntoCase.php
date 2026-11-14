@@ -96,33 +96,69 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 			return;
 		}
 
+		$schemas = $this->configuredSchemas();
+		if ($schemas === null) {
+			$output->info('Case-property schemas not configured, skipping backfill.');
+			return;
+		}
+
+		$this->backfillAsSystem(objectService: $objectService, schemas: $schemas, output: $output);
+	}//end run()
+
+	/**
+	 * Run the backfill as the system user.
+	 *
+	 * @param object                                                                              $objectService OpenRegister's object service.
+	 * @param array{register: string, caseSchema: string, valueSchema: string, defSchema: string} $schemas       The register and schemas.
+	 * @param IOutput                                                                             $output        Progress reporting.
+	 *
+	 * @return void
+	 */
+	private function backfillAsSystem(object $objectService, array $schemas, IOutput $output): void {
+		// A BLOCK closure, not `fn () => ...`: an arrow function implicitly
+		// returns its expression, and returning the result of a void method is
+		// a fatal.
+		$objectService->runAsSystem(
+			function () use ($objectService, $schemas, $output): void {
+				$this->backfill(store: $this->caseStore(objectService: $objectService, schemas: $schemas), output: $output);
+			}
+		);
+	}//end backfillAsSystem()
+
+	/**
+	 * Read the register and the three schemas the backfill needs.
+	 *
+	 * @return array{register: string, caseSchema: string, valueSchema: string, defSchema: string}|null Null when one is not configured.
+	 */
+	private function configuredSchemas(): array|null {
 		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
 		$caseSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_schema', '');
 		$valueSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_property_schema', '');
 		$defSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'property_definition_schema', '');
 		if ($register === '' || $caseSchema === '' || $valueSchema === '' || $defSchema === '') {
-			$output->info('Case-property schemas not configured, skipping backfill.');
-			return;
+			return null;
 		}
 
-		// A BLOCK closure, not `fn () => ...`: an arrow function implicitly
-		// returns its expression, and returning the result of a void method is
-		// a fatal.
-		$objectService->runAsSystem(
-			function () use ($objectService, $register, $caseSchema, $valueSchema, $defSchema, $output): void {
-				$this->backfill(
-					store: new CasePropertyStore(
-						objectService: $objectService,
-						register: $register,
-						caseSchema: $caseSchema,
-						valueSchema: $valueSchema,
-						defSchema: $defSchema,
-					),
-					output: $output,
-				);
-			}
+		return ['register' => $register, 'caseSchema' => $caseSchema, 'valueSchema' => $valueSchema, 'defSchema' => $defSchema];
+	}//end configuredSchemas()
+
+	/**
+	 * Bundle the object service with the configured register and schemas.
+	 *
+	 * @param object                                                                              $objectService OpenRegister's object service.
+	 * @param array{register: string, caseSchema: string, valueSchema: string, defSchema: string} $schemas       The register and schemas.
+	 *
+	 * @return CasePropertyStore
+	 */
+	private function caseStore(object $objectService, array $schemas): CasePropertyStore {
+		return new CasePropertyStore(
+			objectService: $objectService,
+			register: $schemas['register'],
+			caseSchema: $schemas['caseSchema'],
+			valueSchema: $schemas['valueSchema'],
+			defSchema: $schemas['defSchema'],
 		);
-	}//end run()
+	}//end caseStore()
 
 	/**
 	 * Read the answers and their definitions, then write one array per case.
@@ -216,27 +252,8 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 	 * @return string One of `written`, `skipped` or `failed`.
 	 */
 	private function foldOne(CasePropertyStore $store, string $caseId, array $entries): string {
-		$objectService = $store->objectService;
 		try {
-			$case = $objectService->find($caseId, ['_rbac' => false, '_multitenancy' => false]);
-			if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
-				$case = $case->jsonSerialize();
-			}
-
-			if (is_array($case) === false) {
-				return 'skipped';
-			}
-
-			// An existing array is the newer truth: it was written either by the
-			// form or by an earlier run. Overwriting it with a projection of the
-			// old rows would undo a real edit.
-			if (empty($case['properties']) === false) {
-				return 'skipped';
-			}
-
-			$case['properties'] = $entries;
-			$objectService->saveObject($store->caseSchema, $case, ['_rbac' => false, '_multitenancy' => false]);
-			return 'written';
+			return $this->foldInto(store: $store, caseId: $caseId, entries: $entries);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not fold case properties onto a case',
@@ -245,6 +262,55 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 			return 'failed';
 		}//end try
 	}//end foldOne()
+
+	/**
+	 * Read one case and write its properties array when it has none yet.
+	 *
+	 * @param CasePropertyStore                 $store   The object service and case schema.
+	 * @param string                            $caseId  The case to write.
+	 * @param array<int, array<string, string>> $entries The entries to store.
+	 *
+	 * @return string Either `written` or `skipped`.
+	 *
+	 * @throws Throwable When reading or saving the case fails.
+	 */
+	private function foldInto(CasePropertyStore $store, string $caseId, array $entries): string {
+		$objectService = $store->objectService;
+		$case = $this->readCase(objectService: $objectService, caseId: $caseId);
+		if (is_array($case) === false) {
+			return 'skipped';
+		}
+
+		// An existing array is the newer truth: it was written either by the
+		// form or by an earlier run. Overwriting it with a projection of the
+		// old rows would undo a real edit.
+		if (empty($case['properties']) === false) {
+			return 'skipped';
+		}
+
+		$case['properties'] = $entries;
+		$objectService->saveObject($store->caseSchema, $case, ['_rbac' => false, '_multitenancy' => false]);
+		return 'written';
+	}//end foldInto()
+
+	/**
+	 * Read one case unscoped, as a plain array when the store returns an entity.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $caseId        The case to read.
+	 *
+	 * @return mixed The case, or whatever the store answered.
+	 *
+	 * @throws Throwable When the read fails.
+	 */
+	private function readCase(object $objectService, string $caseId): mixed {
+		$case = $objectService->find($caseId, ['_rbac' => false, '_multitenancy' => false]);
+		if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
+			$case = $case->jsonSerialize();
+		}
+
+		return $case;
+	}//end readCase()
 
 	/**
 	 * Read every object of one schema as plain arrays.

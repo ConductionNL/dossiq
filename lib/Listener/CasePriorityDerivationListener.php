@@ -121,11 +121,7 @@ class CasePriorityDerivationListener implements IEventListener {
 	 *
 	 * @return void
 	 */
-	private function apply(
-		ObjectCreatingEvent|ObjectUpdatingEvent $event,
-		ObjectEntity $entity,
-		?ObjectEntity $previous,
-	): void {
+	private function apply(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity, ?ObjectEntity $previous): void {
 		$payload = $this->payload(entity: $entity);
 		if ($payload === null || $this->isCaseSchema(object: $payload) === false) {
 			return;
@@ -134,22 +130,28 @@ class CasePriorityDerivationListener implements IEventListener {
 		$modified = $event->getModifiedData();
 		$payload = array_merge($payload, $modified);
 
+		$stamp = $this->overrideStamp(payload: $payload, previous: $this->previousPayload(previous: $previous));
+		$payload = array_merge($payload, $stamp);
+
+		$derived = $this->priorityService->resolve(case: $payload);
+		$event->setModifiedData(array_merge($modified, $stamp, $derived));
+	}//end apply()
+
+	/**
+	 * The case as it was, or null on create.
+	 *
+	 * @param ObjectEntity|null $previous The case as it was.
+	 *
+	 * @return array<string, mixed>|null The payload, or null.
+	 */
+	private function previousPayload(?ObjectEntity $previous): ?array {
 		$was = null;
 		if ($previous !== null) {
 			$was = $this->payload(entity: $previous);
 		}
 
-		$stamp = $this->overrideStamp(payload: $payload, previous: $was);
-		$payload = array_merge($payload, $stamp);
-
-		$event->setModifiedData(
-			array_merge(
-				$modified,
-				$stamp,
-				$this->priorityService->resolve(case: $payload)
-			)
-		);
-	}//end apply()
+		return $was;
+	}//end previousPayload()
 
 	/**
 	 * The override bookkeeping this save implies.

@@ -181,20 +181,43 @@ class IntakeCaseTypes implements IntakeCaseTypesInterface {
 			return $reference;
 		}
 
+		$source = $this->caseTypeSource();
+		if ($source === null) {
+			return '';
+		}
+
+		return $this->searchIdentifier(source: $source, reference: $reference);
+	}//end lookup()
+
+	/**
+	 * The object service, register and case type schema, when all are configured.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null Null when one is missing.
+	 */
+	private function caseTypeSource(): array|null {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_type_schema');
 		if ($objectService === null || $register === '' || $schema === '') {
-			return '';
+			return null;
 		}
 
+		return [$objectService, $register, $schema];
+	}//end caseTypeSource()
+
+	/**
+	 * Find a case type uuid by its identifier.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $source    The object service, register and case type schema.
+	 * @param string                                 $reference The identifier.
+	 *
+	 * @return string The uuid, or the empty string.
+	 */
+	private function searchIdentifier(array $source, string $reference): string {
+		[$objectService, $register, $schema] = $source;
 		try {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['identifier' => $reference, '_limit' => 1]
-			);
+			$filters = ['identifier' => $reference, '_limit' => 1];
+			$rows = $this->searchObjectsAsArraysUnscoped(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq intake: the case type could not be looked up',
@@ -206,5 +229,5 @@ class IntakeCaseTypes implements IntakeCaseTypesInterface {
 		$row = ($rows[0] ?? []);
 
 		return trim((string)($row['id'] ?? ($row['@self']['id'] ?? '')));
-	}//end lookup()
+	}//end searchIdentifier()
 }//end class

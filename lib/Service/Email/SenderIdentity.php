@@ -99,18 +99,42 @@ class SenderIdentity {
 	public function accountFor(string $address): array {
 		$address = trim($address);
 		if ($address !== '') {
-			$account = $this->holding(address: $address);
-			if ($account === null) {
-				throw new RefusedException(
-					rule: 'sender-not-held',
-					sentence: 'No Nextcloud Mail account holds ' . $address . ', so dossiq does not send from it.',
-					status: RefusedException::STATUS_UNPROCESSABLE
-				);
-			}
-
-			return $account;
+			return $this->heldAccount(address: $address);
 		}
 
+		return $this->defaultAccount();
+	}//end accountFor()
+
+	/**
+	 * The Mail account that holds an address.
+	 *
+	 * @param string $address The trimmed sender address.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RefusedException When no Mail account holds it.
+	 */
+	private function heldAccount(string $address): array {
+		$account = $this->holding(address: $address);
+		if ($account === null) {
+			throw new RefusedException(
+				rule: 'sender-not-held',
+				sentence: 'No Nextcloud Mail account holds ' . $address . ', so dossiq does not send from it.',
+				status: RefusedException::STATUS_UNPROCESSABLE
+			);
+		}
+
+		return $account;
+	}//end heldAccount()
+
+	/**
+	 * The Mail account picked for case mail.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RefusedException When none is picked or it cannot be reached.
+	 */
+	private function defaultAccount(): array {
 		$defaultId = $this->intakeAccount->accountId();
 		foreach ($this->gateway->accounts() as $account) {
 			if ($defaultId > 0 && (int)$account['id'] === $defaultId) {
@@ -123,7 +147,7 @@ class SenderIdentity {
 			sentence: 'No Nextcloud Mail account is picked for case mail, or it cannot be reached. Pick one in the dossiq mail settings.',
 			status: RefusedException::STATUS_INDETERMINATE
 		);
-	}//end accountFor()
+	}//end defaultAccount()
 
 	/**
 	 * Why a case type cannot be published with its sending account, if it cannot.

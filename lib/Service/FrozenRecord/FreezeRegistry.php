@@ -127,30 +127,51 @@ class FreezeRegistry implements FreezeRegistryInterface {
 		}
 
 		$this->definitions = [];
+		foreach ($this->configuredEntries() as $index => $entry) {
+			$this->addDefinition(index: $index, entry: $entry);
+		}
+
+		return $this->definitions;
+	}//end definitions()
+
+	/**
+	 * The configured entries as decoded from the setting.
+	 *
+	 * @return array<int|string, mixed> The entries, or empty when none are configured or they are not a list.
+	 */
+	private function configuredEntries(): array {
 		$raw = trim($this->settingsService->getConfigValue(self::CONFIG_KEY));
 		if ($raw === '') {
-			return $this->definitions;
+			return [];
 		}
 
 		$entries = json_decode($raw, true);
 		if (is_array($entries) === false) {
 			$this->logger->error('Dossiq frozen records: the configured entries are not a JSON list, so nothing is frozen by them');
-			return $this->definitions;
+			return [];
 		}
 
-		foreach ($entries as $index => $entry) {
-			try {
-				$this->definitions[] = new FreezeDefinition(entry: (array)$entry);
-			} catch (InvalidArgumentException $invalid) {
-				$this->logger->error(
-					'Dossiq frozen records: a configured entry is invalid and was skipped',
-					['index' => $index, 'reason' => $invalid->getMessage()]
-				);
-			}
-		}
+		return $entries;
+	}//end configuredEntries()
 
-		return $this->definitions;
-	}//end definitions()
+	/**
+	 * Add one configured entry, or log and skip it when it is invalid.
+	 *
+	 * @param int|string $index The entry's position.
+	 * @param mixed      $entry The entry.
+	 *
+	 * @return void
+	 */
+	private function addDefinition(int|string $index, mixed $entry): void {
+		try {
+			$this->definitions[] = new FreezeDefinition(entry: (array)$entry);
+		} catch (InvalidArgumentException $invalid) {
+			$this->logger->error(
+				'Dossiq frozen records: a configured entry is invalid and was skipped',
+				['index' => $index, 'reason' => $invalid->getMessage()]
+			);
+		}
+	}//end addDefinition()
 
 	/**
 	 * The schema id or slug an entry names, resolving a `config:` reference.

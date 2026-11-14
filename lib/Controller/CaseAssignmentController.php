@@ -218,6 +218,18 @@ class CaseAssignmentController extends Controller {
 			);
 		}
 
+		return $this->claimRefusal(state: $state, caseId: $caseId);
+	}//end requireClaimableCase()
+
+	/**
+	 * The refusal for a case that is not free to take, or null when it is.
+	 *
+	 * @param array<string, mixed> $state  The assignment state.
+	 * @param string               $caseId The case UUID.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function claimRefusal(array $state, string $caseId): JSONResponse|null {
 		if ($state['claimable'] === true) {
 			return null;
 		}
@@ -228,7 +240,7 @@ class CaseAssignmentController extends Controller {
 		}
 
 		return $this->refusal(code: $code, caseId: $caseId);
-	}//end requireClaimableCase()
+	}//end claimRefusal()
 
 	/**
 	 * Run a gesture and answer it, turning a refusal into its status.

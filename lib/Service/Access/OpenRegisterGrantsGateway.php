@@ -359,6 +359,31 @@ class OpenRegisterGrantsGateway implements OpenRegisterGrantsGatewayInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseObject(string $caseId): ?object {
+		$source = $this->caseSource();
+		if ($source === null) {
+			return null;
+		}
+
+		[$objectService, $register, $schema] = $source;
+		try {
+			$object = $objectService->find($caseId, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq grants gateway: the case could not be read for its own authorization block',
+				['exception' => $e->getMessage(), 'caseId' => $caseId],
+			);
+			return null;
+		}
+
+		return $this->objectOrNull(object: $object);
+	}//end caseObject()
+
+	/**
+	 * The object service, register and case schema, when all are configured.
+	 *
+	 * @return array{0: object, 1: mixed, 2: mixed}|null Null when one is missing.
+	 */
+	private function caseSource(): array|null {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -370,20 +395,21 @@ class OpenRegisterGrantsGateway implements OpenRegisterGrantsGatewayInterface {
 			return null;
 		}
 
-		try {
-			$object = $objectService->find($caseId, register: $register, schema: $schema);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq grants gateway: the case could not be read for its own authorization block',
-				['exception' => $e->getMessage(), 'caseId' => $caseId],
-			);
-			return null;
-		}
+		return [$objectService, $register, $schema];
+	}//end caseSource()
 
+	/**
+	 * The answer when it is an object, null otherwise.
+	 *
+	 * @param mixed $object What the store answered.
+	 *
+	 * @return object|null
+	 */
+	private function objectOrNull(mixed $object): object|null {
 		if (is_object($object) === false) {
 			return null;
 		}
 
 		return $object;
-	}//end caseObject()
+	}//end objectOrNull()
 }//end class

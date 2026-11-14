@@ -111,6 +111,18 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 			return $this->cancel(triggerId: $triggerId, reason: 'Bezwaar trigger switched off') ?? self::CANCELLED;
 		}
 
+		return $this->syncActive(trigger: $trigger, triggerId: $triggerId);
+	}//end sync()
+
+	/**
+	 * Bring the timer of an active trigger in step with its archive date.
+	 *
+	 * @param array<string, mixed> $trigger   The bezwaarTrigger object.
+	 * @param string               $triggerId The trigger's id.
+	 *
+	 * @return string One of the outcome constants.
+	 */
+	private function syncActive(array $trigger, string $triggerId): string {
 		$archive = $this->midnight(value: $trigger['archiveDate'] ?? null);
 		if ($archive === null) {
 			return self::SKIPPED;
@@ -121,18 +133,25 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 			return $cancelled;
 		}
 
+		return $this->armUntil(trigger: $trigger, triggerId: $triggerId, archive: $archive);
+	}//end syncActive()
+
+	/**
+	 * Arm the timer up to the archive date, or report it due when that date has passed.
+	 *
+	 * @param array<string, mixed> $trigger   The bezwaarTrigger object.
+	 * @param string               $triggerId The trigger's id.
+	 * @param DateTimeImmutable    $archive   The archive date at midnight.
+	 *
+	 * @return string One of the outcome constants.
+	 */
+	private function armUntil(array $trigger, string $triggerId, DateTimeImmutable $archive): string {
 		$today = $this->dates->today();
 		if ($archive <= $today) {
 			return self::DUE;
 		}
 
-		// Anchored on the bekendmaking, as AWB 6:7 counts from it. A trigger
-		// without a usable one, or with one after its archive date, is
-		// anchored today, so the timer still breaches on the archive date.
-		$anchor = $this->midnight(value: $trigger['announcementDate'] ?? null);
-		if ($anchor === null || $anchor >= $archive || $anchor > $today) {
-			$anchor = $today;
-		}
+		$anchor = $this->anchorFor(trigger: $trigger, archive: $archive, today: $today);
 
 		return $this->arm(
 			start: new ArchiveTimerStart(
@@ -142,7 +161,28 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 				slaDays: $this->days->between(from: $anchor, to: $archive),
 			)
 		);
-	}//end sync()
+	}//end armUntil()
+
+	/**
+	 * The timer's anchor: the bekendmaking, as AWB 6:7 counts from it.
+	 *
+	 * @param array<string, mixed> $trigger The bezwaarTrigger object.
+	 * @param DateTimeImmutable    $archive The archive date at midnight.
+	 * @param DateTimeImmutable    $today   Today at midnight.
+	 *
+	 * @return DateTimeImmutable The anchor.
+	 */
+	private function anchorFor(array $trigger, DateTimeImmutable $archive, DateTimeImmutable $today): DateTimeImmutable {
+		// Anchored on the bekendmaking, as AWB 6:7 counts from it. A trigger
+		// without a usable one, or with one after its archive date, is
+		// anchored today, so the timer still breaches on the archive date.
+		$anchor = $this->midnight(value: $trigger['announcementDate'] ?? null);
+		if ($anchor === null || $anchor >= $archive || $anchor > $today) {
+			$anchor = $today;
+		}
+
+		return $anchor;
+	}//end anchorFor()
 
 	/**
 	 * Arm the timer.

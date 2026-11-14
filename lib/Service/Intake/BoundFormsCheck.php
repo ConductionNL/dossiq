@@ -134,6 +134,20 @@ class BoundFormsCheck implements BoundFormsCheckInterface {
 			return $assessment;
 		}
 
+		return $this->assessmentFor(schema: $schema, eventClass: $eventClass, caseType: $caseType, assessment: $assessment);
+	}//end assess()
+
+	/**
+	 * Ask OpenRegister for the forms bound to the case schema and judge each one.
+	 *
+	 * @param object               $schema     The case schema.
+	 * @param string               $eventClass The dependents event class.
+	 * @param array<string, mixed> $caseType   The case type as it is being saved.
+	 * @param array<string, mixed> $assessment The assessment so far.
+	 *
+	 * @return array{refused: bool, schema: string, affected: list<array<string, mixed>>} The assessment.
+	 */
+	private function assessmentFor(object $schema, string $eventClass, array $caseType, array $assessment): array {
 		$event = new $eventClass(schema: $schema);
 		$this->dispatcher->dispatchTyped($event);
 
@@ -141,8 +155,21 @@ class BoundFormsCheck implements BoundFormsCheckInterface {
 			$assessment['schema'] = (string)$schema->getSlug();
 		}
 
+		return $this->withJudgedForms(forms: $event->getForms(), caseType: $caseType, assessment: $assessment);
+	}//end assessmentFor()
+
+	/**
+	 * The assessment with every judged form added.
+	 *
+	 * @param iterable<object>     $forms      OpenRegister's `FormDependent`s.
+	 * @param array<string, mixed> $caseType   The case type as it is being saved.
+	 * @param array<string, mixed> $assessment The assessment so far.
+	 *
+	 * @return array{refused: bool, schema: string, affected: list<array<string, mixed>>} The assessment.
+	 */
+	private function withJudgedForms(iterable $forms, array $caseType, array $assessment): array {
 		$names = $this->namesOf(caseType: $caseType);
-		foreach ($event->getForms() as $form) {
+		foreach ($forms as $form) {
 			$entry = $this->judged(form: $form, caseType: $caseType, names: $names);
 			if ($entry === null) {
 				continue;
@@ -153,7 +180,7 @@ class BoundFormsCheck implements BoundFormsCheckInterface {
 		}
 
 		return $assessment;
-	}//end assess()
+	}//end withJudgedForms()
 
 	/**
 	 * One announced form, judged, or null when it is not another app's form for this type or has no findings.

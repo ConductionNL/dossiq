@@ -136,12 +136,23 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		$body = self::withGenericDescription(body: $body, rtoData: $rtoData);
 		$body = self::withArchiveFields(body: $body, selectielijstData: $selectielijstData);
 
+		return $this->validateEnriched(body: $body, selectielijstData: $selectielijstData, errors: $errors);
+	}//end rulesResultaattypenCreate()
+
+	/**
+	 * Validate an enriched resultaattype body: its procestype and its archive procedure.
+	 *
+	 * @param array      $body              The enriched body.
+	 * @param array|null $selectielijstData The selectielijstklasse, null when none was fetched.
+	 * @param array      $errors            The reference errors so far.
+	 *
+	 * @return array The rule result.
+	 */
+	private function validateEnriched(array $body, ?array $selectielijstData, array $errors): array {
 		// Ztc-002e: Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype.
-		if ($selectielijstData !== null) {
-			$procestypeError = $this->validateProcestypeMatch(body: $body, selectielijstData: $selectielijstData);
-			if ($procestypeError !== null) {
-				return $procestypeError;
-			}
+		$procestypeError = $this->procestypeError(body: $body, selectielijstData: $selectielijstData);
+		if ($procestypeError !== null) {
+			return $procestypeError;
 		}
 
 		// Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
@@ -155,7 +166,23 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		}
 
 		return $this->isValid(body: $body);
-	}//end rulesResultaattypenCreate()
+	}//end validateEnriched()
+
+	/**
+	 * The procestype mismatch error, null when there is no selectielijstklasse or it matches.
+	 *
+	 * @param array      $body              The enriched body.
+	 * @param array|null $selectielijstData The selectielijstklasse, null when none was fetched.
+	 *
+	 * @return array|null
+	 */
+	private function procestypeError(array $body, ?array $selectielijstData): ?array {
+		if ($selectielijstData === null) {
+			return null;
+		}
+
+		return $this->validateProcestypeMatch(body: $body, selectielijstData: $selectielijstData);
+	}//end procestypeError()
 
 	/**
 	 * Fetch the two external VNG references a resultaattype is built from (ztc-002).

@@ -228,23 +228,8 @@ class WooCollection implements WooCollectionInterface {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
 	 */
 	public function exclude(string $caseId, string $documentRef, string $reason, string $note, string $userId): array {
-		if (in_array($reason, self::REASONS, true) === false) {
-			throw new WooCorpusRefused(reason: 'unknown_reason', status: 400);
-		}
-
-		if (in_array($documentRef, $this->caseDocuments->idsFor(caseId: $caseId), true) === false) {
-			throw new WooCorpusRefused(reason: 'document_not_on_case', status: 404);
-		}
-
-		if ($this->assessments->findAssessment(caseId: $caseId, documentRef: $documentRef) !== null) {
-			throw new WooCorpusRefused(reason: 'document_assessed', status: 409);
-		}
-
-		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
-			if ((string)($exclusion['documentRef'] ?? '') === $documentRef) {
-				throw new WooCorpusRefused(reason: 'document_excluded', status: 409);
-			}
-		}
+		$this->assertExcludable(caseId: $caseId, documentRef: $documentRef, reason: $reason);
+		$this->assertNotExcluded(caseId: $caseId, documentRef: $documentRef);
 
 		$provenance = $this->provenance->forDocument(caseId: $caseId, documentId: $documentRef);
 
@@ -259,6 +244,50 @@ class WooCollection implements WooCollectionInterface {
 			]
 		);
 	}//end exclude()
+
+	/**
+	 * Refuse an unknown reason, a document not on the case, or an assessed document.
+	 *
+	 * @param string $caseId      The case uuid.
+	 * @param string $documentRef The document's uuid.
+	 * @param string $reason      One of {@see self::REASONS}.
+	 *
+	 * @return void
+	 *
+	 * @throws WooCorpusRefused 400 for an unknown reason, 404 for a document not on the case,
+	 *                          409 for an assessed document.
+	 */
+	private function assertExcludable(string $caseId, string $documentRef, string $reason): void {
+		if (in_array($reason, self::REASONS, true) === false) {
+			throw new WooCorpusRefused(reason: 'unknown_reason', status: 400);
+		}
+
+		if (in_array($documentRef, $this->caseDocuments->idsFor(caseId: $caseId), true) === false) {
+			throw new WooCorpusRefused(reason: 'document_not_on_case', status: 404);
+		}
+
+		if ($this->assessments->findAssessment(caseId: $caseId, documentRef: $documentRef) !== null) {
+			throw new WooCorpusRefused(reason: 'document_assessed', status: 409);
+		}
+	}//end assertExcludable()
+
+	/**
+	 * Refuse a document the case already set aside.
+	 *
+	 * @param string $caseId      The case uuid.
+	 * @param string $documentRef The document's uuid.
+	 *
+	 * @return void
+	 *
+	 * @throws WooCorpusRefused 409 for an already excluded document.
+	 */
+	private function assertNotExcluded(string $caseId, string $documentRef): void {
+		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
+			if ((string)($exclusion['documentRef'] ?? '') === $documentRef) {
+				throw new WooCorpusRefused(reason: 'document_excluded', status: 409);
+			}
+		}
+	}//end assertNotExcluded()
 
 	/**
 	 * Record a candidate set aside before review.

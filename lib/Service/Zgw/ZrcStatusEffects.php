@@ -154,33 +154,7 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	 */
 	public function applyStatusEffect(array $body, array $objectData): void {
 		try {
-			$final = $this->eindstatus->finalState(body: $body);
-			if ($final === 'none') {
-				return;
-			}
-
-			$loaded = $this->loadStatusCase(body: $body);
-			if ($loaded === null) {
-				return;
-			}
-
-			[$caseUuid, $caseConfig, $caseData] = $loaded;
-
-			if ($final === true) {
-				$this->closeCase(
-					caseUuid: $caseUuid,
-					caseData: $caseData,
-					caseConfig: $caseConfig,
-					submitted: ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null)),
-				);
-			}
-
-			// 🔑 Only a status type that says FALSE reopens. A flag stored as
-			// 'false' or 0 is neither true nor false here and reopens nothing,
-			// exactly as before this moved out of the controller.
-			if ($final === false) {
-				$this->reopenCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
-			}
+			$this->applyFinalState(body: $body, objectData: $objectData);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'handleEindstatusEffect failed: ' . $e->getMessage(),
@@ -188,6 +162,62 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 			);
 		}//end try
 	}//end applyStatusEffect()
+
+	/**
+	 * Resolve the zaak a final or reopening status belongs to and move it.
+	 *
+	 * @param array $body       The status body as received.
+	 * @param array $objectData The stored status.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When resolving or saving the zaak fails.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function applyFinalState(array $body, array $objectData): void {
+		$final = $this->eindstatus->finalState(body: $body);
+		if ($final === 'none') {
+			return;
+		}
+
+		$loaded = $this->loadStatusCase(body: $body);
+		if ($loaded === null) {
+			return;
+		}
+
+		$this->moveCase(
+			final: $final,
+			loaded: $loaded,
+			submitted: ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null)),
+		);
+	}//end applyFinalState()
+
+	/**
+	 * Close the zaak on a final status, reopen it on a status type that says false.
+	 *
+	 * @param bool|string|null                  $final     What the status type says about being final.
+	 * @param array{0: string, 1: array, 2: array} $loaded    The zaak uuid, its mapping and its data.
+	 * @param mixed                             $submitted The submitted status date, if any.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function moveCase(bool|string|null $final, array $loaded, mixed $submitted): void {
+		[$caseUuid, $caseConfig, $caseData] = $loaded;
+
+		if ($final === true) {
+			$this->closeCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig, submitted: $submitted);
+		}
+
+		// 🔑 Only a status type that says FALSE reopens. A flag stored as
+		// 'false' or 0 is neither true nor false here and reopens nothing,
+		// exactly as before this moved out of the controller.
+		if ($final === false) {
+			$this->reopenCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
+		}
+	}//end moveCase()
 
 	/**
 	 * The zaak a status body names, ready to re-save: its uuid, its mapping and its data.

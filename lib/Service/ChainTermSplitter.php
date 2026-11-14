@@ -155,6 +155,20 @@ class ChainTermSplitter {
 			return $values;
 		}
 
+		$each = $this->undeclaredWeight(values: $values, declared: $declared);
+
+		return $this->filledWeights(values: $values, each: $each);
+	}//end weights()
+
+	/**
+	 * The weight each undeclared step gets.
+	 *
+	 * @param array<int, float> $values   Every step's share, zero when undeclared.
+	 * @param array<int, float> $declared The declared shares.
+	 *
+	 * @return float
+	 */
+	private function undeclaredWeight(array $values, array $declared): float {
 		// Steps that declare nothing divide whatever the declared ones leave
 		// under a hundred, and get an equal sliver when they leave nothing.
 		$claimed = array_sum($declared);
@@ -165,6 +179,18 @@ class ChainTermSplitter {
 			$each = ($left / $undeclared);
 		}
 
+		return $each;
+	}//end undeclaredWeight()
+
+	/**
+	 * Every step's declared share, or the undeclared weight when it declares none.
+	 *
+	 * @param array<int, float> $values Every step's share, zero when undeclared.
+	 * @param float             $each   The weight of an undeclared step.
+	 *
+	 * @return array<int, float>
+	 */
+	private function filledWeights(array $values, float $each): array {
 		$weights = [];
 		foreach ($values as $share) {
 			if ($share > 0.0) {
@@ -176,5 +202,5 @@ class ChainTermSplitter {
 		}//end foreach
 
 		return $weights;
-	}//end weights()
+	}//end filledWeights()
 }//end class

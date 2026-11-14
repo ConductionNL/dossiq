@@ -346,15 +346,11 @@ class PlannedActionService implements PlannedActionServiceInterface {
 	private function write(array $object, ?string $uuid): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '') {
+		if ($this->canWrite(objectService: $objectService, register: $register) === false) {
 			return null;
 		}
 
-		$schema = (string)$this->settingsService->getConfigValue(self::ACTION_SCHEMA_KEY);
-		if ($schema === '') {
-			$schema = 'plannedAction';
-		}
-
+		$schema = $this->actionSchema();
 		try {
 			return $this->saveObjectAsArray(
 				objectService: $objectService,
@@ -370,5 +366,31 @@ class PlannedActionService implements PlannedActionServiceInterface {
 			);
 			return null;
 		}
-	}
+	}//end write()
+
+	/**
+	 * The configured planned action schema, plannedAction when none is set.
+	 *
+	 * @return string
+	 */
+	private function actionSchema(): string {
+		$schema = (string)$this->settingsService->getConfigValue(self::ACTION_SCHEMA_KEY);
+		if ($schema === '') {
+			$schema = 'plannedAction';
+		}
+
+		return $schema;
+	}//end actionSchema()
+
+	/**
+	 * Whether OpenRegister and the register are there to write to.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param string      $register      The register id.
+	 *
+	 * @return bool
+	 */
+	private function canWrite(?object $objectService, string $register): bool {
+		return $objectService !== null && $register !== '';
+	}//end canWrite()
 }//end class

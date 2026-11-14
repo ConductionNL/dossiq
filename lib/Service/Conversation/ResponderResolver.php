@@ -79,6 +79,23 @@ class ResponderResolver {
 			return ['ok' => false, 'users' => [], 'unresolved' => ['(none declared)']];
 		}
 
+		[$users, $unresolved] = $this->gather(declared: $declared);
+
+		if ($unresolved !== []) {
+			return ['ok' => false, 'users' => [], 'unresolved' => $unresolved];
+		}
+
+		return ['ok' => true, 'users' => $users, 'unresolved' => []];
+	}//end resolve()
+
+	/**
+	 * The members of every declared responder, and the responders that have none.
+	 *
+	 * @param array<string> $declared The declared names.
+	 *
+	 * @return array{0: array<string>, 1: array<string>} The user ids, and the names that did not resolve.
+	 */
+	private function gather(array $declared): array {
 		$users = [];
 		$unresolved = [];
 
@@ -89,19 +106,29 @@ class ResponderResolver {
 				continue;
 			}
 
-			foreach ($members as $member) {
-				if (in_array($member, $users, true) === false) {
-					$users[] = $member;
-				}
+			$users = $this->withMembers(users: $users, members: $members);
+		}
+
+		return [$users, $unresolved];
+	}//end gather()
+
+	/**
+	 * The user ids with the members added that are not in it yet.
+	 *
+	 * @param array<string> $users   The user ids so far.
+	 * @param array<string> $members The members to add.
+	 *
+	 * @return array<string>
+	 */
+	private function withMembers(array $users, array $members): array {
+		foreach ($members as $member) {
+			if (in_array($member, $users, true) === false) {
+				$users[] = $member;
 			}
 		}
 
-		if ($unresolved !== []) {
-			return ['ok' => false, 'users' => [], 'unresolved' => $unresolved];
-		}
-
-		return ['ok' => true, 'users' => $users, 'unresolved' => []];
-	}//end resolve()
+		return $users;
+	}//end withMembers()
 
 	/**
 	 * The responders a case type declares, as written.
@@ -117,23 +144,13 @@ class ResponderResolver {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$source = $this->caseTypeSource();
+		if ($source === null) {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		$caseType = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $caseTypeId,
-		);
+		[$objectService, $register, $schema] = $source;
+		$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId);
 
 		if ($caseType === null) {
 			return [];
@@ -141,6 +158,26 @@ class ResponderResolver {
 
 		return $this->names(responders: ($caseType['responders'] ?? []));
 	}//end declaredResponders()
+
+	/**
+	 * The object service, register and case type schema, when all are configured.
+	 *
+	 * @return array{0: object, 1: mixed, 2: mixed}|null Null when one is missing.
+	 */
+	private function caseTypeSource(): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
+		if (empty($register) === true || empty($schema) === true) {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseTypeSource()
 
 	/**
 	 * The declared names, trimmed, non-empty and each one once.

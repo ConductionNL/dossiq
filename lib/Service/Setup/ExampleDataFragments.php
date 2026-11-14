@@ -178,11 +178,7 @@ class ExampleDataFragments {
 	 * @return array<string, string> The ids, keyed by token.
 	 */
 	private function storedReferences(array $objects, array $siblings): array {
-		$fragments = [];
-		foreach ($siblings as $sibling) {
-			$fragments['@ref:' . (string)($sibling['@self']['schema'] ?? '') . ':' . (string)($sibling['@self']['slug'] ?? '')] = true;
-		}
-
+		$fragments = $this->siblingFragments(siblings: $siblings);
 		$tokens = [];
 		array_walk_recursive(
 			$objects,
@@ -193,8 +189,35 @@ class ExampleDataFragments {
 			}
 		);
 
+		return $this->storedIdsOf(tokens: array_keys($tokens));
+	}//end storedReferences()
+
+	/**
+	 * The reference tokens the fragment's own objects answer to.
+	 *
+	 * @param array<int, array<string, mixed>> $siblings The fragment's objects.
+	 *
+	 * @return array<string, true>
+	 */
+	private function siblingFragments(array $siblings): array {
+		$fragments = [];
+		foreach ($siblings as $sibling) {
+			$fragments['@ref:' . (string)($sibling['@self']['schema'] ?? '') . ':' . (string)($sibling['@self']['slug'] ?? '')] = true;
+		}
+
+		return $fragments;
+	}//end siblingFragments()
+
+	/**
+	 * The stored id of each reference token, keyed by the token; a token nothing answers to is left out.
+	 *
+	 * @param array<int, string> $tokens The `@ref:<schema>:<slug>` tokens.
+	 *
+	 * @return array<string, string>
+	 */
+	private function storedIdsOf(array $tokens): array {
 		$ids = [];
-		foreach (array_keys($tokens) as $token) {
+		foreach ($tokens as $token) {
 			[, $schema, $slug] = explode(':', $token, 3);
 			$id = $this->storedId(schema: $schema, slug: $slug);
 			if ($id !== '') {
@@ -203,7 +226,7 @@ class ExampleDataFragments {
 		}
 
 		return $ids;
-	}//end storedReferences()
+	}//end storedIdsOf()
 
 	/**
 	 * The id of the stored register object of a schema with a slug.
@@ -260,26 +283,8 @@ class ExampleDataFragments {
 	 */
 	private function resolve(array $value, array $who, DateTimeImmutable $now): array {
 		$isList = array_is_list($value);
-		foreach ($value as $key => $item) {
-			if (is_array($item) === true) {
-				$value[$key] = $this->resolve(value: $item, who: $who, now: $now);
-				continue;
-			}
-
-			if (is_string($item) === false) {
-				continue;
-			}
-
-			if (array_key_exists($item, $who) === true) {
-				$value[$key] = $who[$item];
-				if ($who[$item] === '') {
-					unset($value[$key]);
-				}
-
-				continue;
-			}
-
-			$value[$key] = $this->date(token: $item, now: $now);
+		foreach (array_keys($value) as $key) {
+			$value = $this->resolvedEntry(value: $value, key: $key, who: $who, now: $now);
 		}
 
 		// A dropped list element must not leave a gap: a list with a gap
@@ -290,6 +295,56 @@ class ExampleDataFragments {
 
 		return $value;
 	}//end resolve()
+
+	/**
+	 * Resolve one entry of a fragment value: a nested array in full, a person token to its
+	 * user (dropped when that user is empty), anything else as a date token.
+	 *
+	 * @param array                 $value The value being resolved.
+	 * @param int|string            $key   The entry's key.
+	 * @param array<string, string> $who   The person tokens and the users they resolve to.
+	 * @param DateTimeImmutable     $now   The moment date tokens are relative to.
+	 *
+	 * @return array The value with this entry resolved.
+	 */
+	private function resolvedEntry(array $value, int|string $key, array $who, DateTimeImmutable $now): array {
+		$item = $value[$key];
+		if (is_array($item) === true) {
+			$value[$key] = $this->resolve(value: $item, who: $who, now: $now);
+			return $value;
+		}
+
+		if (is_string($item) === false) {
+			return $value;
+		}
+
+		if (array_key_exists($item, $who) === true) {
+			return $this->withPerson(value: $value, key: $key, who: $who);
+		}
+
+		$value[$key] = $this->date(token: $item, now: $now);
+
+		return $value;
+	}//end resolvedEntry()
+
+	/**
+	 * Resolve a person token entry to its user, dropping the entry when that user is empty.
+	 *
+	 * @param array                 $value The value being resolved.
+	 * @param int|string            $key   The entry's key, holding a person token.
+	 * @param array<string, string> $who   The person tokens and the users they resolve to.
+	 *
+	 * @return array The value with this entry resolved.
+	 */
+	private function withPerson(array $value, int|string $key, array $who): array {
+		$item = $value[$key];
+		$value[$key] = $who[$item];
+		if ($who[$item] === '') {
+			unset($value[$key]);
+		}
+
+		return $value;
+	}//end withPerson()
 
 	/**
 	 * Fill one date token; any other string is returned as it is.

@@ -168,20 +168,12 @@ class CoveredWorkSource implements QueueSource {
 	 */
 	private function itemOf(array $row, string $subjectType, string $route, string $dateKey): ?QueueItem {
 		$id = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
-		$context = ($row['_substituted'] ?? []);
-		$absentee = '';
-		if (is_array($context) === true) {
-			$absentee = trim((string)($context['absentee'] ?? ''));
-		}
-
+		$absentee = $this->absenteeOf(row: $row);
 		if ($id === '' || $absentee === '') {
 			return null;
 		}
 
-		$due = null;
-		if (is_string($row[$dateKey] ?? null) === true && trim((string)$row[$dateKey]) !== '') {
-			$due = trim((string)$row[$dateKey]);
-		}
+		$due = $this->dueOf(row: $row, dateKey: $dateKey);
 
 		return new QueueItem(
 			source: $this->name(),
@@ -194,4 +186,38 @@ class CoveredWorkSource implements QueueSource {
 			route: ['name' => $route, 'params' => ['id' => $id]]
 		);
 	}//end itemOf()
+
+	/**
+	 * Whom a covered row is covered for.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The absentee, or '' when the row carries no `_substituted` block.
+	 */
+	private function absenteeOf(array $row): string {
+		$context = ($row['_substituted'] ?? []);
+		$absentee = '';
+		if (is_array($context) === true) {
+			$absentee = trim((string)($context['absentee'] ?? ''));
+		}
+
+		return $absentee;
+	}//end absenteeOf()
+
+	/**
+	 * The row's date, trimmed.
+	 *
+	 * @param array<string, mixed> $row     The row.
+	 * @param string               $dateKey The property holding its date.
+	 *
+	 * @return string|null The date, or null when it is not set.
+	 */
+	private function dueOf(array $row, string $dateKey): string|null {
+		$due = null;
+		if (is_string($row[$dateKey] ?? null) === true && trim((string)$row[$dateKey]) !== '') {
+			$due = trim((string)$row[$dateKey]);
+		}
+
+		return $due;
+	}//end dueOf()
 }//end class

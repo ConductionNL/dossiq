@@ -139,24 +139,45 @@ class MandaatRepository {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function loadRoleIndex(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('organisatie_rol_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$source = $this->roleSource();
+		if ($source === null) {
 			return [];
 		}
 
+		[$objectService, $register, $schema] = $source;
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: []
-			);
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
 		} catch (\Throwable $e) {
 			return [];
 		}
 
+		return $this->roleIndex(rows: $rows);
+	}//end loadRoleIndex()
+
+	/**
+	 * The object service, register and OrganisatieRol schema, when all are configured.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null Null when one is missing.
+	 */
+	private function roleSource(): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('organisatie_rol_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end roleSource()
+
+	/**
+	 * Index OrganisatieRol rows by role name.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The OrganisatieRol rows.
+	 *
+	 * @return array<string, string> rolNaam → rolId.
+	 */
+	private function roleIndex(array $rows): array {
 		$out = [];
 		foreach ($rows as $row) {
 			$roleName = (string)($row['roleName'] ?? '');
@@ -166,7 +187,7 @@ class MandaatRepository {
 		}
 
 		return $out;
-	}//end loadRoleIndex()
+	}//end roleIndex()
 
 	/**
 	 * Find the prior adopted decision for a decision number.

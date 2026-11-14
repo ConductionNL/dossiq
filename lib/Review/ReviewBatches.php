@@ -47,6 +47,7 @@ use Throwable;
  * batch and its reviews when the case type keeps them private.
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ReviewBatches implements ReviewBatchesInterface {
 
@@ -401,6 +402,22 @@ class ReviewBatches implements ReviewBatchesInterface {
 	 * @throws RefusedException When something is missing, unknown or taken.
 	 */
 	private function validate(string $caseId, string $name, string $assignee, array $documents): void {
+		$this->assertNamedAndAssigned(name: $name, assignee: $assignee);
+		$this->assertReviewerAdmitted(assignee: $assignee);
+		$this->assertDocumentsFree(caseId: $caseId, documents: $documents);
+	}//end validate()
+
+	/**
+	 * Refuse a batch while batches cannot be stored, or one without a name or a known reviewer.
+	 *
+	 * @param string $name     The batch name.
+	 * @param string $assignee The reviewer's user id.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When batches cannot be stored, the name is empty or the reviewer is unknown.
+	 */
+	private function assertNamedAndAssigned(string $name, string $assignee): void {
 		if ($this->isAvailable() === false) {
 			throw $this->refusal(rule: 'review-batch-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE);
 		}
@@ -412,9 +429,19 @@ class ReviewBatches implements ReviewBatchesInterface {
 		if ($assignee === '' || $this->userManager->userExists($assignee) === false) {
 			throw $this->refusal(rule: 'review-batch-assignee-unknown', sentence: 'Choose the reviewer of the batch.');
 		}
+	}//end assertNamedAndAssigned()
 
-		$this->assertReviewerAdmitted(assignee: $assignee);
-
+	/**
+	 * Refuse a batch without documents, with a document of another case, or with one already in an open batch.
+	 *
+	 * @param string        $caseId    The case uuid.
+	 * @param array<string> $documents The document ids.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the documents cannot form this batch.
+	 */
+	private function assertDocumentsFree(string $caseId, array $documents): void {
 		if ($documents === []) {
 			throw $this->refusal(rule: 'review-batch-empty', sentence: 'Put at least one document in the batch.');
 		}
@@ -430,7 +457,7 @@ class ReviewBatches implements ReviewBatchesInterface {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
-	}//end validate()
+	}//end assertDocumentsFree()
 
 	/**
 	 * Whether the batch schema can be written.

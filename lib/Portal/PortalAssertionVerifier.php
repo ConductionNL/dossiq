@@ -150,10 +150,20 @@ class PortalAssertionVerifier implements PortalAssertionVerifierInterface {
 			return $this->reject(reason: 'malformed structure');
 		}
 
-		[$head, $body, $signature] = $parts;
+		return $this->verifiedClaims(parts: $parts, secret: $secret);
+	}//end signedClaims()
 
-		$header = json_decode($this->b64UrlDecode(encoded: $head), true);
-		if (is_array($header) === false || ($header['alg'] ?? '') !== self::ALG) {
+	/**
+	 * The claims of a well-formed token whose header and signature hold.
+	 *
+	 * @param array<int, string> $parts  The token's header, body and signature, base64url encoded.
+	 * @param string             $secret The signing secret.
+	 *
+	 * @return array<string, mixed>|null The claims, or null when rejected.
+	 */
+	private function verifiedClaims(array $parts, string $secret): ?array {
+		[$head, $body, $signature] = $parts;
+		if ($this->hasExpectedHeader(head: $head) === false) {
 			return $this->reject(reason: 'unexpected algorithm');
 		}
 
@@ -168,7 +178,20 @@ class PortalAssertionVerifier implements PortalAssertionVerifierInterface {
 		}
 
 		return $claims;
-	}//end signedClaims()
+	}//end verifiedClaims()
+
+	/**
+	 * Whether the token's header is a JSON object naming the expected algorithm.
+	 *
+	 * @param string $head The base64url encoded header.
+	 *
+	 * @return bool
+	 */
+	private function hasExpectedHeader(string $head): bool {
+		$header = json_decode($this->b64UrlDecode(encoded: $head), true);
+
+		return is_array($header) === true && ($header['alg'] ?? '') === self::ALG;
+	}//end hasExpectedHeader()
 
 	/**
 	 * Why signed claims are still refused, or null when they are an assertion for a subject, now.

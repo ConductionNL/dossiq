@@ -155,16 +155,45 @@ class WorkflowTemplateLoader {
 			return $this->cachedTemplate(caseTypeId: $caseTypeId);
 		}
 
+		$search = $this->templateSearch(caseTypeId: $caseTypeId);
+		if ($search === null) {
+			return $this->noTemplate(caseTypeId: $caseTypeId);
+		}
+
+		return $this->searchTemplate(objectService: $search[0], query: $search[1], caseTypeId: $caseTypeId);
+	}//end getActiveTemplate()
+
+	/**
+	 * The object service and the active-template query for a case type.
+	 *
+	 * @param string $caseTypeId The caseType UUID.
+	 *
+	 * @return array{0: object, 1: array}|null Null when OpenRegister or the query is not available.
+	 */
+	private function templateSearch(string $caseTypeId): array|null {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return $this->noTemplate(caseTypeId: $caseTypeId);
+			return null;
 		}
 
 		$query = $this->activeTemplateQuery(caseTypeId: $caseTypeId);
 		if ($query === null) {
-			return $this->noTemplate(caseTypeId: $caseTypeId);
+			return null;
 		}
 
+		return [$objectService, $query];
+	}//end templateSearch()
+
+	/**
+	 * Search the active template and remember the answer for the case type.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param array  $query         The active-template query.
+	 * @param string $caseTypeId    The caseType UUID.
+	 *
+	 * @return array<string, mixed>|null The template, or null when none is active or the search failed.
+	 */
+	private function searchTemplate(object $objectService, array $query, string $caseTypeId): array|null {
 		try {
 			$found = $objectService->searchObjects($query);
 		} catch (\Throwable $e) {
@@ -177,7 +206,7 @@ class WorkflowTemplateLoader {
 		}//end try
 
 		return $this->rememberedTemplate(caseTypeId: $caseTypeId, found: $found);
-	}//end getActiveTemplate()
+	}//end searchTemplate()
 
 	/**
 	 * The cached answer for a case type: its template, or null when it had none.

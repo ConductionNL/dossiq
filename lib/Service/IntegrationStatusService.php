@@ -301,23 +301,7 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 			return [];
 		}
 
-		$refreshed = [];
-		foreach (self::SAVE_REQUIRED_KEYS as $key => $configKeys) {
-			if (array_intersect($configKeys, array_keys($saved)) === []) {
-				continue;
-			}
-
-			$sent = $this->send(
-				key: $key,
-				build: static fn (): object => new $eventClass(
-					app: AppIdentity::APP_ID,
-					key: $key,
-				)
-			);
-			if ($sent === true) {
-				$refreshed[] = $key;
-			}
-		}
+		$refreshed = $this->refreshedKeys(eventClass: $eventClass, saved: $saved);
 
 		// The templates card is the one row integriq cannot resolve from the
 		// saved value alone: an empty key reads Live or Simulated depending on
@@ -328,6 +312,47 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 
 		return $refreshed;
 	}//end recordFromSave()
+
+	/**
+	 * Send a refresh for every integration key the save touched.
+	 *
+	 * @param string               $eventClass The refresh event class.
+	 * @param array<string, mixed> $saved      The saved settings.
+	 *
+	 * @return array<int, string> The keys whose refresh was sent.
+	 */
+	private function refreshedKeys(string $eventClass, array $saved): array {
+		$refreshed = [];
+		foreach (self::SAVE_REQUIRED_KEYS as $key => $configKeys) {
+			if (array_intersect($configKeys, array_keys($saved)) === []) {
+				continue;
+			}
+
+			if ($this->sendRefresh(eventClass: $eventClass, key: $key) === true) {
+				$refreshed[] = $key;
+			}
+		}
+
+		return $refreshed;
+	}//end refreshedKeys()
+
+	/**
+	 * Send one integration key's refresh event.
+	 *
+	 * @param string $eventClass The refresh event class.
+	 * @param string $key        The integration key.
+	 *
+	 * @return bool Whether it was sent.
+	 */
+	private function sendRefresh(string $eventClass, string $key): bool {
+		return $this->send(
+			key: $key,
+			build: static fn (): object => new $eventClass(
+				app: AppIdentity::APP_ID,
+				key: $key,
+			)
+		);
+	}//end sendRefresh()
 
 	/**
 	 * The event class to instantiate, or null when integriq does not ship it.

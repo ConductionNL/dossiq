@@ -1580,10 +1580,10 @@
     },
     {
       "file": "lib/Service/WorkflowTemplateLoader.php",
-      "method": "getActiveTemplate",
+      "method": "searchTemplate",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`getActiveTemplate()` answers `return null` when the read fails; the catch logs at error (\"WorkflowTemplateLoader: searchObjects failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`searchTemplate()` answers `return null` when the read fails; the catch logs at error (\"WorkflowTemplateLoader: searchObjects failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Zaakdossier/DocumentDefaults.php",
