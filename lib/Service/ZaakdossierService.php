@@ -52,6 +52,8 @@ use RuntimeException;
  * dossier around it.
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ZaakdossierService implements ZaakdossierServiceInterface {
 	use SearchesObjects;
@@ -160,12 +162,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 		// Who the document came from and who it went to, resolved against the
 		// parties this case has. See CorrespondentWriter::resolveFor().
 		$direction = $this->normaliser->direction(value: ($metadata['direction'] ?? null));
-		$correspondents = $this->correspondents->resolveFor(
-			caseId: $caseId,
-			sender: ($metadata['sender'] ?? null),
-			recipients: ($metadata['recipients'] ?? null),
-			direction: $direction,
-		);
+		$correspondents = $this->correspondentsOf(caseId: $caseId, metadata: $metadata, direction: $direction);
 
 		$informatieobject = $this->uploadedRecord(
 			fileName: $fileName,
@@ -187,6 +184,43 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			informatieobject: $informatieobject,
 		);
 
+		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $infoId, correspondents: $correspondents);
+
+		return $this->uploadSummary(infoId: $infoId, fileName: $fileName, informatieobject: $informatieobject);
+	}//end uploadDocument()
+
+	/**
+	 * Who the document came from and who it went to, resolved against the case's parties.
+	 *
+	 * @param string               $caseId    The case (zaak) UUID.
+	 * @param array<string, mixed> $metadata  Document metadata.
+	 * @param string               $direction The normalised direction.
+	 *
+	 * @return array<string, mixed> The sender and recipients.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function correspondentsOf(string $caseId, array $metadata, string $direction): array {
+		return $this->correspondents->resolveFor(
+			caseId: $caseId,
+			sender: ($metadata['sender'] ?? null),
+			recipients: ($metadata['recipients'] ?? null),
+			direction: $direction,
+		);
+	}//end correspondentsOf()
+
+	/**
+	 * Join the uploaded document to its case and record one dispatch per correspondent.
+	 *
+	 * @param string               $caseId         The case (zaak) UUID.
+	 * @param string               $infoId         The stored informatieobject id.
+	 * @param array<string, mixed> $correspondents The resolved sender and recipients.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function linkAndRecordDispatches(string $caseId, string $infoId, array $correspondents): void {
 		// Create the case <-> document join, unless the listener already did.
 		$this->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoId);
 
@@ -197,21 +231,34 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			'Dossiq dossier: uploaded informatieobject ' . $infoId . ' for case ' . $caseId,
 			['app' => AppIdentity::APP_ID],
 		);
+	}//end linkAndRecordDispatches()
 
+	/**
+	 * The summary of an uploaded informatieobject.
+	 *
+	 * @param string               $infoId           The stored informatieobject id.
+	 * @param string               $fileName         The original filename.
+	 * @param array<string, mixed> $informatieobject The record as stored.
+	 *
+	 * @return array<string, mixed> The created informatieobject summary.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function uploadSummary(string $infoId, string $fileName, array $informatieobject): array {
 		return [
 			'id' => $infoId,
 			'title' => $informatieobject['title'],
 			'fileName' => $fileName,
 			'status' => 'draft',
-			'vertrouwelijkheidaanduiding' => $classification,
-			'informatieobjecttype' => $type,
+			'vertrouwelijkheidaanduiding' => $informatieobject['vertrouwelijkheidaanduiding'],
+			'informatieobjecttype' => $informatieobject['informatieobjecttype'],
 			'direction' => $informatieobject['direction'],
 			'sender' => $informatieobject['sender'],
 			'recipients' => $informatieobject['recipients'],
 			'keywords' => $informatieobject['keywords'],
 			'integrity' => $informatieobject['integrity'],
 		];
-	}//end uploadDocument()
+	}//end uploadSummary()
 
 	/**
 	 * Check the required upload input and return the document type.
