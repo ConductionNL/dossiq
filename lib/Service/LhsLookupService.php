@@ -251,13 +251,7 @@ class LhsLookupService implements LhsLookupServiceInterface {
 				filters: ['behaviourRow' => $behaviour, 'consequenceColumn' => $gevolg, '_limit' => 1]
 			);
 
-			// The outer is_array() is always true ($results is typed array); the inner
-			// one on $results[0] is NOT redundant and stays.
-			if (isset($results[0]) === true && is_array($results[0]) === true) {
-				return array_merge($results[0], ['source' => 'register']);
-			}
-
-			return null;
+			return $this->firstCell(results: $results);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'LHS matrix lookup from register failed, using fallback: ' . $e->getMessage(),
@@ -266,4 +260,22 @@ class LhsLookupService implements LhsLookupServiceInterface {
 			return null;
 		}
 	}//end lookupFromRegister()
+
+	/**
+	 * The first lhsMatrixCell row of a search, marked as read from the register.
+	 *
+	 * @param array $results The search results
+	 *
+	 * @return array<string, mixed>|null Cell data or null when not found
+	 */
+	private function firstCell(array $results): ?array {
+		// The outer is_array() is always true ($results is typed array); the inner
+		// one on $results[0] is NOT redundant and stays.
+		if (isset($results[0]) === true && is_array($results[0]) === true) {
+			return array_merge($results[0], ['source' => 'register']);
+		}
+
+		return null;
+	}//end firstCell()
+
 }//end class
