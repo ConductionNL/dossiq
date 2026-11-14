@@ -306,6 +306,21 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function declarationsFor(string $caseTypeId): array {
+		$declared = $this->declaredOrShipped(caseTypeId: $caseTypeId);
+
+		return $this->wholeDeclarations(declared: $declared);
+	}//end declarationsFor()
+
+	/**
+	 * The markers the case type declares, or the shipped set when it declares none or cannot be read.
+	 *
+	 * @param string $caseTypeId The case's case type, or the empty string.
+	 *
+	 * @return array<int|string, mixed> The declarations, not yet checked.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function declaredOrShipped(string $caseTypeId): array {
 		$declared = [];
 		if (trim($caseTypeId) !== '') {
 			try {
@@ -324,6 +339,19 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 			$declared = self::SHIPPED_MARKERS;
 		}
 
+		return $declared;
+	}//end declaredOrShipped()
+
+	/**
+	 * The declarations that are whole and enabled.
+	 *
+	 * @param array<int|string, mixed> $declared The declarations, not yet checked.
+	 *
+	 * @return array<int, array<string, mixed>> The declarations, each one whole.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function wholeDeclarations(array $declared): array {
 		$whole = [];
 		foreach ($declared as $declaration) {
 			if (is_array($declaration) === false) {
@@ -345,7 +373,7 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 		}//end foreach
 
 		return $whole;
-	}//end declarationsFor()
+	}//end wholeDeclarations()
 
 	/**
 	 * The markers standing on this case right now.
@@ -431,6 +459,24 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 			return null;
 		}
 
+		return $this->raisedMarker(declaration: $declaration, reason: $reason, standing: $standing, now: $now);
+	}//end markerFor()
+
+	/**
+	 * The marker a declaration raises for a reason.
+	 *
+	 * @param array<string, mixed>  $declaration The marker declaration.
+	 * @param string                $reason      Why the marker stands.
+	 * @param array<string, string> $standing    The raisedAt of each standing marker, by id.
+	 * @param DateTimeImmutable     $now         Today.
+	 *
+	 * @return array<string, mixed> The raised marker.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function raisedMarker(array $declaration, string $reason, array $standing, DateTimeImmutable $now): array {
+		$id = (string)$declaration['id'];
+
 		return [
 			'marker' => $id,
 			'tab' => (string)$declaration['tab'],
@@ -440,7 +486,7 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 			// three-week-old problem read as new on each edit.
 			'raisedAt' => ($standing[$id] ?? $now->format('c')),
 		];
-	}//end markerFor()
+	}//end raisedMarker()
 
 	/**
 	 * A marker already standing on the case, exactly as it stands.

@@ -308,6 +308,18 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 			return [];
 		}
 
+		return $this->rowsOfTenant(rows: $rows, tenantId: $tenantId);
+	}//end legacyRows()
+
+	/**
+	 * The normalised rows that carry data and belong to the tenant.
+	 *
+	 * @param mixed  $rows     The rows as read.
+	 * @param string $tenantId The Organisation's uuid.
+	 *
+	 * @return array<int, array{uuid: string, data: array<string, mixed>}> The rows.
+	 */
+	private function rowsOfTenant(mixed $rows, string $tenantId): array {
 		$out = [];
 		foreach ((array) $rows as $row) {
 			$normalised = $this->rowNormaliser->normalise(row: $row);
@@ -317,7 +329,7 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 		}
 
 		return $out;
-	}//end legacyRows()
+	}//end rowsOfTenant()
 
 	/**
 	 * The signed-in user, or `admin` for a call without a session.

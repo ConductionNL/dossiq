@@ -169,12 +169,25 @@ class CasePriorityRaiseService {
 			['case' => $caseId, 'floor' => $floor, 'rule' => $rule]
 		);
 
+		return $this->priorityAfter(stored: $stored, fallback: $fallback, floor: $floor);
+	}//end writeFloor()
+
+	/**
+	 * The priority the case reads after the write.
+	 *
+	 * @param mixed  $stored   The case as the patch answered it.
+	 * @param string $fallback What to raise when the write cannot be read back.
+	 * @param string $floor    The floor that was stored.
+	 *
+	 * @return string The case's priority after the write.
+	 */
+	private function priorityAfter(mixed $stored, string $fallback, string $floor): string {
 		if (is_array($stored) === false) {
 			return $this->priorityService->raise(current: $fallback, floor: $floor);
 		}
 
 		return (string)($stored['priority'] ?? $this->priorityService->raise(current: $fallback, floor: $floor));
-	}//end writeFloor()
+	}//end priorityAfter()
 
 	/**
 	 * Read one case, or null when there is no case to read.

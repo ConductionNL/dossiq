@@ -349,12 +349,7 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 			return false;
 		}
 
-		$data['status'] = $status;
-		$data['lastError'] = $lastError;
-		$data['simulated'] = $simulated;
-		if ($status === 'read') {
-			$data['readAt'] = (new DateTime())->format('c');
-		}
+		$data = $this->withStatus(data: $data, status: $status, lastError: $lastError, simulated: $simulated);
 
 		$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
 
@@ -367,6 +362,27 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 
 		return true;
 	}//end recordStatus()
+
+	/**
+	 * The stored message with the new status stamped onto it.
+	 *
+	 * @param array<string, mixed> $data      The stored message.
+	 * @param string               $status    The status it moved to.
+	 * @param string               $lastError The provider's reason, when it failed.
+	 * @param bool                 $simulated Whether the binding that handled it sends nothing.
+	 *
+	 * @return array<string, mixed> The message with status, lastError, simulated and readAt set.
+	 */
+	private function withStatus(array $data, string $status, string $lastError, bool $simulated): array {
+		$data['status'] = $status;
+		$data['lastError'] = $lastError;
+		$data['simulated'] = $simulated;
+		if ($status === 'read') {
+			$data['readAt'] = (new DateTime())->format('c');
+		}
+
+		return $data;
+	}//end withStatus()
 
 	/**
 	 * The stored message integriq is tracking under this external id, as an array.
