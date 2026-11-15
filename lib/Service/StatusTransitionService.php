@@ -254,16 +254,15 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 		$step = $this->stepFor(ask: new TransitionAsk(caseId: $caseId, transitionId: $transitionId, userId: $actor, resultTypeId: $resultTypeId));
 		$eval = $this->assertTransitionAllowed(step: $step);
 
-		return $this->carryOut(caseId: $caseId, step: $step, evaluatedGuards: $eval, comment: $comment);
+		return $this->carryOut(step: $step, move: ['evaluatedGuards' => $eval, 'comment' => $comment]);
 	}//end execute()
 
 	/**
 	 * Write an allowed move, retime the status clocks, record it and dispatch its actions.
 	 *
-	 * @param string                           $caseId          Case UUID
-	 * @param TransitionStep                   $step            The allowed move on the loaded case
-	 * @param array<int, array<string, mixed>> $evaluatedGuards The guard evaluation results
-	 * @param string|null                      $comment         Optional comment
+	 * @param TransitionStep $step The allowed move on the loaded case, asked for its case UUID
+	 * @param array{evaluatedGuards: array<int, array<string, mixed>>, comment: string|null} $move The guard evaluation
+	 *        results, and the optional comment
 	 *
 	 * @return array{
 	 *     status: string,
@@ -277,7 +276,8 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function carryOut(string $caseId, TransitionStep $step, array $evaluatedGuards, ?string $comment): array {
+	private function carryOut(TransitionStep $step, array $move): array {
+		$caseId = $step->ask->caseId;
 		$toStatus = $step->toStatus();
 		if ($toStatus === '') {
 			throw new RuntimeException('transition_missing_to_status');
@@ -298,7 +298,7 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 
 		$recorded = $this->recordAndDispatch(
 			step: $step->withCaseData(caseData: $saved),
-			move: $step->move(comment: $comment, evaluatedGuards: $evaluatedGuards)
+			move: $step->move(comment: $move['comment'], evaluatedGuards: $move['evaluatedGuards'])
 		);
 
 		return ($this->moveResult(caseId: $caseId, recorded: $recorded) + ['version' => $savedVersion]);
