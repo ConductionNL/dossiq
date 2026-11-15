@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ClassificationSchemesInterface;
+use OCA\Dossiq\Service\Queue\JsonPreference;
 use OCP\IAppConfig;
 
 /**
@@ -182,16 +183,7 @@ class ClassificationSchemes implements ClassificationSchemesInterface {
 	 * @return array<string, array<int, string>> Scheme name to allowed values.
 	 */
 	private function administered(): array {
-		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::SCHEMES_KEY, '');
-
-		if (trim($raw) === '') {
-			return [];
-		}
-
-		$decoded = json_decode($raw, true);
-		if (is_array($decoded) === false) {
-			return [];
-		}
+		$decoded = JsonPreference::decode(raw: $this->appConfig->getValueString(AppIdentity::APP_ID, self::SCHEMES_KEY, ''));
 
 		$schemes = [];
 		foreach ($decoded as $name => $values) {

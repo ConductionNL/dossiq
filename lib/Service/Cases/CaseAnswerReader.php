@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Cases;
 
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\Support\StoredArray;
 
 /**
  * Read a case's answers, from the register's list or a legacy map.
@@ -65,14 +66,7 @@ class CaseAnswerReader {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function entriesOf(array $case): array {
-		$raw = ($case['properties'] ?? []);
-		if (is_string($raw) === true) {
-			$raw = json_decode($raw, true);
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
+		$raw = StoredArray::from(value: ($case['properties'] ?? []));
 
 		$entries = [];
 		foreach ($raw as $index => $item) {

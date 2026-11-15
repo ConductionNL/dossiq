@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Cases;
 
+use OCA\Dossiq\Service\Queue\JsonPreference;
+
 /**
  * One case moving onto another case type, landing in one of its statuses,
  * and what that move records on the case and answers its caller.
@@ -123,16 +125,11 @@ final class RebindMove {
 			return $raw;
 		}
 
-		if (is_string($raw) === false || trim($raw) === '') {
+		if (is_string($raw) === false) {
 			return [];
 		}
 
-		$decoded = json_decode($raw, true);
-		if (is_array($decoded) === false) {
-			return [];
-		}
-
-		return $decoded;
+		return JsonPreference::decode(raw: $raw);
 	}//end priorEntries()
 
 	/**
