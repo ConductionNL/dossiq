@@ -1,0 +1,43 @@
+{
+    "calls": [
+        {
+            "currentCaseType": {
+                "register": "dossiq",
+                "caseTypeId": "3c0f5a00-0000-4000-a000-00000000a001"
+            }
+        },
+        {
+            "write": {
+                "register": "dossiq",
+                "case": {
+                    "title": "Parkeren",
+                    "description": "Alle stukken",
+                    "caseType": "type-1",
+                    "portalSubject": "subject-anna",
+                    "portalParty": "subject:subject-anna",
+                    "intakeChannel": "website",
+                    "intakeSourceName": "Mijn Zuiddrecht",
+                    "wooRequest": {
+                        "onderwerp": "Parkeren",
+                        "omschrijving": "Alle stukken",
+                        "origin": "portal",
+                        "originReference": "",
+                        "collectionId": ""
+                    },
+                    "wooStartFrom": "4d4d4d4d-0000-4000-a000-0000000000aa",
+                    "status": "status-ontvangst"
+                },
+                "caseType": {
+                    "id": "type-1",
+                    "initialStatus": "status-ontvangst"
+                }
+            }
+        }
+    ],
+    "answer": {
+        "caseId": "case-1",
+        "caseUrl": "https://gemeente.test/index.php/apps/dossiq/cases/case-1",
+        "identifier": "ZAAK-1",
+        "deadline": "2026-12-01"
+    }
+}

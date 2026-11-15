@@ -1,0 +1,28 @@
+{
+    "case missing": {
+        "exception": [
+            "RuntimeException",
+            "Case not found: case-1"
+        ],
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-1",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": []
+    }
+}

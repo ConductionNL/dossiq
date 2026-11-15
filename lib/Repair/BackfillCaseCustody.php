@@ -29,16 +29,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Custody\CaseCustodyChain;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyChainInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -48,7 +48,7 @@ use Throwable;
 /**
  * Open the first holding of every case that has none.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class BackfillCaseCustody implements IRepairStep {
 
@@ -65,16 +65,16 @@ class BackfillCaseCustody implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService Bridge to OpenRegister.
-	 * @param CaseCustodyChain $custody         The chain the holdings are written into.
+	 * @param SettingsServiceInterface  $settingsService Bridge to OpenRegister.
+	 * @param CaseCustodyChainInterface $custody         The chain the holdings are written into.
 	 * @param IAppConfig       $appConfig       App configuration.
 	 * @param LoggerInterface  $logger          Logger.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseCustodyChain $custody,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseCustodyChainInterface $custody,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -85,7 +85,7 @@ class BackfillCaseCustody implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getName(): string {
 		return 'Open the first chain-of-custody holding for every existing case';
@@ -102,7 +102,7 @@ class BackfillCaseCustody implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -111,9 +111,9 @@ class BackfillCaseCustody implements IRepairStep {
 			return;
 		}
 
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$caseSchema = $this->appConfig->getValueString(Application::APP_ID, 'case_schema', '');
-		$custodySchema = $this->appConfig->getValueString(Application::APP_ID, 'case_custody_schema', '');
+		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$caseSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_schema', '');
+		$custodySchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_custody_schema', '');
 		if ($register === '' || $caseSchema === '' || $custodySchema === '') {
 			$output->info('The case or custody schema is not configured, so the custody backfill was skipped.');
 			return;
@@ -140,7 +140,7 @@ class BackfillCaseCustody implements IRepairStep {
 	 * @param IOutput $output        Progress reporting.
 	 *
 	 * @return void
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function backfill(object $objectService, string $register, string $caseSchema, IOutput $output): void {
 		$rows = $objectService->findAll(['filters' => ['register' => $register, 'schema' => $caseSchema]]);
@@ -149,6 +149,22 @@ class BackfillCaseCustody implements IRepairStep {
 			return;
 		}
 
+		$tally = $this->backfillAll(rows: $rows);
+
+		$output->info(
+			'Custody backfill: ' . $tally['opened'] . ' holdings opened, '
+			. $tally['skipped'] . ' cases already had one, ' . $tally['failed'] . ' failed.'
+		);
+	}//end backfill()
+
+	/**
+	 * Open a holding for every case row that lacks one, counting what happened.
+	 *
+	 * @param array<int, mixed> $rows The case rows, as arrays or serialisable objects.
+	 *
+	 * @return array{opened: int, skipped: int, failed: int} The tally.
+	 */
+	private function backfillAll(array $rows): array {
 		$tally = ['opened' => 0, 'skipped' => 0, 'failed' => 0];
 		foreach ($rows as $row) {
 			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
@@ -158,11 +174,8 @@ class BackfillCaseCustody implements IRepairStep {
 			$tally[$this->backfillOne(case: (array)$row)] += 1;
 		}
 
-		$output->info(
-			'Custody backfill: ' . $tally['opened'] . ' holdings opened, '
-			. $tally['skipped'] . ' cases already had one, ' . $tally['failed'] . ' failed.'
-		);
-	}//end backfill()
+		return $tally;
+	}//end backfillAll()
 
 	/**
 	 * Open one case's first holding, and say which tally it belongs to.

@@ -40,6 +40,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class CaseHoldTest extends TestCase {
 
@@ -212,6 +213,24 @@ class CaseHoldTest extends TestCase {
 			$this->assertArrayNotHasKey(key: 'heldUntil', array: $this->case, message: 'a refused hold must write nothing');
 		}
 	}//end testAnImpossibleHoldIsRefused()
+
+	/**
+	 * A wake date that cannot be read is refused, and nothing is written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testAnUnreadableWakeDateIsRefused(): void {
+		try {
+			$this->holds->hold(caseId: 'case-1', reason: 'Wacht', until: 'na de zomer');
+			$this->fail(message: 'an unreadable wake date should have been refused');
+		} catch (RefusedException $e) {
+			$this->assertSame(expected: 'wake-date-unreadable', actual: $e->getRule());
+			$this->assertSame(expected: 'That date could not be read.', actual: $e->getSentence());
+			$this->assertArrayNotHasKey(key: 'heldUntil', array: $this->case, message: 'a refused hold must write nothing');
+		}
+	}//end testAnUnreadableWakeDateIsRefused()
 
 	/**
 	 * The holds that are not holds.

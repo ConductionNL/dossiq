@@ -32,12 +32,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Woo\WooRequestIntake;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 class AanvullingsverzoekServiceTest extends TestCase {
 
@@ -96,6 +99,77 @@ class AanvullingsverzoekServiceTest extends TestCase {
 	}//end service()
 
 	/**
+	 * The same service, told what the case's portal subject is.
+	 *
+	 * @param string $subject The case's portal subject, or '' for none.
+	 *
+	 * @return AanvullingsverzoekService&MockObject The service.
+	 */
+	private function serviceForSubject(string $subject): AanvullingsverzoekService {
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(
+				[
+					'act' => $this->act,
+					'settingsService' => $this->settings,
+					'logger' => new NullLogger(),
+				]
+			)
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'portalSubjectOf'])
+			->getMock();
+
+		$service->method('openFor')->willReturn(null);
+		$service->method('write')->willReturnArgument(0);
+		$service->method('portalSubjectOf')->willReturn($subject);
+
+		return $service;
+	}//end serviceForSubject()
+
+	/**
+	 * The request names who may read it in the portal, copied from the case.
+	 *
+	 * @return void
+	 */
+	public function testTheRequestNamesWhoMayReadItInThePortal(): void {
+		$this->act->expects($this->once())->method('ask')->willReturn($this->sent());
+
+		$request = $this->serviceForSubject(subject: 'person:bsn-hash-1')->ask(
+			caseId: 'case-1',
+			items: ['Bankafschrift'],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			pauseReason: 'reason-awb-45',
+			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
+		);
+
+		self::assertSame(expected: 'person:bsn-hash-1', actual: $request['portalSubject']);
+	}//end testTheRequestNamesWhoMayReadItInThePortal()
+
+	/**
+	 * 🔴 A case with no portal subject writes none, so the request reaches
+	 * nobody rather than everybody: the portal scopes this collection by that
+	 * one field, and an empty value there would match no row at all, while a
+	 * wrong one would match somebody else's.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutAPortalSubjectWritesNone(): void {
+		$this->act->expects($this->once())->method('ask')->willReturn($this->sent());
+
+		$request = $this->serviceForSubject(subject: '')->ask(
+			caseId: 'case-1',
+			items: ['Bankafschrift'],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			pauseReason: 'reason-awb-45',
+			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
+		);
+
+		self::assertArrayNotHasKey('portalSubject', $request);
+	}//end testACaseWithoutAPortalSubjectWritesNone()
+
+	/**
 	 * What the act answers for a send that worked.
 	 *
 	 * @return array<string, mixed> The outcome.
@@ -143,6 +217,53 @@ class AanvullingsverzoekServiceTest extends TestCase {
 		self::assertSame(expected: 'handler1', actual: $request['requestedBy']);
 		self::assertNotSame(expected: '', actual: (string)$request['requestedAt']);
 	}//end testAskingWritesTheRequestNamingBothItems()
+
+	/**
+	 * The service, told what the case's type is.
+	 *
+	 * @param string $case The case's type identifier or id.
+	 *
+	 * @return AanvullingsverzoekService&MockObject The service.
+	 */
+	private function serviceForCase(string $case): AanvullingsverzoekService {
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(['act' => $this->act, 'settingsService' => $this->settings, 'logger' => new NullLogger()])
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'caseTypeOf'])
+			->getMock();
+		$service->method('openFor')->willReturn(null);
+		$service->method('write')->willReturnArgument(0);
+		$service->method('caseTypeOf')->willReturn($case);
+
+		return $service;
+	}//end serviceForCase()
+
+	/**
+	 * A clarification may be asked on any version of the Woo request case
+	 * type, and on no other type.
+	 *
+	 * @return void
+	 */
+	public function testAClarificationIsAskedOnEveryVersionOfTheWooCaseType(): void {
+		$this->act->method('ask')->willReturn($this->sent());
+		$ask = static fn (AanvullingsverzoekService $service): array => $service->ask(
+			caseId: 'case-1',
+			items: [],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			question: 'Welke periode bedoelt u?',
+		);
+
+		self::assertSame(expected: 'verduidelijking', actual: $ask($this->serviceForCase(case: WooRequestIntake::CASE_TYPE_ID))['kind']);
+		self::assertSame(expected: 'verduidelijking', actual: $ask($this->serviceForCase(case: 'woo-verzoek'))['kind']);
+
+		try {
+			$ask($this->serviceForCase(case: 'melding-openbare-ruimte'));
+			self::fail(message: 'a clarification on another case type is refused');
+		} catch (RefusedException $e) {
+			self::assertSame(expected: 'aanvullingsverzoek-clarification-woo-only', actual: $e->getRule());
+		}
+	}//end testAClarificationIsAskedOnEveryVersionOfTheWooCaseType()
 
 	/**
 	 * The hersteltermijn is the one the suspension landed on.
@@ -309,4 +430,168 @@ class AanvullingsverzoekServiceTest extends TestCase {
 			actual: array_column($request['missingItems'], 'item')
 		);
 	}//end testBlankItemsNeverReachTheRecord()
+
+	/**
+	 * Decision 169: asking raises the resident's portal task and remembers it
+	 * on the request; a case without a portal subject raises none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
+	 */
+	public function testAskingRaisesThePortalTaskAndRemembersIt(): void {
+		$this->act->method('ask')->willReturn($this->sent());
+		$portalTask = $this->createMock(ResidentQuestionTask::class);
+		$raisedFor = [];
+		$portalTask->method('raise')->willReturnCallback(
+			function (array $question, string $actor) use (&$raisedFor): ?string {
+				$raisedFor[] = [$question['id'], $question['portalSubject'], $question['title'], $question['items'], $question['due'], $question['source'], $actor];
+				return 'task-1';
+			}
+		);
+
+		$writes = [];
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(['act' => $this->act, 'settingsService' => $this->settings, 'logger' => new NullLogger(), 'portalTask' => $portalTask])
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'portalSubjectOf'])
+			->getMock();
+		$service->method('openFor')->willReturn(null);
+		$service->method('portalSubjectOf')->willReturn('person:bsn-hash-1');
+		$service->method('write')->willReturnCallback(
+			function (array $request, string $id = '') use (&$writes): array {
+				$writes[] = [$id, $request];
+				return array_merge($request, ['id' => ($id !== '' ? $id : 'avr-1')]);
+			}
+		);
+
+		$request = $service->ask(
+			caseId: 'case-1',
+			items: ['Bankafschrift'],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			pauseReason: 'reason-awb-45',
+			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
+		);
+
+		self::assertSame([['avr-1', 'person:bsn-hash-1', 'Vul uw aanvraag aan', ['Bankafschrift'], '2026-10-01', 'dossiq.aanvullingsverzoek', 'handler1']], $raisedFor);
+		self::assertSame('task-1', $request['portalTask']);
+		self::assertSame(['avr-1', ['portalTask' => 'task-1']], $writes[1]);
+	}//end testAskingRaisesThePortalTaskAndRemembersIt()
+
+	/**
+	 * Decision 169: a write that moves a request out of `open` closes its
+	 * portal task with the stored request; a write that keeps it open does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
+	 */
+	public function testAWriteThatLeavesOpenClosesThePortalTask(): void {
+		$objects = new class {
+			/**
+			 * @param string               $objectId The id.
+			 * @param array<string, mixed> $data     The changes.
+			 * @param mixed                $register The register.
+			 * @param mixed                $schema   The schema.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
+				return array_merge(['id' => $objectId, 'portalTask' => 'task-1', 'state' => 'open'], $data);
+			}
+		};
+		$this->settings->method('getObjectService')->willReturn($objects);
+		$this->settings->method('getConfigValue')->willReturn('register-1');
+
+		$closed = [];
+		$portalTask = $this->createMock(ResidentQuestionTask::class);
+		$portalTask->method('close')->willReturnCallback(
+			function (string $taskUuid, string $reason, string $source) use (&$closed): bool {
+				$closed[] = [$taskUuid, $reason, $source];
+				return true;
+			}
+		);
+		$service = new AanvullingsverzoekService(act: $this->act, settingsService: $this->settings, logger: new NullLogger(), portalTask: $portalTask);
+
+		$service->write(request: ['hersteltermijn' => '2026-11-01'], id: 'avr-1');
+		self::assertSame([], $closed);
+
+		$service->write(request: ['state' => 'answered', 'answeredBy' => 'handler1'], id: 'avr-1');
+		self::assertSame([['task-1', 'The aanvullingsverzoek is answered in dossiq.', 'dossiq.aanvullingsverzoek']], $closed);
+	}//end testAWriteThatLeavesOpenClosesThePortalTask()
+
+	/**
+	 * How long a request has been open is counted in whole days, never negative.
+	 *
+	 * @return void
+	 */
+	public function testDaysOpenCountsWholeDaysSinceTheRequest(): void {
+		$service = $this->service();
+		$now = new \DateTimeImmutable('2026-03-20T12:00:00+01:00');
+
+		$this->assertSame(14, $service->daysOpen(request: ['requestedAt' => '2026-03-06T09:00:00+01:00'], now: $now));
+		// One hour short of a whole day is no day yet.
+		$this->assertSame(0, $service->daysOpen(request: ['requestedAt' => '2026-03-19T13:00:00+01:00'], now: $now));
+		$this->assertSame(1, $service->daysOpen(request: ['requestedAt' => '2026-03-19T12:00:00+01:00'], now: $now));
+		// A request dated after now reads as its distance: the count has no sign.
+		$this->assertSame(2, $service->daysOpen(request: ['requestedAt' => '2026-03-22T12:00:00+01:00'], now: $now));
+		$this->assertSame(0, $service->daysOpen(request: [], now: $now));
+		$this->assertSame(0, $service->daysOpen(request: ['requestedAt' => 'not a date'], now: $now));
+	}//end testDaysOpenCountsWholeDaysSinceTheRequest()
+
+	/**
+	 * A portal task that is raised but cannot be remembered leaves the request as written, and says so.
+	 *
+	 * @return void
+	 */
+	public function testATaskThatCannotBeRememberedLeavesTheRequestAsWritten(): void {
+		$this->act->method('ask')->willReturn($this->sent());
+		$portalTask = $this->createMock(ResidentQuestionTask::class);
+		$portalTask->method('raise')->willReturn('task-1');
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$warnings = [];
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$warnings): void {
+				$warnings[] = [$message, $context];
+			}
+		);
+
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(['act' => $this->act, 'settingsService' => $this->settings, 'logger' => $logger, 'portalTask' => $portalTask])
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'portalSubjectOf'])
+			->getMock();
+		$service->method('openFor')->willReturn(null);
+		$service->method('portalSubjectOf')->willReturn('person:bsn-hash-1');
+		$service->method('write')->willReturnCallback(
+			static function (array $request, string $id = ''): array {
+				if ($id !== '') {
+					throw new RefusedException(rule: 'aanvullingsverzoek-not-written', sentence: 'The request could not be written down.', status: RefusedException::STATUS_INDETERMINATE);
+				}
+
+				return array_merge($request, ['id' => 'avr-1']);
+			}
+		);
+
+		$request = $service->ask(
+			caseId: 'case-1',
+			items: ['Bankafschrift'],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			pauseReason: 'reason-awb-45',
+			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
+		);
+
+		self::assertArrayNotHasKey('portalTask', $request);
+		self::assertSame('avr-1', $request['id']);
+		self::assertSame(
+			[['Dossiq: the portal task was raised, but the request could not remember it', ['app' => 'dossiq', 'request' => 'avr-1', 'task' => 'task-1']]],
+			$warnings
+		);
+	}//end testATaskThatCannotBeRememberedLeavesTheRequestAsWritten()
 }//end class

@@ -32,6 +32,14 @@ change was being built, so the engine calendar answers rather than
     read".
 - [ ] 2.1 [partial] The on-screen intake confirmation names the reference,
   the received moment, the start and the deadline (D-5).
+  - UPDATE 12 Oct: the queue is gone (decision 179), so the case exists
+    before the response does. portaliq development (7b7ae1fd) shows the case
+    number, the received moment, the term start and the deadline from the
+    submit response (`src/site/components/forms/confirmation.js`,
+    `momentLines`). Still open: the sentence about the first working day
+    is not on that screen (Q-dossiq-d179-2), and the e2e scenario is a live
+    pass (decision 139). Tracked in `a-request-form-opens-the-case-at-once`
+    tasks 2.2b and 2.2c.
   - WHAT SHIPPED: the three fields are on
     `PortalContributionProvider::CITIZEN_CASE_FIELDS`, which is the ONE list
     the portal projects a case down to and the ontvangstbevestiging quotes

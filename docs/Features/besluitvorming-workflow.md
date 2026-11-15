@@ -37,7 +37,7 @@ The nine statuses run from **Voorstel opstellen** to **Gearchiveerd**. A handler
 
 ## Mandates
 
-A mandaatbesluit may only be signed by someone who holds the mandate for it. Dossiq checks this against the mandaatregister before the case may advance, so an unmandated signature is refused rather than recorded.
+A mandaatbesluit may only be signed by someone who holds the mandate for it. Dossiq asks decidiq's delegatie- en mandaatregister before the case may advance, so an unmandated signature is refused rather than recorded. Without decidiq on the instance the step is refused, because nobody can confirm the mandate.
 
 ## Where the parts live
 
@@ -51,4 +51,4 @@ A mandaatbesluit may only be signed by someone who holds the mandate for it. Dos
 
 ## Next
 
-Activate the besluitvorming case types from **Settings, Case types**, then open **All cases** and filter on the one you need.
+Activate the besluitvorming case types from **Advanced, Case types**, then open **All cases** and filter on the one you need.

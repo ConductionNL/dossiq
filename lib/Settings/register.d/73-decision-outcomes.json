@@ -85,6 +85,11 @@
 								"type": "string",
 								"title": "Lodged with",
 								"description": "Who it is lodged with, as the clause names them, for example het college van burgemeester en wethouders."
+							},
+							"caseType": {
+								"type": "string",
+								"title": "Case type it opens",
+								"description": "The case type a lodged remedy opens, for example the Bezwaar case type. Registering a remedy against a decision of this case type opens a case of that type, linked to the decided case. Empty when remedies are not handled in dossiq."
 							}
 						}
 					}

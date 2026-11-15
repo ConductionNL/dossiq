@@ -27,16 +27,19 @@ use PHPUnit\Framework\TestCase;
  * moment it renders.
  *
  * The wizard shipped exactly that. Its `seed` step ran the `seed` action, which
- * reads `caseTypes` out of `lib/Settings/bezwaar_seed_data.json` — a key that
- * has not existed since commit 382e953d parked the Dutch demo under
- * `_caseTypes_disabled` and curated an English one in
+ * read `caseTypes` out of the old `bezwaar_seed_data.json`, a key parked since
+ * commit 382e953d curated an English demo in
  * `lib/Settings/register.d/46-demo-cases-english.json` instead. Every click
- * answered `422 Nothing to seed`.
+ * answered `422 Nothing to seed`, so the step went.
+ *
+ * The `seed` action now installs the on-request `bezwaar-beroep` package, so
+ * it has something to install again. The wizard offers on-request packages
+ * through the Case types step (`install-case-types`, one card per package),
+ * so the single-package `seed` step stays out.
  *
  * Two assertions, and the second is the one that matters. The first says every
  * `run-action` step names an action the controller handles. The second says a
- * step may not be backed by an empty dataset: re-adding the seed step is fine
- * the day somebody un-parks the data, and refused until then.
+ * step may not be backed by an empty dataset.
  */
 class SetupWizardStepsTest extends TestCase {
 
@@ -60,7 +63,11 @@ class SetupWizardStepsTest extends TestCase {
 	}
 
 	/**
-	 * The `run-action` steps the wizard offers, in order.
+	 * The steps the wizard offers that post a setup action, in order.
+	 *
+	 * A `run-action` step posts its `action`. A cards choice step posts its
+	 * `loadAction` from each card's Load button (wizard-dataset-card-load), so
+	 * it is held to the same rule.
 	 *
 	 * @return array<int, array{id: string, action: string}> The steps.
 	 */
@@ -68,13 +75,20 @@ class SetupWizardStepsTest extends TestCase {
 		$steps = [];
 		foreach ((array)((array)($this->manifest()['setup'] ?? []))['steps'] ?? [] as $step) {
 			$step = (array)$step;
-			if ((string)($step['type'] ?? '') !== 'run-action') {
+			$action = '';
+			if ((string)($step['type'] ?? '') === 'run-action') {
+				$action = (string)($step['action'] ?? '');
+			} else if (isset($step['loadAction']) === true) {
+				$action = (string)$step['loadAction'];
+			}
+
+			if ($action === '') {
 				continue;
 			}
 
 			$steps[] = [
 				'id' => (string)($step['id'] ?? ''),
-				'action' => (string)($step['action'] ?? ''),
+				'action' => $action,
 			];
 		}
 
@@ -82,7 +96,7 @@ class SetupWizardStepsTest extends TestCase {
 	}
 
 	/**
-	 * Every `run-action` step names an action SetupController handles.
+	 * Every action-posting step names an action SetupController handles.
 	 *
 	 * An unhandled id falls through to the controller's `Unknown setup action`
 	 * branch, which answers 404 — the same shape of dead step, arrived at a
@@ -92,7 +106,7 @@ class SetupWizardStepsTest extends TestCase {
 	 */
 	public function testEveryRunActionStepNamesAnActionTheControllerHandles(): void {
 		$steps = $this->runActionSteps();
-		$this->assertGreaterThan(0, count($steps), 'The sweep found no run-action steps, so an all-clear says nothing');
+		$this->assertGreaterThan(0, count($steps), 'The sweep found no action-posting steps, so an all-clear says nothing');
 
 		$controller = (string)file_get_contents(self::ROOT . '/lib/Controller/SetupController.php');
 
@@ -123,7 +137,7 @@ class SetupWizardStepsTest extends TestCase {
 	 */
 	public function testNoOfferedStepIsBackedByAnEmptyDataset(): void {
 		// action id => [file, the key the seeder actually reads].
-		$backing = ['seed' => ['lib/Settings/bezwaar_seed_data.json', 'caseTypes']];
+		$backing = ['seed' => ['lib/Settings/packages/bezwaar-beroep/case-type.json', 'caseType']];
 
 		$offenders = [];
 		$examined = 0;
@@ -157,21 +171,20 @@ class SetupWizardStepsTest extends TestCase {
 
 		// The positive control. With the seed step removed nothing in the map
 		// is currently offered, and an assertion over an empty loop is an
-		// assertion about nothing — so pin the fact the dataset is still empty.
-		// The day it is un-parked this fails, which is the reminder that the
-		// step may come back.
+		// assertion about nothing, so pin that the backing still exists: the
+		// package the `seed` action installs carries case types.
 		if ($examined === 0) {
-			$data = json_decode((string)file_get_contents(self::ROOT . '/lib/Settings/bezwaar_seed_data.json'), true);
-			$this->assertSame(
+			$data = json_decode((string)file_get_contents(self::ROOT . '/' . $backing['seed'][0]), true);
+			$this->assertNotSame(
 				[],
-				(array)(((array)$data)['caseTypes'] ?? []),
-				'bezwaar_seed_data.json now carries case types, so the wizard `seed` step can be offered again'
+				(array)(((array)$data)[$backing['seed'][1]] ?? []),
+				'the package the `seed` action installs carries no case type'
 			);
 		}
 	}
 
 	/**
-	 * The seed step is not offered while its dataset is parked.
+	 * The seed step is not offered until offering it is decided.
 	 *
 	 * The specific regression, pinned by id. Without it the sweep above would
 	 * pass just as happily on a manifest that declares no setup block at all.
@@ -185,6 +198,6 @@ class SetupWizardStepsTest extends TestCase {
 		}
 
 		$this->assertContains('demo-data', $ids, 'The demo-data offer is what actually shows a new reader the app working');
-		$this->assertNotContains('seed', $ids, 'The seed step reads a parked dataset and can only answer 422');
+		$this->assertNotContains('seed', $ids, 'On-request packages are offered per card by the case-types step, not by a seed step');
 	}
 }

@@ -42,6 +42,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * Suspend, resume, extend and reopen behind their guards.
@@ -152,6 +153,36 @@ class CaseLifecycleControllerTest extends TestCase {
 	}//end testSuspendIsRefusedWithoutCaseAccess()
 
 	/**
+	 * The picked pause reason reaches the service, and an undeclared one is a 422 naming its code.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	public function testSuspendPassesThePauseReasonAndRefusesAnUndeclaredOne(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => match ($key) {
+				'reason' => '',
+				'days' => 14,
+				'pauseReason' => 'made-up',
+				default => $default,
+			}
+		);
+		$this->request = $request;
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->lifecycle->expects($this->once())
+			->method('suspend')
+			->with(caseId: 'case-1', reason: '', days: 14, pauseReason: 'made-up')
+			->willThrowException(new \RuntimeException('pause_reason_not_declared'));
+
+		$response = $this->controller()->suspend(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('pause_reason_not_declared', $response->getData()['code']);
+	}//end testSuspendPassesThePauseReasonAndRefusesAnUndeclaredOne()
+
+	/**
 	 * The per-case guard is asked with the case from the URL and the session
 	 * user, not with anything the caller supplied.
 	 *
@@ -240,6 +271,24 @@ class CaseLifecycleControllerTest extends TestCase {
 	}//end testARefusedGestureAnswersItsCode()
 
 	/**
+	 * An extension past the case type's limit answers 409 with its own code.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	public function testAnExtensionPastTheLimitAnswers409(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->lifecycle->method('extend')
+			->willThrowException(new RuntimeException('extension_limit_reached'));
+
+		$response = $this->controller()->extend(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('extension_limit_reached', $response->getData()['code']);
+	}//end testAnExtensionPastTheLimitAnswers409()
+
+	/**
 	 * An unexpected failure is a 500 that says nothing about itself.
 	 *
 	 * @return void
@@ -253,6 +302,9 @@ class CaseLifecycleControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 		$this->assertStringNotContainsString('connection', json_encode($response->getData()));
+		// The page translates the code; an English sentence alone reached a
+		// Dutch screen as "Could not change the case".
+		$this->assertSame('change_failed', $response->getData()['code']);
 	}//end testAnUnexpectedFailureWithholdsItsDetail()
 
 	/**
@@ -314,7 +366,10 @@ class CaseLifecycleControllerTest extends TestCase {
 				 *
 				 * @throws HookStoppedException Always.
 				 */
-				public function deleteObject(string $uuid, string $register, string $schema): bool {
+				public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+					$uuid = $deletion->uuid;
+					$register = $deletion->target->register;
+					$schema = $deletion->target->schema;
 					throw new HookStoppedException(
 						'You cannot delete this case yet.',
 						['blockedBy' => ['open-term']]
@@ -402,7 +457,10 @@ class CaseLifecycleControllerTest extends TestCase {
 			 *
 			 * @return bool Always true.
 			 */
-			public function deleteObject(string $uuid, string $register, string $schema): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$this->seen = [$uuid, $register, $schema];
 				return true;
 			}

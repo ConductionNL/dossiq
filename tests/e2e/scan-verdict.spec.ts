@@ -27,6 +27,7 @@ import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
+	ensureCaseType,
 	getRequestToken,
 	objectId,
 	RUN_PREFIX,
@@ -42,8 +43,12 @@ test.describe('scan verdict on the row', () => {
 
 	test.beforeAll(async ({ request }) => {
 		const token = await getRequestToken(request)
+		// `case` requires `caseType` (dossiq_register.json), so a case filed
+		// without one is refused in this hook and no test in the file runs.
+		const caseType = await ensureCaseType(request, token)
 		const created = await createObject(request, token, 'case', {
 			title: CASE_TITLE,
+			caseType: caseType.id,
 			description: 'Scan verdict run',
 		})
 		caseId = objectId(created)
@@ -54,7 +59,7 @@ test.describe('scan verdict on the row', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md#no-scanner-no-claim
+	// @e2e openspec/specs/document-zaakdossier/spec.md#no-scanner-no-claim
 	test('no scanner, no claim', async ({ page, request }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 		await page
@@ -86,7 +91,7 @@ test.describe('scan verdict on the row', () => {
 		expect(verdictBody.scannerPresent).toBe(false)
 	})
 
-	// @e2e openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md#no-scanner-no-claim
+	// @e2e openspec/specs/document-zaakdossier/spec.md#no-scanner-no-claim
 	test('a caller who cannot see the file is told nothing about it', async ({
 		request,
 	}) => {

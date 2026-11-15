@@ -59,6 +59,8 @@
 			@createFederatedShare="createFederatedShareDialogOpen = true"
 			@revokeFederated="revokeFederatedShare"
 			@openActivity="openActivity" />
+		<!-- Access for a named user or group on this instance (REQ-CRS-43). -->
+		<CaseAccessGrants :objectId="objectId" />
 
 		<CreateAccessLinkDialog
 			:open="createAccessLinkDialogOpen"
@@ -129,6 +131,7 @@ import CreateAccessLinkDialog from '../../../dialogs/CreateAccessLinkDialog.vue'
 import CreateFederatedShareDialog from '../../../dialogs/CreateFederatedShareDialog.vue'
 import CreateShareDialog from '../../../dialogs/CreateShareDialog.vue'
 import FederatedActivityPanel from '../../../dialogs/FederatedActivityPanel.vue'
+import CaseAccessGrants from './CaseAccessGrants.vue'
 import ShareTab from './ShareTab.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 import {
@@ -137,6 +140,7 @@ import {
 	federatedSharesListEndpoint,
 	revokeFederatedShareEndpoint,
 } from '../../../utils/federatedShareHelpers.js'
+import { loadPartnerOrganisations } from '../../../utils/partnerOrganisations.js'
 
 export default {
 	name: 'CaseSharingTab',
@@ -146,6 +150,7 @@ export default {
 		NcNoteCard,
 		CreateAccessLinkDialog,
 		CreateShareDialog,
+		CaseAccessGrants,
 		CaseTransferDialog,
 		CreateFederatedShareDialog,
 		FederatedActivityPanel,
@@ -194,7 +199,7 @@ export default {
 		 * later screen could tell them so.
 		 *
 		 * @return {string} The sentence.
-		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 * @spec openspec/specs/deelzaak-support/spec.md
 		 */
 		inheritanceWarning() {
 			return n(
@@ -210,7 +215,7 @@ export default {
 	 * Load the three surfaces this tab owns: the access links, the partner
 	 * shares and the federated shares, plus what the dialogs need to offer.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	mounted() {
 		this.loadShares()
@@ -233,7 +238,7 @@ export default {
 		 * exist would teach them to ignore the line.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 * @spec openspec/specs/deelzaak-support/spec.md
 		 */
 		async loadDeelzaken() {
 			if (!this.objectId) {
@@ -253,7 +258,7 @@ export default {
 		/**
 		 * Load every access link on this case, each with its state.
 		 *
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 		 */
 		async loadLinks() {
 			if (!this.objectId) {
@@ -287,7 +292,7 @@ export default {
 		 * Mint a link and show the handler the address to send.
 		 *
 		 * @param {object} payload the link payload from CreateAccessLinkDialog.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 		 */
 		async createLink(payload) {
 			try {
@@ -315,7 +320,7 @@ export default {
 		 * created it, so the refusal is shown rather than hidden.
 		 *
 		 * @param {object} link the link row.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 		 */
 		async revokeLink(link) {
 			try {
@@ -339,7 +344,7 @@ export default {
 		 * Switch a link off, or back on.
 		 *
 		 * @param {object} link the link row.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 		 */
 		async pauseLink(link) {
 			try {
@@ -362,7 +367,7 @@ export default {
 		 * Show the handler what the holder of this link reads.
 		 *
 		 * @param {object} link the link row.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 		 */
 		async previewLink(link) {
 			try {
@@ -383,7 +388,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md */
 		async loadShares() {
 			if (!this.objectId) {
 				return
@@ -440,21 +445,14 @@ export default {
 		 * existing caseShare objects keeps resolving.
 		 *
 		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md
-		 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+		 * @spec openspec/specs/partner-organisations/spec.md
+		 * @spec openspec/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 		 *
 		 * @return {Promise<void>}
 		 */
 		async loadPartners() {
 			try {
-				const response = await axios.get(
-					generateUrl('/apps/openregister/api/organisations'),
-				)
-				// A partner is somebody ELSE's organisation that this instance
-				// shares cases WITH. Without the type filter the picker would
-				// offer this municipality its own tenant to share a case with.
-				this.partners = (response.data?.results || []).filter(
-					(organisation) => organisation.type === 'partner',
-				)
+				this.partners = await loadPartnerOrganisations()
 			} catch (err) {
 				this.partners = []
 				showError(t('dossiq', 'Could not load partner organisations'))
@@ -481,7 +479,7 @@ export default {
 
 		/**
 		 * @param {object} payload the partner-share creation payload.
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 		 */
 		async createShare(payload) {
 			try {
@@ -499,7 +497,7 @@ export default {
 
 		/**
 		 * @param {string} shareId the caseShare UUID to revoke.
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 		 */
 		async revokeShare(shareId) {
 			try {

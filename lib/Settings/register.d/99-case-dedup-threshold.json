@@ -1,0 +1,14 @@
+{
+  "_note": "DqNieuweZaakDubbel (coordinator decision 26 Oct, overrulable by Ruben): the same requester alone is no longer a duplicate case; a DSO re-delivery (the same permit application reference) still is. With OpenRegister leaving a rule out when neither case holds its field (a Woo request has no permit reference), a Woo request scores requester 0.2, title exact 0.05 and title spelling 0.15 out of 0.4: the requester with an unrelated title reaches about 0.56, with a similar title about 0.64 ('Kosten nieuw zwembad' against 'Kosten zwembad Sportpark Zuid') and with the same title 1.0. A permit reference alone reaches 0.6 and more. The threshold 0.6 sits between. Weights and threshold are set in dossiq_register.json; case moves to 1.57.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.57.0"
+      }
+    }
+  }
+}

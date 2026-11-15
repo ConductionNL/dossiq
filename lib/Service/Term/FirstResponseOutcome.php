@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\FirstResponseOutcomeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
@@ -49,9 +50,9 @@ use Throwable;
 /**
  * Records and reports the first-response term.
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
  */
-class FirstResponseOutcome {
+class FirstResponseOutcome implements FirstResponseOutcomeInterface {
 	use SearchesObjects;
 
 	/**
@@ -75,11 +76,13 @@ class FirstResponseOutcome {
 	 * @param SettingsService      $settingsService Register and schema ids, and the object service.
 	 * @param WorkingDayCalculator $workingDays     Counts the overrun in the term's own mode.
 	 * @param LoggerInterface      $logger          Logger.
+	 * @param DayCount             $days            Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly WorkingDayCalculator $workingDays,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -94,7 +97,7 @@ class FirstResponseOutcome {
 	 *
 	 * @return array{status: string, overrunDays: int} What was recorded.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 */
 	public function record(
 		string $caseId,
@@ -133,7 +136,7 @@ class FirstResponseOutcome {
 	 *
 	 * @return array{missed: int, met: int, averageOverrunDays: float} The report.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 */
 	public function report(array $filters = []): array {
 		$missed = 0;
@@ -242,7 +245,7 @@ class FirstResponseOutcome {
 	 */
 	private function overrunBetween(DateTimeImmutable $due, DateTimeImmutable $sent, string $countingMode): int {
 		if ($countingMode !== WorkingDayRoll::MODE_WORKING_DAYS) {
-			return (int)$due->diff($sent)->days;
+			return $this->days->between(from: $due, to: $sent);
 		}
 
 		// Counted from the day AFTER the promise. `countWorkingDays()` counts

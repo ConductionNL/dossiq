@@ -1,7 +1,7 @@
 # ai-oversight-log Specification
 
 ## Purpose
-TBD - created by archiving change ai-oversight-log. Update Purpose after archive.
+Record what the AI assistance did on a case, so an overseer can query the entries, export them under RBAC and review them on the oversight surface.
 ## Requirements
 ### Requirement: Audit entries are queryable
 

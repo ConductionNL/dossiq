@@ -25,7 +25,9 @@
  * @spec openspec/specs/signalering-widgets/spec.md
  */
 import { describe, expect, it } from 'vitest'
+import termSignal from '../../lib/Settings/register.d/99-case-term-signal-from.json'
 import manifest from '../../src/manifest.json'
+import { pageView } from './helpers/pageViews.js'
 
 /**
  * The My Work landing page definition.
@@ -34,6 +36,16 @@ import manifest from '../../src/manifest.json'
  */
 export function myWorkPage() {
 	return manifest.pages.find((p) => p.id === 'MyWorkHome')
+}
+
+/**
+ * The My work view of the landing page, where its widgets live since
+ * landing-views. The page's own grid is empty in the full structure.
+ *
+ * @return {object} The `mine` view: `{ id, label, widgets, layout }`.
+ */
+export function myWorkGrid() {
+	return pageView(myWorkPage(), 'mine')
 }
 
 /**
@@ -49,7 +61,7 @@ export function myWorkPage() {
  * @return {Array<object>} The widget entries, in manifest order.
  */
 export function objectTables() {
-	return myWorkPage().config.widgets.filter((w) => w.type === 'object-table')
+	return myWorkGrid().widgets.filter((w) => w.type === 'object-table')
 }
 
 /**
@@ -59,7 +71,7 @@ export function objectTables() {
  * @return {object|undefined} The widget entry.
  */
 export function widgetById(id) {
-	return myWorkPage().config.widgets.find((w) => w.id === id)
+	return myWorkGrid().widgets.find((w) => w.id === id)
 }
 
 /**
@@ -127,12 +139,12 @@ export function duplicatesAnother(a, b) {
  * @return {Array<object>} Matching layout entries.
  */
 export function cellsFor(widgetId) {
-	return myWorkPage().config.layout.filter((c) => c.widgetId === widgetId)
+	return myWorkGrid().layout.filter((c) => c.widgetId === widgetId)
 }
 
 describe('my work tables', () => {
 	it('shows one My work table and one Deadlines table', () => {
-		const ids = myWorkPage().config.widgets.map((w) => w.id)
+		const ids = myWorkGrid().widgets.map((w) => w.id)
 		expect(ids).toContain('my-work')
 		expect(ids).toContain('deadlines')
 		// The four tiles these two replace are gone, not merely hidden.
@@ -182,7 +194,7 @@ describe('my work tables', () => {
 				},
 				{
 					schema: 'case',
-					filter: { isFinalStatus: false, deadline: { lte: '@today+3d' } },
+					filter: { isFinalStatus: false, termSignalFrom: { lte: '@today' } },
 					order: { deadline: 'asc' },
 				},
 			),
@@ -209,10 +221,11 @@ describe('my work tables', () => {
 		// the store behind it had stopped being written, so the failure was
 		// invisible: a full table of rows nothing updates.
 		const w = widgetById('my-work')
-		expect(w.type).toBe('custom')
+		// The library `tasks` widget reads the engine inbox itself.
+		expect(w.type).toBe('tasks')
 		expect(
 			Object.hasOwn(w.content, 'source'),
-			'a custom widget declares no object source',
+			'the task widget declares no object source',
 		).toBe(false)
 		expect(JSON.stringify(w.content)).not.toContain('caseTask')
 	})
@@ -221,7 +234,7 @@ describe('my work tables', () => {
 		// The whole page, not just this tile: `content` is where a retired
 		// slug survives a migration, and every other widget on the page is
 		// declared the same way.
-		for (const w of myWorkPage().config.widgets) {
+		for (const w of myWorkGrid().widgets) {
 			expect(
 				JSON.stringify(w.content ?? {}),
 				`widget ${w.id} still reads caseTask`,
@@ -229,25 +242,20 @@ describe('my work tables', () => {
 		}
 	})
 
-	it('my-work resolves through the page slot, or it renders a placeholder', () => {
-		// A `type: "custom"` widget with no `slots` entry renders the
-		// "Widget not available" placeholder and reports nothing. The map has
-		// to be a SIBLING of `config`: CnPageRenderer reads `page.slots`, and
-		// one nested under `config` is accepted by the schema and never read.
+	it('my-work is the library task widget over the reader\'s own tasks, with no page slot', () => {
+		// The library `tasks` widget reads the engine inbox, so the page needs
+		// no slot and dossiq no component for it any more.
 		const page = myWorkPage()
-		expect(page.slots).toBeTypeOf('object')
-		expect(page.slots['widget-my-work']).toBe('MyWorkWidget')
+		expect(widgetById('my-work').type).toBe('tasks')
+		expect(widgetById('my-work').content.scope).toBe('assigned')
+		expect(page.slots?.['widget-my-work']).toBeUndefined()
 		expect(
 			Object.hasOwn(page.config, 'slots'),
 			'slots must not be nested under config',
 		).toBe(false)
 	})
 
-	it('my-work keeps the config the component reads', () => {
-		// Every key here is read by MyWorkWidget.vue, and every key here is
-		// what a generic widget takes back the day nextcloud-vue grows a task
-		// source for widgets. A key dropped from the manifest turns the swap
-		// back into a rewrite.
+	it('my-work keeps the config it had', () => {
 		const w = widgetById('my-work')
 		expect(w.content.limit).toBe(10)
 		expect(w.content.emptyText).toBe('You have no open tasks')
@@ -255,9 +263,8 @@ describe('my work tables', () => {
 		expect(w.content.viewAllRoute.name).toBe('Tasks')
 	})
 
-	it('my-work opens the task, which is where Pick up and Complete live', () => {
-		// Row actions are blocked on nextcloud-vue, so the interim is the row
-		// route. `rowRoute` names a route, and the route name is the page id.
+	it('my-work opens the task on a row click', () => {
+		// `rowRoute` names a route, and the route name is the page id.
 		const w = widgetById('my-work')
 		expect(w.content.rowRoute).toBe('TaskDetail')
 		// Absence, not an `undefined` value: `toBeUndefined()` and
@@ -268,16 +275,31 @@ describe('my work tables', () => {
 		expect(target, 'rowRoute must name a page that exists').toBeDefined()
 	})
 
-	it('deadlines covers everything past due and the next three days', () => {
+	it('deadline signals hold the late cases and those in the last quarter of their term (REQ-SIG-004)', () => {
 		const w = objectTables().find((t) => t.id === 'deadlines')
+		expect(w.title).toBe('Deadline signals')
+		expect(w.subtitle).toBe('Late, or less than a quarter of the term left')
 		expect(w.content.source.schema).toBe('case')
 		expect(w.content.source.filter).toEqual({
 			isFinalStatus: false,
 			statusHiddenInLists: false,
 			isDraft: false,
-			deadline: { lte: '@today+3d' },
+			termSignalFrom: { lte: '@today' },
 		})
 		expect(w.content.source.order).toEqual({ deadline: 'asc' })
+		expect(w.content.emptyText).toBe('No deadline signals')
+		expect(w.content.viewAllLabel).toBe('All deadlines')
+	})
+
+	it('termSignalFrom is the start date plus three quarters of the term, saved on the case', () => {
+		const calc = termSignal.components.schemas.case.configuration['x-openregister-calculations'].termSignalFrom
+		expect(calc.materialise).toBe(true)
+		const { date, amount, unit } = calc.expression.dateAdd
+		expect(unit).toBe('days')
+		expect(date).toEqual({ coalesce: [{ prop: 'startDate' }, { prop: 'deadline' }] })
+		const [term, share] = amount.round[0]['*']
+		expect(share).toBe(0.75)
+		expect(term.dateDiff.to).toEqual({ formatDate: [{ prop: 'deadline' }, 'Y-m-d'] })
 	})
 
 	it('deadlines leaves closed cases out', () => {
@@ -299,12 +321,12 @@ describe('my work tables', () => {
 		// Every widget, not only the object-tables: `my-work` left that set
 		// when it became a custom widget, and a tile placed twice renders
 		// twice whatever its type.
-		const page = myWorkPage()
-		for (const w of page.config.widgets) {
+		const grid = myWorkGrid()
+		for (const w of grid.widgets) {
 			expect(cellsFor(w.id), `layout cells for ${w.id}`).toHaveLength(1)
 		}
 		const taken = new Map()
-		for (const cell of page.config.layout) {
+		for (const cell of grid.layout) {
 			for (let x = cell.gridX; x < cell.gridX + cell.gridWidth; x++) {
 				for (let y = cell.gridY; y < cell.gridY + cell.gridHeight; y++) {
 					const at = `${x},${y}`
@@ -320,9 +342,9 @@ describe('my work tables', () => {
 	})
 
 	it('every widget on the page is placed, and every cell names a widget', () => {
-		const page = myWorkPage()
-		const declared = new Set(page.config.widgets.map((w) => w.id))
-		const placed = new Set(page.config.layout.map((c) => c.widgetId))
+		const grid = myWorkGrid()
+		const declared = new Set(grid.widgets.map((w) => w.id))
+		const placed = new Set(grid.layout.map((c) => c.widgetId))
 		expect([...declared].filter((id) => !placed.has(id))).toEqual([])
 		expect([...placed].filter((id) => !declared.has(id))).toEqual([])
 	})

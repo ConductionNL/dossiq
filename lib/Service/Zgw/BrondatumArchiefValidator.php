@@ -76,6 +76,29 @@ class BrondatumArchiefValidator extends ZgwRulesBase {
 	];
 
 	/**
+	 * Per selectielijstklasse procestermijn, the one afleidingswijze it allows (ztc-003).
+	 *
+	 * @var array<string, string>
+	 */
+	private const ONLY_AFLEIDINGSWIJZE_FOR_PROCESTERMIJN = [
+		'nihil'                     => 'afgehandeld',
+		'bestaansduur_procesobject' => 'termijn',
+	];
+
+	/**
+	 * Per archive procedure field, the afleidingswijze values that require it;
+	 * every other afleidingswijze forbids it (ztc-004, ztc-006 to ztc-008).
+	 *
+	 * @var array<string, array<string>>
+	 */
+	private const PRESENCE_REQUIRED_FOR = [
+		'datumkenmerk'  => self::AFLEIDINGSWIJZE_REQUIRES_DATUMKENMERK,
+		'objecttype'    => self::AFLEIDINGSWIJZE_REQUIRES_OBJECTTYPE,
+		'registratie'   => ['ander_datumkenmerk'],
+		'procestermijn' => ['termijn'],
+	];
+
+	/**
 	 * Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
 	 *
 	 * @param array $archive The brondatumArchiefprocedure data
@@ -87,132 +110,192 @@ class BrondatumArchiefValidator extends ZgwRulesBase {
 	 */
 	public function validate(array $archive, ?array $selectielijstData): array {
 		$afleidingswijze = $archive['afleidingswijze'] ?? '';
-		$errors = [];
 
-		// Ztc-004: datumkenmerk required/forbidden.
-		$errors = array_merge(
-			$errors,
-			$this->validateFieldPresence(
-				afleidingswijze: $afleidingswijze,
-				fieldName: 'brondatumArchiefprocedure.datumkenmerk',
-				fieldValue: ($archive['datumkenmerk'] ?? ''),
-				requiredFor: self::AFLEIDINGSWIJZE_REQUIRES_DATUMKENMERK
-			)
+		return array_merge(
+			// Ztc-004: datumkenmerk required/forbidden.
+			$this->presenceErrors(archive: $archive, field: 'datumkenmerk'),
+			// Ztc-005: einddatumBekend must be false for afgehandeld/termijn.
+			$this->einddatumBekendErrors(archive: $archive),
+			// Ztc-006: objecttype required/forbidden.
+			$this->presenceErrors(archive: $archive, field: 'objecttype'),
+			// Ztc-007: registratie required only for ander_datumkenmerk.
+			$this->presenceErrors(archive: $archive, field: 'registratie'),
+			// Ztc-008: procestermijn required only for termijn.
+			$this->presenceErrors(archive: $archive, field: 'procestermijn'),
+			// Ztc-003: Validate afleidingswijze against selectielijstklasse.procestermijn.
+			$this->selectielijstErrors(afleidingswijze: $afleidingswijze, selectielijstData: $selectielijstData)
 		);
-
-		// Ztc-005: einddatumBekend must be false for afgehandeld/termijn.
-		$endDateBekend = $archive['einddatumBekend'] ?? false;
-		if (($endDateBekend === true || $endDateBekend === 'true')
-			&& in_array($afleidingswijze, self::AFLEIDINGSWIJZE_FORBIDS_EINDDATUM_BEKEND, true) === true
-		) {
-			$errors[] = $this->fieldError(
-				fieldName: 'brondatumArchiefprocedure.einddatumBekend',
-				code: 'must-be-empty',
-				reason: "einddatumBekend moet false zijn voor afleidingswijze \"{$afleidingswijze}\"."
-			);
-		}
-
-		// Ztc-006: objecttype required/forbidden.
-		$errors = array_merge(
-			$errors,
-			$this->validateFieldPresence(
-				afleidingswijze: $afleidingswijze,
-				fieldName: 'brondatumArchiefprocedure.objecttype',
-				fieldValue: ($archive['objecttype'] ?? ''),
-				requiredFor: self::AFLEIDINGSWIJZE_REQUIRES_OBJECTTYPE
-			)
-		);
-
-		// Ztc-007: registratie required only for ander_datumkenmerk.
-		$errors = array_merge(
-			$errors,
-			$this->validateFieldPresence(
-				afleidingswijze: $afleidingswijze,
-				fieldName: 'brondatumArchiefprocedure.registratie',
-				fieldValue: ($archive['registratie'] ?? ''),
-				requiredFor: ['ander_datumkenmerk']
-			)
-		);
-
-		// Ztc-008: procestermijn required only for termijn.
-		$procestermijn = $archive['procestermijn'] ?? null;
-
-		$ptValue = '';
-		if (is_string($procestermijn) === true) {
-			$ptValue = $procestermijn;
-		}
-
-		$errors = array_merge(
-			$errors,
-			$this->validateFieldPresence(
-				afleidingswijze: $afleidingswijze,
-				fieldName: 'brondatumArchiefprocedure.procestermijn',
-				fieldValue: $ptValue,
-				requiredFor: ['termijn']
-			)
-		);
-
-		// Ztc-003: Validate afleidingswijze against selectielijstklasse.procestermijn.
-		if ($selectielijstData !== null) {
-			$slProcestermijn = $selectielijstData['procestermijn'] ?? null;
-			$ptCheck = $this->checkProcestermijnCompatibility(
-				afleidingswijze: $afleidingswijze,
-				procestermijn: $slProcestermijn
-			);
-			if ($ptCheck !== null) {
-				$errors[] = $ptCheck;
-			}
-		}
-
-		return $errors;
 	}//end validate()
 
 	/**
-	 * Validate field presence based on afleidingswijze (required vs forbidden).
+	 * The required/forbidden error for one field of the archive procedure.
 	 *
-	 * @param string $afleidingswijze The afleidingswijze value
-	 * @param string $fieldName The full field path for error reporting
-	 * @param string $fieldValue The field value
-	 * @param array<string> $requiredFor Afleidingswijze values that require this field
+	 * @param array  $archive The brondatumArchiefprocedure data
+	 * @param string $field   The field, a key of PRESENCE_REQUIRED_FOR
 	 *
 	 * @return array<array{name: string, code: string, reason: string}> Validation errors
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	private function validateFieldPresence(
-		string $afleidingswijze,
-		string $fieldName,
-		string $fieldValue,
-		array $requiredFor,
-	): array {
-		// $fieldValue is a non-nullable string parameter, so `!== null` was
-		// always true (PHPStan 2: notIdentical.alwaysTrue).
-		$hasValue = ($fieldValue !== '');
+	private function presenceErrors(array $archive, string $field): array {
+		return $this->fieldPresenceErrors(
+			afleidingswijze: $archive['afleidingswijze'] ?? '',
+			field: new ArchiveProcedureField(name: $field, value: $this->presenceValue(archive: $archive, field: $field))
+		);
+	}//end presenceErrors()
 
-		$isRequired = in_array($afleidingswijze, $requiredFor, true);
+	/**
+	 * The value a field's presence is judged on: procestermijn only counts
+	 * as a string, every other field as stored, or '' when absent.
+	 *
+	 * @param array  $archive The brondatumArchiefprocedure data
+	 * @param string $field   The field
+	 *
+	 * @return mixed The value
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function presenceValue(array $archive, string $field): mixed {
+		if ($field !== 'procestermijn') {
+			return ($archive[$field] ?? '');
+		}
+
+		$procestermijn = $archive['procestermijn'] ?? null;
+		if (is_string($procestermijn) === true) {
+			return $procestermijn;
+		}
+
+		return '';
+	}//end presenceValue()
+
+	/**
+	 * Ztc-005: einddatumBekend must be false for afgehandeld/termijn.
+	 *
+	 * @param array $archive The brondatumArchiefprocedure data
+	 *
+	 * @return array<array{name: string, code: string, reason: string}> Validation errors
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function einddatumBekendErrors(array $archive): array {
+		$afleidingswijze = $archive['afleidingswijze'] ?? '';
+		if ($this->setsForbiddenEinddatumBekend(archive: $archive) === false) {
+			return [];
+		}
+
+		return [
+			$this->fieldError(
+				fieldName: 'brondatumArchiefprocedure.einddatumBekend',
+				code: 'must-be-empty',
+				reason: "einddatumBekend moet false zijn voor afleidingswijze \"{$afleidingswijze}\"."
+			),
+		];
+	}//end einddatumBekendErrors()
+
+	/**
+	 * Whether einddatumBekend is set while the afleidingswijze forbids it.
+	 *
+	 * @param array $archive The brondatumArchiefprocedure data
+	 *
+	 * @return bool True when it is set for afgehandeld or termijn
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function setsForbiddenEinddatumBekend(array $archive): bool {
+		$afleidingswijze = $archive['afleidingswijze'] ?? '';
+		$endDateBekend   = $archive['einddatumBekend'] ?? false;
+
+		return ($endDateBekend === true || $endDateBekend === 'true')
+			&& in_array($afleidingswijze, self::AFLEIDINGSWIJZE_FORBIDS_EINDDATUM_BEKEND, true) === true;
+	}//end setsForbiddenEinddatumBekend()
+
+	/**
+	 * Ztc-003: the afleidingswijze against the selectielijstklasse's procestermijn,
+	 * when the selectielijstklasse was fetched.
+	 *
+	 * @param string     $afleidingswijze   The afleidingswijze value
+	 * @param array|null $selectielijstData The fetched selectielijstklasse data
+	 *
+	 * @return array<array{name: string, code: string, reason: string}> Validation errors
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function selectielijstErrors(string $afleidingswijze, ?array $selectielijstData): array {
+		if ($selectielijstData === null) {
+			return [];
+		}
+
+		$ptCheck = $this->checkProcestermijnCompatibility(
+			afleidingswijze: $afleidingswijze,
+			procestermijn: $selectielijstData['procestermijn'] ?? null
+		);
+		if ($ptCheck === null) {
+			return [];
+		}
+
+		return [$ptCheck];
+	}//end selectielijstErrors()
+
+	/**
+	 * Validate field presence based on afleidingswijze (required vs forbidden).
+	 *
+	 * @param string                $afleidingswijze The afleidingswijze value
+	 * @param ArchiveProcedureField $field           The field and its value
+	 *
+	 * @return array<array{name: string, code: string, reason: string}> Validation errors
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function fieldPresenceErrors(string $afleidingswijze, ArchiveProcedureField $field): array {
+		$hasValue   = $field->isFilled();
+		$isRequired = in_array($afleidingswijze, self::PRESENCE_REQUIRED_FOR[$field->name], true);
 
 		if ($isRequired === true && $hasValue === false) {
-			return [
-				$this->fieldError(
-					fieldName: $fieldName,
-					code: 'required',
-					reason: "{$fieldName} is vereist voor afleidingswijze \"{$afleidingswijze}\"."
-				),
-			];
+			return [$this->requiredError(fieldName: $field->path(), afleidingswijze: $afleidingswijze)];
 		}
 
 		if ($isRequired === false && $hasValue === true) {
-			return [
-				$this->fieldError(
-					fieldName: $fieldName,
-					code: 'must-be-empty',
-					reason: "{$fieldName} mag niet ingevuld zijn voor afleidingswijze \"{$afleidingswijze}\"."
-				),
-			];
+			return [$this->mustBeEmptyError(fieldName: $field->path(), afleidingswijze: $afleidingswijze)];
 		}
 
 		return [];
-	}//end validateFieldPresence()
+	}//end fieldPresenceErrors()
+
+	/**
+	 * The error for a field the afleidingswijze requires but that is empty.
+	 *
+	 * @param string $fieldName       The full field path
+	 * @param string $afleidingswijze The afleidingswijze value
+	 *
+	 * @return array{name: string, code: string, reason: string} The error
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function requiredError(string $fieldName, string $afleidingswijze): array {
+		return $this->fieldError(
+			fieldName: $fieldName,
+			code: 'required',
+			reason: "{$fieldName} is vereist voor afleidingswijze \"{$afleidingswijze}\"."
+		);
+	}//end requiredError()
+
+	/**
+	 * The error for a field the afleidingswijze forbids but that is filled.
+	 *
+	 * @param string $fieldName       The full field path
+	 * @param string $afleidingswijze The afleidingswijze value
+	 *
+	 * @return array{name: string, code: string, reason: string} The error
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function mustBeEmptyError(string $fieldName, string $afleidingswijze): array {
+		return $this->fieldError(
+			fieldName: $fieldName,
+			code: 'must-be-empty',
+			reason: "{$fieldName} mag niet ingevuld zijn voor afleidingswijze \"{$afleidingswijze}\"."
+		);
+	}//end mustBeEmptyError()
 
 	/**
 	 * Check afleidingswijze compatibility with selectielijstklasse.procestermijn (ztc-003).
@@ -228,34 +311,50 @@ class BrondatumArchiefValidator extends ZgwRulesBase {
 		string $afleidingswijze,
 		?string $procestermijn,
 	): ?array {
-		if ($procestermijn === 'nihil' && $afleidingswijze !== 'afgehandeld') {
-			return $this->fieldError(
-				fieldName: 'nonFieldErrors',
-				code: 'invalid-afleidingswijze-for-procestermijn',
-				reason: "Afleidingswijze \"{$afleidingswijze}\" is niet geldig" . ' bij selectielijstklasse met procestermijn "nihil".'
-			);
-		}
-
-		if ($procestermijn === 'bestaansduur_procesobject' && $afleidingswijze !== 'termijn') {
-			$reason = "Afleidingswijze \"{$afleidingswijze}\" is niet geldig"
-				. ' bij selectielijstklasse met procestermijn "bestaansduur_procesobject".';
-			return $this->fieldError(
-				fieldName: 'nonFieldErrors',
-				code: 'invalid-afleidingswijze-for-procestermijn',
-				reason: $reason
-			);
+		$only = self::ONLY_AFLEIDINGSWIJZE_FOR_PROCESTERMIJN[$procestermijn ?? ''] ?? null;
+		if ($only !== null && $afleidingswijze !== $only) {
+			return $this->invalidForProcestermijnError(afleidingswijze: $afleidingswijze, procestermijn: $procestermijn);
 		}
 
 		if (($procestermijn === '' || $procestermijn === null) && $afleidingswijze === 'termijn') {
-			$reason = 'brondatumArchiefprocedure.procestermijn is vereist voor'
-				. ' afleidingswijze "termijn" maar selectielijstklasse heeft geen procestermijn.';
-			return $this->fieldError(
-				fieldName: 'brondatumArchiefprocedure.procestermijn',
-				code: 'required',
-				reason: $reason
-			);
+			return $this->procestermijnMissingError();
 		}
 
 		return null;
 	}//end checkProcestermijnCompatibility()
+
+	/**
+	 * The error for an afleidingswijze the selectielijstklasse's procestermijn does not allow.
+	 *
+	 * @param string $afleidingswijze The afleidingswijze value
+	 * @param string $procestermijn   The selectielijstklasse procestermijn value
+	 *
+	 * @return array{name: string, code: string, reason: string} The error
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function invalidForProcestermijnError(string $afleidingswijze, string $procestermijn): array {
+		return $this->fieldError(
+			fieldName: 'nonFieldErrors',
+			code: 'invalid-afleidingswijze-for-procestermijn',
+			reason: "Afleidingswijze \"{$afleidingswijze}\" is niet geldig"." bij selectielijstklasse met procestermijn \"{$procestermijn}\"."
+		);
+	}//end invalidForProcestermijnError()
+
+	/**
+	 * The error for afleidingswijze termijn against a selectielijstklasse without procestermijn.
+	 *
+	 * @return array{name: string, code: string, reason: string} The error
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function procestermijnMissingError(): array {
+		$reason = 'brondatumArchiefprocedure.procestermijn is vereist voor'
+			.' afleidingswijze "termijn" maar selectielijstklasse heeft geen procestermijn.';
+		return $this->fieldError(
+			fieldName: 'brondatumArchiefprocedure.procestermijn',
+			code: 'required',
+			reason: $reason
+		);
+	}//end procestermijnMissingError()
 }//end class

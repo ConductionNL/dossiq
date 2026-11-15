@@ -38,6 +38,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\RoutingController;
 use OCA\Dossiq\Service\RoleResolverService;
+use OCA\Dossiq\Service\Routing\CaseRouter;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -47,6 +49,8 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Minimal ObjectService surface used by RoutingController::reroute().
@@ -67,13 +71,15 @@ interface RoutingControllerContractObjectService {
 	 *
 	 * @return mixed The object.
 	 */
-	public function find(int|string $id, string $register = '', string $schema = ''): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
  * Wire-contract tests for RoutingController::reroute().
  *
  * @covers \OCA\Dossiq\Controller\RoutingController
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Support\ObjectArray
  */
 class RoutingControllerContractTest extends TestCase {
 
@@ -82,7 +88,7 @@ class RoutingControllerContractTest extends TestCase {
 	 *
 	 * @var IRequest|MockObject
 	 */
-	private IRequest $request;
+	private IRequest&MockObject $request;
 
 	/**
 	 * The role resolver.
@@ -127,6 +133,13 @@ class RoutingControllerContractTest extends TestCase {
 	private RoutingController $controller;
 
 	/**
+	 * The router the route action hands the rule to.
+	 *
+	 * @var CaseRouter&MockObject
+	 */
+	private CaseRouter&MockObject $router;
+
+	/**
 	 * Build the controller with mocked collaborators.
 	 *
 	 * @return void
@@ -140,11 +153,13 @@ class RoutingControllerContractTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->router = $this->createMock(CaseRouter::class);
 
 		$this->controller = new RoutingController(
 			appName: 'dossiq',
 			request: $this->request,
 			resolver: $this->resolver,
+			router: $this->router,
 			settingsService: $this->settingsService,
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
@@ -232,7 +247,11 @@ class RoutingControllerContractTest extends TestCase {
 		$objectService = $this->createMock(RoutingControllerContractObjectService::class);
 		$objectService->expects($this->once())
 			->method('find')
-			->with('zaak-1', 'dossiq', 'zaak')
+			->with(...LegacyObjectArgs::with(method: 'find', expected: [
+					'id' => 'zaak-1',
+					'register' => 'dossiq',
+					'schema' => 'zaak',
+				]))
 			->willReturn(['id' => 'zaak-1', 'workflowTemplate' => '']);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
@@ -274,4 +293,64 @@ class RoutingControllerContractTest extends TestCase {
 		$this->assertSame(['error' => 'Herberekening mislukt'], $response->getData());
 		$this->assertStringNotContainsString('10.0.0.5', json_encode($response->getData()));
 	}//end testRerouteReturnsAGeneric500WithoutLeakingTheInternalFailure()
+
+	/**
+	 * Route is admin-only, like reroute: a non-admin is refused before the router runs.
+	 *
+	 * @return void
+	 */
+	public function testRouteRefusesANonAdmin(): void {
+		$this->signIn('gewone-behandelaar');
+		$this->groupManager->method('isAdmin')->with('gewone-behandelaar')->willReturn(false);
+		$this->router->expects($this->never())->method('route');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->controller->route(id: 'zaak-1')->getStatus());
+	}//end testRouteRefusesANonAdmin()
+
+	/**
+	 * A rule without a strategy is a 400; one nobody registered is the router's 422 refusal.
+	 *
+	 * @return void
+	 */
+	public function testRouteRefusesARuleWithoutAKnownStrategy(): void {
+		$this->signIn('beheerder');
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParams')->willReturnOnConsecutiveCalls(['roleType' => 'behandelaar'], ['strategy' => 'lottery']);
+		$this->router->expects($this->once())->method('route')->willThrowException(
+			new RefusedException(rule: 'routing-strategy-unknown', sentence: 'Routing strategy "lottery" is not registered', status: RefusedException::STATUS_UNPROCESSABLE)
+		);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->controller->route(id: 'zaak-1')->getStatus());
+		$this->assertSame(RefusedException::STATUS_UNPROCESSABLE, $this->controller->route(id: 'zaak-1')->getStatus());
+	}//end testRouteRefusesARuleWithoutAKnownStrategy()
+
+	/**
+	 * The router's answer is the response; a failure is a generic 500.
+	 *
+	 * @return void
+	 */
+	public function testRouteAnswersWhatTheRouterDid(): void {
+		$this->signIn('beheerder');
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$rule = ['strategy' => 'round-robin', 'roleType' => 'behandelaar', 'takeBackAfter' => ['value' => 2, 'unit' => 'businessDays']];
+		$this->request->method('getParams')->willReturn($rule);
+		$answer = ['caseId' => 'zaak-1', 'assignee' => 'aad', 'team' => '', 'areaFallbackUsed' => false, 'reason' => '', 'takeBack' => 'armed'];
+		$this->router->method('route')->willReturnCallback(
+			static function (string $caseId, array $rule) use ($answer): array {
+				if ($caseId === 'zaak-2') {
+					throw new \RuntimeException('PDOException at 10.0.0.5');
+				}
+
+				return $answer;
+			}
+		);
+
+		$response = $this->controller->route(id: 'zaak-1');
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame($answer, $response->getData());
+
+		$failed = $this->controller->route(id: 'zaak-2');
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
+		$this->assertSame(['error' => 'Routeren mislukt'], $failed->getData());
+	}//end testRouteAnswersWhatTheRouterDid()
 }//end class

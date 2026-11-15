@@ -1,0 +1,279 @@
+<?php
+
+/**
+ * HearingService writes each Awb entry onto the session's OpenRegister trail.
+ *
+ * No act stands without its entry (REQ-BAT-003): a created hearing whose
+ * entry fails is deleted, a change is recorded before it is made, and a
+ * refusal refuses whether or not its entry is written.
+ *
+ * Lives beside the class, in Bezwaar/: tests/Unit/Service/HearingServiceTest.php
+ * is the test of the other HearingService, OCA\Dossiq\Service\HearingService.
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Service\Bezwaar
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
+
+use DateTimeImmutable;
+use DateTimeInterface;
+use OCA\Dossiq\Tests\Support\LifecycleRegister;
+use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
+/**
+ * @covers \OCA\Dossiq\Service\Bezwaar\HearingService
+ * @covers \OCA\Dossiq\Service\Support\OpensInTheInitialState
+ *
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException
+ * @uses \OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner
+ * @uses \OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder
+ * @uses \OCA\Dossiq\Service\Hearing\HearingPlan
+ * @uses \OCA\Dossiq\Service\Hearing\NewSession
+ * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
+ * @uses \OCA\Dossiq\Service\Hearing\SessionStore
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryCommand
+ */
+class HearingServiceTest extends TestCase {
+	use MakesBezwaarAuditTrail;
+
+	protected function setUp(): void {
+		parent::setUp();
+		$this->startBezwaarStore();
+	}
+
+	/**
+	 * A hearing whose entry cannot be written is deleted and refused (REQ-BAT-003).
+	 *
+	 * @return void
+	 */
+	public function testAHearingWhoseEntryCannotBeWrittenIsDeletedAndRefused(): void {
+		$this->trail->failsAll = true;
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
+
+		try {
+			$service->schedule(
+				caseId: 'case-1',
+				scheduledDate: (new DateTimeImmutable('+20 days'))->format(DateTimeInterface::ATOM),
+				chairpersonId: 'chair-1',
+				invitees: [['role' => 'bezwaarmaker', 'channel' => 'email']],
+			);
+			$this->fail('a hearing without its entry must be refused');
+		} catch (RuntimeException $refused) {
+			$this->assertStringContainsString('hearing-scheduled', $refused->getMessage());
+		}
+
+		$this->assertSame(1, $this->store->writes, 'the session was saved before the entry was tried');
+		$this->assertSame([], $this->store->all('hearingSession'), 'the saved session must be deleted again');
+		$this->assertNotSame([], $this->auditErrors, 'the unwritten entry must be logged');
+	}
+
+	/**
+	 * A waiver writes an Awb art. 7:3 row with its reason.
+	 *
+	 * @return void
+	 */
+	public function testAWaiverWritesAnAwb73RowWithItsReason(): void {
+		$saved = $this->realHearingService(trail: $this->bezwaarAuditTrail())->waive(caseId: 'case-1', reason: 'Bezwaarmaker ziet af van horen');
+
+		$context = $this->rowContext(uuid: (string) $saved['id'], action: 'dossiq.bezwaar.hearing-waived');
+		$this->assertSame('awb-art-7:3', $context['tag']);
+		$this->assertSame(['case' => 'case-1', 'reason' => 'Bezwaarmaker ziet af van horen'], $context['payload']);
+		$this->assertArrayNotHasKey('auditTrail', $this->store->row('hearingSession', (string) $saved['id']));
+	}
+
+	/**
+	 * A refused audio upload is recorded under AVG art. 6, and refused even when that entry fails.
+	 *
+	 * @return void
+	 */
+	public function testARefusedAudioUploadIsRecordedUnderAvgArt6(): void {
+		$this->store->seed('hearingSession', 'session-1', ['case' => 'case-1', 'recordingConsent' => 'denied']);
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
+		$minutes = ['minutesSummary' => 'Verslag', 'audioRecording' => 'file-9'];
+
+		try {
+			$service->addMinutes(sessionId: 'session-1', payload: $minutes);
+			$this->fail('an upload without consent must be refused');
+		} catch (RuntimeException $refused) {
+			$this->assertStringContainsString('toestemming', $refused->getMessage());
+		}
+
+		$this->assertSame('avg-art-6', $this->rowContext(uuid: 'session-1', action: 'dossiq.bezwaar.audio-upload-denied')['tag']);
+		$this->assertArrayNotHasKey('audioRecording', $this->store->row('hearingSession', 'session-1'));
+
+		$this->trail->failsAll = true;
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('toestemming');
+		try {
+			$service->addMinutes(sessionId: 'session-1', payload: $minutes);
+		} finally {
+			$this->assertSame('dossiq.bezwaar.audio-upload-denied', $this->auditErrors[0][1]['action'] ?? null, 'the unwritten refusal must be logged with its entry');
+			$this->assertSame('avg-art-6', $this->auditErrors[0][1]['entry']['tag'] ?? null);
+		}
+	}
+
+	/**
+	 * A stored recording consent denial is not changed by the minutes.
+	 *
+	 * @return void
+	 */
+	public function testMinutesKeepAStoredConsentDenial(): void {
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
+
+		foreach ([
+			'grant with audio' => ['minutesSummary' => 'Verslag', 'audioRecording' => 'file-9', 'recordingConsent' => 'granted'],
+			'grant without audio' => ['minutesSummary' => 'Verslag', 'recordingConsent' => 'granted'],
+			'not requested' => ['minutesSummary' => 'Verslag', 'recordingConsent' => 'not_requested'],
+		] as $case => $minutes) {
+			$this->store->seed('hearingSession', $case, ['case' => 'case-1', 'recordingConsent' => 'denied']);
+			try {
+				$service->addMinutes(sessionId: $case, payload: $minutes);
+				$this->fail("a stored denial was changed: $case");
+			} catch (RuntimeException $refused) {
+				$this->assertStringContainsString('toestemming', $refused->getMessage(), $case);
+			}
+
+			$stored = $this->store->row('hearingSession', $case);
+			$this->assertSame('denied', $stored['recordingConsent'], $case);
+			$this->assertArrayNotHasKey('audioRecording', $stored, $case);
+			$this->assertArrayNotHasKey('status', $stored, $case);
+			$this->assertSame('avg-art-6', $this->rowContext(uuid: $case, action: 'dossiq.bezwaar.recording-consent-change-refused')['tag'], $case);
+		}
+	}
+
+	/**
+	 * Minutes may repeat a stored denial, and consent not yet asked may be given with them.
+	 *
+	 * @return void
+	 */
+	public function testMinutesMayRepeatADenialOrGiveConsentNotYetAsked(): void {
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
+
+		$this->store->seed('hearingSession', 'session-1', ['case' => 'case-1', 'recordingConsent' => 'denied']);
+		$service->addMinutes(sessionId: 'session-1', payload: ['minutesSummary' => 'Verslag', 'recordingConsent' => 'denied']);
+		$this->assertSame('denied', $this->store->row('hearingSession', 'session-1')['recordingConsent']);
+
+		$this->store->seed('hearingSession', 'session-2', ['case' => 'case-1', 'recordingConsent' => 'not_requested']);
+		$service->addMinutes(sessionId: 'session-2', payload: ['minutesSummary' => 'Verslag', 'audioRecording' => 'file-9', 'recordingConsent' => 'granted']);
+		$this->assertSame('file-9', $this->store->row('hearingSession', 'session-2')['audioRecording']);
+	}
+
+	/**
+	 * The verslag is recorded before the patch, and a failed patch leaves a not-applied row.
+	 *
+	 * @return void
+	 */
+	public function testMinutesAreRecordedBeforeThePatch(): void {
+		$this->store->seed('hearingSession', 'session-1', ['case' => 'case-1']);
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
+
+		$service->addMinutes(sessionId: 'session-1', payload: ['minutesSummary' => 'Verslag van de hoorzitting']);
+		$this->assertSame(['dossiq.bezwaar.verslag-recorded'], $this->trail->actionsOn('session-1'));
+		$this->assertSame('executed', $this->store->row('hearingSession', 'session-1')['status']);
+
+		$this->store->seed('hearingSession', 'session-2', ['case' => 'case-1']);
+		$this->store->refuseSaves = true;
+		try {
+			$service->addMinutes(sessionId: 'session-2', payload: ['minutesSummary' => 'Verslag']);
+			$this->fail('a failed patch must raise');
+		} catch (RuntimeException $failed) {
+			$this->assertSame('Could not add minutes', $failed->getMessage());
+		}
+
+		$this->assertSame(['dossiq.bezwaar.verslag-recorded', 'dossiq.bezwaar.verslag-recorded-not-applied'], $this->trail->actionsOn('session-2'));
+
+		$this->store->refuseSaves = false;
+		$this->store->seed('hearingSession', 'session-3', ['case' => 'case-1']);
+		$this->trail->failsAll = true;
+		try {
+			$service->addMinutes(sessionId: 'session-3', payload: ['minutesSummary' => 'Verslag']);
+			$this->fail('minutes whose entry cannot be written must be refused');
+		} catch (RuntimeException $refused) {
+			$this->assertArrayNotHasKey('status', $this->store->row('hearingSession', 'session-3'), 'nothing may change without its entry');
+		}
+	}
+	/**
+	 * A waiver opens in the hearing's initial status and is moved to afgezien
+	 * by the declared `waive` transition, because the register refuses a
+	 * create in any status but the initial one (openregister#5400).
+	 *
+	 * @return void
+	 */
+	public function testAWaiverOpensPlannedAndIsMovedByTheWaiveTransition(): void {
+		$this->store = new LifecycleRegister();
+
+		$saved = $this->realHearingService(trail: $this->bezwaarAuditTrail())->waive(caseId: 'case-1', reason: 'Bezwaarmaker ziet af van horen');
+
+		$stored = $this->store->row('hearingSession', (string) $saved['id']);
+		$this->assertSame('afgezien', $stored['status']);
+		$this->assertTrue($stored['hearingWaived']);
+		$this->assertSame('Bezwaarmaker ziet af van horen', $stored['waiverReason']);
+		$this->assertSame(['hearingSession: planned -> afgezien'], $this->store->moves);
+		$this->assertSame('afgezien', $saved['status']);
+		$this->assertCount(1, $this->store->all('hearingSession'));
+		$this->assertSame('awb-art-7:3', $this->rowContext(uuid: (string) $saved['id'], action: 'dossiq.bezwaar.hearing-waived')['tag']);
+	}
+
+	/**
+	 * A waiver whose move is refused leaves no session behind and no entry.
+	 *
+	 * @return void
+	 */
+	public function testAWaiverWhoseMoveIsRefusedLeavesNoSession(): void {
+		$this->store = new class () extends LifecycleRegister {
+			/**
+			 * Refuse every update, as a register that refuses the move does.
+			 *
+			 * @param array<string, mixed> $object        The row.
+			 * @param int|string           $register      The register.
+			 * @param int|string           $schema        The schema slug.
+			 * @param string|null          $uuid          The uuid, or null for a new row.
+			 * @param bool                 $_rbac         Passed on.
+			 * @param bool                 $_multitenancy Passed on.
+			 *
+			 * @return array<string, mixed> The saved row.
+			 */
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
+				if ($uuid !== null) {
+					throw new RuntimeException('move refused');
+				}
+
+				return parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid), _rbac: $_rbac, _multitenancy: $_multitenancy);
+			}
+		};
+
+		try {
+			$this->realHearingService(trail: $this->bezwaarAuditTrail())->waive(caseId: 'case-1', reason: 'Bezwaarmaker ziet af van horen');
+			$this->fail('a waiver that cannot be moved to afgezien must be refused');
+		} catch (RuntimeException $refused) {
+			$this->assertSame('Could not record waiver', $refused->getMessage());
+		}
+
+		$this->assertSame(1, $this->store->writes, 'the session was created before the move was tried');
+		$this->assertSame([], $this->store->all('hearingSession'), 'the created session must be deleted again');
+		$this->assertSame([], $this->trail->rows, 'a refused waiver writes no entry');
+	}
+}

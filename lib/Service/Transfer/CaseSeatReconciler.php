@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use OCA\Dossiq\Service\People\CaseSeats;
 /**
  * Empties the seats the receiving team cannot fill, and reports which.
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 class CaseSeatReconciler {
 
@@ -62,7 +62,7 @@ class CaseSeatReconciler {
 	 * @param CaseSeats     $seats The handler and the coordinator on a case.
 	 * @param TeamDirectory $teams Who is in which team.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+	 * @spec openspec/specs/people-on-the-case/spec.md
 	 */
 	public function __construct(
 		private readonly CaseSeats $seats,
@@ -92,7 +92,7 @@ class CaseSeatReconciler {
 	 * @return array{emptied: array<int, array<string, string>>, changes: array<string, mixed>}
 	 *         What will come off the case, and the case fields the caller must write.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	public function plan(array $case, string $team): array {
 		$seats = $this->seats->seatsOf(case: $case);
@@ -133,7 +133,7 @@ class CaseSeatReconciler {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	public function apply(string $caseId, array $emptied): void {
 		if ($caseId === '') {

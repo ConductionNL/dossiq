@@ -1,0 +1,127 @@
+{
+    "anonymous": {
+        "status": 401,
+        "body": {
+            "error": "Not authenticated"
+        },
+        "calls": []
+    },
+    "outside the audience": {
+        "status": 200,
+        "body": {
+            "byCategorie": {
+                "dimension": "category"
+            },
+            "byAfdeling": {
+                "dimension": "involvedDepartment"
+            },
+            "byKanaal": {
+                "dimension": "receiptChannel"
+            },
+            "monthlyTrend": [
+                "trend"
+            ],
+            "avgResolution": [
+                "resolution"
+            ]
+        },
+        "calls": [
+            "audience clerk",
+            "frequency category 2026-02-01..2026-03-31",
+            "frequency involvedDepartment 2026-02-01..2026-03-31",
+            "frequency receiptChannel 2026-02-01..2026-03-31",
+            "trend 2026-02-01..2026-03-31",
+            "resolution 2026-02-01..2026-03-31"
+        ]
+    },
+    "in the audience": {
+        "status": 200,
+        "body": {
+            "byCategorie": {
+                "dimension": "category"
+            },
+            "byAfdeling": {
+                "dimension": "involvedDepartment"
+            },
+            "byKanaal": {
+                "dimension": "receiptChannel"
+            },
+            "monthlyTrend": [
+                "trend"
+            ],
+            "avgResolution": [
+                "resolution"
+            ],
+            "employeeAlerts": [
+                {
+                    "employee": "e-1"
+                }
+            ]
+        },
+        "calls": [
+            "audience hr-1",
+            "frequency category 2026-02-01..2026-03-31",
+            "frequency involvedDepartment 2026-02-01..2026-03-31",
+            "frequency receiptChannel 2026-02-01..2026-03-31",
+            "trend 2026-02-01..2026-03-31",
+            "resolution 2026-02-01..2026-03-31",
+            "alerts"
+        ]
+    },
+    "only a start date": {
+        "status": 200,
+        "body": {
+            "byCategorie": {
+                "dimension": "category"
+            },
+            "byAfdeling": {
+                "dimension": "involvedDepartment"
+            },
+            "byKanaal": {
+                "dimension": "receiptChannel"
+            },
+            "monthlyTrend": [
+                "trend"
+            ],
+            "avgResolution": [
+                "resolution"
+            ]
+        },
+        "calls": [
+            "audience hr-1",
+            "frequency category 2026-02-01..<today>",
+            "frequency involvedDepartment 2026-02-01..<today>",
+            "frequency receiptChannel 2026-02-01..<today>",
+            "trend 2026-02-01..<today>",
+            "resolution 2026-02-01..<today>"
+        ]
+    },
+    "only an end date": {
+        "status": 200,
+        "body": {
+            "byCategorie": {
+                "dimension": "category"
+            },
+            "byAfdeling": {
+                "dimension": "involvedDepartment"
+            },
+            "byKanaal": {
+                "dimension": "receiptChannel"
+            },
+            "monthlyTrend": [
+                "trend"
+            ],
+            "avgResolution": [
+                "resolution"
+            ]
+        },
+        "calls": [
+            "audience hr-1",
+            "frequency category <year-start>..2026-03-31",
+            "frequency involvedDepartment <year-start>..2026-03-31",
+            "frequency receiptChannel <year-start>..2026-03-31",
+            "trend <year-start>..2026-03-31",
+            "resolution <year-start>..2026-03-31"
+        ]
+    }
+}

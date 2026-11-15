@@ -1,0 +1,52 @@
+{
+    "zgwResource": "resultaattype",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "omschrijving": "{{ name }}",
+        "omschrijvingGeneriek": "{{ genericDescription }}",
+        "notes": "{{ description }}",
+        "caseType": "{{ _baseUrl | replace({\"catalogi/v1/resultaattypen\": \"catalogi/v1/zaaktypen\"}) }}/{{ caseType }}",
+        "archiefnominatie": "{{ archivalAction }}",
+        "archiefactietermijn": "{{ archivalPeriod }}",
+        "brondatumArchiefprocedure": "{{ sourceDateArchiveProcedure | json_encode }}",
+        "selectielijstklasse": "{{ selectionListClass }}"
+    },
+    "reverseMapping": {
+        "name": "{{ omschrijving }}",
+        "genericDescription": "{{ omschrijvingGeneriek }}",
+        "description": "{{ toelichting }}",
+        "caseType": "{{ zaaktype | zgw_extract_uuid }}",
+        "archivalAction": "{{ archiefnominatie }}",
+        "archivalPeriod": "{{ archiefactietermijn }}",
+        "sourceDateArchiveProcedure": "{{ brondatumArchiefprocedure | json_encode }}",
+        "selectionListClass": "{{ selectielijstklasse }}"
+    },
+    "valueMapping": {
+        "archivalAction": {
+            "bewaren": "bewaren",
+            "vernietigen": "vernietigen",
+            "blijvend_bewaren": "blijvend_bewaren"
+        }
+    },
+    "cast": {
+        "sourceDateArchiveProcedure": "jsonToArray"
+    },
+    "reverseCast": [],
+    "nullableFields": [
+        "archiefactietermijn",
+        "omschrijvingGeneriek",
+        "brondatumArchiefprocedure",
+        "selectielijstklasse"
+    ],
+    "queryParameterMapping": {
+        "caseType": {
+            "field": "caseType",
+            "extractUuid": true
+        }
+    }
+}

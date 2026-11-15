@@ -57,8 +57,7 @@ class UnaryTestEvaluator {
 	 * Check whether a rule cell expression matches an already-coerced value.
 	 *
 	 * @param string $expression The raw cell text (e.g. `'[0..25000]'`, `'-'`, `'in (a,b)'`).
-	 * @param mixed $value The runtime value, already coerced via {@see coerce()} for `$type`.
-	 * @param string $type One of {@see VALID_TYPES}.
+	 * @param UnaryTestValue $subject The runtime value, already coerced via {@see coerce()}, and its type.
 	 *
 	 * @return bool True when the expression matches the value.
 	 *
@@ -69,7 +68,9 @@ class UnaryTestEvaluator {
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — one dispatch per grammar form; splitting hides the grammar
 	 * @SuppressWarnings(PHPMD.NPathComplexity)      — same: the branches are a flat form-dispatch, not nested logic
 	 */
-	public function matches(string $expression, mixed $value, string $type): bool {
+	public function matchesValue(string $expression, UnaryTestValue $subject): bool {
+		$value = $subject->value;
+		$type = $subject->type;
 		$trimmed = trim($expression);
 
 		// Explicit quoted literal — bypasses the wildcard shortcut so a rule

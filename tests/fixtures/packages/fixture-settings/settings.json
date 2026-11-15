@@ -1,0 +1,10 @@
+{
+  "fixture_source_schema": {
+    "schema": {
+      "app": "fixture-app",
+      "register": ["fixture-register", "fixture-register-old"],
+      "slug": "fixture_source"
+    }
+  },
+  "fixture_label": "shipped"
+}

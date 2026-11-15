@@ -625,38 +625,141 @@ export async function adoptableCaseTypes(api: APIRequestContext): Promise<any[]>
 }
 
 /**
- * Seed one team and return the uuid `case.assignedGroup` wants.
+ * The Nextcloud groups this run created as teams, so teardown removes them.
+ */
+const teamsCreated: string[] = []
+
+/**
+ * Seed one team and return the group id `case.assignedGroup` holds.
  *
- * 🔴 A TEAM NAME IS NOT A TEAM. `case.assignedGroup` is declared
- * `{"type":"string","format":"uuid","$ref":"organisatieRol"}`, and the Cases
- * index reads `assignedGroup.roleName` off the expanded reference. A fixture
- * that handed it the word `vergunningen` got
- * `400 Property 'assignedGroup' should match format 'uuid'`, in beforeAll,
- * and every test in the file died there without reaching an assertion. Six
- * custody scenarios and five handover scenarios were lost that way.
+ * A TEAM IS A NEXTCLOUD GROUP (one-team-model). `case.assignedGroup` used to
+ * be a `$ref` to an `organisatieRol` row, and this fixture seeded one of those
+ * to satisfy the uuid format, while the custody chain and the handover asked
+ * Nextcloud who was in the team: a uuid nobody could be a member of. It now
+ * creates a group, tagged with RUN_PREFIX, and `removeTeams` deletes them.
  *
- * Each call seeds its own row, tagged with RUN_PREFIX so `cleanupRunObjects`
- * removes it.
+ * The group id is lower case and carries no spaces, so it reads the same in
+ * a URL, a filter and a column.
  *
- * @param api        Authenticated request context.
- * @param token      CSRF request-token.
+ * @param api        Authenticated request context (an administrator).
+ * @param token      CSRF request-token, unused: OCS takes the OCS header.
  * @param department The department the team belongs to, in words.
- * @return The organisatieRol uuid and the name it shows under.
+ * @return The group id and the display name it shows under.
  */
 export async function ensureTeam(
 	api: APIRequestContext,
 	token: string,
 	department: string,
 ): Promise<{ id: string; name: string }> {
+	void token
+	const id = `${RUN_PREFIX}-${department}`
+		.toLowerCase()
+		.replace(/[^a-z0-9_.-]+/g, '-')
 	const name = `${RUN_PREFIX} ${department}`
-	const team = await createObject(api, token, 'organisatieRol', {
-		roleName: name,
-		roleType: 'ambtelijk',
-		department,
-		team: department,
+	const created = await api.post('/ocs/v2.php/cloud/groups?format=json', {
+		headers: { 'OCS-APIRequest': 'true' },
+		form: { groupid: id, displayname: name },
 	})
+	const status = Number(
+		(await created.json().catch(() => ({})))?.ocs?.meta?.statuscode ?? -1,
+	)
+	// 200 is created, 102 is "group exists", which a retry of beforeAll meets.
+	if (status !== 200 && status !== 102) {
+		throw new Error(
+			`ensureTeam: creating group ${id} answered OCS status ${status}`,
+		)
+	}
+	teamsCreated.push(id)
 
-	return { id: objectId(team), name }
+	return { id, name }
+}
+
+/**
+ * Delete the groups `ensureTeam` created in this process.
+ *
+ * @param api Authenticated request context (an administrator).
+ * @return Nothing.
+ */
+export async function removeTeams(api: APIRequestContext): Promise<void> {
+	while (teamsCreated.length > 0) {
+		const id = teamsCreated.pop() as string
+		await api
+			.delete(
+				`/ocs/v2.php/cloud/groups/${encodeURIComponent(id)}?format=json`,
+				{
+					headers: { 'OCS-APIRequest': 'true' },
+				},
+			)
+			.catch(() => undefined)
+	}
+}
+
+/** The informatieobjecttype this process files its documents under. */
+let documentTypeForRun = ''
+
+/**
+ * File an informatieobject that satisfies its schema.
+ *
+ * `informatieobject` requires title, fileName, vertrouwelijkheidaanduiding
+ * and informatieobjecttype (lib/Settings/register.d/70-document-zaakdossier.json,
+ * since 96aa93a23; `titel` became `title` in f3ca3f782). A spec that filed a
+ * bare `{ titel }` was refused in its setup and never reached the behaviour it
+ * was written for, so the required fields are supplied here once. The type is
+ * created on first use and tracked like every other fixture.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param fields The document fields the spec cares about, `title` included.
+ * @return The created informatieobject.
+ */
+export async function seedDocument(
+	api: APIRequestContext,
+	token: string,
+	fields: Record<string, unknown> & { title: string },
+): Promise<any> {
+	if (documentTypeForRun === '') {
+		const type = await createObject(api, token, 'informatieobjecttype', {
+			description: `${RUN_PREFIX} Document`,
+			informatieobjectcategorie: 'incoming',
+			vertrouwelijkheidaanduiding: 'openbaar',
+		})
+		documentTypeForRun = objectId(type)
+	}
+	return createObject(api, token, 'informatieobject', {
+		fileName: `${String(fields.title).replace(/[^\w-]+/g, '-')}.pdf`,
+		vertrouwelijkheidaanduiding: 'openbaar',
+		informatieobjecttype: documentTypeForRun,
+		...fields,
+	})
+}
+
+/**
+ * A published case type of this run that allows its term to be suspended.
+ *
+ * A pause on a term is refused unless the case's type sets
+ * `suspensionAllowed: true` (CaseLifecycleService::suspend since 0f0d36c61,
+ * DeadlinePauseService::assertSuspensionAllowed since 78ea5bbf8). A spec that
+ * pauses a term on whatever `ensureCaseType` adopts gets
+ * `suspension_not_allowed` whenever the adopted type does not allow it, which
+ * is most shipped types, so the pause is the spec's own fixture to make.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @return The case type id.
+ */
+export async function seedSuspendableCaseType(
+	api: APIRequestContext,
+	token: string,
+): Promise<string> {
+	const suffix = nextFixtureSuffix()
+	const caseType = await createObject(api, token, 'caseType', {
+		title: `${RUN_PREFIX} Opschortbaar ${suffix}`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-opschortbaar-${suffix}`,
+		description: 'Throwaway caseType whose term may be suspended.',
+		isDraft: false,
+		suspensionAllowed: true,
+	})
+	return objectId(caseType)
 }
 
 /**
@@ -837,6 +940,15 @@ export async function seedStateMachine(
 	const statusReceived = add('statusType', r)
 	const statusInProgress = add('statusType', p)
 	const statusDone = add('statusType', d)
+
+	// A case type names the status a new case starts in. Publishing refuses
+	// one that does not ("Pick the status a new case of this type starts in.",
+	// PublicationChecks::initialStatusIsOwn, a3be5d41a), so a machine seeded
+	// without it can never be published, and every spec that publishes this
+	// fixture failed in its setup rather than on its own assertion.
+	await updateObject(api, token, 'caseType', caseTypeId, {
+		initialStatus: statusReceived,
+	})
 
 	const transitions = [
 		{

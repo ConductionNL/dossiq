@@ -1,0 +1,7 @@
+{
+    "status": 400,
+    "data": {
+        "message": "zaakId and zaaktype are required"
+    },
+    "calls": []
+}

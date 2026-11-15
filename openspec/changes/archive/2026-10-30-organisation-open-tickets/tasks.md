@@ -1,0 +1,6 @@
+- [x] masterEntityRef on kvkCompany and brpPerson, register 0.20.65
+- [x] PipelinqGateway::openTicketsByMasterEntity
+- [x] PartyTicketController and its two routes
+- [x] Open tickets column on Organisations, Tickets card on OrganisationDetail
+- [x] Example set: masterEntityRef on the cast's companies and residents
+- [x] Tests: PipelinqOpenTicketsTest, PartyTicketControllerTest, organisationOpenTickets.spec.js

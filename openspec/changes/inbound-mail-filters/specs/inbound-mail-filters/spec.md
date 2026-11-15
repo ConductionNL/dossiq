@@ -288,14 +288,25 @@ to mark a message as junk or as not junk, and that SHALL be recorded.
 
 ### Requirement: Outbound mail leaves through the same account, with no dossiq credential (REQ-IMF-11)
 
-Every message dossiq sends about a case SHALL leave through a Nextcloud
-Mail account an administrator selected, using that account's own
-authentication. dossiq SHALL NOT store an SMTP password, SHALL NOT
-implement an OAuth 2.0 flow for sending, and SHALL NOT open its own SMTP
-connection. Upgrading SHALL delete any stored outbound mail credential. A
-sent message SHALL be filed in the account's sent folder. Where the
-account cannot be reached, sending SHALL report unavailable and SHALL NOT
-silently drop the message.
+Which transport each kind of outbound mail leaves through SHALL be
+configuration (`mail_transport_by_kind`, decisions 165 and 182), not code:
+`mail-account` sends through a Nextcloud Mail account an administrator
+selected, using that account's own authentication, through Nextcloud
+Mail's outbox; `imailer` sends through Nextcloud's IMailer with the RFC 8058
+`List-Unsubscribe` headers. With nothing configured, a message a handler
+writes about a case (`case-mail`) SHALL leave through the Mail account, and
+notices and other service mail (`notice`, `service`) SHALL leave through
+IMailer, because Nextcloud Mail takes no custom header. A message sent
+through the Mail account SHALL carry its unsubscribe link in the body. An
+unknown configured value SHALL keep the default rather than send nothing.
+dossiq SHALL NOT store an SMTP password, SHALL NOT implement an OAuth 2.0
+flow for sending, and SHALL NOT open its own SMTP connection. Upgrading
+SHALL delete any stored outbound mail credential. A sent case mail SHALL
+be filed in the account's sent folder. Where the account cannot be
+reached, sending SHALL report unavailable and SHALL NOT silently drop the
+message. When Nextcloud Mail accepts custom headers, all mail moves to the
+Mail account (decision 147, change
+`case-mail-through-the-mail-account-with-rfc-8058`).
 
 #### Scenario: nothing in dossiq holds a sending password
 @e2e tests/e2e/inbound-mail-filters.spec.ts
@@ -320,17 +331,35 @@ silently drop the message.
 - **THEN** the message SHALL be in it
 
 #### Scenario: the stored SMTP credential is deleted on upgrade
+@e2e exclude An upgrade step, not a browser act; covered by tests/Unit/Service/Email/OutboundThroughMailAccountTest.php.
 
 - **GIVEN** an instance carrying a stored outbound mail credential
 - **WHEN** the upgrade runs
 - **THEN** the value SHALL be removed
 
 #### Scenario: an unreachable account does not lose the message
+@e2e exclude Needs a Mail account whose server is down under the suite; covered by tests/Unit/Service/Email/OutboundThroughMailAccountTest.php and tests/Unit/Controller/EmailControllerTest.php.
 
 - **GIVEN** an account dossiq cannot reach
 - **WHEN** a case message is sent
 - **THEN** sending SHALL report unavailable
 - **AND** the message SHALL stay queued and visible on the case
+
+#### Scenario: a term notice keeps its unsubscribe headers
+@e2e exclude Mail headers are not visible to a browser; covered by tests/Unit/Service/Termijn/TermNoticeDeliveryTest.php.
+
+- **GIVEN** a term notice or other service mail
+- **WHEN** dossiq sends it
+- **THEN** it SHALL leave through Nextcloud's IMailer
+- **AND** it SHALL carry the RFC 8058 `List-Unsubscribe` and `List-Unsubscribe-Post` headers
+
+#### Scenario: the transport of a kind is configuration
+@e2e exclude An app-config value read on the send path; covered by tests/Unit/Service/Email/MailTransportPolicyTest.php and OutboundThroughMailAccountTest.php.
+
+- **GIVEN** `mail_transport_by_kind` sets `case-mail` to `imailer`
+- **WHEN** a handler sends a case mail
+- **THEN** it SHALL leave through Nextcloud's IMailer from the configured sender address
+- **AND** nothing SHALL be handed to the Mail account
 
 ### Requirement: A team's mail carries that team's sender identity (REQ-IMF-12)
 
@@ -357,6 +386,7 @@ selected account holds.
 - **THEN** the instance default account SHALL be used
 
 #### Scenario: an unresolvable account refuses publication
+@e2e exclude The publish refusal is covered by tests/Unit/Service/Email/SenderIdentityPerCaseTypeTest.php; the case type editor field waits on its board.
 
 - **GIVEN** a case type declaring an account that does not resolve
 - **WHEN** it is published
@@ -364,6 +394,7 @@ selected account holds.
 - **AND** it SHALL name the account
 
 #### Scenario: dossiq does not forge a sender
+@e2e exclude Covered by tests/Unit/Service/Email/SenderIdentityPerCaseTypeTest.php; the send refusal is also asserted in tests/e2e/inbound-mail-filters.spec.ts when two Mail accounts exist.
 
 - **GIVEN** a From address no selected account holds
 - **WHEN** dossiq is asked to send from it

@@ -1,0 +1,100 @@
+{
+    "no questions, no start points": [
+        {
+            "type": "greeting",
+            "showDate": false
+        },
+        {
+            "type": "cases",
+            "collection": "mijnZaken",
+            "open": true,
+            "limit": 5,
+            "label": "Lopende zaken",
+            "display": "compact",
+            "showAll": true,
+            "yourTurn": [
+                "applicant"
+            ]
+        },
+        {
+            "type": "inbox",
+            "collection": "berichten",
+            "limit": 3,
+            "label": "Nieuwe berichten",
+            "display": "list"
+        }
+    ],
+    "questions to answer": [
+        {
+            "type": "greeting",
+            "showDate": false
+        },
+        {
+            "type": "tasks",
+            "collection": "vragenAanU",
+            "dueField": "hersteltermijn",
+            "titleFields": [
+                "summary"
+            ],
+            "label": "Wat u nog moet doen",
+            "display": "highlight",
+            "tone": "warning",
+            "dueInLine": true,
+            "buttonLabel": "Document toevoegen"
+        },
+        {
+            "type": "cases",
+            "collection": "mijnZaken",
+            "open": true,
+            "limit": 5,
+            "label": "Lopende zaken",
+            "display": "compact",
+            "showAll": true,
+            "yourTurn": [
+                "applicant"
+            ]
+        },
+        {
+            "type": "inbox",
+            "collection": "berichten",
+            "limit": 3,
+            "label": "Nieuwe berichten",
+            "display": "list"
+        }
+    ],
+    "start points and a label": [
+        {
+            "type": "greeting",
+            "showDate": false
+        },
+        {
+            "type": "cta",
+            "page": "start-vergunning",
+            "label": "Vergunning aanvragen"
+        },
+        {
+            "type": "cta",
+            "page": "start-melding",
+            "label": "Melding doen"
+        },
+        {
+            "type": "cases",
+            "collection": "mijnZaken",
+            "open": true,
+            "limit": 5,
+            "label": "Uw zaken",
+            "display": "compact",
+            "showAll": true,
+            "yourTurn": [
+                "applicant"
+            ]
+        },
+        {
+            "type": "inbox",
+            "collection": "berichten",
+            "limit": 3,
+            "label": "Nieuwe berichten",
+            "display": "list"
+        }
+    ]
+}
