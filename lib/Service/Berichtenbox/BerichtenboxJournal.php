@@ -113,6 +113,20 @@ class BerichtenboxJournal {
 	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function recordSend(string $caseId, string $subject, array $result, array $messageData): void {
+		$this->recordSendOnCase(caseId: $caseId, sent: ['subject' => $subject, 'result' => $result, 'messageData' => $messageData]);
+	}//end recordSend()
+
+	/**
+	 * Write the send on the case timeline.
+	 *
+	 * @param string               $caseId The case.
+	 * @param array<string, mixed> $sent   The message `subject`, integriq's `result` and the stored `messageData`.
+	 *
+	 * @return void
+	 */
+	private function recordSendOnCase(string $caseId, array $sent): void {
+		$subject = $sent['subject'];
+		$result = $sent['result'];
 		[$sentence, $visibility] = $this->timelineEntry(subject: $subject, result: $result);
 
 		$this->timeline->record(
@@ -122,11 +136,11 @@ class BerichtenboxJournal {
 			fields: [
 				'subject' => $subject,
 				'messageId' => (string)($result['messageId'] ?? ''),
-				'status' => (string)($messageData['status']),
+				'status' => (string)($sent['messageData']['status']),
 			],
 			visibility: $visibility,
 		);
-	}//end recordSend()
+	}//end recordSendOnCase()
 
 	/**
 	 * Write the status change on the case timeline, when the message names a case.
