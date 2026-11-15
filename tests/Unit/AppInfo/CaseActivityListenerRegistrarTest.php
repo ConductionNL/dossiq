@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\Listener\Registrar\CaseActivityListenerRegistrar;
 use OCA\Dossiq\Listener\CaseLastActivityListener;
+use OCA\Dossiq\Listener\TransferredCaseActListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -37,7 +38,8 @@ use PHPUnit\Framework\TestCase;
 class CaseActivityListenerRegistrarTest extends TestCase {
 
 	/**
-	 * Object saves, task completion and both spellings of a new note.
+	 * Object saves, task completion and both spellings of a new note, heard by the
+	 * activity stamp and by the follow of a transferred case.
 	 *
 	 * @return void
 	 */
@@ -46,7 +48,7 @@ class CaseActivityListenerRegistrarTest extends TestCase {
 		$context = $this->createMock(originalClassName: IRegistrationContext::class);
 		$context->method('registerEventListener')->willReturnCallback(
 			static function (string $event, string $listener) use (&$registered): void {
-				$registered[$event] = $listener;
+				$registered[$event][] = $listener;
 			}
 		);
 
@@ -62,6 +64,8 @@ class CaseActivityListenerRegistrarTest extends TestCase {
 			],
 			actual: array_keys($registered),
 		);
-		self::assertSame(expected: [CaseLastActivityListener::class], actual: array_values(array_unique($registered)));
+		foreach ($registered as $listeners) {
+			self::assertSame(expected: [CaseLastActivityListener::class, TransferredCaseActListener::class], actual: $listeners);
+		}
 	}//end testTheListenerHearsEveryKindOfWork()
 }//end class
