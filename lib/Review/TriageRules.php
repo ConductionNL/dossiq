@@ -30,6 +30,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TriageRulesInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Review\Support\ReviewSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,6 +51,7 @@ use Throwable;
  */
 class TriageRules implements TriageRulesInterface {
 
+	use ReviewSchemaRows;
 	use SearchesObjects;
 
 	/**
@@ -489,16 +491,6 @@ class TriageRules implements TriageRulesInterface {
 	}//end idOf()
 
 	/**
-	 * Whether the rule schema can be read and written.
-	 *
-	 * @return bool
-	 */
-	private function isAvailable(): bool {
-		return $this->reviews->isAvailable() === true
-			&& $this->settingsService->getConfigValue(self::SCHEMA_KEY) !== '';
-	}//end isAvailable()
-
-	/**
 	 * Every rule of a case the caller may read, as stored: what a listing shows and a change starts from.
 	 *
 	 * @param string $caseId The case UUID.
@@ -570,23 +562,4 @@ class TriageRules implements TriageRulesInterface {
 			previous: $previous,
 		);
 	}//end unavailable()
-
-	/**
-	 * A refusal, 422 unless said otherwise.
-	 *
-	 * @param string         $rule     The rule.
-	 * @param string         $sentence The static sentence.
-	 * @param int            $status   The status.
-	 * @param Throwable|null $previous The cause.
-	 *
-	 * @return RefusedException
-	 */
-	private function refusal(
-		string $rule,
-		string $sentence,
-		int $status = RefusedException::STATUS_UNPROCESSABLE,
-		?Throwable $previous = null,
-	): RefusedException {
-		return new RefusedException(rule: $rule, sentence: $sentence, status: $status, previous: $previous);
-	}//end refusal()
 }//end class

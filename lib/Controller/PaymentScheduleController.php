@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Controller\Support\RefusesUnreadableCases;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\PaymentScheduleOverviewInterface;
 use OCP\AppFramework\Controller;
@@ -43,6 +44,8 @@ use Throwable;
  * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-a-handler-runs-a-grant-from-its-case-page-req-sub-case-01
  */
 class PaymentScheduleController extends Controller {
+
+	use RefusesUnreadableCases;
 
 	/**
 	 * Constructor.
@@ -77,9 +80,9 @@ class PaymentScheduleController extends Controller {
 	#[NoAdminRequired]
 	public function forCase(string $caseId): JSONResponse {
 		$caseId = trim($caseId);
-		$user   = $this->userSession->getUser();
-		if ($user === null || $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'You may not read this case.'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->unreadableCaseRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {

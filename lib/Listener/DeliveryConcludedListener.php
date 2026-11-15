@@ -33,9 +33,9 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\AnswersAsServiceAccount;
 use OCA\Dossiq\Listener\Support\ConcludedDelivery;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -51,6 +51,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/dossiq-delivers-nothing/specs/besluitvorming-delivery/spec.md
  */
 class DeliveryConcludedListener implements IEventListener {
+	use AnswersAsServiceAccount;
+
 	/**
 	 * Terminal statuses the seam can conclude with.
 	 *
@@ -84,17 +86,13 @@ class DeliveryConcludedListener implements IEventListener {
 	 * @spec openspec/changes/dossiq-delivers-nothing/specs/besluitvorming-delivery/spec.md
 	 */
 	public function handle(Event $event): void {
-		try {
-			// Integriq raises this from its own background work, with nobody
-			// signed in, and OpenRegister refuses a write from nobody. A
-			// signed-in caller keeps writing as themselves.
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(operation: fn () => $this->answer(event: $event));
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// written; integriq's delivery record stays the source of truth,
-			// and the case's publication shows the delivery as still requested.
-			return;
-		}
+		// Integriq raises this from its own background work, with nobody
+		// signed in, and OpenRegister refuses a write from nobody. A
+		// signed-in caller keeps writing as themselves.
+		// Without the service account nothing is
+		// written; integriq's delivery record stays the source of truth,
+		// and the case's publication shows the delivery as still requested.
+		$this->answerAsServiceAccount(answer: fn () => $this->answer(event: $event));
 	}//end handle()
 
 	/**

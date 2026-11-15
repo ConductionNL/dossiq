@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
+use OCA\Dossiq\Controller\Support\RefusesAnonymousCallers;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\MandaatCheckServiceInterface;
@@ -56,6 +57,8 @@ use Throwable;
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class MandaatMatrixController extends Controller {
+	use RefusesAnonymousCallers;
+
 	use ReadsJsonRequests;
 	use SearchesObjects;
 	use TranslatesRefusals;
@@ -101,20 +104,6 @@ class MandaatMatrixController extends Controller {
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
-
-	/**
-	 * Per-object authorization guard.
-	 *
-	 * @return JSONResponse|null
-	 */
-	private function ensureAuthenticated(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
-	}//end ensureAuthenticated()
 
 	/**
 	 * Authorization probe — UI can call this before submitting a decision.

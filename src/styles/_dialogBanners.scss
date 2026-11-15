@@ -1,0 +1,26 @@
+// SPDX-FileCopyrightText: 2026 Conduction B.V.
+// SPDX-License-Identifier: EUPL-1.2
+
+// The case dialogs' body: a column of blocks, with a green banner once the
+// action went through and an amber one for what the handler should know.
+
+@mixin dialog-column {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+@mixin saved-banner {
+	margin: 0;
+	padding: 12px 14px;
+	border-radius: var(--border-radius-large);
+	background: var(--color-success);
+	color: var(--color-success-text, var(--color-primary-element-text));
+}
+
+@mixin warning-banner {
+	padding: 12px 14px;
+	border-radius: var(--border-radius-large);
+	background: var(--color-warning);
+	color: var(--color-warning-text, var(--color-main-text));
+}

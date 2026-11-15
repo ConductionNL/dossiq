@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Service\Catalogue;
 
 use OCA\Dossiq\Kernel\Contracts\ObjectTypeCatalogueInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IL10N;
 use RuntimeException;
@@ -47,6 +48,7 @@ use RuntimeException;
 class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * Case-object links read per page.
@@ -112,24 +114,6 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 
 		return $rows;
 	}//end list()
-
-	/**
-	 * OpenRegister's ObjectService.
-	 *
-	 * @return object The ObjectService.
-	 *
-	 * @throws RuntimeException When OpenRegister is not available.
-	 *
-	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * Page through the case-object links, collecting the cases and an object url per type.

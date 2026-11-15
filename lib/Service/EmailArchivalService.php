@@ -316,17 +316,12 @@ class EmailArchivalService implements EmailArchivalServiceInterface {
 	 * @return array<string, mixed>|null
 	 */
 	private function loadArchival(string $archivalId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$target = $this->archivalTarget();
+		if ($target === null) {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_document_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
+		[$objectService, $register, $schema] = $target;
 		$rows = $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,

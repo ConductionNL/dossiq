@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
+use OCA\Dossiq\BulkAction\Support\DeclaresBulkAction;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
@@ -59,6 +60,7 @@ use Throwable;
 class SetCaseAttributeAction implements BulkActionInterface {
 
 	use ReadsCaseObject;
+	use DeclaresBulkAction;
 
 	/**
 	 * The action id every caller names.
@@ -106,17 +108,6 @@ class SetCaseAttributeAction implements BulkActionInterface {
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
-
-	/**
-	 * The action id.
-	 *
-	 * @return string The id.
-	 *
-	 * @spec openspec/specs/case-management/spec.md
-	 */
-	public function getId(): string {
-		return self::ID;
-	}//end getId()
 
 	/**
 	 * The label.

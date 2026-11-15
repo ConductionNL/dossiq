@@ -132,13 +132,9 @@ class PipelinqCaseController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function partyLanguage(string $caseId, string $partyId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notSignedIn();
-		}
-
-		if ($this->access->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return $this->forbidden();
+		$refused = $this->refuseUnlessReader(caseId: $caseId);
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		return new JSONResponse($this->languages->forParty(partyId: $partyId));

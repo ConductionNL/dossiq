@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\FindsCaseReaders;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseActNoticesInterface;
@@ -46,6 +47,8 @@ use OCP\IUserSession;
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
  */
 class CaseShareController extends Controller {
+
+	use FindsCaseReaders;
 
 	/**
 	 * Constructor.
@@ -81,13 +84,9 @@ class CaseShareController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'You may not read this case.'], Http::STATUS_FORBIDDEN);
+		$user = $this->caseReader(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return new JSONResponse(['results' => $this->shares->rows(caseId: $caseId, uid: $user->getUID())]);

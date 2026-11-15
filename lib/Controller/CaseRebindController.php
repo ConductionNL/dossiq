@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\CaseCaller;
+use OCA\Dossiq\Controller\Support\FindsCaseWriter;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -47,7 +47,6 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -60,6 +59,7 @@ use Throwable;
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindController extends Controller {
+	use FindsCaseWriter;
 
 	use TranslatesRefusals;
 
@@ -230,19 +230,6 @@ class CaseRebindController extends Controller {
 
 		return $value;
 	}//end arrayParam()
-
-	/**
-	 * The caller, when they may write this case, and null otherwise.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null when they may not.
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	private function writerOf(string $caseId): ?IUser {
-		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
-	}//end writerOf()
 
 	/**
 	 * The answer a caller who may not touch this case gets.

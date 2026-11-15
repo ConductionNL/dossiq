@@ -137,15 +137,7 @@ class CaseEmailRepository implements CaseEmailRepositoryInterface {
 			return [];
 		}
 
-		if (is_object($caseObj) === true && method_exists($caseObj, 'jsonSerialize') === true) {
-			$caseObj = $caseObj->jsonSerialize();
-		}
-
-		if (is_array($caseObj) === false) {
-			return [];
-		}
-
-		return $caseObj;
+		return ($this->objectToArrayOrNull(value: $caseObj) ?? []);
 	}//end loadCaseRecord()
 
 	/**

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersRuleRefusals;
 use OCA\Dossiq\Controller\Support\GuardsZgwRequests;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Service\Zgw\RelationSearch;
@@ -59,6 +60,7 @@ use OCP\IRequest;
  */
 class DrcController extends ZgwController {
 	use MapsZgwRows;
+	use AnswersRuleRefusals;
 	use GuardsZgwRequests;
 
 	/**
@@ -336,11 +338,9 @@ class DrcController extends ZgwController {
 			objectService: $this->zgwService->getObjectService(),
 			mappingConfig: $mappingConfig
 		);
-		if ($ruleResult['valid'] === false) {
-			return new JSONResponse(
-				data: $this->zgwService->buildValidationError($ruleResult),
-				statusCode: $ruleResult['status']
-			);
+		$refusal = $this->ruleRefusal(ruleResult: $ruleResult);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return $ruleResult['enrichedBody'];
@@ -1577,24 +1577,15 @@ class DrcController extends ZgwController {
 	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function cascadeGebruiksrechtenScope(string $eioUuid): ?ZgwSearchScope {
-		$grConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'gebruiksrechten');
-		if ($grConfig === null) {
-			return null;
-		}
-
 		// An unsearchable scope answers this cascade with an empty page and no
 		// error ({@see ZgwSearchScope}), so the EIO goes and its gebruiksrechten
 		// stay behind pointing at a document that no longer exists. Name it.
-		$grScope = ZgwSearchScope::fromMapping(mappingConfig: $grConfig);
-		if ($grScope === null) {
-			$this->zgwService->getLogger()->error(
+		return $this->gebruiksrechtenScope(
+			whenUnsearchable: fn () => $this->zgwService->getLogger()->error(
 				'drc-008: gebruiksrechten mapping has no searchable register/schema, so the '
 				. 'gebruiksrechten of ' . $eioUuid . ' are being left behind as orphans'
-			);
-			return null;
-		}
-
-		return $grScope;
+			)
+		);
 	}//end cascadeGebruiksrechtenScope()
 
 	/**
@@ -1767,28 +1758,42 @@ class DrcController extends ZgwController {
 	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function indicationGebruiksrechtenScope(string $eioUuid): ?ZgwSearchScope {
-		$grConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'gebruiksrechten');
-		if ($grConfig === null) {
-			return null;
-		}
-
 		// 🔴 A ZERO THIS CODE CANNOT TRUST MUST NOT CLEAR A USAGE RIGHT.
 		// `total: 0` is also what a gebruiksrechten mapping whose register or
 		// schema OpenRegister cannot resolve answers, with no error at all
 		// ({@see ZgwSearchScope}). Clearing indicatieGebruiksrecht on that
 		// zero states "this document carries no usage restrictions" about a
 		// document whose gebruiksrechten were never counted.
-		$grScope = ZgwSearchScope::fromMapping(mappingConfig: $grConfig);
-		if ($grScope === null) {
-			$this->zgwService->getLogger()->warning(
+		return $this->gebruiksrechtenScope(
+			whenUnsearchable: fn () => $this->zgwService->getLogger()->warning(
 				'drc-006: gebruiksrechten mapping has no searchable register/schema, '
 				. 'leaving indicatieGebruiksrecht as it is for ' . $eioUuid
-			);
+			)
+		);
+	}//end indicationGebruiksrechtenScope()
+
+	/**
+	 * The searchable gebruiksrechten scope, null without a mapping or with an unsearchable one.
+	 *
+	 * @param callable(): mixed $whenUnsearchable Called when the mapping names no searchable register/schema.
+	 *
+	 * @return ZgwSearchScope|null
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call.
+	 */
+	private function gebruiksrechtenScope(callable $whenUnsearchable): ?ZgwSearchScope {
+		$grConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'gebruiksrechten');
+		if ($grConfig === null) {
 			return null;
 		}
 
+		$grScope = ZgwSearchScope::fromMapping(mappingConfig: $grConfig);
+		if ($grScope === null) {
+			$whenUnsearchable();
+		}
+
 		return $grScope;
-	}//end indicationGebruiksrechtenScope()
+	}//end gebruiksrechtenScope()
 
 	/**
 	 * Count the gebruiksrechten that still point at a document.
@@ -2414,11 +2419,9 @@ class DrcController extends ZgwController {
 	 */
 	private function applyUpdateRules(EioUpdateRun $run): ?JSONResponse {
 		$ruleResult = $this->validateUpdate(run: $run);
-		if ($ruleResult['valid'] === false) {
-			return new JSONResponse(
-				data: $this->zgwService->buildValidationError($ruleResult),
-				statusCode: $ruleResult['status']
-			);
+		$refusal = $this->ruleRefusal(ruleResult: $ruleResult);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$run->body = $ruleResult['enrichedBody'];
@@ -2758,7 +2761,7 @@ class DrcController extends ZgwController {
 			$existingData['locked'] = true;
 			$existingData['lockId'] = $lockId;
 
-			$this->saveLockData(document: $document, data: $existingData);
+			$this->saveFallbackObject(document: $document, data: $existingData);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning('DRC: Failed to store lockId in data blob: ' . $e->getMessage());
 		}//end try
@@ -2777,7 +2780,7 @@ class DrcController extends ZgwController {
 			$existingData['locked'] = false;
 			$existingData['lockId'] = '';
 
-			$this->saveLockData(document: $document, data: $existingData);
+			$this->saveFallbackObject(document: $document, data: $existingData);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning('DRC: Failed to clear lockId in data blob: ' . $e->getMessage());
 		}//end try
@@ -2804,23 +2807,4 @@ class DrcController extends ZgwController {
 
 		return $existingData;
 	}//end lockDataOf()
-
-	/**
-	 * Write the document's data back.
-	 *
-	 * @param EioDocument          $document The document, its object service and its mapping.
-	 * @param array<string, mixed> $data     The data to write.
-	 *
-	 * @return void
-	 *
-	 * @throws \Throwable When the save fails.
-	 */
-	private function saveLockData(EioDocument $document, array $data): void {
-		$document->objectService->saveObject(
-			register: $document->mappingConfig['sourceRegister'],
-			schema: $document->mappingConfig['sourceSchema'],
-			object: $data,
-			uuid: $document->uuid
-		);
-	}//end saveLockData()
 }//end class

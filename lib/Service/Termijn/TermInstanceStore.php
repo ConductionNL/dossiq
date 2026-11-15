@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ResolvesSchemaStore;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -50,6 +51,7 @@ use Psr\Log\LoggerInterface;
 class TermInstanceStore {
 
 	use SearchesObjects;
+	use ResolvesSchemaStore;
 
 	/**
 	 * Constructor.
@@ -75,7 +77,7 @@ class TermInstanceStore {
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function read(string $termInstanceId): ?array {
-		$store = $this->storeFor(schemaKey: 'termijn_instance_schema');
+		$store = $this->schemaStore(schemaKey: 'termijn_instance_schema');
 		if ($store === null) {
 			return null;
 		}
@@ -99,7 +101,7 @@ class TermInstanceStore {
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function latestForCase(string $caseId): ?array {
-		$store = $this->storeFor(schemaKey: 'termijn_instance_schema');
+		$store = $this->schemaStore(schemaKey: 'termijn_instance_schema');
 		if ($store === null) {
 			return null;
 		}
@@ -135,7 +137,7 @@ class TermInstanceStore {
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function allForCase(string $caseId): array {
-		$store = $this->storeFor(schemaKey: 'termijn_instance_schema');
+		$store = $this->schemaStore(schemaKey: 'termijn_instance_schema');
 		if ($store === null || $caseId === '') {
 			return [];
 		}
@@ -169,7 +171,7 @@ class TermInstanceStore {
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function save(string $schemaConfigKey, array $object): ?array {
-		$store = $this->storeFor(schemaKey: $schemaConfigKey);
+		$store = $this->schemaStore(schemaKey: $schemaConfigKey);
 		if ($store === null) {
 			return null;
 		}
@@ -182,30 +184,6 @@ class TermInstanceStore {
 			return null;
 		}
 	}//end save()
-
-	/**
-	 * The object service, register and schema for one schema key, null when any is missing.
-	 *
-	 * The register and schema are only read once there is an object service.
-	 *
-	 * @param string $schemaKey The settings key of the schema.
-	 *
-	 * @return array{objectService: object, register: string, schema: string}|null The store.
-	 */
-	private function storeFor(string $schemaKey): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema   = (string)$this->settingsService->getConfigValue($schemaKey);
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
-	}//end storeFor()
 
 	/**
 	 * One term instance by id.

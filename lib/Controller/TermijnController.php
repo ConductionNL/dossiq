@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
+use OCA\Dossiq\Controller\Support\RefusesAnonymousCallers;
 use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\DeadlineExtensionServiceInterface;
@@ -60,6 +61,7 @@ use Throwable;
  */
 class TermijnController extends Controller {
 	use ReadsJsonRequests;
+	use RefusesAnonymousCallers;
 
 	/**
 	 * Constructor.
@@ -87,28 +89,6 @@ class TermijnController extends Controller {
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
-
-	/**
-	 * Per-object authorization guard.
-	 *
-	 * Returns a Http::STATUS_FORBIDDEN response when no user is logged in.
-	 * Per-object IDOR enforcement (the user must have access to the
-	 * specific zaak) is delegated to {@see TermijnService} which only
-	 * returns instances bound to a zaak the caller can see — the NC
-	 * SecurityMiddleware enforces base auth + we re-check the session
-	 * here so the controller cannot be reached anonymously even if
-	 * route attributes are misconfigured.
-	 *
-	 * @return JSONResponse|null
-	 */
-	private function ensureAuthenticated(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
-	}//end ensureAuthenticated()
 
 	/**
 	 * Create a TermijnInstance for a zaak.

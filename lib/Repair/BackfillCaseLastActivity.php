@@ -37,6 +37,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseActivityStampInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -165,15 +166,13 @@ class BackfillCaseLastActivity implements IRepairStep {
 	 * @return CaseDatingRun|null The pass.
 	 */
 	private function configuredRun(): ?CaseDatingRun {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'case_schema');
+		if ($target === null) {
 			return null;
 		}
 
-		$run = new CaseDatingRun(objectService: $objectService, register: $register);
-		$run->schema = $schema;
+		$run = new CaseDatingRun(objectService: $target->objectService, register: $target->register);
+		$run->schema = $target->schema;
 
 		return $run;
 	}//end configuredRun()

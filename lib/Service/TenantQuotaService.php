@@ -32,6 +32,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantQuotaServiceInterface;
+use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -43,6 +44,8 @@ use Throwable;
  * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 class TenantQuotaService implements TenantQuotaServiceInterface {
+	use ResolvesInstalledObjectService;
+
 	/**
 	 * Tier defaults: tier => quotaType => [limit, enforcement].
 	 *
@@ -528,24 +531,4 @@ class TenantQuotaService implements TenantQuotaServiceInterface {
 			$this->logger->error('Dossiq: persistQuota failed', ['exception' => $e->getMessage()]);
 		}
 	}//end persistQuota()
-
-	/**
-	 * Resolve the OpenRegister ObjectService when available.
-	 *
-	 * @return mixed|null
-	 */
-	private function getObjectService() {
-		// IAppManager::getInstalledApps() declares its array return in PHPDoc
-		// only, so normalise defensively before the membership test.
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end getObjectService()
 }//end class

@@ -30,6 +30,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
+use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
@@ -43,6 +44,8 @@ use Throwable;
  * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
  */
 class TenantOnboardingService implements TenantOnboardingServiceInterface {
+	use ResolvesInstalledObjectService;
+
 	/**
 	 * The seven canonical onboarding steps.
 	 */
@@ -522,24 +525,4 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 			return 0;
 		}//end try
 	}//end countSchemaRows()
-
-	/**
-	 * Resolve the OpenRegister object service, or null when unavailable.
-	 *
-	 * @return mixed|null
-	 */
-	private function getObjectService() {
-		// IAppManager::getInstalledApps() declares its array return in PHPDoc
-		// only, so normalise defensively before the membership test.
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end getObjectService()
 }//end class

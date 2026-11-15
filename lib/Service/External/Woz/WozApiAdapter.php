@@ -52,6 +52,7 @@ namespace OCA\Dossiq\Service\External\Woz;
 
 use OCA\Dossiq\Service\External\HalResponseBody;
 use OCA\Dossiq\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\Support\SendsHalHeaders;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
 use Psr\Log\LoggerInterface;
@@ -63,6 +64,8 @@ use Throwable;
  * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 class WozApiAdapter implements WozAdapterInterface {
+	use SendsHalHeaders;
+
 	/**
 	 * Default base URL — SwaggerHub auto-mock of the published WOZ
 	 * Bevragen OpenAPI spec (`test`-tier smoke-testing only; see class
@@ -174,7 +177,7 @@ class WozApiAdapter implements WozAdapterInterface {
 		try {
 			$response = $this->clientService->newClient()->get(
 				rtrim($baseUrl, '/') . '/wozobjecten',
-				['timeout' => 10, 'query' => $query, 'headers' => $this->headers()]
+				['timeout' => 10, 'query' => $query, 'headers' => $this->halHeaders(integration: 'woz')]
 			);
 
 			return $this->searchResultOf(response: $response, context: $context);
@@ -285,7 +288,7 @@ class WozApiAdapter implements WozAdapterInterface {
 	private function fetchObject(string $url): IResponse {
 		$client = $this->clientService->newClient();
 
-		return $client->get($url, ['timeout' => 10, 'headers' => $this->headers()]);
+		return $client->get($url, ['timeout' => 10, 'headers' => $this->halHeaders(integration: 'woz')]);
 	}//end fetchObject()
 
 	/**
@@ -338,21 +341,6 @@ class WozApiAdapter implements WozAdapterInterface {
 	public function isDormant(): bool {
 		return false;
 	}//end isDormant()
-
-	/**
-	 * Build the shared request headers.
-	 *
-	 * @return array<string,string>
-	 */
-	private function headers(): array {
-		$apiKey = $this->mode->setting(integration: 'woz', key: 'apiKey');
-		$headers = ['Accept' => 'application/hal+json'];
-		if ($apiKey !== '') {
-			$headers['X-Api-Key'] = $apiKey;
-		}
-
-		return $headers;
-	}//end headers()
 
 	/**
 	 * Build a LOOKUP_ERROR result for a non-2xx, non-404 HTTP status.

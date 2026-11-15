@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersFlaggedRefusals;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\BerichtenboxServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -39,6 +40,7 @@ use OCP\IUserSession;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class BerichtenboxController extends Controller {
+	use AnswersFlaggedRefusals;
 
 	/**
 	 * Refusal codes that mean no digital post provider is set up on this
@@ -86,7 +88,7 @@ class BerichtenboxController extends Controller {
 	public function send(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		$caseId = $this->request->getParam('caseId');
@@ -146,10 +148,7 @@ class BerichtenboxController extends Controller {
 		// citizen's statutory message box. Externally visible and not
 		// undoable, so this is the strictest guard in the file.
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: (string)$caseId, user: $user) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Not authorized'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->notAuthorized();
 		}
 
 		return null;
@@ -216,7 +215,7 @@ class BerichtenboxController extends Controller {
 	public function messages(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');
@@ -226,10 +225,7 @@ class BerichtenboxController extends Controller {
 
 		// Official correspondence with a citizen about this case.
 		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Not authorized'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->notAuthorized();
 		}
 
 		$messages = $this->berichtenboxService->getMessagesForCase($caseId);

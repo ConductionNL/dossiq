@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTriggerInterface;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FindsInConfiguredSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -49,6 +50,7 @@ use Throwable;
  */
 class BezwaarArchiveTrigger implements BezwaarArchiveTriggerInterface {
 	use SearchesObjects;
+	use FindsInConfiguredSchema;
 
 	/**
 	 * Outcome: the beschikking was archived and the trigger switched off.
@@ -102,16 +104,9 @@ class BezwaarArchiveTrigger implements BezwaarArchiveTriggerInterface {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function find(string $triggerId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register      = (string) $this->settingsService->getConfigValue('register');
-		$schema        = (string) $this->settingsService->getConfigValue(self::SCHEMA_CONFIG_KEY);
-		if ($objectService === null || $register === '' || $schema === '' || $triggerId === '') {
-			return null;
-		}
-
 		// A trigger that does not exist reads as null; any other failure is
 		// thrown to the caller, which logs it with the fire it belongs to.
-		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $triggerId);
+		return $this->findInConfiguredSchema(schemaKey: self::SCHEMA_CONFIG_KEY, id: $triggerId);
 	}//end find()
 
 	/**

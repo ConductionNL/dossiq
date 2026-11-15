@@ -1,8 +1,9 @@
 {
-  "ceiling": 239,
+  "ceiling": 232,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-15, shared private steps: copies of one catch moved into one trait each. `CaseReassignmentService::finalStatusIds` and `Substitution/SubstitutedWorkResolver::finalStatusIds` became `Support/ReadsFinalStatusIds::finalStatusIds`; the five `Tenant*Service::getObjectService` became `Support/ResolvesInstalledObjectService::getObjectService`; `Mandaat/MandaatRepository::findPriorDecision`, `::findMandatenForBesluit` and `Substitution/SubstitutionAccessGuard::allSubstitutions` read through `Support/SearchesConfiguredSchema::configuredRows`. Ten sites became three. The ceiling went 239 to 232.",
     "2026-11-10, shared organisation lookup: the tenant and partner migrations, the satellite orphan scan, the tenant resolver and the quota limits now resolve OpenRegister's OrganisationMapper and read an Organisation by uuid through `OrganisationLookup::mapper` and `OrganisationLookup::byUuid`. Nine sites became two. The ceiling went 246 to 239.",
     "2026-11-11, the ApprovalService accessors left with the class in OpenRegister (723174caa), taking `OpenRegisterBridge::approvalService` with them. The ceiling went 247 to 246.",
     "2026-11-11, the custody chain and the custody query share one reader for the custody schema: `CaseCustodyChain::holdings` and `CaseCustodyQuery::heldBy` read through `Custody/CustodyRows::find`, one site for the same degradation. The ceiling went 248 to 247.",
@@ -312,13 +313,6 @@
       "reason": "`findPublishedModel()` answers `return null` when the read fails; the catch logs at error (\"CasePlanProjectionService: caseModel lookup failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/CaseReassignmentService.php",
-      "method": "finalStatusIds",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`finalStatusIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/CaseSharingService.php",
       "method": "getCaseIdForShare",
       "occurrence": 1,
@@ -345,6 +339,27 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`mapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (the caller's own message) and the caller carries on without it."
+    },
+    {
+      "file": "lib/Service/Support/ReadsFinalStatusIds.php",
+      "method": "finalStatusIds",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`finalStatusIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+    },
+    {
+      "file": "lib/Service/Support/ResolvesInstalledObjectService.php",
+      "method": "getObjectService",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+    },
+    {
+      "file": "lib/Service/Support/SearchesConfiguredSchema.php",
+      "method": "configuredRows",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`configuredRows()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Transfer/FederatedIdempotency.php",
@@ -768,20 +783,6 @@
     },
     {
       "file": "lib/Service/Mandaat/MandaatRepository.php",
-      "method": "findMandatenForBesluit",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findMandatenForBesluit()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Mandaat/MandaatRepository.php",
-      "method": "findPriorDecision",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findPriorDecision()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Mandaat/MandaatRepository.php",
       "method": "loadRoleIndex",
       "occurrence": 1,
       "class": "read-miss",
@@ -1117,20 +1118,6 @@
       "reason": "`readLeave()` answers `return null` when the humaniq HR app answers badly or is absent; the catch logs at warning (\"Dossiq: could not read humaniq leave for a substitution\") naming the user and the error, and the caller falls back to the typed substitution dates."
     },
     {
-      "file": "lib/Service/Substitution/SubstitutedWorkResolver.php",
-      "method": "finalStatusIds",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`finalStatusIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Substitution/SubstitutionAccessGuard.php",
-      "method": "allSubstitutions",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`allSubstitutions()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/SubstitutionAuditService.php",
       "method": "stamp",
       "occurrence": 1,
@@ -1201,13 +1188,6 @@
       "reason": "`resolveTenantEntity()` answers `return null` when the read fails; the catch logs at error (\"Dossiq AUDIT: could not resolve tenant ObjectEntity\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/TenantAuthenticationService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
-    },
-    {
       "file": "lib/Service/TenantBillingService.php",
       "method": "storeEvent",
       "occurrence": 1,
@@ -1222,25 +1202,11 @@
       "reason": "`fetchEventsForMonth()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/TenantBillingService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
-    },
-    {
       "file": "lib/Service/TenantConfigurationService.php",
       "method": "getConfig",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`getConfig()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/TenantConfigurationService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
     },
     {
       "file": "lib/Service/TenantMigrationService.php",
@@ -1258,13 +1224,6 @@
     },
     {
       "file": "lib/Service/TenantOnboardingService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/TenantOnboardingService.php",
       "method": "legacyRows",
       "occurrence": 1,
       "class": "degradation",
@@ -1276,13 +1235,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`readActiveOrganisation()` answers `return null` when OpenRegister's OrganisationService cannot be resolved or throws; the catch logs at error (\"Dossiq: could not read the active organisation from OpenRegister; no tenant\"), and the request then has no tenant."
-    },
-    {
-      "file": "lib/Service/TenantQuotaService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
     },
     {
       "file": "lib/Service/TenantQuotaService.php",

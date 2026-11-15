@@ -40,7 +40,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\CaseCaller;
+use OCA\Dossiq\Controller\Support\AnswersCaseNotYours;
+use OCA\Dossiq\Controller\Support\FindsCaseWriter;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -54,7 +55,6 @@ use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -67,6 +67,8 @@ use Throwable;
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseVersionController extends Controller {
+	use AnswersCaseNotYours;
+	use FindsCaseWriter;
 
 	use TranslatesRefusals;
 
@@ -228,37 +230,6 @@ class CaseVersionController extends Controller {
 			return $this->broke(op: 'version-move', e: $e);
 		}
 	}//end moveToVersion()
-
-	/**
-	 * The caller, when they may write this case, and null otherwise.
-	 *
-	 * Answering the USER rather than a boolean, because every caller that needs
-	 * the check also needs the uid, and a guard that hands back a boolean
-	 * invites a second `getUser()` beside it that nothing re-checks.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null when they may not.
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	private function writerOf(string $caseId): ?IUser {
-		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
-	}//end writerOf()
-
-	/**
-	 * The answer a caller who may not touch this case gets.
-	 *
-	 * @return JSONResponse The 403.
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	private function notYours(): JSONResponse {
-		return new JSONResponse(
-			['message' => 'You cannot move this case.', 'error' => 'case-access-denied'],
-			Http::STATUS_FORBIDDEN,
-		);
-	}//end notYours()
 
 	/**
 	 * A failure that is not a refusal, logged and answered as one.

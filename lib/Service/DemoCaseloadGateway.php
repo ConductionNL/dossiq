@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\Support\NormalisesObjectRows;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -42,6 +43,10 @@ use RuntimeException;
  * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
 class DemoCaseloadGateway {
+	use NormalisesObjectRows {
+		toArray as public;
+	}
+
 	/**
 	 * Constructor.
 	 *
@@ -279,35 +284,6 @@ class DemoCaseloadGateway {
 
 		return array_values($results);
 	}//end rowsOf()
-
-	/**
-	 * Normalise an OpenRegister object to a plain array.
-	 *
-	 * @param mixed $object The object entity or array.
-	 *
-	 * @return array The object's data.
-	 *
-	 * @spec openspec/specs/dossiq-app-scaffold/spec.md
-	 */
-	public function toArray(mixed $object): array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === false) {
-			return [];
-		}
-
-		if (method_exists($object, 'getObject') === true) {
-			return (array)$object->getObject();
-		}
-
-		if (method_exists($object, 'jsonSerialize') === true) {
-			return (array)$object->jsonSerialize();
-		}
-
-		return [];
-	}//end toArray()
 
 	/**
 	 * The id of a saved OpenRegister object.
