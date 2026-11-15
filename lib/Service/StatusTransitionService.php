@@ -534,23 +534,23 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 			self::FREE_FORM_MOVE,
 			['fromStatus' => (string)($case['status'] ?? ''), 'toStatus' => $toStatusId, 'comment' => $comment, 'actor' => $userId],
 		);
-		$case = $this->saveFreeFormMove(caseId: $caseId, caseData: $case, toStatusId: $toStatusId);
+		$case = $this->saveFreeFormMove(moving: ['caseId' => $caseId, 'case' => $case], toStatusId: $toStatusId);
 
-		return $this->recordAndDispatchFreeForm(caseId: $caseId, caseData: $case, move: $move);
+		return $this->recordAndDispatchFreeForm(moved: ['caseId' => $caseId, 'case' => $case], move: $move);
 	}//end executeFreeForm()
 
 	/**
 	 * Save the case in its new status and retime its terms.
 	 *
-	 * @param string               $caseId     Case UUID
-	 * @param array<string, mixed> $caseData   The case.
-	 * @param string               $toStatusId Target statusType UUID
+	 * @param array{caseId: string, case: array<string, mixed>} $moving     Case UUID, and the case.
+	 * @param string                                            $toStatusId Target statusType UUID
 	 *
 	 * @return array<string, mixed> The saved case.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function saveFreeFormMove(string $caseId, array $caseData, string $toStatusId): array {
+	private function saveFreeFormMove(array $moving, string $toStatusId): array {
+		['caseId' => $caseId, 'case' => $caseData] = $moving;
 		[$case] = $this->ledger->save(
 			case: $this->declarations->stamp(case: $caseData, toStatus: $toStatusId),
 			toStatus: $toStatusId,
@@ -563,9 +563,9 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 	/**
 	 * Record the move and dispatch the target status's checklist actions.
 	 *
-	 * @param string               $caseId   Case UUID
-	 * @param array<string, mixed> $caseData The saved case.
-	 * @param array<string, mixed> $move     The move (`toStatus`, `fromStatus`, `comment`, `actor`, ...); `actor` is the acting user UID.
+	 * @param array{caseId: string, case: array<string, mixed>} $moved Case UUID, and the saved case.
+	 * @param array<string, mixed>                              $move  The move (`toStatus`, `fromStatus`, `comment`, `actor`, ...);
+	 *                                                                 `actor` is the acting user UID.
 	 *
 	 * @return array{
 	 *     status: string,
@@ -576,7 +576,8 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function recordAndDispatchFreeForm(string $caseId, array $caseData, array $move): array {
+	private function recordAndDispatchFreeForm(array $moved, array $move): array {
+		['caseId' => $caseId, 'case' => $caseData] = $moved;
 		$record = $this->ledger->record(caseId: $caseId, move: $move);
 		$dispatched = $this->ledger->dispatch(
 			actions: $this->declarations->checklistActions(statusTypeId: $move['toStatus'], case: $caseData, actor: $move['actor']),
