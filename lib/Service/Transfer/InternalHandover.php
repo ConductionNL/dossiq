@@ -55,10 +55,10 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Routing\RoutingNote;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\DelegatesToDossierRegister;
 use OCA\Dossiq\Service\Support\RecordsOrRefuses;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -70,6 +70,7 @@ class InternalHandover {
 
 	use SearchesObjects;
 	use RecordsOrRefuses;
+	use DelegatesToDossierRegister;
 
 	/**
 	 * The value `handoverScope` carries for a move inside this organisation.
@@ -734,28 +735,4 @@ class InternalHandover {
 			);
 		}
 	}//end writeCase()
-
-	/**
-	 * The object service and the register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	private function context(): array {
-		return $this->dossierRegister->context();
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		return $this->dossierRegister->schema(key: $key);
-	}//end schema()
 }//end class
