@@ -187,7 +187,7 @@ class BewijsstukService implements BewijsstukServiceInterface {
 
 		$store = $this->resolve();
 
-		$record = $this->recordOf(payload: $payload, linkedIn: $linkedIn, regelingRetention: $regelingRetention);
+		$record = $this->recordOf(payload: $payload, retention: ['linkedIn' => $linkedIn, 'regelingRetention' => $regelingRetention]);
 		if ($contents !== null) {
 			$record['fileHashSha256'] = $this->computeHash(contents: $contents);
 		}
@@ -214,13 +214,14 @@ class BewijsstukService implements BewijsstukServiceInterface {
 	/**
 	 * The record: the payload with its bewaartermijn and archive status.
 	 *
-	 * @param array<string, mixed> $payload           The bewijsstuk metadata.
-	 * @param string               $linkedIn          The phase the bewijsstuk is linked in.
-	 * @param int|null             $regelingRetention Regeling-configured retention override.
+	 * @param array<string, mixed>                                 $payload   The bewijsstuk metadata.
+	 * @param array{linkedIn: string, regelingRetention: int|null} $retention `linkedIn` the phase the bewijsstuk is linked in; `regelingRetention`
+	 *                                                                        regeling-configured retention override.
 	 *
 	 * @return array<string, mixed> The record to store.
 	 */
-	private function recordOf(array $payload, string $linkedIn, ?int $regelingRetention): array {
+	private function recordOf(array $payload, array $retention): array {
+		[$linkedIn, $regelingRetention] = [$retention['linkedIn'], $retention['regelingRetention']];
 		$now = new DateTimeImmutable();
 		$jaren = $this->bewaartermijnJaren(linkedIn: $linkedIn, override: $regelingRetention);
 		return array_merge(

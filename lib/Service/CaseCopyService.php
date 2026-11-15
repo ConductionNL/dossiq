@@ -134,7 +134,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 		$context = $this->context() + ['sourceId' => $caseId];
 		$source = $this->requireSource(context: $context, caseId: $caseId);
 
-		$payload = $this->buildPayload(source: $source, caseId: $caseId, options: $options);
+		$payload = $this->buildPayload(source: $source, copy: ['caseId' => $caseId, 'options' => $options]);
 
 		$created = $this->writeCopy(context: $context, payload: $payload);
 		$newId = (string)($created['id'] ?? '');
@@ -217,15 +217,16 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	/**
 	 * The payload the copy is written from.
 	 *
-	 * @param array<string, mixed> $source The source case.
-	 * @param string $caseId The source case's id.
-	 * @param array{title?: string, documents?: bool} $options The caller's options.
+	 * @param array<string, mixed>                                                    $source The source case.
+	 * @param array{caseId: string, options: array{title?: string, documents?: bool}} $copy   `caseId` the source case's id; `options` the caller's
+	 *                                                                                        options.
 	 *
 	 * @return array<string, mixed> The new case's properties.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function buildPayload(array $source, string $caseId, array $options): array {
+	private function buildPayload(array $source, array $copy): array {
+		[$caseId, $options] = [$copy['caseId'], $copy['options']];
 		$payload = [];
 		foreach (self::CARRIED as $field) {
 			if (array_key_exists($field, $source) === true && $source[$field] !== null) {

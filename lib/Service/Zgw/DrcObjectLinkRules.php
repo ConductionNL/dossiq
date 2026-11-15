@@ -136,7 +136,7 @@ class DrcObjectLinkRules {
 			return $error;
 		}
 
-		return $this->validateOioCrossRegister(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
+		return $this->validateOioCrossRegister(ioUrl: $ioUrl, linked: ['objectUrl' => $objectUrl, 'objectType' => $objectType]);
 	}//end checkOioRelations()
 
 	/**
@@ -205,13 +205,14 @@ class DrcObjectLinkRules {
 	/**
 	 * Validate OIO cross-register: ZIO/BIO must exist (drc-004 VNG).
 	 *
-	 * @param string $ioUrl The informatieobject URL
-	 * @param string $objectUrl The object URL (zaak or besluit)
-	 * @param string $objectType The object type (zaak or besluit)
+	 * @param string                                       $ioUrl  The informatieobject URL
+	 * @param array{objectUrl: string, objectType: string} $linked `objectUrl` the object URL (zaak or besluit); `objectType` the object type (zaak
+	 *                                                             or besluit).
 	 *
 	 * @return array|null The refusal when the relation does not exist or could not be looked up, null if valid
 	 */
-	private function validateOioCrossRegister(string $ioUrl, string $objectUrl, string $objectType): ?array {
+	private function validateOioCrossRegister(string $ioUrl, array $linked): ?array {
+		[$objectUrl, $objectType] = [$linked['objectUrl'], $linked['objectType']];
 		$ioUuid = $this->fieldValidator->extractUuid(url: $ioUrl) ?? '';
 		$objectUuid = $this->fieldValidator->extractUuid(url: $objectUrl) ?? '';
 

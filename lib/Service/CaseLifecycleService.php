@@ -176,13 +176,15 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	private function pause(string $caseId, array $pause): array {
 		$this->onTermInstance(
 			caseId: $caseId,
-			gesture: 'suspend',
-			apply: fn (string $instanceId): array => $this->deadlines->pauseService->registerPauze(
-				termInstanceId: $instanceId,
-				durationDays: $pause['days'],
-				rationale: $pause['reason'],
-				pauseReason: $pause['pauseReason'],
-			),
+			act: [
+				'gesture' => 'suspend',
+				'apply' => fn (string $instanceId): array => $this->deadlines->pauseService->registerPauze(
+					termInstanceId: $instanceId,
+					durationDays: $pause['days'],
+					rationale: $pause['reason'],
+					pauseReason: $pause['pauseReason'],
+				),
+			]
 		);
 
 		$this->journal(caseId: $caseId, changes: [], entry: ['type' => 'suspend'] + $pause);
@@ -278,10 +280,12 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
 		$this->onTermInstance(
 			caseId: $caseId,
-			gesture: 'resume',
-			apply: fn (string $instanceId): array => $this->deadlines->pauseService->resumeAfterPauze(
-				termInstanceId: $instanceId,
-			),
+			act: [
+				'gesture' => 'resume',
+				'apply' => fn (string $instanceId): array => $this->deadlines->pauseService->resumeAfterPauze(
+					termInstanceId: $instanceId,
+				),
+			]
 		);
 
 		$this->journal(caseId: $caseId, changes: [], entry: ['type' => 'resume', 'reason' => $reason]);
@@ -383,12 +387,14 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	private function requestExtension(TermExtension $extension): ?array {
 		return $this->onTermInstance(
 			caseId: $extension->caseId,
-			gesture: 'extend',
-			apply: fn (string $instanceId): array => $this->deadlines->extensionService->requestExtension(
-				termInstanceId: $instanceId,
-				rationale: $extension->reason,
-				newEndDate: $extension->newEnd,
-			),
+			act: [
+				'gesture' => 'extend',
+				'apply' => fn (string $instanceId): array => $this->deadlines->extensionService->requestExtension(
+					termInstanceId: $instanceId,
+					rationale: $extension->reason,
+					newEndDate: $extension->newEnd,
+				),
+			]
 		);
 	}//end requestExtension()
 
@@ -631,15 +637,16 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 	 * the case; only the statutory bookkeeping is skipped, and it is logged
 	 * rather than swallowed silently.
 	 *
-	 * @param string $caseId Case UUID
-	 * @param string $gesture The gesture name, for the log line
-	 * @param callable(string): array<string, mixed> $apply What to do with the instance id
+	 * @param string                                                                $caseId Case UUID
+	 * @param array{gesture: string, apply: callable(string): array<string, mixed>} $act    `gesture` the gesture name, for the log line; `apply`
+	 *                                                                                      what to do with the instance id.
 	 *
 	 * @return array<string, mixed>|null What the gesture answered, or null when the case has no instance.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function onTermInstance(string $caseId, string $gesture, callable $apply): ?array {
+	private function onTermInstance(string $caseId, array $act): ?array {
+		[$gesture, $apply] = [$act['gesture'], $act['apply']];
 		$instance = $this->deadlines->termService->getTermijnInstanceForZaak(caseId: $caseId);
 		$instanceId = (string)($instance['id'] ?? ($instance['@self']['id'] ?? ''));
 		if ($instanceId === '') {

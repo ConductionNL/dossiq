@@ -546,7 +546,14 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 				continue;
 			}
 
-			$definition = $this->propertyDefinition(property: $property, type: $type, caseTypeId: $caseTypeId, value: $scheme[$property]);
+			$definition = $this->propertyDefinition(
+				property: $property,
+				definition: [
+					'type' => $type,
+					'caseTypeId' => $caseTypeId,
+					'value' => $scheme[$property],
+				]
+			);
 
 			$objectService->saveObject($definition, [], $register, $propertySchema);
 		}
@@ -555,14 +562,14 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	/**
 	 * One propertyDefinition record.
 	 *
-	 * @param string $property   The property name.
-	 * @param string $type       The property type.
-	 * @param string $caseTypeId The case type it belongs to.
-	 * @param mixed  $value      The scheme's value, the default.
+	 * @param string                                                $property   The property name.
+	 * @param array{type: string, caseTypeId: string, value: mixed} $definition `type` the property type; `caseTypeId` the case type it belongs to;
+	 *                                                                          `value` the scheme's value, the default.
 	 *
 	 * @return array<string, mixed> The record.
 	 */
-	private function propertyDefinition(string $property, string $type, string $caseTypeId, mixed $value): array {
+	private function propertyDefinition(string $property, array $definition): array {
+		[$type, $caseTypeId, $value] = [$definition['type'], $definition['caseTypeId'], $definition['value']];
 		$definition = [
 			'name' => $property,
 			'caseType' => $caseTypeId,

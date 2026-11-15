@@ -172,7 +172,7 @@ class WooCollectionQueries implements WooCollectionQueriesInterface {
 			return $answer;
 		}
 
-		return $this->markNew(query: $query, queryId: $queryId, rows: $answer['rows'], caseId: $caseId);
+		return $this->markNew(query: $query, found: ['queryId' => $queryId, 'rows' => $answer['rows'], 'caseId' => $caseId]);
 	}//end rerun()
 
 	/**
@@ -203,14 +203,14 @@ class WooCollectionQueries implements WooCollectionQueriesInterface {
 	/**
 	 * Mark each row the query had not found before and the case does not hold, and remember the keys.
 	 *
-	 * @param array<string, mixed>             $query   The stored query.
-	 * @param string                           $queryId The stored query's uuid.
-	 * @param array<int, array<string, mixed>> $rows    The rows the search found.
-	 * @param string                           $caseId  The case uuid.
+	 * @param array<string, mixed>                                                           $query The stored query.
+	 * @param array{queryId: string, rows: array<int, array<string, mixed>>, caseId: string} $found `queryId` the stored query's uuid; `rows` the
+	 *                                                                                              rows the search found; `caseId` the case uuid.
 	 *
 	 * @return array{rows: array<int, array<string, mixed>>, refusal: string} Each row with `new`.
 	 */
-	private function markNew(array $query, string $queryId, array $rows, string $caseId): array {
+	private function markNew(array $query, array $found): array {
+		[$queryId, $rows, $caseId] = [$found['queryId'], $found['rows'], $found['caseId']];
 		$seen = array_flip($this->keys(values: (array)($query['resultKeys'] ?? [])));
 		$onCase = array_flip($this->caseDocuments->idsFor(caseId: $caseId));
 		$marked = [];
