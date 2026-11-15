@@ -101,7 +101,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { caseDialogFromRoute } from '../mixins/caseDialog.js'
-import { caseActionRefusal } from '../utils/caseActionsHelpers.js'
+import { caseActionRefusalOf } from '../utils/caseActionsHelpers.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -169,9 +169,7 @@ export default {
 					this.chosen = this.flows[0].id
 				}
 			} catch (err) {
-				this.error = caseActionRefusal(err?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = caseActionRefusalOf(err)
 			} finally {
 				this.loading = false
 			}
@@ -208,9 +206,7 @@ export default {
 				emit(PAGE_REFRESH)
 				this.$emit('close')
 			} catch (err) {
-				this.error = caseActionRefusal(err?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = caseActionRefusalOf(err)
 			} finally {
 				this.busy = false
 			}

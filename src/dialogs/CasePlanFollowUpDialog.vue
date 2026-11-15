@@ -132,7 +132,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 import {
-	caseActionRefusal,
+	caseActionRefusalOf,
 	earliestFollowUpDate,
 	endOptions,
 	isPlanComplete,
@@ -313,9 +313,7 @@ export default {
 				emit(PAGE_REFRESH)
 				this.$emit('close')
 			} catch (err) {
-				this.error = caseActionRefusal(err?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = caseActionRefusalOf(err)
 			} finally {
 				this.busy = false
 			}

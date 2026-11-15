@@ -91,7 +91,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { caseDialogFromRoute } from '../mixins/caseDialog.js'
-import { caseActionRefusal, proposedCopyTitle } from '../utils/caseActionsHelpers.js'
+import { caseActionRefusalOf, proposedCopyTitle } from '../utils/caseActionsHelpers.js'
 
 export default {
 	name: 'CaseCopyDialog',
@@ -183,9 +183,7 @@ export default {
 					this.$router?.push({ name: 'CaseDetail', params: { id: newId } })
 				}
 			} catch (err) {
-				this.error = caseActionRefusal(err?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = caseActionRefusalOf(err)
 			} finally {
 				this.busy = false
 			}
