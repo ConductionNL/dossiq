@@ -138,7 +138,7 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 
 		$startTime = microtime(true);
 
-		$result = $this->askHermiq(sessionId: $sessionId, turn: $turn, summary: $summary);
+		$result = $this->askHermiq(turn: $turn, ask: ['sessionId' => $sessionId, 'summary' => $summary]);
 
 		$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
 
@@ -175,9 +175,8 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	/**
 	 * Send the message to Hermiq with the case as context.
 	 *
-	 * @param string|null   $sessionId The Hermiq session, or null for a new one.
-	 * @param AssistantTurn $turn      The case and the message.
-	 * @param array         $summary   The case summary.
+	 * @param AssistantTurn                                  $turn The case and the message.
+	 * @param array{sessionId: string|null, summary: array} $ask  The Hermiq session (null for a new one) and the case summary.
 	 *
 	 * @return array Hermiq's answer.
 	 *
@@ -185,9 +184,9 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	 *
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
-	private function askHermiq(?string $sessionId, AssistantTurn $turn, array $summary): array {
+	private function askHermiq(AssistantTurn $turn, array $ask): array {
 		return $this->hermiqClient->converse(
-			sessionId: $sessionId,
+			sessionId: $ask['sessionId'],
 			message: $turn->message,
 			context: [
 				// FROZEN at `procest`: this is this app's id AS HERMIQ KNOWS IT,
@@ -198,7 +197,7 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 				'app' => 'procest',
 				'objectType' => 'case',
 				'objectRef' => $turn->caseId,
-				'contextData' => $summary,
+				'contextData' => $ask['summary'],
 			]
 		);
 	}//end askHermiq()
