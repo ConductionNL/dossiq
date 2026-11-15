@@ -163,24 +163,27 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 		bool $isAdmin = false,
 		string $search = '',
 	): array {
-		return $this->pageOf(cases: $this->visibleCases(forUser: $forUser, isAdmin: $isAdmin, search: $search), offset: $offset, limit: $limit);
+		return $this->pageOf(
+			cases: $this->visibleCases(viewer: ['forUser' => $forUser, 'isAdmin' => $isAdmin], search: $search),
+			window: ['offset' => $offset, 'limit' => $limit]
+		);
 	}//end deletedCases()
 
 	/**
 	 * Every deleted case the caller may see and the search term matches, unsorted.
 	 *
-	 * @param string $forUser The caller's user id; an empty id sees nothing.
-	 * @param bool   $isAdmin Whether the caller is an administrator.
-	 * @param string $search  A term the number, title or deleter must hold; empty for all.
+	 * @param array{forUser: string, isAdmin: bool} $viewer The caller's user id (an empty id sees nothing), and whether
+	 *                                                     the caller is an administrator.
+	 * @param string                                $search A term the number, title or deleter must hold; empty for all.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function visibleCases(string $forUser, bool $isAdmin, string $search): array {
+	private function visibleCases(array $viewer, string $search): array {
 		$cases = [];
 		foreach ($this->deletedRows() as $row) {
-			if ($this->visible(row: $row, forUser: $forUser, isAdmin: $isAdmin) === false) {
+			if ($this->visible(row: $row, viewer: $viewer) === false) {
 				continue;
 			}
 
@@ -196,31 +199,30 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 	/**
 	 * Whether a deleted row is a case the caller may see.
 	 *
-	 * @param mixed  $row     The deleted row.
-	 * @param string $forUser The caller's user id.
-	 * @param bool   $isAdmin Whether the caller is an administrator.
+	 * @param mixed                                 $row    The deleted row.
+	 * @param array{forUser: string, isAdmin: bool} $viewer The caller's user id, and whether the caller is an administrator.
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function visible(mixed $row, string $forUser, bool $isAdmin): bool {
+	private function visible(mixed $row, array $viewer): bool {
 		return $this->isCase(entity: $row) === true
-			&& $this->maySee(entity: $row, userId: $forUser, isAdmin: $isAdmin) === true;
+			&& $this->maySee(entity: $row, userId: $viewer['forUser'], isAdmin: $viewer['isAdmin']) === true;
 	}//end visible()
 
 	/**
 	 * One page of the cases, newest deletion first, with the total.
 	 *
 	 * @param array<int, array<string, mixed>> $cases  The cases.
-	 * @param int                              $offset How many rows to skip.
-	 * @param int                              $limit  How many rows to return.
+	 * @param array{offset: int, limit: int}   $window How many rows to skip, and how many to return.
 	 *
 	 * @return array{results: array<int, array<string, mixed>>, total: int}
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function pageOf(array $cases, int $offset, int $limit): array {
+	private function pageOf(array $cases, array $window): array {
+		['offset' => $offset, 'limit' => $limit] = $window;
 		usort(
 			$cases,
 			static fn (array $first, array $second): int => strcmp($second['deletedAt'], $first['deletedAt'])

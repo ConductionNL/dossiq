@@ -160,7 +160,7 @@ class WorkflowTemplateLoader {
 			return $this->noTemplate(caseTypeId: $caseTypeId);
 		}
 
-		return $this->searchTemplate(objectService: $search[0], query: $search[1], caseTypeId: $caseTypeId);
+		return $this->searchTemplate(search: $search, caseTypeId: $caseTypeId);
 	}//end getActiveTemplate()
 
 	/**
@@ -187,13 +187,13 @@ class WorkflowTemplateLoader {
 	/**
 	 * Search the active template and remember the answer for the case type.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param array  $query         The active-template query.
-	 * @param string $caseTypeId    The caseType UUID.
+	 * @param array{0: object, 1: array} $search     OpenRegister's object service and the active-template query.
+	 * @param string                    $caseTypeId The caseType UUID.
 	 *
 	 * @return array<string, mixed>|null The template, or null when none is active or the search failed.
 	 */
-	private function searchTemplate(object $objectService, array $query, string $caseTypeId): array|null {
+	private function searchTemplate(array $search, string $caseTypeId): array|null {
+		[$objectService, $query] = $search;
 		try {
 			$found = $objectService->searchObjects($query);
 		} catch (\Throwable $e) {
