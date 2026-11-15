@@ -29,8 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\TransferredCaseFollowInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Transfer\TransferredCaseFollow;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
@@ -79,12 +79,12 @@ class TransferredCaseActListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TransferredCaseFollow             $follow       Records the act for the sender.
+	 * @param TransferredCaseFollowInterface    $follow       Records the act for the sender.
 	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 * @param IUserSession|null                 $userSession  Who did it; nobody means the system.
 	 */
 	public function __construct(
-		private readonly TransferredCaseFollow $follow,
+		private readonly TransferredCaseFollowInterface $follow,
 		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly ?IUserSession $userSession = null,
 	) {

@@ -47,10 +47,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\Status\DerivedStatusJournal;
 use OCA\Dossiq\Service\Timeline\StatusDisplayName;
-use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -79,13 +79,13 @@ class DerivedStatusTimelineListener implements IEventListener {
 	 *
 	 * @param DerivedStatusJournal $journal  What the derivation staged this request.
 	 * @param CaseTimelineInterface         $timeline The one seam that writes a timeline entry.
-	 * @param StatusTypeLookup     $statuses Resolves a statusType id to its name.
+	 * @param StatusTypeLookupInterface     $statuses Resolves a statusType id to its name.
 	 * @param LoggerInterface      $logger   Structured logger.
 	 */
 	public function __construct(
 		private readonly DerivedStatusJournal $journal,
 		private readonly CaseTimelineInterface $timeline,
-		private readonly StatusTypeLookup $statuses,
+		private readonly StatusTypeLookupInterface $statuses,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->statusNames = new StatusDisplayName(statuses: $statuses);

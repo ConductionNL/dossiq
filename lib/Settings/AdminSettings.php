@@ -25,12 +25,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Settings;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PackageAdminTabsInterface;
+use OCA\Dossiq\Kernel\Contracts\ProvisionAssignedGroupsInterface;
 use OCA\Dossiq\Kernel\Contracts\QueueUrgencySettingsInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Prerequisites;
-use OCA\Dossiq\Repair\ProvisionAssignedGroups;
 use OCA\Dossiq\Service\Access\RoleActs;
-use OCA\Dossiq\Service\CaseDefinition\PackageAdminTabs;
 use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -56,7 +56,7 @@ class AdminSettings implements IDelegatedSettings {
 	 * @param SettingsServiceInterface $settingsService Reads the stored config values.
 	 * @param QueueUrgencySettingsInterface $queueUrgency The queue thresholds and weights.
 	 * @param ServerVersion        $serverVersion The Nextcloud this instance runs.
-	 * @param PackageAdminTabs     $packageTabs   The installed packages that declare an admin tab.
+	 * @param PackageAdminTabsInterface     $packageTabs   The installed packages that declare an admin tab.
 	 */
 	public function __construct(
 		private IAppManager $appManager,
@@ -64,7 +64,7 @@ class AdminSettings implements IDelegatedSettings {
 		private SettingsServiceInterface $settingsService,
 		private QueueUrgencySettingsInterface $queueUrgency,
 		private ServerVersion $serverVersion,
-		private PackageAdminTabs $packageTabs,
+		private PackageAdminTabsInterface $packageTabs,
 	) {
 	}//end __construct()
 
@@ -136,7 +136,7 @@ class AdminSettings implements IDelegatedSettings {
 		// What each provisioned role allows (REQ-CRS-14), in provisioning order.
 		$this->initialState->provideInitialState(
 			'roleActs',
-			(new RoleActs())->table(groups: ProvisionAssignedGroups::ASSIGNED_GROUPS)
+			(new RoleActs())->table(groups: ProvisionAssignedGroupsInterface::ASSIGNED_GROUPS)
 		);
 	}//end provideInstanceState()
 
