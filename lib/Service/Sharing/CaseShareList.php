@@ -87,7 +87,7 @@ class CaseShareList implements CaseShareListInterface {
 				continue;
 			}
 
-			$rows[] = $this->rowOf(share: $share, linkId: $linkId, uid: $uid);
+			$rows[] = $this->rowOf(share: $share, uid: $uid);
 		}
 
 		return $rows;
@@ -96,13 +96,13 @@ class CaseShareList implements CaseShareListInterface {
 	/**
 	 * The row for one share.
 	 *
-	 * @param array<string, mixed> $share  The share.
-	 * @param int                  $linkId Its access link id.
-	 * @param string               $uid    The reader.
+	 * @param array<string, mixed> $share The share, with its access link id.
+	 * @param string               $uid   The reader.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function rowOf(array $share, int $linkId, string $uid): array {
+	private function rowOf(array $share, string $uid): array {
+		$linkId    = (int)($share['accessLinkId'] ?? 0);
 		$status    = (self::STATUS[(string)($share['state'] ?? '')] ?? 'active');
 		$documents = $this->documentsOf(share: $share);
 		$url       = (string)($share['accessLinkUrl'] ?? '');
