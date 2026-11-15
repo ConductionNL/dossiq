@@ -106,22 +106,36 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	public function invite(string $consultationId, string $userId, ?string $password = null): array {
 		[$consultation, $caseId, $body] = $this->invitable(consultationId: $consultationId);
 
-		$share = $this->shares->createTokenShare(
-			caseId: $caseId,
+		$invite = ['consultation' => $consultation, 'consultationId' => $consultationId, 'body' => $body, 'caseId' => $caseId];
+
+		return $this->invited(share: $this->mintedLink(invite: $invite, minter: ['userId' => $userId, 'password' => $password]), invite: $invite);
+	}//end invite()
+
+	/**
+	 * Mint the read-and-comment link on the case for the advisory body, until the consultation's deadline.
+	 *
+	 * @param array<string, mixed>                         $invite The `consultation`, its `consultationId`, the advisory `body` and the `caseId`.
+	 * @param array{userId: string, password: string|null} $minter The `userId` minting it and the link's `password`, or null.
+	 *
+	 * @return array<string, mixed> What minting the link answered.
+	 */
+	private function mintedLink(array $invite, array $minter): array {
+		$body = $invite['body'];
+
+		return $this->shares->createTokenShare(
+			caseId: $invite['caseId'],
 			label: $body,
-			createdBy: $userId,
-			expiresAt: $this->deadlineOf(consultation: $consultation),
+			createdBy: $minter['userId'],
+			expiresAt: $this->deadlineOf(consultation: $invite['consultation']),
 			capabilities: ['read', 'comment'],
-			password: $password,
+			password: $minter['password'],
 			sharedDocuments: [],
 			extra: [
 				'advisoryBody' => $body,
-				'consultationId' => $consultationId,
+				'consultationId' => $invite['consultationId'],
 			]
 		);
-
-		return $this->invited(share: $share, invite: ['consultation' => $consultation, 'consultationId' => $consultationId, 'body' => $body]);
-	}//end invite()
+	}//end mintedLink()
 
 	/**
 	 * The minted link with where it goes, refusing when the share could not be minted.

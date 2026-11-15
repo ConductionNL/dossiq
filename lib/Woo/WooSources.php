@@ -213,16 +213,27 @@ class WooSources implements WooSourcesInterface {
 			return ['rows' => [], 'remaining' => 0, 'notices' => [], 'refusal' => $refusal];
 		}
 
+		return $this->microsoft365Search(search: ['terms' => $terms, 'from' => $from, 'to' => $to, 'userId' => $userId]);
+	}//end searchMicrosoft365()
+
+	/**
+	 * Ask integriq to search Microsoft 365 for the user, and read its answer.
+	 *
+	 * @param array<string, string|null> $search The search `terms`, the `from` and `to` dates and the `userId`.
+	 *
+	 * @return array{rows: array<int, array<string, mixed>>, remaining: int, notices: array<int, string>, refusal: string}
+	 */
+	private function microsoft365Search(array $search): array {
 		$result = $this->ask(
 			relative: self::SEARCH_EVENT,
-			arguments: [AppIdentity::APP_ID, $this->connectionKey(), $userId, $terms, $from, $to, [], self::ROW_LIMIT],
+			arguments: [AppIdentity::APP_ID, $this->connectionKey(), $search['userId'], $search['terms'], $search['from'], $search['to'], [], self::ROW_LIMIT],
 		);
 		if ($result === null) {
 			return ['rows' => [], 'remaining' => 0, 'notices' => [], 'refusal' => 'integriq-did-not-answer'];
 		}
 
 		return $this->microsoft365Answer(result: $result);
-	}//end searchMicrosoft365()
+	}//end microsoft365Search()
 
 	/**
 	 * The first rows of integriq's Microsoft 365 answer, how many more there were, and its notices.

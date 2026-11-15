@@ -172,6 +172,21 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		$toUser = trim($toUser);
 		$this->assertHandoverPair(fromUser: $fromUser, toUser: $toUser);
 
+		return $this->handedOver(handover: ['fromUser' => $fromUser, 'toUser' => $toUser, 'actor' => $actor]);
+	}//end execute()
+
+	/**
+	 * Hand a checked pair's caseload, coordinator seats and drafts over, record it on the cases and log it.
+	 *
+	 * @param array{fromUser: string, toUser: string, actor: string} $handover The leaver, the successor (both trimmed) and the actor.
+	 *
+	 * @return array<string, mixed> The handover result.
+	 */
+	private function handedOver(array $handover): array {
+		$fromUser = $handover['fromUser'];
+		$toUser = $handover['toUser'];
+		$actor = $handover['actor'];
+
 		// The coordinator seats are read BEFORE the cases move. Reading them
 		// afterwards would work today and break the first time the case walk
 		// starts touching role records, and the failure would be silent: an
@@ -179,7 +194,7 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		$coordinated = $this->seats->casesCoordinatedBy(uid: $fromUser);
 		$drafts = $this->draftsOf(uid: $fromUser);
 
-		$batch = $this->releaseCaseload(handover: ['fromUser' => $fromUser, 'toUser' => $toUser, 'actor' => $actor]);
+		$batch = $this->releaseCaseload(handover: $handover);
 		$batchId = self::batchIdOf(batch: $batch);
 		$now = (new DateTimeImmutable())->format('c');
 
@@ -198,7 +213,7 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 
 		$result = self::handoverResult(batch: $batch, moved: ['seats' => $seatsMoved, 'drafts' => $drafts]);
 		return $this->loggedHandover(result: $result, act: $act);
-	}//end execute()
+	}//end handedOver()
 
 	/**
 	 * The batch id of a committed caseload job.

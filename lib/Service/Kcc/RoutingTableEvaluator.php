@@ -384,7 +384,7 @@ class RoutingTableEvaluator {
 				$literal = strtolower($value);
 			}
 
-			return $this->recordEquality(equalities: $gathered->equalities, column: self::EQUALITY_COLUMNS[$type], value: $literal);
+			return $this->recordEquality(gathered: $gathered, equality: [self::EQUALITY_COLUMNS[$type], $literal]);
 		}
 
 		if ($type === 'keyword') {
@@ -400,7 +400,7 @@ class RoutingTableEvaluator {
 		}
 
 		if ($type === 'time_of_day') {
-			return $this->recordTimeWindow(value: $value, lowerBound: $gathered->lowerBound, upperBound: $gathered->upperBound);
+			return $this->recordTimeWindow(value: $value, gathered: $gathered);
 		}
 
 		// The legacy engine's default arm: an unknown type never matches.
@@ -414,18 +414,18 @@ class RoutingTableEvaluator {
 	 * never both hold — the legacy engine evaluated them as `false`, and one
 	 * table cell can carry only one literal, so the rule compiles to nothing.
 	 *
-	 * @param array<string, string> $equalities The rule's equality cells so far.
-	 * @param string $column The column name.
-	 * @param string $value The demanded value.
+	 * @param RuleConditions             $gathered The rule's conditions so far, with its equality cells.
+	 * @param array{0: string, 1: string} $equality The column name and the demanded value.
 	 *
 	 * @return bool False when the constraint is contradictory.
 	 */
-	private function recordEquality(array &$equalities, string $column, string $value): bool {
-		if (array_key_exists($column, $equalities) === true) {
-			return ($equalities[$column] === $value);
+	private function recordEquality(RuleConditions $gathered, array $equality): bool {
+		[$column, $value] = $equality;
+		if (array_key_exists($column, $gathered->equalities) === true) {
+			return ($gathered->equalities[$column] === $value);
 		}
 
-		$equalities[$column] = $value;
+		$gathered->equalities[$column] = $value;
 
 		return true;
 	}//end recordEquality()
@@ -436,13 +436,12 @@ class RoutingTableEvaluator {
 	 * Several time conditions intersect, like the legacy conjunction did:
 	 * every `after` raises the lower bound, every `before` lowers the upper.
 	 *
-	 * @param string $value The condition value.
-	 * @param int|null $lowerBound The inclusive lower bound, in minutes.
-	 * @param int|null $upperBound The exclusive upper bound, in minutes.
+	 * @param string         $value    The condition value.
+	 * @param RuleConditions $gathered The rule's conditions so far, with its inclusive lower and exclusive upper bound in minutes.
 	 *
 	 * @return bool False when the value is not a time-of-day expression.
 	 */
-	private function recordTimeWindow(string $value, ?int &$lowerBound, ?int &$upperBound): bool {
+	private function recordTimeWindow(string $value, RuleConditions $gathered): bool {
 		if (preg_match('/^(after|before)_(\d{1,2}):(\d{2})$/', $value, $matches) !== 1) {
 			// The legacy engine's timeOfDayMatches() answers false for a
 			// malformed window, so the rule can never match.
@@ -451,12 +450,12 @@ class RoutingTableEvaluator {
 
 		$boundary = ((int)$matches[2] * 60) + (int)$matches[3];
 		if ($matches[1] === 'after') {
-			$lowerBound = max($boundary, ($lowerBound ?? $boundary));
+			$gathered->lowerBound = max($boundary, ($gathered->lowerBound ?? $boundary));
 
 			return true;
 		}
 
-		$upperBound = min($boundary, ($upperBound ?? $boundary));
+		$gathered->upperBound = min($boundary, ($gathered->upperBound ?? $boundary));
 
 		return true;
 	}//end recordTimeWindow()
