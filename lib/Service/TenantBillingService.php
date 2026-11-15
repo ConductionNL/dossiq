@@ -135,7 +135,7 @@ class TenantBillingService implements TenantBillingServiceInterface {
 		$events = $this->fetchEventsForMonth(tenantId: $tenantId, month: $month);
 		$unbilled = array_values(array_filter($events, static fn ($e) => ($e['invoiceRef'] ?? null) === null));
 		$summary = $this->aggregate(events: $unbilled);
-		$result = $this->invoiceResult(tenantId: $tenantId, month: $month, unbilled: $unbilled, summary: $summary);
+		$result = ['tenantId' => $tenantId, 'month' => $month] + $this->invoiceResult(unbilled: $unbilled, summary: $summary);
 
 		if ($unbilled === []) {
 			$result['error'] = 'no unbilled events';
@@ -156,7 +156,7 @@ class TenantBillingService implements TenantBillingServiceInterface {
 			return $result;
 		}
 
-		return $this->exportUnbilled(tenantId: $tenantId, month: $month, unbilled: $unbilled, result: $result);
+		return $this->exportUnbilled(unbilled: $unbilled, result: $result);
 	}//end runInvoicing()
 
 	/**
@@ -183,18 +183,16 @@ class TenantBillingService implements TenantBillingServiceInterface {
 	}//end invoiceMonth()
 
 	/**
-	 * The invoicing answer before anything is exported.
+	 * The invoicing answer before anything is exported, without its tenant and month.
 	 *
-	 * @param string $tenantId Tenant UUID.
-	 * @param string $month YYYY-MM.
 	 * @param array<int, array<string, mixed>> $unbilled The month's unbilled events.
 	 * @param array<string, mixed> $summary The aggregate of the unbilled events.
 	 *
-	 * @return array{tenantId:string, month:string, eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
+	 * @return array{eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
 	 *
 	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
 	 */
-	private function invoiceResult(string $tenantId, string $month, array $unbilled, array $summary): array {
+	private function invoiceResult(array $unbilled, array $summary): array {
 		$amount = (float)$summary['totalAmount'];
 		$currency = 'EUR';
 		if ($unbilled !== []) {
@@ -202,8 +200,6 @@ class TenantBillingService implements TenantBillingServiceInterface {
 		}
 
 		return [
-			'tenantId' => $tenantId,
-			'month' => $month,
 			'eventCount' => count($unbilled),
 			'amount' => $amount,
 			'currency' => $currency,
@@ -214,10 +210,8 @@ class TenantBillingService implements TenantBillingServiceInterface {
 	}//end invoiceResult()
 
 	/**
-	 * Export the unbilled events as one invoice and stamp them.
+	 * Export the unbilled events as one invoice for the answer's tenant and month, and stamp them.
 	 *
-	 * @param string $tenantId Tenant UUID.
-	 * @param string $month YYYY-MM.
 	 * @param array<int, array<string, mixed>> $unbilled The month's unbilled events.
 	 * @param array<string, mixed> $result The answer so far, in the shape this method returns.
 	 *
@@ -225,8 +219,8 @@ class TenantBillingService implements TenantBillingServiceInterface {
 	 *
 	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
 	 */
-	private function exportUnbilled(string $tenantId, string $month, array $unbilled, array $result): array {
-		$payload = $this->shillinq->buildInvoicePayload(tenantId: $tenantId, month: $month, events: $unbilled);
+	private function exportUnbilled(array $unbilled, array $result): array {
+		$payload = $this->shillinq->buildInvoicePayload(tenantId: $result['tenantId'], month: $result['month'], events: $unbilled);
 		$exportRc = $this->shillinq->exportInvoice(payload: $payload);
 		if ($exportRc['success'] !== true) {
 			$result['error'] = (string)($exportRc['lastError'] ?? 'export failed');
@@ -262,20 +256,26 @@ class TenantBillingService implements TenantBillingServiceInterface {
 			throw new InvalidArgumentException('Unknown billing event type: ' . $eventType);
 		}
 
+		return $this->storeEvent(
+			event: ['tenantRef' => $tenantId, 'eventType' => $eventType, 'quantity' => $quantity, 'unitPrice' => $unitPrice, 'currency' => $currency]
+		);
+	}//end emitEvent()
+
+	/**
+	 * Stamp a billing event with its time and store it, uninvoiced.
+	 *
+	 * @param array{tenantRef: string, eventType: string, quantity: float, unitPrice: float, currency: string} $event The event fields.
+	 *
+	 * @return array<string,mixed>|null Persisted event row, or null when it could not be stored.
+	 */
+	private function storeEvent(array $event): ?array {
 		$objectService = $this->getObjectService();
 		if ($objectService === null) {
 			return null;
 		}
 
-		$event = [
-			'tenantRef' => $tenantId,
-			'eventType' => $eventType,
-			'quantity' => $quantity,
-			'unitPrice' => $unitPrice,
-			'currency' => $currency,
-			'occurredAt' => (new DateTimeImmutable('now'))->format(DATE_ATOM),
-			'invoiceRef' => null,
-		];
+		$event['occurredAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
+		$event['invoiceRef'] = null;
 
 		try {
 			return $objectService->saveObject(
@@ -285,10 +285,10 @@ class TenantBillingService implements TenantBillingServiceInterface {
 				uuid: null,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: emitEvent failed', ['eventType' => $eventType, 'exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: emitEvent failed', ['eventType' => $event['eventType'], 'exception' => $e->getMessage()]);
 			return null;
 		}
-	}//end emitEvent()
+	}//end storeEvent()
 
 	/**
 	 * Aggregate billing for a month.
