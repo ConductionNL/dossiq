@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
+use OCA\Dossiq\Support\OptionalService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Service\HoldOrder;
 use OCP\EventDispatcher\Event;
@@ -340,20 +341,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 * @return object|null
 	 */
 	private function resolveOr(string $fqn): ?object {
-		if (class_exists($fqn) === false) {
-			return null;
-		}
-
-		try {
-			$service = $this->container->get($fqn);
-			if (is_object($service) === true) {
-				return $service;
-			}
-
-			return null;
-		} catch (\Throwable $e) {
-			return null;
-		}
+		return OptionalService::from(container: $this->container, fqn: $fqn);
 	}//end resolveOr()
 
 	/**

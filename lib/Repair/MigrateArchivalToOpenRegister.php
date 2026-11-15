@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Support\OptionalService;
 use OCA\OpenRegister\Service\HoldOrder;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -487,19 +488,6 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	 * @return object|null
 	 */
 	private function resolveOr(string $fqn): ?object {
-		if (class_exists($fqn) === false) {
-			return null;
-		}
-
-		try {
-			$service = $this->container->get($fqn);
-			if (is_object($service) === true) {
-				return $service;
-			}
-
-			return null;
-		} catch (\Throwable $e) {
-			return null;
-		}
+		return OptionalService::from(container: $this->container, fqn: $fqn);
 	}//end resolveOr()
 }//end class
