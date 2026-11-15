@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\Notification\IManager as INotificationManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -98,7 +99,12 @@ class ApplicantPortalActsUnknownCaseTest extends TestCase {
 	 */
 	public function testACaseThatDoesNotReadAsAnArrayRecordsNothing(): void {
 		$objects = $this->createMock(ObjectServiceInterface::class);
-		$objects->expects($this->once())->method('find')->with('case-1', $this->anything(), $this->anything(), '7', '12')->willReturn(null);
+		$objects->expects($this->once())->method('find')
+			->with(
+				'case-1',
+				$this->callback(static fn (ObjectFindOptions $options): bool => $options->register === '7' && $options->schema === '12')
+			)
+			->willReturn(null);
 		$this->assertFalse($this->acts($objects)->recordWithdrawal('case-1', 'withdrawn', 'reason', '2026-05-01T10:00:00Z'));
 
 		$entity = $this->createMock(ObjectEntityInterface::class);
