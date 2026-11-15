@@ -3,7 +3,8 @@
 /**
  * Dossiq RefusesUnreadableCases support trait.
  *
- * The refusal the money controllers give a caller who is not signed in or may not read the case. The using class provides `$userSession` and `$caseAccess` properties.
+ * The refusal the money controllers give a caller who is not signed in or may not read the case.
+ * The using class provides `$userSession` and `$caseAccess` properties.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller\Support

@@ -3,7 +3,8 @@
 /**
  * Dossiq FindsCaseReaders support trait.
  *
- * The signed-in caller who may read a case, or the refusal the case-detail controllers answer otherwise. The using class provides `$userSession` and `$caseAccess` properties.
+ * The signed-in caller who may read a case, or the refusal the case-detail controllers answer otherwise.
+ * The using class provides `$userSession` and `$caseAccess` properties.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller\Support
