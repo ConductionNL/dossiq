@@ -95,38 +95,36 @@ class SendTemplateMessageHandler implements ActionHandlerInterface, SendTemplate
 			return new ActionResult(succeeded: true, data: ['skipped' => 'already sent']);
 		}
 
-		return $this->send(recipients: $recipients, template: $template, caseId: $caseId, claim: $claim);
+		return $this->send(recipients: $recipients, message: ['caseId' => $caseId, 'template' => $template, 'claim' => $claim]);
 	}//end handle()
 
 	/**
 	 * Send to every recipient, settling the claim, or giving it back on a failure.
 	 *
-	 * @param array<int, string> $recipients The addresses.
-	 * @param string             $template   The template id.
-	 * @param string             $caseId     The case id.
-	 * @param string             $claim      The ledger key, or ''.
+	 * @param array<int, string>                                   $recipients The addresses.
+	 * @param array{caseId: string, template: string, claim: string} $message    The case id, the template id and the ledger key (or '').
 	 *
 	 * @return ActionResult The result.
 	 */
-	private function send(array $recipients, string $template, string $caseId, string $claim): ActionResult {
+	private function send(array $recipients, array $message): ActionResult {
 		try {
 			foreach ($recipients as $recipient) {
-				$this->mail->sendFromTemplate(caseId: $caseId, templateId: $template, to: $recipient);
+				$this->mail->sendFromTemplate(caseId: $message['caseId'], templateId: $message['template'], to: $recipient);
 			}
 		} catch (Throwable $e) {
-			$this->logger->error('SendTemplateMessageHandler: the message was not sent', ['case' => $caseId, 'exception' => $e->getMessage()]);
-			if ($claim !== '') {
-				$this->ledger->release(key: $claim);
+			$this->logger->error('SendTemplateMessageHandler: the message was not sent', ['case' => $message['caseId'], 'exception' => $e->getMessage()]);
+			if ($message['claim'] !== '') {
+				$this->ledger->release(key: $message['claim']);
 			}
 
 			return new ActionResult(succeeded: false, error: 'send_message_failed');
 		}
 
-		if ($claim !== '') {
-			$this->ledger->settle(key: $claim, outcome: 'sent', now: time());
+		if ($message['claim'] !== '') {
+			$this->ledger->settle(key: $message['claim'], outcome: 'sent', now: time());
 		}
 
-		return new ActionResult(succeeded: true, data: ['sentTo' => $recipients, 'template' => $template]);
+		return new ActionResult(succeeded: true, data: ['sentTo' => $recipients, 'template' => $message['template']]);
 	}//end send()
 
 	/**

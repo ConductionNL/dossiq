@@ -296,12 +296,12 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 		// would breach about a status the case is not in.
 		$this->declarations->retime(caseId: $caseId, toStatus: $toStatus);
 
-		[$record, $dispatched] = $this->recordAndDispatch(
+		$recorded = $this->recordAndDispatch(
 			step: $step->withCaseData(caseData: $saved),
 			move: $step->move(comment: $comment, evaluatedGuards: $evaluatedGuards)
 		);
 
-		return ($this->moveResult(caseId: $caseId, record: $record, dispatched: $dispatched) + ['version' => $savedVersion]);
+		return ($this->moveResult(caseId: $caseId, recorded: $recorded) + ['version' => $savedVersion]);
 	}//end carryOut()
 
 	/**
@@ -585,15 +585,14 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 			record: $record,
 		);
 
-		return $this->moveResult(caseId: $caseId, record: $record, dispatched: $dispatched);
+		return $this->moveResult(caseId: $caseId, recorded: [$record, $dispatched]);
 	}//end recordAndDispatchFreeForm()
 
 	/**
 	 * The answer of a carried-out move; a guarded transition adds its `version`.
 	 *
-	 * @param string                           $caseId     Case UUID
-	 * @param array<string, mixed>             $record     The status record.
-	 * @param array<int, array<string, mixed>> $dispatched The dispatched actions.
+	 * @param string                                                         $caseId   Case UUID
+	 * @param array{0: array<string, mixed>, 1: array<int, array<string, mixed>>} $recorded The status record and the dispatched actions.
 	 *
 	 * @return array{
 	 *     status: string,
@@ -604,7 +603,8 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function moveResult(string $caseId, array $record, array $dispatched): array {
+	private function moveResult(string $caseId, array $recorded): array {
+		[$record, $dispatched] = $recorded;
 		$outcome = $this->actionOutcome(dispatched: $dispatched, caseId: $caseId);
 
 		return [
