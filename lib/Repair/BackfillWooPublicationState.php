@@ -251,7 +251,10 @@ class BackfillWooPublicationState implements IRepairStep {
 				break;
 			}
 
-			$tally = $this->tallyDecisions(tally: $tally, rows: $rows, write: $write);
+			foreach ($this->outcomes(rows: $rows, write: $write) as $outcome) {
+				$tally[$outcome]++;
+			}
+
 			if (count($rows) < self::PAGE) {
 				break;
 			}
@@ -284,15 +287,15 @@ class BackfillWooPublicationState implements IRepairStep {
 	}//end readDecisionPage()
 
 	/**
-	 * Write the case of every Woo decision on one page and count the outcomes.
+	 * Write the case of every Woo decision on one page, answering the tally each write belongs to.
 	 *
-	 * @param array{written: int, unchanged: int, missing: int, failed: int, readable: bool} $tally The running tally.
-	 * @param array<int, array<string, mixed>>                                                $rows  The decisions.
-	 * @param callable(string, array<string, string>): string                             $write Writes one case, answering its tally.
+	 * @param array<int, array<string, mixed>>                $rows  The decisions.
+	 * @param callable(string, array<string, string>): string $write Writes one case, answering its tally.
 	 *
-	 * @return array{written: int, unchanged: int, missing: int, failed: int, readable: bool} The new tally.
+	 * @return list<string> The tally of each written case, in order.
 	 */
-	private function tallyDecisions(array $tally, array $rows, callable $write): array {
+	private function outcomes(array $rows, callable $write): array {
+		$outcomes = [];
 		foreach ($rows as $decision) {
 			$state = $this->stateFor(decision: $decision);
 			$caseId = (string)($decision['case'] ?? '');
@@ -300,11 +303,11 @@ class BackfillWooPublicationState implements IRepairStep {
 				continue;
 			}
 
-			$tally[$write($caseId, $state)]++;
+			$outcomes[] = $write($caseId, $state);
 		}
 
-		return $tally;
-	}//end tallyDecisions()
+		return $outcomes;
+	}//end outcomes()
 
 	/**
 	 * Write one case when its state differs, and say which tally it belongs to.
