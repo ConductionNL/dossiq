@@ -143,6 +143,18 @@ class ConfiguredRegistryService implements ConfiguredRegistryServiceInterface {
 			);
 		}
 
+		return $this->saved(context: $context, data: $this->addressedBy(data: $data, id: $id));
+	}//end save()
+
+	/**
+	 * The payload with its own identity stripped, addressed by the id when one is given.
+	 *
+	 * @param array<string, mixed> $data The object payload.
+	 * @param string|null          $id   Existing id, or null to create.
+	 *
+	 * @return array<string, mixed> The payload to save.
+	 */
+	private function addressedBy(array $data, ?string $id): array {
 		// 🔴 IDENTITY COMES FROM THE PARAMETER, NEVER FROM THE PAYLOAD.
 		//
 		// `saveObject()` does not take its target as an argument you control:
@@ -159,7 +171,7 @@ class ConfiguredRegistryService implements ConfiguredRegistryServiceInterface {
 		// returned 201 carrying the victim's own uuid, and the victim's row
 		// came back with the attacker's values.
 		//
-		// This method already takes `$id` for the update case. Stripping the
+		// save() already takes `$id` for the update case. Stripping the
 		// payload's identity makes that parameter the ONLY way to address an
 		// existing object, which is what it was always for.
 		unset($data['id'], $data['uuid'], $data['@self']);
@@ -168,6 +180,18 @@ class ConfiguredRegistryService implements ConfiguredRegistryServiceInterface {
 			$data['id'] = $id;
 		}
 
+		return $data;
+	}//end addressedBy()
+
+	/**
+	 * Save the payload into the configured register and schema.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $context The resolved store context.
+	 * @param array<string, mixed>                                            $data    The payload to save.
+	 *
+	 * @return array<string, mixed> The saved object.
+	 */
+	private function saved(array $context, array $data): array {
 		$saved = $context['objectService']->saveObject(
 			register: $context['register'],
 			schema: $context['schema'],
@@ -175,7 +199,7 @@ class ConfiguredRegistryService implements ConfiguredRegistryServiceInterface {
 		);
 
 		return $this->toArray(value: $saved, fallback: $data);
-	}//end save()
+	}//end saved()
 
 	/**
 	 * Delete a single object.
