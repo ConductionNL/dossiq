@@ -138,7 +138,7 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 
 		$startTime = microtime(true);
 
-		$result = $this->askHermiq(sessionId: $sessionId, turn: $turn, summary: $summary);
+		$result = $this->askHermiq(turn: $turn, ask: ['sessionId' => $sessionId, 'summary' => $summary]);
 
 		$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
 
@@ -175,9 +175,8 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	/**
 	 * Send the message to Hermiq with the case as context.
 	 *
-	 * @param string|null   $sessionId The Hermiq session, or null for a new one.
-	 * @param AssistantTurn $turn      The case and the message.
-	 * @param array         $summary   The case summary.
+	 * @param AssistantTurn                                  $turn The case and the message.
+	 * @param array{sessionId: string|null, summary: array} $ask  The Hermiq session (null for a new one) and the case summary.
 	 *
 	 * @return array Hermiq's answer.
 	 *
@@ -185,9 +184,9 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	 *
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
-	private function askHermiq(?string $sessionId, AssistantTurn $turn, array $summary): array {
+	private function askHermiq(AssistantTurn $turn, array $ask): array {
 		return $this->hermiqClient->converse(
-			sessionId: $sessionId,
+			sessionId: $ask['sessionId'],
 			message: $turn->message,
 			context: [
 				// FROZEN at `procest`: this is this app's id AS HERMIQ KNOWS IT,
@@ -198,7 +197,7 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 				'app' => 'procest',
 				'objectType' => 'case',
 				'objectRef' => $turn->caseId,
-				'contextData' => $summary,
+				'contextData' => $ask['summary'],
 			]
 		);
 	}//end askHermiq()
@@ -274,7 +273,7 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
-		$found = $this->findCase(objectService: $objectService, caseId: $caseId, register: $register, schema: $schema);
+		$found = $this->findCase(store: [$objectService, $register, $schema], caseId: $caseId);
 
 		return $this->casePayload(found: $found, caseId: $caseId);
 	}//end loadReadableCase()
@@ -282,16 +281,15 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	/**
 	 * Read the case through the caller-scoped object service.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $caseId        The case id.
-	 * @param string $register      The register.
-	 * @param string $schema        The case schema.
+	 * @param array{0: object, 1: mixed, 2: mixed} $store  OpenRegister's object service, the register and the case schema.
+	 * @param string                               $caseId The case id.
 	 *
 	 * @return mixed What the object service answered.
 	 *
 	 * @throws Exception (code 404) When the read fails.
 	 */
-	private function findCase(object $objectService, string $caseId, string $register, string $schema): mixed {
+	private function findCase(array $store, string $caseId): mixed {
+		[$objectService, $register, $schema] = $store;
 		try {
 			$case = $objectService->find(id: $caseId, register: $register, schema: $schema);
 		} catch (Throwable $e) {

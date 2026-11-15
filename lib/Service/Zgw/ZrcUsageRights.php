@@ -228,7 +228,7 @@ class ZrcUsageRights {
 			return;
 		}
 
-		$this->writeUsageRights(docUuid: $docUuid, docConfig: $docConfig, docData: $docData, hasGr: $hasGr);
+		$this->writeUsageRights(docConfig: $docConfig, document: ['uuid' => $docUuid, 'data' => $docData, 'hasGr' => $hasGr]);
 	}//end settleUsageRightsOf()
 
 	/**
@@ -256,16 +256,17 @@ class ZrcUsageRights {
 	/**
 	 * Save the document with its indicatieGebruiksrecht.
 	 *
-	 * @param string $docUuid The document.
-	 * @param array $docConfig The document mapping.
-	 * @param array $docData The stored document.
-	 * @param bool $hasGr Whether gebruiksrechten exist.
+	 * @param array                                         $docConfig The document mapping.
+	 * @param array{uuid: string, data: array, hasGr: bool} $document  The document, the stored document and
+	 *                                                                 whether gebruiksrechten exist.
 	 *
 	 * @return void
 	 */
-	private function writeUsageRights(string $docUuid, array $docConfig, array $docData, bool $hasGr): void {
+	private function writeUsageRights(array $docConfig, array $document): void {
+		$docUuid = $document['uuid'];
+		$docData = $document['data'];
 		unset($docData['@self'], $docData['organisation']);
-		$docData['usageRightsIndication'] = $hasGr;
+		$docData['usageRightsIndication'] = $document['hasGr'];
 		$docData['id'] = $docUuid;
 		$this->zgwService->getObjectService()->saveObject(
 			register: $docConfig['sourceRegister'],

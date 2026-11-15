@@ -117,14 +117,33 @@ trait GuardsZgwRequests {
 	 * @return JSONResponse|null The 404, or null when the resource exists or cannot be checked.
 	 */
 	private function missingResourceRefusal(string $resource, string $uuid, string $detail): ?JSONResponse {
+		if ($this->isGoneFromSource(resource: $resource, uuid: $uuid) === false) {
+			return null;
+		}
+
+		return new JSONResponse(
+			data: ['detail' => $detail],
+			statusCode: Http::STATUS_NOT_FOUND
+		);
+	}//end missingResourceRefusal()
+
+	/**
+	 * Whether the resource can be looked for in its source register and is not there.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid     The resource UUID.
+	 *
+	 * @return bool False when it exists, or when there is no object service or mapping to look in.
+	 */
+	private function isGoneFromSource(string $resource, string $uuid): bool {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
-			return null;
+			return false;
 		}
 
 		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
 		if ($mappingConfig === null) {
-			return null;
+			return false;
 		}
 
 		try {
@@ -134,12 +153,9 @@ trait GuardsZgwRequests {
 				schema: $mappingConfig['sourceSchema']
 			);
 		} catch (\Throwable $e) {
-			return new JSONResponse(
-				data: ['detail' => $detail],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return true;
 		}
 
-		return null;
-	}//end missingResourceRefusal()
+		return false;
+	}//end isGoneFromSource()
 }//end trait

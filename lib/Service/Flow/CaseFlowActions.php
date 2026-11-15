@@ -203,35 +203,60 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		string $until = '',
 		int $count = 0,
 	): array {
-		$due = $this->document->dueDate(date: $date);
-		$mode = $this->document->recurrenceOf(recurrence: $recurrence);
-		$end = $this->document->endOf(recurrence: $mode, until: $until, count: $count);
+		return $this->planFollowUp(
+			request: [
+				'caseId' => $caseId,
+				'caseTypeId' => $caseTypeId,
+				'date' => $date,
+				'title' => $title,
+				'uid' => $uid,
+				'recurrence' => $recurrence,
+				'until' => $until,
+				'count' => $count,
+			]
+		);
+	}//end plan()
+
+	/**
+	 * Write and publish the scheduled flow of a planned follow-up, as {@see self::plan()} describes.
+	 *
+	 * @param array<string, mixed> $request The `caseId`, `caseTypeId`, due `date`, `title`, acting `uid`, `recurrence`,
+	 *                                      `until` and `count` as {@see self::plan()} received them.
+	 *
+	 * @return array{id: string, title: string, date: string, caseType: string, recurrence: string, until: string, count: int} The planned follow-up.
+	 *
+	 * @throws RuntimeException `flows_unavailable`, `invalid_date`, `invalid_recurrence`, `invalid_end`, `plan_failed`.
+	 */
+	private function planFollowUp(array $request): array {
+		$due = $this->document->dueDate(date: $request['date']);
+		$mode = $this->document->recurrenceOf(recurrence: $request['recurrence']);
+		$end = $this->document->endOf(recurrence: $mode, until: $request['until'], count: $request['count']);
 
 		$service = $this->flowService();
 
 		$document = $this->document->build(
-			caseId: $caseId,
-			caseTypeId: $caseTypeId,
+			caseId: $request['caseId'],
+			caseTypeId: $request['caseTypeId'],
 			due: $due,
-			title: $title,
-			uid: $uid,
+			title: $request['title'],
+			uid: $request['uid'],
 			recurrence: $mode,
 			until: $end['until'],
 			count: $end['count']
 		);
 
-		$flow = $this->saveAndPublish(service: $service, document: $document, caseId: $caseId);
+		$flow = $this->saveAndPublish(service: $service, planned: ['document' => $document, 'caseId' => $request['caseId']]);
 
 		return [
 			'id' => (string)$flow->getUuid(),
-			'title' => $title,
+			'title' => $request['title'],
 			'date' => $due->format('Y-m-d'),
-			'caseType' => $caseTypeId,
+			'caseType' => $request['caseTypeId'],
 			'recurrence' => $mode,
 			'until' => $end['until'],
 			'count' => $end['count'],
 		];
-	}//end plan()
+	}//end planFollowUp()
 
 	/**
 	 * OpenRegister's flow service.
@@ -254,9 +279,8 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	/**
 	 * Save the flow document, stamp the series source, publish and enable it.
 	 *
-	 * @param object               $service  OpenRegister's flow service.
-	 * @param array<string, mixed> $document The flow document.
-	 * @param string               $caseId   The case, for the log line.
+	 * @param object                                                 $service OpenRegister's flow service.
+	 * @param array{document: array<string, mixed>, caseId: string} $planned The flow document, and the case for the log line.
 	 *
 	 * @return object The published flow.
 	 *
@@ -264,7 +288,8 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	 *
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
-	private function saveAndPublish(object $service, array $document, string $caseId): object {
+	private function saveAndPublish(object $service, array $planned): object {
+		$document = $planned['document'];
 		try {
 			$flow = $service->save(data: $document);
 
@@ -282,7 +307,7 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'CaseFlowActions: could not write the planned follow-up',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
+				['caseId' => $planned['caseId'], 'exception' => $e->getMessage()]
 			);
 
 			throw new RuntimeException('plan_failed');
@@ -445,7 +470,7 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		}
 
 		$lookup = new StartableFlowLookup(objectService: $objectService, register: $register, typeSchema: $typeSchema);
-		$case = $this->fetch(lookup: $lookup, schema: $caseSchema, id: $caseId);
+		$case = $this->fetch(lookup: $lookup, object: ['schema' => $caseSchema, 'id' => $caseId]);
 		if ($case === null) {
 			throw new RuntimeException('case_not_found');
 		}
@@ -463,7 +488,7 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	 */
 	private function flowIdsOfType(StartableFlowLookup $lookup, array $caseRow): array {
 		$caseTypeId = (string)($caseRow['caseType'] ?? '');
-		$caseType = $this->fetch(lookup: $lookup, schema: $lookup->typeSchema, id: $caseTypeId);
+		$caseType = $this->fetch(lookup: $lookup, object: ['schema' => $lookup->typeSchema, 'id' => $caseTypeId]);
 		if ($caseType === null) {
 			return [];
 		}
@@ -552,19 +577,19 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	/**
 	 * Fetch one object, tolerating a fail-closed miss.
 	 *
-	 * @param StartableFlowLookup $lookup The ObjectService and register.
-	 * @param string              $schema The schema slug.
-	 * @param string              $id     The object id.
+	 * @param StartableFlowLookup                $lookup The ObjectService and register.
+	 * @param array{schema: string, id: string} $object The schema slug and the object id.
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	private function fetch(StartableFlowLookup $lookup, string $schema, string $id): ?array {
+	private function fetch(StartableFlowLookup $lookup, array $object): ?array {
+		$id = $object['id'];
 		if ($id === '') {
 			return null;
 		}
 
 		try {
-			$found = $lookup->objectService->find($id, register: $lookup->register, schema: $schema);
+			$found = $lookup->objectService->find($id, register: $lookup->register, schema: $object['schema']);
 		} catch (Throwable $e) {
 			$this->logger->debug('CaseFlowActions: object lookup failed', ['id' => $id, 'exception' => $e->getMessage()]);
 

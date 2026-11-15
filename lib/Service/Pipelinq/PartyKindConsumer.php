@@ -219,7 +219,7 @@ class PartyKindConsumer implements PartyKindConsumerInterface {
 		}
 
 		try {
-			$this->writeAcceptance(objectService: $objectService, target: $target, ordered: $ordered);
+			$this->writeAcceptance(objectService: $objectService, acceptance: ['recordType' => $target, 'kinds' => $ordered]);
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq pipelinq: a case type could not declare which party kinds it accepts, so the '
@@ -257,20 +257,20 @@ class PartyKindConsumer implements PartyKindConsumerInterface {
 	/**
 	 * Write the acceptance for a target: a create the first time, a patch after.
 	 *
-	 * @param object             $objectService The OpenRegister object service.
-	 * @param string             $target        The record type the acceptance is for.
-	 * @param array<int, string> $ordered       The kinds being declared.
+	 * @param object                                            $objectService The OpenRegister object service.
+	 * @param array{recordType: string, kinds: array<int, string>} $acceptance    The record type the acceptance is for, and
+	 *                                                                           the kinds being declared.
 	 *
 	 * @return void
 	 */
-	private function writeAcceptance(object $objectService, string $target, array $ordered): void {
-		$existing = $this->existingAcceptanceId(objectService: $objectService, target: $target);
+	private function writeAcceptance(object $objectService, array $acceptance): void {
+		$existing = $this->existingAcceptanceId(objectService: $objectService, target: $acceptance['recordType']);
 
 		if ($existing === null) {
 			// A FIRST declaration is a create, and a create's payload IS
 			// the whole object, so a plain save is correct here.
 			$objectService->saveObject(
-				object: ['recordType' => $target, 'kinds' => $ordered],
+				object: $acceptance,
 				register: self::PIPELINQ_REGISTER,
 				schema: self::ACCEPTANCE_SCHEMA,
 			);
@@ -289,7 +289,7 @@ class PartyKindConsumer implements PartyKindConsumerInterface {
 			register: self::PIPELINQ_REGISTER,
 			schema: self::ACCEPTANCE_SCHEMA,
 			id: $existing,
-			changes: ['recordType' => $target, 'kinds' => $ordered],
+			changes: $acceptance,
 		);
 	}//end writeAcceptance()
 

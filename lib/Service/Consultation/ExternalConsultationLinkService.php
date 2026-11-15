@@ -120,17 +120,31 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			]
 		);
 
+		return $this->invited(share: $share, invite: ['consultation' => $consultation, 'consultationId' => $consultationId, 'body' => $body]);
+	}//end invite()
+
+	/**
+	 * The minted link with where it goes, refusing when the share could not be minted.
+	 *
+	 * @param array<string, mixed> $share  What minting the link answered.
+	 * @param array<string, mixed> $invite The `consultation`, its `consultationId` and the advisory `body`.
+	 *
+	 * @return array<string, mixed> The link, with the address it goes to.
+	 *
+	 * @throws RuntimeException When the share answered an error.
+	 */
+	private function invited(array $share, array $invite): array {
 		if (isset($share['error']) === true) {
 			throw new RuntimeException((string)$share['error']);
 		}
 
 		$this->logger->info(
 			'Dossiq: an external advisory body was invited over a case access link',
-			['consultationId' => $consultationId, 'advisoryBody' => $body]
+			['consultationId' => $invite['consultationId'], 'advisoryBody' => $invite['body']]
 		);
 
-		return $this->withAddress(share: $share, consultation: $consultation);
-	}//end invite()
+		return $this->withAddress(share: $share, consultation: $invite['consultation']);
+	}//end invited()
 
 	/**
 	 * The consultation, its case and its advisory body, when it can carry a link.
@@ -216,7 +230,7 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			return ['collected' => false];
 		}
 
-		return $this->recordAdvice(consultationId: $consultationId, advice: $advice, share: $share, newest: $newest);
+		return $this->recordAdvice(answer: ['consultationId' => $consultationId, 'advice' => $advice], link: ['share' => $share, 'newest' => $newest]);
 	}//end collect()
 
 	/**
@@ -262,18 +276,22 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 	/**
 	 * Record the comment as the consultation's response, and mark it collected on the share.
 	 *
-	 * @param string               $consultationId The consultation UUID.
-	 * @param string               $advice         The codified outcome the handler reads in the comment.
-	 * @param array<string, mixed> $share          The share.
-	 * @param array<string, mixed> $newest         The comment.
+	 * @param array{consultationId: string, advice: string}                    $answer The consultation UUID and the codified outcome
+	 *                                                                                 the handler reads in the comment.
+	 * @param array{share: array<string, mixed>, newest: array<string, mixed>} $link   The share and the comment.
 	 *
 	 * @return array<string, mixed> What was recorded.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
-	private function recordAdvice(string $consultationId, string $advice, array $share, array $newest): array {
+	private function recordAdvice(array $answer, array $link): array {
+		$share = $link['share'];
+		$newest = $link['newest'];
 		$notes = (string)($share['advisoryBody'] ?? '') . ': ' . (string)$newest['message'];
-		$recorded = $this->consultations->submitResponse(consultationId: $consultationId, response: ['advice' => $advice, 'notes' => $notes]);
+		$recorded = $this->consultations->submitResponse(
+			consultationId: $answer['consultationId'],
+			response: ['advice' => $answer['advice'], 'notes' => $notes]
+		);
 
 		$this->linkShares->markCollected(shareId: (string)($share['id'] ?? $share['uuid'] ?? ''), noteId: (int)$newest['id']);
 

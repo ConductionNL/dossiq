@@ -622,7 +622,10 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function saveRedactionProposal(string $caseId, string $documentRef, array $proposal): array {
-		$savedObject = $this->updateAssessment(caseId: $caseId, documentRef: $documentRef, fields: ['redactionProposal' => $proposal]);
+		$savedObject = $this->updateAssessment(
+			document: ['caseId' => $caseId, 'documentRef' => $documentRef],
+			fields: ['redactionProposal' => $proposal]
+		);
 
 		$this->logger->info(
 			'WOO redaction proposal saved for document ' . $documentRef . ' in case ' . $caseId
@@ -658,22 +661,23 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 			$fields['redactedDocumentRef'] = $redactedDocumentRef;
 		}
 
-		return $this->updateAssessment(caseId: $caseId, documentRef: $documentRef, fields: $fields);
+		return $this->updateAssessment(document: ['caseId' => $caseId, 'documentRef' => $documentRef], fields: $fields);
 	}//end saveRedaction()
 
 	/**
 	 * Change fields of an EXISTING assessment, under the reviewer rule.
 	 *
-	 * @param string               $caseId      The case UUID.
-	 * @param string               $documentRef The document UUID.
-	 * @param array<string, mixed> $fields      The fields to set.
+	 * @param array{caseId: string, documentRef: string} $document The case UUID and the document UUID.
+	 * @param array<string, mixed>                       $fields   The fields to set.
 	 *
 	 * @return array<string, mixed> The updated assessment record.
 	 *
 	 * @throws RuntimeException When OpenRegister is unavailable or the document has not been assessed.
 	 * @throws RefusedException When the caller may not change this assessment.
 	 */
-	private function updateAssessment(string $caseId, string $documentRef, array $fields): array {
+	private function updateAssessment(array $document, array $fields): array {
+		$caseId = $document['caseId'];
+		$documentRef = $document['documentRef'];
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');

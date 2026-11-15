@@ -72,23 +72,36 @@ class ZtcRelatedTypeLookup {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function sameIdentifierUrls(object $objectService, array $ztMapping, string $ztRef, string $baseUrl): array {
+		$caseTypes = new MappedObjects(objectService: $objectService, mapping: $ztMapping);
+
+		return array_map(
+			static fn (mixed $id): string => $baseUrl.'/zaaktypen/'.$id,
+			$this->sameIdentifierIds(caseTypes: $caseTypes, ztRef: $ztRef)
+		);
+	}//end sameIdentifierUrls()
+
+	/**
+	 * The ids of every zaaktype that shares the identifier of the referenced one.
+	 *
+	 * When the referenced zaaktype cannot be read, its own id stands in.
+	 *
+	 * @param MappedObjects $caseTypes The object service with the zaaktypen mapping
+	 * @param string        $ztRef     The referenced zaaktype uuid
+	 *
+	 * @return array<string> The zaaktype ids (empty when it has no identifier)
+	 */
+	private function sameIdentifierIds(MappedObjects $caseTypes, string $ztRef): array {
 		try {
-			$ident = $this->findIn(objectService: $objectService, mapping: $ztMapping, id: $ztRef)['identifier'] ?? '';
+			$ident = $this->findIn(objectService: $caseTypes->objectService, mapping: $caseTypes->mapping, id: $ztRef)['identifier'] ?? '';
 			if ($ident === '') {
 				return [];
 			}
 
-			$urls = [];
-			$caseTypes = new MappedObjects(objectService: $objectService, mapping: $ztMapping);
-			foreach ($this->searchIds(objects: $caseTypes, params: ['identifier' => $ident]) as $id) {
-				$urls[] = $baseUrl.'/zaaktypen/'.$id;
-			}
-
-			return $urls;
+			return $this->searchIds(objects: $caseTypes, params: ['identifier' => $ident]);
 		} catch (\Throwable $e) {
-			return [$baseUrl.'/zaaktypen/'.$ztRef];
+			return [$ztRef];
 		}
-	}//end sameIdentifierUrls()
+	}//end sameIdentifierIds()
 
 	/**
 	 * Expand gerelateerdeZaaktypen: a URL is kept, a uuid becomes one relation per zaaktype
@@ -150,31 +163,47 @@ class ZtcRelatedTypeLookup {
 			return [];
 		}
 
-		$iotUrls = [];
-		$caseTypeLinks = new MappedObjects(objectService: $objectService, mapping: $ziotMapping);
-		foreach ($this->searchRowsOrNone(objects: $caseTypeLinks, params: ['caseType' => $uuid]) as $ziotData) {
-			$iotRef = $ziotData['informatieobjecttype'] ?? '';
-			if ($iotRef !== '') {
-				$sameName = $this->sameNameDocumentTypeUrls(objectService: $objectService, iotMapping: $iotMapping, iotRef: $iotRef, baseUrl: $baseUrl);
-				array_push($iotUrls, ...$sameName);
-			}
-		}
+		$iotUrls = array_map(
+			static fn (mixed $id): string => $baseUrl.'/informatieobjecttypen/'.$id,
+			$this->documentTypeIds(
+				caseTypeLinks: new MappedObjects(objectService: $objectService, mapping: $ziotMapping),
+				lookup: ['uuid' => $uuid, 'documentTypes' => new MappedObjects(objectService: $objectService, mapping: $iotMapping)]
+			)
+		);
 
 		return array_values(array_unique($iotUrls));
 	}//end caseTypeDocumentTypeUrls()
 
 	/**
-	 * The URLs of every informatieobjecttype named like the referenced one.
+	 * The informatieobjecttype ids of a zaaktype's ZIOT records, each expanded to every type with the same name.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param array $iotMapping The informatieobjecttypen mapping
-	 * @param mixed $iotRef The referenced informatieobjecttype uuid
-	 * @param string $baseUrl The Catalogi API base URL
+	 * @param MappedObjects                                     $caseTypeLinks The object service with the ZIOT mapping
+	 * @param array{uuid: string, documentTypes: MappedObjects} $lookup        The zaaktype uuid, and the object service with
+	 *                                                                         the informatieobjecttypen mapping
 	 *
-	 * @return array<string> The URLs (empty when the type has no name)
+	 * @return array<mixed> The ids, in order, possibly repeated
 	 */
-	private function sameNameDocumentTypeUrls(object $objectService, array $iotMapping, mixed $iotRef, string $baseUrl): array {
-		$documentTypes = new MappedObjects(objectService: $objectService, mapping: $iotMapping);
+	private function documentTypeIds(MappedObjects $caseTypeLinks, array $lookup): array {
+		$ids = [];
+		foreach ($this->searchRowsOrNone(objects: $caseTypeLinks, params: ['caseType' => $lookup['uuid']]) as $ziotData) {
+			$iotRef = $ziotData['informatieobjecttype'] ?? '';
+			if ($iotRef !== '') {
+				array_push($ids, ...$this->sameNameDocumentTypeIds(documentTypes: $lookup['documentTypes'], iotRef: $iotRef));
+			}
+		}
+
+		return $ids;
+	}//end documentTypeIds()
+
+	/**
+	 * The ids of every informatieobjecttype named like the referenced one.
+	 *
+	 * @param MappedObjects $documentTypes The object service with the informatieobjecttypen mapping
+	 * @param mixed         $iotRef        The referenced informatieobjecttype uuid
+	 *
+	 * @return array<mixed> The ids (empty when the type has no name); the reference itself when it cannot be read
+	 */
+	private function sameNameDocumentTypeIds(MappedObjects $documentTypes, mixed $iotRef): array {
 		try {
 			$found = $this->findIn(objectService: $documentTypes->objectService, mapping: $documentTypes->mapping, id: $iotRef);
 			$iotName = $this->text->textOf(value: ($found['name'] ?? ''));
@@ -182,17 +211,12 @@ class ZtcRelatedTypeLookup {
 				return [];
 			}
 
-			$urls = [];
-			foreach ($this->searchIds(objects: $documentTypes, params: ['name' => $iotName]) as $id) {
-				$urls[] = $baseUrl.'/informatieobjecttypen/'.$id;
-			}
-
-			return $urls;
+			return $this->searchIds(objects: $documentTypes, params: ['name' => $iotName]);
 		} catch (\Throwable $e) {
 			// If IOT lookup fails, fall back to direct UUID.
-			return [$baseUrl.'/informatieobjecttypen/'.$iotRef];
+			return [$iotRef];
 		}
-	}//end sameNameDocumentTypeUrls()
+	}//end sameNameDocumentTypeIds()
 
 	/**
 	 * The URLs of every object of a resource whose caseType is the zaaktype.
@@ -212,17 +236,33 @@ class ZtcRelatedTypeLookup {
 			return [];
 		}
 
-		$urls = [];
 		$objects = new MappedObjects(objectService: $objectService, mapping: $mapping);
+
+		return array_map(
+			static fn (mixed $id): string => $baseUrl.'/'.$resource.'/'.$id,
+			$this->idsOfObjectsFor(objects: $objects, uuid: $uuid)
+		);
+	}//end urlsOfObjectsFor()
+
+	/**
+	 * The ids of every object of a mapping whose caseType is the zaaktype, skipping rows without one.
+	 *
+	 * @param MappedObjects $objects The object service with the resource's mapping
+	 * @param string        $uuid    The zaaktype uuid
+	 *
+	 * @return array<mixed> The ids (empty on error)
+	 */
+	private function idsOfObjectsFor(MappedObjects $objects, string $uuid): array {
+		$ids = [];
 		foreach ($this->searchRowsOrNone(objects: $objects, params: ['caseType' => $uuid]) as $row) {
 			$id = $row['id'] ?? ($row['@self']['id'] ?? '');
 			if ($id !== '') {
-				$urls[] = $baseUrl.'/'.$resource.'/'.$id;
+				$ids[] = $id;
 			}
 		}
 
-		return $urls;
-	}//end urlsOfObjectsFor()
+		return $ids;
+	}//end idsOfObjectsFor()
 
 	/**
 	 * Read one object of a mapping as an array.

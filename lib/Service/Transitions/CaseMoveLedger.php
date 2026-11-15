@@ -88,18 +88,32 @@ class CaseMoveLedger {
 			throw new RuntimeException('case_not_found');
 		}
 
+		self::assertUnchanged(caseAtSave: $caseAtSave, read: ['version' => $readVersion, 'status' => $currentId]);
+
+		return $caseAtSave;
+	}//end reloadUnchanged()
+
+	/**
+	 * Refuse the move when the case no longer has the version and status it was read with.
+	 *
+	 * @param array<string, mixed>               $caseAtSave The case as it is now.
+	 * @param array{version: int, status: string} $read       The version and the status it was read with.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When another change reached the case first.
+	 */
+	private static function assertUnchanged(array $caseAtSave, array $read): void {
 		$versionAtSave = (int)(($caseAtSave['@self']['version'] ?? ($caseAtSave['version'] ?? 0)));
 		$statusAtSave = (string)($caseAtSave['status'] ?? '');
-		if ($versionAtSave !== $readVersion || $statusAtSave !== $currentId) {
+		if ($versionAtSave !== $read['version'] || $statusAtSave !== $read['status']) {
 			throw new RefusedException(
 				rule: 'transition-conflict',
 				sentence: 'Another change reached this case first. Reload it and try again.',
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
-
-		return $caseAtSave;
-	}//end reloadUnchanged()
+	}//end assertUnchanged()
 
 	/**
 	 * Write the result a closing move records onto the case payload. Not saved here.
@@ -124,6 +138,21 @@ class CaseMoveLedger {
 			return $case;
 		}
 
+		return $this->closed(case: $case, move: ['caseId' => $caseId, 'resultTypeId' => $resultTypeId]);
+	}//end close()
+
+	/**
+	 * The case payload with the end date settled and, when a result resolves, the result and its archival future.
+	 *
+	 * @param array<string, mixed>                           $case The case payload about to be saved.
+	 * @param array{caseId: string, resultTypeId: string|null} $move The case uuid and the chosen result type, or null.
+	 *
+	 * @return array<string, mixed> The payload.
+	 *
+	 * @throws RuntimeException When a closing move carries no result type.
+	 */
+	private function closed(array $case, array $move): array {
+		$resultTypeId = $move['resultTypeId'];
 		$endDate = substr((string)($case['endDate'] ?? ''), 0, 10);
 		if ($endDate === '') {
 			$endDate = date('Y-m-d');
@@ -132,7 +161,7 @@ class CaseMoveLedger {
 		$case['endDate'] = $endDate;
 
 		$resultId = $this->resultWriter->resolveClosingResult(
-			caseId: $caseId,
+			caseId: $move['caseId'],
 			caseTypeId: (string)($case['caseType'] ?? ''),
 			resultTypeId: $resultTypeId,
 		);
@@ -146,7 +175,7 @@ class CaseMoveLedger {
 			$case,
 			$this->resultWriter->archivalFuture(case: $case, resultTypeId: (string)$resultTypeId, endDate: $endDate)
 		);
-	}//end close()
+	}//end closed()
 
 	/**
 	 * Save the case in the status it enters, once.
@@ -164,6 +193,20 @@ class CaseMoveLedger {
 	 */
 	public function save(array $case, string $toStatus, ?int $readVersion = null): array {
 		$case['status'] = $toStatus;
+		$saved = $this->store->saveCase(case: self::withReadVersion(case: $case, readVersion: $readVersion));
+
+		return [$saved, (int)(($saved['@self']['version'] ?? ($saved['version'] ?? 0)))];
+	}//end save()
+
+	/**
+	 * The case payload carrying the version it was read at, so the save is refused when the case moved meanwhile.
+	 *
+	 * @param array<string, mixed> $case        The case payload.
+	 * @param int|null             $readVersion The version it was read at, or null to save without one.
+	 *
+	 * @return array<string, mixed> The payload.
+	 */
+	private static function withReadVersion(array $case, ?int $readVersion): array {
 		if ($readVersion !== null) {
 			$self = ($case['@self'] ?? null);
 			if (is_array($self) === false) {
@@ -174,10 +217,8 @@ class CaseMoveLedger {
 			$case['@self'] = $self;
 		}
 
-		$saved = $this->store->saveCase(case: $case);
-
-		return [$saved, (int)(($saved['@self']['version'] ?? ($saved['version'] ?? 0)))];
-	}//end save()
+		return $case;
+	}//end withReadVersion()
 
 	/**
 	 * Refuse a status that is not one of the case type's.

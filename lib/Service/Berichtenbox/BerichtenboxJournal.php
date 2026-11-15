@@ -146,18 +146,34 @@ class BerichtenboxJournal {
 		string $status,
 		string $lastError,
 	): void {
-		$caseId = (string)($data['caseId'] ?? '');
-		if ($caseId === '') {
+		if ((string)($data['caseId'] ?? '') === '') {
 			return;
 		}
 
+		$this->recordStatusOnCase(
+			data: $data,
+			outcome: ['messageId' => $externalMessageId, 'status' => $status, 'lastError' => $lastError]
+		);
+	}//end recordStatus()
+
+	/**
+	 * Write the status change on the timeline of the case the message names.
+	 *
+	 * @param array<string, mixed>  $data    The stored message, with its `caseId`.
+	 * @param array<string, string> $outcome The `messageId` integriq tracks it by, the `status` it moved to and
+	 *                                       the provider's `lastError`, when it failed.
+	 *
+	 * @return void
+	 */
+	private function recordStatusOnCase(array $data, array $outcome): void {
+		$status = $outcome['status'];
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: (string)$data['caseId'],
 			kind: TimelineKinds::PORTAL_MESSAGE,
-			message: $this->statusSentence(subject: (string)($data['subject'] ?? ''), outcome: ['status' => $status, 'lastError' => $lastError]),
+			message: $this->statusSentence(subject: (string)($data['subject'] ?? ''), outcome: ['status' => $status, 'lastError' => $outcome['lastError']]),
 			fields: [
 				'subject' => (string)($data['subject'] ?? ''),
-				'messageId' => $externalMessageId,
+				'messageId' => $outcome['messageId'],
 				'status' => $status,
 			],
 			// INTERNAL: a delivery receipt is about our sending, not about what
@@ -165,7 +181,7 @@ class BerichtenboxJournal {
 			// message itself.
 			visibility: CaseTimeline::INTERNAL,
 		);
-	}//end recordStatus()
+	}//end recordStatusOnCase()
 
 	/**
 	 * The sentence and the visibility the timeline entry gets.

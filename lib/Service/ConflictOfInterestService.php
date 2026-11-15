@@ -233,19 +233,31 @@ class ConflictOfInterestService {
 			return ['conflict' => false];
 		}
 
+		return $this->conflictWithApplicant(subject: ['userId' => $userId, 'caseId' => $caseId], applicantBsn: $applicantBsn);
+	}//end checkConflict()
+
+	/**
+	 * Whether the case worker is the applicant, or related to them; a conflict when the worker cannot be resolved.
+	 *
+	 * @param array{userId: string, caseId: string} $subject      The user id and the case id.
+	 * @param string                                $applicantBsn The applicant's BSN, sourced server-side.
+	 *
+	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
+	 */
+	private function conflictWithApplicant(array $subject, string $applicantBsn): array {
 		// The case-worker identity is resolved SERVER-SIDE. It is deliberately
 		// NOT read from $caseProperties: that array originates from the request
 		// body, and an authorization input supplied by the requester is not an
 		// authorization input — a caller would simply omit `userBsn` to force
 		// "no conflict" (the bug this replaces).
-		$userBsn = $this->resolveEmployeeBsn(userId: $userId);
+		$userBsn = $this->resolveEmployeeBsn(userId: $subject['userId']);
 		if ($userBsn === null || $userBsn === '') {
 			// INDETERMINATE: the applicant is known but we cannot establish who
 			// the case worker is, so we cannot answer the question. A conflict
 			// check that cannot run MUST NOT report "no conflict" — fail closed.
 			$this->logger->warning(
 				'Belangenconflict check is indeterminate — blocking',
-				['userId' => $userId, 'caseId' => $caseId]
+				['userId' => $subject['userId'], 'caseId' => $subject['caseId']]
 			);
 			return ['conflict' => true, 'reason' => self::REASON_IDENTITY_INDETERMINATE];
 		}
@@ -255,8 +267,8 @@ class ConflictOfInterestService {
 			return ['conflict' => true, 'reason' => 'self'];
 		}
 
-		return $this->detectRelationConflict(bsns: [$userBsn, $applicantBsn], caseId: $caseId);
-	}//end checkConflict()
+		return $this->detectRelationConflict(bsns: [$userBsn, $applicantBsn], caseId: $subject['caseId']);
+	}//end conflictWithApplicant()
 
 	/**
 	 * Detect a family/relationship conflict between worker and applicant.

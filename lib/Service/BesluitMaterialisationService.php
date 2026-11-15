@@ -81,6 +81,29 @@ class BesluitMaterialisationService implements BesluitMaterialisationServiceInte
 		// Build the ZGW Besluit payload from the decidesk outcome (REQ-PDCD-003).
 		$decision = $this->buildBesluitPayload(caseId: $caseId, outcome: $outcome);
 
+		$saved = $this->persisted(
+			store: [$objectService, $register, $schema],
+			besluit: ['payload' => $decision, 'decisionId' => $decisionId, 'caseId' => $caseId]
+		);
+
+		return $this->asRecord(saved: $saved, caseId: $caseId, outcome: $outcome);
+	}//end materialise()
+
+	/**
+	 * Save the Besluit, over the existing one when it has a UUID.
+	 *
+	 * @param array{0: object, 1: mixed, 2: mixed}                                        $store   The object service, register and Besluit schema.
+	 * @param array{payload: array<string, mixed>, decisionId: string, caseId: string} $besluit The payload, the existing UUID (or '') and the case.
+	 *
+	 * @return mixed What the object service saved.
+	 *
+	 * @throws RuntimeException When the Besluit cannot be persisted.
+	 */
+	private function persisted(array $store, array $besluit): mixed {
+		[$objectService, $register, $schema] = $store;
+		$decision = $besluit['payload'];
+		$decisionId = $besluit['decisionId'];
+
 		// Merge with existing Besluit when updating (non-empty UUID), otherwise create.
 		$uuid = null;
 		if ($decisionId !== '') {
@@ -98,13 +121,13 @@ class BesluitMaterialisationService implements BesluitMaterialisationServiceInte
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'BesluitMaterialisationService: persist failed',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
+				['caseId' => $besluit['caseId'], 'error' => $e->getMessage()]
 			);
 			throw new RuntimeException('Besluit persist failed: ' . $e->getMessage(), 0, $e);
 		}
 
-		return $this->asRecord(saved: $saved, caseId: $caseId, outcome: $outcome);
-	}//end materialise()
+		return $saved;
+	}//end persisted()
 
 	/**
 	 * The OpenRegister object service, required to materialise a Besluit.
@@ -181,12 +204,23 @@ class BesluitMaterialisationService implements BesluitMaterialisationServiceInte
 	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function materialiseFromConcludedEvent(string $caseId, string $decisionId, array $event): array {
+		return $this->materialise(caseId: $caseId, decisionId: $decisionId, outcome: self::outcomeOf(event: $event));
+	}//end materialiseFromConcludedEvent()
+
+	/**
+	 * The decidesk outcome a concluded event carries: its outcome (or status), when, why, by whom and how.
+	 *
+	 * @param array<string, mixed> $event The DecisionConcludedEvent payload.
+	 *
+	 * @return array<string, mixed> The outcome, with the raw event.
+	 */
+	private static function outcomeOf(array $event): array {
 		$result = (string)($event['outcome'] ?? '');
 		if ($result === '') {
 			$result = (string)($event['status'] ?? '');
 		}
 
-		$outcome = [
+		return [
 			'result' => $result,
 			'decidedAt' => (string)($event['decidedAt'] ?? ''),
 			'rationale' => (string)($event['rationale'] ?? ''),
@@ -194,9 +228,7 @@ class BesluitMaterialisationService implements BesluitMaterialisationServiceInte
 			'method' => (string)($event['method'] ?? ''),
 			'raw' => $event,
 		];
-
-		return $this->materialise(caseId: $caseId, decisionId: $decisionId, outcome: $outcome);
-	}//end materialiseFromConcludedEvent()
+	}//end outcomeOf()
 
 	/**
 	 * Build the Besluiten-API payload from a decidesk outcome.

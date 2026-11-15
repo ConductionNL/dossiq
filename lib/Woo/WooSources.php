@@ -221,13 +221,24 @@ class WooSources implements WooSourcesInterface {
 			return ['rows' => [], 'remaining' => 0, 'notices' => [], 'refusal' => 'integriq-did-not-answer'];
 		}
 
+		return $this->microsoft365Answer(result: $result);
+	}//end searchMicrosoft365()
+
+	/**
+	 * The first rows of integriq's Microsoft 365 answer, how many more there were, and its notices.
+	 *
+	 * @param array<string, mixed> $result Integriq's answer.
+	 *
+	 * @return array{rows: array<int, array<string, mixed>>, remaining: int, notices: array<int, string>, refusal: string}
+	 */
+	private function microsoft365Answer(array $result): array {
 		$hits = array_values(array_filter((array)($result['hits'] ?? []), 'is_array'));
 		$rows = array_map(fn (array $hit): array => $this->row(hit: $hit), array_slice($hits, 0, self::ROW_LIMIT));
 		$remaining = max(0, (int)($result['moreCount'] ?? 0)) + max(0, (count($hits) - self::ROW_LIMIT));
 		$notices = array_values(array_map('strval', array_filter((array)($result['notices'] ?? []), 'is_scalar')));
 
 		return ['rows' => $rows, 'remaining' => $remaining, 'notices' => $notices, 'refusal' => ''];
-	}//end searchMicrosoft365()
+	}//end microsoft365Answer()
 
 	/**
 	 * Fetch one integriq hit by its handle, as one person.

@@ -155,8 +155,7 @@ class AwbProceedingScanner {
 	private function scanSchema(AwbScanRun $run): void {
 		$proceedings = $this->listObjects(
 			objectService: $run->objectService,
-			schema: $run->schema,
-			includeDeleted: $run->includeDeleted
+			query: ['schema' => $run->schema, 'includeDeleted' => $run->includeDeleted]
 		);
 
 		$closedHit = 0;
@@ -243,7 +242,7 @@ class AwbProceedingScanner {
 	private function terminatedProceedingIds(object $objectService, string $schema): array {
 		$ids = [];
 
-		foreach ($this->listObjects(objectService: $objectService, schema: $schema, includeDeleted: true) as $decision) {
+		foreach ($this->listObjects(objectService: $objectService, query: ['schema' => $schema, 'includeDeleted' => true]) as $decision) {
 			foreach (['objectionProceeding', 'beroep', 'appeal', 'objection'] as $key) {
 				$ref = ($decision['data'][$key] ?? null);
 				if (is_string($ref) === true && $ref !== '') {
@@ -262,15 +261,15 @@ class AwbProceedingScanner {
 	 * so an instance that never installed a given Awb schema is a no-op rather
 	 * than a failure.
 	 *
-	 * @param object $objectService OpenRegister object service.
-	 * @param string $schema Schema slug.
-	 * @param bool $includeDeleted Whether to include soft-deleted objects.
+	 * @param object                                     $objectService OpenRegister object service.
+	 * @param array{schema: string, includeDeleted: bool} $query         The schema slug, and whether to include soft-deleted objects.
 	 *
 	 * @return array<int, array<string, mixed>> Rendered objects.
 	 *
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
-	private function listObjects(object $objectService, string $schema, bool $includeDeleted): array {
+	private function listObjects(object $objectService, array $query): array {
+		$schema = $query['schema'];
 		try {
 			$objects = $objectService
 				->setRegister(self::REGISTER)
@@ -278,7 +277,7 @@ class AwbProceedingScanner {
 				->findAll(
 					[
 						'limit' => null,
-						'filters' => $this->filtersFor(includeDeleted: $includeDeleted),
+						'filters' => $this->filtersFor(includeDeleted: $query['includeDeleted']),
 					],
 					false,
 					false

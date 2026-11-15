@@ -250,13 +250,7 @@ class DocumentRelevance implements DocumentRelevanceInterface {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
 	 */
 	public function mark(string $caseId, string $documentRef, string $relevance, string $userId): array {
-		if (in_array($relevance, self::RELEVANCES, true) === false) {
-			throw new RefusedException(
-				rule: 'review-relevance-unknown',
-				sentence: 'Mark the document in scope, out of scope or unmarked.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		self::assertKnownRelevance(relevance: $relevance);
 
 		$review = ($this->forCase(caseId: $caseId)[$documentRef] ?? ['case' => $caseId, 'documentRef' => $documentRef, 'relevance' => self::UNMARKED]);
 		$wasRule = (($review['relevanceSource'] ?? '') === 'rule' && (string)($review['rule'] ?? '') !== '');
@@ -266,6 +260,25 @@ class DocumentRelevance implements DocumentRelevanceInterface {
 
 		return $this->save(review: $this->stamped(review: $review, mark: ['relevance' => $relevance, 'userId' => $userId]));
 	}//end mark()
+
+	/**
+	 * Refuse a relevance that is not in scope, out of scope or unmarked.
+	 *
+	 * @param string $relevance The relevance asked for.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException 422 when the relevance is unknown.
+	 */
+	private static function assertKnownRelevance(string $relevance): void {
+		if (in_array($relevance, self::RELEVANCES, true) === false) {
+			throw new RefusedException(
+				rule: 'review-relevance-unknown',
+				sentence: 'Mark the document in scope, out of scope or unmarked.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertKnownRelevance()
 
 	/**
 	 * The review carrying a reviewer's mark: the relevance, who marked it and when.

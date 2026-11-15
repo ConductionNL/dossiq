@@ -172,10 +172,10 @@ class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInte
 			// available|active|completed|terminated|disabled). Writing 'open'
 			// produced an object no transition could advance.
 			'status' => 'available',
-			'assignee' => $this->resolveAssignee(actionConfig: $actionConfig, case: $action->case, title: $title),
+			'assignee' => $this->resolveAssignee(action: $action, title: $title),
 		];
 
-		$task = $this->withTeamAndStep(task: $task, actionConfig: $actionConfig, case: $action->case);
+		$task = $this->withTeamAndStep(task: $task, action: $action);
 
 		return $this->declared(task: $task, actionConfig: $actionConfig);
 	}//end taskFor()
@@ -234,15 +234,15 @@ class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInte
 	/**
 	 * The case's team and the status that asked for the task, when there are any.
 	 *
-	 * @param array<string, mixed> $task         The task being built.
-	 * @param array<string, mixed> $actionConfig The action.
-	 * @param array<string, mixed> $case         The case.
+	 * @param array<string, mixed> $task   The task being built.
+	 * @param TaskAction           $action The action and its case.
 	 *
 	 * @return array<string, mixed> The task.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function withTeamAndStep(array $task, array $actionConfig, array $case): array {
+	private function withTeamAndStep(array $task, TaskAction $action): array {
+		$actionConfig = $action->actionConfig;
 		// The team is not a second guess at the person: a case can carry a
 		// team, a personal assignee, or both, and the task schema has a
 		// field for each. Carrying the case's team over is what keeps a
@@ -251,7 +251,7 @@ class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInte
 		// Read through the resolver, never a (string) cast: an expanded
 		// read of the old $ref casts to the literal "Array" and writes a
 		// team that resolves to nothing (one-team-model: a group id now).
-		$team = $this->assignees->resolveTeam(case: $case);
+		$team = $this->assignees->resolveTeam(case: $action->case);
 		if ($team !== '') {
 			$task['assigneeGroup'] = $team;
 		}
@@ -522,16 +522,17 @@ class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInte
 	 * task and SAYS SO, which is a defined outcome rather than a silent empty
 	 * string.
 	 *
-	 * @param array<string, mixed> $actionConfig The action configuration.
-	 * @param array<string, mixed> $case         The case.
-	 * @param string               $title        The task title, for the log line.
+	 * @param TaskAction $action The action configuration and its case.
+	 * @param string     $title  The task title, for the log line.
 	 *
 	 * @return string The principal, or '' when nothing names one.
 	 *
 	 * @spec openspec/specs/email-case-matching/spec.md
 	 * @spec openspec/specs/task-management/spec.md
 	 */
-	private function resolveAssignee(array $actionConfig, array $case, string $title): string {
+	private function resolveAssignee(TaskAction $action, string $title): string {
+		$actionConfig = $action->actionConfig;
+		$case = $action->case;
 		$assignee = $this->assignees->resolve(
 			primary: (string)($actionConfig['assignee'] ?? ''),
 			fallback: (string)($actionConfig['assigneeFallback'] ?? ''),

@@ -289,7 +289,7 @@ final class EscalationRuleValidator {
 				continue;
 			}
 
-			$error = $this->roleError(role: $role, roleKey: $roleKey, roleTypes: $roleTypes, path: $path);
+			$error = $this->roleError(reference: ['role' => $role, 'key' => $roleKey, 'path' => $path . '.' . $roleKey], roleTypes: $roleTypes);
 			if ($error !== null) {
 				$errors[] = $error;
 			}
@@ -301,20 +301,21 @@ final class EscalationRuleValidator {
 	/**
 	 * The error for one role reference, when it is malformed or does not resolve.
 	 *
-	 * @param mixed                $role      The role reference.
-	 * @param string               $roleKey   `notifyRole` or `escalateToRole`.
-	 * @param array<string, mixed> $roleTypes Map of role name/uuid to definition.
-	 * @param string               $path      The path prefix for any error.
+	 * @param array{role: mixed, key: string, path: string} $reference The role reference, its key (`notifyRole` or
+	 *                                                                `escalateToRole`) and the path of any error.
+	 * @param array<string, mixed>                         $roleTypes Map of role name/uuid to definition.
 	 *
 	 * @return array{path: string, code: string, message: string}|null Null when the reference is fine.
 	 *
 	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
-	private function roleError(mixed $role, string $roleKey, array $roleTypes, string $path): array|null {
+	private function roleError(array $reference, array $roleTypes): array|null {
+		$role = $reference['role'];
+		$roleKey = $reference['key'];
 		$checkRoles = ($roleTypes !== []);
 		if (is_string($role) === false || $role === '') {
 			return $this->error(
-				path: $path . '.' . $roleKey,
+				path: $reference['path'],
 				code: 'malformed_role_reference',
 				message: $roleKey . ' must be a non-empty role reference'
 			);
@@ -322,7 +323,7 @@ final class EscalationRuleValidator {
 
 		if ($checkRoles === true && array_key_exists($role, $roleTypes) === false) {
 			return $this->error(
-				path: $path . '.' . $roleKey,
+				path: $reference['path'],
 				code: 'unknown_role_reference',
 				message: $roleKey . ' does not resolve to a roleType on the linked caseType'
 			);
