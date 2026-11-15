@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\FindsCaseUploader;
 use OCA\Dossiq\Kernel\Contracts\DocumentApprovalClearanceInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentWriteGateInterface;
 use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
@@ -52,6 +53,8 @@ use OCP\IUserSession;
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class ZaakdossierController extends Controller {
+	use FindsCaseUploader;
+
 	/**
 	 * Constructor.
 	 *
@@ -154,18 +157,14 @@ class ZaakdossierController extends Controller {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function uploadDocument(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
 		// Its sibling `linkExisting()` below already guards, via
 		// `InformatieobjectReader::guardReadable()` — but that guard is about
 		// the DOCUMENT, and upload has no existing document to check. The
 		// missing half is the CASE, so this endpoint wrote attachments into
 		// any case on the instance.
-		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$user = $this->uploader(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$metadata = $this->uploadMetadataFor(fallbackAuthor: static fn (): string => $user->getDisplayName());
@@ -321,13 +320,9 @@ class ZaakdossierController extends Controller {
 	 * @return JSONResponse|null The refusal, or null when the change may go ahead.
 	 */
 	private function linkRefusal(string $caseId, string $infoObjectId): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$user = $this->uploader(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
