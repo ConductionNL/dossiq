@@ -115,7 +115,10 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 			$built = $this->draftData->build(
 				declaration: $declaration,
 				case: $case,
-				related: fn (string $schemaKey, string $caseField): array => $this->related(schemaKey: $schemaKey, caseField: $caseField, caseId: $caseId)
+				related: fn (string $schemaKey, string $caseField): array => $this->related(
+					link: ['schemaKey' => $schemaKey, 'caseField' => $caseField],
+					caseId: $caseId
+				)
 			);
 		} catch (InvalidArgumentException $e) {
 			return $this->answer(status: 'refused', reason: $e->getMessage());
@@ -349,13 +352,14 @@ class CaseDocumentDrafts implements CaseDocumentDraftsInterface {
 	/**
 	 * The case's related records of one schema, read regardless of the caller.
 	 *
-	 * @param string $schemaKey The app setting naming the schema.
-	 * @param string $caseField The field holding the case.
-	 * @param string $caseId    The case uuid.
+	 * @param array{schemaKey: string, caseField: string} $link   The app setting naming the schema, and the field
+	 *                                                           holding the case.
+	 * @param string                                       $caseId The case uuid.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
-	private function related(string $schemaKey, string $caseField, string $caseId): array {
+	private function related(array $link, string $caseId): array {
+		['schemaKey' => $schemaKey, 'caseField' => $caseField] = $link;
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue($schemaKey);

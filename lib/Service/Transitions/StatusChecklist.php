@@ -163,7 +163,7 @@ class StatusChecklist {
 				continue;
 			}
 
-			$action = $this->actionFor(caseId: $caseId, statusTypeId: $statusTypeId, title: $item['title']);
+			$action = $this->actionFor(task: ['caseId' => $caseId, 'statusTypeId' => $statusTypeId, 'title' => $item['title']]);
 			if ($action !== null) {
 				$actions[] = $action;
 			}
@@ -175,20 +175,16 @@ class StatusChecklist {
 	/**
 	 * The createTask action for one checklist item, or null when this case type switched the task off.
 	 *
-	 * @param string $caseId       The case entering the status.
-	 * @param string $statusTypeId The statusType UUID being entered.
-	 * @param string $title        The checklist item's title.
+	 * @param array{caseId: string, statusTypeId: string, title: string} $task The case entering the status, the
+	 *                                                                        statusType UUID being entered and the
+	 *                                                                        checklist item's title.
 	 *
 	 * @return array{type: string, title: string, workflowStepId: string, assignee: string, declaration: array<string, mixed>}|null The action.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function actionFor(string $caseId, string $statusTypeId, string $title): ?array {
-		$declaration = $this->declarationFor(
-			caseId: $caseId,
-			statusTypeId: $statusTypeId,
-			title: $title
-		);
+	private function actionFor(array $task): ?array {
+		$declaration = $this->declarationFor(task: $task);
 
 		// A task this case type switched off is not created at all. Two
 		// case types can share a process and differ on one step, which is
@@ -199,8 +195,8 @@ class StatusChecklist {
 
 		return [
 			'type' => 'createTask',
-			'title' => $title,
-			'workflowStepId' => $statusTypeId,
+			'title' => $task['title'],
+			'workflowStepId' => $task['statusTypeId'],
 			'assignee' => self::CHECKLIST_ASSIGNEE,
 			// The declaration travels WITH the action rather than being
 			// read again by the handler. The handler would have to know
@@ -218,23 +214,22 @@ class StatusChecklist {
 	 * every caller written before this block existed gets: the task runs, with
 	 * no form, no candidates, no lead time of its own and no effects.
 	 *
-	 * @param string $caseId       The case uuid.
-	 * @param string $statusTypeId The statusType being entered.
-	 * @param string $title        The checklist item's title.
+	 * @param array{caseId: string, statusTypeId: string, title: string} $task The case uuid, the statusType being
+	 *                                                                        entered and the checklist item's title.
 	 *
 	 * @return array<string, mixed> The declaration.
 	 *
 	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
-	private function declarationFor(string $caseId, string $statusTypeId, string $title): array {
-		if ($this->declarations === null || $caseId === '') {
+	private function declarationFor(array $task): array {
+		if ($this->declarations === null || $task['caseId'] === '') {
 			return TaskDeclaration::NONE;
 		}
 
 		return $this->declarations->forTask(
-			caseId: $caseId,
-			statusTypeId: $statusTypeId,
-			title: $title
+			caseId: $task['caseId'],
+			statusTypeId: $task['statusTypeId'],
+			title: $task['title']
 		);
 	}//end declarationFor()
 
