@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Mandaat;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
+use OCA\Dossiq\Service\Support\SearchesConfiguredSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -53,6 +54,7 @@ use RuntimeException;
 class MandaatRepository {
 	use SearchesObjects;
 	use ReadsConfiguredSource;
+	use SearchesConfiguredSchema;
 
 	/**
 	 * Constructor.
@@ -212,21 +214,8 @@ class MandaatRepository {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function findPriorDecision(string $decisionNumber, ?string $excludeId = null): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaterings_besluit_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return null;
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['decisionNumber' => $decisionNumber]
-			);
-		} catch (\Throwable $e) {
+		$rows = $this->configuredRows(schemaKey: 'mandaterings_besluit_schema', filters: ['decisionNumber' => $decisionNumber]);
+		if ($rows === null) {
 			return null;
 		}
 
@@ -277,23 +266,7 @@ class MandaatRepository {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function findMandatenForBesluit(string $decisionId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			return (array)$this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['mandateDecision' => $decisionId]
-			);
-		} catch (\Throwable $e) {
-			return [];
-		}
+		return ($this->configuredRows(schemaKey: 'mandaat_schema', filters: ['mandateDecision' => $decisionId]) ?? []);
 	}//end findMandatenForBesluit()
 
 	/**
