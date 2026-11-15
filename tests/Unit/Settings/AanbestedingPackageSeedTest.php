@@ -80,7 +80,7 @@ class AanbestedingPackageSeedTest extends TestCase {
 		$this->assertSame([], $result['warnings']);
 		$this->assertTrue($result['valid']);
 		$this->assertContains('seed', $result['manifest']['parts']);
-		$this->assertSame('1.9.0', $result['manifest']['version']);
+		$this->assertSame('1.10.0', $result['manifest']['version']);
 	}//end testThePackagePassesTheShippedPackageRulesWithItsSeed()
 
 	public function testTheAwardAndTheRefusalAreDecisionTypesOfTheTenderCaseType(): void {
@@ -123,4 +123,20 @@ class AanbestedingPackageSeedTest extends TestCase {
 		$this->assertContains($term['kind'], $schema['properties']['kind']['enum']);
 		$this->assertSame([], array_diff(array_keys($term), array_merge(array_keys($schema['properties']), ['id'])), 'only declared fields');
 	}//end testTheStandstillIsTwentyCalendarDaysForTheTenderCaseType()
+	/**
+	 * The final award hands the tender on as a decision, so the contract starts from it.
+	 *
+	 * @return void
+	 */
+	public function testTheFinalAwardRaisesTheAwardDecision(): void {
+		$flow        = self::json('flows/aanbesteding.json');
+		$transitions = json_decode($flow['transitions'], true, 512, JSON_THROW_ON_ERROR);
+		$actions     = [];
+		foreach ($transitions as $transition) {
+			$actions[$transition['label']] = $transition['automaticActions'];
+		}
+
+		$this->assertSame([['type' => 'raiseDecision', 'decisionType' => 'tender-award']], $actions['Definitief gunnen']);
+		$this->assertSame([], $actions['Gunningsbeslissing versturen'], 'the award is handed on only once it is final');
+	}//end testTheFinalAwardRaisesTheAwardDecision()
 }//end class

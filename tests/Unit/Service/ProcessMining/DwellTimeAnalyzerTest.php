@@ -545,4 +545,31 @@ class DwellTimeAnalyzerTest extends TestCase {
 		self::assertSame(['2026-01-01T00:00:00+00:00', '2026-01-02T00:00:00+00:00'], [$first->enteredMoment(), $first->nextMoment()]);
 		self::assertSame(['2026-01-02T00:00:00+00:00', null, null], [$last->enteredMoment(), $last->nextMoment(), $last->next]);
 	}//end testAVisitReadsItsOwnAndTheNextMoment()
+
+	/**
+	 * Rows that are not case arrays are skipped by the held totals.
+	 *
+	 * @return void
+	 */
+	public function testHeldTotalsSkipRowsThatAreNotCases(): void {
+		$analyzer = new DwellTimeAnalyzer(
+			dates: $this->caseDates(),
+			held: new StatusDwellService(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
+		);
+
+		self::assertSame(
+			expected: ['intake' => 4, 'review' => 5],
+			actual: $analyzer->heldTotalsByStatus(
+				casesById: [
+					'broken' => 'not-a-case',
+					'case-1' => [
+						'status' => 'review',
+						'currentStatusEnteredAt' => '2026-06-01T09:00:00+02:00',
+						'statusDwellTotals' => [['statusType' => 'intake', 'workingDays' => 4]],
+					],
+				],
+				now: new DateTimeImmutable('2026-06-08T09:00:00+02:00'),
+			)
+		);
+	}//end testHeldTotalsSkipRowsThatAreNotCases()
 }//end class

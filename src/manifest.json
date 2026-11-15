@@ -650,10 +650,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes. A case type that sets requiresSpecialCategory refuses a case without them at intake (SpecialCategoryClassification, 422 naming the field), on every create path; the form offers the field on every case because a form condition reads the form's own values and cannot ask the chosen case type.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"widget": "textarea"
 							},
@@ -1187,10 +1198,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"widget": "textarea"
 							},
@@ -2030,6 +2052,12 @@
 						"label": "Extend the term",
 						"icon": "CalendarPlus",
 						"handler": "extendTermSelection"
+					},
+					{
+						"id": "export-anonymised",
+						"label": "Export anonymised",
+						"icon": "ShieldAccountOutline",
+						"handler": "exportAnonymisedSelection"
 					}
 				],
 				"register": "dossiq",
@@ -2863,8 +2891,9 @@
 				],
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",
-				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
+				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "gdprClassification", "impact", "urgency"],
 				"fieldOverrides": {
+					"gdprClassification": { "_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.", "enumLabels": { "health": "Health", "ethnicity": "Racial or ethnic origin", "religion": "Religion or belief", "politicalOpinion": "Political opinions", "criminal": "Criminal convictions and offences" } },
 					"description": { "widget": "textarea" },
 					"requester": { "widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }], "label": "Requester" },
 					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
@@ -5455,8 +5484,27 @@
 								},
 								{
 									"widgetId": "case-attention"
+								},
+								{
+									"widgetId": "case-special-categories"
 								}
 							]
+						}
+					},
+					{
+						"id": "case-special-categories",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"_note": "social-domain-consent-and-safeguards 3.1, REQ-SDC-SAFE-01: a case that records special categories of personal data (its gdprClassification, required at intake when the case type sets requiresSpecialCategory) says so on the case page, naming them. A strip in case-banner-stack, shown only while the field holds a category.",
+						"content": {
+							"variant": "warning",
+							"icon": "ShieldAccountOutline",
+							"lead": "This case processes special categories of personal data: {subject.gdprClassification|values}.",
+							"fallbackLead": "This case processes special categories of personal data.",
+							"visibleWhen": {
+								"field": "gdprClassification",
+								"op": "notEmpty"
+							}
 						}
 					},
 					{
@@ -5788,6 +5836,81 @@
 							"recordPhotosField": "photos",
 							"caption": "{templateSnapshot.name} version {templateVersion}"
 						}
+					},
+					{
+						"id": "case-consents",
+						"type": "object-list",
+						"title": "Consents",
+						"_note": "social-domain-consent-and-safeguards 2.1, REQ-SDC-CONSENT-01: the consents recorded on this case, as the `toestemming` objects CaseTransferConsentGate reads before a share. Shown only when the case type requires consent for sharing. Add opens ConsentRecordDialog; Revoke patches `withdrawn`, which the gate reads as a withdrawal, so the next share with that party is refused. A revoked consent stays in the list, marked, because a withdrawal is part of the record.",
+						"visibleWhen": {
+							"field": "@context.caseType.requiresConsentForSharing",
+							"op": "eq",
+							"value": true
+						},
+						"content": {
+							"register": "dossiq",
+							"schema": "toestemming",
+							"filter": {
+								"caseId": "@objectId"
+							},
+							"sort": {
+								"field": "grantedDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "recipientParties",
+									"label": "Sharing with"
+								},
+								{
+									"key": "tedoel",
+									"label": "Purpose"
+								},
+								{
+									"key": "grantedByName",
+									"label": "Given by"
+								},
+								{
+									"key": "grantedDate",
+									"label": "Valid from"
+								},
+								{
+									"key": "validTo",
+									"label": "Valid until"
+								},
+								{
+									"key": "withdrawn",
+									"label": "Revoked"
+								}
+							],
+							"createAction": {
+								"type": "open-modal",
+								"target": "ConsentRecordDialog",
+								"label": "Record consent"
+							},
+							"rowActions": [
+								{
+									"id": "revoke-consent",
+									"label": "Revoke",
+									"type": "object-op",
+									"op": "patch",
+									"values": {
+										"withdrawn": true
+									},
+									"confirm": true,
+									"confirmTitle": "Revoke consent",
+									"confirmMessage": "After revoking, a share with this party is refused until a new consent is recorded.",
+									"confirmLabel": "Revoke",
+									"visibleWhen": {
+										"field": "withdrawn",
+										"op": "neq",
+										"value": true
+									}
+								}
+							],
+							"emptyText": "No consent has been recorded on this case yet"
+						}
 					}
 				],
 				"layout": [
@@ -5933,6 +6056,15 @@
 						"gridX": 6,
 						"gridY": 27,
 						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "case-consents",
+						"widgetId": "case-consents",
+						"gridX": 0,
+						"gridY": 31,
+						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
 					}
@@ -6393,6 +6525,21 @@
 									"op": "empty"
 								}
 							]
+						}
+					},
+					{
+						"id": "ask-partner",
+						"type": "open-modal",
+						"target": "PartnerAskDialog",
+						"label": "Ask a partner",
+						"icon": "AccountArrowRightOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "empty"
 						}
 					},
 					{
@@ -15223,10 +15370,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"widget": "textarea"
 							},
@@ -16035,10 +16193,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"widget": "textarea"
 							},
