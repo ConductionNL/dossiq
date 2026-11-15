@@ -204,32 +204,11 @@ class TakeoverStore {
 	 * @throws RefusedException When it cannot be read.
 	 */
 	public function requireCase(string $caseId): array {
-		try {
-			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				id: trim($caseId),
-			);
-		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: CaseTakeoverRequest::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so nothing was asked.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}
-
-		if ($case === null) {
-			throw new RefusedException(
-				rule: CaseTakeoverRequest::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so nothing was asked.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
+		return $this->dossierRegister->requireCase(
+			caseId: trim($caseId),
+			rule: CaseTakeoverRequest::CASE_UNREADABLE,
+			sentence: 'We could not read that case, so nothing was asked.',
+		);
 	}//end requireCase()
 
 	/**
@@ -250,13 +229,7 @@ class TakeoverStore {
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
 		try {
-			[$objectService, $register] = $this->context();
-			$objectService->saveObject(
-				object: $payload,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				uuid: $caseId,
-			);
+			$this->dossierRegister->saveCase(caseId: $caseId, payload: $payload);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq takeover: the case seat could not be written',

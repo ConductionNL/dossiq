@@ -264,32 +264,11 @@ class CaseSplitStore {
 	 * @throws RefusedException When it cannot be read.
 	 */
 	public function requireCase(string $caseId): array {
-		try {
-			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				id: $caseId,
-			);
-		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: CaseSplitExecutor::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so it was not split.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}
-
-		if ($case === null) {
-			throw new RefusedException(
-				rule: CaseSplitExecutor::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so it was not split.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
+		return $this->dossierRegister->requireCase(
+			caseId: $caseId,
+			rule: CaseSplitExecutor::CASE_UNREADABLE,
+			sentence: 'We could not read that case, so it was not split.',
+		);
 	}//end requireCase()
 
 	/**
