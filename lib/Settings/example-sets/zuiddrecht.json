@@ -9716,6 +9716,44 @@
 					]
 				}
 			}
+		},
+		{
+			"key": "marleen-te-beoordelen-deze-week",
+			"data": {
+				"name": "Te beoordelen deze week",
+				"description": "Door Marleen Postma, team Vergunningen",
+				"sharedWith": [{"group": "{{cast:vergunningen.gid}}", "mode": "read"}],
+				"owner": "{{cast:marleen.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"assignedGroup": "{{cast:vergunningen.gid}}",
+						"isFinalStatus": false,
+						"statusHiddenInLists": false,
+						"isDraft": false,
+						"deadline[gte]": "@today",
+						"deadline[lt]": "@today+7d"
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						},
+						{
+							"key": "receivedAt",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
 		}
 	],
 	"notes": [

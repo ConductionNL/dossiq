@@ -120,4 +120,54 @@ class EmailTemplateVersionListenerTest extends TestCase {
 		$this->assertSame([], $deactivate->getModifiedData());
 		$this->assertSame([], $other->getModifiedData());
 	}//end testADeactivationOrAnotherSchemaMakesNoVersion()
+
+	/**
+	 * When the earlier wording cannot be kept the change is refused, and nothing else is written.
+	 *
+	 * @return void
+	 */
+	public function testAnEarlierWordingThatCannotBeKeptRefusesTheChange(): void {
+		$this->store->refusedSchemas = ['emailTemplate'];
+		$before = ['caseType' => 'ct-1', 'name' => 'Ontvangst', 'body' => 'Oud', 'version' => 2, 'isActive' => true];
+		$event = new ObjectUpdatingEvent($this->entity(array_merge($before, ['body' => 'Nieuw'])), $this->entity($before));
+
+		$this->listener()->handle($event);
+
+		$this->assertTrue($event->isPropagationStopped());
+		$this->assertSame('email-template-version-not-kept', $event->getErrors()['error']);
+		$this->assertSame([], $event->getModifiedData());
+	}//end testAnEarlierWordingThatCannotBeKeptRefusesTheChange()
+
+	/**
+	 * An unchanged wording, or an update without the earlier object, makes no version.
+	 *
+	 * @return void
+	 */
+	public function testAnUnchangedWordingOrNoEarlierObjectMakesNoVersion(): void {
+		$before = ['caseType' => 'ct-1', 'name' => 'Ontvangst', 'body' => 'Oud', 'version' => 2, 'isActive' => true];
+		$unchanged = new ObjectUpdatingEvent($this->entity($before), $this->entity($before));
+		$this->listener()->handle($unchanged);
+
+		$noOld = new ObjectUpdatingEvent($this->entity(array_merge($before, ['body' => 'Nieuw'])), null);
+		$this->listener()->handle($noOld);
+
+		$this->assertSame([], $this->store->all('emailTemplate'));
+		$this->assertSame([], $unchanged->getModifiedData());
+		$this->assertSame([], $noOld->getModifiedData());
+	}//end testAnUnchangedWordingOrNoEarlierObjectMakesNoVersion()
+
+	/**
+	 * A template without a version is version 1 before and 2 after.
+	 *
+	 * @return void
+	 */
+	public function testAnUnversionedTemplateBecomesVersionTwo(): void {
+		$before = ['caseType' => 'ct-1', 'name' => 'Ontvangst', 'body' => 'Oud'];
+		$event = new ObjectUpdatingEvent($this->entity(array_merge($before, ['body' => 'Nieuw'])), $this->entity($before));
+
+		$this->listener()->handle($event);
+
+		$this->assertSame(2, $event->getModifiedData()['version']);
+		$this->assertSame(1, array_values($this->store->all('emailTemplate'))[0]['version']);
+	}//end testAnUnversionedTemplateBecomesVersionTwo()
 }//end class

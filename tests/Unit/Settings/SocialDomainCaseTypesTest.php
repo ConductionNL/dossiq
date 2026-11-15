@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore
+ * @uses \OCA\Dossiq\Service\Import\RecordMappingRun
  */
 class SocialDomainCaseTypesTest extends TestCase {
 	use MakesCaseDateNormaliser;

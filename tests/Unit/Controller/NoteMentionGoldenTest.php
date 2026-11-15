@@ -140,7 +140,7 @@ class NoteMentionGoldenTest extends TestCase {
 			->getMock();
 		$caseAccessGuard->method('hasCaseReadAccess')->willReturn(value: true);
 		$userManager = $this->createMock(originalClassName: IUserManager::class);
-		$userManager->method('userExists')->willReturn(value: true);
+		$userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->createMock(originalClassName: IUser::class));
 
 		$controller = new NotesController(
 			request: $request,

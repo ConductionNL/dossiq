@@ -1,5 +1,5 @@
 {
-	"_comment": "Ids dossiq reserved in the parity corpus (ConductionNL/market-intelligence, procest/_round4/tools/corpus-rows.json) on 2026-10-07, decisions 79 and 82. Each is the next free number in its area across rows and proposals in this repo. scripts/sync-capability-comparison.mjs re-issues capabilities.json from the corpus and drops any row the corpus does not hold, so the corpus has to issue these rows under these ids, with these texts and our rating, before the next re-issue; until then a re-issue removes them and tests/vitest/capabilityComparison.spec.js fails on the row count. Competitor cells are unread.",
+	"_comment": "Ids dossiq reserved in the parity corpus (ConductionNL/market-intelligence, procest/_round4/tools/corpus-rows.json) on 2026-10-07, decisions 79 and 82. Each is the next free number in its area across rows and proposals in this repo. scripts/sync-capability-comparison.mjs re-issues capabilities.json from the corpus and drops any row the corpus does not hold, so the corpus has to issue these rows under these ids, with these texts and our rating, before the next re-issue; until then a re-issue removes them and tests/vitest/capabilityComparison.spec.js fails on the row count. Competitor cells are unread. 9.20 and 9.21 were reserved on 2026-11-12 (coverage follow-up), for the open changes case-page-and-list-as-a-place and unread-state-on-the-case, which covered no row; each carries its own reservedOn.",
 	"reservedOn": "2026-10-07",
 	"decision": "build-all DECISIONS.md 79 and 82",
 	"rows": [
@@ -275,6 +275,38 @@
 				"openspec/specs/tenant-onboarding",
 				"openspec/specs/tenant-mandate"
 			]
+		},
+		{
+			"id": "9.20",
+			"area": "Search",
+			"areaNumber": 9,
+			"cap": "Work through a case list from the case page: step to the next or previous case of that list, hold a personal order on it, and see a referenced record's summary in place",
+			"cap_nl": "Een zaaklijst afwerken vanaf de zaakpagina: naar de volgende of vorige zaak van die lijst gaan, er een eigen volgorde op houden en de samenvatting van een verwijzing ter plekke zien",
+			"dossiq": "partial",
+			"dossiqNote": "Missing: the summary of a referenced record in place (REQ-CPL-03), which waits on nextcloud-vue reading referencePreview. Round 6 retired the split view: a row opens the case page, so the list keeping its position is the case page stepping through it.",
+			"opencase": "unread",
+			"gzac": "unread",
+			"zaaksysteem": "unread",
+			"zac": "unread",
+			"openzaak": "unread",
+			"reservedOn": "2026-11-12",
+			"spec": "openspec/changes/case-page-and-list-as-a-place"
+		},
+		{
+			"id": "9.21",
+			"area": "Search",
+			"areaNumber": 9,
+			"cap": "A case carries an unread state per person, shown in the case list and on the case's tabs, set back to unread by hand and cleared by opening it",
+			"cap_nl": "Een zaak heeft per persoon een ongelezen-status, zichtbaar in de zaaklijst en op de tabbladen van de zaak, met de hand terug te zetten naar ongelezen en gewist door de zaak te openen",
+			"dossiq": "yes",
+			"dossiqNote": "Open in the change and outside this sentence: marking a single message read (1.2b) and narrowing the unread triggers per case type (3.1b), which waits on OpenRegister resolving the read-state annotation per object.",
+			"opencase": "unread",
+			"gzac": "unread",
+			"zaaksysteem": "unread",
+			"zac": "unread",
+			"openzaak": "unread",
+			"reservedOn": "2026-11-12",
+			"spec": "openspec/changes/unread-state-on-the-case"
 		}
 	]
 }

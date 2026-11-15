@@ -122,14 +122,7 @@ class DecisionDocumentLifecycle {
 		string $actor,
 		?DateTimeImmutable $moment = null,
 	): array {
-		$from = (string)($document['currentStatus'] ?? 'draft');
-		if (in_array($to, (self::TRANSITIONS[$from] ?? []), true) === false) {
-			throw new RefusedException(
-				rule: 'decision-document-transition',
-				sentence: sprintf('A decision cannot move from %s to %s.', $from, $to),
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
+		self::assertMove(document: $document, to: $to);
 
 		$moment = ($moment ?? new DateTimeImmutable());
 		$stamp = $moment->format(DateTimeInterface::ATOM);
@@ -142,6 +135,27 @@ class DecisionDocumentLifecycle {
 			default => ['currentStatus' => 'draft', 'approvedBy' => null, 'approvedAt' => null],
 		};
 	}//end transition()
+
+	/**
+	 * Refuse a move the lifecycle does not allow from the document's current status.
+	 *
+	 * @param array<string, mixed> $document The document, with its `currentStatus` (draft when absent).
+	 * @param string               $to       The status it would move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the move is not allowed.
+	 */
+	private static function assertMove(array $document, string $to): void {
+		$from = (string)($document['currentStatus'] ?? 'draft');
+		if (in_array($to, (self::TRANSITIONS[$from] ?? []), true) === false) {
+			throw new RefusedException(
+				rule: 'decision-document-transition',
+				sentence: sprintf('A decision cannot move from %s to %s.', $from, $to),
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+	}//end assertMove()
 
 	/**
 	 * Approval: valid, and decided by someone who holds the authority.

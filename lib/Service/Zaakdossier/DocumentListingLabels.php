@@ -127,25 +127,46 @@ class DocumentListingLabels {
 
 		$register = $this->settingsService->getConfigValue('register');
 
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => 500],
-		);
+		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 500]);
 
+		return $this->namesByReference(rows: $rows);
+	}//end typeNames()
+
+	/**
+	 * Each type's name, keyed by its uuid, its slug and the name itself; the first row to claim a key keeps it.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The type rows.
+	 *
+	 * @return array<string, string> Reference to name.
+	 */
+	private function namesByReference(array $rows): array {
 		$names = [];
 		foreach ($rows as $row) {
 			$name = trim((string)($row['description'] ?? ''));
 			$self = (array)($row['@self'] ?? []);
 			$references = [(string)($row['id'] ?? ($self['id'] ?? '')), (string)($self['slug'] ?? ''), $name];
-			foreach ($references as $reference) {
-				if ($name !== '' && $reference !== '' && isset($names[$reference]) === false) {
-					$names[$reference] = $name;
-				}
+			$names = $this->withReferences(names: $names, references: $references, name: $name);
+		}
+
+		return $names;
+	}//end namesByReference()
+
+	/**
+	 * The names with each unclaimed, non-empty reference pointing at this name.
+	 *
+	 * @param array<string, string> $names      Reference to name so far.
+	 * @param array<int, string>    $references The type's references.
+	 * @param string                $name       The type's name.
+	 *
+	 * @return array<string, string> Reference to name.
+	 */
+	private function withReferences(array $names, array $references, string $name): array {
+		foreach ($references as $reference) {
+			if ($name !== '' && $reference !== '' && isset($names[$reference]) === false) {
+				$names[$reference] = $name;
 			}
 		}
 
 		return $names;
-	}//end typeNames()
+	}//end withReferences()
 }//end class

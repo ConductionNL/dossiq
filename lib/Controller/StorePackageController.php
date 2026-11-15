@@ -20,15 +20,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md
+ * @spec openspec/specs/dossiq-store-surface/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTypePackageChoiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -40,7 +40,7 @@ use OCP\IRequest;
 /**
  * Lists the shipped packages and installs one.
  *
- * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md
+ * @spec openspec/specs/dossiq-store-surface/spec.md
  */
 class StorePackageController extends Controller {
 
@@ -53,13 +53,13 @@ class StorePackageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request The request.
-	 * @param CaseTypePackageChoice $choice  The packages on offer and their install.
+	 * @param CaseTypePackageChoiceInterface $choice  The packages on offer and their install.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTypePackageChoice $choice,
+		private readonly CaseTypePackageChoiceInterface $choice,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -68,7 +68,7 @@ class StorePackageController extends Controller {
 	 *
 	 * @return JSONResponse `{ packages }`.
 	 *
-	 * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md#requirement-the-marketplace-lists-the-shipped-packages
+	 * @spec openspec/specs/dossiq-store-surface/spec.md#requirement-the-marketplace-lists-the-shipped-packages
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
@@ -83,7 +83,7 @@ class StorePackageController extends Controller {
 	 *
 	 * @return JSONResponse 200 with the outcome; 400 for a malformed id; 404 for an id not on offer; 422 for a refusal.
 	 *
-	 * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md#requirement-an-administrator-installs-a-shipped-package
+	 * @spec openspec/specs/dossiq-store-surface/spec.md#requirement-an-administrator-installs-a-shipped-package
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function install(string $id): JSONResponse {

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T26
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 /**
  * Mock implementation of the template-engine adapter.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T26
  */
 class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	/**
@@ -43,7 +43,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 *
 	 * @return array{format: string, fileId: string, checksumSha256: string, paginas: int}
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T26
 	 */
 	public function render(string $templateId, array $context): array {
 		$payload = json_encode([$templateId, $context], JSON_UNESCAPED_UNICODE);
@@ -67,7 +67,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 *
 	 * @return array{templateId: string, version: string, effectiveDate: string}
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T26
 	 */
 	public function resolveVersion(string $templateId, string $effectiveDate): array {
 		return [

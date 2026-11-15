@@ -353,6 +353,30 @@ class CaseAccessLinkServiceTest extends TestCase {
 	}//end testAShareMintsALinkOverTheCase()
 
 	/**
+	 * A share asked for without an expiry still mints with one: OpenRegister
+	 * refuses a link with none, so the link gets the default thirty days.
+	 *
+	 * @return void
+	 */
+	public function testAShareWithoutAnExpiryMintsWithTheDefaultTtl(): void {
+		$before = new \DateTimeImmutable(CaseAccessLinkService::DEFAULT_TTL . ' -1 second');
+		$result = $this->service->createTokenShare(
+			caseId: 'case-1',
+			label: 'Brandweer',
+			createdBy: 'anja',
+			expiresAt: '  ',
+		);
+		$after = new \DateTimeImmutable(CaseAccessLinkService::DEFAULT_TTL . ' +1 second');
+
+		self::assertArrayNotHasKey('error', $result);
+		$minted = $this->links->minted[array_key_first($this->links->minted)];
+		$expires = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, (string)$minted['expiresAt']);
+		self::assertInstanceOf(\DateTimeImmutable::class, $expires, 'The default expiry is an ISO 8601 date.');
+		self::assertGreaterThanOrEqual($before->getTimestamp(), $expires->getTimestamp());
+		self::assertLessThanOrEqual($after->getTimestamp(), $expires->getTimestamp());
+	}//end testAShareWithoutAnExpiryMintsWithTheDefaultTtl()
+
+	/**
 	 * A capability that is not one refuses the whole share, and nothing is
 	 * minted.
 	 *
@@ -582,4 +606,45 @@ class CaseAccessLinkServiceTest extends TestCase {
 		self::assertArrayHasKey('error', $result);
 		self::assertSame([], $this->objects->objects, 'No link means no share record.');
 	}//end testAFailedMintIsNotAShare()
+	/**
+	 * Capabilities are trimmed and lowercased, blanks and repeats dropped, reading first; one unknown refuses all.
+	 *
+	 * @return void
+	 */
+	public function testCapabilitiesAreNormalisedAndOneUnknownRefusesAll(): void {
+		$granted = $this->service->createTokenShare(
+			caseId: 'case-1',
+			label: '',
+			createdBy: 'anja',
+			expiresAt: '2030-01-01',
+			capabilities: [' Upload ', '', 'COMMENT', 'read', 'upload', '  '],
+		);
+		self::assertArrayNotHasKey('error', $granted);
+		$minted = $this->links->minted[array_key_first($this->links->minted)];
+		self::assertSame(['read', 'upload', 'comment'], $minted['capabilities']);
+
+		$this->links->minted = [];
+		$refused = $this->service->createTokenShare(
+			caseId: 'case-1',
+			label: '',
+			createdBy: 'anja',
+			expiresAt: '2030-01-01',
+			capabilities: ['comment', 'Read ', 'share'],
+		);
+		self::assertSame('A link may grant reading, commenting or uploading, and nothing else', $refused['error'] ?? null);
+		self::assertSame([], $this->links->minted);
+	}//end testCapabilitiesAreNormalisedAndOneUnknownRefusesAll()
+
+	/**
+	 * A blank or unreadable expiry leaves a link live; a disabled flag must be exactly true to pause it.
+	 *
+	 * @return void
+	 */
+	public function testStateOfTreatsAnUnreadableExpiryAsLive(): void {
+		self::assertSame('live', $this->accessLinks->stateOf([]));
+		self::assertSame('live', $this->accessLinks->stateOf(['expiresAt' => '  ']));
+		self::assertSame('live', $this->accessLinks->stateOf(['expiresAt' => 'not a date']));
+		self::assertSame('live', $this->accessLinks->stateOf(['disabled' => 'yes', 'revokedAt' => '']));
+		self::assertSame('revoked', $this->accessLinks->stateOf(['revokedAt' => '2026-01-01', 'disabled' => true]));
+	}//end testStateOfTreatsAnUnreadableExpiryAsLive()
 }//end class

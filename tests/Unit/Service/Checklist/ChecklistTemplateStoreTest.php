@@ -199,4 +199,153 @@ class ChecklistTemplateStoreTest extends TestCase {
 		$this->assertSame(1, $store->saved[0]['version']);
 		$this->assertSame('Wapening', $result['items'][0]['question']);
 	}//end testCreateChecklistSavesATemplate()
+
+	/**
+	 * A list OpenRegister cannot answer is logged and reads as empty.
+	 *
+	 * @return void
+	 */
+	public function testAFailingListIsLoggedAndAnswersEmpty(): void {
+		$store = new class {
+			/**
+			 * The filters of the last search.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public array $filters = [];
+
+			/**
+			 * Fail the search.
+			 *
+			 * @param string               $register The register.
+			 * @param string               $schema   The schema slug.
+			 * @param array<string, mixed> $filters  The filters.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				$this->filters = $filters;
+				throw new RuntimeException('register missing');
+			}
+		};
+		$this->settingsService->method('getObjectService')->willReturn($store);
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
+		$this->logger->expects($this->once())
+			->method('warning')
+			->with('Failed to list checklist templates: register missing', ['app' => 'dossiq']);
+
+		self::assertSame(expected: [], actual: $this->service->all(caseTypeRef: ''));
+		self::assertSame(expected: ['_limit' => 100, '_order' => 'name'], actual: $store->filters);
+	}//end testAFailingListIsLoggedAndAnswersEmpty()
+
+	/**
+	 * An update saves under the template's id with the version moved up by one.
+	 *
+	 * @return void
+	 */
+	public function testAnUpdateSavesUnderTheIdWithTheNextVersion(): void {
+		$store = new class {
+			/**
+			 * What was saved, and where.
+			 *
+			 * @var array<int, mixed>
+			 */
+			public array $saved = [];
+
+			/**
+			 * Record the save and answer nothing usable.
+			 *
+			 * @param array<string, mixed> $object   The object.
+			 * @param int|string           $register The register.
+			 * @param int|string           $schema   The schema slug.
+			 * @param string|null          $uuid     The uuid.
+			 *
+			 * @return null
+			 */
+			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): mixed {
+				$this->saved = [$object, $register, $schema, $uuid];
+
+				return null;
+			}
+		};
+		$this->settingsService->method('getObjectService')->willReturn($store);
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
+
+		$result = $this->service->update(
+			id: 't-1',
+			data: ['name' => 'Fundering', 'version' => 3, 'items' => [['question' => 'Wapening', 'type' => 'boolean']]]
+		);
+
+		self::assertSame(expected: 4, actual: $store->saved[0]['version']);
+		self::assertSame(expected: 'dossiq', actual: $store->saved[1]);
+		self::assertSame(expected: 'inspectionChecklistTemplate', actual: $store->saved[2]);
+		self::assertSame(expected: 't-1', actual: $store->saved[3]);
+		// The store answered nothing, so the template as sent is answered back.
+		self::assertSame(expected: 'Fundering', actual: $result['name']);
+		self::assertSame(expected: 'Wapening', actual: $result['items'][0]['question']);
+	}//end testAnUpdateSavesUnderTheIdWithTheNextVersion()
+
+	/**
+	 * A delete removes the template from the template schema.
+	 *
+	 * @return void
+	 */
+	public function testADeleteRemovesTheTemplate(): void {
+		$store = new class {
+			/**
+			 * The deletes received.
+			 *
+			 * @var array<int, array<int, mixed>>
+			 */
+			public array $deleted = [];
+
+			/**
+			 * Record the delete.
+			 *
+			 * @param string     $uuid     The uuid.
+			 * @param int|string $register The register.
+			 * @param int|string $schema   The schema slug.
+			 *
+			 * @return bool
+			 */
+			public function deleteObject(string $uuid, int|string $register, int|string $schema): bool {
+				$this->deleted[] = [$uuid, $register, $schema];
+				return true;
+			}
+		};
+		$this->settingsService->method('getObjectService')->willReturn($store);
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
+
+		self::assertTrue(condition: $this->service->delete(id: 't-1'));
+		self::assertSame(expected: [['t-1', 'dossiq', 'inspectionChecklistTemplate']], actual: $store->deleted);
+	}//end testADeleteRemovesTheTemplate()
+
+	/**
+	 * A delete OpenRegister refuses is logged with the id and answers false.
+	 *
+	 * @return void
+	 */
+	public function testARefusedDeleteIsLoggedAndAnswersFalse(): void {
+		$store = new class {
+			/**
+			 * Refuse the delete.
+			 *
+			 * @param string     $uuid     The uuid.
+			 * @param int|string $register The register.
+			 * @param int|string $schema   The schema slug.
+			 *
+			 * @return bool
+			 */
+			public function deleteObject(string $uuid, int|string $register, int|string $schema): bool {
+				throw new RuntimeException('in use');
+			}
+		};
+		$this->settingsService->method('getObjectService')->willReturn($store);
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
+		$this->logger->expects($this->once())
+			->method('warning')
+			->with('Failed to delete checklist template t-1: in use', ['app' => 'dossiq']);
+
+		self::assertFalse(condition: $this->service->delete(id: 't-1'));
+	}//end testARefusedDeleteIsLoggedAndAnswersFalse()
 }//end class

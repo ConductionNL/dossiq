@@ -152,7 +152,7 @@ class PackageWriter {
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
 	 */
 	public function writePackage(string $package, array $groups): array {
@@ -161,7 +161,31 @@ class PackageWriter {
 			return $this->packageFailure(message: "Package '{$package}' was not installed: this instance has no OpenRegister register configured.");
 		}
 
-		$run = [
+		$run = $this->newRun(target: $target, package: $package);
+
+		try {
+			$this->writeGroups(groups: $groups, run: $run);
+		} catch (\Throwable $e) {
+			$this->undo(written: $run['written']);
+
+			return $this->packageFailure(message: "Package '{$package}' was not installed, and nothing it wrote was kept: " . $e->getMessage());
+		}
+
+		return $this->installed(package: $package, run: $run);
+	}//end writePackage()
+
+	/**
+	 * The empty run state an install accumulates into.
+	 *
+	 * @param RowTarget $target Where the rows go.
+	 * @param string $package The package name.
+	 *
+	 * @return array<string, mixed> The run.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	private function newRun(RowTarget $target, string $package): array {
+		return [
 			'target' => $target,
 			'package' => $package,
 			'written' => [],
@@ -171,17 +195,35 @@ class PackageWriter {
 			'ids' => [],
 			'caseTypes' => [],
 		];
+	}//end newRun()
 
-		try {
-			foreach ($groups as $group) {
-				$this->writeGroup(group: $group, run: $run);
-			}
-		} catch (\Throwable $e) {
-			$this->undo(written: $run['written']);
-
-			return $this->packageFailure(message: "Package '{$package}' was not installed, and nothing it wrote was kept: " . $e->getMessage());
+	/**
+	 * Write every group of the package into the run.
+	 *
+	 * @param array<int, array<string, mixed>> $groups The package's groups.
+	 * @param array<string, mixed> $run The run, accumulated in place.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	private function writeGroups(array $groups, array &$run): void {
+		foreach ($groups as $group) {
+			$this->writeGroup(group: $group, run: $run);
 		}
+	}//end writeGroups()
 
+	/**
+	 * The report of an install that kept what it wrote.
+	 *
+	 * @param string $package The package name.
+	 * @param array<string, mixed> $run The finished run.
+	 *
+	 * @return array<string, mixed> The success report.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	private function installed(string $package, array $run): array {
 		$run['adopted'] = $this->fills()->withFillsPointedAt(adopted: $run['adopted'], ids: $run['ids']);
 
 		return [
@@ -193,7 +235,7 @@ class PackageWriter {
 			'adopted' => $run['adopted'],
 			'held' => $run['held'],
 		];
-	}//end writePackage()
+	}//end installed()
 
 	/**
 	 * A package install that wrote nothing it kept.
@@ -427,7 +469,7 @@ class PackageWriter {
 	 *
 	 * @return array<int, string> The ids of the rows that were filled.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function fillAdopted(array $adopted): array {
 		return $this->fills()->write(adopted: $adopted);

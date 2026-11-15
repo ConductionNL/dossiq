@@ -35,13 +35,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeSourceSeederInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -54,9 +55,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class IntakeSourceSeeder {
+class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 	use SearchesObjects;
 
 	/**
@@ -108,7 +109,7 @@ class IntakeSourceSeeder {
 	 *
 	 * @return array<int, array<string, mixed>> The channel definitions.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function catalogue(): array {
 		$content = file_get_contents(self::CATALOGUE_PATH);
@@ -137,15 +138,10 @@ class IntakeSourceSeeder {
 	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>}
 	 *                                                                                        What the seed did.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function seed(): array {
-		$empty = [
-			'available' => false,
-			'created' => 0,
-			'updated' => 0,
-			'refused' => [],
-		];
+		$empty = $this->nothingSeeded();
 
 		$objectService = $this->resolve(service: 'OCA\OpenRegister\Service\ObjectService');
 		$registerMapper = $this->resolve(service: 'OCA\OpenRegister\Db\RegisterMapper');
@@ -156,13 +152,50 @@ class IntakeSourceSeeder {
 		try {
 			$register = $registerMapper->find(self::REGISTER_SLUG, false, false);
 		} catch (Throwable $e) {
-			$this->logger->info(
-				'Dossiq: the OpenRegister intake-sources register is not present, no channel seeded',
-				['exception' => $e->getMessage()]
-			);
+			$this->logRegisterAbsent(error: $e);
 			return $empty;
 		}
 
+		return $this->upsertAllAsSystem(objectService: $objectService, register: $register);
+	}//end seed()
+
+	/**
+	 * What the seed answers when it did nothing.
+	 *
+	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>} The empty answer.
+	 */
+	private function nothingSeeded(): array {
+		return [
+			'available' => false,
+			'created' => 0,
+			'updated' => 0,
+			'refused' => [],
+		];
+	}//end nothingSeeded()
+
+	/**
+	 * Log that the intake-sources register is not present.
+	 *
+	 * @param Throwable $error Why the register could not be found.
+	 *
+	 * @return void
+	 */
+	private function logRegisterAbsent(Throwable $error): void {
+		$this->logger->info(
+			'Dossiq: the OpenRegister intake-sources register is not present, no channel seeded',
+			['exception' => $error->getMessage()]
+		);
+	}//end logRegisterAbsent()
+
+	/**
+	 * Create what is missing and refresh the rest, as the system.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param object $register The intake-sources register.
+	 *
+	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>} What the seed did.
+	 */
+	private function upsertAllAsSystem(object $objectService, object $register): array {
 		// A REPAIR STEP RUNS WITH NO SESSION, SO OPENREGISTER RESOLVES THE ACTOR
 		// AS 'Anonymous' AND REFUSES EVERY WRITE. The refusal is reported as a
 		// warning, which does not fail an upgrade, so the install would print
@@ -173,73 +206,92 @@ class IntakeSourceSeeder {
 		return $this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): array => $this->upsertAll(
-				objectService: $objectService,
-				register: (string)$register->getId()
+				target: new IntakeSourceRegister(objectService: $objectService, register: (string)$register->getId())
 			)
 		);
-	}//end seed()
+	}//end upsertAllAsSystem()
 
 	/**
 	 * Create what is missing and refresh the rest, one channel at a time.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register      The intake-sources register id.
+	 * @param IntakeSourceRegister $target OpenRegister's ObjectService and the intake-sources register id.
 	 *
 	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>}
 	 *                                                                                        What the seed did.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function upsertAll(object $objectService, string $register): array {
-		$created = 0;
-		$updated = 0;
+	private function upsertAll(IntakeSourceRegister $target): array {
+		$tally = ['created' => 0, 'updated' => 0];
 		$refused = [];
 
 		foreach ($this->catalogue() as $source) {
-			$slug = (string)$source['slug'];
-			try {
-				$existing = $this->findBySlug(
-					objectService: $objectService,
-					register: $register,
-					slug: $slug
-				);
+			$outcome = $this->upsertOne(target: $target, source: $source);
+			if ($outcome === 'refused') {
+				$refused[] = (string)$source['slug'];
+				continue;
+			}
 
-				if ($existing === null) {
-					$objectService->saveObject(
-						register: $register,
-						schema: self::SCHEMA_SLUG,
-						object: $this->newRow(source: $source)
-					);
-					$created++;
-					continue;
-				}
+			$tally[$outcome]++;
+		}
 
-				$objectService->saveObject(
-					register: $register,
-					schema: self::SCHEMA_SLUG,
-					object: $this->refreshedRow(existing: $this->dataOf(object: $existing), source: $source),
-					uuid: $this->uuidOf(object: $existing)
-				);
-				$updated++;
-			} catch (Throwable $e) {
-				// \Throwable rather than \Exception: an OpenRegister refusal can
-				// surface as a PHP Error, and one refused channel must not abort
-				// the upgrade that is seeding the other four.
-				$refused[] = $slug;
-				$this->logger->error(
-					'Dossiq: failed to seed an intake source',
-					['slug' => $slug, 'exception' => $e->getMessage()]
-				);
-			}//end try
-		}//end foreach
-
-		return [
-			'available' => true,
-			'created' => $created,
-			'updated' => $updated,
-			'refused' => $refused,
-		];
+		return ['available' => true, 'created' => $tally['created'], 'updated' => $tally['updated'], 'refused' => $refused];
 	}//end seed()
+
+	/**
+	 * Create or refresh one channel, logging a refusal.
+	 *
+	 * @param IntakeSourceRegister $target OpenRegister's ObjectService and the intake-sources register id.
+	 * @param array<string, mixed> $source The catalogue definition.
+	 *
+	 * @return string 'created', 'updated' or 'refused'.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function upsertOne(IntakeSourceRegister $target, array $source): string {
+		$slug = (string)$source['slug'];
+		try {
+			return $this->writeSource(target: $target, source: $source);
+		} catch (Throwable $e) {
+			// \Throwable rather than \Exception: an OpenRegister refusal can
+			// surface as a PHP Error, and one refused channel must not abort
+			// the upgrade that is seeding the other four.
+			$this->logger->error(
+				'Dossiq: failed to seed an intake source',
+				['slug' => $slug, 'exception' => $e->getMessage()]
+			);
+			return 'refused';
+		}
+	}//end upsertOne()
+
+	/**
+	 * Write one channel: a new row when it is missing, a refreshed one otherwise.
+	 *
+	 * @param IntakeSourceRegister $target OpenRegister's ObjectService and the intake-sources register id.
+	 * @param array<string, mixed> $source The catalogue definition.
+	 *
+	 * @return string 'created' or 'updated'.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function writeSource(IntakeSourceRegister $target, array $source): string {
+		$objectService = $target->objectService;
+		$register = $target->register;
+		$existing = $this->findBySlug(target: $target, slug: (string)$source['slug']);
+
+		if ($existing === null) {
+			$objectService->saveObject(register: $register, schema: self::SCHEMA_SLUG, object: $this->newRow(source: $source));
+			return 'created';
+		}
+
+		$objectService->saveObject(
+			register: $register,
+			schema: self::SCHEMA_SLUG,
+			object: $this->refreshedRow(existing: $this->dataOf(object: $existing), source: $source),
+			uuid: $this->uuidOf(object: $existing)
+		);
+		return 'updated';
+	}//end writeSource()
 
 	/**
 	 * A new row: the catalogue's own fields, switched off.
@@ -252,7 +304,7 @@ class IntakeSourceSeeder {
 	 *
 	 * @return array<string, mixed> The object to write.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function newRow(array $source): array {
 		$row = ['slug' => (string)$source['slug'], 'enabled' => false];
@@ -273,7 +325,7 @@ class IntakeSourceSeeder {
 	 *
 	 * @return array<string, mixed> The object to write back.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function refreshedRow(array $existing, array $source): array {
 		$row = $existing;
@@ -291,17 +343,16 @@ class IntakeSourceSeeder {
 	/**
 	 * Find one intake source by its slug.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $slug          The source's slug.
+	 * @param IntakeSourceRegister $target The OpenRegister ObjectService and the register id.
+	 * @param string               $slug   The source's slug.
 	 *
 	 * @return object|array|null The row, or null when there is none.
 	 */
-	private function findBySlug(object $objectService, string $register, string $slug): object|array|null {
-		$results = $objectService->findAll(
+	private function findBySlug(IntakeSourceRegister $target, string $slug): object|array|null {
+		$results = $target->objectService->findAll(
 			[
 				'filters' => [
-					'register' => $register,
+					'register' => $target->register,
 					'schema' => self::SCHEMA_SLUG,
 					'slug' => $slug,
 				],

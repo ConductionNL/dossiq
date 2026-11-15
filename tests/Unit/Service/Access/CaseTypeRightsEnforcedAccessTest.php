@@ -241,15 +241,48 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 			$memberOfThird = $container;
 		}
 
-		$memberOf = new $memberOfClass($schemas, $registers, $memberOfThird, $evaluator, new NullLogger());
-		$matcher = new $matcherClass($session, $container, $evaluator, new NullLogger(), $groups, $memberOf);
+		// From 70e55704 on, OpenRegister takes the two mappers as one SchemaRegisterLookup.
+		$lookupClass = 'OCA\\OpenRegister\\Service\\Rbac\\SchemaRegisterLookup';
+		$first = (new \ReflectionMethod(objectOrMethod: $memberOfClass, method: '__construct'))->getParameters()[0]->getType();
+		$memberOf = null;
+		if ($first instanceof \ReflectionNamedType && $first->getName() === $lookupClass) {
+			$memberOf = new $memberOfClass(new $lookupClass($schemas, $registers), $container, $evaluator, new NullLogger());
+		}
+
+		if ($memberOf === null) {
+			$memberOf = new $memberOfClass($schemas, $registers, $memberOfThird, $evaluator, new NullLogger());
+		}
+
+		// OpenRegister main takes the caller, its groups and the member-of
+		// resolver as one ConditionUserResolvers.
+		$usersClass = 'OCA\\OpenRegister\\Service\\ConditionUserResolvers';
+		if (class_exists(class: $usersClass) === true) {
+			$matcher = new $matcherClass(new $usersClass($session, $groups, $memberOf), $container, $evaluator, new NullLogger());
+		}
+
+		if (class_exists(class: $usersClass) === false) {
+			$matcher = new $matcherClass($session, $container, $evaluator, new NullLogger(), $groups, $memberOf);
+		}
 
 		$permissionClass = 'OCA\\OpenRegister\\Service\\Object\\PermissionHandler';
-		$permissions = new $permissionClass($session, $users, $groups, $schemas, $objects, $matcher, $appConfig, new NullLogger(), $container, $dispatcher);
+		// OpenRegister takes the collaborators as four bundles once PermissionCallerServices exists.
+		$bundle = 'OCA\\OpenRegister\\Service\\Object\\Permission\\';
+		if (class_exists(class: $bundle . 'PermissionCallerServices') === true) {
+			$permissions = new $permissionClass(
+				new ($bundle . 'PermissionCallerServices')($session, $users, $groups, $appConfig),
+				new ($bundle . 'PermissionDataServices')($schemas, $objects, $container, new NullLogger()),
+				new ($bundle . 'PermissionRuleServices')($matcher, $dispatcher),
+				new ($bundle . 'PermissionGrantServices')(new ($bundle . 'PermissionDenyServices')(), new ($bundle . 'PermissionDerivedGrantServices')())
+			);
+		}
+
+		if (class_exists(class: $bundle . 'PermissionCallerServices') === false) {
+			$permissions = new $permissionClass($session, $users, $groups, $schemas, $objects, $matcher, $appConfig, new NullLogger(), $container, $dispatcher);
+		}
 
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($permissions, $registers, $objects, $permissionClass) {
-				if ($id === $permissionClass) {
+				if ($id === $permissionClass || $id === $permissionClass . 'Interface') {
 					return $permissions;
 				}
 
@@ -284,6 +317,19 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		);
 
 		$rbacClass = 'OCA\\OpenRegister\\Db\\MagicMapper\\MagicRbacHandler';
+		// OpenRegister main takes the caller, the settings and the support services as three bundles.
+		$magic = 'OCA\\OpenRegister\\Db\\MagicMapper\\';
+		if (class_exists(class: $magic . 'MagicMapperIdentity') === true) {
+			return [
+				$permissions,
+				new $rbacClass(
+					new ($magic . 'MagicMapperIdentity')($session, $groups, $users),
+					new ($magic . 'MagicRbacSettings')($appConfig),
+					new ($magic . 'MagicRbacSupport')($matcher, $container, new NullLogger())
+				),
+			];
+		}
+
 		return [$permissions, new $rbacClass($session, $groups, $users, $appConfig, $matcher, $container, new NullLogger())];
 	}//end handlers()
 
@@ -350,7 +396,17 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 			$this->createMock('OCA\\OpenRegister\\Service\\DateTimeNormalizer'),
 			relatedRows: $this->createMock('OCA\\OpenRegister\\Service\\Query\\RelatedRowQueryApplier')
 		);
-		$conditions = $search->buildWhereConditionsSql(query: [], schema: $this->caseSchema());
+		// OpenRegister main asks for one WhereClauseRequest over a MagicReadTable.
+		$magic = 'OCA\\OpenRegister\\Db\\MagicMapper\\';
+		if (method_exists($search, 'buildWhereClause') === true) {
+			$conditions = $search->buildWhereClause(
+				request: new ($magic . 'WhereClauseRequest')(query: [], table: new ($magic . 'MagicReadTable')(schema: $this->caseSchema()))
+			);
+		}
+
+		if (method_exists($search, 'buildWhereClause') === false) {
+			$conditions = $search->buildWhereConditionsSql(query: [], schema: $this->caseSchema());
+		}
 
 		$pdo = new PDO('sqlite::memory:');
 		$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

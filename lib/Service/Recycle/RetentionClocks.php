@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Service\Recycle;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\RetentionClocksInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
@@ -51,9 +52,9 @@ use Throwable;
 /**
  * Reads the lawful-purpose clock and the archive clock as two separate values.
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class RetentionClocks {
+class RetentionClocks implements RetentionClocksInterface {
 
 	/**
 	 * The case-type property that states the lawful-purpose retention.
@@ -103,7 +104,7 @@ class RetentionClocks {
 	 *
 	 * @return array{lawfulPurpose: array<string, mixed>, archive: array<string, mixed>, disagree: bool}
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function clocksFor(array $case): array {
 		$lawful = $this->lawfulPurposeClock(case: $case);
@@ -127,7 +128,7 @@ class RetentionClocks {
 	 *
 	 * @return string|null The date as `Y-m-d`, or null when no rule applies.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function lawfulPurposeEndDate(array $case): ?string {
 		$closed = $this->date(value: (string)($case['endDate'] ?? ''));

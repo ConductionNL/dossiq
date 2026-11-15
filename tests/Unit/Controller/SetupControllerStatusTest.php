@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SetupController;
 use OCA\Dossiq\Service\DemoDataService;
+use OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCA\Dossiq\Service\Setup\ActiveOrganisationProfile;
 use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
@@ -76,6 +77,7 @@ class SetupControllerStatusTest extends TestCase {
 	 * @param array<string,mixed>|null $requestParams      Request params, for the config-fields step.
 	 * @param ActiveOrganisationProfile|null $profile      The Organisation step's store; a named organisation by default.
 	 * @param array<int,array<string,mixed>> $catalogue    The case definition packages the installer lists.
+	 * @param array<int,array<string,mixed>>|\Throwable|null $examplesResult What writing the installed packages' examples returns, or throws.
 	 *
 	 * @return array{controller: SetupController, written: array<string,string>, settings: SettingsService, asked: list<string>} The
 	 *   controller, a live view of every app-config value it wrote, its settings collaborator, and the package ids the installer was asked for.
@@ -90,6 +92,7 @@ class SetupControllerStatusTest extends TestCase {
 		?array $requestParams = null,
 		?ActiveOrganisationProfile $profile = null,
 		array $catalogue = [],
+		array|\Throwable|null $examplesResult = null,
 	): array {
 		$written = [];
 		$asked = [];
@@ -136,6 +139,18 @@ class SetupControllerStatusTest extends TestCase {
 			);
 		}
 
+		$examples = $this->createMock(InstalledPackageExamples::class);
+		if ($examplesResult instanceof \Throwable) {
+			$examples->method('forInstalled')->willThrowException($examplesResult);
+		} elseif ($examplesResult !== null) {
+			$examples->method('forInstalled')->willReturnCallback(
+				static function () use ($examplesResult, &$written, &$asked): array {
+					$asked[] = 'examples with decision ' . ($written['demo_data_decided'] ?? 'unset');
+					return $examplesResult;
+				}
+			);
+		}
+
 		if ($demoResult instanceof \Throwable) {
 			$demo->method('install')->willThrowException($demoResult);
 		} elseif ($demoResult !== null) {
@@ -166,7 +181,7 @@ class SetupControllerStatusTest extends TestCase {
 			packages: $packages,
 			readiness: new FirstRunReadiness(settingsService: $settings, appConfig: $appConfig),
 			organisationProfile: ($profile ?? $this->namedOrganisation()),
-			caseTypes: new CaseTypePackageChoice(packages: $packages, appConfig: $appConfig),
+			caseTypes: new CaseTypePackageChoice(packages: $packages, appConfig: $appConfig, examples: $examples),
 		);
 
 		return ['controller' => $controller, 'written' => &$written, 'settings' => $settings, 'asked' => &$asked];
@@ -1110,4 +1125,75 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertArrayNotHasKey('demo_data_decided', $built['written']);
 
 	}//end testAFailedLoadOnNextKeepsTheWizardOnTheStep()
+
+	/**
+	 * Loading example data writes the examples of the packages installed
+	 * before it, once the decision is recorded, and reports their outcomes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testLoadingTheDemoDataWritesTheExamplesOfInstalledPackages(): void {
+		$outcome = ['status' => 'installed', 'package' => 'fixture', 'version' => '1.0.0', 'message' => 'ok', 'written' => 1];
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: ['objects' => 4, 'requested' => 4, 'refused' => 0, 'unchanged' => 0],
+			examplesResult: [$outcome],
+		);
+
+		$data = $built['controller']->runAction(actionId: 'install-demo-data')->getData();
+
+		$this->assertTrue($data['success']);
+		$this->assertSame([$outcome], $data['detail']['packageExamples']);
+		$this->assertSame(['examples with decision installed'], $built['asked']);
+		$this->assertSame(4, $data['detail']['objects']);
+
+	}//end testLoadingTheDemoDataWritesTheExamplesOfInstalledPackages()
+
+	/**
+	 * A failure writing the package examples does not turn a finished load
+	 * into a failed one; it is reported beside it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testAFailureWritingThePackageExamplesIsReportedBesideTheLoad(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: ['objects' => 4, 'requested' => 4, 'refused' => 0, 'unchanged' => 0],
+			examplesResult: new \RuntimeException('the register is gone'),
+		);
+
+		$data = $built['controller']->runAction(actionId: 'install-demo-data')->getData();
+
+		$this->assertTrue($data['success']);
+		$this->assertSame('installed', $built['written']['demo_data_decided']);
+		$this->assertSame(
+			[['status' => PackageInstaller::FAILED, 'package' => '', 'version' => '', 'message' => 'the register is gone']],
+			$data['detail']['packageExamples']
+		);
+
+	}//end testAFailureWritingThePackageExamplesIsReportedBesideTheLoad()
+
+	/**
+	 * A failed load writes no package examples.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testAFailedLoadWritesNoPackageExamples(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: new \RuntimeException('No demo dataset ships with this app'),
+			examplesResult: [],
+		);
+
+		$built['controller']->runAction(actionId: 'install-demo-data');
+
+		$this->assertSame([], $built['asked']);
+
+	}//end testAFailedLoadWritesNoPackageExamples()
 }//end class

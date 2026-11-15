@@ -102,8 +102,8 @@ class RuleConditionLogic {
 		$field = (string)($condition['field'] ?? '');
 
 		return match ($kind) {
-			'fieldCompare' => $this->compare(field: $field, operator: (string)($condition['op'] ?? 'eq'), value: ($condition['value'] ?? null)),
-			'fieldEquals' => $this->compare(field: $field, operator: 'eq', value: ($condition['value'] ?? null)),
+			'fieldCompare' => $this->compare(condition: $condition, operator: (string)($condition['op'] ?? 'eq')),
+			'fieldEquals' => $this->compare(condition: $condition, operator: 'eq'),
 			'fieldPresent' => $this->present(field: $field),
 			'fieldDiffers' => $this->differs(field: $field, value: ($condition['value'] ?? null)),
 			'statusIs' => ['==' => [['var' => 'json.status'], (string)($condition['status'] ?? '')]],
@@ -115,13 +115,14 @@ class RuleConditionLogic {
 	/**
 	 * A comparison on a case property or on a property definition's answer.
 	 *
-	 * @param string $field The field.
-	 * @param string $operator The rule operator.
-	 * @param mixed $value The value to compare with.
+	 * @param array<string, mixed> $condition The condition: its `field` and the `value` to compare with.
+	 * @param string               $operator  The rule operator.
 	 *
 	 * @return array<string, mixed>|bool The expression.
 	 */
-	private function compare(string $field, string $operator, mixed $value): array|bool {
+	private function compare(array $condition, string $operator): array|bool {
+		$field = (string)($condition['field'] ?? '');
+		$value = ($condition['value'] ?? null);
 		$symbol = (self::OPERATORS[$operator] ?? null);
 		if ($field === '' || $symbol === null) {
 			return false;

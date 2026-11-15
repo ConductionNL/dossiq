@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+ * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Which shipped fields an adopted case type lacks, and writing them.
  *
- * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+ * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
  */
 class AdoptedCaseTypeFill {
 
@@ -69,7 +69,7 @@ class AdoptedCaseTypeFill {
 	 *
 	 * @return array<string, mixed> The fields to add, with the package's values.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function lackedBy(array $shipped, array $stored): array {
 		$lacked = [];
@@ -99,7 +99,7 @@ class AdoptedCaseTypeFill {
 	 *
 	 * @return array<string, mixed> The row.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function pointedAt(array $row, array $ids): array {
 		if ($ids === []) {
@@ -134,7 +134,7 @@ class AdoptedCaseTypeFill {
 	 *
 	 * @return array<int, array<string, mixed>> The adopted rows.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function withFillsPointedAt(array $adopted, array $ids): array {
 		foreach ($adopted as $index => $entry) {
@@ -157,7 +157,7 @@ class AdoptedCaseTypeFill {
 	 *
 	 * @return array<int, string> The ids of the rows that were filled.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function write(array $adopted): array {
 		$objectService = $this->settings->getObjectService();
@@ -167,28 +167,61 @@ class AdoptedCaseTypeFill {
 
 		$filled = [];
 		foreach ($adopted as $entry) {
-			if (($entry['fill'] ?? []) === []) {
-				continue;
-			}
-
-			try {
-				// An administrator's install, which passes the access check as PackageWriter's writes do.
-				$objectService->saveObject(
-					$this->withoutMetadata(row: (array)$entry['row']),
-					register: (string)$entry['register'],
-					schema: (string)$entry['schema'],
-					uuid: (string)$entry['id'],
-					_rbac: false
-				);
+			if ($this->fill(objectService: $objectService, entry: $entry) === true) {
 				$filled[] = (string)$entry['id'];
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Package install: adopted case type {id} kept without the fields it lacked: {error}',
-					['id' => $entry['id'], 'error' => $e->getMessage()]
-				);
 			}
 		}//end foreach
 
 		return $filled;
 	}//end write()
+
+	/**
+	 * Fill one adopted case type when it lacks fields, logging when the write fails.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $entry         The adopted row.
+	 *
+	 * @return bool Whether the row was filled.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 */
+	private function fill(object $objectService, array $entry): bool {
+		if (($entry['fill'] ?? []) === []) {
+			return false;
+		}
+
+		try {
+			$this->saveFilled(objectService: $objectService, entry: $entry);
+			return true;
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Package install: adopted case type {id} kept without the fields it lacked: {error}',
+				['id' => $entry['id'], 'error' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end fill()
+
+	/**
+	 * Write one adopted case type as it reads once filled.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $entry         The adopted row.
+	 *
+	 * @return void
+	 *
+	 * @throws \Throwable When OpenRegister refuses the write.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 */
+	private function saveFilled(object $objectService, array $entry): void {
+		// An administrator's install, which passes the access check as PackageWriter's writes do.
+		$objectService->saveObject(
+			$this->withoutMetadata(row: (array)$entry['row']),
+			register: (string)$entry['register'],
+			schema: (string)$entry['schema'],
+			uuid: (string)$entry['id'],
+			_rbac: false
+		);
+	}//end saveFilled()
 }//end class

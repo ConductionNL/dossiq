@@ -196,7 +196,7 @@ class CapacityGuardWiringTest extends TestCase {
 		// into three free places move three and report seven, each with the
 		// capacity sentence. The assertion is here so that stays true.
 		$this->assertMatchesRegularExpression(
-			'/public function apply\(\s*ObjectEntity \$object/',
+			'/public function apply\(BulkStep \$step\): BulkActionResult/',
 			$source,
 			'the bulk action must apply to one object at a time, or a full status refuses the '
 			. 'whole selection instead of the cases past the limit'

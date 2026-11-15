@@ -132,6 +132,23 @@ class ReportingAudienceTest extends TestCase {
 	}//end testNoSessionReadsNothing()
 
 	/**
+	 * A group check that cannot be answered refuses, it does not let through.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	public function testAnUnanswerableGroupCheckRefuses(): void {
+		$groups = $this->createMock(originalClassName: IGroupManager::class);
+		$groups->method('isInGroup')->willThrowException(new \RuntimeException('group backend down'));
+		$groups->expects($this->never())->method('isAdmin');
+
+		$audience = new ReportingAudience(groupManager: $groups);
+
+		$this->assertFalse($audience->isInAudience(user: $this->caller()));
+	}//end testAnUnanswerableGroupCheckRefuses()
+
+	/**
 	 * The vocabulary is the one this app already gates on.
 	 *
 	 * 🔑 THIS IS THE ANTI-DUPLICATION ASSERTION. The groups are not new: they

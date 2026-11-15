@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ReviewListenerRegistrar;
 use OCA\Dossiq\Listener\StoppingRuleGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
  * Direct OpenRegister writes to the stopping rule, through the OpenRegister event classes.
  *
  * @covers \OCA\Dossiq\Listener\StoppingRuleGuard
- * @covers \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\ReviewListenerRegistrar
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  * @uses \OCA\Dossiq\Listener\LinkMarkerListener
@@ -75,7 +75,12 @@ class StoppingRuleGuardTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 		$logger = $this->createMock(LoggerInterface::class);
-		$rules = new StoppingRules(settingsService: $settings, reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), logger: $logger);
+		$rules = new StoppingRules(
+			settingsService: $settings,
+			reviews: new DocumentRelevance(settingsService: $settings, logger: $logger),
+			logger: $logger,
+			writes: $this->createMock(originalClassName: \OCA\Dossiq\Review\ReviewWrites::class)
+		);
 
 		return new StoppingRuleGuard(settingsService: $settings, rules: $rules, logger: $logger);
 	}//end guard()

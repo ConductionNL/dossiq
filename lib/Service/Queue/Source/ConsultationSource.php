@@ -17,7 +17,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use OCP\IL10N;
 /**
  * Open consultations assigned to the reader.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class ConsultationSource extends RegisterBackedSource {
 	/**
@@ -53,7 +53,7 @@ class ConsultationSource extends RegisterBackedSource {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		SettingsService $settings,
@@ -67,7 +67,7 @@ class ConsultationSource extends RegisterBackedSource {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function name(): string {
 		return 'consultations';
@@ -78,7 +78,7 @@ class ConsultationSource extends RegisterBackedSource {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function label(): string {
 		return $this->l10n->t('Advice asked of you');
@@ -89,7 +89,7 @@ class ConsultationSource extends RegisterBackedSource {
 	 *
 	 * @return string The closing condition.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function closesWhen(): string {
 		return $this->l10n->t('A consultation leaves when you answer it, or when it is withdrawn.');
@@ -100,7 +100,7 @@ class ConsultationSource extends RegisterBackedSource {
 	 *
 	 * @return array<int, string> The mechanism ids.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function mechanisms(): array {
 		return ['notification:onCreate', 'flow:DossiqEnsureCommitteeNode'];
@@ -113,39 +113,47 @@ class ConsultationSource extends RegisterBackedSource {
 	 *
 	 * @return array<int, QueueItem> The items.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function itemsFor(string $userId): array {
-		$rows = $this->rows(schema: 'consultation', filters: ['assignee' => $userId]);
-
+		$rows = new WaitingRequestRows(closedStatuses: self::CLOSED_STATUSES);
 		$items = [];
-		foreach ($rows as $row) {
+		foreach ($this->rows(schema: 'consultation', filters: ['assignee' => $userId]) as $row) {
 			$id = $this->idOf(row: $row);
-			$status = strtolower(trim((string)($row['status'] ?? '')));
-			if ($id === '' || in_array($status, self::CLOSED_STATUSES, true) === true) {
-				continue;
+			if ($rows->isWaiting(id: $id, row: $row) === true) {
+				$items[] = $this->itemOf(row: $row, id: $id);
 			}
-
-			$case = trim((string)($row['parentCase'] ?? ''));
-			$route = ['name' => 'Cases'];
-			if ($case !== '') {
-				// The case has no consultations tab, so the row opens the case itself.
-				$route = ['name' => 'CaseDetail', 'params' => ['id' => $case]];
-			}
-
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'consultation',
-				subjectId: $id,
-				title: (string)($row['subject'] ?? $id),
-				priority: (string)($row['priority'] ?? ''),
-				dueAt: $this->dateOf(row: $row, key: 'latestResponseDate'),
-				coveredFor: null,
-				route: $route
-			);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * The queue item for one waiting consultation.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 * @param string               $id  The row's id.
+	 *
+	 * @return QueueItem
+	 */
+	private function itemOf(array $row, string $id): QueueItem {
+		$case = trim((string)($row['parentCase'] ?? ''));
+		// The case has no consultations tab, so the row opens the case itself.
+		$route = WaitingRequestRows::routeOf(
+			case: $case,
+			caseRoute: ['name' => 'CaseDetail', 'params' => ['id' => $case]]
+		);
+
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'consultation',
+			subjectId: $id,
+			title: (string)($row['subject'] ?? $id),
+			priority: (string)($row['priority'] ?? ''),
+			dueAt: $this->dateOf(row: $row, key: 'latestResponseDate'),
+			coveredFor: null,
+			route: $route
+		);
+	}//end itemOf()
 }//end class

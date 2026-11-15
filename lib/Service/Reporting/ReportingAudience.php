@@ -15,8 +15,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Reporting;
 
-use OCP\IUser;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
 use OCP\IGroupManager;
+use OCP\IUser;
 use Throwable;
 
 /**
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/specs/security-hardening/spec.md
  */
-class ReportingAudience {
+class ReportingAudience implements ReportingAudienceInterface {
 
 	/**
 	 * The groups that may read a figure about the whole case population.
@@ -61,11 +62,6 @@ class ReportingAudience {
 	 * @var array<int, string>
 	 */
 	public const ALLOWED_GROUPS = ['controllers', 'beheerders', 'admin'];
-
-	/**
-	 * The sentence a refused caller reads.
-	 */
-	public const REFUSAL = 'This report covers every case, so it is for the controller and beheerder roles.';
 
 	/**
 	 * Constructor.

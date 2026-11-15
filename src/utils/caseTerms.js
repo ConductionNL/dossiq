@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 /** The order the clocks are read in on a case page. */
@@ -28,7 +28,7 @@ export const KIND_ORDER = ['statutory', 'planned', 'internal', 'phase']
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding, passed in so this module needs no global.
  *
  * @return {string} The label.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 export function kindLabel(kind, t) {
 	const labels = {
@@ -47,7 +47,7 @@ export function kindLabel(kind, t) {
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {string} The sentence, empty for a kind we do not know.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 export function kindHint(kind, t) {
 	const hints = {
@@ -73,19 +73,40 @@ export function kindHint(kind, t) {
  * @param {number} [warnWithin] How many days ahead reads as due soon.
  *
  * @return {string} One of `overdue`, `soon`, `ontime`, `unknown`.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 export function termTone(term, warnWithin = 5) {
-	if (!term || !term.endDate) {
+	if (hasNoEndDate(term)) {
 		return 'unknown'
 	}
 	if (term.overdue === true) {
 		return 'overdue'
 	}
-	if (typeof term.daysLeft === 'number' && term.daysLeft <= warnWithin) {
+	if (isDueWithin(term, warnWithin)) {
 		return 'soon'
 	}
 	return 'ontime'
+}
+
+/**
+ * Whether a term is missing, or carries no end date.
+ *
+ * @param {object|null} term One shaped term from the server.
+ * @return {boolean} True when there is no end date to read.
+ */
+function hasNoEndDate(term) {
+	return !term || !term.endDate
+}
+
+/**
+ * Whether a term's days-left count is at or under a threshold.
+ *
+ * @param {object} term One shaped term from the server.
+ * @param {number} warnWithin How many days ahead reads as due soon.
+ * @return {boolean} True when the count is a number within the threshold.
+ */
+function isDueWithin(term, warnWithin) {
+	return typeof term.daysLeft === 'number' && term.daysLeft <= warnWithin
 }
 
 /**
@@ -95,10 +116,10 @@ export function termTone(term, warnWithin = 5) {
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {string} The sentence.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 export function daysLeftSentence(term, t) {
-	if (!term || typeof term.daysLeft !== 'number' || !term.endDate) {
+	if (hasNoDaysLeft(term)) {
 		return t('dossiq', 'No end date')
 	}
 	if (term.overdue === true) {
@@ -121,21 +142,62 @@ export function daysLeftSentence(term, t) {
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {string} The sentence, empty when the clock is not suspended.
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 export function pauseSentence(term, t) {
 	if (!term || term.status !== 'paused') {
 		return ''
 	}
-
-	const reason = term.pauseReason || ''
-	const chases = Number.isFinite(term.chasesSent) ? term.chasesSent : 0
-
-	if (reason === '') {
-		return chases === 0
-			? t('dossiq', 'Suspended')
-			: t('dossiq', 'Suspended, {chases} reminders sent', { chases })
+	if ((term.pauseReason || '') === '') {
+		return unexplainedPauseSentence(term, t)
 	}
+	return explainedPauseSentence(term, t)
+}
+
+/**
+ * Whether a term lacks a numeric days-left count or an end date.
+ *
+ * @param {object|null} term One shaped term from the server.
+ * @return {boolean} True when there is no count to put in words.
+ */
+function hasNoDaysLeft(term) {
+	return !term || typeof term.daysLeft !== 'number' || !term.endDate
+}
+
+/**
+ * How many reminders a suspended term has sent, 0 when that is not a number.
+ *
+ * @param {object} term One shaped term from the server.
+ * @return {number} The count.
+ */
+function chasesOf(term) {
+	return Number.isFinite(term.chasesSent) ? term.chasesSent : 0
+}
+
+/**
+ * The pause sentence for a suspension nobody gave a reason for.
+ *
+ * @param {object} term One paused term from the server.
+ * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
+ * @return {string} The sentence.
+ */
+function unexplainedPauseSentence(term, t) {
+	const chases = chasesOf(term)
+	return chases === 0
+		? t('dossiq', 'Suspended')
+		: t('dossiq', 'Suspended, {chases} reminders sent', { chases })
+}
+
+/**
+ * The pause sentence for a suspension with a reason, and the reminders sent.
+ *
+ * @param {object} term One paused term with a `pauseReason`.
+ * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
+ * @return {string} The sentence.
+ */
+function explainedPauseSentence(term, t) {
+	const reason = term.pauseReason
+	const chases = chasesOf(term)
 
 	if (chases === 0) {
 		return t('dossiq', 'Suspended: {reason}. No reminder sent yet.', { reason })
@@ -162,7 +224,7 @@ export function pauseSentence(term, t) {
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {Array} The rows to render.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 export function termRows(terms, t) {
 	if (!Array.isArray(terms)) {
@@ -189,7 +251,7 @@ export function termRows(terms, t) {
  * @param {object} progress The progress block the server answered.
  *
  * @return {boolean} True when any clock has run out.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 export function needsAttention(progress) {
 	if (!progress || typeof progress !== 'object') {
@@ -229,7 +291,7 @@ function rank(kind) {
  * @param {(key: string, params?: object) => string} t - The bound translate.
  *
  * @return {Array<string>} One sentence per move, oldest first.
- * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 export function moveLines(term, t) {
 	if (!Array.isArray(term?.moves)) {
@@ -238,22 +300,62 @@ export function moveLines(term, t) {
 
 	return term.moves
 		.filter((move) => move && typeof move === 'object')
-		.map((move) => {
-			const to = String(move.to || '').slice(0, 10)
-			const from = String(move.from || '').slice(0, 10)
-			const reason = String(move.reason || '').trim()
+		.map((move) => moveLine(move, t))
+}
 
-			if (from && to) {
-				return reason
-					? t('Moved from {from} to {to}: {reason}', { from, to, reason })
-					: t('Moved from {from} to {to}, with no reason recorded', {
-							from,
-							to,
-						})
-			}
+/**
+ * One move as a sentence: with its dates when both are known.
+ *
+ * @param {object} move One recorded move.
+ * @param {(key: string, params?: object) => string} t - The bound translate.
+ * @return {string} The sentence.
+ */
+function moveLine(move, t) {
+	const phrased = phrasedMove(move)
+	if (phrased.from && phrased.to) {
+		return datedMoveLine(phrased, t)
+	}
+	return phrased.reason
+		? t('Moved: {reason}', { reason: phrased.reason })
+		: t('Moved, with no reason recorded')
+}
 
-			return reason
-				? t('Moved: {reason}', { reason })
-				: t('Moved, with no reason recorded')
-		})
+/**
+ * A move's dates (day part only) and its trimmed reason, as strings.
+ *
+ * @param {object} move One recorded move.
+ * @return {{from: string, to: string, reason: string}} The phrased move.
+ */
+function phrasedMove(move) {
+	const to = moveDay(move.to)
+	const from = moveDay(move.from)
+	const reason = String(move.reason || '').trim()
+	return { from, to, reason }
+}
+
+/**
+ * The day part of a move's date.
+ *
+ * @param {string|null|undefined} value The date as recorded.
+ * @return {string} `YYYY-MM-DD`, or the empty string.
+ */
+function moveDay(value) {
+	return String(value || '').slice(0, 10)
+}
+
+/**
+ * The sentence for a move whose two dates are known.
+ *
+ * @param {{from: string, to: string, reason: string}} phrased The phrased move.
+ * @param {(key: string, params?: object) => string} t - The bound translate.
+ * @return {string} The sentence.
+ */
+function datedMoveLine(phrased, t) {
+	const { from, to, reason } = phrased
+	return reason
+		? t('Moved from {from} to {to}: {reason}', { from, to, reason })
+		: t('Moved from {from} to {to}, with no reason recorded', {
+				from,
+				to,
+			})
 }

@@ -84,7 +84,8 @@
           }
         ]
       },
-      "initialStatus": "f20608d3-c6af-5a46-83fa-be67234eb9ea"
+      "initialStatus": "f20608d3-c6af-5a46-83fa-be67234eb9ea",
+      "inspectionChecklist": "3015a8a5-2eda-5fc6-bb3b-d3753f30512d"
     },
     {
       "id": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
@@ -106,6 +107,7 @@
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
       "identifier": "handhavingszaak",
+      "adviceDecisionTable": "dossiq.lhs-intervention",
       "workflowDefinition": "6f5b5055-b2a5-5008-a177-528e4b2b4a72",
       "x-index": {
         "columns": [

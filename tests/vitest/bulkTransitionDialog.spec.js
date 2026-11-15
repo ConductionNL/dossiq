@@ -465,3 +465,41 @@ describe('BulkTransitionDialog, the transition mode', () => {
 		})
 	})
 })
+
+describe('BulkTransitionDialog, the sentences and the gate', () => {
+	it('words every refusal, with the details it has', async () => {
+		const wrapper = await open('resume')
+		const refuse = (data, extra = {}) => wrapper.vm.refusalSentence({ response: { data }, ...extra })
+		expect(refuse({ reason: 'case-type-versions', details: { versions: [2, 3], caseType: 'Bezwaar' } }))
+			.toBe('These cases run on versions 2 and 3 of Bezwaar. A field means something different on each, so pick one version and try again.')
+		expect(refuse({ reason: 'case-type-versions' }))
+			.toBe('These cases run on versions  of . A field means something different on each, so pick one version and try again.')
+		expect(refuse({ reason: 'ceiling', details: { ceiling: 500, count: 900 } }))
+			.toBe('This act takes at most 500 cases at a time, and you selected 900.')
+		expect(refuse({ reason: 'ceiling' })).toBe('This act takes at most 0 cases at a time, and you selected 0.')
+		expect(refuse({ reason: 'other', error: 'Nee' }, { message: 'axios' })).toBe('Nee')
+		expect(refuse({ reason: 'toString' }, { message: 'Network Error' })).toBe('Network Error')
+		expect(wrapper.vm.refusalSentence(null)).toBe('The act could not be started.')
+	})
+
+	it('offers the rehearsal only once the mode fields and the reason are given', async () => {
+		const wrapper = await open('extend')
+		const gate = async (fields) => {
+			Object.assign(wrapper.vm.$data, fields)
+			await wrapper.vm.$nextTick()
+			return wrapper.vm.canRehearse
+		}
+		expect(await gate({ reason: 'x', newEndDate: '2026-12-01', starting: false })).toBe(true)
+		expect(await gate({ starting: true })).toBe(false)
+		expect(await gate({ starting: false, reason: '  ' })).toBe(false)
+		expect(await gate({ reason: 'x', newEndDate: '' })).toBe(false)
+
+		const transition = await open('transition')
+		Object.assign(transition.vm.$data, { reason: 'x', selectedTransition: null })
+		await transition.vm.$nextTick()
+		expect(transition.vm.canRehearse).toBe(false)
+		transition.vm.selectedTransition = { id: 'to-decided' }
+		await transition.vm.$nextTick()
+		expect(transition.vm.canRehearse).toBe(true)
+	})
+})

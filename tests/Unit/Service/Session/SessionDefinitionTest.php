@@ -71,6 +71,8 @@ class SessionDefinitionTest extends TestCase {
 			'empty role'         => [['key' => 'h', 'inviteeRoles' => ['']]],
 			'unknown step'       => [['key' => 'h', 'statuses' => ['archived' => 'gearchiveerd']]],
 			'empty status'       => [['key' => 'h', 'statuses' => ['planned' => ' ']]],
+			'statuses not a map' => [['key' => 'h', 'statuses' => 'planned']],
+			'key not text'       => [['key' => 7]],
 		];
 	}//end malformedEntries()
 
@@ -87,6 +89,16 @@ class SessionDefinitionTest extends TestCase {
 		$this->expectException(InvalidArgumentException::class);
 		new SessionDefinition(config: $entry);
 	}//end testAMalformedEntryIsRefused()
+
+	/**
+	 * A label that is not text falls back to the key, and a padded label is trimmed.
+	 *
+	 * @return void
+	 */
+	public function testALabelThatIsNotTextFallsBackToTheKey(): void {
+		self::assertSame('talk', (new SessionDefinition(config: ['key' => 'talk', 'label' => ['Talk']]))->label);
+		self::assertSame('Talk', (new SessionDefinition(config: ['key' => 'talk', 'label' => '  Talk ']))->label);
+	}//end testALabelThatIsNotTextFallsBackToTheKey()
 
 	/**
 	 * A session planned inside the inspection floor is refused, on the floor is accepted.

@@ -237,4 +237,92 @@ class ActiveOrganisationProfileTest extends TestCase {
 		$this->assertSame($active, $updated[0]);
 
 	}//end testTheWriteLandsOnTheActiveOrganisationOnly()
+	/**
+	 * Build the profile over a container that throws, with a logger that records.
+	 *
+	 * @param string                    $failingId Suffix of the service id that throws.
+	 * @param object|null               $organisation The active organisation.
+	 * @param array<int,array<int,mixed>> $logged Receives [level, message, context] per log call.
+	 *
+	 * @return ActiveOrganisationProfile The profile.
+	 */
+	private function failingProfile(string $failingId, ?object $organisation, array &$logged): ActiveOrganisationProfile {
+		$apps = $this->createMock(IAppManager::class);
+		$apps->method('getInstalledApps')->willReturn(['openregister']);
+
+		$service = new class($organisation) {
+			/** @param object|null $organisation The active organisation. */
+			public function __construct(private ?object $organisation) {
+			}
+
+			/** @return object|null */
+			public function getActiveOrganisation(): ?object {
+				return $this->organisation;
+			}
+		};
+
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function (string $id) use ($failingId, $service): object {
+				if (str_ends_with($id, $failingId) === true) {
+					throw new \RuntimeException('OpenRegister is unreachable');
+				}
+
+				return $service;
+			}
+		);
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$logged): void {
+				$logged[] = ['warning', $message, $context];
+			}
+		);
+		$logger->method('error')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$logged): void {
+				$logged[] = ['error', $message, $context];
+			}
+		);
+
+		return new ActiveOrganisationProfile(appManager: $apps, container: $container, logger: $logger);
+
+	}//end failingProfile()
+
+	/**
+	 * When OpenRegister cannot be asked, nothing is available and a warning is logged.
+	 *
+	 * @return void
+	 */
+	public function testAFailingOrganisationServiceReadsAsUnavailable(): void {
+		$logged = [];
+		$profile = $this->failingProfile('OrganisationService', $this->organisation('X'), $logged);
+
+		$this->assertSame(['available' => false, 'name' => '', 'logo' => ''], $profile->read());
+		$this->assertCount(1, $logged);
+		$this->assertSame('warning', $logged[0][0]);
+		$this->assertSame('Dossiq: the setup wizard could not read the active organisation from OpenRegister', $logged[0][1]);
+		$this->assertSame(['exception' => 'OpenRegister is unreachable'], $logged[0][2]);
+
+		// Unreadable counts as nothing to name, so the step is settled.
+		$this->assertTrue($profile->isSettled());
+
+	}//end testAFailingOrganisationServiceReadsAsUnavailable()
+
+	/**
+	 * A failing save reports failure and logs an error instead of throwing.
+	 *
+	 * @return void
+	 */
+	public function testAFailingSaveReturnsFalseAndLogsAnError(): void {
+		$logged = [];
+		$organisation = $this->organisation('Default Organisation');
+		$profile = $this->failingProfile('OrganisationMapper', $organisation, $logged);
+
+		$this->assertFalse($profile->write(['organisation_name' => 'Gemeente Waterland']));
+		$this->assertCount(1, $logged);
+		$this->assertSame('error', $logged[0][0]);
+		$this->assertSame('Dossiq: could not save the organisation name or logo from the setup wizard', $logged[0][1]);
+		$this->assertSame(['exception' => 'OpenRegister is unreachable'], $logged[0][2]);
+
+	}//end testAFailingSaveReturnsFalseAndLogsAnError()
 }//end class

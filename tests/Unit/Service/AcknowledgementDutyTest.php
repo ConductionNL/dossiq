@@ -141,6 +141,8 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Woo\WooReceivedAnswers
  * @uses \OCA\Dossiq\Woo\WooRequestForm
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Termijn\TermNotice
+ * @uses \OCA\Dossiq\Service\Termijn\TermNoticeRun
  */
 class AcknowledgementDutyTest extends TestCase {
 	use MakesRealTermNoticeSender;

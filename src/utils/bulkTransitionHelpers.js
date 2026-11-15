@@ -20,7 +20,7 @@
  *
  * @return {{transitionId: string, comment: string}} The job parameters.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function transitionParameters(transitionId, comment) {
 	return { transitionId: transitionId || '', comment: comment || '' }
@@ -42,7 +42,7 @@ export function transitionParameters(transitionId, comment) {
  *
  * @return {object} The job parameters.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function lifecycleParameters(gesture, fields) {
 	const given = fields || {}
@@ -79,7 +79,7 @@ export const LIFECYCLE_GESTURES = ['suspend', 'resume', 'extend']
  * @param {string} mode The dialog mode.
  * @return {boolean} True for suspend / resume / extend.
  *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
 export function isLifecycleGesture(mode) {
 	return LIFECYCLE_GESTURES.includes(mode)
@@ -92,7 +92,7 @@ export function isLifecycleGesture(mode) {
  *
  * @return {Array<object>} The transitions on offer in all of them.
  *
- * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+ * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
  */
 export function commonTransitions(offers) {
 	const [first = [], ...rest] = offers
@@ -111,7 +111,7 @@ export function commonTransitions(offers) {
  *
  * @return {{id: string, title: string, identifier: string, status: string, deadline: string}} The row.
  *
- * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+ * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
  */
 export function changeRow(id, object, current) {
 	const deadline = object?.deadline ? new Date(object.deadline) : null
