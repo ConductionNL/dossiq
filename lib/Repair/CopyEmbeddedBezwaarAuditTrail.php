@@ -230,8 +230,8 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	/**
 	 * Copy one record's entries that are not on its trail yet, in order.
 	 *
-	 * @param BezwaarAuditCopy                                     $copy   The register and the schema.
-	 * @param array{0: string, 1: array<int, array<string, mixed>>} $record The record, and its embedded entries in array order.
+	 * @param BezwaarAuditCopy                       $copy   The register and the schema.
+	 * @param array{0: string, 1: array<int, mixed>} $record The record, and its embedded entries in array order.
 	 *
 	 * @return int How many entries were copied.
 	 *
