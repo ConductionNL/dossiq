@@ -39,6 +39,7 @@ use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
 use OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard;
 use OCA\Dossiq\Service\Advice\AdviceNotifier;
 use OCA\Dossiq\Service\Advice\AdviceRepository;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUserSession;
@@ -58,6 +59,8 @@ use RuntimeException;
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class AdviceService implements AdviceServiceInterface {
+
+	use RequiresObjectService;
 
 	/**
 	 * The conclusions a received advice may carry.
@@ -466,24 +469,6 @@ class AdviceService implements AdviceServiceInterface {
 
 		return $savedRecord;
 	}//end requestAdvice()
-
-	/**
-	 * OpenRegister's object service, refusing when it is not available.
-	 *
-	 * @return object The object service
-	 *
-	 * @throws RuntimeException If OpenRegister is unavailable
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * Notify the adviseur of a new request, unless the advisor is external.

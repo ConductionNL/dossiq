@@ -30,6 +30,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantBillingServiceInterface;
+use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
@@ -43,6 +44,8 @@ use Throwable;
  * @spec openspec/specs/tenant-billing/spec.md
  */
 class TenantBillingService implements TenantBillingServiceInterface {
+
+	use ResolvesInstalledObjectService;
 	/**
 	 * The month value that names the month before the current one.
 	 */
@@ -520,24 +523,4 @@ class TenantBillingService implements TenantBillingServiceInterface {
 			array_filter($events, static fn (array $e): bool => str_starts_with((string)($e['occurredAt'] ?? ''), $month))
 		);
 	}//end eventsInMonth()
-
-	/**
-	 * Resolve the OpenRegister ObjectService when available.
-	 *
-	 * @return mixed|null The ObjectService instance, or null when unavailable.
-	 */
-	private function getObjectService() {
-		// IAppManager::getInstalledApps() declares its array return in PHPDoc
-		// only, so normalise defensively before the membership test.
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end getObjectService()
 }//end class
