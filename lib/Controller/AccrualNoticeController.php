@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Controller\Support\RefusesAnonymousCallers;
 use OCA\Dossiq\Kernel\Contracts\AccrualNoticeServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -48,6 +49,9 @@ use Throwable;
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 class AccrualNoticeController extends Controller {
+	use ReadsJsonRequests {
+		jsonBody as protected;
+	}
 	use RefusesAnonymousCallers;
 
 
@@ -236,25 +240,6 @@ class AccrualNoticeController extends Controller {
 			return null;
 		}
 	}//end termInstanceOf()
-
-	/**
-	 * Decode the JSON request body.
-	 *
-	 * IRequest::getContent() is protected on the concrete OC request, so the
-	 * payload is read from php://input. Protected so a test can supply it.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
-	 */
-	protected function jsonBody(): array {
-		$body = json_decode((string)file_get_contents('php://input'), true);
-		if (is_array($body) === true) {
-			return $body;
-		}
-
-		return [];
-	}//end jsonBody()
 
 	/**
 	 * Deprecated alias of /api/notices-of-default, kept for clients of the old URL.
