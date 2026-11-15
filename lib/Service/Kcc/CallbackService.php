@@ -185,20 +185,41 @@ class CallbackService implements CallbackServiceInterface {
 	 */
 	public function applyAttempt(array $callback, bool $succeeded, ?DateTimeImmutable $now = null): array {
 		$now = ($now ?? new DateTimeImmutable());
-		$attempts = ((int)($callback['attemptCount'] ?? 0)) + 1;
-
-		$callback['attemptCount'] = $attempts;
+		$callback['attemptCount'] = ((int)($callback['attemptCount'] ?? 0)) + 1;
 
 		if ($succeeded === true) {
-			$callback['status'] = 'completed';
-			$callback['nextAttemptAt'] = null;
-			return $callback;
+			return $this->closed(callback: $callback, status: 'completed');
 		}
 
+		return $this->missed(callback: $callback, now: $now);
+	}//end applyAttempt()
+
+	/**
+	 * The callback closed with a status and no next attempt.
+	 *
+	 * @param array<string, mixed> $callback The callback record.
+	 * @param string               $status   `completed` or `failed`.
+	 *
+	 * @return array<string, mixed> The updated callback record.
+	 */
+	private function closed(array $callback, string $status): array {
+		$callback['status'] = $status;
+		$callback['nextAttemptAt'] = null;
+		return $callback;
+	}//end closed()
+
+	/**
+	 * The callback after a missed attempt: failed at the attempt cap, otherwise retried after a backoff.
+	 *
+	 * @param array<string, mixed> $callback The callback record, its attempt counted.
+	 * @param DateTimeImmutable    $now      Reference time.
+	 *
+	 * @return array<string, mixed> The updated callback record.
+	 */
+	private function missed(array $callback, DateTimeImmutable $now): array {
+		$attempts = $callback['attemptCount'];
 		if ($attempts >= self::MAX_ATTEMPTS) {
-			$callback['status'] = 'failed';
-			$callback['nextAttemptAt'] = null;
-			return $callback;
+			return $this->closed(callback: $callback, status: 'failed');
 		}
 
 		$callback['status'] = 'attempted';
@@ -207,7 +228,7 @@ class CallbackService implements CallbackServiceInterface {
 			->format(DateTimeInterface::ATOM);
 
 		return $callback;
-	}//end applyAttempt()
+	}//end missed()
 
 	/**
 	 * Cancel a callback request owned by the agent.
