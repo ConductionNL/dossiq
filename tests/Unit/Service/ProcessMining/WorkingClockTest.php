@@ -232,6 +232,43 @@ class WorkingClockTest extends TestCase {
 		$this->assertSame(32.0, $measured['wallHours']);
 		$this->assertSame(0.0, $measured['workingHours']);
 	}
+
+	/**
+	 * The engine is resolved on first use and never looked up again.
+	 *
+	 * @return void
+	 */
+	public function testTheEngineIsLookedUpOnce(): void {
+		if (class_exists(WorkingClock::ENGINE_CALCULATOR) === false) {
+			class_alias(FakeEngineCalculator::class, WorkingClock::ENGINE_CALCULATOR);
+		}
+
+		if (class_exists(WorkingClock::ENGINE_CALENDARS) === false) {
+			class_alias(FakeEngineCalendars::class, WorkingClock::ENGINE_CALENDARS);
+		}
+
+		$calculator = new FakeEngineCalculator();
+		$lookups    = [];
+		$container  = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function (string $id) use ($calculator, &$lookups): object {
+				$lookups[] = $id;
+				if ($id === WorkingClock::ENGINE_CALCULATOR) {
+					return $calculator;
+				}
+
+				return new FakeEngineCalendars(calendar: new \stdClass());
+			}
+		);
+
+		$clock = new WorkingClock(container: $container, days: new WorkingDayCalculator());
+		$clock->clock();
+		$clock->hoursBetween(from: new DateTimeImmutable('2026-09-11T16:00:00+00:00'), to: new DateTimeImmutable('2026-09-14T09:00:00+00:00'));
+		$clock->hoursBetween(from: new DateTimeImmutable('2026-09-14T09:00:00+00:00'), to: new DateTimeImmutable('2026-09-15T09:00:00+00:00'));
+
+		$this->assertSame(WorkingClock::CLOCK_CALENDAR, $clock->clock());
+		$this->assertSame([WorkingClock::ENGINE_CALCULATOR, WorkingClock::ENGINE_CALENDARS], $lookups);
+	}//end testTheEngineIsLookedUpOnce()
 }//end class
 
 /**

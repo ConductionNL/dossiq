@@ -271,7 +271,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 43 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 44 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -292,11 +292,12 @@ describe('the actions', () => {
 		const count = (where) => placed.filter((place) => place === where).length
 		// 43: Advice from the decision table joined Case (DqHandhaving,
 		// enforcement-intervention-from-the-case 3.2), and so did two acts
-		// of vth-cases-run-end-to-end.
-		expect(placed).toHaveLength(43)
+		// of vth-cases-run-end-to-end. 44: Ask a partner joined Case
+		// (capability-rows-said-and-planned T04).
+		expect(placed).toHaveLength(44)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(28)
+		expect(count('Case')).toBe(29)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)

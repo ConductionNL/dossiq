@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
  * The case type's `documentReview` block, read for a case.
  *
  * @covers \OCA\Dossiq\Review\ReviewConfiguration
+ * @uses \OCA\Dossiq\Review\ReviewDepth
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
  */
@@ -81,4 +82,66 @@ class ReviewConfigurationTest extends TestCase {
 		$this->assertSame(['reviewDepth' => 'everything', 'batchSize' => 25], $configuration->forCase(caseId: 'case-depth'));
 		$this->assertSame([], $configuration->reviewDepth(caseId: 'case-depth'));
 	}//end testAMalformedBlockConfiguresNothing()
+
+	/**
+	 * No object service, an unconfigured register or schema, or an empty id reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredStoreReadsNothing(): void {
+		$store = new InMemoryRegister();
+		$store->seed(schema: 'caseType', uuid: 'ct-1', row: ['documentReview' => ['batchSize' => 10]]);
+		$store->seed(schema: 'case', uuid: 'case-a', row: ['caseType' => 'ct-1']);
+		$full = ['register' => 'dossiq', 'case_schema' => 'case', 'case_type_schema' => 'caseType'];
+
+		$this->assertSame(expected: ['batchSize' => 10], actual: $this->configured(store: $store, config: $full)->forCase(caseId: 'case-a'));
+		$this->assertSame(expected: [], actual: $this->configured(store: null, config: $full)->forCase(caseId: 'case-a'));
+		$this->assertSame(expected: [], actual: $this->configured(store: $store, config: ['register' => ''] + $full)->forCase(caseId: 'case-a'));
+		$this->assertSame(expected: [], actual: $this->configured(store: $store, config: ['case_schema' => ''] + $full)->forCase(caseId: 'case-a'));
+		$this->assertSame(expected: [], actual: $this->configured(store: $store, config: ['case_type_schema' => ''] + $full)->forCase(caseId: 'case-a'));
+		$this->assertSame(expected: [], actual: $this->configured(store: $store, config: $full)->forCase(caseId: ''));
+	}//end testAnUnconfiguredStoreReadsNothing()
+
+	/**
+	 * A document's depth follows its type, and an every-page depth requires every page.
+	 *
+	 * @return void
+	 */
+	public function testTheDepthOfADocumentFollowsItsType(): void {
+		$configuration = $this->configured(store: null, config: []);
+		$depth = ['pdf' => ['mode' => 'sample', 'sampleSize' => 2]];
+
+		$this->assertSame(
+			expected: ['depth' => ['mode' => 'every-page'], 'pagesRequired' => [1, 2, 3]],
+			actual: $configuration->depthOfDocument(reviewDepth: $depth, document: ['mimeType' => 'text/plain'], pageCount: 3)
+		);
+		$this->assertSame(
+			expected: ['depth' => ['mode' => 'every-page'], 'pagesRequired' => [1]],
+			actual: $configuration->depthOfDocument(reviewDepth: $depth, document: ['mimeType' => 'text/plain'], pageCount: null)
+		);
+
+		$sampled = $configuration->depthOfDocument(reviewDepth: $depth, document: ['mimeType' => 'application/pdf'], pageCount: 10);
+		$this->assertSame(expected: 'sample', actual: $sampled['depth']['mode']);
+		$this->assertSame(expected: 2, actual: $sampled['depth']['sampleSize']);
+		$this->assertCount(expectedCount: 2, haystack: $sampled['pagesRequired']);
+		$this->assertSame(expected: [], actual: array_diff($sampled['pagesRequired'], range(start: 1, end: 10)));
+	}//end testTheDepthOfADocumentFollowsItsType()
+
+	/**
+	 * A configuration reading the given store with the given app config.
+	 *
+	 * @param InMemoryRegister|null $store  The object service, or none.
+	 * @param array<string, string> $config The app config values.
+	 *
+	 * @return ReviewConfiguration The subject.
+	 */
+	private function configured(?InMemoryRegister $store, array $config): ReviewConfiguration {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(value: $store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			callback: static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
+		);
+
+		return new ReviewConfiguration(settingsService: $settings);
+	}//end configured()
 }//end class

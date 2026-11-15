@@ -15,13 +15,19 @@ use OCA\Dossiq\Listener\Registrar\BezwaarSubscriptionRegistrar;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * Without OpenRegister's filtered subscription, the objection lifecycle and
- * legal-hold listeners still subscribe, unfiltered, and each fallback says so
- * in the log.
+ * The bezwaar lifecycle and legal hold listeners subscribe narrowed to the
+ * dossiq register and their own schemas when OpenRegister offers a filtered
+ * subscription, and fall back to an unfiltered listener with a warning when
+ * it does not.
+ *
+ * Both paths define stand-ins for classes the test bootstrap does not load
+ * (OpenRegister's ObjectEventSubscription, Nextcloud's server), so each runs
+ * in its own process and leaks nothing into other tests.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\AppInfo
@@ -30,71 +36,65 @@ use Psr\Log\LoggerInterface;
  */
 class BezwaarSubscriptionRegistrarTest extends TestCase {
 
-	/**
-	 * The server container before the test.
-	 *
-	 * @var mixed
-	 */
-	private $server;
+	private const LIFECYCLE = ['objectionProceeding', 'objection', 'hearingSession', 'advisoryReport', 'decision'];
+	private const LEGAL_HOLD = ['objection', 'objectionProceeding', 'beroep', 'bezwaarDecision', 'appealDecision'];
 
-	/**
-	 * Keep the server container to put it back.
-	 *
-	 * @return void
-	 */
-	protected function setUp(): void {
-		parent::setUp();
-		$this->server = \OC::$server;
-	}//end setUp()
+	#[RunInSeparateProcess]
+	public function testEachListenerSubscribesNarrowedToItsSchemas(): void {
+		eval(<<<'PHP'
+			namespace OCA\OpenRegister\Event;
+			final class ObjectEventSubscription {
+				public static array $calls = [];
+				public static function subscribe(\OCP\EventDispatcher\IEventDispatcher $dispatcher, string $event, string $listener, array $registers, array $schemas): void {
+					self::$calls[] = [$event, $listener, $registers, $schemas];
+				}
+			}
+			PHP);
 
-	/**
-	 * Put the server container back.
-	 *
-	 * @return void
-	 */
-	protected function tearDown(): void {
-		\OC::$server = $this->server;
-		parent::tearDown();
-	}//end tearDown()
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->expects($this->never())->method('addServiceListener');
 
-	public function testWithoutTheFilteredSubscriptionEachListenerFallsBackLoudly(): void {
-		self::assertFalse(class_exists('OCA\\OpenRegister\\Event\\ObjectEventSubscription'), 'the filtered subscription is absent in this test run');
+		(new BezwaarSubscriptionRegistrar())->subscribe(dispatcher: $dispatcher);
+
+		self::assertSame(
+			[
+				[ObjectCreatedEvent::class, BezwaarLifecycleListener::class, ['dossiq'], self::LIFECYCLE],
+				[ObjectUpdatedEvent::class, BezwaarLifecycleListener::class, ['dossiq'], self::LIFECYCLE],
+				[ObjectCreatedEvent::class, BezwaarLegalHoldListener::class, ['dossiq'], self::LEGAL_HOLD],
+			],
+			\OCA\OpenRegister\Event\ObjectEventSubscription::$calls
+		);
+	}//end testEachListenerSubscribesNarrowedToItsSchemas()
+
+	#[RunInSeparateProcess]
+	public function testWithoutAFilteredSubscriptionEachListenerFallsBackLoudly(): void {
+		self::assertFalse(class_exists('\\OCA\\OpenRegister\\Event\\ObjectEventSubscription'), 'the fallback path needs OpenRegister without filtered subscriptions');
 
 		$warnings = [];
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->method('warning')->willReturnCallback(
-			static function (string $message, array $context) use (&$warnings): void {
+			static function (string $message, array $context=[]) use (&$warnings): void {
 				$warnings[] = [$message, $context];
 			}
 		);
-		\OC::$server = new class ($logger) {
-			/**
-			 * @param LoggerInterface $logger The logger the registrar asks for.
-			 */
+		if (class_exists('\\OC', false) === false) {
+			eval('final class OC { public static $server; }');
+		}
+
+		\OC::$server = new class($logger) {
 			public function __construct(private LoggerInterface $logger) {
-			}//end __construct()
+			}
 
-			/**
-			 * Resolve the logger, and nothing else.
-			 *
-			 * @param string $name The service.
-			 *
-			 * @return object
-			 */
-			public function get(string $name): object {
-				if ($name !== LoggerInterface::class) {
-					throw new \RuntimeException('Unexpected service '.$name);
-				}
-
-				return $this->logger;
-			}//end get()
+			public function get(string $name): mixed {
+				return $name === LoggerInterface::class ? $this->logger : null;
+			}
 		};
 
-		$subscribed = [];
+		$added = [];
 		$dispatcher = $this->createMock(IEventDispatcher::class);
-		$dispatcher->expects(self::exactly(3))->method('addServiceListener')->willReturnCallback(
-			static function (string $event, string $listener) use (&$subscribed): void {
-				$subscribed[] = [$event, $listener];
+		$dispatcher->method('addServiceListener')->willReturnCallback(
+			static function (string $event, string $listener) use (&$added): void {
+				$added[] = [$event, $listener];
 			}
 		);
 
@@ -106,16 +106,15 @@ class BezwaarSubscriptionRegistrarTest extends TestCase {
 				[ObjectUpdatedEvent::class, BezwaarLifecycleListener::class],
 				[ObjectCreatedEvent::class, BezwaarLegalHoldListener::class],
 			],
-			$subscribed
+			$added
 		);
 		self::assertCount(3, $warnings);
 		self::assertSame(
-			'OpenRegister ObjectEventSubscription unavailable: '.BezwaarLegalHoldListener::class
-			.' fell back to an UNFILTERED registration for '.ObjectCreatedEvent::class
-			.' and will be invoked on every object write instance-wide.',
+			'OpenRegister ObjectEventSubscription unavailable: ' . BezwaarLegalHoldListener::class
+			. ' fell back to an UNFILTERED registration for ' . ObjectCreatedEvent::class
+			. ' and will be invoked on every object write instance-wide.',
 			$warnings[2][0]
 		);
 		self::assertSame(['app' => 'dossiq'], $warnings[0][1]);
-		self::assertStringContainsString(ObjectUpdatedEvent::class, $warnings[1][0]);
-	}//end testWithoutTheFilteredSubscriptionEachListenerFallsBackLoudly()
+	}//end testWithoutAFilteredSubscriptionEachListenerFallsBackLoudly()
 }//end class
