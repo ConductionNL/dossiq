@@ -220,4 +220,15 @@ class ReportViewsTest extends TestCase {
 		$missing = $this->views->shape(report: [...$report, 'caseTypeFilter' => 'none'], view: 'byAssignee');
 		self::assertSame([], $missing['byAssignee']);
 	}//end testShapeFocusesAndNarrows()
+
+	/**
+	 * Non-numeric medians, such as a numeric string, give a zero headline
+	 * rather than a value of the wrong type.
+	 *
+	 * @return void
+	 */
+	public function testANonNumericMedianGivesAZeroHeadline(): void {
+		self::assertSame(0, $this->views->headlineHours(row: ['medianWorkingHours' => '3', 'medianHours' => '65']));
+		self::assertSame(2.5, $this->views->headlineHours(row: ['medianWorkingHours' => null, 'medianHours' => 2.5]));
+	}//end testANonNumericMedianGivesAZeroHeadline()
 }//end class
