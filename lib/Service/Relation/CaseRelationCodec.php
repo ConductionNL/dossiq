@@ -308,16 +308,28 @@ class CaseRelationCodec {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function hasPair(array $relations, string $caseId, string $natureRelationship): bool {
+		$pair = ['caseId' => $caseId, 'aardRelatie' => $natureRelationship];
 		foreach ($relations as $relation) {
-			if ((string)($relation['caseId'] ?? '') === $caseId
-				&& (string)($relation['aardRelatie'] ?? '') === $natureRelationship
-			) {
+			if (self::isPair(relation: $relation, pair: $pair) === true) {
 				return true;
 			}
 		}
 
 		return false;
 	}//end hasPair()
+
+	/**
+	 * Whether a relation entry links this case with this relation type.
+	 *
+	 * @param array<string, mixed>                       $relation The relation entry.
+	 * @param array{caseId: string, aardRelatie: string} $pair     The case and the relation type.
+	 *
+	 * @return bool
+	 */
+	private static function isPair(array $relation, array $pair): bool {
+		return (string)($relation['caseId'] ?? '') === $pair['caseId']
+			&& (string)($relation['aardRelatie'] ?? '') === $pair['aardRelatie'];
+	}//end isPair()
 
 	/**
 	 * Return a copy of the relation list with the given pair removed.
@@ -331,15 +343,9 @@ class CaseRelationCodec {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function removePair(array $relations, string $caseId, string $natureRelationship): array {
-		return array_values(
-			array_filter(
-				$relations,
-				static fn (array $relation): bool => (
-					(string)($relation['caseId'] ?? '') !== $caseId
-					|| (string)($relation['aardRelatie'] ?? '') !== $natureRelationship
-				)
-			)
-		);
+		$pair = ['caseId' => $caseId, 'aardRelatie' => $natureRelationship];
+
+		return array_values(array_filter($relations, static fn (array $relation): bool => self::isPair(relation: $relation, pair: $pair) === false));
 	}//end removePair()
 
 	/**
