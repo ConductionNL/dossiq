@@ -20,8 +20,9 @@
 
 ## 4. Anonymised export
 
-- [ ] 4.1 The list export gains `anonymised: true`, applying `identifyingFields` (remove, generalise postcode to area, date to year); `tests/Unit/Service/*ExportTest.php` covers it; the export writes a processing-log row.
+- [x] 4.1 The list export gains `anonymised: true`, applying `identifyingFields` (remove, generalise postcode to area, date to year); `tests/Unit/Service/*ExportTest.php` covers it; the export writes a processing-log row.
   - Server side done: `POST /api/cases/anonymised-export` (`CaseAnonymisedExportController`, `AnonymisedCaseExport`) reads the listed cases as the user, removes each case type's `identifyingFields` (postcode to area, date to year, the rest removed, `@self` dropped), refuses when a case type cannot be read, and writes one processing-log row. Tests: `tests/Unit/Service/Export/AnonymisedCaseExportTest.php`, `tests/Unit/Controller/CaseAnonymisedExportControllerTest.php`. Open: the anonymised option on the list's `export` header action in `src/manifest.json`.
+  - Frontend: the Cases list's bulk action Export anonymised (`exportAnonymisedSelection`, `src/utils/anonymisedExport.js`) posts the selected cases to the endpoint and saves its answer as CSV; a refusal is shown and nothing falls back to the plain export. A bulk action rather than an entry in the library's Export menu, because that menu streams OpenRegister's export leaf and takes no extra variant; selecting all rows of a filtered list exports that list. Test: `tests/vitest/anonymisedExport.spec.js`.
 
 ## 5. Checks
 

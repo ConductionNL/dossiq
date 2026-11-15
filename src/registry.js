@@ -162,6 +162,7 @@ import WorkloadTeamChips from './views/WorkloadTeamChips.vue'
 import WorkloadTeamHeading from './views/WorkloadTeamHeading.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
+import { exportAnonymisedSelection } from './utils/anonymisedExport.js'
 import {
 	extendTermSelection,
 	reassignSelection,
@@ -1087,6 +1088,13 @@ const registry = {
 		kind: 'handler',
 		handler: toggleCaseFollow,
 		_note: "The Queue's and Cases' follow row action, which replaced the star (one-follow-control). ONE entry rather than a follow and an unfollow, because `@self.watching` rides every row so the click knows which way to go. The gesture is PUT to follow and DELETE to stop on one path, and no declarative write takes two methods.",
+	},
+	// The anonymised export of the selected cases (social-domain-consent-and-safeguards 4.1).
+	// @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	exportAnonymisedSelection: {
+		kind: 'handler',
+		handler: exportAnonymisedSelection,
+		_note: 'The Cases page\'s Export anonymised bulk action. The library export menu (CSV and Excel) streams OpenRegister\'s export leaf and has no anonymised variant, so this posts the selected ids to POST /api/cases/anonymised-export, which removes or generalises each case type\'s identifyingFields and writes the processing-log row, and saves the answer as CSV. A refusal is shown and nothing falls back to the plain export.',
 	},
 	// @spec openspec/specs/case-management/spec.md
 	reassignSelection: {

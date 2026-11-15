@@ -2030,6 +2030,12 @@
 						"label": "Extend the term",
 						"icon": "CalendarPlus",
 						"handler": "extendTermSelection"
+					},
+					{
+						"id": "export-anonymised",
+						"label": "Export anonymised",
+						"icon": "ShieldAccountOutline",
+						"handler": "exportAnonymisedSelection"
 					}
 				],
 				"register": "dossiq",
