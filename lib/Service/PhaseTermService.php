@@ -160,18 +160,30 @@ class PhaseTermService implements PhaseTermServiceInterface {
 	public function stopRunningPhases(string $caseId, ?DateTimeImmutable $when = null, string $except = ''): int {
 		$moment = ($when ?? new DateTimeImmutable());
 
+		return $this->stopRunning(rows: $this->termService->instancesForCase(caseId: $caseId), stop: ['moment' => $moment, 'except' => $except]);
+	}//end stopRunningPhases()
+
+	/**
+	 * Complete every running phase clock among the term rows, except the named phase's own.
+	 *
+	 * @param iterable<array<string, mixed>>                   $rows The case's term instances.
+	 * @param array{moment: DateTimeImmutable, except: string} $stop The moment they stop, and the status type left running.
+	 *
+	 * @return int How many were stopped.
+	 */
+	private function stopRunning(iterable $rows, array $stop): int {
 		$stopped = 0;
-		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			if ($this->isRunningPhase(row: $row, except: $except) === false) {
+		foreach ($rows as $row) {
+			if ($this->isRunningPhase(row: $row, except: $stop['except']) === false) {
 				continue;
 			}
 
-			$this->completePhase(row: $row, moment: $moment);
+			$this->completePhase(row: $row, moment: $stop['moment']);
 			$stopped++;
 		}
 
 		return $stopped;
-	}//end stopRunningPhases()
+	}//end stopRunning()
 
 	/**
 	 * Whether a term instance is a running phase clock other than the one to leave running.
