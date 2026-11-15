@@ -17,6 +17,7 @@ use OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar;
 use OCA\Dossiq\Listener\Registrar\CrossAppListenerRegistrar;
 use OCA\Dossiq\Listener\Registrar\DerivedStatusListenerRegistrar;
 use OCA\Dossiq\Listener\Registrar\ImmutabilityListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeObligationListenerRegistrar;
 use OCA\Dossiq\Listener\Registrar\ListenerRegistrar;
 use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\Registrar\TermijnTimerRegistrar;
@@ -39,6 +40,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Listener\Registrar\DerivedStatusListenerRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\BezwaarListenerRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\WorkflowListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\IntakeObligationListenerRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\TermijnTimerRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\CaseMergeRegistrar
  * @uses \OCA\Dossiq\Listener\Registrar\BulkActionRegistrar
@@ -56,6 +58,7 @@ class ListenerRegistrarTest extends TestCase {
 			new DerivedStatusListenerRegistrar(),
 			new BezwaarListenerRegistrar(),
 			new WorkflowListenerRegistrar(),
+			new IntakeObligationListenerRegistrar(),
 			new TermijnTimerRegistrar(),
 			new CaseMergeRegistrar(),
 			new BulkActionRegistrar(),
