@@ -174,6 +174,18 @@ class TransitionPreconditions {
 			toIsClosing: $toIsClosing,
 		);
 
+		return $this->reasonsAt(dependencies: $dependencies, destination: $destination);
+	}//end withheldReasons()
+
+	/**
+	 * The reason each unmet dependency withholds the move, in declaration order.
+	 *
+	 * @param array<int, array<string, mixed>> $dependencies The dependencies the transition declares.
+	 * @param TransitionDestination            $destination  The case and where the move goes.
+	 *
+	 * @return array<int, string> The reasons; none when every dependency is met.
+	 */
+	private function reasonsAt(array $dependencies, TransitionDestination $destination): array {
 		$reasons = [];
 		foreach ($dependencies as $dependency) {
 			$reason = $this->reasonFor(dependency: $dependency, destination: $destination);
@@ -183,7 +195,7 @@ class TransitionPreconditions {
 		}
 
 		return $reasons;
-	}//end withheldReasons()
+	}//end reasonsAt()
 
 	/**
 	 * Why one dependency is in the way, or the empty string when it is settled.
