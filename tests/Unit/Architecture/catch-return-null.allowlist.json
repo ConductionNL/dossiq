@@ -621,10 +621,10 @@
     },
     {
       "file": "lib/Service/Email/MailMessageSource.php",
-      "method": "listMailboxMessagesSince",
+      "method": "intakeMessages",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`listMailboxMessagesSince()` answers `return []` when the Nextcloud Mail tables are absent or the folder is gone; the catch logs at warning (\"Dossiq: listing the intake folder failed\") and intake reads nothing that run rather than failing the cron."
+      "reason": "`intakeMessages()` answers `return []` when the Nextcloud Mail tables are absent or the folder is gone; the catch logs at warning (\"Dossiq: listing the intake folder failed\") and intake reads nothing that run rather than failing the cron."
     },
     {
       "file": "lib/Service/Email/MailMessageSource.php",
