@@ -272,28 +272,41 @@ class CaseTypeRuleFlowDocument {
 	 */
 	private function step(array $rule, array $action, RuleFlowScope $scope): ?array {
 		return match ($action['action'] ?? null) {
-			'addTask' => $this->addTask(rule: $rule, action: $action, caseTypeId: $scope->caseTypeId),
+			'addTask' => $this->addTask(action: $action, once: $this->onceOf(rule: $rule, scope: $scope)),
 			'setField' => $this->writeField(
-				field: trim((string)($action['field'] ?? '')),
-				value: ($action['value'] ?? null),
+				write: ['field' => trim((string)($action['field'] ?? '')), 'value' => ($action['value'] ?? null)],
 				definitionNames: $scope->definitionNames
 			),
-			'sendMessage' => $this->sendMessage(rule: $rule, action: $action, caseTypeId: $scope->caseTypeId),
-			'chooseVariant' => $this->writeField(field: 'variant', value: trim((string)($action['variant'] ?? '')), definitionNames: []),
+			'sendMessage' => $this->sendMessage(action: $action, once: $this->onceOf(rule: $rule, scope: $scope)),
+			'chooseVariant' => $this->writeField(write: ['field' => 'variant', 'value' => trim((string)($action['variant'] ?? ''))], definitionNames: []),
 			default => null,
 		};
 	}//end step()
 
 	/**
+	 * How a rule's step is kept to once: its key per rule and case, and per status entry for a status rule.
+	 *
+	 * @param array<string, mixed> $rule  The rule.
+	 * @param RuleFlowScope        $scope The case type the flow belongs to.
+	 *
+	 * @return array{onceKey: string, perStatusEntry: bool} The once-key and whether it repeats per status entry.
+	 */
+	private function onceOf(array $rule, RuleFlowScope $scope): array {
+		return [
+			'onceKey' => 'rule:' . $scope->caseTypeId . ':' . (string)($rule['id'] ?? ''),
+			'perStatusEntry' => (($rule['when']['event'] ?? null) === 'statusEntered'),
+		];
+	}//end onceOf()
+
+	/**
 	 * The create-task step, keyed once per rule and case.
 	 *
-	 * @param array<string, mixed> $rule The rule.
-	 * @param array<string, mixed> $action The action.
-	 * @param string $caseTypeId The case type uuid.
+	 * @param array<string, mixed>                         $action The action.
+	 * @param array{onceKey: string, perStatusEntry: bool} $once   How the step is kept to once.
 	 *
 	 * @return array{type: string, config: array<string, mixed>}|null The step.
 	 */
-	private function addTask(array $rule, array $action, string $caseTypeId): ?array {
+	private function addTask(array $action, array $once): ?array {
 		$title = trim((string)($action['title'] ?? ''));
 		if ($title === '') {
 			return null;
@@ -301,7 +314,7 @@ class CaseTypeRuleFlowDocument {
 
 		$config = [
 			'title' => $title,
-			'onceKey' => 'rule:' . $caseTypeId . ':' . (string)($rule['id'] ?? ''),
+			'onceKey' => $once['onceKey'],
 		];
 		$taskType = trim((string)($action['taskType'] ?? ''));
 		if ($taskType !== '') {
@@ -314,13 +327,12 @@ class CaseTypeRuleFlowDocument {
 	/**
 	 * The send-message step: once per case, or once per status entry for a status rule.
 	 *
-	 * @param array<string, mixed> $rule The rule.
-	 * @param array<string, mixed> $action The action.
-	 * @param string $caseTypeId The case type uuid.
+	 * @param array<string, mixed>                         $action The action.
+	 * @param array{onceKey: string, perStatusEntry: bool} $once   How the step is kept to once.
 	 *
 	 * @return array{type: string, config: array<string, mixed>}|null The step.
 	 */
-	private function sendMessage(array $rule, array $action, string $caseTypeId): ?array {
+	private function sendMessage(array $action, array $once): ?array {
 		$template = trim((string)($action['emailTemplate'] ?? ''));
 		if ($template === '') {
 			return null;
@@ -328,14 +340,14 @@ class CaseTypeRuleFlowDocument {
 
 		$config = [
 			'emailTemplate' => $template,
-			'onceKey' => 'rule:' . $caseTypeId . ':' . (string)($rule['id'] ?? ''),
+			'onceKey' => $once['onceKey'],
 		];
 		$role = trim((string)($action['recipientRole'] ?? ''));
 		if ($role !== '') {
 			$config['recipientRole'] = $role;
 		}
 
-		if (($rule['when']['event'] ?? null) === 'statusEntered') {
+		if ($once['perStatusEntry'] === true) {
 			$config['oncePer'] = 'currentStatusEnteredAt';
 		}
 
@@ -349,13 +361,13 @@ class CaseTypeRuleFlowDocument {
 	 * property definition's answer lives in the case's `properties` list, which
 	 * a field patch cannot address, so it is a `dossiq.setCaseAnswer` step.
 	 *
-	 * @param string $field The case field or property definition name.
-	 * @param mixed $value The value to write.
-	 * @param array<int, string> $definitionNames The case type's property definition names.
+	 * @param array{field: string, value: mixed} $write           The case field or property definition name, and the value to write.
+	 * @param array<int, string>                 $definitionNames The case type's property definition names.
 	 *
 	 * @return array{type: string, config: array<string, mixed>, guard: array<string, mixed>}|null The step.
 	 */
-	private function writeField(string $field, mixed $value, array $definitionNames): ?array {
+	private function writeField(array $write, array $definitionNames): ?array {
+		['field' => $field, 'value' => $value] = $write;
 		if ($field === '' || $value === '') {
 			return null;
 		}

@@ -206,7 +206,7 @@ class TriageConditions {
 	 */
 	public function matches(array $conditions, array $facts): bool {
 		foreach ($conditions as $field => $wanted) {
-			if ($this->holds(field: $field, wanted: $wanted, facts: $facts) === false) {
+			if ($this->holds(condition: [$field, $wanted], facts: $facts) === false) {
 				return false;
 			}
 		}
@@ -217,13 +217,13 @@ class TriageConditions {
 	/**
 	 * Whether one condition holds for the facts.
 	 *
-	 * @param string $field  The condition.
-	 * @param string $wanted Its value.
+	 * @param array{0: string, 1: string} $condition The condition and its value.
 	 * @param MatchedFacts $facts The facts.
 	 *
 	 * @return bool
 	 */
-	private function holds(string $field, string $wanted, array $facts): bool {
+	private function holds(array $condition, array $facts): bool {
+		[$field, $wanted] = $condition;
 		return match ($field) {
 			'custodian', 'sourceSystem' => $facts[$field] !== '' && $facts[$field] === $wanted,
 			'mimeType' => $this->mimeMatches(mime: $facts['mimeType'], wanted: $wanted),
