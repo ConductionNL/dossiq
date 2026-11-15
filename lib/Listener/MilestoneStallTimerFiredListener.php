@@ -29,15 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Milestone\MilestoneStallActs;
-use OCA\Dossiq\Service\Milestone\MilestoneStallTimer;
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallActsInterface;
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallTimerInterface;
+use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Turns a milestone stall breach into the assignee's notification.
@@ -51,12 +50,12 @@ class MilestoneStallTimerFiredListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param MilestoneStallActs       $acts           Reads the case and tells the assignee.
+	 * @param MilestoneStallActsInterface       $acts           Reads the case and tells the assignee.
 	 * @param BackgroundServiceAccount $serviceAccount The identity a cron-driven fire writes as.
 	 * @param LoggerInterface          $logger         Logs a failed fire.
 	 */
 	public function __construct(
-		private readonly MilestoneStallActs $acts,
+		private readonly MilestoneStallActsInterface $acts,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly LoggerInterface $logger,
 	) {
@@ -76,33 +75,34 @@ class MilestoneStallTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$timer    = $event->getTimer();
-		$metadata = ($timer->getMetadata() ?? []);
+		$metadata = TimerFire::metadataFrom(event: $event, source: MilestoneStallTimerInterface::METADATA_SOURCE);
 		$caseId   = (string) ($metadata['caseId'] ?? '');
-		if ((string) $timer->getAppId() !== 'dossiq'
-			|| (string) ($metadata['source'] ?? '') !== MilestoneStallTimer::METADATA_SOURCE
-			|| $caseId === ''
-			|| str_starts_with((string) $event->getRungKey(), 'slaBreached:') === false
-		) {
+		if ($metadata === null || $caseId === '' || TimerFire::isBreach(event: $event) === false) {
 			return;
 		}
 
 		$identifier = (string) ($metadata['milestoneIdentifier'] ?? '');
-
-		try {
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(
-				operation: function () use ($caseId, $identifier): void {
-					$case = $this->acts->find(caseId: $caseId);
-					if ($case !== null) {
-						$this->acts->notifyIfStalled(case: $case, identifier: $identifier);
-					}
-				}
-			);
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged and told to the admins. Nothing was written.
-			return;
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq milestone: timer fire handling failed', ['case' => $caseId, 'error' => $e->getMessage()]);
+		$failure    = TimerFire::runAsAccount(
+			account: $this->serviceAccount,
+			operation: fn () => $this->notifyIfStalled(caseId: $caseId, identifier: $identifier)
+		);
+		if ($failure !== null) {
+			$this->logger->error('Dossiq milestone: timer fire handling failed', ['case' => $caseId, 'error' => $failure->getMessage()]);
 		}
 	}//end handle()
+
+	/**
+	 * Tell the case's handler when the milestone is still stalled.
+	 *
+	 * @param string $caseId     The case.
+	 * @param string $identifier The milestone.
+	 *
+	 * @return void
+	 */
+	private function notifyIfStalled(string $caseId, string $identifier): void {
+		$case = $this->acts->find(caseId: $caseId);
+		if ($case !== null) {
+			$this->acts->notifyIfStalled(case: $case, identifier: $identifier);
+		}
+	}//end notifyIfStalled()
 }//end class

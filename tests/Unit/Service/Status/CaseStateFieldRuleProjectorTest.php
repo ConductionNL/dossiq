@@ -449,4 +449,59 @@ class CaseStateFieldRuleProjectorTest extends TestCase {
 		$this->assertFalse($this->projector([['id' => 's2']])->publish(caseTypeId: 'ct'));
 		$this->assertFalse($this->projector([])->publish(caseTypeId: ''));
 	}//end testPublishingWithoutOpenRegisterAnswersFalse()
+
+	/**
+	 * A live lifecycle with no states, or empty ones, carries nothing forward.
+	 *
+	 * @return void
+	 */
+	public function testALiveLifecycleWithoutStatesCarriesNothing(): void {
+		$declared = ['field' => 'status'];
+
+		$this->assertSame(
+			expected: $declared,
+			actual: CaseStateFieldRuleProjector::carryForwardStates(
+				annotationKey: CaseStateFieldRuleProjector::LIFECYCLE_KEY,
+				declared: $declared,
+				live: ['field' => 'status', 'states' => []],
+			)
+		);
+		$this->assertSame(
+			expected: $declared,
+			actual: CaseStateFieldRuleProjector::carryForwardStates(
+				annotationKey: CaseStateFieldRuleProjector::LIFECYCLE_KEY,
+				declared: $declared,
+				live: ['states' => 'not-a-map'],
+			)
+		);
+		$this->assertSame(
+			expected: $declared,
+			actual: CaseStateFieldRuleProjector::carryForwardStates(
+				annotationKey: CaseStateFieldRuleProjector::LIFECYCLE_KEY,
+				declared: $declared,
+				live: null,
+			)
+		);
+	}//end testALiveLifecycleWithoutStatesCarriesNothing()
+
+	/**
+	 * A property flag with no status or no name is not published.
+	 *
+	 * @return void
+	 */
+	public function testAPropertyFlagWithoutStatusOrNameIsSkipped(): void {
+		$states = $this->projector(
+			statusTypes: [['id' => 's2', 'name' => 'Besluitvorming']],
+			properties: [
+				['name' => '  ', 'requiredAtStatus' => 's2'],
+				['name' => 'kadastraalNummer', 'requiredAtStatus' => ''],
+				['name' => 'perceel', 'requiredAtStatus' => ['id' => 's2']],
+			]
+		)->statesOf(caseTypeId: 'ct');
+
+		$this->assertSame(
+			expected: ['s2' => ['fields' => ['required' => [['fields' => ['perceel']]]]]],
+			actual: $states
+		);
+	}//end testAPropertyFlagWithoutStatusOrNameIsSkipped()
 }//end class

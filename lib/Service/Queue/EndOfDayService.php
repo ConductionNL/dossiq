@@ -29,7 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
-use DateTimeZone;
+use OCA\Dossiq\Kernel\Contracts\EndOfDayServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IL10N;
@@ -46,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/specs/end-of-day-manifest/spec.md
  */
-class EndOfDayService {
+class EndOfDayService implements EndOfDayServiceInterface {
 
 	private const READ_STATE = 'OCA\\OpenRegister\\Service\\Interaction\\ReadStateService';
 
@@ -95,28 +95,66 @@ class EndOfDayService {
 	 */
 	public function dayFor(string $userId, ?DateTimeImmutable $now=null): array {
 		$now = ($now ?? new DateTimeImmutable());
-		$today = $now->format('Y-m-d');
 		$queue = $this->queue->forPerson(userId: $userId, now: $now);
-		$candidates = array_values(
+		$candidates = $this->casesAndTasks(items: $queue['items']);
+
+		$day = new ReaderDay(userId: $userId, today: $now->format('Y-m-d'), zone: $now->getTimezone());
+		[$open, $recorded, $untouched] = $this->partitionByToday(candidates: $candidates, day: $day);
+
+		return [
+			'open' => $open,
+			'recorded' => $recorded,
+			'tomorrow' => $this->tomorrowFirst(rows: $untouched, now: $now),
+			'opened' => (count($open) + count($recorded)),
+			'figures' => $this->figures(open: $open, recorded: $recorded),
+			'unavailable' => $queue['unavailable'],
+			'unavailableText' => $this->unavailableText(unavailable: $queue['unavailable']),
+		];
+	}//end dayFor()
+
+	/**
+	 * The queue items that are cases or tasks.
+	 *
+	 * @param array<int, array<string, mixed>> $items The queue items.
+	 *
+	 * @return array<int, array<string, mixed>> The cases and tasks, reindexed.
+	 *
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	 */
+	private function casesAndTasks(array $items): array {
+		return array_values(
 			array_filter(
-				$queue['items'],
+				$items,
 				static fn (array $item): bool => in_array(($item['subjectType'] ?? ''), ['case', 'task'], true)
 			)
 		);
+	}//end casesAndTasks()
 
+	/**
+	 * Split the candidates into opened today, recorded today and untouched rows.
+	 *
+	 * @param array<int, array<string, mixed>> $candidates The cases and tasks.
+	 * @param ReaderDay                        $day        The reader and today, in the reader's time zone.
+	 *
+	 * @return array{0: array<int, array<string, mixed>>, 1: array<int, array<string, mixed>>, 2: array<int, array<string, mixed>>}
+	 *         The open rows, the recorded rows (newest first) and the untouched rows.
+	 *
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	 */
+	private function partitionByToday(array $candidates, ReaderDay $day): array {
 		$open = [];
 		$recorded = [];
 		$untouched = [];
 		foreach ($candidates as $item) {
 			$row = $this->rowOf(item: $item);
-			$note = $this->noteOfToday(item: $item, userId: $userId, today: $today, zone: $now->getTimezone());
+			$note = $this->noteOfToday(item: $item, day: $day);
 			if ($note !== null) {
 				$facts = $this->rowMeta->factsOf(item: $item);
 				$recorded[] = $row + $note + ['recordedMeta' => $this->rowMeta->recordedLine(facts: $facts, time: $note['recordedTime'])];
 				continue;
 			}
 
-			if ($this->openedToday(item: $item, userId: $userId, today: $today, zone: $now->getTimezone()) === true) {
+			if ($this->openedToday(item: $item, day: $day) === true) {
 				$open[] = $row + ['meta' => $this->rowMeta->openLine(facts: $this->rowMeta->factsOf(item: $item))];
 				continue;
 			}
@@ -126,30 +164,37 @@ class EndOfDayService {
 
 		usort($recorded, static fn (array $left, array $right): int => strcmp((string)$right['recordedAt'], (string)$left['recordedAt']));
 
+		return [$open, $recorded, $untouched];
+	}//end partitionByToday()
+
+	/**
+	 * The day's two figures: what was opened, and how many notes were recorded.
+	 *
+	 * @param array<int, array<string, mixed>> $open     The rows opened today.
+	 * @param array<int, array<string, mixed>> $recorded The rows a note was recorded on today.
+	 *
+	 * @return array<int, array<string, mixed>> The figures.
+	 *
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	 */
+	private function figures(array $open, array $recorded): array {
 		$opened = (count($open) + count($recorded));
 		$cases = count(array_filter([...$open, ...$recorded], static fn (array $row): bool => $row['subjectType'] === 'case'));
+		$recordedCount = count($recorded);
 
 		return [
-			'open' => $open,
-			'recorded' => $recorded,
-			'tomorrow' => $this->tomorrowFirst(rows: $untouched, now: $now),
-			'opened' => $opened,
-			'figures' => [
-				[
-					'label' => $this->l10n->t('Opened'),
-					'value' => $opened,
-					'note' => $this->l10n->t('%1$s cases, %2$s tasks', [$cases, ($opened - $cases)]),
-				],
-				[
-					'label' => $this->l10n->t('Notes recorded'),
-					'value' => count($recorded),
-					'note' => $this->l10n->t('of the %s', [$opened]),
-				],
+			[
+				'label' => $this->l10n->t('Opened'),
+				'value' => $opened,
+				'note' => $this->l10n->t('%1$s cases, %2$s tasks', [$cases, ($opened - $cases)]),
 			],
-			'unavailable' => $queue['unavailable'],
-			'unavailableText' => $this->unavailableText(unavailable: $queue['unavailable']),
+			[
+				'label' => $this->l10n->t('Notes recorded'),
+				'value' => $recordedCount,
+				'note' => $this->l10n->t('of the %s', [$opened]),
+			],
 		];
-	}//end dayFor()
+	}//end figures()
 
 	/**
 	 * A queue item as a row of the page's lists: the fields the record lists
@@ -187,16 +232,14 @@ class EndOfDayService {
 	/**
 	 * Whether OpenRegister's read state says the reader opened this item today.
 	 *
-	 * @param array<string, mixed> $item   The queue item.
-	 * @param string               $userId The reader.
-	 * @param string               $today  Today, `Y-m-d` in the reader's zone.
-	 * @param DateTimeZone         $zone   The reader's zone.
+	 * @param array<string, mixed> $item The queue item.
+	 * @param ReaderDay            $day  The reader, and today in their zone.
 	 *
 	 * @return bool
 	 */
-	private function openedToday(array $item, string $userId, string $today, DateTimeZone $zone): bool {
+	private function openedToday(array $item, ReaderDay $day): bool {
 		try {
-			$state = $this->readStateOf(item: $item, userId: $userId);
+			$state = $this->readStateOf(item: $item, userId: $day->userId);
 		} catch (Throwable $e) {
 			// The read state is the register's to answer; an item it cannot
 			// answer for has not been opened, as far as anyone can tell.
@@ -209,7 +252,7 @@ class EndOfDayService {
 			$seen = (string)($state->jsonSerialize()['lastSeenAt'] ?? '');
 		}
 
-		return $this->isToday(moment: $seen, today: $today, zone: $zone);
+		return $this->isToday(moment: $seen, day: $day);
 	}//end openedToday()
 
 	/**
@@ -248,14 +291,12 @@ class EndOfDayService {
 	 * The reader's latest note of today on this item, as the fields the
 	 * "Recorded today" list shows, or null.
 	 *
-	 * @param array<string, mixed> $item   The queue item.
-	 * @param string               $userId The reader.
-	 * @param string               $today  Today, `Y-m-d` in the reader's zone.
-	 * @param DateTimeZone         $zone   The reader's zone.
+	 * @param array<string, mixed> $item The queue item.
+	 * @param ReaderDay            $day  The reader, and today in their zone.
 	 *
 	 * @return array{note: string, recordedAt: string, recordedTime: string}|null
 	 */
-	private function noteOfToday(array $item, string $userId, string $today, DateTimeZone $zone): ?array {
+	private function noteOfToday(array $item, ReaderDay $day): ?array {
 		$notes = $this->settings->getOpenRegisterClass(class: self::NOTES);
 		if ($notes === null) {
 			return null;
@@ -270,10 +311,29 @@ class EndOfDayService {
 			$this->logger->warning('Dossiq: the notes of end-of-day candidate ' . (string)$item['id'] . ' could not be read: ' . $e->getMessage());
 		}
 
+		$latest = $this->latestNoteOfToday(list: (array)$list, day: $day);
+
+		if ($latest === null) {
+			return null;
+		}
+
+		$time = (new DateTimeImmutable((string)$latest['createdAt']))->setTimezone($day->zone)->format('H:i');
+		return ['note' => (string)($latest['message'] ?? ''), 'recordedAt' => (string)$latest['createdAt'], 'recordedTime' => $time];
+	}//end noteOfToday()
+
+	/**
+	 * The reader's latest note of today among an item's notes, or null.
+	 *
+	 * @param array<int|string, mixed> $list The item's notes.
+	 * @param ReaderDay                $day  The reader, and today in their zone.
+	 *
+	 * @return mixed The latest note, or null.
+	 */
+	private function latestNoteOfToday(array $list, ReaderDay $day): mixed {
 		$latest = null;
-		foreach ((array)$list as $note) {
+		foreach ($list as $note) {
 			$created = (string)($note['createdAt'] ?? '');
-			if (($note['actorId'] ?? '') !== $userId || $this->isToday(moment: $created, today: $today, zone: $zone) === false) {
+			if ($this->isOtherNote(note: $note, created: $created, day: $day) === true) {
 				continue;
 			}
 
@@ -282,13 +342,21 @@ class EndOfDayService {
 			}
 		}
 
-		if ($latest === null) {
-			return null;
-		}
+		return $latest;
+	}//end latestNoteOfToday()
 
-		$time = (new DateTimeImmutable((string)$latest['createdAt']))->setTimezone($zone)->format('H:i');
-		return ['note' => (string)($latest['message'] ?? ''), 'recordedAt' => (string)$latest['createdAt'], 'recordedTime' => $time];
-	}//end noteOfToday()
+	/**
+	 * Whether a note was written by someone else than the reader, or not today.
+	 *
+	 * @param mixed     $note    The note.
+	 * @param string    $created When it was created.
+	 * @param ReaderDay $day     The reader, and today in their zone.
+	 *
+	 * @return bool True when the note is not the reader's of today.
+	 */
+	private function isOtherNote(mixed $note, string $created, ReaderDay $day): bool {
+		return (($note['actorId'] ?? '') !== $day->userId || $this->isToday(moment: $created, day: $day) === false);
+	}//end isOtherNote()
 
 	/**
 	 * The items the reader did not open today whose term ends by tomorrow, soonest first.
@@ -314,19 +382,18 @@ class EndOfDayService {
 	/**
 	 * Whether a moment falls on today in the reader's zone.
 	 *
-	 * @param string       $moment An ISO 8601 moment, or ''.
-	 * @param string       $today  Today, `Y-m-d`.
-	 * @param DateTimeZone $zone   The reader's zone.
+	 * @param string    $moment An ISO 8601 moment, or ''.
+	 * @param ReaderDay $day    Today, `Y-m-d`, and the reader's zone.
 	 *
 	 * @return bool
 	 */
-	private function isToday(string $moment, string $today, DateTimeZone $zone): bool {
+	private function isToday(string $moment, ReaderDay $day): bool {
 		if ($moment === '') {
 			return false;
 		}
 
 		try {
-			return (new DateTimeImmutable($moment))->setTimezone($zone)->format('Y-m-d') === $today;
+			return (new DateTimeImmutable($moment))->setTimezone($day->zone)->format('Y-m-d') === $day->today;
 		} catch (Throwable $e) {
 			return false;
 		}

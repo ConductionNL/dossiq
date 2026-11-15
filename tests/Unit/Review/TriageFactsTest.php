@@ -41,6 +41,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class TriageFactsTest extends TestCase {
 

@@ -157,11 +157,48 @@ final class SeriesDefinition {
 	 * @spec openspec/specs/numbered-document-series/spec.md
 	 */
 	public static function fromArray(string $series, array $config, string $defaultPrefix = ''): self {
-		$prefix = $defaultPrefix;
-		if (is_string(($config['prefix'] ?? null)) === true && trim($config['prefix']) !== '') {
-			$prefix = trim($config['prefix']);
+		$prefix = self::trimmedOr(value: ($config['prefix'] ?? null), default: $defaultPrefix);
+		$order = self::orderOf(config: $config);
+		$numberField = self::trimmedOr(value: ($config['numberField'] ?? null), default: self::DEFAULT_NUMBER_FIELD);
+
+		return new self(
+			series: $series,
+			prefix: $prefix,
+			order: $order,
+			width: (int)($config['width'] ?? self::DEFAULT_WIDTH),
+			gapPolicy: (string)($config['gapPolicy'] ?? self::GAP_RENUMBER),
+			numberField: $numberField,
+		);
+	}//end fromArray()
+
+	/**
+	 * A configured text, trimmed, or the default when it is no text or blank.
+	 *
+	 * @param mixed  $value   The configured value.
+	 * @param string $default The default.
+	 *
+	 * @return string The text.
+	 *
+	 * @spec openspec/specs/numbered-document-series/spec.md
+	 */
+	private static function trimmedOr(mixed $value, string $default): string {
+		if (is_string($value) === true && trim($value) !== '') {
+			return trim($value);
 		}
 
+		return $default;
+	}//end trimmedOr()
+
+	/**
+	 * The sort keys of a configuration block, each as field and direction.
+	 *
+	 * @param array<string, mixed> $config The block under `documentSeries.<series>`.
+	 *
+	 * @return array<int, array{field: string, direction: string}> The order.
+	 *
+	 * @spec openspec/specs/numbered-document-series/spec.md
+	 */
+	private static function orderOf(array $config): array {
 		$order = [];
 		foreach ((array)($config['order'] ?? []) as $key) {
 			if (is_string($key) === true) {
@@ -174,18 +211,6 @@ final class SeriesDefinition {
 			];
 		}
 
-		$numberField = self::DEFAULT_NUMBER_FIELD;
-		if (is_string(($config['numberField'] ?? null)) === true && trim($config['numberField']) !== '') {
-			$numberField = trim($config['numberField']);
-		}
-
-		return new self(
-			series: $series,
-			prefix: $prefix,
-			order: $order,
-			width: (int)($config['width'] ?? self::DEFAULT_WIDTH),
-			gapPolicy: (string)($config['gapPolicy'] ?? self::GAP_RENUMBER),
-			numberField: $numberField,
-		);
-	}//end fromArray()
+		return $order;
+	}//end orderOf()
 }//end class

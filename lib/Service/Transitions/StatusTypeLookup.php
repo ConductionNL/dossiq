@@ -92,7 +92,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The public label, or '' when the status is not announced.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function announcedLabelOf(string $statusTypeId): string {
 		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
@@ -179,7 +179,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The statusType UUID, or '' when this case type models no such role.
 	 *
-	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function idForRole(string $caseTypeId, string $role): string {
 		$wanted = strtolower(trim($role));
@@ -288,7 +288,7 @@ class StatusTypeLookup {
 	 *
 	 * @return array<int, array<string, mixed>> The rows, empty when unresolvable.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function rowsOf(string $caseTypeId): array {
 		if (trim($caseTypeId) === '') {

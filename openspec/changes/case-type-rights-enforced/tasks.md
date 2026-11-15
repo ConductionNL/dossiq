@@ -16,5 +16,5 @@ Depends on OpenRegister `rbac-matrix-app-rows-and-file-verbs`.
 
 - [x] 3.1 `CaseTypeRightsByRole`: Eigen team, statuses, documents, Besluiten from the mandate register; PHPUnit
 - [x] 3.2 Rights tab: department "Eigen team", status multi-select, documents choice; vitest caseTypeRightsEditor (needs nc-vue feat/field-list-multiselect-and-endpoint-options)
-- [ ] 3.3 Tenant setup checklist "Mandaten ingesteld": not built; the row on board DqTenant is a Mandaten card history row filled by the example set (tenantMandate), not a checklist step
+- [x] 3.3 Tenant setup checklist "Mandaten ingesteld": the onboarding progress reports the `mandate_import` step completed while the organisation holds an active mandate (`MandaatCheckService::hasActiveMandateFor`, read in `TenantOnboardingService::getProgress`, no write on the read); PHPUnit
 - [x] 3.4 l10n

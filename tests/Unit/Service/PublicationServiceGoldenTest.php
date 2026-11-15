@@ -37,6 +37,7 @@ use Throwable;
  * settings, store and dispatch call, the dispatched delivery request and the logs.
  *
  * @covers \OCA\Dossiq\Service\PublicationService
+ * @uses \OCA\Dossiq\Service\Publication\PublicationDateRule
  */
 class PublicationServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

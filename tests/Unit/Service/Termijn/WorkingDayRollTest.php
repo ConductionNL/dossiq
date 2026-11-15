@@ -29,6 +29,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use OCA\OpenRegister\Service\Flow\Timer\CalendarSpan;
+use OCA\OpenRegister\Service\Flow\Timer\WorkingCalendar;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -307,22 +309,19 @@ class FakeRollCalculator {
 	}//end add()
 
 	/**
-	 * How many days of one unit lie between two instants.
+	 * How many days of one unit lie between the instants of a span.
 	 *
-	 * @param \DateTimeInterface $from The start.
-	 * @param \DateTimeInterface $to The end.
-	 * @param string $unit The unit.
-	 * @param object $calendar The calendar.
+	 * @param CalendarSpan $span The instants and the resolved calendar.
+	 * @param string       $unit The unit.
 	 *
 	 * @return float The span.
 	 */
-	public function measure(\DateTimeInterface $from, \DateTimeInterface $to, string $unit, object $calendar): float {
-		$cursor = DateTimeImmutable::createFromInterface($from);
-		$end = DateTimeImmutable::createFromInterface($to);
+	public function measure(CalendarSpan $span, string $unit): float {
+		$cursor = $span->from;
 		$days = 0;
-		while ($cursor < $end) {
+		while ($cursor < $span->to) {
 			$cursor = $cursor->modify('+1 day');
-			if ((int)$cursor->format('N') < 6) {
+			if ($span->calendar->isWorkingDay($cursor) === true) {
 				$days++;
 			}
 		}
@@ -341,9 +340,16 @@ class FakeRollCalendars {
 	 * @param string|null $calendarSlug The slug.
 	 * @param string|null $organisation The organisation.
 	 *
-	 * @return object The calendar.
+	 * @return WorkingCalendar The calendar.
 	 */
-	public function resolve(?string $calendarSlug, ?string $organisation): object {
-		return new \stdClass();
+	public function resolve(?string $calendarSlug, ?string $organisation): WorkingCalendar {
+		return WorkingCalendar::fromArray(
+			[
+				'slug' => 'nl-national',
+				'workingWeekdays' => [1, 2, 3, 4, 5],
+				'hoursPerWorkingDay' => 8,
+				'timezone' => 'Europe/Amsterdam',
+			]
+		);
 	}//end resolve()
 }//end class

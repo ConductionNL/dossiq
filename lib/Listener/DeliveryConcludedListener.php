@@ -31,9 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\ConcludedDelivery;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
@@ -61,14 +61,14 @@ class DeliveryConcludedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the ObjectService + register config.
+	 * @param SettingsServiceInterface $settingsService Resolves the ObjectService + register config.
 	 * @param LoggerInterface $logger Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
@@ -116,7 +116,7 @@ class DeliveryConcludedListener implements IEventListener {
 		}
 
 		try {
-			if ((string)$event->getSourceApp() !== Application::APP_ID) {
+			if ((string)$event->getSourceApp() !== AppIdentity::APP_ID) {
 				return;
 			}
 
@@ -131,7 +131,7 @@ class DeliveryConcludedListener implements IEventListener {
 			// bookkeeping — its message record stays the source of truth.
 			$this->logger->error(
 				'Dossiq DeliveryConcludedListener failed to project delivery outcome',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()]
 			);
 		}//end try
 	}//end answer()
@@ -180,15 +180,26 @@ class DeliveryConcludedListener implements IEventListener {
 			return;
 		}
 
+		$this->projectWith(objectService: $objectService, delivery: $delivery);
+	}//end projectOntoCase()
+
+	/**
+	 * Load the delivery's case, apply the outcome to its publication and save it.
+	 *
+	 * @param object            $objectService The OpenRegister ObjectService.
+	 * @param ConcludedDelivery $delivery      The case, the correlation id, the channel and the terminal outcome.
+	 *
+	 * @return void
+	 */
+	private function projectWith(object $objectService, ConcludedDelivery $delivery): void {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
-		$case = $this->loadCase(objectService: $objectService, caseId: $delivery->caseId, register: $register, schema: $schema);
+		$case = $this->concludedCase(
+			found: $objectService->find(id: $delivery->caseId, register: $register, schema: $schema),
+			delivery: $delivery
+		);
 		if ($case === null) {
-			$this->logger->warning(
-				'Dossiq DeliveryConcludedListener: case not found for concluded delivery',
-				['caseId' => $delivery->caseId, 'correlationId' => $delivery->correlationId]
-			);
 			return;
 		}
 
@@ -198,12 +209,28 @@ class DeliveryConcludedListener implements IEventListener {
 		}
 
 		$case['publications'] = $applied;
-		$objectService->saveObject(
-			object: $case,
-			register: $register,
-			schema: $schema,
-		);
-	}//end projectOntoCase()
+		$objectService->saveObject(object: $case, register: $register, schema: $schema);
+	}//end projectWith()
+
+	/**
+	 * The delivery's case as found, logging when it is not found.
+	 *
+	 * @param mixed             $found    What OpenRegister found for the delivery's case id.
+	 * @param ConcludedDelivery $delivery The concluded delivery.
+	 *
+	 * @return array<string, mixed>|null The case data, or null when not found.
+	 */
+	private function concludedCase(mixed $found, ConcludedDelivery $delivery): ?array {
+		$case = $this->caseOf(obj: $found);
+		if ($case === null) {
+			$this->logger->warning(
+				'Dossiq DeliveryConcludedListener: case not found for concluded delivery',
+				['caseId' => $delivery->caseId, 'correlationId' => $delivery->correlationId]
+			);
+		}
+
+		return $case;
+	}//end concludedCase()
 
 	/**
 	 * The case's publications with the outcome on the matching delivery, or
@@ -242,17 +269,13 @@ class DeliveryConcludedListener implements IEventListener {
 	}//end publicationsWith()
 
 	/**
-	 * Load a case from OpenRegister and normalise it to its array form.
+	 * A case OpenRegister found, normalised to its array form.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $caseId The case id.
-	 * @param mixed $register The configured register id.
-	 * @param mixed $schema The configured case schema id.
+	 * @param mixed $obj What OpenRegister found, or null.
 	 *
 	 * @return array<string, mixed>|null The case data, or null when not found.
 	 */
-	private function loadCase(object $objectService, string $caseId, mixed $register, mixed $schema): ?array {
-		$obj = $objectService->find(id: $caseId, register: $register, schema: $schema);
+	private function caseOf(mixed $obj): ?array {
 		if ($obj === null) {
 			return null;
 		}
@@ -263,7 +286,7 @@ class DeliveryConcludedListener implements IEventListener {
 		}
 
 		return $case;
-	}//end loadCase()
+	}//end caseOf()
 
 	/**
 	 * Apply a terminal delivery outcome to the matching publication entry.

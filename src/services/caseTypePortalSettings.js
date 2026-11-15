@@ -98,32 +98,67 @@ export function portalStateFrom(caseType = {}) {
 		: []
 	const writable = {}
 	for (const field of WRITABLE_CEILING) {
-		const entry = stored.find((row) => row?.field === field)
-		writable[field] = {
-			enabled: entry !== undefined,
-			openStatuses: ids(entry?.openStatuses),
-			closedReason: text(entry?.closedReason),
-			audiences:
-				entry && ids(entry.audiences).length > 0
-					? ids(entry.audiences)
-					: [...PORTAL_AUDIENCES],
-		}
+		writable[field] = writableState(stored.find((row) => row?.field === field))
 	}
-
-	const withdrawal = caseType?.portalWithdrawal ?? {}
 
 	return {
 		writable,
 		amendment: windowState(caseType?.portalAmendmentWindow),
 		documents: windowState(caseType?.portalDocumentWindow),
-		withdrawal: {
-			enabled: text(withdrawal.targetStatus) !== '',
-			openStatuses: ids(withdrawal.openStatuses),
-			targetStatus: text(withdrawal.targetStatus),
-			closedReason: text(withdrawal.closedReason),
-			confirmText: text(withdrawal.confirmText),
-		},
+		withdrawal: withdrawalState(caseType?.portalWithdrawal ?? {}),
 	}
+}
+
+/**
+ * The audiences a writable field is offered to: its own, else every portal audience.
+ *
+ * @param {unknown} audiences The stored audiences.
+ * @return {Array<string>} The audiences.
+ */
+function audiencesOr(audiences) {
+	return ids(audiences).length > 0 ? ids(audiences) : [...PORTAL_AUDIENCES]
+}
+
+/**
+ * The form state of one ceiling field.
+ *
+ * @param {object|undefined} entry Its stored row, or undefined when it is not writable.
+ * @return {object} The state.
+ */
+function writableState(entry) {
+	return {
+		enabled: entry !== undefined,
+		openStatuses: ids(entry?.openStatuses),
+		closedReason: text(entry?.closedReason),
+		audiences: entry ? audiencesOr(entry.audiences) : [...PORTAL_AUDIENCES],
+	}
+}
+
+/**
+ * The form state of the withdrawal block.
+ *
+ * @param {object} withdrawal The stored block.
+ * @return {object} The state.
+ */
+function withdrawalState(withdrawal) {
+	return {
+		enabled: text(withdrawal.targetStatus) !== '',
+		openStatuses: ids(withdrawal.openStatuses),
+		targetStatus: text(withdrawal.targetStatus),
+		closedReason: text(withdrawal.closedReason),
+		confirmText: text(withdrawal.confirmText),
+	}
+}
+
+/**
+ * A property holding a text, or none when the text is empty.
+ *
+ * @param {string} name The property name.
+ * @param {unknown} value The value.
+ * @return {object} `{[name]: text}` or `{}`.
+ */
+function optionalText(name, value) {
+	return text(value) !== '' ? { [name]: text(value) } : {}
 }
 
 /**
@@ -137,43 +172,8 @@ export function portalPayload(state) {
 	const portalWritable = []
 	for (const field of WRITABLE_CEILING) {
 		const entry = state?.writable?.[field]
-		if (!entry?.enabled) {
-			continue
-		}
-		const row = {
-			field,
-			audiences:
-				ids(entry.audiences).length > 0
-					? ids(entry.audiences)
-					: [...PORTAL_AUDIENCES],
-			openStatuses: ids(entry.openStatuses),
-		}
-		if (text(entry.closedReason) !== '') {
-			row.closedReason = text(entry.closedReason)
-		}
-		portalWritable.push(row)
-	}
-
-	const windowBlock = (block) => {
-		const out = { openStatuses: ids(block?.openStatuses) }
-		if (text(block?.closedReason) !== '') {
-			out.closedReason = text(block.closedReason)
-		}
-		return out
-	}
-
-	const withdrawal = state?.withdrawal ?? {}
-	let portalWithdrawal = {}
-	if (withdrawal.enabled && text(withdrawal.targetStatus) !== '') {
-		portalWithdrawal = {
-			openStatuses: ids(withdrawal.openStatuses),
-			targetStatus: text(withdrawal.targetStatus),
-		}
-		if (text(withdrawal.closedReason) !== '') {
-			portalWithdrawal.closedReason = text(withdrawal.closedReason)
-		}
-		if (text(withdrawal.confirmText) !== '') {
-			portalWithdrawal.confirmText = text(withdrawal.confirmText)
+		if (entry?.enabled) {
+			portalWritable.push(writableRow(field, entry))
 		}
 	}
 
@@ -181,7 +181,54 @@ export function portalPayload(state) {
 		portalWritable,
 		portalAmendmentWindow: windowBlock(state?.amendment),
 		portalDocumentWindow: windowBlock(state?.documents),
-		portalWithdrawal,
+		portalWithdrawal: withdrawalBlock(state?.withdrawal ?? {}),
+	}
+}
+
+/**
+ * The stored row of one writable field.
+ *
+ * @param {string} field The field.
+ * @param {object} entry Its form state.
+ * @return {object} The row.
+ */
+function writableRow(field, entry) {
+	return {
+		field,
+		audiences: audiencesOr(entry.audiences),
+		openStatuses: ids(entry.openStatuses),
+		...optionalText('closedReason', entry.closedReason),
+	}
+}
+
+/**
+ * The stored block of an amendment or document window.
+ *
+ * @param {object|undefined} block Its form state.
+ * @return {object} The block.
+ */
+function windowBlock(block) {
+	return {
+		openStatuses: ids(block?.openStatuses),
+		...optionalText('closedReason', block?.closedReason),
+	}
+}
+
+/**
+ * The stored withdrawal block: empty unless it is enabled and names a target.
+ *
+ * @param {object} withdrawal Its form state.
+ * @return {object} The block.
+ */
+function withdrawalBlock(withdrawal) {
+	if (!withdrawal.enabled || text(withdrawal.targetStatus) === '') {
+		return {}
+	}
+	return {
+		openStatuses: ids(withdrawal.openStatuses),
+		targetStatus: text(withdrawal.targetStatus),
+		...optionalText('closedReason', withdrawal.closedReason),
+		...optionalText('confirmText', withdrawal.confirmText),
 	}
 }
 

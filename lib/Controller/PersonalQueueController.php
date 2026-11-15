@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -32,12 +32,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Queue\DigestPreferences;
-use OCA\Dossiq\Service\Queue\PersonalAgendaItemService;
-use OCA\Dossiq\Service\Queue\PersonalQueueService;
-use OCA\Dossiq\Service\Queue\PersonalStageService;
-use OCA\Dossiq\Service\Queue\QueueViewPreferences;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DigestPreferencesInterface;
+use OCA\Dossiq\Kernel\Contracts\PersonalAgendaItemServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\PersonalQueueServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\PersonalStageServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\QueueViewPreferencesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * The caller's own queue, planned items and private stages; the end of day is EndOfDayController's.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class PersonalQueueController extends Controller {
 	/**
@@ -57,26 +57,26 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @param IRequest                  $request     The request.
 	 * @param IUserSession              $userSession The caller.
-	 * @param PersonalQueueService      $queue       The queue itself.
-	 * @param QueueViewPreferences      $view        What the reader changed about their view.
-	 * @param PersonalStageService      $stages      The reader's private labels.
-	 * @param PersonalAgendaItemService $agenda      The reader's own planned items.
-	 * @param DigestPreferences         $digest      When the reader wants their digest.
+	 * @param PersonalQueueServiceInterface      $queue       The queue itself.
+	 * @param QueueViewPreferencesInterface      $view        What the reader changed about their view.
+	 * @param PersonalStageServiceInterface      $stages      The reader's private labels.
+	 * @param PersonalAgendaItemServiceInterface $agenda      The reader's own planned items.
+	 * @param DigestPreferencesInterface         $digest      When the reader wants their digest.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly PersonalQueueService $queue,
-		private readonly QueueViewPreferences $view,
-		private readonly PersonalStageService $stages,
-		private readonly PersonalAgendaItemService $agenda,
-		private readonly DigestPreferences $digest,
+		private readonly PersonalQueueServiceInterface $queue,
+		private readonly QueueViewPreferencesInterface $view,
+		private readonly PersonalStageServiceInterface $stages,
+		private readonly PersonalAgendaItemServiceInterface $agenda,
+		private readonly DigestPreferencesInterface $digest,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -84,7 +84,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The queue.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
@@ -107,7 +107,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse What is hidden now.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function hideGroup(string $group): JSONResponse {
@@ -132,7 +132,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse What is hidden now.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function showGroup(string $group): JSONResponse {
@@ -155,7 +155,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The grouping now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function setGrouping(): JSONResponse {
@@ -177,7 +177,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse What was planned.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function planItem(): JSONResponse {
@@ -207,7 +207,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The stage.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function stage(string $caseId): JSONResponse {
@@ -226,7 +226,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The stage now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function setStage(string $caseId): JSONResponse {
@@ -249,7 +249,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The settings.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function digestSettings(): JSONResponse {
@@ -266,7 +266,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The settings now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	#[NoAdminRequired]
 	public function saveDigestSettings(): JSONResponse {
@@ -279,7 +279,7 @@ class PersonalQueueController extends Controller {
 			$this->digest->save(
 				userId: $userId,
 				enabled: ($this->request->getParam('enabled', true) !== false),
-				hour: (int)$this->request->getParam('hour', DigestPreferences::DEFAULT_HOUR)
+				hour: (int)$this->request->getParam('hour', DigestPreferencesInterface::DEFAULT_HOUR)
 			)
 		);
 	}//end saveDigestSettings()
@@ -289,7 +289,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return string The caller's uid, or an empty string when nobody is signed in.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function caller(): string {
 		return (string)($this->userSession->getUser()?->getUID() ?? '');
@@ -300,7 +300,7 @@ class PersonalQueueController extends Controller {
 	 *
 	 * @return JSONResponse The refusal.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function unauthenticated(): JSONResponse {
 		return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);

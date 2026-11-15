@@ -22,7 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentTextInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -37,7 +38,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
  */
-class DocumentText {
+class DocumentText implements DocumentTextInterface {
 
 	/**
 	 * OpenRegister's text extraction service.
@@ -83,7 +84,7 @@ class DocumentText {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the extracted text of a document could not be read, so no text condition matches it',
-				['app' => Application::APP_ID, 'fileId' => (int)$fileId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'fileId' => (int)$fileId, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -110,7 +111,7 @@ class DocumentText {
 		} catch (Throwable $e) {
 			$this->logger->info(
 				'Dossiq: OpenRegister\'s text extraction is not available, so no text condition matches',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}

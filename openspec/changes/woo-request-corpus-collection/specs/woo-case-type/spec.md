@@ -105,3 +105,24 @@ under.
 - **WHEN** it is recorded
 - **THEN** the answer SHALL be 400 `template_not_found`
 - **AND** no plan and no configuration SHALL be stored
+
+### Requirement: Collected e-mails are grouped into the conversation they belong to (REQ-WRC-006)
+
+When the add receives e-mail messages (`.eml` or `.msg`), it SHALL read `Message-ID`, `In-Reply-To`
+and `References` and SHALL record the same `threadId` in the `provenance` of every message of one
+conversation, also when the messages came from different custodians or systems. The collection
+report SHALL count conversations next to documents. The collected documents list SHALL show a
+conversation as one entry that opens to its messages in date order. A message without those headers
+SHALL be its own conversation. A message that is byte for byte the same as one already on the case is
+still handled by REQ-WRC-003 as a `duplicate`.
+
+#### Scenario: A reply chain is one conversation
+- **GIVEN** three collected mails, where the second answers the first and the third answers the second, and the third came from another custodian
+- **WHEN** the collection is read
+- **THEN** the three mails SHALL carry the same `threadId`
+- **AND** the collected documents list SHALL show one conversation holding the three mails in date order
+
+#### Scenario: A mail without headers stands alone
+- **GIVEN** a collected `.msg` file without `Message-ID`, `In-Reply-To` or `References`
+- **WHEN** the collection is read
+- **THEN** it SHALL carry a `threadId` of its own and be counted as one conversation

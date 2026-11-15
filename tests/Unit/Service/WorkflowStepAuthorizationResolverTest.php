@@ -56,6 +56,8 @@ interface AuthResolverObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WorkflowStepAuthorizationResolver
  *
  * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-6.1
+ * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 final class WorkflowStepAuthorizationResolverTest extends TestCase {
 

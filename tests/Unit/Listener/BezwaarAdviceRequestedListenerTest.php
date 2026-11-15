@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class BezwaarAdviceRequestedListenerTest extends TestCase {
 	use MakesBezwaarAuditTrail;

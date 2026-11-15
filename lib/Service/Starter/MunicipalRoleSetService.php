@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\MunicipalRoleSetServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCP\IUser;
@@ -46,7 +47,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-class MunicipalRoleSetService {
+class MunicipalRoleSetService implements MunicipalRoleSetServiceInterface {
 
 	/**
 	 * The app config key naming the role type schema.
@@ -141,11 +142,21 @@ class MunicipalRoleSetService {
 			return null;
 		}
 
-		$byName = [];
-		foreach ($existing as $role) {
-			$byName[$this->text->textOf(value: ($role['name'] ?? ''))] = true;
-		}
+		$byName = $this->namesOf(roles: $existing);
 
+		return $this->seedMissing(byName: $byName);
+	}//end seed()
+
+	/**
+	 * Write every shipped role whose name is not taken yet.
+	 *
+	 * @param array<string, true> $byName The names already shipped, as keys.
+	 *
+	 * @return array{seeded: int, skipped: int} The tally.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function seedMissing(array $byName): array {
 		$tally = ['seeded' => 0, 'skipped' => 0];
 		foreach (self::ROLES_SHIPPED as $role) {
 			if (isset($byName[$role['name']]) === true) {
@@ -153,23 +164,56 @@ class MunicipalRoleSetService {
 				continue;
 			}
 
-			$payload = ($role + ['shippedSet' => ShippedSets::MUNICIPAL_ROLES, 'dormant' => true]);
-			$saved = $this->shippedRoles->store->save(configKey: self::ROLE_TYPES, payload: $payload);
-			if ($saved === null) {
-				continue;
+			if ($this->seedRole(role: $role) === true) {
+				$tally['seeded']++;
 			}
-
-			$tally['seeded']++;
-			$this->shippedRoles->shipped->stamp(
-				set: ShippedSets::MUNICIPAL_ROLES,
-				targetSchema: 'roleType',
-				targetObject: $this->shippedRoles->store->idOf(row: $saved),
-				object: $saved,
-			);
-		}//end foreach
+		}
 
 		return $tally;
-	}//end seed()
+	}//end seedMissing()
+
+	/**
+	 * The names of the roles already shipped, as keys.
+	 *
+	 * @param array<int, array<string, mixed>> $roles The shipped roles.
+	 *
+	 * @return array<string, true> Name => true.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function namesOf(array $roles): array {
+		$byName = [];
+		foreach ($roles as $role) {
+			$byName[$this->text->textOf(value: ($role['name'] ?? ''))] = true;
+		}
+
+		return $byName;
+	}//end namesOf()
+
+	/**
+	 * Write one shipped role, dormant, and stamp it as part of the set.
+	 *
+	 * @param array<string, mixed> $role The role as shipped.
+	 *
+	 * @return bool True when it was written.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function seedRole(array $role): bool {
+		$payload = ($role + ['shippedSet' => ShippedSets::MUNICIPAL_ROLES, 'dormant' => true]);
+		$saved = $this->shippedRoles->store->save(configKey: self::ROLE_TYPES, payload: $payload);
+		if ($saved === null) {
+			return false;
+		}
+
+		$this->shippedRoles->shipped->stamp(
+			set: ShippedSets::MUNICIPAL_ROLES,
+			targetSchema: 'roleType',
+			targetObject: $this->shippedRoles->store->idOf(row: $saved),
+			object: $saved,
+		);
+		return true;
+	}//end seedRole()
 
 	/**
 	 * What the roles screen should show: the set, whether it is adopted, and
@@ -215,6 +259,30 @@ class MunicipalRoleSetService {
 	 */
 	public function adopt(): array {
 		$roles = $this->shippedRoles();
+		$refusal = $this->adoptRefusal(roles: $roles);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$user = $this->session->getUser();
+		$adopted = $this->wakeRoles(roles: ($roles ?? []));
+		if ($this->recordAdoption(user: $user) === null) {
+			return ['ok' => false, 'reason' => 'write_failed', 'adopted' => $adopted];
+		}
+
+		$this->logger->info('Dossiq starter: the municipal role set was adopted', ['roles' => $adopted]);
+
+		return ['ok' => true, 'reason' => '', 'adopted' => $adopted];
+	}//end adopt()
+
+	/**
+	 * Why the set cannot be adopted now, or null when it can.
+	 *
+	 * @param array<int, array<string, mixed>>|null $roles The shipped roles, null when unreachable.
+	 *
+	 * @return array{ok: bool, reason: string, adopted: int}|null The refusal.
+	 */
+	private function adoptRefusal(?array $roles): ?array {
 		if ($roles === null) {
 			return ['ok' => false, 'reason' => 'unavailable', 'adopted' => 0];
 		}
@@ -223,21 +291,38 @@ class MunicipalRoleSetService {
 			return ['ok' => false, 'reason' => 'already_adopted', 'adopted' => 0];
 		}
 
-		$user = $this->session->getUser();
+		return null;
+	}//end adoptRefusal()
+
+	/**
+	 * Take every shipped role out of dormancy.
+	 *
+	 * @param array<int, array<string, mixed>> $roles The shipped roles.
+	 *
+	 * @return int How many were saved.
+	 */
+	private function wakeRoles(array $roles): int {
 		$adopted = 0;
 		foreach ($roles as $role) {
 			$role['dormant'] = false;
-			$saved = $this->shippedRoles->store->save(
-				configKey: self::ROLE_TYPES,
-				payload: $role,
-				id: $this->shippedRoles->store->idOf(row: $role),
-			);
+			$saved = $this->shippedRoles->store->save(configKey: self::ROLE_TYPES, payload: $role, id: $this->shippedRoles->store->idOf(row: $role));
 			if ($saved !== null) {
 				$adopted++;
 			}
 		}
 
-		$record = $this->shippedRoles->store->save(
+		return $adopted;
+	}//end wakeRoles()
+
+	/**
+	 * Record who adopted the set, and when.
+	 *
+	 * @param IUser|null $user Who adopted it.
+	 *
+	 * @return array<string, mixed>|null The record, or null when it could not be written.
+	 */
+	private function recordAdoption(?IUser $user): ?array {
+		return $this->shippedRoles->store->save(
 			configKey: self::ADOPTIONS,
 			payload: [
 				'set' => ShippedSets::MUNICIPAL_ROLES,
@@ -246,18 +331,7 @@ class MunicipalRoleSetService {
 				'adoptedAt' => gmdate('c'),
 			],
 		);
-
-		if ($record === null) {
-			return ['ok' => false, 'reason' => 'write_failed', 'adopted' => $adopted];
-		}
-
-		$this->logger->info(
-			'Dossiq starter: the municipal role set was adopted',
-			['roles' => $adopted]
-		);
-
-		return ['ok' => true, 'reason' => '', 'adopted' => $adopted];
-	}//end adopt()
+	}//end recordAdoption()
 
 	/**
 	 * Put the set back to dormant, while nothing is granted against it.
@@ -283,6 +357,36 @@ class MunicipalRoleSetService {
 			return ['ok' => false, 'reason' => 'role_in_use', 'roleInUse' => $inUse[0]];
 		}
 
+		return $this->reverse(roles: $roles, adoption: $adoption);
+	}//end undoAdoption()
+
+	/**
+	 * Put the set's roles back to dormant and record the reversal on the adoption.
+	 *
+	 * @param array<int, array<string, mixed>> $roles    The set's roles.
+	 * @param array<string, mixed>             $adoption The open adoption.
+	 *
+	 * @return array{ok: bool, reason: string, roleInUse: string} What happened.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function reverse(array $roles, array $adoption): array {
+		$this->putDormant(roles: $roles);
+		$this->recordReversal(adoption: $adoption);
+
+		return ['ok' => true, 'reason' => '', 'roleInUse' => ''];
+	}//end reverse()
+
+	/**
+	 * Mark every role of the set dormant again.
+	 *
+	 * @param array<int, array<string, mixed>> $roles The set's roles.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function putDormant(array $roles): void {
 		foreach ($roles as $role) {
 			$role['dormant'] = true;
 			$this->shippedRoles->store->save(
@@ -291,7 +395,18 @@ class MunicipalRoleSetService {
 				id: $this->shippedRoles->store->idOf(row: $role),
 			);
 		}
+	}//end putDormant()
 
+	/**
+	 * Record on the adoption who reversed it, and when.
+	 *
+	 * @param array<string, mixed> $adoption The open adoption.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function recordReversal(array $adoption): void {
 		$adoption['reversedBy'] = $this->actor(user: $this->session->getUser());
 		$adoption['reversedAt'] = gmdate('c');
 		$this->shippedRoles->store->save(
@@ -299,9 +414,7 @@ class MunicipalRoleSetService {
 			payload: $adoption,
 			id: $this->shippedRoles->store->idOf(row: $adoption),
 		);
-
-		return ['ok' => true, 'reason' => '', 'roleInUse' => ''];
-	}//end undoAdoption()
+	}//end recordReversal()
 
 	/**
 	 * Who is acting, or '' when nobody is signed in.

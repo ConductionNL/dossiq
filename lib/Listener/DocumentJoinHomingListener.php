@@ -35,8 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
+use OCA\Dossiq\Kernel\Contracts\DocumentJoinHomingInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -61,12 +61,12 @@ class DocumentJoinHomingListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param DocumentJoinHoming       $homing       Moves the file into the case's folder.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves a schema id to its slug.
+	 * @param DocumentJoinHomingInterface       $homing       Moves the file into the case's folder.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 */
 	public function __construct(
-		private readonly DocumentJoinHoming $homing,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly DocumentJoinHomingInterface $homing,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 	) {
 	}//end __construct()
 

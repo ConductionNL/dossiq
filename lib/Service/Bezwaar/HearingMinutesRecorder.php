@@ -74,36 +74,69 @@ class HearingMinutesRecorder {
 	 *
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
-	public function guardRecordingConsent(
-		string $sessionId,
-		array $payload,
-		array $current,
-		string $register,
-		string $schema,
-	): void {
-		$this->guardStoredDenial(
-			payload: $payload,
-			current: $current,
-			session: ['id' => $sessionId, 'register' => $register, 'schema' => $schema]
-		);
+	public function guardRecordingConsent(string $sessionId, array $payload, array $current, string $register, string $schema): void {
+		$session = ['id' => $sessionId, 'register' => $register, 'schema' => $schema];
+		$this->guardStoredDenial(payload: $payload, current: $current, session: $session);
 
-		$hasAudio = isset($payload['audioRecording']) === true
-			&& (string)$payload['audioRecording'] !== '';
-		if ($hasAudio === false) {
+		if (self::hasAudio(payload: $payload) === false) {
 			return;
 		}
 
-		$consent = (string)(
-			$payload['recordingConsent'] ?? ($current['recordingConsent'] ?? 'not_requested')
-		);
+		$consent = self::consentOf(payload: $payload, current: $current);
 		if ($consent === 'granted') {
 			return;
 		}
 
+		$this->refuseAudioUpload(session: $session, consent: $consent);
+	}//end guardRecordingConsent()
+
+	/**
+	 * Whether the minutes carry an audio recording.
+	 *
+	 * @param array<string, mixed> $payload Minutes payload.
+	 *
+	 * @return bool True when an audio recording is uploaded.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private static function hasAudio(array $payload): bool {
+		return isset($payload['audioRecording']) === true
+			&& (string)$payload['audioRecording'] !== '';
+	}//end hasAudio()
+
+	/**
+	 * The recording consent the minutes carry, else the stored one, else `not_requested`.
+	 *
+	 * @param array<string, mixed> $payload Minutes payload.
+	 * @param array<string, mixed> $current Current hearingSession record.
+	 *
+	 * @return string The consent.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private static function consentOf(array $payload, array $current): string {
+		return (string)(
+			$payload['recordingConsent'] ?? ($current['recordingConsent'] ?? 'not_requested')
+		);
+	}//end consentOf()
+
+	/**
+	 * Record a refused audio upload on the session's trail, and refuse it.
+	 *
+	 * @param array<string, string> $session The session's `id`, `register` and `schema`.
+	 * @param string                $consent The consent the upload lacks.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException Always: consent for the recording is absent.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private function refuseAudioUpload(array $session, string $consent): void {
 		$this->auditTrail->recordRefusal(
-			register: $register,
-			schema: $schema,
-			objectUuid: $sessionId,
+			register: $session['register'],
+			schema: $session['schema'],
+			objectUuid: $session['id'],
 			event: 'audio-upload-denied',
 			payload: ['consent' => $consent],
 			tag: BezwaarAuditTrail::TAG_RECORDING_CONSENT,
@@ -112,7 +145,7 @@ class HearingMinutesRecorder {
 		throw new RuntimeException(
 			'Bezwaarmaker heeft geen toestemming gegeven voor audio-opname'
 		);
-	}//end guardRecordingConsent()
+	}//end refuseAudioUpload()
 
 	/**
 	 * Refuse minutes that would change a stored recording consent denial.
@@ -161,34 +194,52 @@ class HearingMinutesRecorder {
 	 * @spec openspec/specs/bezwaar-hearing/spec.md
 	 */
 	public function buildMinutesUpdate(array $payload, string $summary, string $document): array {
-		$minutesSummary = null;
-		if ($summary !== '') {
-			$minutesSummary = $summary;
-		}
-
-		$minutesDocument = null;
-		if ($document !== '') {
-			$minutesDocument = $document;
-		}
-
 		$update = [
-			'minutesSummary' => $minutesSummary,
-			'minutesDocument' => $minutesDocument,
+			'minutesSummary' => $this->nullWhenEmpty(value: $summary),
+			'minutesDocument' => $this->nullWhenEmpty(value: $document),
 			'status' => 'executed',
 		];
 
+		return array_merge($update, $this->recordingFields(payload: $payload));
+	}//end buildMinutesUpdate()
+
+	/**
+	 * The value, or null when it is empty.
+	 *
+	 * @param string $value The resolved value.
+	 *
+	 * @return string|null
+	 */
+	private function nullWhenEmpty(string $value): string|null {
+		$result = null;
+		if ($value !== '') {
+			$result = $value;
+		}
+
+		return $result;
+	}//end nullWhenEmpty()
+
+	/**
+	 * The audio recording and consent fields a minutes payload sets.
+	 *
+	 * @param array<string, mixed> $payload Minutes payload.
+	 *
+	 * @return array<string, string>
+	 */
+	private function recordingFields(array $payload): array {
+		$fields = [];
 		if (isset($payload['audioRecording']) === true
 			&& (string)$payload['audioRecording'] !== ''
 		) {
-			$update['audioRecording'] = (string)$payload['audioRecording'];
+			$fields['audioRecording'] = (string)$payload['audioRecording'];
 		}
 
 		if (isset($payload['recordingConsent']) === true) {
-			$update['recordingConsent'] = (string)$payload['recordingConsent'];
+			$fields['recordingConsent'] = (string)$payload['recordingConsent'];
 		}
 
-		return $update;
-	}//end buildMinutesUpdate()
+		return $fields;
+	}//end recordingFields()
 
 	/**
 	 * The payload of an awb-art-7:7 entry for an attendance correction made

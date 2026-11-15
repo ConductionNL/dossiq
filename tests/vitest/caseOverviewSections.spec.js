@@ -29,6 +29,13 @@ describe('resolveOverviewSections', () => {
 		expect(section.rows.map((row) => row.value)).toEqual(['5 nov', 'A case', '—', 'Text'])
 	})
 
+	it('reads the properties as the case stores them, a list of named entries', () => {
+		const [section] = resolveOverviewSections(declared, { title: 'A case', properties: [{ name: 'when', value: '5 nov' }, { name: 'state', value: 'Planned' }] })
+
+		expect(section.pill).toBe('Planned')
+		expect(section.rows.map((row) => row.value)).toEqual(['5 nov', 'A case', '—', 'Text'])
+	})
+
 	it('draws nothing without a case or a list, and leaves out a section without a title', () => {
 		expect(resolveOverviewSections(declared, null)).toEqual([])
 		expect(resolveOverviewSections(null, {})).toEqual([])

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\People\CaseRoleProjection;
+use OCA\Dossiq\Kernel\Contracts\CaseRoleProjectionInterface;
 use OCA\OpenRegister\Event\PersonLinkedEvent;
 use OCA\OpenRegister\Event\PersonLinkUpdatedEvent;
 use OCA\OpenRegister\Event\PersonUnlinkedEvent;
@@ -37,11 +37,11 @@ use Throwable;
 class PersonLinkListener implements IEventListener {
 
 	/**
-	 * @param CaseRoleProjection $projection Turns a link into a role record.
+	 * @param CaseRoleProjectionInterface $projection Turns a link into a role record.
 	 * @param LoggerInterface $logger Says what could not be projected.
 	 */
 	public function __construct(
-		private readonly CaseRoleProjection $projection,
+		private readonly CaseRoleProjectionInterface $projection,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

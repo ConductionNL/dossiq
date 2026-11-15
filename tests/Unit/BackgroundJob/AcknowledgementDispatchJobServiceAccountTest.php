@@ -90,6 +90,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Termijn\TermNotice
+ * @uses \OCA\Dossiq\Service\Termijn\TermNoticeRun
  */
 class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

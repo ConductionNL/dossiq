@@ -1,0 +1,62 @@
+{
+  "_note": "expired-pause-resumes-the-term (REQ-TERM-080, row 8.10). When a pause runs out without an answer the term resumes by itself, and the case's handler is told. The `hervat` event that records it carries the notice: `notify` is the handler's user id, `caseTitle` and `endDate` are what the message names. Only that automatic resume writes `notify`, so a handler's own resume tells nobody, and the rule's filter reads an absent field on every other event, which fails closed. termijnGebeurtenis 1.3.0.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "termijnGebeurtenis": {
+        "version": "1.3.0",
+        "properties": {
+          "notify": {
+            "type": "string",
+            "title": "Notify",
+            "description": "Nextcloud user id this event is told to. Written by dossiq when a term resumes because its pause ran out, never by hand.",
+            "maxLength": 255,
+            "readOnly": true,
+            "visible": false
+          },
+          "caseTitle": {
+            "type": "string",
+            "title": "Case title",
+            "description": "The title of the case the event is about, as the notification names it.",
+            "maxLength": 1024,
+            "readOnly": true,
+            "visible": false
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "title": "New end date",
+            "description": "The term's end date after this event.",
+            "readOnly": true,
+            "visible": false
+          }
+        },
+        "x-openregister-notifications": {
+          "termResumedAfterPause": {
+            "trigger": {
+              "type": "created",
+              "filter": {"field": "notify", "operator": "notIn", "values": [""]}
+            },
+            "enabled": true,
+            "channels": ["nc-notification"],
+            "optInChannels": ["email"],
+            "recipients": [
+              {"kind": "field", "field": "notify"}
+            ],
+            "subject": {
+              "nl": "De termijn van zaak \"{{caseTitle}}\" loopt weer; nieuwe einddatum {{endDate}}",
+              "en": "The term of case \"{{caseTitle}}\" is running again; new end date {{endDate}}"
+            },
+            "message": {
+              "nl": "De opschorting is verlopen zonder antwoord, dus de termijn is vanzelf hervat. De zaak moet nu uiterlijk {{endDate}} beslist zijn.",
+              "en": "The suspension ran out without an answer, so the term resumed by itself. The case now has to be decided by {{endDate}}."
+            }
+          }
+        }
+      }
+    }
+  }
+}

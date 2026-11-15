@@ -538,4 +538,55 @@ class AanvullingsverzoekServiceTest extends TestCase {
 		$this->assertSame(0, $service->daysOpen(request: [], now: $now));
 		$this->assertSame(0, $service->daysOpen(request: ['requestedAt' => 'not a date'], now: $now));
 	}//end testDaysOpenCountsWholeDaysSinceTheRequest()
+
+	/**
+	 * A portal task that is raised but cannot be remembered leaves the request as written, and says so.
+	 *
+	 * @return void
+	 */
+	public function testATaskThatCannotBeRememberedLeavesTheRequestAsWritten(): void {
+		$this->act->method('ask')->willReturn($this->sent());
+		$portalTask = $this->createMock(ResidentQuestionTask::class);
+		$portalTask->method('raise')->willReturn('task-1');
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$warnings = [];
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$warnings): void {
+				$warnings[] = [$message, $context];
+			}
+		);
+
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(['act' => $this->act, 'settingsService' => $this->settings, 'logger' => $logger, 'portalTask' => $portalTask])
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'portalSubjectOf'])
+			->getMock();
+		$service->method('openFor')->willReturn(null);
+		$service->method('portalSubjectOf')->willReturn('person:bsn-hash-1');
+		$service->method('write')->willReturnCallback(
+			static function (array $request, string $id = ''): array {
+				if ($id !== '') {
+					throw new RefusedException(rule: 'aanvullingsverzoek-not-written', sentence: 'The request could not be written down.', status: RefusedException::STATUS_INDETERMINATE);
+				}
+
+				return array_merge($request, ['id' => 'avr-1']);
+			}
+		);
+
+		$request = $service->ask(
+			caseId: 'case-1',
+			items: ['Bankafschrift'],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			pauseReason: 'reason-awb-45',
+			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
+		);
+
+		self::assertArrayNotHasKey('portalTask', $request);
+		self::assertSame('avr-1', $request['id']);
+		self::assertSame(
+			[['Dossiq: the portal task was raised, but the request could not remember it', ['app' => 'dossiq', 'request' => 'avr-1', 'task' => 'task-1']]],
+			$warnings
+		);
+	}//end testATaskThatCannotBeRememberedLeavesTheRequestAsWritten()
 }//end class

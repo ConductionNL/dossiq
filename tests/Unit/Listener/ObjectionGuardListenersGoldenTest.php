@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\Support\ReadsEventObjects
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
+ * @uses \OCA\Dossiq\Listener\ObjectionObject
  *
  * @spec openspec/specs/bezwaar-decision/spec.md
  */
@@ -100,6 +101,13 @@ class ObjectionGuardListenersGoldenTest extends TestCase {
 			],
 			'appeal, schema by url' => ['appeal', 'created', array_replace($appeal, ['@self' => ['schema' => 'https://x/schemas/appeal']]), null, true],
 			'appeal, schema slug at the top' => ['appeal', 'created', array_replace($appeal, ['@self' => [], 'schema' => 'appeal']), null, true],
+			'appeal on a terminal judgment' => ['appeal', 'updated', array_replace($appeal, ['judgmentOutcome' => 'upheld']), null, true],
+			'appeal with an open judgment' => ['appeal', 'updated', array_replace($appeal, ['judgmentOutcome' => 'pending']), null, true],
+			'appeal without a contested decision' => ['appeal', 'updated', array_replace($appeal, ['contestedDecision' => '']), null, true],
+			'appeal without a filing date' => ['appeal', 'updated', array_diff_key($appeal, ['appellantFilingDate' => 1]), null, true],
+			'appeal filed after its deadline' => ['appeal', 'updated', array_replace($appeal, ['filingDeadline' => '2026-01-01']), null, true],
+			'appeal filed before its deadline' => ['appeal', 'updated', array_replace($appeal, ['filingDeadline' => '2026-02-01']), null, true],
+			'appeal with an unreadable deadline' => ['appeal', 'updated', array_replace($appeal, ['filingDeadline' => 'not a date']), null, true],
 		];
 	}//end worlds()
 

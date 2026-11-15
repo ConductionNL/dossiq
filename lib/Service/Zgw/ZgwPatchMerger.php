@@ -56,25 +56,51 @@ class ZgwPatchMerger {
 		$stored = $this->storedForTwig(existingData: $existingData);
 
 		$reverseMap = $mappingConfig['reverseMapping'] ?? [];
-		$patchData  = [];
-		foreach ($this->patchedKeys(reverseMap: $reverseMap, bodyKeys: array_keys($body)) as $key) {
-			if (isset($englishData[$key]) === true) {
-				$patchData[$key] = $englishData[$key];
-			}
-		}
-
-		$merged = array_merge($stored['data'], $patchData);
+		$patchKeys = $this->patchedKeys(reverseMap: $reverseMap, bodyKeys: array_keys($body));
+		$merged = array_merge($stored['data'], self::patchOf(englishData: $englishData, keys: $patchKeys));
 
 		// Restore fields that were originally arrays, but skip fields that are stored as JSON
 		// strings in the schema (referenceProcess, relatedCaseTypes, ...): those must remain
 		// JSON-encoded strings for OpenRegister validation.
 		$jsonStringFields = $this->jsonStringFields(reverseMap: $reverseMap, reverseCast: $mappingConfig['reverseCast'] ?? []);
-		foreach (array_diff($stored['arrayKeys'], $jsonStringFields) as $key) {
+
+		return $this->withArraysRestored(merged: $merged, keys: array_diff($stored['arrayKeys'], $jsonStringFields));
+	}//end merge()
+
+	/**
+	 * The English body values of the patched keys the body carries.
+	 *
+	 * @param array             $englishData The body mapped to English field names
+	 * @param array<int, mixed> $keys        The keys the PATCH touches
+	 *
+	 * @return array The patch
+	 */
+	private static function patchOf(array $englishData, array $keys): array {
+		$patchData = [];
+		foreach ($keys as $key) {
+			if (isset($englishData[$key]) === true) {
+				$patchData[$key] = $englishData[$key];
+			}
+		}
+
+		return $patchData;
+	}//end patchOf()
+
+	/**
+	 * The merged object with the fields that were stored as arrays decoded back to arrays.
+	 *
+	 * @param array             $merged The merged object
+	 * @param array<int, mixed> $keys   The fields to restore
+	 *
+	 * @return array The merged object
+	 */
+	private function withArraysRestored(array $merged, array $keys): array {
+		foreach ($keys as $key) {
 			$merged[$key] = $this->decodedArray(value: $merged[$key] ?? null);
 		}
 
 		return $merged;
-	}//end merge()
+	}//end withArraysRestored()
 
 	/**
 	 * The stored object as it travels through the merge: identity fields dropped, an integer

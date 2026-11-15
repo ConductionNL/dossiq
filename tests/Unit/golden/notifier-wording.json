@@ -1,0 +1,416 @@
+{
+    "advies_ontvangen": {
+        "empty": [
+            "Your advice request was answered",
+            "Open the request to read the advice."
+        ],
+        "filled": [
+            "Your advice request was answered",
+            "Graag even kijken"
+        ],
+        "one": [
+            "Your advice request was answered",
+            "Open the request to read the advice."
+        ],
+        "negative": [
+            "Your advice request was answered",
+            "Open the request to read the advice."
+        ]
+    },
+    "advies_herinnering": {
+        "empty": [
+            "An advice request is still open",
+            "Open the request and send your advice."
+        ],
+        "filled": [
+            "An advice request is still open",
+            "Graag even kijken"
+        ],
+        "one": [
+            "An advice request is still open",
+            "Open the request and send your advice."
+        ],
+        "negative": [
+            "An advice request is still open",
+            "Open the request and send your advice."
+        ]
+    },
+    "advice_requested": {
+        "empty": [
+            "You were asked for advice",
+            "Open the request to see what is asked."
+        ],
+        "filled": [
+            "You were asked for advice",
+            "Graag even kijken"
+        ],
+        "one": [
+            "You were asked for advice",
+            "Open the request to see what is asked."
+        ],
+        "negative": [
+            "You were asked for advice",
+            "Open the request to see what is asked."
+        ]
+    },
+    "advies_aangevraagd": {
+        "empty": [
+            "You were asked for advice",
+            "Open the request to see what is asked."
+        ],
+        "filled": [
+            "You were asked for advice",
+            "Graag even kijken"
+        ],
+        "one": [
+            "You were asked for advice",
+            "Open the request to see what is asked."
+        ],
+        "negative": [
+            "You were asked for advice",
+            "Open the request to see what is asked."
+        ]
+    },
+    "applicant_responded": {
+        "empty": [
+            "The applicant responded on a case you handle",
+            "Open the case to see what the applicant did."
+        ],
+        "filled": [
+            "The applicant responded on a case you handle",
+            "The applicant answered your question in the portal. Open the case to read the answer and say whether the request is complete."
+        ],
+        "one": [
+            "The applicant responded on a case you handle",
+            "Open the case to see what the applicant did."
+        ],
+        "negative": [
+            "The applicant responded on a case you handle",
+            "Open the case to see what the applicant did."
+        ]
+    },
+    "applicant_withdrew": {
+        "empty": [
+            "The applicant withdrew a case you handle",
+            "Open the case to close it the way its case type prescribes."
+        ],
+        "filled": [
+            "The applicant withdrew a case you handle",
+            "Reason given: Verhuisd"
+        ],
+        "one": [
+            "The applicant withdrew a case you handle",
+            "Open the case to close it the way its case type prescribes."
+        ],
+        "negative": [
+            "The applicant withdrew a case you handle",
+            "Open the case to close it the way its case type prescribes."
+        ]
+    },
+    "background_service_account_missing": {
+        "empty": [
+            "Dossiq background jobs have no service account",
+            "Reminders on suspended terms are not sent and nothing is saved until you choose an account in the Dossiq settings."
+        ],
+        "filled": [
+            "Dossiq background jobs have no service account",
+            "Reminders on suspended terms are not sent and nothing is saved until you choose an account in the Dossiq settings."
+        ],
+        "one": [
+            "Dossiq background jobs have no service account",
+            "Reminders on suspended terms are not sent and nothing is saved until you choose an account in the Dossiq settings."
+        ],
+        "negative": [
+            "Dossiq background jobs have no service account",
+            "Reminders on suspended terms are not sent and nothing is saved until you choose an account in the Dossiq settings."
+        ]
+    },
+    "cases_reassigned": {
+        "empty": [
+            "Cases were transferred to you",
+            "Open your case list to see what is new."
+        ],
+        "filled": [
+            "Cases were transferred to you",
+            "Cases from bert: 4. Open your case list to see them."
+        ],
+        "one": [
+            "Cases were transferred to you",
+            "Open your case list to see what is new."
+        ],
+        "negative": [
+            "Cases were transferred to you",
+            "Open your case list to see what is new."
+        ]
+    },
+    "case_role_notified": {
+        "empty": [
+            "A case you handle needs your attention",
+            "Open the case to see what to do next."
+        ],
+        "filled": [
+            "A case you handle needs your attention",
+            "Graag even kijken"
+        ],
+        "one": [
+            "A case you handle needs your attention",
+            "Open the case to see what to do next."
+        ],
+        "negative": [
+            "A case you handle needs your attention",
+            "Open the case to see what to do next."
+        ]
+    },
+    "case_status_changed": {
+        "empty": [
+            "A case you handle changed status",
+            "Open the case to see what changed."
+        ],
+        "filled": [
+            "A case you handle changed status: Besluit",
+            "Graag even kijken"
+        ],
+        "one": [
+            "A case you handle changed status",
+            "Open the case to see what changed."
+        ],
+        "negative": [
+            "A case you handle changed status",
+            "Open the case to see what changed."
+        ]
+    },
+    "dso_deadline_critical": {
+        "empty": [
+            "A permit deadline is close",
+            "Little time is left. Open the case and decide."
+        ],
+        "filled": [
+            "A permit deadline is close",
+            "Little time is left. Open the case and decide."
+        ],
+        "one": [
+            "A permit deadline is close",
+            "Little time is left. Open the case and decide."
+        ],
+        "negative": [
+            "A permit deadline is close",
+            "Little time is left. Open the case and decide."
+        ]
+    },
+    "dso_deadline_overdue": {
+        "empty": [
+            "A permit deadline has passed",
+            "The legal term has run out. Decide on this case now."
+        ],
+        "filled": [
+            "A permit deadline has passed",
+            "The legal term has run out. Decide on this case now."
+        ],
+        "one": [
+            "A permit deadline has passed",
+            "The legal term has run out. Decide on this case now."
+        ],
+        "negative": [
+            "A permit deadline has passed",
+            "The legal term has run out. Decide on this case now."
+        ]
+    },
+    "dso_deadline_warning": {
+        "empty": [
+            "A permit case is nearing its deadline",
+            "Open the case and plan the decision."
+        ],
+        "filled": [
+            "A permit case is nearing its deadline",
+            "Open the case and plan the decision."
+        ],
+        "one": [
+            "A permit case is nearing its deadline",
+            "Open the case and plan the decision."
+        ],
+        "negative": [
+            "A permit case is nearing its deadline",
+            "Open the case and plan the decision."
+        ]
+    },
+    "milestone_bottleneck": {
+        "empty": [
+            "A case is stuck on a milestone",
+            "Open the case and move it on."
+        ],
+        "filled": [
+            "A case is stuck on Advies binnen",
+            "Days past the planned date: 3. Open the case and move it on."
+        ],
+        "one": [
+            "A case is stuck on a milestone",
+            "Days past the planned date: 1. Open the case and move it on."
+        ],
+        "negative": [
+            "A case is stuck on a milestone",
+            "Open the case and move it on."
+        ]
+    },
+    "note_mention": {
+        "empty": [
+            "You were mentioned in a note",
+            "Open the record to see the full note."
+        ],
+        "filled": [
+            "Anna de Vries mentioned you in a note",
+            "Open the record to see the full note."
+        ],
+        "one": [
+            "You were mentioned in a note",
+            "Open the record to see the full note."
+        ],
+        "negative": [
+            "You were mentioned in a note",
+            "Open the record to see the full note."
+        ]
+    },
+    "tenant_quota_soft_limit": {
+        "empty": [
+            "Your organisation is close to its limit of 0 cases per month",
+            "Used this period: 0 of 0 cases per month."
+        ],
+        "filled": [
+            "Your organisation is close to its limit of 100 cases per month",
+            "Used this period: 80 of 100 cases per month."
+        ],
+        "one": [
+            "Your organisation is close to its limit of 1 cases per month",
+            "Used this period: 1 of 1 cases per month."
+        ],
+        "negative": [
+            "Your organisation is close to its limit of 0 cases per month",
+            "Used this period: 0 of 0 cases per month."
+        ]
+    },
+    "stuf_circuit_open": {
+        "empty": [
+            "A StUF connection was switched off",
+            "Too many failures in a row. Check the endpoint settings."
+        ],
+        "filled": [
+            "A StUF connection was switched off",
+            "Too many failures in a row. Check the endpoint settings."
+        ],
+        "one": [
+            "A StUF connection was switched off",
+            "Too many failures in a row. Check the endpoint settings."
+        ],
+        "negative": [
+            "A StUF connection was switched off",
+            "Too many failures in a row. Check the endpoint settings."
+        ]
+    },
+    "stuf_permanent_error": {
+        "empty": [
+            "A StUF message was refused",
+            "The other system rejected it. Open the endpoint log to see why."
+        ],
+        "filled": [
+            "A StUF message was refused",
+            "The other system rejected it. Open the endpoint log to see why."
+        ],
+        "one": [
+            "A StUF message was refused",
+            "The other system rejected it. Open the endpoint log to see why."
+        ],
+        "negative": [
+            "A StUF message was refused",
+            "The other system rejected it. Open the endpoint log to see why."
+        ]
+    },
+    "stuf_timeout": {
+        "empty": [
+            "A StUF message timed out",
+            "The other system did not answer. Check the endpoint and try again."
+        ],
+        "filled": [
+            "A StUF message timed out",
+            "The other system did not answer. Check the endpoint and try again."
+        ],
+        "one": [
+            "A StUF message timed out",
+            "The other system did not answer. Check the endpoint and try again."
+        ],
+        "negative": [
+            "A StUF message timed out",
+            "The other system did not answer. Check the endpoint and try again."
+        ]
+    },
+    "term_exceeded": {
+        "empty": [
+            "A case deadline has passed",
+            "The legal term has run out. Decide on this case now."
+        ],
+        "filled": [
+            "A case deadline has passed",
+            "The legal term has run out. Decide on this case now."
+        ],
+        "one": [
+            "A case deadline has passed",
+            "The legal term has run out. Decide on this case now."
+        ],
+        "negative": [
+            "A case deadline has passed",
+            "The legal term has run out. Decide on this case now."
+        ]
+    },
+    "term_nearing": {
+        "empty": [
+            "A case is nearing its deadline",
+            "Days left to decide: 0. Open the case."
+        ],
+        "filled": [
+            "A case is nearing its deadline",
+            "Days left to decide: 5. Open the case."
+        ],
+        "one": [
+            "A case is nearing its deadline",
+            "Days left to decide: 1. Open the case."
+        ],
+        "negative": [
+            "A case is nearing its deadline",
+            "Days left to decide: -1. Open the case."
+        ]
+    },
+    "woo_deadline_overdue": {
+        "empty": [
+            "A Woo deadline has passed",
+            "The legal term has run out. Decide on this request now."
+        ],
+        "filled": [
+            "A Woo deadline has passed",
+            "The legal term has run out. Decide on this request now."
+        ],
+        "one": [
+            "A Woo deadline has passed",
+            "The legal term has run out. Decide on this request now."
+        ],
+        "negative": [
+            "A Woo deadline has passed",
+            "The legal term has run out. Decide on this request now."
+        ]
+    },
+    "woo_deadline_warning": {
+        "empty": [
+            "A Woo request is nearing its deadline",
+            "Open the request and plan the decision."
+        ],
+        "filled": [
+            "A Woo request is nearing its deadline",
+            "Days left to decide: 5. Open the request."
+        ],
+        "one": [
+            "A Woo request is nearing its deadline",
+            "Days left to decide: 1. Open the request."
+        ],
+        "negative": [
+            "A Woo request is nearing its deadline",
+            "Open the request and plan the decision."
+        ]
+    }
+}

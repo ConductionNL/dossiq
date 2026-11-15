@@ -220,4 +220,31 @@ class WooSourcesTest extends TestCase {
 		self::assertTrue(WooSources::isKnown('microsoft365'));
 		self::assertFalse(WooSources::isKnown('dropbox'));
 	}//end testOnlyTheThreeSourcesAreKnown()
+
+	public function testAListenerThatThrowsIsTreatedAsNoAnswer(): void {
+		$this->dispatcher->addListener(
+			DocumentSearchRequestedEvent::class,
+			static function (): void {
+				throw new \RuntimeException('graph token expired');
+			}
+		);
+		$this->dispatcher->addListener(
+			DocumentFetchRequestedEvent::class,
+			static function (): void {
+				throw new \RuntimeException('graph token expired');
+			}
+		);
+
+		$answer = $this->sources()->searchMicrosoft365(terms: 'x', from: null, to: null, userId: 'pjansen');
+
+		self::assertSame('integriq-did-not-answer', $answer['refusal']);
+		self::assertSame([], $answer['rows']);
+		self::assertSame(0, $answer['remaining']);
+		self::assertNull($this->sources()->fetchMicrosoft365(handle: 'driveItem:d:1', userId: 'pjansen'));
+	}//end testAListenerThatThrowsIsTreatedAsNoAnswer()
+
+	public function testAFetchWithoutAHandleAsksNothing(): void {
+		self::assertNull($this->sources()->fetchMicrosoft365(handle: '', userId: 'pjansen'));
+		self::assertSame([], $this->dispatcher->dispatched);
+	}//end testAFetchWithoutAHandleAsksNothing()
 }//end class

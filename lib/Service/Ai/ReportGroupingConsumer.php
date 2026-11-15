@@ -37,7 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ReportGroupingConsumerInterface;
 use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-identical-reports-collapse-on-the-case-and-dossiq-decides-what-a-group-means-req-aic-04
  */
-class ReportGroupingConsumer {
+class ReportGroupingConsumer implements ReportGroupingConsumerInterface {
 
 	/**
 	 * The feature slug a case type declares to have its reports grouped.
@@ -372,7 +373,7 @@ class ReportGroupingConsumer {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($this->isConfigured(objectService: $objectService, register: $register, schema: $schema) === false) {
 			return null;
 		}
 
@@ -381,11 +382,35 @@ class ReportGroupingConsumer {
 		} catch (Throwable $e) {
 			$this->logger->info(
 				'ReportGroupingConsumer: case not readable',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
 
+		return $this->rowOf(found: $found);
+	}//end readCase()
+
+	/**
+	 * Whether the object service, register and case schema are all there to read from.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param string      $register      The register id.
+	 * @param string      $schema        The case schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(?object $objectService, string $register, string $schema): bool {
+		return $objectService !== null && $register !== '' && $schema !== '';
+	}//end isConfigured()
+
+	/**
+	 * The case row of a found case, null when nothing was found or it reads as no row.
+	 *
+	 * @param mixed $found What the find answered.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function rowOf(mixed $found): ?array {
 		if ($found === null) {
 			return null;
 		}
@@ -396,5 +421,5 @@ class ReportGroupingConsumer {
 		}
 
 		return $row;
-	}//end readCase()
+	}//end rowOf()
 }//end class

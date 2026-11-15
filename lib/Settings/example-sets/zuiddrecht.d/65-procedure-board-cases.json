@@ -2,45 +2,6 @@
 	"$comment": "The cases DqAanbesteding, DqSubsidie and DqKlachten draw, beside the example cases other boards name. Status, title and the properties the case type's overviewSections read follow the boards.",
 	"objects": [
 		{
-			"key": "termijn-board-aanbesteding-groenonderhoud",
-			"register": "dossiq",
-			"schema": "deadlineInstance",
-			"data": {
-				"case": "{{object:board-aanbesteding-groenonderhoud.id}}",
-				"kind": "statutory",
-				"startDate": "{{datetime:-12 09:00}}",
-				"endDateCalculated": "{{date:30}}",
-				"endDateCurrent": "{{date:30}}",
-				"status": "lopend"
-			}
-		},
-		{
-			"key": "termijn-board-subsidie-buurtvereniging-oost",
-			"register": "dossiq",
-			"schema": "deadlineInstance",
-			"data": {
-				"case": "{{object:board-subsidie-buurtvereniging-oost.id}}",
-				"kind": "statutory",
-				"startDate": "{{datetime:-40 09:00}}",
-				"endDateCalculated": "{{date:60}}",
-				"endDateCurrent": "{{date:60}}",
-				"status": "lopend"
-			}
-		},
-		{
-			"key": "termijn-board-klacht-melding-openbare-ruimte",
-			"register": "dossiq",
-			"schema": "deadlineInstance",
-			"data": {
-				"case": "{{object:board-klacht-melding-openbare-ruimte.id}}",
-				"kind": "statutory",
-				"startDate": "{{datetime:-1 09:00}}",
-				"endDateCalculated": "{{date:20}}",
-				"endDateCurrent": "{{date:20}}",
-				"status": "lopend"
-			}
-		},
-		{
 			"key": "board-aanbesteding-groenonderhoud",
 			"register": "dossiq",
 			"schema": "case",
@@ -88,8 +49,7 @@
 				}
 			},
 			"jsonFields": [
-				"statusHistory",
-				"properties"
+				"statusHistory"
 			],
 			"data": {
 				"title": "Groenonderhoud 2027 tot 2030",
@@ -122,16 +82,16 @@
 					}
 				],
 				"deadline": "{{date:14}}",
-				"properties": {
-					"procedureSoort": "Europees openbaar, diensten",
-					"geraamdeWaarde": "€ 1.840.000 over 4 jaar",
-					"drempel": "€ 221.000, dus Europees",
-					"percelen": "1, geen percelen",
-					"publicatie": "TenderNed 2026-412889, 1 sep 2026",
-					"gunningscriterium": "Beste prijs-kwaliteitverhouding",
-					"vragenronde": "12 vragen, nota van inlichtingen 22 sep",
-					"sluiting": "13 okt 2026, 12:00"
-				}
+				"properties": [
+					{ "name": "procedureSoort", "value": "Europees openbaar, diensten" },
+					{ "name": "geraamdeWaarde", "value": "€ 1.840.000 over 4 jaar" },
+					{ "name": "drempel", "value": "€ 221.000, dus Europees" },
+					{ "name": "percelen", "value": "1, geen percelen" },
+					{ "name": "publicatie", "value": "TenderNed 2026-412889, 1 sep 2026" },
+					{ "name": "gunningscriterium", "value": "Beste prijs-kwaliteitverhouding" },
+					{ "name": "vragenronde", "value": "12 vragen, nota van inlichtingen 22 sep" },
+					{ "name": "sluiting", "value": "13 okt 2026, 12:00" }
+				]
 			}
 		},
 		{
@@ -175,8 +135,7 @@
 				}
 			},
 			"jsonFields": [
-				"statusHistory",
-				"properties"
+				"statusHistory"
 			],
 			"data": {
 				"title": "Subsidie Buurtvereniging Oost, activiteiten 2026",
@@ -205,17 +164,17 @@
 					}
 				],
 				"deadline": "{{date:60}}",
-				"properties": {
-					"aanvrager": "Buurtvereniging Oost",
-					"regeling": "Subsidieregeling bewonersinitiatieven 2026",
-					"aangevraagd": "€ 27.500 op 8 jan 2026",
-					"verleend": "€ 24.000, beschikking van 12 feb 2026",
-					"beschikking": "Verleningsbeschikking van 12 feb",
-					"tussenrapportage": "Ontvangen 15 jul, beoordeeld als voldoende op 29 jul",
-					"eindverantwoording": "Uiterlijk 1 apr 2027",
-					"vaststelling": "Nog niet: binnen 13 weken na de eindverantwoording",
-					"terugvordering": "Nog geen voorstel"
-				}
+				"properties": [
+					{ "name": "aanvrager", "value": "Buurtvereniging Oost" },
+					{ "name": "regeling", "value": "Subsidieregeling bewonersinitiatieven 2026" },
+					{ "name": "aangevraagd", "value": "€ 27.500 op 8 jan 2026" },
+					{ "name": "verleend", "value": "€ 24.000, beschikking van 12 feb 2026" },
+					{ "name": "beschikking", "value": "Verleningsbeschikking van 12 feb" },
+					{ "name": "tussenrapportage", "value": "Ontvangen 15 jul, beoordeeld als voldoende op 29 jul" },
+					{ "name": "eindverantwoording", "value": "Uiterlijk 1 apr 2027" },
+					{ "name": "vaststelling", "value": "Nog niet: binnen 13 weken na de eindverantwoording" },
+					{ "name": "terugvordering", "value": "Nog geen voorstel" }
+				]
 			}
 		},
 		{
@@ -259,8 +218,7 @@
 				}
 			},
 			"jsonFields": [
-				"statusHistory",
-				"properties"
+				"statusHistory"
 			],
 			"data": {
 				"title": "Klacht over de afhandeling van een melding openbare ruimte",
@@ -289,19 +247,58 @@
 					}
 				],
 				"deadline": "{{date:18}}",
-				"properties": {
-					"klager": "R. de Boer, Lindelaan 12",
-					"klachtOnderwerp": "Melding over een losse stoeptegel is na vier weken niet opgepakt",
-					"afdeling": "Beheer openbare ruimte",
-					"gaatOver": "Melding 2026-1187",
-					"klachtCategorie": "Niet tijdig handelen",
-					"hoorgesprekStatus": "Gepland",
-					"hoorgesprekWanneer": "woensdag 5 nov 2026, 10:00",
-					"hoorgesprekSoort": "Videogesprek",
-					"hoorgesprekWaar": "Talk-gesprek Hoorgesprek",
-					"hoorgesprekAanwezig": "R. de Boer, Sanne Mulder, Joris Vink",
-					"hoorgesprekVerslag": "Nog niet vastgelegd"
-				}
+				"properties": [
+					{ "name": "klager", "value": "R. de Boer, Lindelaan 12" },
+					{ "name": "klachtOnderwerp", "value": "Melding over een losse stoeptegel is na vier weken niet opgepakt" },
+					{ "name": "afdeling", "value": "Beheer openbare ruimte" },
+					{ "name": "gaatOver", "value": "Melding 2026-1187" },
+					{ "name": "klachtCategorie", "value": "Niet tijdig handelen" },
+					{ "name": "hoorgesprekStatus", "value": "Gepland" },
+					{ "name": "hoorgesprekWanneer", "value": "woensdag 5 nov 2026, 10:00" },
+					{ "name": "hoorgesprekSoort", "value": "Videogesprek" },
+					{ "name": "hoorgesprekWaar", "value": "Talk-gesprek Hoorgesprek" },
+					{ "name": "hoorgesprekAanwezig", "value": "R. de Boer, Sanne Mulder, Joris Vink" },
+					{ "name": "hoorgesprekVerslag", "value": "Nog niet vastgelegd" }
+				]
+			}
+		},
+		{
+			"key": "termijn-board-aanbesteding-groenonderhoud",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:board-aanbesteding-groenonderhoud.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-12 09:00}}",
+				"endDateCalculated": "{{date:30}}",
+				"endDateCurrent": "{{date:30}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "termijn-board-subsidie-buurtvereniging-oost",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:board-subsidie-buurtvereniging-oost.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-40 09:00}}",
+				"endDateCalculated": "{{date:60}}",
+				"endDateCurrent": "{{date:60}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "termijn-board-klacht-melding-openbare-ruimte",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:board-klacht-melding-openbare-ruimte.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-1 09:00}}",
+				"endDateCalculated": "{{date:20}}",
+				"endDateCurrent": "{{date:20}}",
+				"status": "lopend"
 			}
 		}
 	]

@@ -1,0 +1,228 @@
+{
+    "signed out": [
+        {
+            "status": 401,
+            "data": {
+                "error": "Not authenticated"
+            }
+        }
+    ],
+    "created": [
+        {
+            "create": [
+                "close",
+                {
+                    "result": "r-1"
+                },
+                {
+                    "ids": [
+                        "c-1",
+                        "c-2"
+                    ]
+                },
+                "End of year",
+                "behandelaar"
+            ]
+        },
+        {
+            "status": 201,
+            "data": {
+                "id": "job-1",
+                "status": "queued"
+            }
+        }
+    ],
+    "no justification": [
+        {
+            "create": [
+                "close",
+                {
+                    "result": "r-1"
+                },
+                {
+                    "ids": [
+                        "c-1",
+                        "c-2"
+                    ]
+                },
+                null,
+                "behandelaar"
+            ]
+        },
+        {
+            "status": 201,
+            "data": {
+                "id": "job-1",
+                "status": "queued"
+            }
+        }
+    ],
+    "parameters that are not a list": [
+        {
+            "create": [
+                "close",
+                [],
+                [],
+                "End of year",
+                "behandelaar"
+            ]
+        },
+        {
+            "status": 201,
+            "data": {
+                "id": "job-1",
+                "status": "queued"
+            }
+        }
+    ],
+    "mixed versions": [
+        {
+            "create": [
+                "close",
+                {
+                    "result": "r-1"
+                },
+                {
+                    "ids": [
+                        "c-1",
+                        "c-2"
+                    ]
+                },
+                "End of year",
+                "behandelaar"
+            ]
+        },
+        {
+            "status": 422,
+            "data": {
+                "error": "The selection holds cases on more than one version of a case type",
+                "reason": "case-type-versions",
+                "details": {
+                    "caseType": "Omgevingsvergunning",
+                    "versions": [
+                        "1",
+                        "2.0"
+                    ],
+                    "counts": {
+                        "1": 3,
+                        "2.0": 1
+                    }
+                }
+            }
+        }
+    ],
+    "an invalid act": [
+        {
+            "create": [
+                "close",
+                {
+                    "result": "r-1"
+                },
+                {
+                    "ids": [
+                        "c-1",
+                        "c-2"
+                    ]
+                },
+                "End of year",
+                "behandelaar"
+            ]
+        },
+        {
+            "status": 400,
+            "data": {
+                "error": "Unknown action: close"
+            }
+        }
+    ],
+    "an engine refusal without a reason": [
+        {
+            "create": [
+                "close",
+                {
+                    "result": "r-1"
+                },
+                {
+                    "ids": [
+                        "c-1",
+                        "c-2"
+                    ]
+                },
+                "End of year",
+                "behandelaar"
+            ]
+        },
+        {
+            "warning": "BulkJobHandoffController: the job engine refused the act",
+            "context": {
+                "exception": "No job engine",
+                "action": "close"
+            }
+        },
+        {
+            "status": 503,
+            "data": {
+                "error": "No job engine"
+            }
+        }
+    ],
+    "an engine refusal with a reason": [
+        {
+            "create": [
+                "close",
+                {
+                    "result": "r-1"
+                },
+                {
+                    "ids": [
+                        "c-1",
+                        "c-2"
+                    ]
+                },
+                "End of year",
+                "behandelaar"
+            ]
+        },
+        {
+            "status": 422,
+            "data": {
+                "error": "The engine is busy",
+                "reason": "engine-busy",
+                "details": {
+                    "queued": 4
+                }
+            }
+        }
+    ],
+    "anything else": [
+        {
+            "create": [
+                "close",
+                {
+                    "result": "r-1"
+                },
+                {
+                    "ids": [
+                        "c-1",
+                        "c-2"
+                    ]
+                },
+                "End of year",
+                "behandelaar"
+            ]
+        },
+        {
+            "error": "BulkJobHandoffController: the act could not be handed over",
+            "context": {
+                "exception": "typo",
+                "action": "close"
+            }
+        },
+        {
+            "status": 500,
+            "data": {
+                "error": "The bulk act could not be started"
+            }
+        }
+    ]
+}

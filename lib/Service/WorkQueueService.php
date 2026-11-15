@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\WorkQueueServiceInterface;
 use OCA\Dossiq\Service\Queue\CaseQueueSource;
 use OCA\Dossiq\Service\Queue\QueueCaseFacts;
 use OCA\Dossiq\Service\Queue\QueueScoringRun;
@@ -56,7 +57,7 @@ use Psr\Log\LoggerInterface;
  * scored is `Queue\QueueCaseFacts`. This class reads the cases and tasks,
  * ranks them, and counts the open work.
  */
-class WorkQueueService {
+class WorkQueueService implements WorkQueueServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -498,39 +499,78 @@ class WorkQueueService {
 	 * @return array<string, mixed> The queue item, carrying the row and `coveredFor`.
 	 */
 	private function caseItem(QueueScoringRun $run, array $row): array {
-		$rowId = (string)($row['id'] ?? '');
-		$deadline = $this->caseFacts->resolveCaseDeadline(
+		$deadline = $this->caseDeadline(run: $run, row: $row);
+
+		$row['coveredFor'] = ($row['coveredFor'] ?? null);
+		$fields = $this->caseItemFields(row: $row, deadline: $deadline);
+
+		return array_merge($fields, $this->caseScoring(run: $run, item: $fields));
+	}//end caseItem()
+
+	/**
+	 * The deadline of one open case, falling back to the row's own.
+	 *
+	 * @param QueueScoringRun      $run The source, instant and the case type's profile.
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return string|null The deadline, or null when there is none.
+	 */
+	private function caseDeadline(QueueScoringRun $run, array $row): ?string {
+		return $this->caseFacts->resolveCaseDeadline(
 			objectService: $run->source->objectService,
 			register: $run->source->register,
-			caseId: $rowId,
+			caseId: (string)($row['id'] ?? ''),
 			fallback: (string)($row['deadline'] ?? '')
 		);
-		$priority = (string)($row['priority'] ?? 'normal');
+	}//end caseDeadline()
+
+	/**
+	 * The score of one open case, with the resident's wait taken into account.
+	 *
+	 * @param QueueScoringRun      $run  The source, instant and the case type's profile.
+	 * @param array<string, mixed> $item The item fields: the case row as `case`, its `deadline` and `priority`.
+	 *
+	 * @return array<string, mixed> The scoring fields.
+	 */
+	private function caseScoring(QueueScoringRun $run, array $item): array {
+		$row = $item['case'];
 		$referenceDate = $this->caseFacts->lastActivityOf($row);
-		$scoring = $this->scorer->withResidentWait(
-			scoring: $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: $referenceDate, now: $run->now, profile: $run->profile),
+		return $this->scorer->withResidentWait(
+			scoring: $this->scoreItem(
+				deadline: $item['deadline'],
+				priority: $item['priority'],
+				referenceDate: $referenceDate,
+				now: $run->now,
+				profile: $run->profile
+			),
 			waiting: (($row['waitingOnApplicant'] ?? false) === true),
 			profile: $run->profile,
 		);
+	}//end caseScoring()
 
-		$row['coveredFor'] = ($row['coveredFor'] ?? null);
-
-		return array_merge(
-			[
-				'itemType' => 'case',
-				'id' => $rowId,
-				'title' => (string)($row['title'] ?? ($row['identifier'] ?? $rowId)),
-				'identifier' => (string)($row['identifier'] ?? ''),
-				'caseType' => ($row['caseType'] ?? null),
-				'status' => ($row['status'] ?? null),
-				'priority' => $priority,
-				'deadline' => $deadline,
-				'coveredFor' => $row['coveredFor'],
-				'case' => $row,
-			],
-			$scoring
-		);
-	}//end caseItem()
+	/**
+	 * The queue item fields of one open case, before its scoring.
+	 *
+	 * @param array<string, mixed> $row      The case row, carrying `coveredFor`.
+	 * @param string|null          $deadline The case's deadline.
+	 *
+	 * @return array<string, mixed> The item fields.
+	 */
+	private function caseItemFields(array $row, ?string $deadline): array {
+		$rowId = (string)($row['id'] ?? '');
+		return [
+			'itemType' => 'case',
+			'id' => $rowId,
+			'title' => (string)($row['title'] ?? ($row['identifier'] ?? $rowId)),
+			'identifier' => (string)($row['identifier'] ?? ''),
+			'caseType' => ($row['caseType'] ?? null),
+			'status' => ($row['status'] ?? null),
+			'priority' => (string)($row['priority'] ?? 'normal'),
+			'deadline' => $deadline,
+			'coveredFor' => $row['coveredFor'],
+			'case' => $row,
+		];
+	}//end caseItemFields()
 
 	/**
 	 * Build scored task queue items for one user.

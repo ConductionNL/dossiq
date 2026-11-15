@@ -22,10 +22,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentVerdictsInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Service\Assessment\OutstandingDocuments as DocumentTitles;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IL10N;
 use Throwable;
@@ -39,15 +39,13 @@ use Throwable;
  *
  * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
  */
-class DocumentVerdicts {
-
-	use SearchesObjects;
+class DocumentVerdicts implements DocumentVerdictsInterface {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService              $settingsService The settings and OpenRegister access.
-	 * @param WOODocumentAssessmentService $assessments     The documents of a case under review.
+	 * @param SettingsServiceInterface              $settingsService The settings and OpenRegister access.
+	 * @param WOODocumentAssessmentServiceInterface $assessments     The documents of a case under review.
 	 * @param DocumentTitles               $titles          The title of a document.
 	 * @param WooRefusalGrounds            $grounds         The label of a cited ground.
 	 * @param IL10N                        $l10n            The translations.
@@ -55,8 +53,8 @@ class DocumentVerdicts {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly WOODocumentAssessmentService $assessments,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly WOODocumentAssessmentServiceInterface $assessments,
 		private readonly DocumentTitles $titles,
 		private readonly WooRefusalGrounds $grounds,
 		private readonly IL10N $l10n,
@@ -233,18 +231,6 @@ class DocumentVerdicts {
 	 * @return array<int, array<string, mixed>> The assessments.
 	 */
 	private function assessmentRows(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('woo_assessment_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['caseRef' => $caseId, '_limit' => 1000],
-		);
+		return (new CaseAssessmentRows(settingsService: $this->settingsService))->forCase(caseId: $caseId);
 	}//end assessmentRows()
 }//end class

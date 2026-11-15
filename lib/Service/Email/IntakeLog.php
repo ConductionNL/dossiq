@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -60,7 +61,7 @@ use Throwable;
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
  */
-class IntakeLog {
+class IntakeLog implements IntakeLogInterface {
 
 	use SearchesObjects;
 
@@ -70,39 +71,9 @@ class IntakeLog {
 	public const SCHEMA_KEY = 'mail_intake_entry_schema';
 
 	/**
-	 * The outcome of an entry that is waiting for a person.
-	 */
-	public const OUTCOME_QUARANTINED = 'quarantined';
-
-	/**
-	 * The outcome of an entry a person released into a case.
-	 */
-	public const OUTCOME_RELEASED = 'released';
-
-	/**
-	 * The outcome of an entry that became a case.
-	 */
-	public const OUTCOME_CASE = 'case';
-
-	/**
-	 * The outcome of an entry nothing could place.
-	 */
-	public const OUTCOME_INBOX = 'inbox';
-
-	/**
 	 * The outcome of an entry that was refused.
 	 */
 	public const OUTCOME_REFUSED = 'refused';
-
-	/**
-	 * The outcome of an entry that was sent on to another body.
-	 */
-	public const OUTCOME_FORWARDED = 'forwarded';
-
-	/**
-	 * The outcome of an entry that was filed in another folder.
-	 */
-	public const OUTCOME_MOVED = 'moved';
 
 	/**
 	 * How much of an original is kept, in bytes.

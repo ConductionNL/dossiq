@@ -26,8 +26,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+ * @spec openspec/specs/payout/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PayoutServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
@@ -47,9 +48,9 @@ use RuntimeException;
 /**
  * Payout preparation, finance handoff and callback processing.
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
-class PayoutService {
+class PayoutService implements PayoutServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -76,7 +77,7 @@ class PayoutService {
 	 * @var array<string, string>
 	 */
 	private const CASE_LINK = [
-		'app' => Application::APP_ID,
+		'app' => AppIdentity::APP_ID,
 		'type' => 'case',
 		'register' => CasePaymentReader::CASE_REGISTER,
 		'schema' => CasePaymentReader::CASE_SCHEMA,
@@ -119,7 +120,7 @@ class PayoutService {
 	 *
 	 * @throws RuntimeException When the calculation is missing, the IBAN is invalid, or finance refuses.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function preparePayout(
 		string $calculationId,
@@ -127,53 +128,118 @@ class PayoutService {
 		string $iban,
 		?DateTimeImmutable $receiptDate = null,
 	): array {
-		$this->assertPaymentInput(iban: $iban, accountHolderName: $accountHolderName);
+		$request = new PayoutRequest();
+		$request->calculationId = $calculationId;
+		$request->accountHolderName = $accountHolderName;
+		$request->iban = $iban;
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$bSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
-		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
-			throw new RuntimeException('The accruing amount and payout schemas are not configured');
-		}
+		return $this->prepare(request: $request, receiptDate: $receiptDate);
+	}//end preparePayout()
 
-		$final = $this->resolvePayableAmount(
-			objectService: $objectService,
-			register: $register,
-			schema: $bSchema,
-			calculationId: $calculationId
+	/**
+	 * Prepare the payout a request describes, as preparePayout() does.
+	 *
+	 * @param PayoutRequest          $request     The calculation, the account holder and the IBAN.
+	 * @param DateTimeImmutable|null $receiptDate Original ingebrekestelling receipt date (default today).
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When the calculation is missing, the IBAN is invalid, or finance refuses.
+	 */
+	private function prepare(PayoutRequest $request, ?DateTimeImmutable $receiptDate): array {
+		$this->assertPaymentInput(iban: $request->iban, accountHolderName: $request->accountHolderName);
+
+		[$objectService, $register, $bSchema, $uSchema] = $this->configuredStore(
+			schemaKeys: [MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA, MoneyConfigKeys::PAYOUT_SCHEMA]
 		);
 
-		$receiptDate = ($receiptDate ?? $this->dates->now());
-		// Awb 4:17: the day the payment is late after, so it rolls (Awt art. 1).
-		$raw = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days');
-		$uiterlijk = $this->dates->formatCalendarDate(
-			moment: ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)
-		);
+		$amounts = new MoneyStore(objectService: $objectService, register: $register, schema: $bSchema);
+		$request->amount = $this->resolvePayableAmount(amounts: $amounts, calculationId: $request->calculationId);
+		$request->paymentDateLatest = $this->paymentDeadline(receiptDate: $receiptDate);
 
-		$row = [
-			'penaltyPaymentCalculation' => $calculationId,
-			'amount' => $final,
-			'accountHolderName' => $accountHolderName,
-			'iban' => strtoupper(str_replace(' ', '', $iban)),
-			'reference' => $this->buildReference(calculationId: $calculationId),
-			'legalBasis' => 'AWB 4:17',
-			'paymentDateLatest' => $uiterlijk,
-			'status' => 'voorbereid',
-		];
-		$row = $this->raiseRowInFinance(row: $row);
-		// Finance holds the payout now; dossiq keeps no copy of it (REQ-DQM-004).
+		return $this->storedUnlessInFinance(
+			row: $this->raiseRowInFinance(row: $this->payoutRow(request: $request)),
+			store: new MoneyStore(objectService: $objectService, register: $register, schema: $uSchema)
+		);
+	}//end prepare()
+
+	/**
+	 * The raised row, stored here only when finance did not take it.
+	 *
+	 * Finance holds the payout once it has a payable id; dossiq keeps no copy
+	 * of it then (REQ-DQM-004).
+	 *
+	 * @param array<string, mixed> $row   The row as finance answered it.
+	 * @param MoneyStore           $store Where payout rows are stored.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function storedUnlessInFinance(array $row, MoneyStore $store): array {
 		if ((string)($row['payableId'] ?? '') !== '') {
 			return $row;
 		}
 
-		return $this->persistDisbursement(
-			objectService: $objectService,
-			register: $register,
-			schema: $uSchema,
-			row: $row
+		return $this->persistDisbursement(store: $store, row: $row);
+	}//end storedUnlessInFinance()
+
+	/**
+	 * The object service, the register and the schemas the keys name; a refusal when any is missing.
+	 *
+	 * @param array<int, string> $schemaKeys The config keys of the schemas, in order.
+	 *
+	 * @return array<int, mixed> The object service, the register, then one schema per key.
+	 *
+	 * @throws RuntimeException When the store or a schema is not configured.
+	 */
+	private function configuredStore(array $schemaKeys): array {
+		$objectService = $this->settingsService->getObjectService();
+		$store = [$objectService, (string)$this->settingsService->getConfigValue('register')];
+		foreach ($schemaKeys as $key) {
+			$store[] = (string)$this->settingsService->getConfigValue($key);
+		}
+
+		if ($objectService === null || in_array('', array_slice($store, 1), true) === true) {
+			throw new RuntimeException('The accruing amount and payout schemas are not configured');
+		}
+
+		return $store;
+	}//end configuredStore()
+
+	/**
+	 * The latest day of payment: the Awb 4:17 offset after receipt, rolled by the Awt (art. 1).
+	 *
+	 * @param DateTimeImmutable|null $receiptDate The receipt, or null for now.
+	 *
+	 * @return string The day (Y-m-d).
+	 */
+	private function paymentDeadline(?DateTimeImmutable $receiptDate): string {
+		$receiptDate = ($receiptDate ?? $this->dates->now());
+		$raw = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days');
+
+		return $this->dates->formatCalendarDate(
+			moment: ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)
 		);
-	}//end preparePayout()
+	}//end paymentDeadline()
+
+	/**
+	 * The payout row as it is raised in finance.
+	 *
+	 * @param PayoutRequest $request The payout to prepare.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function payoutRow(PayoutRequest $request): array {
+		return [
+			'penaltyPaymentCalculation' => $request->calculationId,
+			'amount' => $request->amount,
+			'accountHolderName' => $request->accountHolderName,
+			'iban' => strtoupper(str_replace(' ', '', $request->iban)),
+			'reference' => $this->buildReference(calculationId: $request->calculationId),
+			'legalBasis' => 'AWB 4:17',
+			'paymentDateLatest' => $request->paymentDateLatest,
+			'status' => 'voorbereid',
+		];
+	}//end payoutRow()
 
 	/**
 	 * Prepare a payout from request input: accountHolderName, iban and
@@ -187,7 +253,7 @@ class PayoutService {
 	 * @throws RuntimeException When the calculation is missing, the IBAN is invalid, or finance refuses.
 	 * @throws \InvalidArgumentException When the receipt date is malformed.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function preparePayoutFrom(string $calculationId, array $input): array {
 		$receipt = null;
@@ -217,7 +283,7 @@ class PayoutService {
 	 *
 	 * @throws RuntimeException When finance refuses, because it already approved, paid or rejected the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function withdrawFromFinance(array $row, string $reason): array {
 		if ((string)($row['payableId'] ?? '') === '' || $this->payouts === null) {
@@ -230,7 +296,6 @@ class PayoutService {
 		return $row;
 	}//end withdrawFromFinance()
 
-
 	/**
 	 * Raise a prepared payout in the finance app again under a new reference,
 	 * for example with the amount an objection decided.
@@ -241,7 +306,7 @@ class PayoutService {
 	 *
 	 * @throws RuntimeException When finance refuses the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function raiseAgain(array $row): array {
 		if ((string)($row['payableId'] ?? '') !== '' || (int)($row['amount'] ?? 0) <= 0) {
@@ -345,27 +410,15 @@ class PayoutService {
 	/**
 	 * Resolve the payable amount locked on a DwangsomBerekening.
 	 *
-	 * @param object $objectService OpenRegister object service.
-	 * @param string $register Register identifier.
-	 * @param string $schema DwangsomBerekening schema identifier.
-	 * @param string $calculationId Berekening id.
+	 * @param MoneyStore $amounts       Where the accruing amounts are stored.
+	 * @param string     $calculationId Berekening id.
 	 *
 	 * @return int Payable amount in EUR cents.
 	 *
 	 * @throws RuntimeException When the berekening is missing or has nothing payable.
 	 */
-	private function resolvePayableAmount(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $calculationId,
-	): int {
-		try {
-			$calculation = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $calculationId);
-		} catch (\Throwable $e) {
-			throw new RuntimeException('Accruing amount lookup failed: ' . $e->getMessage());
-		}
-
+	private function resolvePayableAmount(MoneyStore $amounts, string $calculationId): int {
+		$calculation = $this->calculation(amounts: $amounts, calculationId: $calculationId);
 		if ($calculation === null) {
 			throw new RuntimeException('Accruing amount not found: ' . $calculationId);
 		}
@@ -379,28 +432,44 @@ class PayoutService {
 	}//end resolvePayableAmount()
 
 	/**
+	 * Read one DwangsomBerekening.
+	 *
+	 * @param MoneyStore $amounts       Where the accruing amounts are stored.
+	 * @param string     $calculationId Berekening id.
+	 *
+	 * @return array<string, mixed>|null The calculation, or null when there is none.
+	 *
+	 * @throws RuntimeException When the lookup fails.
+	 */
+	private function calculation(MoneyStore $amounts, string $calculationId): ?array {
+		try {
+			return $this->findObjectAsArray(
+				objectService: $amounts->objectService,
+				register: $amounts->register,
+				schema: $amounts->schema,
+				id: $calculationId
+			);
+		} catch (\Throwable $e) {
+			throw new RuntimeException('Accruing amount lookup failed: ' . $e->getMessage());
+		}
+	}//end calculation()
+
+	/**
 	 * Persist a DwangsomUitbetaling row.
 	 *
-	 * @param object $objectService OpenRegister object service.
-	 * @param string $register Register identifier.
-	 * @param string $schema DwangsomUitbetaling schema identifier.
-	 * @param array<string, mixed> $row Row to persist.
+	 * @param MoneyStore           $store Where payout rows are stored.
+	 * @param array<string, mixed> $row   Row to persist.
 	 *
 	 * @return array<string, mixed> The saved row, or the supplied row.
 	 *
 	 * @throws RuntimeException When persisting fails.
 	 */
-	private function persistDisbursement(
-		object $objectService,
-		string $register,
-		string $schema,
-		array $row,
-	): array {
+	private function persistDisbursement(MoneyStore $store, array $row): array {
 		try {
 			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $store->objectService,
+				register: $store->register,
+				schema: $store->schema,
 				object: $row
 			);
 			return ($saved ?? $row);
@@ -421,7 +490,7 @@ class PayoutService {
 	 *
 	 * @throws RuntimeException When the referentie is unknown.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
 	 */
 	public function handleCallback(
 		string $reference,
@@ -429,63 +498,30 @@ class PayoutService {
 		?DateTimeImmutable $paymentDate,
 		string $betalingsreferentie = '',
 	): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		if ($objectService === null || $register === '' || $uSchema === '') {
-			throw new RuntimeException('The accruing amount and payout schemas are not configured');
-		}
-
-		$row = $this->findDisbursementByReference(
-			objectService: $objectService,
-			register: $register,
-			schema: $uSchema,
-			reference: $reference
+		$callback = new PayoutCallback(
+			reference: $reference, status: $status, paymentDate: $paymentDate, betalingsreferentie: $betalingsreferentie
 		);
+		[$objectService, $register, $uSchema] = $this->configuredStore(schemaKeys: [MoneyConfigKeys::PAYOUT_SCHEMA]);
+		$payouts = new MoneyStore(objectService: $objectService, register: $register, schema: $uSchema);
 
-		$row = $this->applyCallbackFields(
-			row: $row,
-			status: $status,
-			paymentDate: $paymentDate,
-			betalingsreferentie: $betalingsreferentie
-		);
+		$row = $this->findDisbursementByReference(payouts: $payouts, reference: $callback->reference);
+		$row = $this->applyCallbackFields(row: $row, callback: $callback);
 
-		return $this->persistDisbursement(
-			objectService: $objectService,
-			register: $register,
-			schema: $uSchema,
-			row: $row
-		);
+		return $this->persistDisbursement(store: $payouts, row: $row);
 	}//end handleCallback()
 
 	/**
 	 * Look up the single DwangsomUitbetaling row carrying a referentie.
 	 *
-	 * @param object $objectService OpenRegister object service.
-	 * @param string $register Register identifier.
-	 * @param string $schema DwangsomUitbetaling schema identifier.
-	 * @param string $reference Payment reference.
+	 * @param MoneyStore $payouts   Where payout rows are stored.
+	 * @param string     $reference Payment reference.
 	 *
 	 * @return array<string, mixed> The matching row.
 	 *
 	 * @throws RuntimeException When the lookup fails or the referentie is unknown.
 	 */
-	private function findDisbursementByReference(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $reference,
-	): array {
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['reference' => $reference],
-			);
-		} catch (\Throwable $e) {
-			throw new RuntimeException('DwangsomUitbetaling lookup failed: ' . $e->getMessage());
-		}
+	private function findDisbursementByReference(MoneyStore $payouts, string $reference): array {
+		$rows = $this->disbursementsWithReference(payouts: $payouts, reference: $reference);
 
 		$row = null;
 		if (count($rows) > 0) {
@@ -500,28 +536,44 @@ class PayoutService {
 	}//end findUitbetalingByReferentie()
 
 	/**
+	 * The DwangsomUitbetaling rows carrying a referentie.
+	 *
+	 * @param MoneyStore $payouts   Where payout rows are stored.
+	 * @param string     $reference Payment reference.
+	 *
+	 * @return array<int, mixed> The rows.
+	 *
+	 * @throws RuntimeException When the lookup fails.
+	 */
+	private function disbursementsWithReference(MoneyStore $payouts, string $reference): array {
+		try {
+			return $this->searchObjectsAsArrays(
+				objectService: $payouts->objectService,
+				register: $payouts->register,
+				schema: $payouts->schema,
+				filters: ['reference' => $reference],
+			);
+		} catch (\Throwable $e) {
+			throw new RuntimeException('DwangsomUitbetaling lookup failed: ' . $e->getMessage());
+		}
+	}//end disbursementsWithReference()
+
+	/**
 	 * Apply the ERP callback fields onto an uitbetaling row.
 	 *
-	 * @param array<string, mixed> $row Uitbetaling row.
-	 * @param string $status New status.
-	 * @param DateTimeImmutable|null $paymentDate Actual payment date.
-	 * @param string $betalingsreferentie ERP/bank reference.
+	 * @param array<string, mixed> $row      Uitbetaling row.
+	 * @param PayoutCallback       $callback The callback.
 	 *
 	 * @return array<string, mixed> The updated row.
 	 */
-	private function applyCallbackFields(
-		array $row,
-		string $status,
-		?DateTimeImmutable $paymentDate,
-		string $betalingsreferentie,
-	): array {
-		$row['status'] = $status;
-		if ($betalingsreferentie !== '') {
-			$row['betalingsreferentie'] = $betalingsreferentie;
+	private function applyCallbackFields(array $row, PayoutCallback $callback): array {
+		$row['status'] = $callback->status;
+		if ($callback->betalingsreferentie !== '') {
+			$row['betalingsreferentie'] = $callback->betalingsreferentie;
 		}
 
-		if ($paymentDate !== null) {
-			$row['actualPaymentDate'] = $this->dates->formatCalendarDate($paymentDate);
+		if ($callback->paymentDate !== null) {
+			$row['actualPaymentDate'] = $this->dates->formatCalendarDate($callback->paymentDate);
 		}
 
 		return $row;
@@ -534,7 +586,7 @@ class PayoutService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
 	 */
 	public function isValidIban(string $iban): bool {
 		$iban = strtoupper(preg_replace('/\s+/', '', $iban));
