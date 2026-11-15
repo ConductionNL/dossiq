@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Throwable;
 /**
  * Writes and reads the per-person record of a mention.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class MentionQueueRecords {
 	use SearchesObjects;
@@ -65,7 +65,7 @@ class MentionQueueRecords {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
@@ -88,7 +88,7 @@ class MentionQueueRecords {
 	 *
 	 * @return bool TRUE when the record was written.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function record(string $person, string $actor, string $subjectType, string $subjectId, string $noteId): bool {
 		if (trim($person) === '' || trim($subjectId) === '') {
@@ -99,19 +99,31 @@ class MentionQueueRecords {
 			$subjectType = 'case';
 		}
 
+		return $this->store(
+			mention: [
+				'person' => $person,
+				'actor' => $actor,
+				'subjectType' => $subjectType,
+				'subjectId' => $subjectId,
+				'noteId' => $noteId,
+			]
+		);
+	}//end record()
+
+	/**
+	 * Write the mention, stamped with the moment it is written; a failure is logged.
+	 *
+	 * @param array<string, string> $mention Who was mentioned, by whom, in what, and the note.
+	 *
+	 * @return bool TRUE when the record was written.
+	 */
+	private function store(array $mention): bool {
 		try {
 			$saved = $this->saveObjectAsArray(
 				objectService: $this->objects(),
 				register: $this->register(),
 				schema: self::SCHEMA,
-				object: [
-					'person' => $person,
-					'actor' => $actor,
-					'subjectType' => $subjectType,
-					'subjectId' => $subjectId,
-					'noteId' => $noteId,
-					'mentionedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-				]
+				object: $mention + ['mentionedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP')]
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: could not record a mention on the queue: ' . $e->getMessage());
@@ -119,7 +131,7 @@ class MentionQueueRecords {
 		}
 
 		return ($saved !== null);
-	}//end record()
+	}//end store()
 
 	/**
 	 * The mentions this person has not dealt with.
@@ -130,7 +142,7 @@ class MentionQueueRecords {
 	 *
 	 * @throws RuntimeException When the records cannot be read.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function openFor(string $userId): array {
 		try {
@@ -161,7 +173,7 @@ class MentionQueueRecords {
 	 *
 	 * @return bool TRUE when the stamp was written.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function acknowledge(string $recordId): bool {
 		if (trim($recordId) === '') {
@@ -191,7 +203,7 @@ class MentionQueueRecords {
 	 *
 	 * @throws RuntimeException When the app is not configured.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function register(): string {
 		$register = trim((string)$this->settings->getConfigValue('register'));
@@ -209,7 +221,7 @@ class MentionQueueRecords {
 	 *
 	 * @throws RuntimeException When OpenRegister is absent.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function objects(): object {
 		$service = $this->settings->getObjectService();

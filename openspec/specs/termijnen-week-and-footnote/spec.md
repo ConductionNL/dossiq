@@ -19,10 +19,10 @@ DqTermijnen SHALL draw it under the quarterly table as "Kwartaal {quarter} van {
 
 ### Requirement: The deadline page names the week
 
-The TermijnDashboard description SHALL read "{today|week} · all teams" ("Week 41 · alle teams").
+The TermijnDashboard description SHALL read "{today|week} · all teams" ("Week 43 · alle teams", as board DqTermijnen draws it).
 
-#### Scenario: the deadline page in week 41
+#### Scenario: the deadline page in week 43
 
-- **GIVEN** today falls in ISO week 41
+- **GIVEN** today falls in ISO week 43
 - **WHEN** the deadline page opens
-- **THEN** its description reads "Week 41 · alle teams"
+- **THEN** its description reads "Week 43 · alle teams"

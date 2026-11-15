@@ -150,6 +150,9 @@ class CaseTypeTermsTest extends TestCase {
 		$this->assertSame(expected: 'Yes, after a notice of default', actual: $plain['penalty']);
 		$this->assertSame(expected: 'No', actual: $none['penalty']);
 		$this->assertSame(expected: '', actual: $unset['penalty']);
+		$this->assertTrue(condition: $plain['penaltyApplies']);
+		$this->assertFalse(condition: $none['penaltyApplies']);
+		$this->assertFalse(condition: $unset['penaltyApplies']);
 	}//end testThePenaltyOnALateDecisionReadsAsASentence()
 
 	/**
@@ -160,4 +163,15 @@ class CaseTypeTermsTest extends TestCase {
 	public function testAnUnreadableCaseTypeAnswersNull(): void {
 		$this->assertNull($this->terms(caseType: [])->termsFor(caseTypeId: 'gone'));
 	}//end testAnUnreadableCaseTypeAnswersNull()
+	/**
+	 * Years read as years, joined with the smaller units in descending order.
+	 *
+	 * @return void
+	 */
+	public function testYearsReadAsYears(): void {
+		$result = $this->terms(caseType: ['serviceTarget' => 'P1Y2M', 'processingDeadline' => 'P2Y'])->termsFor(caseTypeId: 'ct');
+
+		$this->assertSame('1 year, 2 months', $result['serviceTarget']);
+		$this->assertSame('2 years', $result['decisionTerm']);
+	}//end testYearsReadAsYears()
 }//end class

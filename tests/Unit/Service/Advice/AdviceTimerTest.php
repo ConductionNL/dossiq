@@ -34,6 +34,9 @@ use OCA\Dossiq\Service\Advice\AdviceTimer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Unit\Service\FlowTimerEngineFake;
+use OCA\OpenRegister\Db\FlowTimer;
+use DateTimeInterface;
+use RuntimeException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -58,11 +61,18 @@ class AdviceTimerTest extends TestCase {
 	 *
 	 * @param string             $reminderDays The stored `advice_reminder_days`.
 	 * @param FlowTimerEngineFake|null $engine The engine, null for an absent one.
+	 * @param LoggerInterface|null     $logger The logger, a silent mock when null.
+	 * @param SettingsService|null     $settings A pre-configured settings mock, a fresh one when null.
 	 *
 	 * @return AdviceTimer
 	 */
-	private function timer(string $reminderDays = '3', ?FlowTimerEngineFake $engine = null): AdviceTimer {
-		$settings = $this->createMock(SettingsService::class);
+	private function timer(
+		string $reminderDays = '3',
+		?FlowTimerEngineFake $engine = null,
+		?LoggerInterface $logger = null,
+		?SettingsService $settings = null,
+	): AdviceTimer {
+		$settings ??= $this->createMock(SettingsService::class);
 		$settings->method('getOpenRegisterClass')
 			->with(AdviceTimer::ENGINE_CLASS)
 			->willReturn($engine);
@@ -72,7 +82,7 @@ class AdviceTimerTest extends TestCase {
 		return new AdviceTimer(
 			settingsService: $settings,
 			dates: $this->caseDatesFrozenAt(instant: '2026-10-10T14:00:00+02:00'),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $logger ?? $this->createMock(LoggerInterface::class),
 		);
 	}//end timer()
 
@@ -254,4 +264,238 @@ class AdviceTimerTest extends TestCase {
 
 		$this->assertSame(expected: AdviceTimer::UNAVAILABLE, actual: $result);
 	}//end testARefusingEngineIsUnavailable()
+	/**
+	 * An engine that cancels but refuses to arm is logged with the arm
+	 * message and the request id, and answered as unavailable.
+	 *
+	 * @return void
+	 */
+	public function testAnEngineRefusingToArmIsLoggedAndUnavailable(): void {
+		$engine = new class extends FlowTimerEngineFake {
+			/**
+			 * Refuse to arm.
+			 *
+			 * @param array<string, mixed>   $config The timer configuration.
+			 * @param string|null            $actor  The arming identity.
+			 * @param DateTimeInterface|null $now    The clock.
+			 *
+			 * @return FlowTimer
+			 */
+			public function arm(array $config, ?string $actor, ?DateTimeInterface $now = null): FlowTimer {
+				throw new RuntimeException('no arming today');
+			}
+		};
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('error')
+			->with(
+				'Dossiq advice: the engine refused the advice timer',
+				['advice' => 'adv-1', 'error' => 'no arming today']
+			);
+
+		$result = $this->timer(engine: $engine, logger: $logger)->sync(
+			advice: ['id' => 'adv-1', 'status' => 'requested', 'deadline' => '2026-10-20']
+		);
+
+		$this->assertSame(expected: AdviceTimer::UNAVAILABLE, actual: $result);
+		$this->assertCount(expectedCount: 1, haystack: $engine->calls['cancelForSubject']);
+	}//end testAnEngineRefusingToArmIsLoggedAndUnavailable()
+
+	/**
+	 * An engine that vanishes between the cancel and the arm arms nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnEngineGoneBeforeArmingIsUnavailable(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->expects($this->exactly(count: 2))
+			->method('getOpenRegisterClass')
+			->with(AdviceTimer::ENGINE_CLASS)
+			->willReturnOnConsecutiveCalls($this->engine, null);
+
+		$timer = new AdviceTimer(
+			settingsService: $settings,
+			dates: $this->caseDatesFrozenAt(instant: '2026-10-10T14:00:00+02:00'),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$result = $timer->sync(advice: ['id' => 'adv-1', 'status' => 'requested', 'deadline' => '2026-10-20']);
+
+		$this->assertSame(expected: AdviceTimer::UNAVAILABLE, actual: $result);
+		$this->assertCount(expectedCount: 1, haystack: $this->engine->calls['cancelForSubject']);
+		$this->assertArrayNotHasKey(key: 'arm', array: $this->engine->calls);
+	}//end testAnEngineGoneBeforeArmingIsUnavailable()
+
+	/**
+	 * A refused cancel is logged with the cancel message and stops the re-arm.
+	 *
+	 * @return void
+	 */
+	public function testARefusedCancelIsLoggedAndStopsTheRearm(): void {
+		$this->engine->refuse = true;
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('error')
+			->with(
+				'Dossiq advice: the engine refused to cancel the advice timer',
+				['advice' => 'adv-1', 'error' => 'engine refuses cancelForSubject']
+			);
+
+		$result = $this->timer(engine: $this->engine, logger: $logger)->sync(
+			advice: ['id' => 'adv-1', 'status' => 'requested', 'deadline' => '2026-10-20']
+		);
+
+		$this->assertSame(expected: AdviceTimer::UNAVAILABLE, actual: $result);
+		$this->assertSame(expected: [], actual: $this->engine->calls);
+	}//end testARefusedCancelIsLoggedAndStopsTheRearm()
+
+	/**
+	 * A closed request whose timers cannot be cancelled is not reported cancelled.
+	 *
+	 * @return void
+	 */
+	public function testAClosedRequestWithoutTheEngineIsUnavailable(): void {
+		$this->assertSame(
+			expected: AdviceTimer::UNAVAILABLE,
+			actual: $this->timer(engine: null)->sync(advice: ['id' => 'adv-1', 'status' => 'received'])
+		);
+
+		$this->engine->refuse = true;
+		$this->assertSame(
+			expected: AdviceTimer::UNAVAILABLE,
+			actual: $this->timer(engine: $this->engine)->sync(advice: ['id' => 'adv-1', 'status' => 'expired'])
+		);
+	}//end testAClosedRequestWithoutTheEngineIsUnavailable()
+
+	/**
+	 * Cancellation records why: the closing status, or the superseding deadline.
+	 *
+	 * @return void
+	 */
+	public function testCancellationsRecordTheirReason(): void {
+		$timer = $this->timer(engine: $this->engine);
+
+		$timer->sync(advice: ['id' => 'adv-1', 'status' => 'received']);
+		$timer->sync(advice: ['id' => 'adv-2', 'status' => 'requested', 'deadline' => '2026-10-20']);
+
+		$this->assertSame(
+			expected: [
+				['subjectType' => 'object', 'subjectUuid' => 'adv-1', 'reason' => 'Advice request received', 'actor' => null],
+				['subjectType' => 'object', 'subjectUuid' => 'adv-2', 'reason' => 'Superseded by the current deadline', 'actor' => null],
+			],
+			actual: $this->engine->calls['cancelForSubject']
+		);
+		$this->assertNull(actual: $this->engine->calls['arm'][0]['actor']);
+	}//end testCancellationsRecordTheirReason()
+
+	/**
+	 * The id falls back to `uuid`, then to `@self.id`.
+	 *
+	 * @return void
+	 */
+	public function testTheIdFallsBackToUuidThenSelf(): void {
+		$timer = $this->timer(engine: $this->engine);
+
+		$timer->sync(advice: ['uuid' => 'adv-uuid', 'status' => 'received']);
+		$timer->sync(advice: ['@self' => ['id' => 'adv-self'], 'status' => 'received']);
+		$timer->sync(advice: ['id' => 'adv-id', 'uuid' => 'ignored', 'status' => 'received']);
+
+		$this->assertSame(
+			expected: ['adv-uuid', 'adv-self', 'adv-id'],
+			actual: array_column($this->engine->calls['cancelForSubject'], 'subjectUuid')
+		);
+	}//end testTheIdFallsBackToUuidThenSelf()
+
+	/**
+	 * A status that is neither open nor closed is left alone, deadline or not.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownStatusIsSkippedWithoutTouchingTheEngine(): void {
+		$result = $this->timer(engine: $this->engine)->sync(
+			advice: ['id' => 'adv-1', 'status' => 'draft', 'deadline' => '2026-10-20']
+		);
+
+		$this->assertSame(expected: AdviceTimer::SKIPPED, actual: $result);
+		$this->assertSame(expected: [], actual: $this->engine->calls);
+	}//end testAnUnknownStatusIsSkippedWithoutTouchingTheEngine()
+
+	/**
+	 * The title names the subject, else the id; the metadata ties back to the case.
+	 *
+	 * @return void
+	 */
+	public function testTitleAndMetadataNameTheRequestAndCase(): void {
+		$timer = $this->timer(engine: $this->engine);
+
+		$timer->sync(advice: ['id' => 'adv-1', 'status' => 'requested', 'deadline' => '2026-10-20', 'subject' => 'Bouwplan', 'case' => 'case-9']);
+		$timer->sync(advice: ['id' => 'adv-2', 'status' => 'requested', 'deadline' => '2026-10-20']);
+
+		$first  = $this->engine->calls['arm'][0]['config'];
+		$second = $this->engine->calls['arm'][1]['config'];
+		$this->assertSame(expected: 'Adviestermijn Bouwplan', actual: $first['title']);
+		$this->assertSame(expected: 'advice_requested', actual: $first['anchorEvent']);
+		$this->assertSame(
+			expected: ['source' => AdviceTimer::METADATA_SOURCE, 'adviceId' => 'adv-1', 'caseId' => 'case-9'],
+			actual: $first['metadata']
+		);
+		$this->assertSame(expected: 'Adviestermijn adv-2', actual: $second['title']);
+		$this->assertSame(expected: '', actual: $second['metadata']['caseId']);
+	}//end testTitleAndMetadataNameTheRequestAndCase()
+
+	/**
+	 * Both rungs carry the engine's full rule shape and their own message.
+	 *
+	 * @return void
+	 */
+	public function testTheRungsCarryTheFullRuleShape(): void {
+		$this->timer(reminderDays: '5', engine: $this->engine)->sync(
+			advice: ['id' => 'adv-1', 'status' => 'requested', 'deadline' => '2026-10-20']
+		);
+
+		$this->assertSame(
+			expected: [
+				[
+					'trigger'        => 'slaBreached',
+					'offset'         => 0,
+					'offsetUnit'     => 'calendarDays',
+					'notifyRole'     => [],
+					'escalateToRole' => [],
+					'priority'       => 'medium',
+					'message'        => 'advies-verlopen',
+					'openIncident'   => false,
+				],
+				[
+					'trigger'        => 'preBreach',
+					'offset'         => 6,
+					'offsetUnit'     => 'calendarDays',
+					'notifyRole'     => [],
+					'escalateToRole' => [],
+					'priority'       => 'medium',
+					'message'        => 'advies-herinnering',
+					'openIncident'   => false,
+				],
+			],
+			actual: $this->engine->calls['arm'][0]['config']['escalationRules']
+		);
+	}//end testTheRungsCarryTheFullRuleShape()
+
+	/**
+	 * A reminder lead equal to the SLA would sit on the anchor, so it is left out.
+	 *
+	 * @return void
+	 */
+	public function testAReminderOnTheAnchorDayIsLeftOut(): void {
+		// Deadline 13 Oct: SLA 4, lead 3 + 1 = 4, not before the anchor.
+		$this->timer(engine: $this->engine)->sync(
+			advice: ['id' => 'adv-1', 'status' => 'requested', 'deadline' => '2026-10-13']
+		);
+		// Deadline 14 Oct: SLA 5, lead 4 is still ahead.
+		$this->timer(engine: $this->engine)->sync(
+			advice: ['id' => 'adv-2', 'status' => 'requested', 'deadline' => '2026-10-14']
+		);
+
+		$this->assertCount(expectedCount: 1, haystack: $this->engine->calls['arm'][0]['config']['escalationRules']);
+		$this->assertCount(expectedCount: 2, haystack: $this->engine->calls['arm'][1]['config']['escalationRules']);
+	}//end testAReminderOnTheAnchorDayIsLeftOut()
 }//end class

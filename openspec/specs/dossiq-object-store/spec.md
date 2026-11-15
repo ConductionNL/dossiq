@@ -230,7 +230,7 @@ The settings store MUST provide app configuration including register/schema IDs,
 #### Scenario 7.2: Config key completeness
 - GIVEN the settings response
 - WHEN the config object is populated
-- THEN it MUST include at minimum: `register`, `case_schema`, `task_schema`, `status_schema`, `role_schema`, `result_schema`, `decision_schema`, `case_type_schema`, `status_type_schema`, `result_type_schema`, `role_type_schema`, `property_definition_schema`, `document_type_schema`, `decision_type_schema`, `default_case_type`
+- THEN it MUST include at minimum: `register`, `case_schema`, `task_schema`, `status_schema`, `role_schema`, `result_schema`, `decision_schema`, `case_type_schema`, `status_type_schema`, `result_type_schema`, `role_type_schema`, `property_definition_schema`, `document_type_schema`, `decision_type_schema`
 
 #### Scenario 7.3: Settings save
 - GIVEN an admin changes register/schema configuration

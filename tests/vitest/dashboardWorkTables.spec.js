@@ -25,6 +25,7 @@
  * @spec openspec/specs/signalering-widgets/spec.md
  */
 import { describe, expect, it } from 'vitest'
+import termSignal from '../../lib/Settings/register.d/99-case-term-signal-from.json'
 import manifest from '../../src/manifest.json'
 import { pageView } from './helpers/pageViews.js'
 
@@ -193,7 +194,7 @@ describe('my work tables', () => {
 				},
 				{
 					schema: 'case',
-					filter: { isFinalStatus: false, deadline: { lte: '@today+3d' } },
+					filter: { isFinalStatus: false, termSignalFrom: { lte: '@today' } },
 					order: { deadline: 'asc' },
 				},
 			),
@@ -274,16 +275,31 @@ describe('my work tables', () => {
 		expect(target, 'rowRoute must name a page that exists').toBeDefined()
 	})
 
-	it('deadlines covers everything past due and the next three days', () => {
+	it('deadline signals hold the late cases and those in the last quarter of their term (REQ-SIG-004)', () => {
 		const w = objectTables().find((t) => t.id === 'deadlines')
+		expect(w.title).toBe('Deadline signals')
+		expect(w.subtitle).toBe('Late, or less than a quarter of the term left')
 		expect(w.content.source.schema).toBe('case')
 		expect(w.content.source.filter).toEqual({
 			isFinalStatus: false,
 			statusHiddenInLists: false,
 			isDraft: false,
-			deadline: { lte: '@today+3d' },
+			termSignalFrom: { lte: '@today' },
 		})
 		expect(w.content.source.order).toEqual({ deadline: 'asc' })
+		expect(w.content.emptyText).toBe('No deadline signals')
+		expect(w.content.viewAllLabel).toBe('All deadlines')
+	})
+
+	it('termSignalFrom is the start date plus three quarters of the term, saved on the case', () => {
+		const calc = termSignal.components.schemas.case.configuration['x-openregister-calculations'].termSignalFrom
+		expect(calc.materialise).toBe(true)
+		const { date, amount, unit } = calc.expression.dateAdd
+		expect(unit).toBe('days')
+		expect(date).toEqual({ coalesce: [{ prop: 'startDate' }, { prop: 'deadline' }] })
+		const [term, share] = amount.round[0]['*']
+		expect(share).toBe(0.75)
+		expect(term.dateDiff.to).toEqual({ formatDate: [{ prop: 'deadline' }, 'Y-m-d'] })
 	})
 
 	it('deadlines leaves closed cases out', () => {

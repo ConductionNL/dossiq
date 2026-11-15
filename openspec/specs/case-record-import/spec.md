@@ -61,6 +61,11 @@ is listed in `duplicates`, not in `migrated`.
 - **WHEN** the import runs twice
 - **THEN** one case SHALL exist, the second record SHALL be in `duplicates` and stamped with that case, and the second run SHALL import nothing
 
+#### Scenario: A half-finished record whose number became another case is a conflict
+- **GIVEN** a half-finished record whose number became another case
+- **WHEN** the import runs
+- **THEN** it SHALL be listed in `failed` naming both cases, SHALL NOT be stamped or counted, and a later record with that number SHALL join the first case
+
 ### Requirement: References to a moved record move onto its case (REQ-CRI-009)
 
 For each `references` entry `{schema, field, register?}`, every record whose field holds the moved

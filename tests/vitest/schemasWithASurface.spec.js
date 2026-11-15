@@ -267,8 +267,15 @@ describe('the supplier reads their own performance figures', () => {
 	it('is a collection on the supplier contribution, scoped by supplierRef', () => {
 		// Scoped like every other collection there. An unscoped one would
 		// show a supplier somebody else's payment record.
-		const block = provider.slice(provider.indexOf('supplierKpi')).split('],')[0]
-		expect(provider).toContain("'schema' => 'supplierKpi'")
-		expect(block).toContain("'scopeField' => 'supplierRef'")
+		// The supplier collections are one constant, and every entry of it
+		// is emitted with the supplierRef scope.
+		const constant = provider.slice(
+			provider.indexOf('SUPPLIER_COLLECTIONS = ['),
+		).split('];')[0]
+		const emitter = provider.slice(
+			provider.indexOf('foreach (self::SUPPLIER_COLLECTIONS'),
+		).split('}')[0]
+		expect(constant).toContain("'schema' => 'supplierKpi'")
+		expect(emitter).toContain("'scopeField' => 'supplierRef'")
 	})
 })

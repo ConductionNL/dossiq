@@ -225,4 +225,44 @@ class BelplanRoutingServiceTest extends TestCase {
 		self::assertFalse($decision['escalatieFlag']);
 		self::assertSame(0, $decision['candidatePool']);
 	}//end testRouteCallReturnsEmptyOnNoVaardigheid()
+	/**
+	 * Every route answers the same keys in the same order: no skill, no candidate, overflow on
+	 * wait or on queue length, and the pick with its tie-break on handling duration.
+	 *
+	 * @return void
+	 */
+	public function testEveryRouteAnswersTheWholeDecision(): void {
+		$busy = static fn (int $queue, int $duration, string $id = 'sp-1'): array => ['id' => $id, 'expertises' => ['Bouwtoezicht'], 'status' => 'bezet', 'currentQueueLength' => $queue, 'averageHandlingDuration' => $duration];
+
+		self::assertSame(
+			['destinationSpecialistId' => null, 'escalatieFlag' => false, 'estimatedWaitTime' => 0, 'vaardigheid' => '', 'candidatePool' => 0],
+			$this->service->routeCall(vaardigheid: '', pool: [$busy(1, 1)])
+		);
+		self::assertSame(
+			['destinationSpecialistId' => null, 'escalatieFlag' => true, 'estimatedWaitTime' => 0, 'vaardigheid' => 'wmo', 'candidatePool' => 0],
+			$this->service->routeCall(vaardigheid: 'wmo', pool: [$busy(1, 1), ['vaardigheden' => 'not a list']])
+		);
+		self::assertSame(
+			['destinationSpecialistId' => null, 'escalatieFlag' => true, 'estimatedWaitTime' => 150, 'vaardigheid' => 'bouwtoezicht', 'candidatePool' => 2],
+			$this->service->routeCall(vaardigheid: 'bouwtoezicht', pool: [$busy(3, 40), $busy(5, 60, 'sp-2')], overflowWachttijd: 100, maxQueueLengte: 10)
+		);
+		self::assertSame(
+			['destinationSpecialistId' => null, 'escalatieFlag' => true, 'estimatedWaitTime' => 12, 'vaardigheid' => 'bouwtoezicht', 'candidatePool' => 1],
+			$this->service->routeCall(vaardigheid: 'bouwtoezicht', pool: [$busy(6, 2)], overflowWachttijd: 100, maxQueueLengte: 5)
+		);
+		self::assertSame(
+			['destinationSpecialistId' => null, 'escalatieFlag' => false, 'estimatedWaitTime' => 0, 'vaardigheid' => 'bouwtoezicht', 'candidatePool' => 1],
+			$this->service->routeCall(vaardigheid: 'bouwtoezicht', pool: [$busy(0, 50)], overflowWachttijd: 100, maxQueueLengte: 5)
+		);
+
+		$free = [
+			['id' => 'sp-a', 'expertises' => ['bouwtoezicht'], 'status' => 'Beschikbaar', 'currentQueueLength' => 2, 'averageHandlingDuration' => 90],
+			['id' => 'sp-b', 'employeeId' => 'emp-b', 'expertises' => ['bouwtoezicht'], 'status' => 'beschikbaar', 'currentQueueLength' => 2, 'averageHandlingDuration' => 30],
+			$busy(0, 1, 'sp-c'),
+		];
+		self::assertSame(
+			['destinationSpecialistId' => 'emp-b', 'escalatieFlag' => false, 'estimatedWaitTime' => 60, 'vaardigheid' => 'bouwtoezicht', 'candidatePool' => 3],
+			$this->service->routeCall(vaardigheid: 'bouwtoezicht', pool: $free)
+		);
+	}//end testEveryRouteAnswersTheWholeDecision()
 }//end class

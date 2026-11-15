@@ -22,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\People\PersonReachability
+ * @uses \OCA\Dossiq\Service\Support\TrustedRevealRead
  */
 class PersonReachabilityTest extends TestCase {
 

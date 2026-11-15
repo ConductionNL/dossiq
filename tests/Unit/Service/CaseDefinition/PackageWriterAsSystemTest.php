@@ -37,6 +37,10 @@ use Psr\Log\NullLogger;
  * Unit tests for PackageWriter on a schema the caller may not read.
  *
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageWriter
+ * @uses \OCA\Dossiq\Service\CaseDefinition\AdoptedCaseTypeFill
+ * @uses \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowTarget
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowMatchRun
  */
 class PackageWriterAsSystemTest extends TestCase {
 

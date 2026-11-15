@@ -51,6 +51,26 @@ class PenaltyPaymentRowsTest extends TestCase {
 	}
 
 	/**
+	 * The whole report of a year, as recorded before the forfeit rows were split into steps.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeReportOfAYear(): void {
+		$this->objects->seed('penaltyPaymentCalculation', ['id' => 'calc-x', 'deadlineInstance' => 'ti-gone', 'stoppedOn' => '2026-07-01']);
+		$this->objects->seed('dwangsomUitbetaling', ['@self' => ['id' => 'pay-self'], 'penaltyPaymentCalculation' => 'calc-x', 'amount' => '1999', 'status' => 'paid']);
+		$this->objects->seed('dwangsomUitbetaling', ['id' => 'pay-none']);
+		$report = ['2026' => $this->rows->forYear(2026), '2025' => $this->rows->forYear(2025), '2030' => $this->rows->forYear(2030)];
+
+		$fixture = __DIR__ . '/fixtures/penalty-payment-rows-year.json';
+		if (getenv('RECORD_GOLDEN') === '1') {
+			file_put_contents($fixture, json_encode($report, (JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION)) . "\n");
+		}
+
+		self::assertSame(json_decode((string) file_get_contents($fixture), true), json_decode((string) json_encode($report, JSON_PRESERVE_ZERO_FRACTION), true));
+		self::assertSame(0.0, $report['2030']['summary']['totalEuros']);
+	}
+
+	/**
 	 * A payment names its case, case type, requester and forfeit day; the year
 	 * keeps only its own payments, newest forfeit first.
 	 *

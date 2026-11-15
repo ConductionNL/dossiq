@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Team;
 
+use OCA\Dossiq\Kernel\Contracts\PrimaryTeamServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/specs/my-team/spec.md#requirement-the-current-users-primary-team-is-read-from-the-organisation-roles
  */
-class PrimaryTeamService {
+class PrimaryTeamService implements PrimaryTeamServiceInterface {
 	use SearchesObjects;
 
 	/**

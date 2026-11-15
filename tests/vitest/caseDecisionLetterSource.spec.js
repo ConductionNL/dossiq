@@ -66,7 +66,7 @@ describe('the decision letter card', () => {
 	})
 
 	it('says under the rows what signing fixes, as the board does', () => {
-		expect(nl[letter.content.footnote]).toBe('Na het ondertekenen is de beschikking niet meer te wijzigen. De bezwaartermijn van zes weken start op de dag van bekendmaking.')
+		expect(nl[letter.content.footnote]).toBe('Na het ondertekenen is de beschikking niet meer te wijzigen. De bezwaartermijn van zes weken start op de dag van bekendmaking. Een bezwaar dat later binnenkomt, krijgt de waarschuwing: Bezwaartermijn mogelijk overschreden.')
 	})
 
 	it('declares the Woo letter\'s signing route and delivery as the board words them', () => {

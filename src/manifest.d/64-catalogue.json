@@ -82,18 +82,20 @@
 								{
 									"key": "title",
 									"label": "Object type",
+									"width": "257px",
 									"cellClass": "cn-cell--strong",
 									"secondary": "{schemaLine}"
 								},
 								{
-									"key": "properties",
+									"key": "schemaName",
 									"label": "Schema",
-									"formatter": "propertyCount",
-									"type": "number"
+									"width": "458px",
+									"secondary": "{propertyLine}"
 								},
 								{
 									"key": "views",
 									"label": "Display",
+									"width": "143px",
 									"formatter": "objectViews"
 								},
 								{
@@ -115,7 +117,7 @@
 								}
 							],
 							"emptyText": "Object types appear here once cases link objects.",
-							"pageSize": 4,
+							"pageSize": 5,
 							"exportId": "catalogue-object-types",
 							"exportFileName": "object-types"
 						}

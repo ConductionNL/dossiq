@@ -30,7 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\StufIntegriqBridgeInterface;
 use OCP\AppFramework\Http;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
  */
-class StufIntegriqBridge {
+class StufIntegriqBridge implements StufIntegriqBridgeInterface {
 
 	/**
 	 * Integriq's ZDS case command.
@@ -101,7 +102,7 @@ class StufIntegriqBridge {
 		}
 
 		$event = new $eventClass(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			sourceId: $sourceId,
 			operation: 'vrijBericht',
 			arguments: ['name' => $name, 'payload' => $payload],
@@ -109,6 +110,19 @@ class StufIntegriqBridge {
 		);
 		$this->dispatcher->dispatchTyped($event);
 
+		return $this->vrijBerichtAnswer(event: $event);
+	}//end vrijBericht()
+
+	/**
+	 * What integriq answered to a dispatched vrijBericht request.
+	 *
+	 * @param object $event The dispatched request event.
+	 *
+	 * @return array<string, mixed> The result integriq gave.
+	 *
+	 * @throws StufException When integriq did not answer or refused the message.
+	 */
+	private function vrijBerichtAnswer(object $event): array {
 		if ($event->isHandled() === false) {
 			$this->logger->warning(message: 'StUF outbound: integriq did not answer the vrijBericht request');
 			throw new StufException(message: 'Integriq did not answer; nothing was sent.', code: Http::STATUS_SERVICE_UNAVAILABLE);
@@ -120,7 +134,7 @@ class StufIntegriqBridge {
 		}
 
 		return (array)$event->getResult();
-	}//end vrijBericht()
+	}//end vrijBerichtAnswer()
 
 	/**
 	 * Hand a confirmation envelope to integriq and return its answer.
@@ -137,7 +151,7 @@ class StufIntegriqBridge {
 			return null;
 		}
 
-		$event = new $eventClass(sourceApp: Application::APP_ID, rawXml: $rawXml);
+		$event = new $eventClass(sourceApp: AppIdentity::APP_ID, rawXml: $rawXml);
 		$this->dispatcher->dispatchTyped($event);
 		if ($event->isHandled() === false) {
 			return null;
@@ -163,7 +177,7 @@ class StufIntegriqBridge {
 			return null;
 		}
 
-		$event = new $eventClass(sourceApp: Application::APP_ID, rawXml: $rawXml, sourceId: $sourceId, service: $service);
+		$event = new $eventClass(sourceApp: AppIdentity::APP_ID, rawXml: $rawXml, sourceId: $sourceId, service: $service);
 		$this->dispatcher->dispatchTyped($event);
 		if ($event->isHandled() === false) {
 			return null;

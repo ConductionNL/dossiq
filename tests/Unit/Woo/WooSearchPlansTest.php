@@ -318,4 +318,60 @@ class WooSearchPlansTest extends TestCase {
 		self::assertSame([], $this->register->all('wooSearchPlan'), 'nothing is recorded under a false origin');
 		self::assertSame([], $this->register->all('wooRequestConfiguration'));
 	}//end testAPlanNamingATemplateTheCallerCannotUseIsRefused()
+
+	public function testCustodiansAreNormalisedAndNamelessOnesDropped(): void {
+		$input = $this->input();
+		$input['custodians'] = [
+			'  Griffie  ',
+			['name' => ' '],
+			['function' => 'no name'],
+			['name' => 'Team Wonen', 'function' => '  Beleid ', 'userId' => ' jdevries '],
+			['name' => 'Archief', 'userId' => '   '],
+		];
+
+		$plan = $this->plans->record(caseId: self::CASE_ID, input: $input, userId: 'pjansen');
+
+		self::assertSame(
+			[
+				['name' => 'Griffie', 'function' => ''],
+				['name' => 'Team Wonen', 'function' => 'Beleid', 'userId' => 'jdevries'],
+				['name' => 'Archief', 'function' => ''],
+			],
+			$plan['custodians']
+		);
+		self::assertSame($plan['custodians'], $this->register->all('wooRequestConfiguration')[0]['custodians']);
+	}//end testCustodiansAreNormalisedAndNamelessOnesDropped()
+
+	public function testOnlyNamelessCustodiansCountAsNone(): void {
+		$input = $this->input();
+		$input['custodians'] = ['', ['name' => '  ']];
+
+		$this->expectException(WooCorpusRefused::class);
+		$this->expectExceptionMessage('plan_incomplete_custodians');
+
+		$this->plans->record(caseId: self::CASE_ID, input: $input, userId: 'pjansen');
+	}//end testOnlyNamelessCustodiansCountAsNone()
+
+	public function testARequestCannotStartFromItselfOrFromNothing(): void {
+		$this->plans->record(caseId: self::CASE_ID, input: $this->input(), userId: 'pjansen');
+
+		self::assertNull($this->plans->startFrom(caseId: self::CASE_ID, from: self::CASE_ID));
+		self::assertNull($this->plans->startFrom(caseId: self::EARLIER, from: ''));
+		self::assertCount(1, $this->register->all('wooRequestConfiguration'), 'nothing is copied');
+		self::assertSame([['case' => self::CASE_ID, 'created' => 1]], $this->reconciledAfterCreate);
+	}//end testARequestCannotStartFromItselfOrFromNothing()
+
+	public function testRecordingWithoutTheSchemasConfiguredFailsLoudly(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ['register' => 'dossiq'][$key] ?? $default
+		);
+		$plans = new WooSearchPlans(settingsService: $settings, templates: $this->templates(), access: $this->caseReviewerAccessOver($settings));
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('The Woo corpus schemas are not configured');
+
+		$plans->record(caseId: self::CASE_ID, input: $this->input(), userId: 'pjansen');
+	}//end testRecordingWithoutTheSchemasConfiguredFailsLoudly()
 }//end class

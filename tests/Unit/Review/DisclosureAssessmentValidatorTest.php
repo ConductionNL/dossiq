@@ -106,4 +106,27 @@ class DisclosureAssessmentValidatorTest extends TestCase {
 		$this->expectException(RefusedException::class);
 		$this->validator->validate(assessment: ['documentRef' => 'doc-1', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.2.e']]);
 	}//end testAnUnreadableListRefuses()
+
+	/**
+	 * A grouping ground cannot be cited, and neither can a retired one.
+	 *
+	 * @return void
+	 */
+	public function testAGroupingOrRetiredGroundCannotBeCited(): void {
+		self::assertSame(
+			'Weigeringsgrond 5.1 groups other grounds and cannot be cited. Pick one of the grounds under it.',
+			$this->validator->validate(assessment: ['documentRef' => 'doc-1', 'classification' => 'niet_openbaar', 'weigeringsgronden' => [' 5.1 ']])['weigeringsgronden']
+		);
+
+		foreach ($this->grounds->rows as $index => $row) {
+			if ($row['code'] === '5.1.2.e') {
+				$this->grounds->rows[$index]['status'] = 'retired';
+			}
+		}
+
+		self::assertSame(
+			'Weigeringsgrond 5.1.2.e is retired and cannot be cited on a new assessment.',
+			$this->validator->validate(assessment: ['documentRef' => 'doc-1', 'classification' => 'deels_openbaar', 'weigeringsgronden' => ['5.1.2.e']])['weigeringsgronden']
+		);
+	}//end testAGroupingOrRetiredGroundCannotBeCited()
 }//end class

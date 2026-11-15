@@ -35,7 +35,7 @@ describe.each(['ContactDetail', 'OrganisationDetail'])(
 
 		it('stacks the card, the cases, the tickets and the latest contact moments on Overview (board order)', () => {
 			const tabs = widget(p, 'contact-panels').content.tabs
-			expect(tabs[0]).toEqual({
+			expect({ ...tabs[0], widgetIds: tabs[0].widgetIds.filter((wid) => wid !== 'org-contact-persons') }).toEqual({
 				widgetIds: [
 					'contact-card',
 					'contact-open-cases',

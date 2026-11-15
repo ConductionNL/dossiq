@@ -64,16 +64,16 @@ class AccessPurposeRules {
 	 *
 	 * @spec openspec/specs/case-access-purpose/spec.md
 	 */
-	public static function fromConfig(string $raw, array $purposes): array {
+	public function fromConfig(string $raw, array $purposes): array {
 		$own = json_decode($raw, true);
 		if (is_array($own) === false) {
 			return self::DEFAULTS;
 		}
 
 		return [
-			'skipFor' => self::strings(value: ($own['skipFor'] ?? null), fallback: self::DEFAULTS['skipFor']),
-			'skipPurpose' => self::purpose(value: ($own['skipPurpose'] ?? null), purposes: $purposes),
-			'assign' => self::assignments(value: ($own['assign'] ?? null)),
+			'skipFor' => $this->strings(value: ($own['skipFor'] ?? null), fallback: self::DEFAULTS['skipFor']),
+			'skipPurpose' => $this->purpose(value: ($own['skipPurpose'] ?? null), purposes: $purposes),
+			'assign' => $this->assignments(value: ($own['assign'] ?? null)),
 		];
 	}//end fromConfig()
 
@@ -85,7 +85,7 @@ class AccessPurposeRules {
 	 *
 	 * @return array<int, string> The strings.
 	 */
-	private static function strings(mixed $value, array $fallback): array {
+	private function strings(mixed $value, array $fallback): array {
 		if (is_array($value) === false) {
 			return $fallback;
 		}
@@ -101,7 +101,7 @@ class AccessPurposeRules {
 	 *
 	 * @return string The purpose.
 	 */
-	private static function purpose(mixed $value, array $purposes): string {
+	private function purpose(mixed $value, array $purposes): string {
 		if (is_string($value) === true && in_array($value, $purposes, true) === true) {
 			return $value;
 		}
@@ -116,7 +116,7 @@ class AccessPurposeRules {
 	 *
 	 * @return array<string, string> The map.
 	 */
-	private static function assignments(mixed $value): array {
+	private function assignments(mixed $value): array {
 		if (is_array($value) === false) {
 			return self::DEFAULTS['assign'];
 		}

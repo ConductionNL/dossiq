@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCP\AppFramework\OCS\OCSBadRequestException;
 /**
  * Shapes and validates the stored form of a contact moment.
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
  */
 class ContactMomentPayload {
 	/**
@@ -105,7 +105,7 @@ class ContactMomentPayload {
 	 *
 	 * @throws OCSBadRequestException When channel, direction or outcome is not allowed.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function forCreate(array $data, string $agentId): array {
 		$payload = [
@@ -141,7 +141,7 @@ class ContactMomentPayload {
 	 *
 	 * @throws OCSBadRequestException When the resulting outcome is not allowed.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function merged(array $existing, array $data): array {
 		$update = $existing;

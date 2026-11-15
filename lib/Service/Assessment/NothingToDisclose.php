@@ -71,6 +71,21 @@ class NothingToDisclose {
 			return true;
 		}
 
+		if ($this->allWithheld(assessments: $assessments) === false) {
+			return false;
+		}
+
+		return $this->reviewSettled(caseId: $caseId);
+	}//end recorded()
+
+	/**
+	 * Whether there are assessments and every one withholds its document.
+	 *
+	 * @param array<int, array<string, mixed>> $assessments The case's assessments.
+	 *
+	 * @return bool
+	 */
+	private function allWithheld(array $assessments): bool {
 		if ($assessments === []) {
 			return false;
 		}
@@ -81,6 +96,17 @@ class NothingToDisclose {
 			}
 		}
 
+		return true;
+	}//end allWithheld()
+
+	/**
+	 * Whether the case has documents under review and none outstanding.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return bool False when the review cannot be read.
+	 */
+	private function reviewSettled(string $caseId): bool {
 		try {
 			$underReview = $this->assessments->getDocumentsUnderReview(caseId: $caseId);
 			$outstanding = (int)($this->assessments->getOutstanding(caseId: $caseId)['count'] ?? 0);
@@ -89,5 +115,5 @@ class NothingToDisclose {
 		}
 
 		return $underReview !== [] && $outstanding === 0;
-	}//end recorded()
+	}//end reviewSettled()
 }//end class

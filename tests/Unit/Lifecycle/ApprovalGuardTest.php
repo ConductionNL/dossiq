@@ -47,6 +47,9 @@ use OCA\Dossiq\Service\Transitions\ApprovalGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\StatusEntryGuards;
+use OCA\Dossiq\Service\Transitions\ActorGuards;
+use OCA\Dossiq\Service\Transitions\CaseContentGuards;
 use OCA\Dossiq\Service\Transitions\GuardResult;
 use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
@@ -304,20 +307,26 @@ class ApprovalGuardTest extends TestCase {
 		$capacity->method('evaluate')->willReturn(new GuardResult(passed: true));
 
 		return new GuardRegistry(
-			checklist: $this->createMock(originalClassName: ChecklistGuard::class),
-			requiredField: $this->createMock(originalClassName: RequiredFieldGuard::class),
-			requiredDocument: $this->createMock(originalClassName: RequiredDocumentGuard::class),
-			roleGuard: $this->createMock(originalClassName: RoleGuard::class),
-			authority: $this->createMock(originalClassName: DelegatedAuthorityGuard::class),
-			statusChecklist: $checklist,
-			// `status-capacity-limit` (#2932) landed beside this change and made
-			// the capacity guard a constructor argument. A double that PASSES
-			// keeps this file measuring the approval gate rather than a limit no
-			// status here declares. `GuardResult` is final, so the return value
-			// has to be a real one rather than an auto-generated double.
-			capacity: $capacity,
+			caseContent: new CaseContentGuards(
+				checklist: $this->createMock(originalClassName: ChecklistGuard::class),
+				requiredField: $this->createMock(originalClassName: RequiredFieldGuard::class),
+				requiredDocument: $this->createMock(originalClassName: RequiredDocumentGuard::class),
+				statusChecklist: $checklist,
+			),
+			actor: new ActorGuards(
+				roleGuard: $this->createMock(originalClassName: RoleGuard::class),
+				authority: $this->createMock(originalClassName: DelegatedAuthorityGuard::class),
+			),
+			statusEntry: new StatusEntryGuards(
+				// `status-capacity-limit` (#2932) landed beside this change and made
+				// the capacity guard a constructor argument. A double that PASSES
+				// keeps this file measuring the approval gate rather than a limit no
+				// status here declares. `GuardResult` is final, so the return value
+				// has to be a real one rather than an auto-generated double.
+				capacity: $capacity,
+				approvalGuard: $approvals,
+			),
 			logger: new NullLogger(),
-			approvalGuard: $approvals,
 		);
 	}//end registryWith()
 
@@ -340,6 +349,7 @@ class ApprovalGuardTest extends TestCase {
 		$guards = (new TransitionSpecReader())->guardsWithImplicit(
 			transition: $transition,
 			approvalsWired: $registry->knows(type: GuardRegistry::APPROVAL_GATE),
+			entryGuardWired: false,
 		);
 		$eval = $registry->evaluateAll(guards: $guards, case: $this->caseWaiting(), userId: 'behandelaar');
 
@@ -380,6 +390,7 @@ class ApprovalGuardTest extends TestCase {
 			guards: (new TransitionSpecReader())->guardsWithImplicit(
 				transition: ['id' => self::ACT],
 				approvalsWired: true,
+				entryGuardWired: false,
 			),
 			case: $this->caseWaiting(),
 			userId: 'behandelaar',
@@ -414,6 +425,7 @@ class ApprovalGuardTest extends TestCase {
 			actual: (new TransitionSpecReader())->guardsWithImplicit(
 				transition: ['id' => self::ACT],
 				approvalsWired: false,
+				entryGuardWired: false,
 			),
 		);
 	}//end testAnUnwiredRegistryAppendsNoApprovalGuard()

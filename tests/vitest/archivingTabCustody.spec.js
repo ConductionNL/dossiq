@@ -16,9 +16,10 @@ const tabs = simple.configPatch.widgets['case-panels'].content.tabs
 const ids = (tab) => tab.widgetIds || [tab.widgetId]
 
 describe('the Archiving tab', () => {
-	it('stacks the archiving card and Bewaring', () => {
+	it('stacks the archiving card, Bewaring and the archive marking', () => {
 		const archiving = tabs.find((tab) => tab.label === 'Archiving')
-		expect(ids(archiving)).toEqual(['case-archival-panel', 'case-custody-panel'])
+		// DqZaakArchivering: Archiefmarkering and its disagreement banner close the tab.
+		expect(ids(archiving)).toEqual(['case-archival-panel', 'case-custody-panel', 'case-archive-marking-card', 'case-archive-mismatch'])
 	})
 
 	it('leaves no Custody tab of its own', () => {

@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\KpiSources;
 use OCA\Dossiq\Service\KpiAggregationService;
 use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -365,6 +366,8 @@ final class KpiAggregationServiceTest extends TestCase {
 		$closed = [
 			['startDate' => '2026-09-01', 'endDate' => '2026-09-11', 'deadline' => '2026-09-30'],
 			['startDate' => 'not-a-date', 'endDate' => 'also-not-a-date'],
+			['startDate' => 'not-a-date', 'endDate' => '2026-09-05'],
+			['startDate' => '2026-09-01', 'endDate' => 'not-a-date'],
 			['endDate' => '2026-09-05'],
 		];
 
@@ -558,7 +561,14 @@ final class KpiAggregationServiceTest extends TestCase {
 			$teamCases = new ReaderTeamCases(teams: $teamService, users: $users);
 		}
 
-		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(new DayCount(), $teamCases), $l10n, new NullLogger());
+		return new KpiAggregationService(
+			appConfig: $appConfig,
+			container: $container,
+			appManager: $appManager,
+			sources: new KpiSources(engineTasks: $engineTasks, queueFigures: new QueueFigures(dayCount: new DayCount(), teamCases: $teamCases)),
+			l10n: $l10n,
+			logger: new NullLogger(),
+		);
 	}
 
 	/**
@@ -788,5 +798,20 @@ final class KpiAggregationServiceTest extends TestCase {
 				return ['results' => $rows];
 			}
 		};
+	}
+	/**
+	 * The KPI contract answers every key in one order: the queue figures first.
+	 *
+	 * @return void
+	 */
+	public function testTheKpisAnswerEveryKeyInOrder(): void {
+		$keys = array_keys($this->service()->computeKpis('admin'));
+		$tail = [
+			'queueOldestNote', 'openCount', 'newToday', 'overdueCount', 'completedCount',
+			'myCompletedCount', 'myCompletedLastMonth', 'thisMonthName', 'lastMonthName',
+			'taskCount', 'tasksDueToday', 'statusBreakdown', 'typeBreakdown', 'avgProcessingDays', 'slaCompliance',
+		];
+		$this->assertSame($tail, array_slice($keys, -count($tail)));
+		$this->assertContains('queueOldestType', array_slice($keys, 0, -count($tail)));
 	}
 }

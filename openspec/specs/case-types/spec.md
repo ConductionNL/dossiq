@@ -1824,8 +1824,8 @@ Termijnen card SHALL show it.
 
 ### Requirement: The Fields tab draws the board's cards
 
-The case type page's Fields tab SHALL hold the fields editor and the field rights only. The case type form, the raw
-terms and the case list columns SHALL stay on the page on a Properties tab listed under the tab strip's Actions menu.
+The case type page's Fields tab SHALL hold the fields editor and the field rights only. The raw terms SHALL be
+edited from the Termijnen card on Fasen en taken, as board DqZaaktype draws it; there is no Properties tab.
 
 #### Scenario: Opening the Fields tab
 
@@ -1837,7 +1837,7 @@ terms and the case list columns SHALL stay on the page on a Properties tab liste
 
 - **GIVEN** the Terms card on Phases and tasks
 - **WHEN** the administrator presses Edit
-- **THEN** the Properties tab opens with the terms form on it
+- **THEN** the terms open for editing on that card, and no Properties tab opens
 
 ### Requirement: The Overview draws a case type's statuses as coloured tiles
 
@@ -2059,13 +2059,14 @@ values, 8px 16px apart, without an inset of its own inside the card.
 
 ### Requirement: Status and result names are strong text, a status with its colour dot
 
-The Statussen and Resultaten tables SHALL draw their names as strong text without an underline, the Statussen names
-with a dot in the status colour, and the archival action in sentence case.
+The Statussen and Resultaten tables SHALL draw their names as links without an underline (14px, the link colour), the
+Statussen names with a dot in the status colour, and the archival action in sentence case.
 
 #### Scenario: DqZaaktypeStatussen
 
 - **WHEN** an administrator opens the Statussen tab
-- **THEN** "Ontvangen" has a blue dot and no underline, and a result's archival action reads "Vernietigen"
+- **THEN** "Ontvangen" has a blue dot and reads in the link colour without an underline, and a result's archival
+  action reads "Vernietigen"
 
 ### Requirement: The Rules tab is headed and adds a rule from the start
 
@@ -2207,6 +2208,34 @@ The app SHALL answer `GET /api/packages` with every shipped package, its version
 - **WHEN** an administrator posts to `/api/packages/{id}/install`
 - **THEN** the response SHALL be 422 with the installer's message
 
+### Requirement: A case type's side history shows what people changed
+
+The side History card of a case type SHALL leave out the entries System wrote (refreshes, upgrades, example-set upkeep). The case type's All history tab SHALL keep every entry.
+
+#### Scenario: DqZaaktype after a window refresh
+- GIVEN Lars de Koning published version 4 and changed the variants, and the daily refresh saved the case type as System since
+- WHEN the case type opens on Fasen en taken
+- THEN its History card lists "Versie 4 gepubliceerd" and "Varianten gewijzigd" by Lars de Koning, and no System edit
+
+### Requirement: An adopted case type gets the fields it lacks and keeps the ones it has (REQ-CT-ADOPT-01)
+
+When a package adopts a case type the instance already holds, the installer SHALL add each case-type field the package ships that the stored row does not have (no such key, or null), with references pointed at this instance's ids. It SHALL NOT change a field the stored row has, an empty one included. The fields SHALL be written only after the install is recorded, so a failed install leaves the adopted row as it was. Other adopted rows (statuses, roles, results, flows) SHALL stay as they are.
+
+#### Scenario: A seeded case type gets the record import the package adds
+
+- **GIVEN** an instance holding the case type `wmo-melding` without `recordImports`, written by the register seed
+- **WHEN** the Wmo-melding package is installed or upgraded
+- **THEN** the stored case type SHALL carry the package's `recordImports`
+- **AND** its title and every other field it already had SHALL be unchanged
+- @e2e exclude installer behaviour, asserted in PHPUnit
+
+#### Scenario: A field the administrator emptied stays empty
+
+- **GIVEN** an adopted case type whose `description` is an empty string
+- **WHEN** a package that ships a description is installed
+- **THEN** the description SHALL stay empty
+- @e2e exclude installer behaviour, asserted in PHPUnit
+
 ## UI References
 
 - **Case Type List**: See wireframe 3.6 in DESIGN-REFERENCES.md (admin settings, case type cards with status/deadline/validity)
@@ -2229,7 +2258,6 @@ The app SHALL answer `GET /api/packages` with every shipped package, its version
 - General tab (`src/views/settings/tabs/GeneralTab.vue`) with all core fields: title, description, purpose, trigger, subject, processing deadline, service target, extension allowed/period, suspension allowed, origin, confidentiality, publication required/text, valid from, valid until.
 - Statuses tab (`src/views/settings/tabs/StatusesTab.vue`) with ordered status type list, drag-and-drop reorder, inline editing, add/delete, isFinal checkbox, notifyInitiator toggle with notification text.
 - Draft/published lifecycle with publish validation (publish errors displayed in UI).
-- Default case type selection stored via `SettingsService` config key `default_case_type`.
 - Case type validation utilities (`src/utils/caseTypeValidation.js`).
 - All case type sub-entity schemas defined in `dossiq_register.json` and mapped in `SettingsService::SLUG_TO_CONFIG_KEY`: caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType.
 - ZGW Catalogi API compatibility via `ZtcController` (`lib/Controller/ZtcController.php`) and `ZgwZtcRulesService` (`lib/Service/ZgwZtcRulesService.php`).

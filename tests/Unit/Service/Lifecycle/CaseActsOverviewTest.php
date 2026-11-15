@@ -22,9 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Lifecycle;
 
+use OCA\Dossiq\Service\Lifecycle\CaseActSources;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\CaseActsMenu;
 use OCA\Dossiq\Service\Lifecycle\CaseActsOverview;
+use OCA\Dossiq\Service\Lifecycle\CaseArchiveReadiness;
 use OCA\Dossiq\Service\Lifecycle\CaseArchiveState;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\CaseHoldActs;
@@ -38,7 +40,7 @@ use PHPUnit\Framework\TestCase;
  * The state half of the act read.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseActsOverview
- *
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseActSources
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseActsOverviewTest extends TestCase {
@@ -72,11 +74,12 @@ class CaseActsOverviewTest extends TestCase {
 	/**
 	 * Build the read model over doubled collaborators.
 	 *
-	 * @param CaseArchiveState|null $archiveState The archive marker reader, when wired.
+	 * @param CaseArchiveState|null     $archiveState The archive marker reader, when wired.
+	 * @param CaseArchiveReadiness|null $readiness    The archive readiness checklist, when wired.
 	 *
 	 * @return CaseActsOverview The read model.
 	 */
-	private function overview(?CaseArchiveState $archiveState = null): CaseActsOverview {
+	private function overview(?CaseArchiveState $archiveState = null, ?CaseArchiveReadiness $readiness = null): CaseActsOverview {
 		$incompleteness = $this->createMock(originalClassName: CaseIncompleteness::class);
 		$incompleteness->method('missingOn')->willReturn(['applicantAddress']);
 
@@ -97,13 +100,16 @@ class CaseActsOverviewTest extends TestCase {
 
 		return new CaseActsOverview(
 			store: $this->store,
-			menu: $this->menu,
-			endings: $endings,
-			holds: $holds,
-			drafts: $drafts,
+			acts: new CaseActSources(
+				menu: $this->menu,
+				endings: $endings,
+				holds: $holds,
+				drafts: $drafts,
+			),
 			incompleteness: $incompleteness,
 			processStatus: $processStatus,
 			archiveState: $archiveState,
+			readiness: $readiness,
 		);
 	}//end overview()
 
@@ -252,4 +258,59 @@ class CaseActsOverviewTest extends TestCase {
 			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $refusal->getStatus());
 		}
 	}//end testAnUnknownCaseIsRefusedRatherThanAnsweredEmpty()
+	/**
+	 * The archive readiness is the readiness checklist of the loaded case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function testTheArchiveReadinessIsTheChecklistOfTheLoadedCase(): void {
+		$checklist = [['item' => 'result', 'ready' => true], ['item' => 'documents', 'ready' => false]];
+		$readiness = $this->createMock(originalClassName: CaseArchiveReadiness::class);
+		$readiness->expects($this->once())->method('checklist')
+			->with('case-1', self::CASE)
+			->willReturn($checklist);
+
+		self::assertSame(
+			expected: ['caseId' => 'case-1', 'checklist' => $checklist],
+			actual: $this->overview(readiness: $readiness)->archiveReadiness(caseId: 'case-1')
+		);
+	}//end testTheArchiveReadinessIsTheChecklistOfTheLoadedCase()
+
+	/**
+	 * Without the readiness service the checklist is empty, not an error.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function testWithoutTheReadinessServiceTheChecklistIsEmpty(): void {
+		self::assertSame(
+			expected: ['caseId' => 'case-1', 'checklist' => []],
+			actual: $this->overview()->archiveReadiness(caseId: 'case-1')
+		);
+	}//end testWithoutTheReadinessServiceTheChecklistIsEmpty()
+
+	/**
+	 * The archive readiness of an unknown case is refused before any checklist is made.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function testTheArchiveReadinessOfAnUnknownCaseIsRefused(): void {
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->method('loadCase')->willReturn(null);
+		$readiness = $this->createMock(originalClassName: CaseArchiveReadiness::class);
+		$readiness->expects($this->never())->method('checklist');
+
+		try {
+			$this->overview(readiness: $readiness)->archiveReadiness(caseId: 'nope');
+			self::fail(message: 'A case that cannot be read has to refuse.');
+		} catch (RefusedException $refusal) {
+			self::assertSame(expected: 'case-not-found', actual: $refusal->getRule());
+			self::assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $refusal->getStatus());
+		}
+	}//end testTheArchiveReadinessOfAnUnknownCaseIsRefused()
 }//end class

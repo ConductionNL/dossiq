@@ -60,7 +60,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -68,15 +68,17 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionMarkerServiceInterface;
+use OCA\Dossiq\Service\Support\ReferenceId;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * What raises a marker on a case, and what makes it go away.
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class CaseAttentionMarkerService {
+class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface {
 
 	/**
 	 * The panels of the case page a marker may point at.
@@ -185,7 +187,7 @@ class CaseAttentionMarkerService {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The context.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function contextFor(string $caseId): array {
 		return ($this->conditions?->contextFor(caseId: $caseId) ?? []);
@@ -202,7 +204,7 @@ class CaseAttentionMarkerService {
 	 *
 	 * @return array<int, string> The reasons, empty when every declaration is whole.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function validateDeclarations(array $declarations): array {
 		$problems = [];
@@ -301,9 +303,24 @@ class CaseAttentionMarkerService {
 	 *
 	 * @return array<int, array<string, mixed>> The declarations, each one whole.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function declarationsFor(string $caseTypeId): array {
+		$declared = $this->declaredOrShipped(caseTypeId: $caseTypeId);
+
+		return $this->wholeDeclarations(declared: $declared);
+	}//end declarationsFor()
+
+	/**
+	 * The markers the case type declares, or the shipped set when it declares none or cannot be read.
+	 *
+	 * @param string $caseTypeId The case's case type, or the empty string.
+	 *
+	 * @return array<int|string, mixed> The declarations, not yet checked.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function declaredOrShipped(string $caseTypeId): array {
 		$declared = [];
 		if (trim($caseTypeId) !== '') {
 			try {
@@ -322,6 +339,19 @@ class CaseAttentionMarkerService {
 			$declared = self::SHIPPED_MARKERS;
 		}
 
+		return $declared;
+	}//end declaredOrShipped()
+
+	/**
+	 * The declarations that are whole and enabled.
+	 *
+	 * @param array<int|string, mixed> $declared The declarations, not yet checked.
+	 *
+	 * @return array<int, array<string, mixed>> The declarations, each one whole.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function wholeDeclarations(array $declared): array {
 		$whole = [];
 		foreach ($declared as $declaration) {
 			if (is_array($declaration) === false) {
@@ -343,7 +373,7 @@ class CaseAttentionMarkerService {
 		}//end foreach
 
 		return $whole;
-	}//end declarationsFor()
+	}//end wholeDeclarations()
 
 	/**
 	 * The markers standing on this case right now.
@@ -362,56 +392,88 @@ class CaseAttentionMarkerService {
 	 *
 	 * @return array<int, array<string, mixed>> The raised markers.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function evaluate(array $case, ?DateTimeImmutable $now = null, array $context = []): array {
 		$now = ($now ?? new DateTimeImmutable());
 		$caseTypeId = $this->referenceId(value: ($case['caseType'] ?? null));
 		$standing = $this->standing(case: $case);
 
+		$judged = new CaseUnderJudgement(case: $case, now: $now, context: $context, standing: $standing);
 		$raised = [];
 		foreach ($this->declarationsFor(caseTypeId: $caseTypeId) as $declaration) {
-			$condition = (string)$declaration['raiseWhen'];
-			$id = (string)$declaration['id'];
-
-			if ($this->conditions === null
-				|| $this->conditions->unanswerable(condition: $condition, context: $context) === true
-			) {
-				// The rows this condition reads were not fetched, so this save
-				// learnt nothing about it. Keep what was standing; clearing it
-				// would say the work was done on no evidence at all.
-				$kept = $this->keep(marker: $id, case: $case);
-				if ($kept !== null) {
-					$raised[] = $kept;
-				}
-
-				continue;
+			$marker = $this->markerFor(declaration: $declaration, judged: $judged);
+			if ($marker !== null) {
+				$raised[] = $marker;
 			}
-
-			$reason = $this->conditions->reasonFor(
-				condition: $condition,
-				case: $case,
-				now: $now,
-				context: $context
-			);
-
-			if ($reason === '') {
-				continue;
-			}
-
-			$raised[] = [
-				'marker' => $id,
-				'tab' => (string)$declaration['tab'],
-				'reason' => $reason,
-				// A marker that is still standing keeps the moment it FIRST
-				// became true. Restamping it on every save would make a
-				// three-week-old problem read as new on each edit.
-				'raisedAt' => ($standing[$id] ?? $now->format('c')),
-			];
 		}
 
 		return $raised;
 	}//end evaluate()
+
+	/**
+	 * The marker one declaration raises on this case, or null when it raises none.
+	 *
+	 * @param array<string, mixed> $declaration The marker declaration.
+	 * @param CaseUnderJudgement   $judged      The case, today, its related rows and its standing markers.
+	 *
+	 * @return array<string, mixed>|null The raised marker, or null.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function markerFor(array $declaration, CaseUnderJudgement $judged): ?array {
+		$case = $judged->case;
+		$context = $judged->context;
+		$condition = (string)$declaration['raiseWhen'];
+		$id = (string)$declaration['id'];
+
+		if ($this->conditions === null
+			|| $this->conditions->unanswerable(condition: $condition, context: $context) === true
+		) {
+			// The rows this condition reads were not fetched, so this save
+			// learnt nothing about it. Keep what was standing; clearing it
+			// would say the work was done on no evidence at all.
+			return $this->keep(marker: $id, case: $case);
+		}
+
+		$reason = $this->conditions->reasonFor(
+			condition: $condition,
+			case: $case,
+			now: $judged->now,
+			context: $context
+		);
+
+		if ($reason === '') {
+			return null;
+		}
+
+		return $this->raisedMarker(declaration: $declaration, reason: $reason, judged: $judged);
+	}//end markerFor()
+
+	/**
+	 * The marker a declaration raises for a reason.
+	 *
+	 * @param array<string, mixed> $declaration The marker declaration.
+	 * @param string               $reason      Why the marker stands.
+	 * @param CaseUnderJudgement   $judged      Today, and the raisedAt of each standing marker by id.
+	 *
+	 * @return array<string, mixed> The raised marker.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function raisedMarker(array $declaration, string $reason, CaseUnderJudgement $judged): array {
+		$id = (string)$declaration['id'];
+
+		return [
+			'marker' => $id,
+			'tab' => (string)$declaration['tab'],
+			'reason' => $reason,
+			// A marker that is still standing keeps the moment it FIRST
+			// became true. Restamping it on every save would make a
+			// three-week-old problem read as new on each edit.
+			'raisedAt' => ($judged->standing[$id] ?? $judged->now->format('c')),
+		];
+	}//end raisedMarker()
 
 	/**
 	 * A marker already standing on the case, exactly as it stands.
@@ -446,7 +508,7 @@ class CaseAttentionMarkerService {
 	 * @return array{attentionMarkers: array<int, array<string, mixed>>,
 	 *               hasAttentionMarkers: bool} The fields to write back.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function resolve(array $case, ?DateTimeImmutable $now = null, array $context = []): array {
 		$markers = $this->evaluate(case: $case, now: $now, context: $context);
@@ -496,14 +558,6 @@ class CaseAttentionMarkerService {
 	 * @return string The id, or the empty string.
 	 */
 	private function referenceId(mixed $value): string {
-		if (is_array($value) === true) {
-			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
+		return ReferenceId::of(value: $value);
 	}//end referenceId()
 }//end class

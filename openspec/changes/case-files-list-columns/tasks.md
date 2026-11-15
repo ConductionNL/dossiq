@@ -1,9 +1,9 @@
 # Tasks: case-files-list-columns
 
-- [ ] 1 `src/services/documentRowData.js`: a function of the listed nodes that asks the document projection for those file ids in one call and returns `{ [fileId]: { documentType, direction, party, verdict } }`. Reuse the existing projection read; add no endpoint if one already answers by file ids.
-- [ ] 2 `src/manifest.json`, CaseDetail files widget `props`: `columns` for `documentType`, `direction`, `party`, `verdict` as `source: 'row'`, labels in Dutch as DqZaakDocumenten draws them; `rowData` names the provider from task 1 (register it in `src/registry.js` if the widget resolves functions by name).
-- [ ] 3 The verdict column reads the review verdict only when `@context.caseType.documentReview.enabled`; otherwise the column is not declared.
-- [ ] 4 `tests/vitest/documentRowData.spec.js`: one call for 40 nodes, missing file ids map to empty.
-- [ ] 5 `tests/e2e/case-files-columns.spec.ts` for the first scenario of REQ-ZAK-COL-01.
+- [x] 1 Row data for the columns. Done without a new provider or endpoint: the files widget already reads the dossier listing once per folder through nextcloud-vue `rowDataUrl` (keyed by `fileId`), so the listing gained the two values it lacked. Both come from `lib/Service/Zaakdossier/DocumentListingLabels.php`, applied in `CorrespondentWriter::describeAll`: `documentType` is the type's name, from one read of the type catalogue per listing; `partyName` is the sender of an incoming document and the recipients of an outgoing one. `direction` and `reviewVerdict` were already on the row.
+- [x] 2 `src/manifest.json`, CaseDetail files widget `props.columns`: `documentType`, `direction` and `partyName` as `source: 'row'` columns, in the Columns chooser and off by default, because board DqZaakDocumenten draws Document and Assessment only (spec amended to the board, decision 130). Labels are English source strings with Dutch in `l10n/nl.json` (Documenttype, Richting, Afzender of ontvanger), as every other manifest label.
+- [x] 3 The verdict column (`reviewVerdict`) keeps `when: @context.caseType.documentReview.enabled`.
+- [x] 4 Tests: `tests/vitest/caseFilesListColumns.spec.js` (the declared columns, the listing url, the Dutch labels); PHPUnit `DocumentListingLabelsTest` for the type names read once and the party by direction. One request per folder is nextcloud-vue's `rowDataUrl` contract and tested there.
+- [x] 5 `tests/e2e/case-files-columns.spec.ts` for the first scenario of REQ-ZAK-COL-01 (written, not yet run against a live instance).
 - [ ] 6 Live pass on :8080 against board DqZaakDocumenten (pixel check of the column order).
-- [ ] 7 `openspec/parity/capabilities.json` row 4.8: built, evidence the manifest path and the provider.
+- [x] 7 `openspec/parity/capabilities.json` row 4.8: built, evidence the manifest path and the provider. The dossiq rating stays with the parity corpus.

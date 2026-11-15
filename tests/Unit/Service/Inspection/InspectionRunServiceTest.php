@@ -174,22 +174,94 @@ final class InspectionRunServiceTest extends TestCase {
 	}//end testACasesRunsAreItsInspectionTasks()
 
 	/**
+	 * Without the object service there is no template to fill, so the run is refused.
+	 *
+	 * @return void
+	 */
+	public function testARunWithoutTheObjectServiceIsRefused(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->method('getConfigValue')->willReturn('7');
+		$settings->expects($this->never())->method('getOpenRegisterClass');
+		$service = new InspectionRunService($settings, $this->createMock(EngineInboxQuery::class));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('OpenRegister is not available');
+		$service->submit(caseId: 'case-1', templateId: 't-1', payload: [], actor: 'inspecteur-a');
+	}//end testARunWithoutTheObjectServiceIsRefused()
+
+	/**
+	 * Without a configured register there is no template to fill, so the run is refused.
+	 *
+	 * @return void
+	 */
+	public function testARunWithoutARegisterIsRefused(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(new \stdClass());
+		$settings->method('getConfigValue')->willReturnMap([['register', '', '']]);
+		$service = new InspectionRunService($settings, $this->createMock(EngineInboxQuery::class));
+
+		try {
+			$service->submit(caseId: 'case-1', templateId: 't-1', payload: [], actor: 'inspecteur-a');
+			$this->fail('a run without a register must be refused');
+		} catch (RuntimeException $e) {
+			$this->assertSame('OpenRegister is not available', $e->getMessage());
+		}
+
+		$this->assertSame([], $this->tasks->created);
+	}//end testARunWithoutARegisterIsRefused()
+
+	/**
+	 * A valid run without the task layer is refused and writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testARunWithoutTheTaskLayerIsRefused(): void {
+		$service = new InspectionRunService($this->settings(templates: ['t-1' => self::template()], taskLayer: false), $this->createMock(EngineInboxQuery::class));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('The OpenRegister task layer is not available');
+		$service->submit(caseId: 'case-1', templateId: 't-1', payload: ['items' => [['itemId' => 'q1', 'result' => 'pass']]], actor: 'inspecteur-a');
+	}//end testARunWithoutTheTaskLayerIsRefused()
+
+	/**
+	 * A uuid lookup that throws falls through to the older-checklist lookup.
+	 *
+	 * @return void
+	 */
+	public function testAFailingUuidLookupFallsBackToTheFoldedTemplate(): void {
+		$service = new InspectionRunService(
+			$this->settings(templates: [], folded: ['inspectieChecklist/old-2' => self::template()], findThrows: true),
+			$this->createMock(EngineInboxQuery::class)
+		);
+
+		$run = $service->submit(caseId: 'case-1', templateId: 'old-2', payload: ['items' => [['itemId' => 'q1', 'result' => 'pass']]], actor: 'inspecteur-a');
+
+		$this->assertSame('t-1', $this->tasks->created[0]['data']['templateId']);
+		$this->assertSame(0, $run['failedItems']);
+		$this->assertSame('inspecteur-a', $run['inspector']);
+	}//end testAFailingUuidLookupFallsBackToTheFoldedTemplate()
+
+	/**
 	 * Settings over in-memory templates and the task layer.
 	 *
 	 * @param array<string, array<string, mixed>> $templates Templates by uuid.
-	 * @param array<string, array<string, mixed>> $folded    Templates by legacyRef.
+	 * @param array<string, array<string, mixed>> $folded     Templates by legacyRef.
+	 * @param bool                                $taskLayer  Whether the task layer is available.
+	 * @param bool                                $findThrows Whether a uuid lookup throws.
 	 *
 	 * @return SettingsService The stub.
 	 */
-	private function settings(array $templates, array $folded = []): SettingsService {
-		$objects = new class($templates, $folded) {
+	private function settings(array $templates, array $folded = [], bool $taskLayer = true, bool $findThrows = false): SettingsService {
+		$objects = new class($templates, $folded, $findThrows) {
 			/**
 			 * Hold the templates.
 			 *
 			 * @param array<string, array<string, mixed>> $templates By uuid.
-			 * @param array<string, array<string, mixed>> $folded    By legacyRef.
+			 * @param array<string, array<string, mixed>> $folded     By legacyRef.
+			 * @param bool                                $findThrows Whether find throws.
 			 */
-			public function __construct(private readonly array $templates, private readonly array $folded) {
+			public function __construct(private readonly array $templates, private readonly array $folded, private readonly bool $findThrows) {
 			}//end __construct()
 
 			/**
@@ -203,6 +275,9 @@ final class InspectionRunServiceTest extends TestCase {
 			 */
 			public function find(string $id, int|string $register, int|string $schema): ?array {
 				unset($register, $schema);
+				if ($this->findThrows === true) {
+					throw new RuntimeException('not a template uuid: ' . $id);
+				}
 
 				return ($this->templates[$id] ?? null);
 			}
@@ -226,7 +301,7 @@ final class InspectionRunServiceTest extends TestCase {
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
-		$settings->method('getOpenRegisterClass')->willReturn($this->tasks);
+		$settings->method('getOpenRegisterClass')->willReturn($taskLayer === true ? $this->tasks : null);
 		$settings->method('getConfigValue')->willReturnMap([['register', '', '7'], ['case_schema', '', '11']]);
 
 		return $settings;

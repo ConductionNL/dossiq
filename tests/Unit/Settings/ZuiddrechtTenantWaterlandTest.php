@@ -50,7 +50,7 @@ class ZuiddrechtTenantWaterlandTest extends TestCase {
 		}
 
 		$this->assertSame(expected: '{{cast:marieke.uid}}', actual: $records['tenantUser'][0]['userRef']);
-		$this->assertSame(expected: 'admin', actual: $records['tenantUser'][0]['role']);
+		$this->assertSame(expected: 'tenant_admin', actual: $records['tenantUser'][0]['role']);
 		$this->assertSame(expected: ['Behandelaar', 'Teamleider', 'Afdelingshoofd'], actual: array_column($records['tenantMandate'], 'mandateMatrixRef'));
 		$this->assertSame(expected: ['{{cast:marieke.uid}}'], actual: array_values(array_unique(array_column($records['tenantMandate'], 'signedBy'))));
 		$this->assertSame(

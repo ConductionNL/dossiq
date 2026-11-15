@@ -1,0 +1,91 @@
+{
+    "zgwResource": "caseType",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "ct-s",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "identificatie": "{{ identifier }}",
+        "omschrijving": "{{ title }}",
+        "omschrijvingGeneriek": "{{ description }}",
+        "catalogus": "{{ _baseUrl | replace({\"catalogi/v1/zaaktypen\": \"catalogi/v1/catalogussen\"}) }}/{{ catalogus }}",
+        "doel": "{{ purpose }}",
+        "aanleiding": "{{ trigger }}",
+        "subject": "{{ subject }}",
+        "doorlooptijd": "{{ processingDeadline }}",
+        "vertrouwelijkheidaanduiding": "{{ confidentiality }}",
+        "concept": "{{ isDraft }}",
+        "startValidity": "{{ validFrom }}",
+        "endValidity": "{{ validUntil }}",
+        "handelingInitiator": "{{ origin }}",
+        "indicatieInternOfExtern": "{{ internalOrExternal }}",
+        "handelingBehandelaar": "{{ handlerAction }}",
+        "opschortingEnAanhoudingMogelijk": "{{ suspensionAllowed }}",
+        "extensionPossible": "{{ extensionAllowed }}",
+        "verlengingstermijn": "{{ extensionPeriod }}",
+        "publicatieIndicatie": "{{ publicationRequired }}",
+        "productenOfDiensten": "{{ productsOrServices | json_encode }}",
+        "selectielijstDossiqype": "{{ selectionListProcessType }}",
+        "referentieproces": "{{ referenceProcess | json_encode }}",
+        "responsible": "{{ responsible }}",
+        "gerelateerdeZaaktypen": "{{ relatedCaseTypes | json_encode }}",
+        "besluittypen": "decisionTypes",
+        "informatieobjecttypen": "[]"
+    },
+    "reverseMapping": {
+        "title": "{{ omschrijving }}",
+        "description": "{{ omschrijvingGeneriek }}",
+        "identifier": "{{ identificatie }}",
+        "catalogus": "{{ catalogus | zgw_extract_uuid }}",
+        "purpose": "{{ doel }}",
+        "trigger": "{{ aanleiding }}",
+        "subject": "{{ onderwerp }}",
+        "processingDeadline": "{{ doorlooptijd }}",
+        "confidentiality": "{{ vertrouwelijkheidaanduiding }}",
+        "isDraft": "{{ concept }}",
+        "validFrom": "{{ beginGeldigheid }}",
+        "validUntil": "{{ eindeGeldigheid }}",
+        "origin": "{{ handelingInitiator }}",
+        "internalOrExternal": "{{ indicatieInternOfExtern }}",
+        "handlerAction": "{{ handelingBehandelaar }}",
+        "suspensionAllowed": "{{ opschortingEnAanhoudingMogelijk }}",
+        "extensionAllowed": "{{ verlengingMogelijk }}",
+        "extensionPeriod": "{{ verlengingstermijn }}",
+        "publicationRequired": "{{ publicatieIndicatie }}",
+        "selectionListProcessType": "{{ selectielijstDossiqype }}",
+        "responsible": "{{ verantwoordelijke }}",
+        "productsOrServices": "{{ productenOfDiensten | json_encode }}",
+        "referenceProcess": "{{ referentieproces | json_encode }}",
+        "relatedCaseTypes": "{{ gerelateerdeZaaktypen | json_encode }}",
+        "versionDate": "{{ versiedatum }}"
+    },
+    "reverseCast": {
+        "isDraft": "bool",
+        "suspensionAllowed": "bool",
+        "extensionAllowed": "bool",
+        "publicationRequired": "bool",
+        "productsOrServices": "jsonToArray"
+    },
+    "cast": {
+        "concept": "bool",
+        "opschortingEnAanhoudingMogelijk": "bool",
+        "extensionPossible": "bool",
+        "publicatieIndicatie": "bool",
+        "productenOfDiensten": "jsonToArray",
+        "gerelateerdeZaaktypen": "jsonToArray",
+        "informatieobjecttypen": "jsonToArray",
+        "referentieproces": "jsonToArray"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "identificatie": {
+            "field": "identifier"
+        },
+        "catalogus": {
+            "field": "catalogus",
+            "extractUuid": true
+        }
+    }
+}

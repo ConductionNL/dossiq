@@ -1,57 +1,46 @@
-/**
- * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
- * SPDX-License-Identifier: EUPL-1.2
- *
- * The case and task forms keep a draft (task-forms-keep-a-draft): every page
- * that opens one of them names dossiq's draft key, and only the case forms
- * offer Save draft, on the case's own draft marker.
- *
- * @spec openspec/changes/task-forms-keep-a-draft/specs/task-management/spec.md#requirement-a-task-form-keeps-what-you-typed-req-tm-draft-01
- */
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
 
-import fs from 'fs'
-import path from 'path'
+/**
+ * The task form and the case edit form keep a draft (REQ-TM-DRAFT-01).
+ *
+ * CnDetailPage forwards `draftAppId` to every form it opens (the record edit
+ * form and a source verb's form such as the engine task's Edit) and
+ * `draftField` to the record forms. Without `draftAppId` a form keeps nothing
+ * when it closes, so a handler who loses the tab halfway through starts over.
+ * The case's draft marker is the schema's own `isDraft`: a `draftField` the
+ * schema does not declare would make Save as provisional inert.
+ *
+ * @spec openspec/changes/task-forms-keep-a-draft/specs/task-management/spec.md
+ */
 import { describe, expect, it } from 'vitest'
+import register from '../../lib/Settings/dossiq_register.json'
+import manifest from '../../src/manifest.json'
 
-const ROOT = path.resolve(__dirname, '../..')
-const manifest = JSON.parse(
-	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
-)
-const register = JSON.parse(
-	fs.readFileSync(
-		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
-		'utf8',
-	),
-)
+const page = (id) => manifest.pages.find((p) => p.id === id)
 
-/**
- * One page's config.
- *
- * @param {string} id The page id.
- * @return {object} The config.
- */
-const config = (id) => manifest.pages.find((page) => page.id === id).config
+describe('forms that keep a draft', () => {
+	it.each(['TaskDetail', 'CaseDetail'])('%s keeps unsaved input under dossiq\'s key', (id) => {
+		const config = page(id).config
+		expect(config.draftAppId).toBe('dossiq')
+		expect(config.draftField).toBe('isDraft')
+	})
 
-describe('task-forms-keep-a-draft', () => {
-	it.each(['Cases', 'CaseDetail', 'TaskDetail'])(
-		'%s keeps its form drafts under dossiq',
-		(id) => {
-			expect(config(id).draftAppId).toBe('dossiq')
-		},
-	)
+	it('marks a case draft with a property the case schema declares as a boolean', () => {
+		const field = page('CaseDetail').config.draftField
+		expect(register.components.schemas.case.properties[field]).toMatchObject({ type: 'boolean' })
+	})
+})
 
-	it.each(['Cases', 'CaseDetail'])(
-		'%s offers Save draft on the case draft marker',
-		(id) => {
-			expect(config(id).allowDraft).toBe(true)
-			expect(config(id).draftField).toBe('isDraft')
-			expect(register.components.schemas.case.properties.isDraft.type).toBe(
-				'boolean',
-			)
-		},
-	)
+describe('the case forms offer Save draft', () => {
+	it.each(['Cases', 'CaseDetail'])('%s offers Save draft on the case draft marker, under dossiq\'s key', (id) => {
+		const config = page(id).config
+		expect(config.draftAppId).toBe('dossiq')
+		expect(config.allowDraft).toBe(true)
+		expect(config.draftField).toBe('isDraft')
+	})
 
 	it('the task page offers no Save draft: an engine task has no draft marker', () => {
-		expect(config('TaskDetail').allowDraft).toBeUndefined()
+		expect(page('TaskDetail').config.allowDraft).toBeUndefined()
 	})
 })

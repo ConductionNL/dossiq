@@ -44,7 +44,7 @@
     "extends @nextcloud/browserslist-config"
   ],
   "dependencies": {
-    "@conduction/nextcloud-vue": "^2.165.0",
+    "@conduction/nextcloud-vue": "^2.180.0",
     "@nextcloud/auth": "^2.6.0",
     "@nextcloud/axios": "~2.6.0",
     "@nextcloud/capabilities": "^1.2.1",
@@ -78,7 +78,10 @@
     "ip-address": "^10.7.1",
     "qs": "6.16.1",
     "source-map-js": "^1.2.2",
-    "undici": "^8.10.2"
+    "undici": "^8.10.2",
+    "webdav": {
+      "minimatch": "^11.0.1"
+    }
   },
   "devDependencies": {
     "@babel/core": "^7.22.9",

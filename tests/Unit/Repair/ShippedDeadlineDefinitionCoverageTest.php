@@ -102,10 +102,10 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 		'melding-openbare-ruimte' => ['planned', 14, 0, 0, 'Servicenorm'],
 		'parkeervergunning-bewoners' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'kenteken-wijzigen-parkeervergunning' => ['planned', 14, 0, 0, 'Servicenorm'],
-		'building-permit' => ['planned', 56, 0, 0, 'Service norm'],
-		'grant-application' => ['planned', 42, 0, 0, 'Service norm'],
-		'citizen-complaint' => ['planned', 42, 0, 0, 'Service norm'],
-		'foi-request' => ['planned', 30, 0, 0, 'Service norm'],
+		'building-permit' => ['planned', 56, 0, 0, 'Servicenorm, geen wettelijke termijn (demo)'],
+		'grant-application' => ['planned', 42, 0, 0, 'Servicenorm, geen wettelijke termijn (demo)'],
+		'citizen-complaint' => ['planned', 42, 0, 0, 'Servicenorm, geen wettelijke termijn (demo)'],
+		'foi-request' => ['planned', 30, 0, 0, 'Servicenorm, geen wettelijke termijn (demo)'],
 	];
 
 	/**

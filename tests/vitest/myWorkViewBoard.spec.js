@@ -38,6 +38,20 @@ describe('DqAanMijToegewezen', () => {
 		expect(menu.items).toEqual(['header-actions', 'export', 'copy-selected', 'delete-selected'])
 	})
 
+	it('opens as cards, with the table, board and map as the other view modes', () => {
+		expect(overrides.viewMode).toBe('cards')
+		expect(overrides.viewModes).toEqual(['table', 'cards', 'board', 'map'])
+	})
+
+	it('draws the urgency pill and number on top, the case type, requester and cover line under the title, the status and term last', () => {
+		const card = overrides.cardLayout
+		expect(card.headPill.field).toBe('deadlineTier')
+		expect(card.number).toBe('identifier')
+		expect(card.note).toMatchObject({ field: 'coveredFor', tone: 'purple' })
+		expect(card.footerPill.field).toBe('status')
+		expect(card.footerDate.field).toBe('deadline')
+	})
+
 	it('counts once, in the note after the breadcrumb', () => {
 		expect(overrides.headerMeta).toContain('{total}')
 		expect(overrides.countText).toBe('')

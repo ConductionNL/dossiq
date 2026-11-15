@@ -35,8 +35,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Custody\CaseCustodyChain;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyChainInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -62,15 +63,15 @@ class CustodyCaseCreatedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseCustodyChain         $custody      The chain the holding is written into.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param CaseCustodyChainInterface         $custody      The chain the holding is written into.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface          $logger       Records a chain that could not be started.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly CaseCustodyChain $custody,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CaseCustodyChainInterface $custody,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -85,24 +86,64 @@ class CustodyCaseCreatedListener implements IEventListener {
 	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $this->extractObject(event: $event);
+		$payload = $this->newCase(event: $event);
 		if ($payload === null) {
 			return;
 		}
 
-		if ($this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
-			return;
+		$this->beginHolding(caseId: $this->caseIdOf(payload: $payload), payload: $payload);
+	}//end handle()
+
+	/**
+	 * The payload of a newly created case with an id, or null for anything else.
+	 *
+	 * @param Event $event The dispatched event.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	private function newCase(Event $event): ?array {
+		if (($event instanceof ObjectCreatedEvent) === false) {
+			return null;
 		}
 
-		$caseId = trim((string)($payload['id'] ?? ($payload['uuid'] ?? '')));
-		if ($caseId === '') {
-			return;
+		$payload = $this->extractObject(event: $event);
+		if ($payload === null || $this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
+			return null;
 		}
 
+		if ($this->caseIdOf(payload: $payload) === '') {
+			return null;
+		}
+
+		return $payload;
+	}//end newCase()
+
+	/**
+	 * The case's id, or its uuid, trimmed.
+	 *
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	private function caseIdOf(array $payload): string {
+		return trim((string)($payload['id'] ?? ($payload['uuid'] ?? '')));
+	}//end caseIdOf()
+
+	/**
+	 * Begin the case's custody chain with its first holding.
+	 *
+	 * @param string               $caseId  The case id.
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	private function beginHolding(string $caseId, array $payload): void {
 		try {
 			$this->custody->begin(
 				caseId: $caseId,
@@ -121,7 +162,7 @@ class CustodyCaseCreatedListener implements IEventListener {
 				['case' => $caseId, 'exception' => $e->getMessage()],
 			);
 		}
-	}//end handle()
+	}//end beginHolding()
 
 	/**
 	 * When the case started, as well as the payload can say.
@@ -154,22 +195,6 @@ class CustodyCaseCreatedListener implements IEventListener {
 	 * @return array<string, mixed>|null The payload.
 	 */
 	private function extractObject(Event $event): ?array {
-		if (method_exists($event, 'getObject') === false) {
-			return null;
-		}
-
-		$object = $event->getObject();
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return EventObjectPayload::of(event: $event);
 	}//end extractObject()
 }//end class

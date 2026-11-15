@@ -26,7 +26,7 @@ describe('the Rights card on the case type Overview (DqZaaktypeOverzicht)', () =
 	const summary = widget('case-type-rights-summary')
 
 	it('reads one row per role from the rights-by-role endpoint', () => {
-		expect(summary).toMatchObject({ type: 'record-list', title: 'Rights', subtitle: 'Who may do what with cases of this type' })
+		expect(summary).toMatchObject({ type: 'record-list', title: 'Rights', subtitle: 'Who may do what with cases of this type, per role. Edit opens the Rights tab with the matrix of department and confidentiality.', headerWrap: true })
 		expect(summary.content.endpointSource).toEqual({ url: '/apps/dossiq/api/case-types/@objectId/rights-by-role', responsePath: 'rows' })
 		expect(summary.content.presentation).toBe('table')
 		expect(summary.content.columns.map((col) => [col.label, col.value])).toEqual([

@@ -7,7 +7,7 @@ Give dossiq a first-time setup flow that (a) is rendered by the abstract `CnSetu
 
 ### Requirement: REQ-SETUP-PRO-001 — dossiq Declares Its Setup Steps In The Manifest
 
-dossiq SHALL declare a `setup` block in `src/manifest.json` with steps `welcome` (`info`, optional), `demo-data` (`choice`, optional), `load-demo-data` (`run-action`, optional), `register-check` (`run-action`, **required**), `dwangsom-secret` (`config-fields`, optional) and `done` (`summary`, optional), and SHALL set `completionConfigKey` to `setup_completed_version`.
+dossiq SHALL declare a `setup` block in `src/manifest.json` whose steps follow board DqInstellen's stepper, in its order: Welkom (`welcome`), Voorbeeldgegevens (`demo-data`, with `load-demo-data` behind it), Organisatie (`organisation-details`), Huisstijl (`house-style`), Zaaktypen (`case-types`) and Klaar (`done`, the summary board DqInstellenKlaar draws), and SHALL set `completionConfigKey` to `setup_completed_version`. The stepper SHALL read "Dossiq instellen, stap <n> van 6".
 
 dossiq SHALL NOT declare a `seed` step. The requirement used to mandate one, and the step was retired while the bezwaar/beroep seed data was parked and every click answered 422. The `seed` ACTION stays and installs the on-request `bezwaar-beroep` package (case-types REQ-CT-50); offering it in the wizard again is a product choice that has not been made.
 
@@ -34,7 +34,7 @@ The declared step list and the reported step list SHALL agree in both directions
 - **GIVEN** the manifest declares no `seed` step
 - **WHEN** the wizard reads `GET /apps/dossiq/api/setup/status`
 - **THEN** the payload SHALL NOT report a `seed` step, so the wizard cannot prompt for one
-- **AND** it SHALL still report the steps the manifest does declare, `register-check` among them
+- **AND** it SHALL still report the steps the manifest does declare, `case-types` among them
 - **AND** `POST /apps/dossiq/api/setup/action/seed` SHALL answer success when the package installed or was already current, and 422 with `success: false` when the installer refused it, never a success-shaped zero
 - **AND** neither answer SHALL add the step back to the payload
 
@@ -270,15 +270,15 @@ administrator set stays as it was. `GET /api/setup/status` SHALL report
 - **WHEN** the status is read
 - **THEN** it SHALL carry no `dismissed` key
 
-### Requirement: The wizard follows the board's steps
+### Requirement: The wizard opens with a welcome, then the example data
 
-The setup wizard SHALL offer, in this order: Organisation, House style, Case types, Example data, and Done. It SHALL NOT ask for the dwangsom callback secret: that procedure-specific setting is set under admin settings > Financial integration. `GET /api/setup/status` SHALL report each of them.
+The setup wizard SHALL offer, in this order: Welcome, Example data, Organisation, House style, Case types, and Done (ADR-111 rule 4: say what the app is, then offer the data that shows it working). It SHALL NOT ask for the dwangsom callback secret: that procedure-specific setting is set under admin settings > Financial integration. `GET /api/setup/status` SHALL report each of them, the welcome always as done.
 
-#### Scenario: The status names the board's steps
-@e2e exclude the step contract is the status payload; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testEveryActionableManifestStepIsReported` and `::testTheBoardStepsAreReported`
+#### Scenario: The status names the wizard's steps
+@e2e exclude the step contract is the status payload; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testEveryActionableManifestStepIsReported` and `::testTheBoardStepsAreReported`, and the order by `tests/vitest/setupWelcomeFirst.spec.js`
 
 - **WHEN** an administrator's wizard asks for the setup status
-- **THEN** `steps` holds `organisation-details`, `house-style`, `case-types`, `demo-data` and `done`
+- **THEN** `steps` holds `welcome`, `demo-data`, `organisation-details`, `house-style`, `case-types` and `done`
 - **AND** it holds no `dwangsom-secret`
 
 ### Requirement: The organisation's name and logo live on the organisation
@@ -295,14 +295,14 @@ The Organisation step SHALL write the name and logo address onto the active Open
 
 ### Requirement: The house style is handed to Thematiq
 
-The House style step SHALL require the Thematiq app. Where Thematiq is not installed, the wizard SHALL leave the step out and the summary SHALL name it as skipped.
+The House style step SHALL require the Thematiq app. The stepper SHALL keep Huisstijl as step 4 of 6 either way, as board DqInstellen draws it. Where Thematiq is not installed, the wizard SHALL pass over the step, and the Klaar summary (board DqInstellenKlaar) SHALL list Huisstijl as "Overgeslagen: de huisstijl regel je in Thematiq, niet hier", naming Thematiq as the screen that sets it.
 
 #### Scenario: Without Thematiq the step is skipped
 @e2e exclude the skip is CnSetupWizard's `requires` behaviour, tested in nextcloud-vue; the declaration is checked by `tests/validate-manifest.js`
 
 - **GIVEN** Thematiq is not installed
 - **WHEN** the administrator opens the wizard
-- **THEN** the House style step is not offered and the summary says it needs Thematiq
+- **THEN** the stepper still shows Huisstijl, the wizard passes over it, and the summary reads "Overgeslagen: de huisstijl regel je in Thematiq, niet hier"
 
 ### Requirement: The case types step installs on-request packages
 

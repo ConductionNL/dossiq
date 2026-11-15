@@ -108,16 +108,19 @@ class NoticeOfDefaultRowsTest extends TestCase {
 	}
 
 	/**
-	 * A fixed penalty reads its definitive amount and has gone to finance as a
-	 * payment signal; a running one its amount so far, since it started, with
-	 * the amount not fixed yet; a notice without a penalty neither.
+	 * A fixed penalty reads its definitive amount and is ready for payout; a
+	 * running one its amount so far, since it started, with the amount not
+	 * fixed yet; a notice without a penalty neither.
 	 *
 	 * @return void
 	 */
 	public function testReadsThePenaltyAndWhereTheMoneyStands(): void {
 		$byId = array_column(array: $this->rows->list()['notices'], column_key: null, index_key: 'id');
 
-		self::assertSame(expected: ['definitive', 1442.0, '2026-08-21', 'signal-sent'], actual: $this->money(row: $byId['nod-4863']));
+		self::assertSame(expected: ['definitive', 1442.0, '2026-08-21', 'payout-due'], actual: $this->money(row: $byId['nod-4863']));
+		self::assertSame(expected: 'calc-4863', actual: $byId['nod-4863']['accruingAmountId']);
+		self::assertSame(expected: 'calc-107', actual: $byId['nod-107']['accruingAmountId']);
+		self::assertSame(expected: '', actual: $byId['nod-206']['accruingAmountId']);
 		self::assertSame(expected: ['running', 207.0, '2026-10-16', 'amount-open'], actual: $this->money(row: $byId['nod-107']));
 		self::assertSame(expected: ['none', 0.0, '', null], actual: $this->money(row: $byId['nod-206']));
 	}
@@ -144,6 +147,35 @@ class NoticeOfDefaultRowsTest extends TestCase {
 
 		self::assertSame(expected: 'running', actual: $row['penaltyState']);
 		self::assertSame(expected: 'amount-open', actual: $row['financeState']);
+	}
+
+	/**
+	 * A prepared payout says where it stands: stored only, it is prepared; taken
+	 * by the finance app, a payment signal went out; then paid, rejected or on
+	 * hold for an objection.
+	 *
+	 * @return void
+	 */
+	public function testAFixedPenaltyReadsItsPayoutStatus(): void {
+		$cases = [
+			[['status' => 'voorbereid'], 'prepared'],
+			[['status' => 'voorbereid', 'payableId' => 'pay-1'], 'signal-sent'],
+			[['status' => 'in-handling', 'payableId' => 'pay-1'], 'signal-sent'],
+			[['status' => 'paid', 'payableId' => 'pay-1'], 'paid'],
+			[['status' => 'rejected'], 'rejected'],
+			[['status' => 'on-hold-objection'], 'on-hold'],
+		];
+		foreach ($cases as $n => [$payout, $expected]) {
+			$objects = clone $this->objects;
+			$objects->seed(
+				schema: 'dwangsomUitbetaling',
+				object: ['id' => 'pay-row-'.$n, 'penaltyPaymentCalculation' => 'calc-4863'] + $payout
+			);
+			$rows = new NoticeOfDefaultRows(settingsService: $this->settings(objects: $objects, noticeSchema: 'noticeOfDefault'));
+			$row  = array_column(array: $rows->list()['notices'], column_key: null, index_key: 'id')['nod-4863'];
+
+			self::assertSame(expected: $expected, actual: $row['financeState'], message: json_encode($payout));
+		}
 	}
 
 	/**
@@ -223,10 +255,88 @@ class NoticeOfDefaultRowsTest extends TestCase {
 				'accruing_amount_schema' => 'penaltyPaymentCalculation',
 				'notice_of_default_schema' => $noticeSchema,
 				'case_schema' => 'case',
+				'payout_schema' => 'dwangsomUitbetaling',
 				default => '',
 			},
 		);
 
 		return $settings;
+	}
+
+	/**
+	 * A whole row, keys in order, for a fixed penalty and for a notice whose term cannot be read.
+	 *
+	 * @return void
+	 */
+	public function testAWholeRowIsAsPinned(): void {
+		$this->objects->seed(
+			schema: 'noticeOfDefault',
+			object: ['id' => 'nod-lost', 'deadlineInstance' => 'ti-missing', 'receiptDate' => '2026-01-01']
+		);
+
+		$byId = array_column(array: $this->rows->list()['notices'], column_key: null, index_key: 'id');
+
+		self::assertSame(
+			expected: [
+				'id'               => 'nod-4863',
+				'caseId'           => 'case-4863',
+				'caseIdentifier'   => '2026-4863',
+				'caseTitle'        => 'Kapvergunning Parkstraat',
+				'caseLabel'        => '2026-4863 Kapvergunning Parkstraat',
+				'receiptDate'      => '2026-08-07',
+				'validityStatus'   => 'valid',
+				'penaltyState'     => 'definitive',
+				'penaltyEuros'     => 1442.0,
+				'penaltySince'     => '2026-08-21',
+				'financeState'     => 'payout-due',
+				'accruingAmountId' => 'calc-4863',
+			],
+			actual: $byId['nod-4863']
+		);
+		self::assertSame(
+			expected: [
+				'id'               => 'nod-lost',
+				'caseId'           => '',
+				'caseIdentifier'   => '',
+				'caseTitle'        => '',
+				'caseLabel'        => '',
+				'receiptDate'      => '2026-01-01',
+				'validityStatus'   => 'unknown',
+				'penaltyState'     => 'none',
+				'penaltyEuros'     => 0.0,
+				'penaltySince'     => '',
+				'financeState'     => null,
+				'accruingAmountId' => '',
+			],
+			actual: $byId['nod-lost']
+		);
+	}
+
+	/**
+	 * The notices of one case are that case's rows of the report, newest first.
+	 *
+	 * @return void
+	 */
+	public function testForCaseKeepsOnlyThatCasesNotices(): void {
+		$this->objects->seed(
+			schema: 'noticeOfDefault',
+			object: ['id' => 'nod-4863-b', 'deadlineInstance' => 'ti-4863', 'receiptDate' => '2026-09-01', 'validityStatus' => 'unknown']
+		);
+
+		$notices = $this->rows->forCase(caseId: ' case-4863 ')['notices'];
+
+		$this->assertSame(['nod-4863-b', 'nod-4863'], array_column($notices, 'id'));
+		$this->assertSame(['case-4863', 'case-4863'], array_column($notices, 'caseId'));
+		$this->assertSame('definitive', $notices[1]['penaltyState']);
+		$this->assertSame(['notices' => []], $this->rows->forCase(caseId: 'case-unknown'));
+	}
+
+	/**
+	 * Without a case id there is nothing to list.
+	 *
+	 * @return void
+	 */
+	public function testForCaseWithoutAnIdIsEmpty(): void {
+		$this->assertSame(['notices' => []], $this->rows->forCase(caseId: '  '));
 	}
 }

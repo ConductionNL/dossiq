@@ -78,13 +78,16 @@ document.
 
 ### Requirement: the "Who can see this" card shows the exception and changes it
 
-The Files tab's "Who can see this" card MUST show the default (the confidentiality level), the exception (the named
-people and groups) and the reason, and offer "Change exception", which opens a dialog with a people and group picker
-and a reason, saved through the endpoint above.
+The Files tab MUST show, as board DqDocumentenBeheer draws it, a "Wie mag dit zien" list with a "Zichtbaar voor"
+column per document ("Iedereen op de zaak", or the people and groups of the exception), and per document a
+"Wie mag dit zien: <document>" card with the rows Standaard (who sees it without an exception: "Iedereen op de
+zaak"), Uitzondering (the named people and groups) and Reden, and the action "Uitzondering wijzigen", which opens a
+dialog with a people and group picker and a reason, saved through the endpoint above.
 
 #### Scenario: the board's card
-- GIVEN "Offerte verlichting.pdf" carries the exception pieter and woo-team with reason "Commercially sensitive prices"
-- THEN the card reads Default, Exception "Only Pieter Jansen and woo-team" and Reason "Commercially sensitive prices"
+- GIVEN "Offerte herplant essen.pdf" carries the exception pieter and team Vergunningen with reason "Bedrijfsgevoelige prijzen"
+- THEN the card reads Standaard "Iedereen op de zaak", Uitzondering "Alleen Pieter Jansen en team Vergunningen" and Reden "Bedrijfsgevoelige prijzen"
+- AND the list's Zichtbaar voor column reads "Alleen Pieter Jansen en team Vergunningen" for that document
 
 ### Requirement: OpenRegister's own API applies the same rule to the record
 

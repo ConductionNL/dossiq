@@ -46,12 +46,12 @@ Every WMO case concerns vulnerable adults; the zaak MUST declare its special-cat
 - **AND** `avgClassificatie.bijzonderePersoonsgegevens` is `true`
 
 ### Requirement: Wijkteam-only access control
-Only staff in the assigned wijkteam MAY read a zaak's content; other staff MAY read only metadata. Access MUST be enforced at query time by comparing `zaak.wijkteam` to the requesting user's wijkteam (data-driven, not role-driven alone), with a `tweedeBehandelaarId` override.
+Only staff in the assigned wijkteam MAY read a zaak's content; other staff MAY learn only that the zaak exists, as board DqSociaalDomein shows it. Access MUST be enforced at query time by comparing `zaak.wijkteam` to the requesting user's wijkteam (data-driven, not role-driven alone), with a `tweedeBehandelaarId` override.
 
-#### Scenario: Out-of-team staff see metadata only
+#### Scenario: Out-of-team staff see only that the case exists
 - **GIVEN** `WmoZaak` `zaak-2026-wmo-04832` has `wijkteam = wijkteam-zuid`
 - **WHEN** a staff member from `wijkteam-noord` queries the zaak
-- **THEN** the response contains only zaak number, status, and treatment dates
+- **THEN** the response says only that a case exists, with its domain and the contact person to ask ("Alleen dat hij bestaat"), and no zaak number, status or dates
 - **AND** it does NOT contain `ondersteuningsvraag`, the indicatiestelling, or any inhoud fields
 
 #### Scenario: Second handler gets full access regardless of team

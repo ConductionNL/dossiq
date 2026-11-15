@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ComplaintAnalyticsController;
 use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\Complaint\EmployeeAlertAudience;
 use OCA\Dossiq\Service\ComplaintAnalyticsService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -72,6 +73,13 @@ class ComplaintAnalyticsControllerContractTest extends TestCase {
 	private ComplaintAccessGuard $accessGuard;
 
 	/**
+	 * The employee alert audience mock.
+	 *
+	 * @var EmployeeAlertAudience|MockObject
+	 */
+	private EmployeeAlertAudience $alertAudience;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var ComplaintAnalyticsController
@@ -89,12 +97,14 @@ class ComplaintAnalyticsControllerContractTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->analyticsService = $this->createMock(ComplaintAnalyticsService::class);
 		$this->accessGuard = $this->createMock(ComplaintAccessGuard::class);
+		$this->alertAudience = $this->createMock(EmployeeAlertAudience::class);
 
 		$this->controller = new ComplaintAnalyticsController(
 			appName: 'dossiq',
 			request: $this->request,
 			analyticsService: $this->analyticsService,
 			accessGuard: $this->accessGuard,
+			alertAudience: $this->alertAudience,
 		);
 	}//end setUp()
 
@@ -176,4 +186,71 @@ class ComplaintAnalyticsControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['total' => 0], $response->getData());
 	}//end testKpiDefaultsToTheCurrentMonthRatherThanTheCurrentYear()
+
+	/**
+	 * A signed-in caller outside the alert audience gets the frequency figures
+	 * and no `employeeAlerts` key, and the alerts are never built.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
+	 */
+	public function testAnalyticsLeavesOutEmployeeAlertsForACallerOutsideTheAudience(): void {
+		$this->accessGuard->method('currentUid')->willReturn('handler-1');
+		$this->withRequestParams([]);
+		$this->alertAudience->expects($this->once())
+			->method('mayReadEmployeeAlerts')
+			->with('handler-1')
+			->willReturn(false);
+		$this->analyticsService->method('getFrequencyByDimension')->willReturn([]);
+		$this->analyticsService->method('getMonthlyTrend')->willReturn([]);
+		$this->analyticsService->method('getAverageResolutionTime')->willReturn([]);
+		$this->analyticsService->expects($this->never())->method('checkEmployeeThresholdAlerts');
+
+		$response = $this->controller->analytics();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertArrayNotHasKey('employeeAlerts', $response->getData());
+		$this->assertArrayHasKey('byCategorie', $response->getData());
+	}//end testAnalyticsLeavesOutEmployeeAlertsForACallerOutsideTheAudience()
+
+	/**
+	 * A caller in the alert audience gets the alerts as the service built them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
+	 */
+	public function testAnalyticsReturnsEmployeeAlertsForTheAudience(): void {
+		$this->accessGuard->method('currentUid')->willReturn('hr-1');
+		$this->withRequestParams([]);
+		$this->alertAudience->method('mayReadEmployeeAlerts')->with('hr-1')->willReturn(true);
+		$this->analyticsService->method('getFrequencyByDimension')->willReturn([]);
+		$this->analyticsService->method('getMonthlyTrend')->willReturn([]);
+		$this->analyticsService->method('getAverageResolutionTime')->willReturn([]);
+		$alerts = [['count' => 3, 'categories' => ['wachttijd'], 'periods' => ['2026-05-04', '2026-11-04'], 'threshold' => 3]];
+		$this->analyticsService->expects($this->once())->method('checkEmployeeThresholdAlerts')->willReturn($alerts);
+
+		$response = $this->controller->analytics();
+
+		$this->assertSame($alerts, $response->getData()['employeeAlerts']);
+	}//end testAnalyticsReturnsEmployeeAlertsForTheAudience()
+
+	/**
+	 * An anonymous caller is refused before the audience is asked or any figure built.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
+	 */
+	public function testAnalyticsRefusesAnAnonymousCallerBeforeBuildingAnything(): void {
+		$refusal = new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		$this->accessGuard->method('currentUid')->willReturn('');
+		$this->accessGuard->method('notAuthenticated')->willReturn($refusal);
+		$this->alertAudience->expects($this->never())->method('mayReadEmployeeAlerts');
+		$this->analyticsService->expects($this->never())->method('checkEmployeeThresholdAlerts');
+		$this->analyticsService->expects($this->never())->method('getFrequencyByDimension');
+
+		$this->assertSame($refusal, $this->controller->analytics());
+	}//end testAnalyticsRefusesAnAnonymousCallerBeforeBuildingAnything()
 }//end class

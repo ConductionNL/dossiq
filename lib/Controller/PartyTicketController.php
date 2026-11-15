@@ -35,12 +35,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Pipelinq\PipelinqGateway;
+use OCA\Dossiq\Kernel\Contracts\PipelinqGatewayInterface;
+use OCA\Dossiq\Kernel\Contracts\ReadableObjectsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use Throwable;
 
 /**
  * Read parties' open pipelinq tickets by master entity.
@@ -61,18 +63,21 @@ class PartyTicketController extends Controller {
 	 *
 	 * @param string          $appName The app name.
 	 * @param IRequest        $request The HTTP request.
-	 * @param PipelinqGateway $gateway The one seam that names pipelinq.
+	 * @param PipelinqGatewayInterface $gateway     The one seam that names pipelinq.
+	 * @param ReadableObjectsInterface $readable    Whether a caller is signed in, and which master entities they may read.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PipelinqGateway $gateway,
+		private readonly PipelinqGatewayInterface $gateway,
+		private readonly ReadableObjectsInterface $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
-	 * One open ticket count per master entity.
+	 * One open ticket count per master entity the caller may read. A master
+	 * entity that no party the caller may read carries is left out, as a missing one is.
 	 *
 	 * @return JSONResponse `{available, values: {ref: count}}`, or `{available: false}`.
 	 *
@@ -80,15 +85,50 @@ class PartyTicketController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function openTicketCounts(): JSONResponse {
-		$keys = $this->keys(raw: $this->request->getParam('keys', []));
-		if (count($keys) > self::MAX_KEYS) {
-			return new JSONResponse(['error' => 'Too many parties in one read.'], Http::STATUS_BAD_REQUEST);
+		$keys = $this->readableKeys();
+		if ($keys instanceof JSONResponse) {
+			return $keys;
 		}
 
 		if ($keys === []) {
 			return new JSONResponse(['available' => true, 'values' => []]);
 		}
 
+		return $this->openTicketCountsOf(keys: $keys);
+	}//end openTicketCounts()
+
+	/**
+	 * The requested parties the caller may read, or why they cannot be read.
+	 *
+	 * @return array|JSONResponse The readable master-entity keys, or the refusal.
+	 */
+	private function readableKeys(): array|JSONResponse {
+		if ($this->readable->hasCaller() === false) {
+			return new JSONResponse(['error' => 'Sign in to read these parties.'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$keys = $this->keys(raw: $this->request->getParam('keys', []));
+		if (count($keys) > self::MAX_KEYS) {
+			return new JSONResponse(['error' => 'Too many parties in one read.'], Http::STATUS_BAD_REQUEST);
+		}
+
+		try {
+			$keys = $this->readable->readableMasterEntities(refs: $keys);
+		} catch (Throwable) {
+			return new JSONResponse(['error' => 'The parties could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return $keys;
+	}//end readableKeys()
+
+	/**
+	 * Count the open tickets of each party, or answer unavailable when the tickets cannot be read.
+	 *
+	 * @param array $keys The readable master-entity keys.
+	 *
+	 * @return JSONResponse
+	 */
+	private function openTicketCountsOf(array $keys): JSONResponse {
 		$tickets = $this->gateway->openTicketsByMasterEntity(refs: $keys);
 		if ($tickets === null) {
 			return new JSONResponse(['available' => false]);
@@ -100,7 +140,7 @@ class PartyTicketController extends Controller {
 		}
 
 		return new JSONResponse(['available' => true, 'values' => $values]);
-	}//end openTicketCounts()
+	}//end openTicketCountsOf()
 
 	/**
 	 * One party's tickets: the open ones, or with `status` `closed` or `all`
@@ -113,17 +153,21 @@ class PartyTicketController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function openTickets(): JSONResponse {
+		if ($this->readable->hasCaller() === false) {
+			return new JSONResponse(['error' => 'Sign in to read this party.'], Http::STATUS_UNAUTHORIZED);
+		}
+
 		$key = trim((string)$this->request->getParam('key', ''));
 		if ($key === '') {
 			return new JSONResponse(['available' => true, 'results' => [], 'total' => 0]);
 		}
 
-		$status = (string)$this->request->getParam('status', 'open');
-		if (in_array($status, ['closed', 'all'], true) === false) {
-			$status = 'open';
+		$unreadable = $this->unreadableParty(key: $key);
+		if ($unreadable !== null) {
+			return $unreadable;
 		}
 
-		$tickets = $this->gateway->ticketsByMasterEntity(refs: [$key], status: $status);
+		$tickets = $this->gateway->ticketsByMasterEntity(refs: [$key], status: $this->statusAsked());
 		if ($tickets === null) {
 			return new JSONResponse(['available' => false]);
 		}
@@ -132,6 +176,45 @@ class PartyTicketController extends Controller {
 
 		return new JSONResponse(['available' => true, 'results' => $results, 'total' => count($results)]);
 	}//end openTickets()
+
+	/**
+	 * The 503/404 answer when the party cannot be read or the caller may not read it, else null.
+	 *
+	 * @param string $key The party's master entity key.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
+	 */
+	private function unreadableParty(string $key): ?JSONResponse {
+		try {
+			$readable = $this->readable->readableMasterEntities(refs: [$key]);
+		} catch (Throwable) {
+			return new JSONResponse(['error' => 'The party could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		if ($readable === []) {
+			return new JSONResponse(['error' => 'Party not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return null;
+	}//end unreadableParty()
+
+	/**
+	 * The ticket status asked for: `closed` or `all`, and `open` for anything else.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
+	 */
+	private function statusAsked(): string {
+		$status = (string)$this->request->getParam('status', 'open');
+		if (in_array($status, ['closed', 'all'], true) === false) {
+			return 'open';
+		}
+
+		return $status;
+	}//end statusAsked()
 
 	/**
 	 * The distinct, non-empty master entities a request names.

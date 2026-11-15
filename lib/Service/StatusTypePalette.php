@@ -28,12 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\StatusTypePaletteInterface;
+
 /**
  * The board colour of each shipped status name, and what each shipped row held before.
  *
  * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
  */
-final class StatusTypePalette {
+final class StatusTypePalette implements StatusTypePaletteInterface {
 
 	/**
 	 * The colour per shipped status name.
@@ -44,6 +46,7 @@ final class StatusTypePalette {
 		'Aangemeld' => 'blue',
 		'Aanvraag ontvangen' => 'blue',
 		'Beroep ontvangen' => 'blue',
+		'Bevestigd' => 'blue',
 		'Melding ontvangen' => 'blue',
 		'Ontvangen' => 'blue',
 		'Ontvangst' => 'blue',
@@ -60,6 +63,7 @@ final class StatusTypePalette {
 		'Constatering' => 'purple',
 		'Evaluatie' => 'purple',
 		'Hercontrole' => 'purple',
+		'Hoorgesprek' => 'purple',
 		'Hoorzitting afgerond' => 'purple',
 		'Identiteit vastgesteld' => 'purple',
 		'In behandeling' => 'purple',
@@ -76,6 +80,7 @@ final class StatusTypePalette {
 		'Jeugdhulp loopt' => 'purple',
 		'Onderzoek' => 'purple',
 		'Ontvankelijkheidstoets' => 'purple',
+		'Oordeel' => 'purple',
 		'Opvolging' => 'purple',
 		'Overleg' => 'purple',
 		'Parafering' => 'purple',
@@ -87,6 +92,7 @@ final class StatusTypePalette {
 		'Uitvoering' => 'purple',
 		'Veiligheidstoets' => 'purple',
 		'Verweerschrift in voorbereiding' => 'purple',
+		'Voorschotten' => 'purple',
 		'Voorstel opstellen' => 'purple',
 		'Zitting afgerond' => 'purple',
 		'Zoeken documenten' => 'purple',
@@ -106,6 +112,7 @@ final class StatusTypePalette {
 		'Zienswijze' => 'orange',
 		'Zitting gepland' => 'orange',
 		'Advies uitgebracht' => 'teal',
+		'Antwoordbrief' => 'teal',
 		'Beslissing op bezwaar' => 'teal',
 		'Besluit' => 'teal',
 		'Besluit genomen' => 'teal',

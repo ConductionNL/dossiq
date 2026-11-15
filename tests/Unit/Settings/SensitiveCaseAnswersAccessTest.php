@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Tests\Support\SiblingOpenRegister;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -39,34 +40,13 @@ use Psr\Log\NullLogger;
  * @preserveGlobalState disabled
  */
 class SensitiveCaseAnswersAccessTest extends TestCase {
-	private const OPENREGISTER_LIB = __DIR__ . '/../../../../openregister/lib';
-
 	/**
 	 * Put OpenRegister's real source in front of the stubs, for this process only.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$lib = realpath(self::OPENREGISTER_LIB);
-		if ($lib === false || is_dir($lib) === false) {
-			self::markTestSkipped(message: 'No sibling openregister checkout at ' . self::OPENREGISTER_LIB . '. CI clones it, so this runs there.');
-		}
-
-		spl_autoload_register(
-			static function (string $class) use ($lib): void {
-				$prefix = 'OCA\\OpenRegister\\';
-				if (str_starts_with($class, $prefix) === false) {
-					return;
-				}
-
-				$file = $lib . '/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
-				if (is_file($file) === true) {
-					require_once $file;
-				}
-			},
-			true,
-			true
-		);
+		SiblingOpenRegister::loadNamespace(namespace: '');
 	}//end setUp()
 
 	/**
@@ -114,13 +94,26 @@ class SensitiveCaseAnswersAccessTest extends TestCase {
 		$groupManager->method('isInGroup')->willReturnCallback(static fn (string $uid, string $group): bool => in_array($group, $groups, true));
 
 		$handler = 'OCA\\OpenRegister\\Service\\PropertyRbacHandler';
-		$rbac = new $handler(
-			$session,
-			$groupManager,
-			$this->createMock(originalClassName: 'OCA\\OpenRegister\\Service\\ConditionMatcher'),
-			new NullLogger(),
-			$this->noStateRules(),
-		);
+		$matcher = $this->createMock(originalClassName: 'OCA\\OpenRegister\\Service\\ConditionMatcher');
+		// OpenRegister main takes the caller and the rules as two bundles.
+		$service = 'OCA\\OpenRegister\\Service\\';
+		if (class_exists(class: $service . 'PropertyRbacCaller') === true) {
+			$rbac = new $handler(
+				new ($service . 'PropertyRbacCaller')($session, $groupManager),
+				new ($service . 'PropertyRbacRules')($matcher, $this->noStateRules()),
+				new NullLogger(),
+			);
+		}
+
+		if (class_exists(class: $service . 'PropertyRbacCaller') === false) {
+			$rbac = new $handler(
+				$session,
+				$groupManager,
+				$matcher,
+				new NullLogger(),
+				$this->noStateRules(),
+			);
+		}
 
 		return $rbac->filterReadableProperties(
 			$this->caseSchema(),

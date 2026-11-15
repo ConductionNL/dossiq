@@ -26,6 +26,8 @@ use OCA\Dossiq\Service\Cases\CaseMergeRule;
 use OCA\Dossiq\Service\Cases\CaseMergeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Kernel\Contracts\MergeInstruction;
+use OCA\OpenRegister\Kernel\Contracts\ObjectMergerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -254,11 +256,61 @@ class CaseMergeServiceTest extends TestCase {
 	}//end testTheRuleIsReadFromTheShippedRegister()
 
 	/**
+	 * A merge is handed to OpenRegister's object merger as one MergeInstruction.
+	 *
+	 * @return void
+	 */
+	public function testAMergeIsHandedToThePlatformAsAMergeInstruction(): void {
+		$this->objects->store('2', 'case-a', ['id' => 'case-a']);
+		$this->objects->store('2', 'case-b', ['id' => 'case-b']);
+		$merger = $this->createMock(ObjectMergerInterface::class);
+		$merger->expects($this->once())
+			->method('merge')
+			->with($this->callback(
+				static fn (MergeInstruction $instruction): bool => $instruction->from === 'case-b'
+					&& $instruction->into === 'case-a'
+					&& $instruction->reason === 'Dubbel ingediend'
+					&& $instruction->mergedBy === 'behandelaar'
+			))
+			->willReturn(['id' => 'merge-1']);
+
+		$outcome = $this->service(merger: $merger)->requestMerge(
+			mergedId: 'case-b',
+			survivorId: 'case-a',
+			reason: 'Dubbel ingediend',
+			actor: 'behandelaar'
+		);
+
+		$this->assertSame(['operation' => ['id' => 'merge-1']], $outcome);
+	}//end testAMergeIsHandedToThePlatformAsAMergeInstruction()
+
+	/**
+	 * Without OpenRegister's object merger the merge is refused as unavailable.
+	 *
+	 * @return void
+	 */
+	public function testWithoutThePlatformMergerTheMergeIsRefused(): void {
+		$this->objects->store('2', 'case-a', ['id' => 'case-a']);
+		$this->objects->store('2', 'case-b', ['id' => 'case-b']);
+
+		$outcome = $this->service(merger: new \stdClass())->requestMerge(
+			mergedId: 'case-b',
+			survivorId: 'case-a',
+			reason: 'Dubbel ingediend',
+			actor: 'behandelaar'
+		);
+
+		$this->assertSame(['refused' => 'platform-unavailable'], $outcome);
+	}//end testWithoutThePlatformMergerTheMergeIsRefused()
+
+	/**
 	 * The service over the fakes.
+	 *
+	 * @param object|null $merger OpenRegister's merge service, when the platform has one.
 	 *
 	 * @return CaseMergeService The service under test.
 	 */
-	private function service(): CaseMergeService {
+	private function service(?object $merger = null): CaseMergeService {
 		$config = [
 			'register' => '1',
 			'case_schema' => '2',
@@ -270,6 +322,7 @@ class CaseMergeServiceTest extends TestCase {
 			static fn (string $key, string $default = ''): string => (string)($config[$key] ?? $default)
 		);
 		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getOpenRegisterClass')->willReturn($merger);
 
 		// REAL collaborators over the SAME settings double the assertions read
 		// through. Only the wiring lines moved when they were split out.

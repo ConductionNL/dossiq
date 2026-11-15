@@ -10,12 +10,16 @@
         "English value in l10n/en.json instead, keeping the key, the way the other 189 entries do."
     ],
     "keys": [
+        "Maximum",
+        "{type}",
         "#",
         "1 week",
         "AVG",
         "App",
         "BAG",
+        "BRP",
         "BSN",
+        "IBAN",
         "Chat",
         "Checklist",
         "In Nextcloud",
@@ -45,6 +49,7 @@
         "Intake",
         "KvK",
         "Label",
+        "Labels",
         "Links",
         "Mail",
         "Manager",
@@ -70,7 +75,6 @@
         "Status schema",
         "Status: {name}",
         "Status: {status}",
-        "Store",
         "Subsidies",
         "Team",
         "Tenant",
@@ -123,6 +127,7 @@
         "Override",
         "{identifier}",
         "{subject.title}",
+        "{subject}",
         "initiatorDisplayName",
         "name",
         "{name}, {description}",
@@ -134,6 +139,16 @@
         "Variant",
         "via",
         "{summary}",
-        "{knowledgeBasePage:last-segment}"
+        "{knowledgeBasePage:last-segment}",
+        "Dossiq",
+        "Filinq",
+        "Integriq",
+        "OpenRegister",
+        "{minutes} min {seconds} s",
+        "{seconds} s",
+        "Registry",
+        "E-mail",
+        "Thematiq",
+        "{order} · {label}"
     ]
 }
