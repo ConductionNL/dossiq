@@ -144,12 +144,14 @@ class LhsDecisionTableLookup {
 	 * @return array<string, mixed>|null The evaluation result.
 	 */
 	private function evaluated(string $reference, array $inputs): ?array {
+		$result = null;
 		try {
-			return $this->tables->evaluate(reference: $reference, inputs: $inputs);
+			$result = $this->tables->evaluate(reference: $reference, inputs: $inputs);
 		} catch (Throwable $e) {
 			$this->logRefusal(failure: $e, context: ['table' => $reference, 'triple' => implode(':', $inputs)]);
-			return null;
 		}
+
+		return $result;
 	}//end evaluated()
 
 	/**

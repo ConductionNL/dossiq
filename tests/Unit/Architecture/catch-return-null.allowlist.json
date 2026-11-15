@@ -1545,10 +1545,10 @@
     },
     {
       "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",
-      "method": "mergeOntoStored",
+      "method": "storedRow",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`mergeOntoStored()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: refusing to update a row that cannot be read\"), so a failed read and an absent record are the same answer."
+      "reason": "`storedRow()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: refusing to update a row that cannot be read\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",
