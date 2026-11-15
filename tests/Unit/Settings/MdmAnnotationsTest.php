@@ -99,7 +99,7 @@ class MdmAnnotationsTest extends TestCase {
 		// single exact identifier is close to proof. `case` scores two filings,
 		// where no field is proof and the cut-off is what makes one strong
 		// signal enough to ask the question (duplicate-warning-at-intake D-1).
-		$thresholds = ['case' => 0.3, 'supplier' => 0.7, 'partnerOrganization' => 0.7];
+		$thresholds = ['case' => 0.6, 'supplier' => 0.7, 'partnerOrganization' => 0.7];
 
 		foreach (self::ANNOTATED_SCHEMAS as $slug) {
 			$schema = $this->schema(slug: $slug);
@@ -188,13 +188,25 @@ class MdmAnnotationsTest extends TestCase {
 		// for.
 		$this->assertArrayNotHasKey(key: 'identifier', array: $byField);
 
-		// Each single signal has to clear the cut-off on its own, and no signal
-		// may clear it on a near miss. That is the whole of D-1 expressed in
-		// the one vocabulary OpenRegister has: a weighted average.
+		// The permit application reference is proof on its own (a DSO
+		// re-delivery). The same requester is not (coordinator decision 26 Oct,
+		// DqNieuweZaakDubbel): two requests by one person are two requests
+		// unless their titles look alike. OpenRegister leaves a rule out when
+		// neither case holds its field, so on a case without a permit
+		// reference the requester and the title rules make the whole score.
 		$total = array_sum(array_column($dedup['matchRules'], 'weight'));
 		$this->assertSame(expected: 1.0, actual: round($total, 4), message: 'the weights must sum to one, or the cut-off means nothing');
-		$this->assertGreaterThanOrEqual(expected: $dedup['threshold'], actual: $byField['requester'][0]['weight']);
 		$this->assertGreaterThanOrEqual(expected: $dedup['threshold'], actual: $byField['permitApplicationRef'][0]['weight']);
+
+		$withoutPermit = $total - $byField['permitApplicationRef'][0]['weight'];
+		$requesterAlone = $byField['requester'][0]['weight'] / $withoutPermit;
+		$this->assertLessThan(expected: $dedup['threshold'], actual: $requesterAlone, message: 'the same requester with an unrelated title is not a duplicate');
+
+		// The requester and a title that only looks alike ("Kosten nieuw
+		// zwembad" against "Kosten zwembad Sportpark Zuid" spells 0.38 alike)
+		// still clear the cut-off.
+		$titleSpelling = $byField['title'][1]['weight'] * 0.38;
+		$this->assertGreaterThanOrEqual(expected: $dedup['threshold'], actual: ($byField['requester'][0]['weight'] + $titleSpelling) / $withoutPermit);
 	}
 
 	/**

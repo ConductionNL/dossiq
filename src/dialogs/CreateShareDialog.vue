@@ -109,7 +109,7 @@ export default {
 		 * Emit a partner-organisation share payload. Public token links are
 		 * handled by the OR shares leaf, not here.
 		 *
-		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.2
+		 * @spec openspec/changes/archive/2026-06-15-migrate-public-share-to-shares-leaf/tasks.md#P2.2
 		 */
 		async createShare() {
 			this.saving = true

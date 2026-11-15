@@ -53,6 +53,9 @@ use Psr\Log\LoggerInterface;
  * "Local" is an allow-list, and the guard answers with an address.
  *
  * @covers \OCA\Dossiq\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Dossiq\Service\Outbound\HostResolver
+ * @uses \OCA\Dossiq\Service\Outbound\OutboundUrlGuard
+ * @uses \OCA\Dossiq\Support\SuppressesWarnings
  */
 class AiEndpointGuardTest extends TestCase {
 

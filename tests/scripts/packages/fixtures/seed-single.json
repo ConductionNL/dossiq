@@ -1,0 +1,8 @@
+{
+  "caseTypes": {
+    "id": "00000000-0000-4000-a000-000000000009",
+    "title": "Single case type without identifier",
+    "statusTypes": [{"name": "Only"}],
+    "workflowTemplate": {"steps": [{"statusName": "Only"}], "transitions": []}
+  }
+}

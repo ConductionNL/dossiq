@@ -1,7 +1,7 @@
 # case-knowledge-base Specification
 
 ## Purpose
-TBD - created by archiving change knowledge-base-on-the-case. Update Purpose after archive.
+Show a case type's work instruction and the case's own pages on the case, through the knowledge leaf. The team, not dossiq, decides who sees them.
 
 ## Requirements
 

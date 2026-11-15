@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Service\Support\LanguageMapText;
+
 /**
  * Builds the payload for a duplicated or a versioned case type.
  *
@@ -47,6 +49,16 @@ namespace OCA\Dossiq\Service\CaseType;
 class DerivedCaseTypePayload {
 
 	/**
+	 * Constructor.
+	 *
+	 * @param LanguageMapText $text A translatable title or name as one string.
+	 */
+	public function __construct(
+		private readonly LanguageMapText $text = new LanguageMapText(),
+	) {
+	}//end __construct()
+
+	/**
 	 * The payload for a duplicate: a second case type, not a version.
 	 *
 	 * @param array<string, mixed> $source The case type being copied.
@@ -54,16 +66,20 @@ class DerivedCaseTypePayload {
 	 * @return array<string, mixed> The payload to save as a new object.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
 	 */
 	public function duplicate(array $source): array {
 		$payload = $this->stripIdentity(data: $source);
 
-		$payload['title'] = 'Copy of ' . (string)($source['title'] ?? '');
+		$payload['title'] = 'Copy of ' . $this->text->textOf(value: ($source['title'] ?? null));
 		$payload['isDraft'] = true;
 		$payload['identifier'] = $this->generateIdentifier(
 			sourceIdentifier: (string)($source['identifier'] ?? '')
 		);
 		$payload['publicationRequired'] = false;
+		// A copy is the organisation's own, whatever package placed the source.
+		$payload['shipped'] = false;
+		$payload['package'] = '';
 		if (array_key_exists('publicationText', $payload) === true) {
 			$payload['publicationText'] = '';
 		}
@@ -114,7 +130,7 @@ class DerivedCaseTypePayload {
 	 *
 	 * @return array<string, mixed> The payload to save as a new object.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function nextVersion(array $source, string $sourceId): array {
 		$payload = $this->stripIdentity(data: $source);

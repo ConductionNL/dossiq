@@ -41,13 +41,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\OpenRegisterGrantsGatewayInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -59,9 +60,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class OpenRegisterGrantsGateway {
+class OpenRegisterGrantsGateway implements OpenRegisterGrantsGatewayInterface {
 
 	/**
 	 * OpenRegister's RBAC evaluator, resolved by name.
@@ -103,7 +104,7 @@ class OpenRegisterGrantsGateway {
 	 * @param SettingsService    $settingsService Holds the configured register and case schema.
 	 * @param LoggerInterface    $logger          Records why an answer could not be had.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -129,9 +130,34 @@ class OpenRegisterGrantsGateway {
 	 * @return array<string, array<string, mixed>>|null OpenRegister's answer, or null
 	 *                                                  when it could not be asked.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function provenanceForCase(string $caseId, array $actions, ?string $userId = null): ?array {
+		$target = $this->handlerAndSchema();
+		if ($target === null) {
+			return null;
+		}
+
+		[$handler, $schema] = $target;
+		try {
+			$provenance = $handler->provenanceFor(schema: $schema, actions: $actions, userId: $userId, object: $this->caseObject(caseId: $caseId));
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq grants gateway: OpenRegister could not answer the provenance for a case',
+				['exception' => $e->getMessage(), 'caseId' => $caseId]);
+			return null;
+		}
+
+		return $this->provenanceOrNull(provenance: $provenance);
+	}//end provenanceForCase()
+
+	/**
+	 * OpenRegister's permission handler and the case schema, or null when either is missing.
+	 *
+	 * @return array{0: object, 1: object}|null The handler and the schema.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function handlerAndSchema(): ?array {
 		$handler = $this->permissionHandler();
 		if ($handler === null) {
 			return null;
@@ -142,27 +168,25 @@ class OpenRegisterGrantsGateway {
 			return null;
 		}
 
-		try {
-			$provenance = $handler->provenanceFor(
-				schema: $schema,
-				actions: $actions,
-				userId: $userId,
-				object: $this->caseObject(caseId: $caseId),
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq grants gateway: OpenRegister could not answer the provenance for a case',
-				['exception' => $e->getMessage(), 'caseId' => $caseId],
-			);
-			return null;
-		}
+		return [$handler, $schema];
+	}//end handlerAndSchema()
 
+	/**
+	 * The provenance when OpenRegister answered an array, else null.
+	 *
+	 * @param mixed $provenance OpenRegister's answer.
+	 *
+	 * @return array<string, array<string, mixed>>|null The provenance.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function provenanceOrNull(mixed $provenance): ?array {
 		if (is_array($provenance) === false) {
 			return null;
 		}
 
 		return $provenance;
-	}//end provenanceForCase()
+	}//end provenanceOrNull()
 
 	/**
 	 * Whether OpenRegister says, in its own words, that the caller may not write.
@@ -179,7 +203,7 @@ class OpenRegisterGrantsGateway {
 	 * @return bool|null True when OpenRegister refused, false when it granted,
 	 *                   null when there is no record to read.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function refuses(?array $record): ?bool {
 		if ($record === null || array_key_exists('granted', $record) === false) {
@@ -217,7 +241,7 @@ class OpenRegisterGrantsGateway {
 	 *
 	 * @return bool True only when OpenRegister refused the write.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function refusesTheWrite(string $caseId, ?string $userId = null): bool {
 		$provenance = $this->provenanceForCase(
@@ -248,7 +272,7 @@ class OpenRegisterGrantsGateway {
 	 *
 	 * @return object|null The evaluator when it is there and carries the method.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function permissionHandler(): ?object {
 		if ($this->appManager->isInstalled('openregister') === false) {
@@ -284,7 +308,7 @@ class OpenRegisterGrantsGateway {
 	 *
 	 * @return object|null The schema, or null when it cannot be resolved.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseSchema(): ?object {
 		$slug = $this->settingsService->getConfigValue(key: 'case_schema');
@@ -332,9 +356,34 @@ class OpenRegisterGrantsGateway {
 	 *
 	 * @return object|null The object entity, or null.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseObject(string $caseId): ?object {
+		$source = $this->caseSource();
+		if ($source === null) {
+			return null;
+		}
+
+		[$objectService, $register, $schema] = $source;
+		try {
+			$object = $objectService->find($caseId, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq grants gateway: the case could not be read for its own authorization block',
+				['exception' => $e->getMessage(), 'caseId' => $caseId],
+			);
+			return null;
+		}
+
+		return $this->objectOrNull(object: $object);
+	}//end caseObject()
+
+	/**
+	 * The object service, register and case schema, when all are configured.
+	 *
+	 * @return array{0: object, 1: mixed, 2: mixed}|null Null when one is missing.
+	 */
+	private function caseSource(): array|null {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -346,20 +395,21 @@ class OpenRegisterGrantsGateway {
 			return null;
 		}
 
-		try {
-			$object = $objectService->find($caseId, register: $register, schema: $schema);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq grants gateway: the case could not be read for its own authorization block',
-				['exception' => $e->getMessage(), 'caseId' => $caseId],
-			);
-			return null;
-		}
+		return [$objectService, $register, $schema];
+	}//end caseSource()
 
+	/**
+	 * The answer when it is an object, null otherwise.
+	 *
+	 * @param mixed $object What the store answered.
+	 *
+	 * @return object|null
+	 */
+	private function objectOrNull(mixed $object): object|null {
 		if (is_object($object) === false) {
 			return null;
 		}
 
 		return $object;
-	}//end caseObject()
+	}//end objectOrNull()
 }//end class

@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -40,59 +40,107 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\Contracts\CollectionLinkQueueInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
+use OCA\Dossiq\Service\Intake\CollectionCaseLinks;
+use OCA\Dossiq\Service\Intake\SystemCaseStore;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Opens a Woo request case for a resident, optionally from their dossier.
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
  */
-class WooRequestIntake {
-
-	use SearchesObjects;
-
-	/**
-	 * The seeded Woo request case type (register.d/81-woo-verzoek.json).
-	 */
-	public const CASE_TYPE_ID = '3c0f5a00-0000-4000-a000-00000000a001';
+class WooRequestIntake implements WooRequestIntakeInterface {
 
 	/**
 	 * The case object type of a publication from a dossier.
 	 */
-	public const OBJECT_TYPE = 'opencatalogi.publication';
+	public const OBJECT_TYPE = CollectionCaseLinks::OBJECT_TYPE;
 
 	/**
 	 * Where a request may come from.
 	 */
-	public const ORIGINS = ['portal', 'pipelinq'];
+	public const ORIGINS = ['portal', 'pipelinq', 'portal-form', 'opencatalogi'];
+
+	/**
+	 * The origins receive() takes, which need no resident subject: an
+	 * anonymous portal form, and a request opencatalogi took in (REQ-WTO-001).
+	 */
+	public const SUBJECTLESS_ORIGINS = ['portal-form', 'opencatalogi'];
 
 	/**
 	 * The prefix of the reference a dossier keeps in `sourceOf`.
 	 */
-	public const SOURCE_PREFIX = 'dossiq:case:';
+	public const SOURCE_PREFIX = CollectionCaseLinks::SOURCE_PREFIX;
 
 	/**
 	 * The case's `intakeChannel` per origin, in the case schema's own enum.
 	 * The origin itself is kept in `wooRequest.origin`.
 	 */
-	public const INTAKE_CHANNEL = ['portal' => 'website', 'pipelinq' => 'other'];
+	public const INTAKE_CHANNEL = [
+		'portal' => 'website',
+		'pipelinq' => 'other',
+		'portal-form' => 'website',
+		'opencatalogi' => 'other',
+	];
+
+	/**
+	 * How a portal subject logged in, per audience of portaliq's verified
+	 * assertion, in the case schema's `intakeIdentification` enum: a resident
+	 * (`citizen`, `client`) logs in with DigiD, a business with eHerkenning.
+	 */
+	public const IDENTIFICATION_BY_AUDIENCE = [
+		'citizen' => 'digid',
+		'client' => 'digid',
+		'business' => 'eherkenning',
+	];
+
+	/**
+	 * Reads the case type and the case, and writes the case, as the system.
+	 *
+	 * @var SystemCaseStore
+	 */
+	private readonly SystemCaseStore $cases;
+
+	/**
+	 * Reads the resident's own dossier and links it to the case.
+	 *
+	 * @var CollectionCaseLinks
+	 */
+	private readonly CollectionCaseLinks $collections;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
+	 * @param SettingsServiceInterface $settingsService Register, schemas and OpenRegister.
 	 * @param IURLGenerator   $urlGenerator    Makes the publication and case links absolute.
 	 * @param LoggerInterface $logger          Logger.
+	 * @param WooReceivedTerm|null $receivedTerm Reads back the term a received case got. Null
+	 *                                           only where receive() is never called.
+	 * @param WooReceivedAnswers|null $receivedAnswers Maps the received answers, and reads when the
+	 *                                                 requester sent it. Null only where receive()
+	 *                                                 is never called.
+	 * @param SystemCaseStore|null $cases Writes the case as the system and announces it; the
+	 *                                    container hands it the announcer. A store that cannot
+	 *                                    announce when null.
+	 * @param CollectionLinkQueueInterface|null $linkQueue Links a dossier to its case after the case is
+	 *                                            answered (REQ-PSM-002); linked inline when null.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly LoggerInterface $logger,
+		private readonly ?WooReceivedTerm $receivedTerm = null,
+		private readonly ?WooReceivedAnswers $receivedAnswers = null,
+		?SystemCaseStore $cases = null,
+		private readonly ?CollectionLinkQueueInterface $linkQueue = null,
 	) {
+		$this->cases       = ($cases ?? new SystemCaseStore(settingsService: $settingsService, logger: $logger));
+		$this->collections = new CollectionCaseLinks(settingsService: $settingsService, urlGenerator: $urlGenerator, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -103,41 +151,29 @@ class WooRequestIntake {
 	 *
 	 * @return array{caseId: string, caseUrl: string, identifier?: string, deadline?: string}
 	 *
-	 * @throws WooRequestRefused When the request is unusable, the dossier is not the resident's,
+	 * @throws WooRequestRefused When the request is unusable, the dossier belongs to someone else,
 	 *                           or the register or case type is missing.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
 	 */
 	public function start(array $request): array {
 		$wooRequest = (new WooRequestForm())->normalise(request: $request);
 		$subjectRef = trim((string)$request['subjectRef']);
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '') {
-			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
-		}
+		[$objectService, $register] = $this->availableRegister();
+		$collection = $this->ownedCollection(objectService: $objectService, wooRequest: $wooRequest, subjectRef: $subjectRef);
 
-		$collection = null;
-		if ($wooRequest['collectionId'] !== '') {
-			$collection = $this->ownedCollection(objectService: $objectService, collectionId: $wooRequest['collectionId'], subjectRef: $subjectRef);
-		}
-
-		$caseType = $this->caseType(objectService: $objectService, register: $register);
-		$saved = $this->writeCase(
-			objectService: $objectService,
-			register: $register,
-			caseType: $caseType,
-			subjectRef: $subjectRef,
-			wooRequest: $wooRequest,
-		);
+		$target = new IntakeRegister(objectService: $objectService, register: $register);
+		$caseType = $this->caseType(target: $target);
+		$started = $this->startedRequest(request: $request, wooRequest: $wooRequest);
+		$saved = $this->writeCase(target: $target, caseType: $caseType, request: $started);
 		$caseId = $saved['id'];
 
 		if ($collection !== null) {
-			$this->writeCaseObjects(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection);
-			$this->recordSource(objectService: $objectService, collection: $collection, caseId: $caseId);
+			$this->linkLater(target: $target, caseId: $caseId, collection: $collection, subjectRef: $subjectRef);
 		}
 
 		// THE CASE NUMBER AND THE DATE, READ BACK FROM WHAT WAS WRITTEN, so
@@ -146,93 +182,267 @@ class WooRequestIntake {
 		// whose `deadline` is not computed yet leaves the key out rather than
 		// answering an empty value, and the confirmation then drops that
 		// sentence instead of promising a date of ''.
-		return [
-			'caseId' => $caseId,
-			'caseUrl' => $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId),
-		] + $saved['answer'];
+		$caseUrl = $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId);
+		return ['caseId' => $caseId, 'caseUrl' => $caseUrl] + $saved['answer'];
 	}//end start()
 
 	/**
-	 * The public path of a publication, the same one the publish side links to.
+	 * The object service and the dossiq register, or a refusal when either is missing.
 	 *
-	 * @param string $publicationId The publication uuid.
+	 * @return array{0: object, 1: string} The object service and the register.
 	 *
-	 * @return string The path, starting with `/index.php`.
+	 * @throws WooRequestRefused When OpenRegister or the dossiq register is missing.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
 	 */
-	public function publicationPath(string $publicationId): string {
-		$catalogSlug = $this->settingsService->getConfigValue('woo_publication_catalog_slug', 'publication');
+	private function availableRegister(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '') {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
+		}
 
-		return '/index.php/apps/opencatalogi/' . $catalogSlug . '/' . $publicationId;
-	}//end publicationPath()
-
+		return [$objectService, $register];
+	}//end availableRegister()
 
 	/**
-	 * The resident's own dossier, or a refusal that does not say whether it exists.
+	 * The requester's own dossier the request starts from, or null when it names none.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $collectionId  The collection uuid.
-	 * @param string $subjectRef    The resident.
+	 * @param object                $objectService OpenRegister's object service.
+	 * @param array<string, string> $wooRequest    The request as the case keeps it.
+	 * @param string                $subjectRef    The requester.
 	 *
-	 * @return array<string, mixed> The collection.
+	 * @return array<string, mixed>|null The dossier.
 	 *
-	 * @throws WooRequestRefused NOT_FOUND when it is absent or someone else's.
+	 * @throws WooRequestRefused When the dossier does not exist or belongs to someone else.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 */
-	private function ownedCollection(object $objectService, string $collectionId, string $subjectRef): array {
+	private function ownedCollection(object $objectService, array $wooRequest, string $subjectRef): ?array {
 		$collection = null;
-		try {
-			$collection = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?array => $this->findUnscoped(
-					objectService: $objectService,
-					register: $this->settingsService->getWooPublicationConfigValue('woo_collection_register'),
-					schema: $this->settingsService->getWooPublicationConfigValue('woo_collection_schema'),
-					id: $collectionId,
-				)
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('WooRequestIntake: the dossier could not be read', ['collection' => $collectionId, 'error' => $e->getMessage()]);
+		if ($wooRequest['collectionId'] !== '') {
+			$collection = $this->collections->owned(objectService: $objectService, collectionId: $wooRequest['collectionId'], subjectRef: $subjectRef);
+			if ($collection === null) {
+				throw new WooRequestRefused(WooRequestRefused::NOT_FOUND, 'No such dossier.');
+			}
 		}
-
-		if (is_array($collection) === false || (string)($collection['owner'] ?? '') !== $subjectRef) {
-			throw new WooRequestRefused(WooRequestRefused::NOT_FOUND, 'No such dossier.');
-		}
-
-		$collection['id'] = $collectionId;
 
 		return $collection;
 	}//end ownedCollection()
 
 	/**
-	 * The seeded Woo request case type.
+	 * The request `start()` writes, as {@see self::writeCase()} takes it.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The dossiq register.
+	 * @param array<string, mixed>  $request    The request as it came in.
+	 * @param array<string, string> $wooRequest The request as the case keeps it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function startedRequest(array $request, array $wooRequest): array {
+		$subjectRef = trim((string)$request['subjectRef']);
+		$intake = [
+			// No startDate: dossiq sets it inside the create, from the
+			// receipt and the term start (decision 181, Q11), so a request
+			// sent on Sunday does not count its P28D from Sunday.
+			'portalSubject' => $subjectRef,
+			// THE PARTY THE CASE BELONGS TO, typed as portaliq's mandates name
+			// it. The assertion carries the subject only, so a request is the
+			// person's own until portaliq signs a company or a mandate into it
+			// (site-business-and-authorisation D2). Never a BSN.
+			'portalParty' => 'subject:' . $subjectRef,
+			'intakeChannel' => self::INTAKE_CHANNEL[(string)$wooRequest['origin']],
+		] + $this->identification(request: $request);
+
+		return [
+			'wooRequest' => $wooRequest,
+			'intake' => $intake,
+			'startFrom' => trim((string)($request['startFrom'] ?? '')),
+			'branch' => $this->branchOf(request: $request),
+		];
+	}//end startedRequest()
+
+	/**
+	 * How the requester logged in and the portal the request came through,
+	 * for a request from the portal only: the means from the audience the
+	 * receiver read off the verified assertion, the name from portaliq's
+	 * config. An unknown audience and an empty name are left out.
+	 *
+	 * @param array<string, mixed> $request The request.
+	 *
+	 * @return array{intakeIdentification?: string, intakeSourceName?: string}
+	 *
+	 * @spec openspec/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
+	 */
+	private function identification(array $request): array {
+		if (($request['origin'] ?? '') !== 'portal') {
+			return [];
+		}
+
+		$out = [];
+		$means = (self::IDENTIFICATION_BY_AUDIENCE[(string)($request['audience'] ?? '')] ?? '');
+		if ($means !== '') {
+			$out['intakeIdentification'] = $means;
+		}
+
+		$source = $this->settingsService->getPortalName();
+		if ($source !== '') {
+			$out['intakeSourceName'] = $source;
+		}
+
+		return $out;
+	}//end identification()
+
+	/**
+	 * Link the dossier to the case after the case is answered.
+	 *
+	 * The link is one read and one write per dossier item plus a write on the
+	 * dossier; done before answering, it kept the portal's forward waiting
+	 * past its timeout while the case already existed. A background job does
+	 * it right after; without a job list it is done here, as before.
+	 *
+	 * @param IntakeRegister       $target     The OpenRegister ObjectService and the dossiq register.
+	 * @param string               $caseId     The case.
+	 * @param array<string, mixed> $collection The dossier, already proven the resident's.
+	 * @param string               $subjectRef The resident.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
+	 */
+	private function linkLater(IntakeRegister $target, string $caseId, array $collection, string $subjectRef): void {
+		$register = $target->register;
+		if ($this->linkQueue === null) {
+			$this->collections->link(objectService: $target->objectService, register: $register, caseId: $caseId, collection: $collection);
+			return;
+		}
+
+		$this->linkQueue->queue(register: $register, caseId: $caseId, collectionId: (string)$collection['id'], subjectRef: $subjectRef);
+	}//end linkLater()
+
+	/**
+	 * Receive a Woo request in opencatalogi's shape and open its case.
+	 *
+	 * The form submit creates the case directly (decision 179): nothing is
+	 * queued in between, and a request that cannot become a valid case is
+	 * refused here with nothing written.
+	 *
+	 * @param array<string, mixed> $answers    `{requestedInformation, requesterName?, requesterEmail?,
+	 *                                         requesterPhone?, requesterAddress?, channel?, subjectRef?,
+	 *                                         originReference?}`.
+	 * @param string               $receivedAt When the requester sent it (ISO 8601); now when empty or unreadable.
+	 * @param string               $origin     `portal-form` or `opencatalogi`.
+	 *
+	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
+	 */
+	public function receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array {
+		try {
+			$request = $this->requestAndIntake(answers: $answers, receivedAt: $receivedAt, origin: $origin);
+			[$objectService, $register, $receivedTerm] = $this->writeTarget();
+
+			$target = new IntakeRegister(objectService: $objectService, register: $register);
+			$caseType = $this->caseType(target: $target);
+			$saved = $this->writeCase(target: $target, caseType: $caseType, request: $request);
+		} catch (WooRequestRefused $e) {
+			// An unavailable dependency is `unavailable`; every other refusal is `refused`.
+			$outcome = ([WooRequestRefused::UNAVAILABLE => 'unavailable'][$e->getReason()] ?? 'refused');
+
+			return array_merge(WooReceivedAnswers::EMPTY_ANSWER, ['outcome' => $outcome, 'message' => $e->getDetail()]);
+		}//end try
+
+		return $this->termAnswer(receivedTerm: $receivedTerm, target: $target, caseId: $saved['id']);
+	}//end receive()
+
+	/**
+	 * The normalised Woo request and its intake, read from the answers.
+	 *
+	 * @param array<string, mixed> $answers    The answers in opencatalogi's shape.
+	 * @param string               $receivedAt When the requester sent it (ISO 8601).
+	 * @param string               $origin     `portal-form` or `opencatalogi`.
+	 *
+	 * @return array{wooRequest: array<string, mixed>, intake: array<string, mixed>} The request to write.
+	 *
+	 * @throws WooRequestRefused When the date reader is unavailable or the answers are refused.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 */
+	private function requestAndIntake(array $answers, string $receivedAt, string $origin): array {
+		$answersMap = $this->receivedAnswers;
+		if ($answersMap === null) {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The date reader is not available.');
+		}
+
+		$wooRequest = (new WooRequestForm())->normalise(request: $answersMap->toRequest(answers: $answers, origin: $origin));
+		$intake = $answersMap->intake(answers: $answers, origin: $origin, receivedAt: $receivedAt);
+
+		return ['wooRequest' => $wooRequest, 'intake' => $intake];
+	}//end requestAndIntake()
+
+	/**
+	 * The object service, register and term engine the case is written with.
+	 *
+	 * @return array{0: object, 1: string, 2: WooReceivedTerm} The object service, register and term engine.
+	 *
+	 * @throws WooRequestRefused When OpenRegister, the register or the term engine is unavailable.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
+	 */
+	private function writeTarget(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '') {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
+		}
+
+		// NO TERM ENGINE, NO CASE. A Woo request without a running
+		// statutory term is the state this intake exists to prevent, so
+		// it is refused before anything is written (REQ-WTO-002).
+		$receivedTerm = $this->receivedTerm;
+		if ($receivedTerm === null || $receivedTerm->isAvailable() === false) {
+			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The term engine is not available.');
+		}
+
+		return [$objectService, $register, $receivedTerm];
+	}//end writeTarget()
+
+	/**
+	 * Armed only when the written case's statutory term runs.
+	 *
+	 * Read back, never assumed: the case must have a statutory term instance,
+	 * that instance an engine timer, and the case `deadline` must be the
+	 * instance's rolled `endDateCurrent`. Anything less answers `not-armed`
+	 * and leaves an internal timeline entry on the case saying why.
+	 *
+	 * @param WooReceivedTerm $receivedTerm Reads the term back.
+	 * @param IntakeRegister  $target       The OpenRegister ObjectService and the dossiq register.
+	 * @param string          $caseId       The written case.
+	 *
+	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
+	 */
+	private function termAnswer(WooReceivedTerm $receivedTerm, IntakeRegister $target, string $caseId): array {
+		return $receivedTerm->answer(
+			caseId: $caseId,
+			case: $this->cases->readCase(objectService: $target->objectService, register: $target->register, caseId: $caseId),
+			caseUrl: $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId)
+		);
+	}//end termAnswer()
+
+	/**
+	 * The version of the seeded Woo request case type that new cases get.
+	 *
+	 * @param IntakeRegister $target The OpenRegister ObjectService and the dossiq register.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @throws WooRequestRefused UNAVAILABLE when it is not there.
 	 */
-	private function caseType(object $objectService, string $register): array {
-		$caseType = null;
-		try {
-			$caseType = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?array => $this->findUnscoped(
-					objectService: $objectService,
-					register: $register,
-					schema: $this->settingsService->getConfigValue('case_type_schema'),
-					id: self::CASE_TYPE_ID,
-				)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('WooRequestIntake: the Woo request case type could not be read', ['error' => $e->getMessage()]);
-		}
-
-		if (is_array($caseType) === false) {
+	private function caseType(IntakeRegister $target): array {
+		$caseType = $this->cases->currentCaseType(objectService: $target->objectService, register: $target->register, caseTypeId: self::CASE_TYPE_ID);
+		if ($caseType === null) {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The Woo request case type is not installed.');
 		}
 
@@ -240,30 +450,48 @@ class WooRequestIntake {
 	}//end caseType()
 
 	/**
+	 * The branch number a request carries, or '' when it carries none or no
+	 * twelve-digit vestigingsnummer.
+	 *
+	 * @param array<string, mixed> $request The request as it came in.
+	 *
+	 * @return string The branch, or ''.
+	 */
+	private function branchOf(array $request): string {
+		$value  = ($request['branch'] ?? null);
+		$branch = '';
+		if (is_scalar($value) === true) {
+			$branch = trim((string)$value);
+		}
+
+		if (preg_match('/^[0-9]{12}$/', $branch) !== 1) {
+			return '';
+		}
+
+		return $branch;
+	}//end branchOf()
+
+	/**
 	 * Write the case and answer its uuid.
 	 *
-	 * @param object                $objectService The OpenRegister ObjectService.
-	 * @param string                $register      The dossiq register.
-	 * @param array<string, mixed>  $caseType      The Woo request case type.
-	 * @param string                $subjectRef    The resident.
-	 * @param array<string, string> $wooRequest    The request as the case keeps it.
+	 * @param IntakeRegister       $target        The OpenRegister ObjectService and the dossiq register.
+	 * @param array<string, mixed> $caseType      The Woo request case type.
+	 * @param array<string, mixed> $request       `wooRequest` (the request as the case keeps it), `intake`
+	 *                                            (how it came in: `startDate`, `intakeChannel`, and when known
+	 *                                            `portalSubject` and `receivedAt`), and optionally `startFrom`
+	 *                                            (an earlier Woo case this request starts from) and `branch`
+	 *                                            (the branch number a company filed under).
 	 *
 	 * @return array{id: string, answer: array<string, string>} The case uuid, and the number and date it carries.
 	 *
 	 * @throws WooRequestRefused UNAVAILABLE when the write fails.
+	 *
+	 * @spec openspec/changes/a-portal-request-names-its-requester/specs/woo-request-intake/spec.md#requirement-a-case-filed-for-a-resident-names-who-asked-req-wri-006
 	 */
-	private function writeCase(object $objectService, string $register, array $caseType, string $subjectRef, array $wooRequest): array {
-		$case = [
-			'title' => $wooRequest['onderwerp'],
-			'description' => $wooRequest['omschrijving'],
-			'caseType' => self::CASE_TYPE_ID,
-			// The statutory clock starts today: `deadline` is startDate plus
-			// the type's processingDeadline (P28D).
-			'startDate' => date('Y-m-d'),
-			'portalSubject' => $subjectRef,
-			'intakeChannel' => self::INTAKE_CHANNEL[$wooRequest['origin']],
-			'wooRequest' => $wooRequest,
-		];
+	private function writeCase(IntakeRegister $target, array $caseType, array $request): array {
+		$objectService = $target->objectService;
+		$register = $target->register;
+		$case = $this->caseFields(caseType: $caseType, request: $request);
 
 		// THE REQUESTER DETAILS ALSO ANSWER THE CASE TYPE'S OWN QUESTIONS.
 		// The Woo type declares verzoekerNaam, verzoekerEmail and
@@ -278,11 +506,67 @@ class WooRequestIntake {
 		))->forCaseType(
 			objectService: $objectService,
 			register: $register,
-			caseTypeId: self::CASE_TYPE_ID,
-			wooRequest: $wooRequest
+			caseTypeId: (string)($caseType['id'] ?? self::CASE_TYPE_ID),
+			wooRequest: $request['wooRequest']
 		);
 		if ($properties !== []) {
 			$case['properties'] = $properties;
+		}
+
+		$case = $this->withRequesterAndStatus(case: $case, caseType: $caseType);
+
+		return $this->writtenCase(
+			written: $this->cases->write(objectService: $objectService, register: $register, case: $case, caseType: $caseType)
+		);
+	}//end writeCase()
+
+	/**
+	 * The case fields from the request, before the requester properties.
+	 *
+	 * @param array<string, mixed> $caseType The Woo request case type.
+	 * @param array<string, mixed> $request  See {@see self::writeCase()}.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function caseFields(array $caseType, array $request): array {
+		$wooRequest = $request['wooRequest'];
+		$case = [
+			'title' => $wooRequest['onderwerp'],
+			'description' => $wooRequest['omschrijving'],
+			'caseType' => (string)($caseType['id'] ?? self::CASE_TYPE_ID),
+		] + $request['intake'] + ['wooRequest' => $wooRequest];
+
+		// A request that starts from an earlier one names it; WooStartFromListener
+		// copies that request's configuration once the case exists (REQ-WRC-005).
+		$startFrom = (string)($request['startFrom'] ?? '');
+		if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $startFrom) === 1) {
+			$case['wooStartFrom'] = $startFrom;
+		}
+
+		// THE BRANCH A COMPANY FILED UNDER, so a session restricted to that
+		// branch lists the case (portal-case-list-declarations D3).
+		$branch = (string)($request['branch'] ?? '');
+		if ($branch !== '') {
+			$case['portalBranch'] = $branch;
+		}
+
+		return $case;
+	}//end caseFields()
+
+	/**
+	 * The case with who asked, by name, and the case type's initial status.
+	 *
+	 * @param array<string, mixed> $case     The case so far.
+	 * @param array<string, mixed> $caseType The Woo request case type.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function withRequesterAndStatus(array $case, array $caseType): array {
+		// WHO ASKED, BY NAME. The case's Requester reads `initiatorDisplayName`
+		// when no register row was picked; a resident on the portal is not one.
+		$requester = trim((string)($case['wooRequest']['verzoekerNaam'] ?? ''));
+		if ($requester !== '' && trim((string)($case['initiatorDisplayName'] ?? '')) === '') {
+			$case['initiatorDisplayName'] = $requester;
 		}
 
 		$initial = trim((string)($caseType['initialStatus'] ?? ''));
@@ -290,204 +574,28 @@ class WooRequestIntake {
 			$case['status'] = $initial;
 		}
 
-		try {
-			$saved = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): mixed => $objectService->saveObject(
-					object: $case,
-					register: $register,
-					schema: $this->settingsService->getConfigValue('case_schema'),
-					_rbac: false,
-					_multitenancy: false,
-				)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('WooRequestIntake: the case could not be written', ['error' => $e->getMessage()]);
+		return $case;
+	}//end withRequesterAndStatus()
+
+	/**
+	 * What the case store answered on the write, refused when it wrote nothing usable.
+	 *
+	 * @param array{id: string, answer: array<string, string>}|null $written The write's answer.
+	 *
+	 * @return array{id: string, answer: array<string, string>}
+	 *
+	 * @throws WooRequestRefused UNAVAILABLE when the write fails.
+	 */
+	private function writtenCase(?array $written): array {
+		if ($written === null) {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The case could not be written.');
 		}
 
-		$written = (new WooWrittenCase())->read(saved: $saved);
 		if ($written['id'] === '') {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The case was written without an id.');
 		}
 
 		return $written;
-	}//end writeCase()
-
-	/**
-	 * One case object per dossier item.
-	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param string               $register      The dossiq register.
-	 * @param string               $caseId        The case.
-	 * @param array<string, mixed> $collection    The dossier.
-	 *
-	 * @return void
-	 */
-	private function writeCaseObjects(object $objectService, string $register, string $caseId, array $collection): void {
-		$schema = $this->settingsService->getConfigValue('case_object_schema');
-		foreach ((array)($collection['items'] ?? []) as $item) {
-			if (is_array($item) === false) {
-				continue;
-			}
-
-			$publication = trim((string)($item['publication'] ?? ''));
-			if ($publication === '') {
-				continue;
-			}
-
-			$attachment = ($item['attachment'] ?? null);
-			if ($attachment !== null) {
-				$attachment = (string)$attachment;
-			}
-
-			$object = [
-				'case' => $caseId,
-				'objectType' => self::OBJECT_TYPE,
-				'objectUrl' => $this->urlGenerator->getAbsoluteURL($this->publicationPath(publicationId: $publication)),
-				// The schema declares a string, so the pair travels as JSON.
-				'objectIdentification' => (string)json_encode(['publication' => $publication, 'attachment' => $attachment]),
-				'description' => $this->describe(objectService: $objectService, publication: $publication, note: (string)($item['note'] ?? '')),
-			];
-
-			try {
-				$this->runAsSystemIfAvailable(
-					objectService: $objectService,
-					operation: fn (): mixed => $objectService->saveObject(object: $object, register: $register, schema: $schema, _rbac: false, _multitenancy: false)
-				);
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'WooRequestIntake: a dossier item could not be linked to the case',
-					['case' => $caseId, 'publication' => $publication, 'error' => $e->getMessage()]
-				);
-			}
-		}//end foreach
-	}//end writeCaseObjects()
-
-	/**
-	 * What a case object says: the publication's title and the resident's note.
-	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $publication   The publication uuid.
-	 * @param string $note          The resident's note on the item.
-	 *
-	 * @return string
-	 */
-	private function describe(object $objectService, string $publication, string $note): string {
-		$title = '';
-		try {
-			$row = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?array => $this->findUnscoped(
-					objectService: $objectService,
-					register: $this->settingsService->getWooPublicationConfigValue('woo_publication_register'),
-					schema: $this->settingsService->getWooPublicationConfigValue('woo_publication_schema'),
-					id: $publication,
-				)
-			);
-			$title = trim((string)($row['title'] ?? ''));
-		} catch (Throwable $e) {
-			$title = '';
-		}
-
-		$note = trim($note);
-		if ($title !== '' && $note !== '') {
-			return $title . ': ' . $note;
-		}
-
-		if ($title !== '') {
-			return $title;
-		}
-
-		return $note;
-	}//end describe()
-
-	/**
-	 * Append the case to the dossier's `sourceOf`, once, leaving its items alone.
-	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $collection    The dossier as read.
-	 * @param string               $caseId        The case.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
-	 */
-	private function recordSource(object $objectService, array $collection, string $caseId): void {
-		$reference = self::SOURCE_PREFIX . $caseId;
-		$sourceOf = array_values(array_filter((array)($collection['sourceOf'] ?? []), 'is_string'));
-		if (in_array($reference, $sourceOf, true) === true) {
-			return;
-		}
-
-		$collectionId = (string)$collection['id'];
-		$data = $collection;
-		unset($data['@self'], $data['id']);
-		$data['sourceOf'] = array_merge($sourceOf, [$reference]);
-
-		try {
-			$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): mixed => $objectService->saveObject(
-					object: $data,
-					register: $this->settingsService->getWooPublicationConfigValue('woo_collection_register'),
-					schema: $this->settingsService->getWooPublicationConfigValue('woo_collection_schema'),
-					uuid: $collectionId,
-					_rbac: false,
-					_multitenancy: false,
-				)
-			);
-		} catch (Throwable $e) {
-			// The case exists and is the resident's; a dossier that does not
-			// learn about it loses a link, not the request.
-			$this->logger->warning(
-				'WooRequestIntake: the dossier could not record the case it started',
-				['collection' => $collectionId, 'case' => $caseId, 'error' => $e->getMessage()]
-			);
-		}
-	}//end recordSource()
-
-	/**
-	 * One object by id on a register and schema this class pins, unscoped.
-	 *
-	 * Without `_rbac: false, _multitenancy: false` a request that carries no
-	 * Nextcloud user (every portal forward) finds nothing. The callers decide
-	 * who may see the row: ownedCollection() checks the owner.
-	 *
-	 * @param object     $objectService The OpenRegister ObjectService.
-	 * @param int|string $register      The register.
-	 * @param int|string $schema        The schema.
-	 * @param string     $id            The uuid.
-	 *
-	 * @return array<string, mixed>|null The object, or null when it does not exist.
-	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
-	 */
-	private function findUnscoped(object $objectService, int|string $register, int|string $schema, string $id): ?array {
-		try {
-			$object = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema,
-				_rbac: false,
-				_multitenancy: false,
-			);
-		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
-			return null;
-		}
-
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end findUnscoped()
+	}//end writtenCase()
 
 }//end class

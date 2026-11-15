@@ -33,6 +33,7 @@ use OCA\Dossiq\Listener\MessageReceivedListener;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Email\UnmatchedMailIntake;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Integriq\Event\MessageReceivedEvent;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -43,6 +44,8 @@ use Psr\Log\LoggerInterface;
  * Tests the three answers and the duplicate guard.
  *
  * @covers \OCA\Dossiq\Listener\MessageReceivedListener
+ * @covers \OCA\Dossiq\Listener\MessageFiling
+ * @covers \OCA\Dossiq\Listener\Support\EventGetters
  * @uses \OCA\Dossiq\Service\Email\CaseEmailRepository
  * @uses \OCA\Dossiq\Service\Email\IntakeLog
  * @uses \OCA\Dossiq\Service\Email\UnmatchedMailIntake
@@ -137,7 +140,8 @@ class MessageReceivedListenerTest extends TestCase {
 			$this->cases,
 			$this->unmatched,
 			$this->log,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->passThroughAccount()
 		);
 	}//end listener()
 
@@ -321,4 +325,16 @@ class MessageReceivedListenerTest extends TestCase {
 
 		$this->assertNull($event->getOutcome());
 	}//end testAnInternalFailureLeavesTheSlotEmpty()
+
+	/**
+	 * A service account that runs the operation as whoever is signed in.
+	 *
+	 * @return BackgroundServiceAccount The pass-through account.
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 }//end class

@@ -90,4 +90,30 @@ final class ZgwSearchScopeTest extends TestCase {
 		$this->assertFalse(ZgwSearchScope::isSearchable(mappingConfig: null));
 		$this->assertFalse(ZgwSearchScope::isSearchable(mappingConfig: []));
 	}//end testNullMappingIsNotSearchable()
+	/**
+	 * Surrounding whitespace is trimmed off a numeric string, and such a mapping is searchable.
+	 *
+	 * @return void
+	 */
+	public function testAPaddedNumericStringIsTrimmedAndSearchable(): void {
+		$mapping = ['sourceRegister' => ' 7 ', 'sourceSchema' => "\t8\n"];
+
+		$scope = ZgwSearchScope::fromMapping(mappingConfig: $mapping);
+
+		$this->assertNotNull($scope);
+		$this->assertSame([7, 8], [$scope->register, $scope->schema]);
+		$this->assertTrue(ZgwSearchScope::isSearchable(mappingConfig: $mapping));
+	}//end testAPaddedNumericStringIsTrimmedAndSearchable()
+
+	/**
+	 * Zero in any spelling and non-string, non-int references are not ids.
+	 *
+	 * @return void
+	 */
+	public function testZeroAndOtherTypesAreNotIds(): void {
+		foreach ([0, '00', 12.0, true, ['12']] as $reference) {
+			$this->assertNull(ZgwSearchScope::fromMapping(mappingConfig: ['sourceRegister' => $reference, 'sourceSchema' => '34']), var_export($reference, true));
+			$this->assertFalse(ZgwSearchScope::isSearchable(mappingConfig: ['sourceRegister' => '12', 'sourceSchema' => $reference]), var_export($reference, true));
+		}
+	}//end testZeroAndOtherTypesAreNotIds()
 }//end class

@@ -296,4 +296,38 @@ describe('VersionHistoryPanel handed a file id', () => {
 		expect(wrapper.vm.formatSize(null)).toBe('')
 		expect(wrapper.vm.formatSize(-1)).toBe('')
 	})
+
+	it('parses each version into the same shape, numbered newest first', () => {
+		const wrapper = mount(VersionHistoryPanel, { props: { open: false, fileId: 42 } })
+		const xml = `<?xml version="1.0"?>
+<d:multistatus xmlns:d="DAV:" xmlns:nc="http://nextcloud.org/ns">
+	<d:response><d:href>/dav/versions/admin/versions/42/</d:href></d:response>
+	<d:response><d:propstat><d:prop><d:getlastmodified>x</d:getlastmodified></d:prop></d:propstat></d:response>
+	<d:response><d:href>/v/a</d:href><d:propstat><d:prop><d:getlastmodified>Mon, 01 Sep 2026 10:00:00 GMT</d:getlastmodified><d:getcontentlength>0</d:getcontentlength><nc:version-author>anna</nc:version-author></d:prop></d:propstat></d:response>
+	<d:response><d:href>/v/b</d:href></d:response>
+</d:multistatus>`
+
+		expect(wrapper.vm.parseVersions(xml)).toEqual([
+			{ id: '/v/a', number: 2, timestamp: 'Mon, 01 Sep 2026 10:00:00 GMT', author: 'anna', size: 0 },
+			{ id: '/v/b', number: 1, timestamp: '', author: '', size: null },
+		])
+		expect(Object.keys(wrapper.vm.parseVersions(xml)[0])).toEqual(['id', 'number', 'timestamp', 'author', 'size'])
+		expect(wrapper.vm.parseVersions('')).toEqual([])
+		expect(wrapper.vm.parseVersions(null)).toEqual([])
+	})
+
+	it('scales and rounds every unit and reads a non-number as no size', () => {
+		const wrapper = mount(VersionHistoryPanel, { props: { open: false } })
+		expect(wrapper.vm.formatSize(0)).toBe('0 B')
+		expect(wrapper.vm.formatSize(1023)).toBe('1023 B')
+		expect(wrapper.vm.formatSize(1024)).toBe('1 KB')
+		expect(wrapper.vm.formatSize(1500)).toBe('1.5 KB')
+		expect(wrapper.vm.formatSize(1024 ** 3 * 2)).toBe('2 GB')
+		expect(wrapper.vm.formatSize(1024 ** 5)).toBe('1024 TB')
+		expect(wrapper.vm.formatSize(Infinity)).toBe('')
+		expect(wrapper.vm.formatSize(NaN)).toBe('')
+		expect(wrapper.vm.formatSize('2048')).toBe('')
+		expect(wrapper.vm.formatSize(undefined)).toBe('')
+	})
 })
+

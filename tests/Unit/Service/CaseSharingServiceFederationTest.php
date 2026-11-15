@@ -210,7 +210,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 	}//end makeSharingService()
 
 	/**
-	 * A consent gate that lets every partner share through.
+	 * A consent gate that lets every partner and federated share through.
 	 *
 	 * Stubbed here because this test's subject is the federated share and the
 	 * access link, not the consent. REQ-CST-01 and REQ-CST-02 are watched
@@ -219,18 +219,18 @@ class CaseSharingServiceFederationTest extends TestCase {
 	 * @return CaseTransferConsentGate The gate.
 	 */
 	private static function allowingConsentGate(): CaseTransferConsentGate {
+		$allowed = [
+			'allowed' => true,
+			'rule' => '',
+			'sentence' => '',
+			'consent' => null,
+			'scope' => [],
+			'until' => '',
+			'crossesOrganisation' => true,
+		];
 		$gate = self::createStub(CaseTransferConsentGate::class);
-		$gate->method('assess')->willReturn(
-			[
-				'allowed' => true,
-				'rule' => '',
-				'sentence' => '',
-				'consent' => null,
-				'scope' => [],
-				'until' => '',
-				'crossesOrganisation' => true,
-			]
-		);
+		$gate->method('assess')->willReturn($allowed);
+		$gate->method('assessSharing')->willReturn($allowed);
 
 		return $gate;
 	}//end allowingConsentGate()

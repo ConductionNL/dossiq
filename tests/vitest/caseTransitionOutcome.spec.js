@@ -31,8 +31,8 @@ vi.mock('@nextcloud/event-bus', () => ({ emit }))
 
 const { failedActionsOf, failedActionsWarning } =
 	await import('../../src/utils/transitionOutcome.js')
-const CaseTransitionConfirmDialog = (
-	await import('../../src/dialogs/CaseTransitionConfirmDialog.vue')
+const CaseLifecycleMenuDialog = (
+	await import('../../src/dialogs/CaseLifecycleMenuDialog.vue')
 ).default
 
 /** Two actions that did not run. */
@@ -69,30 +69,33 @@ describe('failedActionsWarning', () => {
 	})
 })
 
-describe('the case-page transition dialog', () => {
+// The case page's transition surface is the lifecycle menu since the
+// unreachable confirm dialog retired (the-close-form-keeps-its-template).
+describe('the case-page lifecycle menu', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 	})
 
 	/**
-	 * Mount the dialog on an ordinary transition and confirm it.
+	 * Mount the menu on an ordinary transition and confirm it.
 	 *
 	 * @param {object} body What the engine answers.
 	 * @return {Promise<object>} The mounted wrapper.
 	 */
 	async function confirmWith(body) {
+		axios.get.mockResolvedValue({ data: {} })
 		axios.post.mockResolvedValue({ data: body })
-		const wrapper = shallowMount(CaseTransitionConfirmDialog, {
-			props: {
-				caseId: 'case-1',
-				transition: {
-					id: 't1',
-					label: 'Start behandeling',
-					toStatus: 'st-progress',
-				},
-				closing: false,
-			},
+		const wrapper = shallowMount(CaseLifecycleMenuDialog, {
+			props: { caseId: 'case-1' },
 		})
+		await flushPromises()
+		wrapper.vm.choose({
+			kind: 'transition',
+			id: 't1',
+			label: 'Start behandeling',
+			disabled: false,
+		})
+		wrapper.vm.values = { ...wrapper.vm.values, reason: 'Alle stukken zijn binnen.' }
 		await wrapper.vm.confirm()
 		await flushPromises()
 		return wrapper
@@ -119,5 +122,21 @@ describe('the case-page transition dialog', () => {
 		expect(showWarning).not.toHaveBeenCalled()
 		expect(emit).toHaveBeenCalledWith('cn:page:refresh', {})
 		expect(wrapper.emitted('close')).toHaveLength(1)
+	})
+})
+
+// lifecycle-dialog-title-clears-the-close-button: the small dialog left the
+// title running under the close button.
+describe('the lifecycle menu dialog size', () => {
+	it('opens at the form width, so its title clears the close button', async () => {
+		axios.get.mockResolvedValue({ data: {} })
+		const wrapper = shallowMount(CaseLifecycleMenuDialog, {
+			props: { caseId: 'case-1' },
+		})
+		await flushPromises()
+
+		const dialog = wrapper.find('[data-testid="case-acts-dialog"]')
+		expect(dialog.exists()).toBe(true)
+		expect(dialog.attributes('width')).toBe('form')
 	})
 })

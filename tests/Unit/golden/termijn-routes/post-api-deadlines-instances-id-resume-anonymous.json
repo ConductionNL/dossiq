@@ -1,0 +1,7 @@
+{
+    "status": 403,
+    "data": {
+        "message": "Not authenticated"
+    },
+    "calls": []
+}

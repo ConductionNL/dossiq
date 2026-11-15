@@ -6,7 +6,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Provides a pre-configured WOO-verzoek zaaktype template that municipalities activate from a template library and customize, defining the eight statutory processing stages, a WOO-specific intake form, and 28-day deadline tracking with statutory extension. It supports document collection and inventory, per-document disclosure assessment with mandatory weigeringsgronden, Docudesk redaction, formal besluit recording, publication to a reading room and PLOOI, bezwaar-period tracking, and WOO reporting.
+
 ## Requirements
+
 ### Requirement: WOO zaaktype template activation
 The system MUST provide a pre-configured zaaktype template for WOO verzoeken that can be activated from a template library and customized per municipality.
 
@@ -82,9 +84,11 @@ The WOO zaaktype MUST define eight ordered stages reflecting the statutory WOO p
 - **AND** the notification MUST be recorded in the case timeline
 
 ### Requirement: WOO-specific intake form
-The system MUST provide intake fields specific to WOO requests as property definitions on the zaaktype.
+The system MUST provide intake fields specific to WOO requests as property definitions on the zaaktype. The ontvangstdatum is not one the case worker fills: dossiq answers it when the case is created (REQ-TERM-042).
 
 #### Scenario: Required intake fields
+@e2e exclude The hidden Ontvangstdatum is asserted in tests/vitest/wooReceiptDateOffCreateForm.spec.js; the seeded definitions are data, not a create run.
+
 - **GIVEN** a new WOO Verzoek case being created via `CaseCreateDialog.vue`
 - **WHEN** the case worker fills in the intake form
 - **THEN** the form MUST include these property definitions:
@@ -94,8 +98,9 @@ The system MUST provide intake fields specific to WOO requests as property defin
   - **Onderwerp** (text, required -- topic of the request)
   - **Periode van** / **Periode tot** (date range the request covers)
   - **Bestuurlijke aangelegenheid** (text -- administrative matter)
-  - **Ontvangstdatum** (date, required -- receipt date for deadline calculation)
   - **Gewenste vorm** (enum: papier/digitaal/inzage, default: digitaal)
+- **AND** **Ontvangstdatum** (date) MUST NOT be required: dossiq answers it on creation from the receipt, and keeps an answer an integration supplied
+- **AND** the create form MUST NOT ask for the **Ontvangstdatum** (`hideOnCreate`, REQ-PDM-16)
 
 #### Scenario: Intake form validation
 - **GIVEN** a case worker submitting the WOO intake form
@@ -110,7 +115,7 @@ The system MUST provide intake fields specific to WOO requests as property defin
 - **AND** if the verzoeker matches an existing contact in OpenRegister, the system MUST suggest linking to the existing record
 
 #### Scenario: Intake auto-generates ontvangstbevestiging task
-- **GIVEN** a WOO case is created with ontvangstdatum filled
+- **GIVEN** a WOO case is created
 - **WHEN** the case enters the "Ontvangst" stage
 - **THEN** a task MUST be auto-created: "Verstuur ontvangstbevestiging" with a 2-day deadline
 - **AND** the task MUST reference the verzoeker's contact details
@@ -191,6 +196,7 @@ The system MUST support searching, collecting, and inventorying documents releva
 Each document in a WOO case MUST be individually assessed for disclosure with mandatory legal basis for withheld documents.
 
 #### Scenario: Three-way assessment per document
+@e2e exclude Unchanged by woo-refusal-grounds-list; carried whole because the requirement is modified. No assessment screen renders the dropdown yet.
 - **GIVEN** a WOO case in stage "Beoordelen documenten" with 15 collected documents
 - **WHEN** the case worker opens the document assessment view
 - **THEN** each document MUST have a dropdown with options:
@@ -200,69 +206,75 @@ Each document in a WOO case MUST be individually assessed for disclosure with ma
 - **AND** unassessed documents MUST be visually distinct (grey/pending state)
 
 #### Scenario: Mandatory weigeringsgrond for withheld documents
+@e2e exclude No assessment screen posts to the bulk route yet. Covered by `WOODocumentAssessmentServiceTest::testValidateRequiresWeigeringsgrondForNietOpenbaar`, `testAnOldCodeThatNoLongerExistsIsRefused` and `testAGroupNodeCannotBeCited`.
 - **GIVEN** a document assessed as "Niet openbaar"
 - **WHEN** the case worker saves the assessment
-- **THEN** they MUST select one or more legal grounds from WOO Article 5.1/5.2:
-  - 5.1.1a: Eenheid van de Kroon
-  - 5.1.1b: Veiligheid van de Staat
-  - 5.1.2a: Internationale betrekkingen
-  - 5.1.2b: Economische of financiele belangen van de Staat
-  - 5.1.2c: Opsporing en vervolging van strafbare feiten
-  - 5.1.2d: Inspectie, controle en toezicht
-  - 5.1.2e: Eerbiediging van de persoonlijke levenssfeer
-  - 5.1.2f: Vertrouwelijk verstrekte bedrijfs- en fabricagegegevens
-  - 5.1.2g: Onevenredige bevoordeling of benadeling
-  - 5.1.2i: Goed functioneren van de Staat
-  - 5.2.1: Persoonlijke beleidsopvattingen
-  - 5.2.2: Persoonlijke beleidsopvattingen (intern beraad, geanonimiseerd mogelijk)
+- **THEN** they MUST select one or more grounds from dossiq's list of Woo refusal grounds (`wooRefusalGround`, settled in woo-refusal-grounds-list design D-2)
+- **AND** every selected ground MUST be an active, citable entry of that list
 - **AND** the weigeringsgrond MUST be stored as metadata on the document assessment
 
 #### Scenario: Weigeringsgrond for partially disclosed documents
+@e2e exclude Unchanged by woo-refusal-grounds-list; carried whole because the requirement is modified. Covered by `WOODocumentAssessmentServiceTest::testValidateRequiresWeigeringsgrondForDeelsOpenbaar`.
 - **GIVEN** a document assessed as "Deels openbaar"
 - **THEN** the case worker MUST also select the applicable weigeringsgrond(en) for the redacted portions
 - **AND** these grounds MUST appear in the inventarislijst and decision document
 
 #### Scenario: Assessment progress indicator
+@e2e exclude Unchanged by woo-refusal-grounds-list; carried whole because the requirement is modified.
 - **GIVEN** 15 documents in a WOO dossier with 10 assessed and 5 pending
 - **THEN** the case detail MUST show a progress indicator: "10/15 documenten beoordeeld"
 - **AND** the progress MUST be visible in both the case detail and the case list overview
 
 #### Scenario: Bulk assessment for similar documents
+@e2e exclude Unchanged by woo-refusal-grounds-list; carried whole because the requirement is modified.
 - **GIVEN** multiple documents that share the same assessment (e.g., all internal meeting notes are "Niet openbaar" under 5.2.1)
 - **WHEN** the case worker selects multiple documents and applies a bulk assessment
 - **THEN** all selected documents MUST receive the same assessment and weigeringsgrond
 - **AND** each individual document MUST still be editable afterwards
 
 ### Requirement: Redaction via Docudesk integration
-Documents assessed as "Deels openbaar" MUST be routable to Docudesk for AI-assisted anonymization with human review.
+
+Documents assessed as "Deels openbaar" MUST be redacted through filinq, with a named officer's check of the passages before any copy is written, or by uploading a version redacted elsewhere. The redaction step is the generic one of the document-redaction capability (REQ-DRD-001 to REQ-DRD-005); the Woo request configures it.
+
+@e2e exclude Filinq is not installed in the dossiq e2e environment. Covered by DocumentRedactionServiceTest.
 
 #### Scenario: Send document for redaction
+
 - **GIVEN** a document assessed as "Deels openbaar"
-- **WHEN** the case worker clicks "Anonimiseren"
-- **THEN** the document MUST be sent to Docudesk's anonymization pipeline via OpenConnector or direct API call
-- **AND** the case worker MUST be able to specify which entity types to detect (names, BSN, addresses, phone numbers)
+- **WHEN** the case worker starts its redaction
+- **THEN** the document MUST be sent to filinq's entity detection
+- **AND** filinq's entities, the rules floor and Hermiq's spans MUST be stored unchecked on the assessment
 
 #### Scenario: Review AI-detected entities
-- **GIVEN** Docudesk returns a document with 23 detected entities highlighted
-- **WHEN** the case worker opens the redaction review
-- **THEN** each detected entity MUST be shown with its type (naam, BSN, adres) and the proposed redaction
-- **AND** the case worker MUST be able to accept, reject, or modify each proposed redaction
-- **AND** manually add redactions that the AI missed
+
+- **GIVEN** a document assessed as "Deels openbaar"
+- **WHEN** the case worker opens its redaction
+- **THEN** each passage filinq and Hermiq found MUST be shown with its type and text
+- **AND** the case worker MUST be able to accept, adjust or drop each one and add passages that were missed
 
 #### Scenario: Store anonymized version
-- **GIVEN** the case worker finalizes the redaction review
-- **WHEN** they confirm the redactions
-- **THEN** the anonymized document MUST be stored as a new file in Nextcloud Files linked to the case
-- **AND** the original (unredacted) document MUST be preserved but marked as "niet openbaar"
-- **AND** the link between original and anonymized version MUST be tracked
+
+- **GIVEN** the case worker checked the passages and asked for the redacted copy
+- **WHEN** filinq wrote it
+- **THEN** the copy MUST be stored as a document of the case
+- **AND** the original MUST be preserved
+- **AND** the assessment's `redactedDocumentRef` MUST name the copy, which is the only version the publication delivers
+
+#### Scenario: Upload a redacted version
+
+- **GIVEN** a document assessed as "Deels openbaar"
+- **WHEN** the case worker uploads a version redacted elsewhere
+- **THEN** it MUST be stored as a document of the case and named by `redactedDocumentRef`
 
 #### Scenario: Batch redaction
+
 - **GIVEN** 8 documents assessed as "Deels openbaar"
 - **WHEN** the case worker selects "Batch anonimiseren"
-- **THEN** all 8 documents MUST be sent to Docudesk simultaneously
+- **THEN** all 8 documents MUST be sent to filinq simultaneously
 - **AND** the system MUST track progress per document and notify when each is ready for review
 
 #### Scenario: Complete redaction stage gate
+
 - **GIVEN** a WOO case in stage "Lakken / Anonimiseren"
 - **WHEN** the case worker attempts to advance to "Besluit"
 - **THEN** the system MUST verify that ALL documents assessed as "Deels openbaar" have finalized anonymized versions
@@ -406,3 +418,40 @@ The system MUST provide reporting on WOO case processing for management oversigh
   - Whether deadline was met (ja/nee)
   - Whether extension was used (ja/nee)
 
+### Requirement: A redaction refused for want of a detector says so
+
+When filinq refuses to anonymise a document because no entity detector is live, dossiq MUST answer `detection-unavailable` with a sentence that says entity detection is switched off and that a redacted version can be uploaded instead, and MUST NOT set `redactedDocumentRef`. On a completed run dossiq MUST record the backend filinq names in its detection report, and MUST treat filinq's `nothing_found` as no redacted copy.
+
+@e2e exclude The refusal is raised inside filinq's anonymisation service when OpenRegister's entity detection is off or unavailable; a dossiq e2e run cannot switch filinq's detector state. Covered by FilinqRedactionClientTest and DocumentRedactionServiceTest against a verbatim copy of filinq's exception.
+
+#### Scenario: Detection is switched off
+
+- **GIVEN** a Woo case with a checked, partly public document, and entity detection switched off
+- **WHEN** the redacted copy is asked for
+- **THEN** the answer MUST be `detection-unavailable`
+- **AND** no redacted copy MUST be recorded
+
+#### Scenario: Filinq names the detector that looked
+
+- **GIVEN** filinq anonymised a document with the regex detector
+- **WHEN** the redaction is recorded
+- **THEN** its detection backend MUST be `regex`
+
+### Requirement: The Woo case screens follow the case they show (REQ-WCT-SCR-01)
+
+The Woo request's screens MUST say where the case is in words and dates the reader reads. The delivered-sets list MUST show its dates in the reader's locale and its states as words. A status after the decision MUST NOT carry the role of the handling steps, so the what-now card does not send the case back to handling. The Dutch catalogue MUST mark an optional field with one wording, the library's "(niet verplicht)".
+
+#### Scenario: The delivered sets read as dates and words
+@e2e exclude {asserted in tests/vitest/manifestWooDeliveredSets.spec.js on the shipped manifest and catalogue}
+
+- **GIVEN** a published Woo request with one delivered set
+- **WHEN** a Dutch reader opens the Aangeleverde sets section
+- **THEN** the delivery date MUST be a date in their locale, not an ISO timestamp
+- **AND** the state MUST read "Aangeleverd en vastgelegd", not `frozen`
+
+#### Scenario: At Publicatie the card does not ask for handling
+@e2e exclude {asserted in tests/Unit/Settings/WooStatusRolesTest.php on the shipped fragment}
+
+- **GIVEN** a Woo request whose decision is recorded, at the status Publicatie
+- **WHEN** the handler opens the case
+- **THEN** the what-now card MUST NOT read "Wat nu? Behandelen" or "Daarna: het besluit"

@@ -9,7 +9,7 @@
  * `wooPublicationStatus`, and use icons the app registers, because a button
  * that 404s or renders without its icon looks fine in a manifest.
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
  */
 
 import fs from 'fs'
@@ -29,10 +29,10 @@ const action = (id) => caseDetail.config.headerActions.find((a) => a.id === id)
 describe('the Woo publication on the case page', () => {
 	it('offers Publish (Woo) on a case whose decision is ready', () => {
 		const publish = action('woo-publish')
-		expect(publish.type).toBe('api-call')
-		expect(publish.method).toBe('POST')
-		expect(publish.url).toBe('/apps/dossiq/api/cases/@objectId/woo/publish')
-		expect(publish.confirm).toBe(true)
+		// Board DqPubliceren: a dialog that shows what goes out before one press.
+		expect(publish.type).toBe('open-modal')
+		expect(publish.target).toBe('CasePublishDialog')
+		expect(publish.props.publishUrl).toBe('/apps/dossiq/api/cases/{caseId}/woo/publish')
 	})
 
 	it('offers Withdraw publication only on a published case, after a confirmation', () => {
@@ -59,6 +59,7 @@ describe('the Woo publication on the case page', () => {
 		expect(section.widget.content.include).toEqual([
 			'wooPublicationStatus',
 			'wooPublicationUrl',
+			'wooWithheldNote',
 		])
 		expect(section.widget.content.hideEmpty).toBe(true)
 	})

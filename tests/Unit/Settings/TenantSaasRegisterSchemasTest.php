@@ -66,7 +66,7 @@ class TenantSaasRegisterSchemasTest extends TestCase {
 		$schemas = $this->register['components']['schemas'] ?? [];
 
 		$expected = [
-			'tenant' => ['slug', 'displayName', 'status', 'tier'],
+			'tenant' => ['slug', 'displayName'],
 			'tenantConfiguration' => ['tenantRef'],
 			'tenantQuota' => ['tenantRef', 'quotaType'],
 			'tenantUser' => ['tenantRef', 'userRef'],

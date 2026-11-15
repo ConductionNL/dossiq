@@ -1,0 +1,14 @@
+[
+    {
+        "getInstalledApps": true
+    },
+    {
+        "getObjectService": true
+    },
+    {
+        "getConfigValue": "register"
+    },
+    {
+        "getConfigValue": "case_schema"
+    }
+]

@@ -28,30 +28,30 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Custody\CaseTakeoverRequest;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTakeoverRequestInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
  * Ask, accept, refuse, and read what was asked.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseTakeoverController extends Controller {
 
@@ -62,20 +62,20 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @param string              $appName     The app name.
 	 * @param IRequest            $request     The request.
-	 * @param CaseTakeoverRequest $takeovers   The pull and its answers.
-	 * @param CaseAccessGuard     $accessGuard Per-case authorization, failing closed.
+	 * @param CaseTakeoverRequestInterface $takeovers   The pull and its answers.
+	 * @param CaseAccessGuardInterface     $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession        $userSession The session.
 	 * @param LoggerInterface     $logger      The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTakeoverRequest $takeovers,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseTakeoverRequestInterface $takeovers,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -89,13 +89,13 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @return JSONResponse The request, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	#[NoAdminRequired]
 	public function ask(string $caseId): JSONResponse {
-		$user = $this->readerOf(caseId: $caseId);
+		$user = $this->caller()->reader(caseId: $caseId);
 		if ($user === null) {
-			return $this->notYours();
+			return $this->caller()->notYours();
 		}
 
 		$reason = trim((string)$this->request->getParam('reason', ''));
@@ -123,18 +123,18 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @return JSONResponse The answered request, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	#[NoAdminRequired]
 	public function accept(string $caseId, string $takeoverId): JSONResponse {
-		$user = $this->writerOf(caseId: $caseId);
+		$user = $this->caller()->writer(caseId: $caseId);
 		if ($user === null) {
-			return $this->notYours();
+			return $this->caller()->notYours();
 		}
 
 		try {
 			return new JSONResponse(
-				$this->takeovers->accept(takeoverId: $takeoverId, acceptedBy: $user->getUID())
+				$this->takeovers->accept(takeoverId: $takeoverId, acceptedBy: $user->getUID(), caseId: $caseId)
 			);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'takeover accept', e: $e);
@@ -149,13 +149,13 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @return JSONResponse The answered request, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $caseId, string $takeoverId): JSONResponse {
-		$user = $this->writerOf(caseId: $caseId);
+		$user = $this->caller()->writer(caseId: $caseId);
 		if ($user === null) {
-			return $this->notYours();
+			return $this->caller()->notYours();
 		}
 
 		$reason = trim((string)$this->request->getParam('reason', ''));
@@ -168,7 +168,7 @@ class CaseTakeoverController extends Controller {
 
 		try {
 			return new JSONResponse(
-				$this->takeovers->refuse(takeoverId: $takeoverId, reason: $reason, refusedBy: $user->getUID())
+				$this->takeovers->refuse(takeoverId: $takeoverId, reason: $reason, refusedBy: $user->getUID(), caseId: $caseId)
 			);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'takeover refuse', e: $e);
@@ -182,12 +182,12 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @return JSONResponse The requests, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	#[NoAdminRequired]
 	public function onCase(string $caseId): JSONResponse {
-		if ($this->readerOf(caseId: $caseId) === null) {
-			return $this->notYours();
+		if ($this->caller()->reader(caseId: $caseId) === null) {
+			return $this->caller()->notYours();
 		}
 
 		$requests = $this->takeovers->onCase(caseId: $caseId);
@@ -196,54 +196,11 @@ class CaseTakeoverController extends Controller {
 	}//end onCase()
 
 	/**
-	 * The caller, when they may read this case.
+	 * Who may read or write on the case, and the refusal when they may not.
 	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null.
+	 * @return CaseCaller
 	 */
-	private function readerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
-	}//end readerOf()
-
-	/**
-	 * The caller, when they may move this case.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null.
-	 */
-	private function writerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
-	}//end writerOf()
-
-	/**
-	 * One answer for "this case is not yours", so none of the four differ.
-	 *
-	 * @return JSONResponse The refusal.
-	 */
-	private function notYours(): JSONResponse {
-		return new JSONResponse(
-			['message' => 'You cannot do that on this case.', 'error' => 'case-access-denied'],
-			Http::STATUS_FORBIDDEN,
-		);
-	}//end notYours()
+	private function caller(): CaseCaller {
+		return new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard);
+	}//end caller()
 }//end class

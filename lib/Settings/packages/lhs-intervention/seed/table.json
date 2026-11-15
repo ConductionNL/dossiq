@@ -1,0 +1,216 @@
+{
+  "schema": {
+    "app": "openregister",
+    "register": "decision-tables",
+    "slug": "decision-table"
+  },
+  "match": "key",
+  "rows": [
+    {
+      "id": "922ad0a8-e191-5c05-a4f4-5b6aa00bbd3d",
+      "key": "dossiq.lhs-intervention",
+      "name": "LHS interventie (gedrag x gevolg)",
+      "description": "Landelijke Handhavingsstrategie: the recommended intervention and its explanation for a behaviour row (A-D) and a consequence column (1-4). The same 16 answers as the cells of the lhs-matrix package.",
+      "hitPolicy": "UNIQUE",
+      "inputs": [
+        {
+          "name": "behaviour",
+          "type": "string"
+        },
+        {
+          "name": "consequence",
+          "type": "string"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "interventionStep",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "id": "A:1",
+          "inputEntries": [
+            "A",
+            "1"
+          ],
+          "outputEntries": [
+            "Aanspreken / informeren",
+            "Informeer de overtreder over de regels en geef gelegenheid tot herstel."
+          ]
+        },
+        {
+          "id": "A:2",
+          "inputEntries": [
+            "A",
+            "2"
+          ],
+          "outputEntries": [
+            "Waarschuwen",
+            "Stuur een schriftelijke waarschuwing met hersteltermijn."
+          ]
+        },
+        {
+          "id": "A:3",
+          "inputEntries": [
+            "A",
+            "3"
+          ],
+          "outputEntries": [
+            "Bestuurlijke waarschuwing",
+            "Formele bestuurlijke waarschuwing; overtreder krijgt hersteltermijn."
+          ]
+        },
+        {
+          "id": "A:4",
+          "inputEntries": [
+            "A",
+            "4"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom",
+            "Opleggen last onder dwangsom."
+          ]
+        },
+        {
+          "id": "B:1",
+          "inputEntries": [
+            "B",
+            "1"
+          ],
+          "outputEntries": [
+            "Waarschuwen",
+            "Schriftelijke waarschuwing met korte hersteltermijn."
+          ]
+        },
+        {
+          "id": "B:2",
+          "inputEntries": [
+            "B",
+            "2"
+          ],
+          "outputEntries": [
+            "Bestuurlijke waarschuwing",
+            "Bestuurlijke waarschuwing met hersteltermijn."
+          ]
+        },
+        {
+          "id": "B:3",
+          "inputEntries": [
+            "B",
+            "3"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom",
+            "Last onder dwangsom opleggen."
+          ]
+        },
+        {
+          "id": "B:4",
+          "inputEntries": [
+            "B",
+            "4"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom + Proces-verbaal",
+            "Bestuurlijk én strafrechtelijk optreden."
+          ]
+        },
+        {
+          "id": "C:1",
+          "inputEntries": [
+            "C",
+            "1"
+          ],
+          "outputEntries": [
+            "Bestuurlijke waarschuwing",
+            "Bestuurlijke waarschuwing."
+          ]
+        },
+        {
+          "id": "C:2",
+          "inputEntries": [
+            "C",
+            "2"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom",
+            "Last onder dwangsom."
+          ]
+        },
+        {
+          "id": "C:3",
+          "inputEntries": [
+            "C",
+            "3"
+          ],
+          "outputEntries": [
+            "Bestuursdwang + Proces-verbaal",
+            "Bestuursdwang toepassen en aangifte doen bij OM."
+          ]
+        },
+        {
+          "id": "C:4",
+          "inputEntries": [
+            "C",
+            "4"
+          ],
+          "outputEntries": [
+            "Bestuursdwang + Proces-verbaal",
+            "Zwaarste bestuurlijke inzet gecombineerd met strafrechtelijk optreden."
+          ]
+        },
+        {
+          "id": "D:1",
+          "inputEntries": [
+            "D",
+            "1"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom",
+            "Last onder dwangsom."
+          ]
+        },
+        {
+          "id": "D:2",
+          "inputEntries": [
+            "D",
+            "2"
+          ],
+          "outputEntries": [
+            "Bestuursdwang + Proces-verbaal",
+            "Bestuursdwang en strafrechtelijk optreden."
+          ]
+        },
+        {
+          "id": "D:3",
+          "inputEntries": [
+            "D",
+            "3"
+          ],
+          "outputEntries": [
+            "Bestuursdwang + Proces-verbaal",
+            "Maximale bestuurlijke en strafrechtelijke inzet."
+          ]
+        },
+        {
+          "id": "D:4",
+          "inputEntries": [
+            "D",
+            "4"
+          ],
+          "outputEntries": [
+            "Bestuursdwang + Proces-verbaal",
+            "Maximale inzet bestuur en OM voor crimineel gedrag met onomkeerbare gevolgen."
+          ]
+        }
+      ],
+      "owner": "dossiq"
+    }
+  ]
+}

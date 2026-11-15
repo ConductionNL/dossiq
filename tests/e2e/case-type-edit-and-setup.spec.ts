@@ -297,7 +297,10 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		const body = await readSetupStatus(page)
 
 		expect(body).not.toBeNull()
-		expect(body.steps).toHaveProperty('register-check')
+		// `register-check` is an admin settings action now, and the dataset
+		// cards load themselves (wizard-dataset-card-load).
+		expect(body.steps).not.toHaveProperty('register-check')
+		expect(body.steps).not.toHaveProperty('load-demo-data')
 		expect(body.steps).toHaveProperty('demo-data')
 		expect(body.steps).toHaveProperty('dwangsom-secret')
 		for (const id of Object.keys(body.steps)) {
@@ -342,9 +345,9 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 				'once the required steps are complete the optional secret step is settled',
 			).toBe(true)
 		} else {
-			// Without a provisioned register the wizard is gating anyway and
-			// the optional step is not what reopens it.
-			expect(second.steps['register-check'].done).toBe(false)
+			// No wizard step is required any more, so this branch should not
+			// run. If it does, the register state is what to read.
+			expect(second.registerReady).toBe(false)
 		}
 	})
 
@@ -530,19 +533,15 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 	// "Optional seed does not gate", which is a different scenario and is still
 	// about an offered `seed` step that no longer exists.
 	//
-	// Nothing about the test body changed in either branch. It still proves
-	// `register-check` is reported, which is the half of REQ-SETUP-PRO-001 that
-	// survives.
+	// It still proves a declared step (`demo-data`) is reported. `register-check`
+	// left the wizard for the admin settings page (wizard-dataset-card-load).
 	// @e2e openspec/specs/first-time-setup/spec.md#no-step-is-offered-that-the-wizard-cannot-fulfil
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
 	}) => {
-		// The seeder returns success with every counter at zero when its payload
-		// is absent, which is the state it is in: the case types live under
-		// `_caseTypes_disabled` in bezwaar_seed_data.json. Reporting that as
-		// done made the affordance one-shot and silently useless, and reporting
-		// it honestly still left a step whose every click was a 422. So the
-		// step went. The action stays, for an operator who un-parks the data.
+		// The step went when the seed data was parked and every click was a
+		// 422. The action stays and now installs the on-request bezwaar-beroep
+		// package; offering it in the wizard again has not been decided.
 		await page.goto('/index.php/apps/dossiq')
 		const before = await readSetupStatus(page)
 		expect(
@@ -552,7 +551,7 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		expect(
 			Object.keys(before?.steps ?? {}),
 			'the payload must still carry the steps the wizard does declare',
-		).toContain('register-check')
+		).toContain('demo-data')
 
 		const token = await requestToken(page)
 		// `/api/setup/action/{id}` — NOT `/run/{id}`, which answers 405 and whose
@@ -576,16 +575,15 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 			`POST /api/setup/action/seed returned ${run.status} with no JSON body`,
 		).not.toBeNull()
 
-		if ((run.body?.detail?.caseTypes ?? 0) === 0) {
-			// Nothing was created, so the call must refuse rather than report a
-			// success-shaped zero. 422 is the answer the retired step would have
-			// shown a person on every single click.
+		// The action installs the on-request bezwaar-beroep package. Installed
+		// or already current is a success; a refusal answers 422 rather than a
+		// success-shaped zero.
+		if (['installed', 'current'].includes(run.body?.detail?.status)) {
+			expect(run.status).toBe(200)
+			expect(run.body.success).toBe(true)
+		} else {
 			expect(run.status).toBe(422)
 			expect(run.body.success).toBe(false)
-		} else {
-			// Somebody un-parked the dataset on this instance. The action still
-			// works, and the manifest step may come back with it.
-			expect(run.body.success).toBe(true)
 		}
 
 		// Either way the payload must not have grown a step back.
@@ -626,7 +624,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	test.setTimeout(120_000)
 
 	// Uncited on purpose: see the note above this describe.
-	test('the tour a user actually gets includes the Case types and Flows stops', async ({
+	test('the tour a user actually gets has the six stops of board DqRondleiding', async ({
 		page,
 	}) => {
 		// Asserted against the SERVED BUNDLE, not the manifest on disk: the tour
@@ -638,7 +636,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		const bundle = await mainBundleSource(page)
 		expect(bundle.length, 'could not fetch the app bundle').toBeGreaterThan(1000)
 
-		for (const id of ['see-case-types', 'see-flows']) {
+		for (const id of ['welcome', 'go-dashboard', 'go-cases', 'go-tasks', 'see-case-types', 'done']) {
 			expect(
 				bundle,
 				`walkthrough step "${id}" missing from the built bundle`,
@@ -647,12 +645,11 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	})
 
 	// Uncited on purpose: see the note above this describe.
-	test('the tour opens for a user who has not seen it, and offers all seven steps', async ({
+	test('the tour opens for a user who has not seen it, and offers all six steps', async ({
 		page,
 	}) => {
-		// The step COUNT is the user-visible consequence of adding the two
-		// stops: it cannot read 7 unless both are in the tour the shell
-		// composed.
+		// The step COUNT is the user-visible consequence of the board's six
+		// steps: it cannot read 6 unless the shell composed that tour.
 		//
 		// NOT `test.skip` on "the tour isn't showing": that reads "this user
 		// already finished it" off the tour's ABSENCE, which is the same
@@ -673,7 +670,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 			.getByRole('dialog')
 			.filter({ hasText: 'Welcome to Dossiq' })
 		if (await tour.isVisible({ timeout: 20000 }).catch(() => false)) {
-			await expect(tour).toContainText('/ 7')
+			await expect(tour).toContainText('/ 6')
 			return
 		}
 
@@ -717,59 +714,19 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	})
 
 	// Uncited on purpose: see the note above this describe.
-	test('neither new stop forces the user to create anything', async ({ page }) => {
-		// "Show where, do not force" is the whole point of both steps. A tour
-		// step that only advances on `object-created` would make looking at the
-		// case types a prerequisite for finishing the tour.
-		await page.goto('/index.php/apps/dossiq')
-		const bundle = await mainBundleSource(page)
-		expect(bundle.length, 'could not fetch the app bundle').toBeGreaterThan(1000)
-
-		for (const id of ['see-case-types', 'see-flows']) {
-			// The step object is emitted as one contiguous run in the bundle;
-			// take a window around its id and check what it advances on.
-			const at = bundle.indexOf(id)
-			expect(at).toBeGreaterThan(-1)
-			const window = bundle.slice(at, at + 1200)
-			expect(window, `${id} must offer a manual way past`).toContain(
-				'allowManualNext',
-			)
-			expect(window, `${id} must not require creating one`).not.toContain(
-				'object-created',
-			)
-		}
-	})
-
-	// Uncited on purpose: see the note above this describe.
-	test('both new stops can actually anchor to their nav item', async ({
+	test('every menu stop can actually anchor to its nav item', async ({
 		page,
 	}) => {
-		// The three tests above prove the steps are DECLARED and reach the
-		// built bundle. None of them proves a user ever sees one, and the
-		// difference is not academic:
-		//
-		//   CnWalkthrough.armStep()
-		//     const el = this.resolveTarget(this.step)
-		//     if (!el) { if (this.step.optional) { this.wt.skip(); return } }
-		//
-		// An OPTIONAL step whose target is absent is skipped outright — no
-		// console error, no stall, nothing on screen. And `optional: true` is
-		// exactly what keeps these two stops from forcing authorship, so the
-		// friendly authoring choice is the one that fails silently. The step
-		// counter is no help either: skip() advances past the step and the
-		// total stays 7, so "/ 7" reads identical either way.
-		//
-		// So assert the thing resolveTarget() actually queries. Both stops
-		// target nav items in the SETTINGS section, and CnAppNav emitted
-		// `data-cn-route` on its main/child/footer loops but not the settings
-		// one until nextcloud-vue#811 — which is precisely how both steps
-		// could ship fleet-wide and reach nobody.
+		// The tests above prove the steps are DECLARED and reach the built
+		// bundle; this one proves each menu stop has the anchor
+		// CnWalkthrough.resolveTarget() queries. Case types sits in the
+		// SETTINGS section, which CnAppNav only anchors since nextcloud-vue#811.
 		await page.goto('/index.php/apps/dossiq')
 		await expect(page.locator('.app-navigation, #app-navigation')).toBeVisible({
 			timeout: 20000,
 		})
 
-		for (const route of ['CaseTypes', 'Flows']) {
+		for (const route of ['Dashboard', 'Cases', 'Tasks', 'CaseTypes']) {
 			// The exact selector from CnWalkthrough.resolveTarget(), keyed on
 			// the ROUTE (not the menu id — the attribute is set from
 			// `item.route`).

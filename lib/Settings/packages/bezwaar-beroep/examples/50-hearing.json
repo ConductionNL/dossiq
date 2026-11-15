@@ -1,0 +1,23 @@
+{
+  "schema": "hearing_session_schema",
+  "rows": [
+    {
+      "id": "1b3898e4-94ab-55f9-a35a-0e40f27b0739",
+      "case": "b081ad8b-807e-5d5c-afcd-7fa5884428df",
+      "title": "Hoorzitting bezwaar Molenweg 3",
+      "scheduledDate": "{{datetime:-16 10:00}}",
+      "location": "Stadhuis, zaal 2",
+      "chairperson": "cc42d564-b499-5628-a65c-a42104ab7239",
+      "invitees": [
+        {
+          "role": "Bezwaarmaker",
+          "channel": "post"
+        }
+      ],
+      "inspectionAvailableFrom": "{{date:-23}}",
+      "inspectionDeadline": "{{date:-18}}",
+      "minutesSummary": "De indiener lichtte toe dat de schuur tijdelijk is. De commissie vroeg naar de planning van de sloop.",
+      "status": "executed"
+    }
+  ]
+}

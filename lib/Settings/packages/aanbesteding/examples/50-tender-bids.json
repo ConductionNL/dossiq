@@ -1,0 +1,51 @@
+{
+  "schema": {
+    "app": "dossiq",
+    "register": "dossiq",
+    "slug": "bid"
+  },
+  "rows": [
+    {
+      "id": "aea7d27a-c59b-50a3-b1f8-626c15985a0e",
+      "tender": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "lot": "cc1188cd-b4b4-5679-9889-9ccc75bede3f",
+      "case": "cc1188cd-b4b4-5679-9889-9ccc75bede3f",
+      "supplier": "21dd1f91-6680-52a4-8cb5-d415b3095060",
+      "submittedAt": "{{datetime:-13 10:15}}",
+      "submissionRef": "TN-2026-0412-01",
+      "priceAmount": 612000,
+      "responses": {
+        "kwaliteit": "Plan van aanpak, bijlage A"
+      },
+      "state": "admissible"
+    },
+    {
+      "id": "e9452ced-73bc-5494-837c-bf4d837fe5db",
+      "tender": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "lot": "cc1188cd-b4b4-5679-9889-9ccc75bede3f",
+      "case": "cc1188cd-b4b4-5679-9889-9ccc75bede3f",
+      "supplier": "634af839-44a0-55e7-b92c-f14cb928aeb5",
+      "submittedAt": "{{datetime:-12 16:40}}",
+      "submissionRef": "TN-2026-0412-02",
+      "priceAmount": 584000,
+      "responses": {
+        "kwaliteit": "Plan van aanpak, bijlage A"
+      },
+      "state": "admissible"
+    },
+    {
+      "id": "df479848-4fa6-5f86-a864-a87497d2d33c",
+      "tender": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "lot": "0cfc0e1c-0a23-5641-95d7-4c8128f597d6",
+      "case": "0cfc0e1c-0a23-5641-95d7-4c8128f597d6",
+      "supplier": "0d6aae87-bda6-5f39-996b-2e8276c2d165",
+      "submittedAt": "{{datetime:-13 09:05}}",
+      "submissionRef": "TN-2026-0412-03",
+      "priceAmount": 645000,
+      "responses": {
+        "kwaliteit": "Plan van aanpak, bijlage A"
+      },
+      "state": "admissible"
+    }
+  ]
+}

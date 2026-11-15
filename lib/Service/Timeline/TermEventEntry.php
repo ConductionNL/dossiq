@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use OCA\Dossiq\Service\TermKind;
 /**
  * Writes one `termijngebeurtenis` entry per recorded term event.
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 class TermEventEntry {
 
@@ -91,7 +91,7 @@ class TermEventEntry {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function recordEvent(
 		array $instance,
@@ -111,12 +111,14 @@ class TermEventEntry {
 		}
 
 		$this->write(
-			caseId: $caseId,
-			message: $message,
-			instance: $instance,
-			event: $type,
-			basis: $basis,
-			occurredAt: ($moment ?? new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			line: new TermEventLine(
+				caseId: $caseId,
+				message: $message,
+				instance: $instance,
+				event: $type,
+				basis: $basis,
+				occurredAt: ($moment ?? new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			)
 		);
 	}//end recordEvent()
 
@@ -142,7 +144,7 @@ class TermEventEntry {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function recordStart(array $instance, array $requested = []): void {
 		$caseId = trim((string)($instance['case'] ?? ''));
@@ -159,46 +161,37 @@ class TermEventEntry {
 		}
 
 		$this->write(
-			caseId: $caseId,
-			message: $message,
-			instance: $instance,
-			event: 'start',
-			basis: '',
-			occurredAt: (string)($instance['startDate'] ?? ''),
+			line: new TermEventLine(
+				caseId: $caseId,
+				message: $message,
+				instance: $instance,
+				event: 'start',
+				basis: '',
+				occurredAt: (string)($instance['startDate'] ?? ''),
+			)
 		);
 	}//end recordStart()
 
 	/**
 	 * Write one entry of the term-event kind.
 	 *
-	 * @param string               $caseId     The case the term hangs on.
-	 * @param string               $message    The sentence a handler reads.
-	 * @param array<string, mixed> $instance   The term instance, as stored.
-	 * @param string               $event      The event type.
-	 * @param string               $basis      The legal basis, '' when there is none.
-	 * @param string               $occurredAt When it happened.
+	 * @param TermEventLine $line The case, sentence, term instance, event, basis and moment.
 	 *
 	 * @return void
 	 */
-	private function write(
-		string $caseId,
-		string $message,
-		array $instance,
-		string $event,
-		string $basis,
-		string $occurredAt,
-	): void {
+	private function write(TermEventLine $line): void {
+		$instance = $line->instance;
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: $line->caseId,
 			kind: TimelineKinds::TERM_EVENT,
-			message: $message,
+			message: $line->message,
 			fields: [
-				'event' => $event,
+				'event' => $line->event,
 				'term' => (string)($instance['kind'] ?? TermKind::STATUTORY),
-				'occurredAt' => $occurredAt,
+				'occurredAt' => $line->occurredAt,
 				'dueAt' => $this->dueAt(instance: $instance),
 				'startedAt' => (string)($instance['startDate'] ?? ''),
-				'basis' => $basis,
+				'basis' => $line->basis,
 				'termijnId' => (string)($instance['id'] ?? ''),
 			],
 			visibility: CaseTimeline::INTERNAL,

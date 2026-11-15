@@ -1,0 +1,1549 @@
+{
+    "covering consent": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "internal move, no consent needed": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-1",
+                "dossiq",
+                "case"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "find",
+                "ct-wmo",
+                "dossiq",
+                "caseType"
+            ]
+        ],
+        "logs": []
+    },
+    "internal move, case type needs consent": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "recipientParties": [
+                    "gemeente-delft"
+                ],
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-2",
+                "dossiq",
+                "case"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "find",
+                "ct-jeugd",
+                "dossiq",
+                "caseType"
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-2",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "internal move, case type needs consent, none recorded": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for Gemeente-Delft, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-2",
+                "dossiq",
+                "case"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "find",
+                "ct-jeugd",
+                "dossiq",
+                "caseType"
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-2",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "internal move, consent flag not boolean": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-1",
+                "dossiq",
+                "case"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "find",
+                "ct-wmo",
+                "dossiq",
+                "caseType"
+            ]
+        ],
+        "logs": []
+    },
+    "internal move, case missing": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-404",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-404",
+                    "exception": "Case not found"
+                }
+            ]
+        ]
+    },
+    "internal move, case without a case type": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-1",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-1",
+                    "exception": "Case has no case type"
+                }
+            ]
+        ]
+    },
+    "internal move, case read throws": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-1",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-1",
+                    "exception": "store down"
+                }
+            ]
+        ]
+    },
+    "internal move, no store": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-1",
+                    "exception": "OpenRegister is not available"
+                }
+            ]
+        ]
+    },
+    "internal move, no register": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-1",
+                    "exception": "Dossier register not configured"
+                }
+            ]
+        ]
+    },
+    "internal move, no case type schema": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-1",
+                "dossiq",
+                "case"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-1",
+                    "exception": "Dossiq schema case_type_schema not configured"
+                }
+            ]
+        ]
+    },
+    "internal move, empty case id": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": false
+        },
+        "calls": [],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "  ",
+                    "exception": "No case id"
+                }
+            ]
+        ]
+    },
+    "empty source crosses": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "empty receiver": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for , so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [],
+        "logs": []
+    },
+    "no consents": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for zorgpartner-bv, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "consent for another receiver": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for zorgpartner-bv, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "receiver matched without case or spaces": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "recipient parties as a string": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "recipientParties": " Zorgpartner-bv",
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "scope falls back to its text": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "tegegevens": [
+                    " "
+                ],
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "Alleen het ondersteuningsplan"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "no scope at all": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "tegegevens": [],
+                "scope": " ",
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ]
+            },
+            "scope": [],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "until trimmed": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "validTo": " 2026-12-31 ",
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "lapsed": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-lapsed",
+            "sentence": "The consent for zorgpartner-bv ran to 2026-04-01 and has ended, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "withdrawn": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-withdrawn",
+            "sentence": "The consent for zorgpartner-bv was withdrawn, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "withdrawn as a string is withdrawn": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-withdrawn",
+            "sentence": "The consent for zorgpartner-bv was withdrawn, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "lapsed and withdrawn": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-lapsed",
+            "sentence": "The consent for zorgpartner-bv ran to 2026-03-01 and has ended, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "last lapse named": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-lapsed",
+            "sentence": "The consent for zorgpartner-bv ran to 2026-03-01 and has ended, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "not yet granted": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for zorgpartner-bv covering today, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "granted on the day": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "ends on the day": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "id": "consent-1",
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "unreadable dates do not cover": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for zorgpartner-bv covering today, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "no dates cover": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "grantedDate": "",
+                "validTo": "",
+                "id": "consent-1",
+                "caseId": "case-1",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "first covering consent wins": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "id": "c2",
+                "tegegevens": [
+                    "dossier"
+                ],
+                "caseId": "case-1",
+                "grantedDate": "2026-01-10",
+                "validTo": "2026-12-31",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "dossier"
+            ],
+            "until": "2026-12-31",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "unreadable moment is now": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "grantedDate": "2000-01-01",
+                "validTo": "2999-01-01",
+                "id": "consent-1",
+                "caseId": "case-1",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2999-01-01",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "empty moment is now": {
+        "verdict": {
+            "allowed": true,
+            "rule": "",
+            "sentence": "",
+            "consent": {
+                "grantedDate": "2000-01-01",
+                "validTo": "2999-01-01",
+                "id": "consent-1",
+                "caseId": "case-1",
+                "withdrawn": false,
+                "recipientParties": [
+                    "zorgpartner-bv"
+                ],
+                "tegegevens": [
+                    "ondersteuningsplan",
+                    " ",
+                    "beschikking "
+                ],
+                "scope": "Alleen het ondersteuningsplan"
+            },
+            "scope": [
+                "ondersteuningsplan",
+                "beschikking"
+            ],
+            "until": "2999-01-01",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "consent search throws": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for zorgpartner-bv, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "toestemming",
+                {
+                    "caseId": "case-1",
+                    "_limit": 100
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the recorded consents could not be read",
+                {
+                    "caseId": "case-1",
+                    "exception": "search down"
+                }
+            ]
+        ]
+    },
+    "no consent schema": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for zorgpartner-bv, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "consent_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the recorded consents could not be read",
+                {
+                    "caseId": "case-1",
+                    "exception": "Dossiq schema consent_schema not configured"
+                }
+            ]
+        ]
+    },
+    "no store across": {
+        "verdict": {
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for zorgpartner-bv, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
+            "crossesOrganisation": true
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the recorded consents could not be read",
+                {
+                    "caseId": "case-1",
+                    "exception": "OpenRegister is not available"
+                }
+            ]
+        ]
+    }
+}

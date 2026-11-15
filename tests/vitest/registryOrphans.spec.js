@@ -64,8 +64,9 @@ function modalEntries() {
 }
 
 /**
- * Every modal target any manifest action names, across the base manifest and
- * every fragment under `src/manifest.d`.
+ * Every modal target any manifest action or field-list row action names, across the base manifest,
+ * every fragment under `src/manifest.d` and the structure profiles
+ * (`src/menu-layout*.json`), whose page overlays add actions of their own.
  *
  * Only real `target` values count. A name that appears in a `_note` does not:
  * that is exactly how CaseLifecycleActionDialog read as wired while nothing
@@ -81,6 +82,9 @@ function manifestTargets() {
 			.filter((name) => name.endsWith('.json'))
 			.forEach((name) => files.push(path.join(MANIFEST_D, name)))
 	}
+	fs.readdirSync(path.join(ROOT, 'src'))
+		.filter((name) => /^menu-layout.*\.json$/.test(name))
+		.forEach((name) => files.push(path.join(ROOT, 'src', name)))
 
 	/**
 	 * Collect `target` from every action-shaped node in a manifest tree.
@@ -98,6 +102,12 @@ function manifestTargets() {
 		}
 		if (node.type === 'open-modal' && typeof node.target === 'string') {
 			targets.add(node.target)
+		}
+		// A field-list row action opens a registry dialog by name too.
+		if (Array.isArray(node.rowActions)) {
+			node.rowActions
+				.filter((rowAction) => rowAction && typeof rowAction.dialog === 'string')
+				.forEach((rowAction) => targets.add(rowAction.dialog))
 		}
 		Object.values(node).forEach(walk)
 	}
@@ -186,22 +196,13 @@ describe('registry modals reach a surface', () => {
  * DeleteChecklistDialog and RenewalRequestModal. Each was measured first, and
  * none did network work on mount, so none took a side effect with it.
  *
- * What is left is listed below, with what would remove it from the list.
+ * The sixth, CaseTransitionConfirmDialog, was kept because it was the only
+ * component mounting TemplatePicker. the-close-form-keeps-its-template moved
+ * the picker onto CaseLifecycleMenuDialog, the close form a handler reaches,
+ * and retired the dialog. The list is empty: a new entry needs a reason and
+ * what would remove it.
  */
-const KNOWN_UNIMPORTED = {
-	'src/dialogs/CaseTransitionConfirmDialog.vue':
-		'KEPT, AND THE REASON CHANGED. It was recorded as retire, on the ground '
-		+ 'that a transition is already served by the stages widget and '
-		+ 'CaseLifecycleMenuDialog. That is still true of the MOVE. It is not '
-		+ 'true of the close form: this is the only component that mounts '
-		+ 'TemplatePicker, and starter-content-and-templates REQ-TPL-02 carries '
-		+ 'a live scenario, "a result template presets the outcome text", which '
-		+ 'no other surface implements. The menu picks a result TYPE and presets '
-		+ 'no text. So retiring this drops a spec-named feature rather than '
-		+ 'clutter, and the scenario is unsatisfiable while the dialog is '
-		+ 'unreachable. Routing it means giving the menu the picker, which is a '
-		+ 'change, not a repair. Flagged for Ruben 2026-09-19.',
-}
+const KNOWN_UNIMPORTED = {}
 
 /**
  * Every `.vue` file under the dialog and modal folders.

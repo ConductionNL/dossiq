@@ -1,0 +1,9 @@
+{
+    "calls": [],
+    "answer": {
+        "error": "Berichttekst mag alleen platte tekst bevatten",
+        "errors": [
+            "Berichttekst mag alleen platte tekst bevatten"
+        ]
+    }
+}

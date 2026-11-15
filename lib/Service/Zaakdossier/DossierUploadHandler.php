@@ -27,13 +27,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IUser;
@@ -42,9 +43,9 @@ use RuntimeException;
 /**
  * Decodes, screens and stores dossier document uploads.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
-class DossierUploadHandler {
+class DossierUploadHandler implements DossierUploadHandlerInterface {
 	/**
 	 * File extensions rejected outright as executable content.
 	 *
@@ -98,38 +99,77 @@ class DossierUploadHandler {
 	 *
 	 * @return array<string, mixed> The per-file result entry.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function uploadOne(string $caseId, array $file, array $metadata): array {
 		$name = (string)($file['name'] ?? '');
-		$tmpName = (string)($file['tmp_name'] ?? '');
 		try {
-			if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
-				throw new RuntimeException('Executable files are not permitted: ' . $name);
-			}
-
-			$content = '';
-			if ($tmpName !== '') {
-				$content = (string)file_get_contents($tmpName);
-			}
-
-			$meta = $metadata;
-			if (isset($file['type']) === true && $file['type'] !== '') {
-				$meta['format'] = $file['type'];
-			}
-
-			$created = $this->fileService->uploadDocument(
-				caseId: $caseId,
-				fileName: $name,
-				content: $content,
-				metadata: $meta,
-			);
-
-			return ['name' => $name, 'success' => true, 'informatieobject' => $created];
+			return $this->uploadFile(caseId: $caseId, file: $file, metadata: $metadata);
 		} catch (\Throwable $e) {
 			return ['name' => $name, 'success' => false, 'error' => $e->getMessage()];
 		}//end try
 	}//end uploadOne()
+
+	/**
+	 * Refuse an executable, then store the file's bytes as a document of the case.
+	 *
+	 * @param string               $caseId   The case (zaak) UUID.
+	 * @param array<string, mixed> $file     One normalised uploaded-file entry.
+	 * @param array<string, mixed> $metadata The shared document metadata.
+	 *
+	 * @return array<string, mixed> The per-file result entry.
+	 *
+	 * @throws \Throwable When the file is executable or cannot be stored.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
+	 */
+	private function uploadFile(string $caseId, array $file, array $metadata): array {
+		$name = (string)($file['name'] ?? '');
+		$tmpName = (string)($file['tmp_name'] ?? '');
+		if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
+			throw new RuntimeException('Executable files are not permitted: ' . $name);
+		}
+
+		$content = $this->uploadedContent(tmpName: $tmpName);
+		$meta = $this->uploadMetadata(file: $file, metadata: $metadata);
+
+		$created = $this->fileService->uploadDocument(caseId: $caseId, fileName: $name, content: $content, metadata: $meta);
+
+		return ['name' => $name, 'success' => true, 'informatieobject' => $created];
+	}//end uploadFile()
+
+	/**
+	 * The uploaded bytes, '' when there is no temporary file.
+	 *
+	 * @param string $tmpName The temporary file path.
+	 *
+	 * @return string
+	 */
+	private function uploadedContent(string $tmpName): string {
+		$content = '';
+		if ($tmpName !== '') {
+			$content = (string)file_get_contents($tmpName);
+		}
+
+		return $content;
+	}//end uploadedContent()
+
+	/**
+	 * The shared metadata, with the file's MIME type as its format when the upload gave one.
+	 *
+	 * @param array<string, mixed> $file     One normalised uploaded-file entry.
+	 * @param array<string, mixed> $metadata The shared document metadata.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function uploadMetadata(array $file, array $metadata): array {
+		$meta = $metadata;
+		if (isset($file['type']) === true && $file['type'] !== '') {
+			$meta['format'] = $file['type'];
+		}
+
+		return $meta;
+	}//end uploadMetadata()
 
 	/**
 	 * Decode the shared metadata JSON body into an array.
@@ -138,7 +178,7 @@ class DossierUploadHandler {
 	 *
 	 * @return array<string, mixed> The decoded metadata.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function decodeMetadata(mixed $raw): array {
 		if (is_array($raw) === true) {
@@ -162,7 +202,7 @@ class DossierUploadHandler {
 	 *
 	 * @return array<int, array<string, mixed>> A list of single-file arrays.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function normaliseUploadedFiles(mixed $uploaded): array {
 		if (is_array($uploaded) === false || isset($uploaded['name']) === false) {
@@ -196,9 +236,10 @@ class DossierUploadHandler {
 	 *
 	 * @return bool True when the file appears to be an executable.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
 	 */
-	private function isExecutable(string $name, string $tmpName): bool {
+	public function isExecutable(string $name, string $tmpName): bool {
 		$extension = strtolower((string)pathinfo($name, PATHINFO_EXTENSION));
 		if (in_array($extension, self::BLOCKED_EXTENSIONS, true) === true) {
 			return true;
@@ -227,7 +268,7 @@ class DossierUploadHandler {
 	 *
 	 * @return bool True for a PE/DOS, ELF or shebang header.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	private function hasExecutableMagic(string $magic): bool {
 		if (str_starts_with($magic, 'MZ') === true) {

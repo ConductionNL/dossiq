@@ -1,8 +1,12 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
 const webpackConfig = require('@nextcloud/webpack-vue-config')
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const webpack = require('webpack')
-const { readAppVersion } = require('./scripts/appVersion.js')
+const { appVersionDefinition } = require('./scripts/appVersion.js')
 
 const buildMode = process.env.NODE_ENV
 const isDev = buildMode === 'development'
@@ -27,41 +31,9 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'settings.js'),
 		filename: appId + '-settings.js',
 	},
-	emailSettings: {
-		import: path.join(__dirname, 'src', 'emailSettings.js'),
-		filename: appId + '-email-settings.js',
-	},
-	personalSettings: {
-		import: path.join(__dirname, 'src', 'personalSettings.js'),
-		filename: appId + '-personal-settings.js',
-	},
-	casesOverviewWidget: {
-		import: path.join(__dirname, 'src', 'casesOverviewWidget.js'),
-		filename: appId + '-casesOverviewWidget.js',
-	},
-	overdueCasesWidget: {
-		import: path.join(__dirname, 'src', 'overdueCasesWidget.js'),
-		filename: appId + '-overdueCasesWidget.js',
-	},
-	myTasksWidget: {
-		import: path.join(__dirname, 'src', 'myTasksWidget.js'),
-		filename: appId + '-myTasksWidget.js',
-	},
-	deadlineAlertsWidget: {
-		import: path.join(__dirname, 'src', 'deadlineAlertsWidget.js'),
-		filename: appId + '-deadlineAlertsWidget.js',
-	},
-	taskRemindersWidget: {
-		import: path.join(__dirname, 'src', 'taskRemindersWidget.js'),
-		filename: appId + '-taskRemindersWidget.js',
-	},
-	stalledCasesWidget: {
-		import: path.join(__dirname, 'src', 'stalledCasesWidget.js'),
-		filename: appId + '-stalledCasesWidget.js',
-	},
-	startCaseWidget: {
-		import: path.join(__dirname, 'src', 'startCaseWidget.js'),
-		filename: appId + '-startCaseWidget.js',
+	dashboardWidgets: {
+		import: path.join(__dirname, 'src', 'dashboardWidgets.js'),
+		filename: appId + '-dashboardWidgets.js',
 	},
 }
 
@@ -170,11 +142,13 @@ webpackConfig.module = {
 webpackConfig.plugins = [
 	new VueLoaderPlugin(),
 	new webpack.DefinePlugin({ appName: JSON.stringify(appId) }),
-	// The version Nextcloud installs, from appinfo/info.xml. package.json's
-	// version is 0.1.0 and never bumped, and @nextcloud/vue prints this global
-	// in the settings dialog footer, which read "dossiq 0.1.0" on a 0.3.x install.
+	// The version Nextcloud installed, read in the browser from the page's
+	// `version` initial state, with appinfo/info.xml as the fallback.
+	// @nextcloud/vue prints this global in the settings dialog footer. A build
+	// time literal read "dossiq 0.1.0" (package.json) and later
+	// "dossiq 0.4.47-unstable" on 0.4.48-beta (info.xml before the release bump).
 	new webpack.DefinePlugin({
-		appVersion: JSON.stringify(readAppVersion()),
+		appVersion: appVersionDefinition(appId),
 	}),
 ]
 

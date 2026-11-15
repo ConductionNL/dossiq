@@ -26,12 +26,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
 use OCA\Dossiq\Portal\PortalContributionProvider;
+use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses   \OCA\Dossiq\Portal\PortalPages
  * @uses   \OCA\Dossiq\Portal\CitizenManifest
+ * @uses   \OCA\Dossiq\Portal\PortalConversation
  */
 class PortalCasePageTest extends TestCase {
 	/**
@@ -60,30 +62,91 @@ class PortalCasePageTest extends TestCase {
 
 		$this->assertArrayHasKey('mijnZaken', $pages);
 		// Renamed so it does not repeat the site's own "Mijn zaken" (portal-pages-in-resident-groups).
-		// The case page of the design (site-resident-portal-design D4): the
-		// question on this case first, then where it stands, its documents,
-		// what happened, the four facts, a way to write and the case screen.
+		// The case page of the Zaak board (site-resident-portal-design D4,
+		// case-actions-placed-on-the-case-page): the question on this case
+		// first, then where it stands, the facts, its documents, what
+		// happened, a way to write, and the case screen, which lists the
+		// bezwaar and the klacht placed on the case through `onCase`.
 		$this->assertSame('Uw zaak', $pages['mijnZaken']['label']);
 		$this->assertSame(
 			[
 				'tasks',
 				'steps',
+				'detail',
 				'documents',
 				'timeline',
-				'detail',
 				'cta',
 				'citizenCase',
 			],
 			array_column($pages['mijnZaken']['blocks'], 'type')
 		);
+		$ctas = array_values(array_filter($pages['mijnZaken']['blocks'], static fn (array $block): bool => $block['type'] === 'cta'));
+		$this->assertSame(['replyToMessage'], array_column($ctas, 'action'));
+		// It carries the open case into the reply's recordField.
+		$this->assertSame([true], array_column($ctas, 'withRecord'));
 		// It is a record page on its own collection, which is how portaliq
 		// finds it when a case is opened from a list, a card or a notice, and
 		// what lets steps, documents and timeline render at all.
 		$this->assertSame(
-			['collection' => 'mijnZaken', 'titleFields' => ['title']],
+			['collection' => 'mijnZaken', 'titleFields' => ['title'], 'heading' => 'record', 'under' => 'cases'],
 			$pages['mijnZaken']['record']
 		);
 		$this->assertFalse($pages['mijnZaken']['menu']);
+	}
+
+	/**
+	 * Bezwaar and klacht are placed on the case through `onCase`, not as page
+	 * blocks: the bezwaar first, open for 42 days after the decision was sent,
+	 * each with the sentence the receipt opens with.
+	 *
+	 * The window's date field is pinned here: renamed on the case, every
+	 * bezwaar would read closed.
+	 *
+	 * @dataProvider residentAudienceProvider
+	 *
+	 * @param string $audience The resident audience.
+	 *
+	 * @return void
+	 */
+	public function testBezwaarAndKlachtArePlacedOnTheCase(string $audience): void {
+		$contribution = $this->provider()->getContribution(['audience' => $audience]);
+		$actions = array_column($contribution['actions'], null, 'id');
+
+		$bezwaar = $actions['createBezwaar'];
+		$this->assertSame(
+			[
+				'crossRef' => 'contestedCase',
+				'order' => 10,
+				'window' => ['from' => 'decisionSentOn', 'days' => 42],
+				'closedText' => 'De termijn voor bezwaar is voorbij. Neem contact met ons op als u toch bezwaar wilt maken.',
+			],
+			$bezwaar['onCase']
+		);
+		$this->assertSame('Uw bezwaar is ontvangen.', $bezwaar['successMessage']);
+
+		$klacht = $actions['createKlacht'];
+		$this->assertSame(['crossRef' => 'contestedCase', 'order' => 20], $klacht['onCase']);
+		$this->assertSame('Uw klacht is ontvangen.', $klacht['successMessage']);
+
+		foreach ([$bezwaar, $klacht] as $action) {
+			// Portaliq keeps `onCase` only on a create whose crossRefs declare
+			// the field it names, and fills in the case over the body.
+			$this->assertSame('create', $action['type']);
+			$this->assertArrayHasKey($action['onCase']['crossRef'], $action['crossRefs']);
+			$this->assertSame('case', $action['crossRefs']['contestedCase']['schema']);
+			$this->assertFalse($action['fieldConfigs']['contestedCase']['visible']);
+		}
+
+		// Neither is a block on the overview or the case page any more.
+		foreach ($contribution['pages'] as $page) {
+			if (in_array($page['id'], ['overzicht', 'mijnZaken'], true) === false) {
+				continue;
+			}
+
+			foreach ($page['blocks'] as $block) {
+				$this->assertNotContains(($block['action'] ?? null), ['createBezwaar', 'createKlacht'], $page['id']);
+			}
+		}
 	}
 
 	/**
@@ -135,7 +198,7 @@ class PortalCasePageTest extends TestCase {
 	public function testEveryCollectionKeepsThePagePortaliqGaveIt(string $audience): void {
 		$pages = $this->pagesById(audience: $audience);
 
-		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken'], array_keys($pages));
+		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken', 'startWooVerzoekAlgemeen'], array_keys($pages));
 		$this->assertSame('Berichten', $pages['berichten']['label']);
 		$this->assertSame(
 			[
@@ -176,10 +239,22 @@ class PortalCasePageTest extends TestCase {
 
 		foreach ($contribution['pages'] as $page) {
 			foreach ($page['blocks'] as $block) {
-				// A cta names an action, a page or a route; the ones here all
-				// name an action (site-resident-portal-design D4).
+				// A cta names an action, a page or a route; the overview's
+				// start tiles name a page (resident-start-points-have-a-page),
+				// the rest an action (site-resident-portal-design D4).
+				if ($block['type'] === 'cta' && isset($block['page']) === true) {
+					$this->assertContains($block['page'], array_column($contribution['pages'], 'id'));
+					continue;
+				}
+
 				if ($block['type'] === 'action' || $block['type'] === 'cta') {
 					$this->assertContains($block['action'], $actionIds);
+					continue;
+				}
+
+				// A greeting names nothing: it reads the session (resident-overview-reads-as-designed).
+				if ($block['type'] === 'greeting') {
+					$this->assertArrayNotHasKey('collection', $block);
 					continue;
 				}
 
@@ -236,7 +311,14 @@ class PortalCasePageTest extends TestCase {
 	 * @return PortalContributionProvider
 	 */
 	private function provider(): PortalContributionProvider {
-		return new PortalContributionProvider();
+		$caseTypes = $this->createMock(IntakeCaseTypes::class);
+		$caseTypes->method('caseTypes')->willReturn(
+			[
+				'createBezwaar' => 'bbbbbbbb-0000-4000-a000-000000000001',
+				'createKlacht' => 'kkkkkkkk-0000-4000-a000-000000000002',
+			]
+		);
+		return new PortalContributionProvider(caseTypes: $caseTypes);
 	}
 
 	/**

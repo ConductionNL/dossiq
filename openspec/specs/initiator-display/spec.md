@@ -161,9 +161,12 @@ covering name and number. The view action of a row SHALL open
 `sortable: false`, because such a key resolves client-side for rendering but
 is not a column OpenRegister can order by.
 
-The page SHALL be reached by a menu entry `OrganisationsMenu` that
-`src/menu-layout.json` relocates under `Contacts`, so the top-level count does
-not move: ADR-097 Decision 1 counts top-level entries only. `Contacts` SHALL
+The page SHALL be reached by a menu entry `OrganisationsMenu`. In the
+default simple structure it stands beside Contacts under the Relations
+caption ("Relaties" with "Contacten" and "Organisaties"), as board DqZijbalk
+draws it. In the full structure `src/menu-layout.json` relocates it under
+`Contacts`, so the top-level count does not move: ADR-097 Decision 1 counts
+top-level entries only. `Contacts` SHALL
 carry `open: true`, because `CnAppNav` auto-expands a group only when one of
 its children is the active route, so on `/contacts` the child would otherwise
 be hidden behind a chevron.
@@ -173,8 +176,8 @@ be hidden behind a chevron.
 
 - **GIVEN** the Contacts index
 - **WHEN** you read the navigation
-- **THEN** an Organisations entry SHALL be visible under Contacts
-- **AND** the top-level entries SHALL still be Dashboard, My work, Contacts and Objects
+- **THEN** an Organisations entry SHALL be visible beside or under Contacts
+- **AND** in the simple structure the menu SHALL read Dashboard, Mijn werk and Wachtrij, then the groups Zaken and Relaties, as board DqZijbalk draws it
 
 #### Scenario: An organisation opens on its own page
 @e2e tests/e2e/contacts-domain.spec.ts

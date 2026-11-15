@@ -47,8 +47,8 @@ use OCA\Dossiq\Service\SettingsService;
 /**
  * Reads the case type declarations the lifecycle acts are gated by.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ * @spec openspec/specs/case-status-machinery/spec.md
  */
 class LifecycleCaseTypeRules {
 
@@ -96,7 +96,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return string The group id, empty when the case type names none.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function roleFor(string $caseTypeId, string $act): string {
 		$field = ([
@@ -119,7 +119,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return bool True when no status may be hand-set on its cases.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function processOwnsStatus(string $caseTypeId): bool {
 		$declared = ($this->row(caseTypeId: $caseTypeId)['processOwnedStatus'] ?? false);
@@ -138,7 +138,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return string The workflow definition id, empty when none is declared.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function processOf(string $caseTypeId): string {
 		$declared = ($this->row(caseTypeId: $caseTypeId)['workflowDefinition'] ?? '');
@@ -150,18 +150,39 @@ class LifecycleCaseTypeRules {
 	}//end processOf()
 
 	/**
+	 * Whether this case type opted in to closing its silent cases itself.
+	 *
+	 * Only `true` opts in. A period on its own is not enough: before the sweep
+	 * ran as the background account no close ever landed, so a case type that
+	 * declared a period on an existing instance never closed anything, and an
+	 * upgrade must not start closing those cases without someone deciding to.
+	 *
+	 * @param string $caseTypeId The case type UUID.
+	 *
+	 * @return bool True when `autoCloseOnSilence` is set to true.
+	 *
+	 * @spec openspec/specs/case-status-machinery/spec.md
+	 */
+	public function autoCloseOptedIn(string $caseTypeId): bool {
+		return (($this->row(caseTypeId: $caseTypeId)['autoCloseOnSilence'] ?? false) === true);
+	}//end autoCloseOptedIn()
+
+	/**
 	 * After how many days of silence this case type closes a case itself.
 	 *
 	 * @param string $caseTypeId The case type UUID.
 	 *
-	 * @return int The period in days, 0 when the case type declares none.
+	 * @return int The period in days, 0 when the case type declares none or did not opt in.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function silenceDays(string $caseTypeId): int {
-		$days = (int)($this->row(caseTypeId: $caseTypeId)['autoCloseAfterSilenceDays'] ?? 0);
+		$row = $this->row(caseTypeId: $caseTypeId);
+		if (($row['autoCloseOnSilence'] ?? false) !== true) {
+			return 0;
+		}
 
-		return max(0, $days);
+		return max(0, (int)($row['autoCloseAfterSilenceDays'] ?? 0));
 	}//end silenceDays()
 
 	/**
@@ -171,7 +192,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return int The warning lead time in days.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function warningDays(string $caseTypeId): int {
 		$days = (int)($this->row(caseTypeId: $caseTypeId)['autoCloseWarningDays'] ?? 0);

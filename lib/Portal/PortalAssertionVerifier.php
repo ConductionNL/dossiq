@@ -16,6 +16,12 @@
  * 0e0cfc8d), so an instance-secret fallback here could only ever accept a
  * token portaliq did not make.
  *
+ * portaliq stores that secret SENSITIVE (encrypted at rest), so it is read
+ * through `IAppConfig::getValueString()`, which decrypts it, exactly as
+ * portaliq reads it. The legacy `IConfig::getAppValue()` returns the stored
+ * ciphertext, and every HMAC check then failed (401 on every portal action,
+ * 13-14 Oct 2026).
+ *
  * Self-contained: no portaliq import, no JWT library. The HMAC check is
  * constant time (hash_equals).
  *
@@ -28,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -38,20 +44,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCP\IConfig;
+use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
+use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
 /**
  * Verifies portaliq's `X-Portal-Subject` assertion, fail-closed.
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
  */
-class PortalAssertionVerifier {
-
-	/**
-	 * The header portaliq attaches the assertion to.
-	 */
-	public const HEADER = 'X-Portal-Subject';
+class PortalAssertionVerifier implements PortalAssertionVerifierInterface {
 
 	/**
 	 * The only accepted algorithm.
@@ -91,12 +93,12 @@ class PortalAssertionVerifier {
 	/**
 	 * Constructor.
 	 *
-	 * @param IConfig|null         $config         Where portaliq's secret lives.
+	 * @param IAppConfig|null      $config         Where portaliq's sensitive secret lives (read decrypted).
 	 * @param string|null          $secretOverride A plain secret, for tests.
 	 * @param LoggerInterface|null $logger         Rejection reasons at debug level only.
 	 */
 	public function __construct(
-		private readonly ?IConfig $config = null,
+		private readonly ?IAppConfig $config = null,
 		private readonly ?string $secretOverride = null,
 		private readonly ?LoggerInterface $logger = null,
 	) {
@@ -114,7 +116,7 @@ class PortalAssertionVerifier {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	public function verify(string $jwt): ?array {
 		$claims = $this->signedClaims(jwt: $jwt);
@@ -148,10 +150,20 @@ class PortalAssertionVerifier {
 			return $this->reject(reason: 'malformed structure');
 		}
 
-		[$head, $body, $signature] = $parts;
+		return $this->verifiedClaims(parts: $parts, secret: $secret);
+	}//end signedClaims()
 
-		$header = json_decode($this->b64UrlDecode(encoded: $head), true);
-		if (is_array($header) === false || ($header['alg'] ?? '') !== self::ALG) {
+	/**
+	 * The claims of a well-formed token whose header and signature hold.
+	 *
+	 * @param array<int, string> $parts  The token's header, body and signature, base64url encoded.
+	 * @param string             $secret The signing secret.
+	 *
+	 * @return array<string, mixed>|null The claims, or null when rejected.
+	 */
+	private function verifiedClaims(array $parts, string $secret): ?array {
+		[$head, $body, $signature] = $parts;
+		if ($this->hasExpectedHeader(head: $head) === false) {
 			return $this->reject(reason: 'unexpected algorithm');
 		}
 
@@ -166,7 +178,20 @@ class PortalAssertionVerifier {
 		}
 
 		return $claims;
-	}//end signedClaims()
+	}//end verifiedClaims()
+
+	/**
+	 * Whether the token's header is a JSON object naming the expected algorithm.
+	 *
+	 * @param string $head The base64url encoded header.
+	 *
+	 * @return bool
+	 */
+	private function hasExpectedHeader(string $head): bool {
+		$header = json_decode($this->b64UrlDecode(encoded: $head), true);
+
+		return is_array($header) === true && ($header['alg'] ?? '') === self::ALG;
+	}//end hasExpectedHeader()
 
 	/**
 	 * Why signed claims are still refused, or null when they are an assertion for a subject, now.
@@ -216,12 +241,17 @@ class PortalAssertionVerifier {
 	/**
 	 * portaliq's dedicated secret, or null when there is no usable one.
 	 *
+	 * Read through IAppConfig, non-lazy as portaliq stores it, so the
+	 * sensitive value comes back decrypted.
+	 *
 	 * @return string|null
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	private function secret(): ?string {
 		$secret = $this->secretOverride;
 		if ($secret === null && $this->config !== null) {
-			$secret = (string)$this->config->getAppValue(self::PORTALIQ_APP_ID, self::SECRET_KEY, '');
+			$secret = $this->config->getValueString(self::PORTALIQ_APP_ID, self::SECRET_KEY, '', lazy: false);
 		}
 
 		if ($secret === null || strlen($secret) < self::MIN_SECRET_LENGTH) {

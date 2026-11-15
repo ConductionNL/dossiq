@@ -1,0 +1,211 @@
+<?php
+
+/**
+ * Dossiq ZTC URL validity filter.
+ *
+ * A zaaktype or besluittype read from the Catalogi API lists URLs to related types. Only URLs
+ * that point at a published type, valid today, may stay in those lists. Split out of
+ * ZtcController (method-decomposition).
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Zgw
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Zgw;
+
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZtcUrlValidityFilterInterface;
+use OCA\Dossiq\Support\NormalisesObjectRows;
+
+/**
+ * Drops the cross-reference URLs of ZTC types that do not point at a published, current type.
+ *
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+ */
+class ZtcUrlValidityFilter implements ZtcUrlValidityFilterInterface {
+	use NormalisesObjectRows;
+
+	/**
+	 * The Catalogi API.
+	 */
+	private const ZGW_API = 'catalogi';
+
+	/**
+	 * The ZGW resource behind each settings schema key, for the validity lookup.
+	 */
+	private const SCHEMA_RESOURCES = [
+		'document_type_schema' => 'informatieobjecttypen',
+		'decision_type_schema' => 'besluittypen',
+		'case_type_schema'     => 'zaaktypen',
+	];
+
+	/**
+	 * Constructor.
+	 *
+	 * @param ZgwServiceInterface $zgwService Supplies the ObjectService and the ZGW mappings
+	 */
+	public function __construct(
+		private readonly ZgwServiceInterface $zgwService,
+	) {
+	}//end __construct()
+
+	/**
+	 * Drop every URL in the configured list fields that does not point at a published,
+	 * currently valid object.
+	 *
+	 * @param array<string, array{schemaKey: string, nested: bool}> $fieldConfigs List field => target
+	 * @param array $data The outbound-mapped object
+	 * @param string $today Today's date in Y-m-d format
+	 *
+	 * @return array The object with only valid URLs left
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function filter(array $fieldConfigs, array $data, string $today): array {
+		if (empty($fieldConfigs) === true || $this->zgwService->getObjectService() === null) {
+			return $data;
+		}
+
+		foreach ($fieldConfigs as $field => $config) {
+			if (isset($data[$field]) === false || is_array($data[$field]) === false) {
+				continue;
+			}
+
+			$data[$field] = $this->keptItems(items: $data[$field], config: $config + ['today' => $today]);
+		}
+
+		return $data;
+	}//end filter()
+
+	/**
+	 * The list items that may stay.
+	 *
+	 * @param array<int, mixed>                                     $items  The list.
+	 * @param array{schemaKey: string, nested: bool, today: string} $config The list's target and today's date in
+	 *                                                                      Y-m-d format.
+	 *
+	 * @return array<int, mixed> The items that stay.
+	 */
+	private function keptItems(array $items, array $config): array {
+		$filtered = [];
+		foreach ($items as $item) {
+			if ($this->isValidListItem(item: $item, config: $config) === true) {
+				$filtered[] = $item;
+			}
+		}
+
+		return $filtered;
+	}//end keptItems()
+
+	/**
+	 * Whether one list item may stay: a URL string, or (nested) a relation whose caseType URL is valid.
+	 *
+	 * @param mixed $item The list item
+	 * @param array{schemaKey: string, nested: bool, today: string} $config The list's target and today's date in Y-m-d format
+	 *
+	 * @return bool True when the item may stay
+	 */
+	private function isValidListItem(mixed $item, array $config): bool {
+		// GerelateerdeZaaktypen: array of objects with 'caseType' URL field.
+		$target = ['schemaKey' => $config['schemaKey'], 'today' => $config['today']];
+		if ($config['nested'] === true) {
+			return $this->isUrlValid(url: $item['caseType'] ?? '', target: $target);
+		}
+
+		return is_string($item) === true && $this->isUrlValid(url: $item, target: $target);
+	}//end isValidListItem()
+
+	/**
+	 * Whether a URL points at a published object that is valid today.
+	 *
+	 * A schema key without a known resource, or a resource without a mapping, counts as valid;
+	 * a URL without a uuid, or an object that cannot be read, does not.
+	 *
+	 * @param string $url The URL
+	 * @param array{schemaKey: string, today: string} $target The settings key of the target schema and today's
+	 *                                                        date in Y-m-d format
+	 *
+	 * @return bool True when the URL may stay
+	 */
+	private function isUrlValid(string $url, array $target): bool {
+		['schemaKey' => $schemaKey, 'today' => $today] = $target;
+		if (preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $url, $matches) !== 1) {
+			return false;
+		}
+
+		$targetResource = self::SCHEMA_RESOURCES[$schemaKey] ?? null;
+		if ($targetResource === null) {
+			return true;
+		}
+
+		try {
+			$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $targetResource);
+			if ($mappingConfig === null) {
+				return true;
+			}
+
+			$objectData = $this->findIn(objectService: $this->zgwService->getObjectService(), mapping: $mappingConfig, id: $matches[1]);
+
+			return $this->isPublishedAndCurrent(objectData: $objectData, today: $today);
+		} catch (\Throwable $e) {
+			// If we can't look up the object, exclude the URL.
+			return false;
+		}
+	}//end isUrlValid()
+
+	/**
+	 * Whether an object is published (not a concept) and valid today.
+	 *
+	 * @param array $objectData The object
+	 * @param string $today Today's date in Y-m-d format
+	 *
+	 * @return bool True when published, begun and not ended
+	 */
+	private function isPublishedAndCurrent(array $objectData, string $today): bool {
+		$isDraft = $objectData['isDraft'] ?? ($objectData['draft'] ?? true);
+		if (in_array($isDraft, [true, 'true', '1', 1], true) === true) {
+			return false;
+		}
+
+		// BeginGeldigheid <= today.
+		$start = $objectData['validFrom'] ?? ($objectData['startValidity'] ?? null);
+		if ($start !== null && $start !== '' && $start > $today) {
+			return false;
+		}
+
+		// EindeGeldigheid >= today, or no end date.
+		$end = $objectData['validUntil'] ?? ($objectData['endValidity'] ?? null);
+
+		return $end === null || $end === '' || $end >= $today;
+	}//end isPublishedAndCurrent()
+
+	/**
+	 * Read one object of a mapping as an array.
+	 *
+	 * @param object|null $objectService The OpenRegister ObjectService
+	 * @param array $mapping The ZGW mapping (`sourceRegister`, `sourceSchema`)
+	 * @param string $id The object id
+	 *
+	 * @return array The object
+	 */
+	private function findIn(?object $objectService, array $mapping, string $id): array {
+		return $this->objectToArray(
+			row: $objectService->find(id: $id, register: $mapping['sourceRegister'], schema: $mapping['sourceSchema'])
+		);
+	}//end findIn()
+}//end class
