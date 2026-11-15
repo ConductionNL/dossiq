@@ -49,6 +49,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\ChecksIdentificatieUnique;
 use OCA\Dossiq\Service\Zgw\ZrcCaseFieldRules;
 use OCA\Dossiq\Service\Zgw\ZrcCaseTypeDefaults;
 use OCA\Dossiq\Service\Zgw\ZrcSubResourceRules;
@@ -62,6 +63,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class ZgwZrcRulesService extends ZgwRulesBase {
+	use ChecksIdentificatieUnique;
+
 	/**
 	 * The field rules a zaak body passes on create, update and patch.
 	 *
@@ -144,7 +147,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			return $error;
 		}
 
-		$error = $this->checkUniqueIdentification(body: $body);
+		$error = $this->checkIdentificatieUnique(body: $body);
 		if ($error !== null) {
 			return $error;
 		}
@@ -153,27 +156,6 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 
 		return $this->caseFields->validateCaseFields(result: $this->isValid(body: $body), existingObject: null);
 	}//end rulesZakenCreate()
-
-	/**
-	 * Zrc-002: refuse an identificatie + bronorganisatie that is already taken.
-	 *
-	 * @param array $body The ZGW request body (Dutch field names)
-	 *
-	 * @return array|null The refusal, or null when unique or no identificatie is given
-	 */
-	private function checkUniqueIdentification(array $body): ?array {
-		if (empty($body['identificatie']) === true) {
-			return null;
-		}
-
-		return $this->checkFieldUniqueness(
-			field1Value: $body['identificatie'],
-			field1Search: 'identifier',
-			field2Value: $body['bronorganisatie'] ?? '',
-			field2Search: 'sourceOrganisation',
-			errorField: 'identificatie'
-		);
-	}//end checkUniqueIdentification()
 
 	/**
 	 * The create body with its identificatie, confidentiality, archive status, channel and handler filled in.

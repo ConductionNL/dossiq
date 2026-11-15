@@ -42,6 +42,7 @@ use OCA\Dossiq\Kernel\Contracts\UnmatchedMailIntakeInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
@@ -55,6 +56,8 @@ use Throwable;
  * @spec openspec/specs/email-case-matching/spec.md
  */
 class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
+
+	use ReadsConfiguredSource;
 
 	/**
 	 * The app-config key naming the case type an unmatched mail becomes.
@@ -316,7 +319,7 @@ class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
 	 * @return string The principal, or '' when the type names none.
 	 */
 	private function assigneeFor(string $caseTypeId): string {
-		$source = $this->caseTypeSource();
+		$source = $this->configuredSource(schemaKey: 'case_type_schema');
 		if ($source === null) {
 			return '';
 		}
@@ -334,22 +337,6 @@ class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
 
 		return $this->defaultAssigneeOf(row: $this->normaliseObjectRow(row: $caseType));
 	}//end assigneeFor()
-
-	/**
-	 * The object service, register and case type schema, when all are configured.
-	 *
-	 * @return array{0: object, 1: mixed, 2: mixed}|null Null when one is missing.
-	 */
-	private function caseTypeSource(): array|null {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return null;
-		}
-
-		return [$objectService, $register, $schema];
-	}//end caseTypeSource()
 
 	/**
 	 * The principal a case type assigns new cases to.
