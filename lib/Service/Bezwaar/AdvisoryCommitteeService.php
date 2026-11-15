@@ -158,18 +158,8 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 		array $payload = [],
 	): array {
 		$store = ($this->requestStore() ?? throw new RuntimeException('OpenRegister is not available'));
-		$committeeSchema = $this->settingsService->getConfigValue(
-			key: 'bezwaaradviescommissie_schema'
-		);
-
-		if (in_array('', [$store['register'], $store['schema'], $committeeSchema], true) === true) {
-			throw new RuntimeException(
-				'BAC schemas are not configured'
-			);
-		}
-
 		$this->assertCommitteeAcceptsReferrals(
-			committees: ['schema' => $committeeSchema] + $store,
+			committees: ['schema' => $this->committeeSchema(store: $store)] + $store,
 			commissieId: $commissieId
 		);
 
@@ -180,6 +170,29 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 
 		return $this->saveNewRequest(store: $store, record: $record);
 	}//end assignToCommittee()
+
+	/**
+	 * The configured committee schema, refused when it or the store's register or schema is not configured.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The advice-request store.
+	 *
+	 * @return string The committee schema.
+	 *
+	 * @throws RuntimeException When the BAC schemas are not configured.
+	 */
+	private function committeeSchema(array $store): string {
+		$committeeSchema = $this->settingsService->getConfigValue(
+			key: 'bezwaaradviescommissie_schema'
+		);
+
+		if (in_array('', [$store['register'], $store['schema'], $committeeSchema], true) === true) {
+			throw new RuntimeException(
+				'BAC schemas are not configured'
+			);
+		}
+
+		return $committeeSchema;
+	}//end committeeSchema()
 
 	/**
 	 * The object service, register and advice-request schema, or null without OpenRegister.
@@ -743,25 +756,42 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 			return;
 		}
 
-		$current = $this->readForDeviation(store: $store, requestId: $requestId);
-		if ($current === null) {
+		if ($this->readForDeviation(store: $store, requestId: $requestId) === null) {
 			return;
 		}
 
 		// Outside the try on purpose: an entry that cannot be written goes to
 		// the caller, which logs it with the entry (REQ-BAT-003).
+		$this->recordDeviationEntry(
+			store: $store,
+			entry: ['request' => $requestId, 'decision' => $decisionId, 'motivatie' => $rationaleRef]
+		);
+	}//end recordCouncilDeviation()
+
+	/**
+	 * Write the council-deviation entry on the advice request's audit trail.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The advice-request store.
+	 * @param array{request: string, decision: string, motivatie: string}     $entry The advice request, the besluit op bezwaar
+	 *                                                                               and the motivation reference.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException A BezwaarEntryNotWrittenException when the entry could not be written.
+	 */
+	private function recordDeviationEntry(array $store, array $entry): void {
 		$this->auditTrail->record(
 			register: $store['register'],
 			schema: $store['schema'],
-			objectUuid: $requestId,
+			objectUuid: $entry['request'],
 			event: 'council-deviation-recorded',
 			payload: [
-				'decision' => $decisionId,
-				'motivatie' => $rationaleRef,
+				'decision' => $entry['decision'],
+				'motivatie' => $entry['motivatie'],
 			],
 			tag: BezwaarAuditTrail::TAG_BAC_REFERRAL,
 		);
-	}//end recordCouncilDeviation()
+	}//end recordDeviationEntry()
 
 	/**
 	 * Assert that the requested advice-status transition is permitted by the
