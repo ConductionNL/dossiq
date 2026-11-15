@@ -90,7 +90,7 @@ class SendTemplateMessageHandler implements ActionHandlerInterface, SendTemplate
 			return new ActionResult(succeeded: false, error: 'no_recipient');
 		}
 
-		$claim = $this->claimOf(actionConfig: $actionConfig, case: $case, caseId: $caseId);
+		$claim = $this->claimOf(actionConfig: $actionConfig, subject: ['case' => $case, 'caseId' => $caseId]);
 		if ($claim !== '' && $this->ledger->claim(key: $claim, template: $template, instance: $caseId, now: time()) === false) {
 			return new ActionResult(succeeded: true, data: ['skipped' => 'already sent']);
 		}
@@ -173,13 +173,13 @@ class SendTemplateMessageHandler implements ActionHandlerInterface, SendTemplate
 	/**
 	 * The ledger key of a send-once message, or '' when it may repeat.
 	 *
-	 * @param array<string, mixed> $actionConfig `onceKey` and optionally `oncePer`.
-	 * @param array<string, mixed> $case         The case.
-	 * @param string               $caseId       The case id.
+	 * @param array<string, mixed>                              $actionConfig `onceKey` and optionally `oncePer`.
+	 * @param array{case: array<string, mixed>, caseId: string} $subject      The case, and its id.
 	 *
 	 * @return string The 64-character key.
 	 */
-	private function claimOf(array $actionConfig, array $case, string $caseId): string {
+	private function claimOf(array $actionConfig, array $subject): string {
+		['case' => $case, 'caseId' => $caseId] = $subject;
 		$once = trim((string)($actionConfig['onceKey'] ?? ''));
 		if ($once === '') {
 			return '';

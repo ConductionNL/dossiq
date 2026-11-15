@@ -385,7 +385,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 		$update['status'] = $newStatus;
 		$update = $this->transitionUpdate(request: $request, move: ['from' => $from, 'update' => $update]);
 
-		return $this->applyOrFail(request: $request, update: $update, requestId: $requestId);
+		return $this->applyOrFail(request: $request, change: ['update' => $update, 'requestId' => $requestId]);
 	}//end transitionAdviceStatus()
 
 	/**
@@ -433,9 +433,8 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	/**
 	 * Apply the transition, logging a failure and refusing with a plain message.
 	 *
-	 * @param array<string, mixed> $request   The advice request.
-	 * @param array<string, mixed> $update    The update.
-	 * @param string               $requestId Advice request UUID, for the log.
+	 * @param array<string, mixed>                                $request The advice request.
+	 * @param array{update: array<string, mixed>, requestId: string} $change  The update, and the advice request UUID for the log.
 	 *
 	 * @return array<string, mixed> The updated advice request record
 	 *
@@ -443,7 +442,8 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 *
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
 	 */
-	private function applyOrFail(array $request, array $update, string $requestId): array {
+	private function applyOrFail(array $request, array $change): array {
+		['update' => $update, 'requestId' => $requestId] = $change;
 		try {
 			return $this->applyTransition(request: $request, update: $update);
 		} catch (\Throwable $e) {
