@@ -1419,10 +1419,10 @@
     },
     {
       "file": "lib/Service/Transfer/TransferShareBroker.php",
-      "method": "mintTransferShare",
+      "method": "createShare",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`mintTransferShare()` answers `return null` when the read fails; the catch logs at error (\"CaseTransferService: OR createOutgoingShare failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`createShare()` answers `return null` when the read fails; the catch logs at error (\"CaseTransferService: OR createOutgoingShare failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Transfer/TransferShareBroker.php",
