@@ -245,7 +245,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	private function saveNewRequest(array $store, array $record): array {
 		$saved = $this->createRequest(store: $store, record: $record);
 
-		$this->recordPanel(store: $store, record: $record, saved: $saved);
+		$this->recordPanel(store: $store, request: [$record, $saved]);
 
 		return $saved;
 	}//end saveNewRequest()
@@ -281,15 +281,15 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	/**
 	 * Put a new request's panel on its own trail.
 	 *
-	 * @param array{objectService: object, register: string, schema: string} $store  The request store.
-	 * @param array<string, mixed>                                            $record The request as saved.
-	 * @param array<string, mixed>                                            $saved  The stored request.
+	 * @param array{objectService: object, register: string, schema: string} $store   The request store.
+	 * @param array{0: array<string, mixed>, 1: array<string, mixed>}        $request The request as saved, and the stored request.
 	 *
 	 * @return void
 	 *
 	 * @spec exclude one step of assignToCommittee(), which carries the requirement
 	 */
-	private function recordPanel(array $store, array $record, array $saved): void {
+	private function recordPanel(array $store, array $request): void {
+		[$record, $saved] = $request;
 		// The panel composition is a row on the request's own OpenRegister
 		// trail; a request whose entry cannot be written is deleted again.
 		$this->auditTrail->recordForNewRecord(
@@ -381,7 +381,9 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 		$from = (string)($request['current']['status'] ?? 'assigned');
 		$this->assertMayMove(request: $request, from: $from, newStatus: $newStatus);
 
-		$update = $this->transitionUpdate(request: $request, from: $from, newStatus: $newStatus, payload: $payload);
+		$update = $payload;
+		$update['status'] = $newStatus;
+		$update = $this->transitionUpdate(request: $request, move: ['from' => $from, 'update' => $update]);
 
 		return $this->applyOrFail(request: $request, update: $update, requestId: $requestId);
 	}//end transitionAdviceStatus()
@@ -409,10 +411,9 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	/**
 	 * The update a transition writes, after the independence check.
 	 *
-	 * @param array<string, mixed> $request   The advice request.
-	 * @param string               $from      Its current status.
-	 * @param string               $newStatus Target status.
-	 * @param array<string, mixed> $payload   Optional patch.
+	 * @param array<string, mixed>                               $request The advice request.
+	 * @param array{from: string, update: array<string, mixed>} $move    Its current status, and the optional patch with the
+	 *                                                                   target status.
 	 *
 	 * @return array<string, mixed> The update.
 	 *
@@ -420,9 +421,8 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 *
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
 	 */
-	private function transitionUpdate(array $request, string $from, string $newStatus, array $payload): array {
-		$update = $payload;
-		$update['status'] = $newStatus;
+	private function transitionUpdate(array $request, array $move): array {
+		['from' => $from, 'update' => $update] = $move;
 
 		return $this->buildTransitionUpdate(
 			update: $update,
@@ -623,13 +623,11 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
 	 */
 	private function applyTransition(array $request, array $update): array {
-		$apply = $this->transitionWrite(request: $request, update: $update);
-
 		if (isset($update['adviceIssuedAt']) === false) {
-			return $apply();
+			return $this->transitionWrite(request: $request, update: $update)();
 		}
 
-		return $this->signThenApply(request: $request, update: $update, apply: $apply);
+		return $this->signThenApply(request: $request, update: $update);
 	}//end applyTransition()
 
 	/**
@@ -659,13 +657,12 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 	 *
 	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
 	 * @param array<string, mixed>                                                                                       $update  The patch.
-	 * @param callable(): array<string, mixed>                                                                           $apply   The write.
 	 *
 	 * @return array<string, mixed> The updated advice request record.
 	 *
 	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
 	 */
-	private function signThenApply(array $request, array $update, callable $apply): array {
+	private function signThenApply(array $request, array $update): array {
 		return $this->auditTrail->recordThenApply(
 			register: $request['register'],
 			schema: $request['schema'],
@@ -677,7 +674,7 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 				'conclusion' => $update['conclusion'] ?? ($request['current']['conclusion'] ?? null),
 			],
 			tag: '',
-			apply: $apply,
+			apply: $this->transitionWrite(request: $request, update: $update),
 		);
 	}//end signThenApply()
 
