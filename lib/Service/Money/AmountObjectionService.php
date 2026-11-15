@@ -101,7 +101,7 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 			$this->holdPayout(run: $run, payout: $u);
 		}
 
-		$this->withdrawFinanceOnlyPayouts(calculationId: $calculationId, stored: $uitbetalingen, reason: $run->reason());
+		$this->withdrawFinanceOnlyPayouts(run: $run, stored: $uitbetalingen);
 
 		$this->recordTermEvent(run: $run, type: 'objection-submitted');
 
@@ -140,7 +140,7 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 			$this->raisePayoutAgain(run: $run, payout: $u);
 		}
 
-		$this->raiseFinanceOnlyPayoutAgain(calculationId: $calculationId, newAmountCents: $newAmountCents, stored: $uitbetalingen);
+		$this->raiseFinanceOnlyPayoutAgain(run: $run, decided: ['amountCents' => $newAmountCents, 'stored' => $uitbetalingen]);
 
 		$run->basis = $basis;
 		$run->rationale = 'Bezwaar opgelost; bedrag herzien';
@@ -306,15 +306,15 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 	 *
 	 * A payout finance already approved stays with finance; the refusal is logged.
 	 *
-	 * @param string $calculationId The calculation.
+	 * @param ObjectionRun $run The objection step: the calculation, and why it is withdrawn.
 	 * @param array<int, array<string, mixed>> $stored The payout rows dossiq kept, handled already.
-	 * @param string $reason Why it is withdrawn.
 	 *
 	 * @return void
 	 */
-	private function withdrawFinanceOnlyPayouts(string $calculationId, array $stored, string $reason): void {
+	private function withdrawFinanceOnlyPayouts(ObjectionRun $run, array $stored): void {
+		$reason = $run->reason();
 		$kept = array_column($stored, 'payableId');
-		foreach (($this->reader?->rowsForCalculation(calculationId: $calculationId) ?? []) as $row) {
+		foreach (($this->reader?->rowsForCalculation(calculationId: $run->calculationId) ?? []) as $row) {
 			if ($row['status'] === 'withdrawn' || in_array($row['payableId'], $kept, true) === true) {
 				continue;
 			}
@@ -332,16 +332,16 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 	 * amount, once: only when dossiq kept no row for it and no live payout is
 	 * left, from the last one withdrawn.
 	 *
-	 * @param string $calculationId The calculation.
-	 * @param int $newAmountCents The decided amount.
-	 * @param array<int, array<string, mixed>> $stored The payout rows dossiq kept; when any, they were raised again already.
+	 * @param ObjectionRun $run The objection step, for the calculation.
+	 * @param array{amountCents: int, stored: array<int, array<string, mixed>>} $decided The decided amount, and the
+	 *        payout rows dossiq kept; when any, they were raised again already.
 	 *
 	 * @return void
 	 */
-	private function raiseFinanceOnlyPayoutAgain(string $calculationId, int $newAmountCents, array $stored): void {
+	private function raiseFinanceOnlyPayoutAgain(ObjectionRun $run, array $decided): void {
 		$rows = [];
-		if ($stored === []) {
-			$rows = ($this->reader?->rowsForCalculation(calculationId: $calculationId) ?? []);
+		if ($decided['stored'] === []) {
+			$rows = ($this->reader?->rowsForCalculation(calculationId: $run->calculationId) ?? []);
 		}
 
 		$withdrawn = array_values(array_filter($rows, static fn (array $row): bool => $row['status'] === 'withdrawn'));
@@ -350,7 +350,7 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 		}
 
 		$row = end($withdrawn);
-		$row['amount'] = $newAmountCents;
+		$row['amount'] = $decided['amountCents'];
 		$row['payableId'] = '';
 		try {
 			$this->payouts?->raiseAgain(row: $row);
