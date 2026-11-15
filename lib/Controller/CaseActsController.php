@@ -52,6 +52,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\AnswersNotOnTheCase;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
+use OCA\Dossiq\Controller\Support\UnwiredNotice;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\ArchiveRequesterNoticeInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -319,12 +320,7 @@ class CaseActsController extends Controller {
 	 */
 	private function tellRequester(string $caseId): array {
 		if ($this->archiveNotice === null) {
-			return [
-				'noticeStatus' => 'not-sent',
-				'noticeChannel' => '',
-				'noticeReasonCode' => 'notice-not-wired',
-				'noticeReason' => 'No sender is wired, so the requester was not told.',
-			];
+			return UnwiredNotice::OUTCOME;
 		}
 
 		return $this->archiveNotice->tell(caseId: $caseId);
