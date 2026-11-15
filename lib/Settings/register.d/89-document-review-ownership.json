@@ -1,0 +1,17 @@
+{
+  "_note": "woo-request-scoped-access 5.2 (REQ-WSA-007, decision 197). A reviewer's decision on a document's file (a redaction, a grondslag) is a decision object in OpenRegister; this declaration makes it owned by whoever decided it, so only that reviewer, a member of dossiq-coordinators or an administrator changes it. hideOthers stays false, the same value the Woo case type's reviewerAccess.hideOthers carries. OpenRegister then asks dossiq through DecisionChangeRequestedEvent, and CaseDecisionAccess answers with the supervising group of the case the document belongs to. SchemaSlugMap::SCHEMA_ANNOTATION_KEYS carries the key so it reaches an instance that imported the document schema before it existed. A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "document": {
+        "version": "1.2.0",
+        "configuration": {
+          "x-openregister-review": {
+            "ownership": "decider",
+            "supervisors": ["dossiq-coordinators"],
+            "hideOthers": false
+          }
+        }
+      }
+    }
+  }
+}

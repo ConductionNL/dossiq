@@ -17,11 +17,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\BulkAction\LifecycleCasesAction;
+use OCA\Dossiq\BulkAction\MoveCaseTypeVersionAction;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\BulkAction\SetCaseAttributeAction;
 use OCA\Dossiq\BulkAction\TransitionCasesAction;
 use OCA\Dossiq\Listener\BulkActionRegistrationListener;
 use OCA\Dossiq\Service\CaseLifecycleService;
+use OCA\Dossiq\Service\CaseType\CaseVersionMove;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Support\CaseAssigneeWriter;
@@ -33,7 +35,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Proves dossiq's four bulk actions actually reach the registry.
+ * Proves dossiq's five bulk actions actually reach the registry.
  *
  * An action class that exists but is never registered is invisible to every
  * caller, and looks identical to one that works right up until somebody selects
@@ -44,7 +46,7 @@ use RuntimeException;
 class BulkActionRegistrationListenerTest extends TestCase {
 
 	/**
-	 * A container answering a real instance of each of the four actions.
+	 * A container answering a real instance of each of the five actions.
 	 *
 	 * @param array<int, string> $failing Classes the container refuses to build.
 	 *
@@ -74,6 +76,10 @@ class BulkActionRegistrationListenerTest extends TestCase {
 						writer: $this->createMock(originalClassName: CaseAssigneeWriter::class),
 						l10n: $l10n,
 					),
+					MoveCaseTypeVersionAction::class => new MoveCaseTypeVersionAction(
+						move: $this->createMock(originalClassName: CaseVersionMove::class),
+						l10n: $l10n,
+					),
 					default => new SetCaseAttributeAction(
 						settingsService: $this->createMock(originalClassName: SettingsService::class),
 						l10n: $l10n,
@@ -86,13 +92,13 @@ class BulkActionRegistrationListenerTest extends TestCase {
 	}//end container()
 
 	/**
-	 * All four actions are registered, under their declared ids.
+	 * All five actions are registered, under their declared ids.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
-	public function testAllFourCaseActionsAreRegistered(): void {
+	public function testAllFiveCaseActionsAreRegistered(): void {
 		$event = new RecordingBulkActionRegistrationEvent();
 
 		(new BulkActionRegistrationListener(
@@ -108,17 +114,18 @@ class BulkActionRegistrationListenerTest extends TestCase {
 				LifecycleCasesAction::ID,
 				ReassignCasesAction::ID,
 				SetCaseAttributeAction::ID,
+				MoveCaseTypeVersionAction::ID,
 			],
 			actual: $ids
 		);
-	}//end testAllFourCaseActionsAreRegistered()
+	}//end testAllFiveCaseActionsAreRegistered()
 
 	/**
-	 * One action that cannot be built does not take the other three with it.
+	 * One action that cannot be built does not take the others with it.
 	 *
 	 * A registry that answers nothing looks exactly like an instance where
 	 * dossiq is not installed, so the fail-soft behaviour is the difference
-	 * between one missing act and four.
+	 * between one missing act and all of them.
 	 *
 	 * @return void
 	 *
@@ -138,7 +145,12 @@ class BulkActionRegistrationListenerTest extends TestCase {
 		$ids = array_map(static fn (object $action): string => $action->getId(), $event->recordedActions());
 
 		$this->assertSame(
-			expected: [TransitionCasesAction::ID, LifecycleCasesAction::ID, SetCaseAttributeAction::ID],
+			expected: [
+				TransitionCasesAction::ID,
+				LifecycleCasesAction::ID,
+				SetCaseAttributeAction::ID,
+				MoveCaseTypeVersionAction::ID,
+			],
 			actual: $ids
 		);
 	}//end testOneUnbuildableActionDoesNotTakeTheOthersWithIt()

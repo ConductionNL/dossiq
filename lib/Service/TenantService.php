@@ -3,12 +3,17 @@
 /**
  * Dossiq Tenant Service
  *
- * Service for managing multi-tenant isolation; delegates the tenant data model
- * to OpenRegister's Organisation entity + TenantLifecycleService per the
- * Hydra umbrella consume-or-tenant-fleet-wide (ADR-022).
+ * What is left of dossiq's tenant service once its tenant API moved to
+ * OpenRegister (Q5, Ruben 2026-10-08): the platform admin check that
+ * `MandateValidationMiddleware` makes before it refuses an organisation that
+ * is not active, and the creation of a tenant's audit anchor (Q6).
  *
- * Public method signatures and return shapes are preserved so existing
- * callers (TenantController, TenantMiddleware) do not require modification.
+ * The rest went with the tenant controller. Reading the active organisation is
+ * `GET /api/organisations/active`, listing a user's organisations is
+ * `GET /api/organisations`, provisioning is
+ * `PUT /api/organisations/{uuid}/activate`, and usage is
+ * `GET /api/organisations/{uuid}/usage` with `GET /api/organisations/{uuid}`,
+ * all on OpenRegister.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -24,211 +29,56 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/multi-tenancy/spec.md
- * @spec openspec/specs/multi-tenancy/spec.md
- * @spec openspec/specs/multi-tenancy/spec.md
- * @spec openspec/specs/multi-tenancy/spec.md
+ * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantServiceInterface;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
-use OCP\IUserManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Service for managing multi-tenant isolation backed by OR Organisations.
+ * The platform admin check and the audit anchor for the tenant boundary.
  *
- * Each dossiq tenant maps 1:1 to an OR Organisation entity. The
- * `Organisation.groups` array carries the NC group IDs used by dossiq for
- * tenant routing; `Organisation.status` carries the lifecycle state enforced
- * by `TenantMiddleware`.
- *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
-class TenantService {
+class TenantService implements TenantServiceInterface {
 	/**
-	 * Prefix for tenant Nextcloud groups.
+	 * The register that holds the anchors.
+	 *
+	 * FROZEN: the OpenRegister register SLUG, not this app's id.
 	 */
-	private const TENANT_GROUP_PREFIX = 'tenant_';
+	private const REGISTER = 'dossiq';
+
+	/**
+	 * The schema an anchor is an object of.
+	 */
+	private const SCHEMA_TENANT = 'tenant';
 
 	/**
 	 * Constructor for the TenantService.
 	 *
-	 * @param IAppManager $appManager The app manager.
-	 * @param IGroupManager $groupManager The Nextcloud group manager.
-	 * @param IUserManager $userManager The Nextcloud user manager.
-	 * @param ContainerInterface $container The DI container (graceful OR resolution).
-	 * @param LoggerInterface $logger The logger.
+	 * @param IGroupManager              $groupManager  The Nextcloud group manager.
+	 * @param TenantOrganisationResolver $organisations Reads the Organisation an anchor is made from.
+	 * @param IAppManager                $appManager    OpenRegister availability check.
+	 * @param ContainerInterface         $container     Resolves OpenRegister's ObjectService.
+	 * @param LoggerInterface            $logger        Logger.
 	 */
 	public function __construct(
-		private IAppManager $appManager,
 		private IGroupManager $groupManager,
-		private IUserManager $userManager,
+		private TenantOrganisationResolver $organisations,
+		private IAppManager $appManager,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
-
-	/**
-	 * Resolve the tenant for a given user via OR's `findByUserId` lookup.
-	 *
-	 * Returns the Organisation as a `jsonSerialize`d array so existing callers
-	 * see the same shape as before (uuid, name, slug, status, registerId, etc.).
-	 *
-	 * @param string $userId The Nextcloud user ID.
-	 *
-	 * @return array|null The tenant data or null when none found.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function getTenantForUser(string $userId): ?array {
-		$orgs = $this->findOrganisationsByUserId(userId: $userId);
-		if (empty($orgs) === true) {
-			// Fall back to NC-group lookup so existing single-tenant deployments still work.
-			$user = $this->userManager->get($userId);
-			if ($user === null) {
-				return null;
-			}
-
-			$groups = $this->groupManager->getUserGroups($user);
-			foreach ($groups as $group) {
-				$groupId = $group->getGID();
-				if (str_starts_with($groupId, self::TENANT_GROUP_PREFIX) === true) {
-					return $this->getTenantByGroupId(groupId: $groupId);
-				}
-			}
-
-			return null;
-		}
-
-		return $orgs[0]->jsonSerialize();
-	}//end getTenantForUser()
-
-	/**
-	 * Get a tenant by its Nextcloud group ID.
-	 *
-	 * Queries OR Organisations whose `groups` array contains the given groupId.
-	 *
-	 * @param string $groupId The Nextcloud group ID (`tenant_<slug>`).
-	 *
-	 * @return array|null The tenant data, or null when not resolvable.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function getTenantByGroupId(string $groupId): ?array {
-		$mapper = $this->getOrganisationMapper();
-		if ($mapper === null) {
-			return null;
-		}
-
-		try {
-			// Linear scan is acceptable here — tenant count is small (≤100s).
-			foreach ($mapper->findAll(limit: 500) as $org) {
-				$groups = ($org->getGroups() ?? []);
-				if (in_array($groupId, $groups, true) === true) {
-					return $org->jsonSerialize();
-				}
-			}
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: getTenantByGroupId failed against OR',
-				['groupId' => $groupId, 'exception' => $e->getMessage()]
-			);
-			return null;
-		}
-
-		return null;
-	}//end getTenantByGroupId()
-
-	/**
-	 * Provision a tenant via OR's TenantLifecycleService.
-	 *
-	 * Reads the Organisation by UUID, calls `provision()` (which handles the
-	 * provisioning → active state transition + emits `OrganisationProvisionedEvent`).
-	 *
-	 * @param string $tenantId The Organisation UUID.
-	 *
-	 * @return array The provisioning result (the Organisation `jsonSerialize`d).
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function provisionTenant(string $tenantId): array {
-		$mapper = $this->getOrganisationMapper();
-		$lifecycleService = $this->getTenantLifecycleService();
-		if ($mapper === null || $lifecycleService === null) {
-			return ['error' => 'OpenRegister tenant services unavailable'];
-		}
-
-		try {
-			$org = $mapper->findByUuid($tenantId);
-			$adminUid = 'admin';
-			if ($this->groupManager->isAdmin($org->getOwner() ?? '') === true) {
-				$adminUid = $org->getOwner();
-			}
-
-			$org = $lifecycleService->provision($org, (string)$adminUid);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: provisionTenant failed via OR',
-				['tenantId' => $tenantId, 'exception' => $e->getMessage()]
-			);
-			return ['error' => 'Failed to provision tenant: ' . $e->getMessage()];
-		}
-
-		$this->logger->info(
-			'Dossiq: Tenant provisioned via OR TenantLifecycleService',
-			['tenantId' => $tenantId, 'status' => $org->getStatus()]
-		);
-
-		return $org->jsonSerialize();
-	}//end provisionTenant()
-
-	/**
-	 * Get resource usage for a tenant from OR data.
-	 *
-	 * `storageQuota` comes from the OR Organisation entity (bytes per
-	 * tenant-quotas spec). User count comes from the NC group as before.
-	 *
-	 * @param string $tenantId The Organisation UUID.
-	 *
-	 * @return array Usage data with user count + OR quota fields.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function getResourceUsage(string $tenantId): array {
-		$mapper = $this->getOrganisationMapper();
-		if ($mapper === null) {
-			return ['error' => 'OpenRegister is not available'];
-		}
-
-		try {
-			$org = $mapper->findByUuid($tenantId);
-		} catch (Throwable $e) {
-			return ['error' => 'Organisation not found'];
-		}
-
-		$userCount = 0;
-		foreach (($org->getGroups() ?? []) as $groupId) {
-			$group = $this->groupManager->get($groupId);
-			if ($group !== null) {
-				$userCount += count($group->getUsers());
-			}
-		}
-
-		return [
-			'users' => $userCount,
-			'storageQuota' => (int)($org->getStorageQuota() ?? 0),
-			'bandwidthQuota' => (int)($org->getBandwidthQuota() ?? 0),
-			'requestQuota' => (int)($org->getRequestQuota() ?? 0),
-			'status' => (string)($org->getStatus() ?? ''),
-		];
-	}//end getResourceUsage()
 
 	/**
 	 * Check whether a user is a platform administrator.
@@ -237,97 +87,152 @@ class TenantService {
 	 *
 	 * @return bool True when the user is in the NC admin group.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function isPlatformAdmin(string $userId): bool {
 		return $this->groupManager->isAdmin($userId);
 	}//end isPlatformAdmin()
 
 	/**
-	 * Check whether a tenant (OR Organisation) is in `active` state.
+	 * Make sure the Organisation has its tenant audit anchor, creating it once.
 	 *
-	 * Used by `TenantMiddleware` to short-circuit requests scoped to a
-	 * suspended / deprovisioning / archived tenant with HTTP 403.
+	 * Every tenant audit entry is a row on OpenRegister's audit trail of a
+	 * tenant object (decision Q4). A tenant created in OpenRegister after the
+	 * migration has no such object, so dossiq creates one when its onboarding
+	 * starts (decision Q6): the Organisation's uuid, slug and name, and the
+	 * moment the Organisation was created. An anchor that exists is left
+	 * exactly as it is. Nothing here updates or deletes one.
 	 *
-	 * @param string $tenantId Organisation UUID.
+	 * The read and the write skip RBAC and multitenancy on purpose. The anchor
+	 * is a system record: it must be found whoever's request writes the audit
+	 * entry, and it must not take the organisation of the admin who happened to
+	 * start the onboarding. The only caller is the admin-only onboarding route.
 	 *
-	 * @return string|null Status string (`active`, `suspended`, etc.) or null
-	 *                     when OR cannot resolve the Organisation.
+	 * @param string $organisationUuid The Organisation's uuid, which is the tenant uuid.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @return bool True when the anchor exists afterwards.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
-	public function getTenantStatus(string $tenantId): ?string {
-		$mapper = $this->getOrganisationMapper();
-		if ($mapper === null) {
-			return null;
+	public function ensureAuditAnchor(string $organisationUuid): bool {
+		$uuid = trim($organisationUuid);
+		$objectService = $this->getObjectService();
+		if ($uuid === '' || $objectService === null) {
+			return false;
 		}
 
-		try {
-			return $mapper->findByUuid($tenantId)->getStatus();
-		} catch (Throwable $e) {
-			return null;
+		if ($this->anchorExists(objectService: $objectService, uuid: $uuid) === true) {
+			return true;
 		}
-	}//end getTenantStatus()
+
+		return $this->writeAnchor(objectService: $objectService, uuid: $uuid);
+	}//end ensureAuditAnchor()
 
 	/**
-	 * Find OR Organisations a user belongs to.
+	 * Write the tenant audit anchor of an Organisation, and report whether it exists afterwards.
 	 *
-	 * @param string $userId Nextcloud user ID.
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $uuid          The Organisation's uuid, which is the tenant uuid.
 	 *
-	 * @return array Organisation entities (may be empty).
+	 * @return bool True when the anchor exists afterwards.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
-	private function findOrganisationsByUserId(string $userId): array {
-		$mapper = $this->getOrganisationMapper();
-		if ($mapper === null) {
-			return [];
+	private function writeAnchor(object $objectService, string $uuid): bool {
+		$organisation = $this->organisations->findOrganisation(uuid: $uuid);
+		if ($organisation === null) {
+			$this->logger->warning('Dossiq: no Organisation to anchor the tenant audit trail on', ['organisation' => $uuid]);
+			return false;
 		}
 
 		try {
-			return $mapper->findByUserId($userId);
-		} catch (Throwable $e) {
-			return [];
-		}
-	}//end findOrganisationsByUserId()
-
-	/**
-	 * Resolve OR's OrganisationMapper if installed.
-	 *
-	 * @return \OCA\OpenRegister\Db\OrganisationMapper|null
-	 */
-	private function getOrganisationMapper() {
-		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
+			$objectService->saveObject(
+				object: $this->anchorFor(organisation: $organisation),
+				register: self::REGISTER,
+				schema: self::SCHEMA_TENANT,
+				uuid: $uuid,
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Dossiq: Could not get OrganisationMapper',
-				['exception' => $e->getMessage()]
+				'Dossiq: the tenant audit anchor could not be written',
+				['organisation' => $uuid, 'exception' => $e->getMessage()]
 			);
-			return null;
+			return false;
 		}
-	}//end getOrganisationMapper()
+
+		return $this->anchorExists(objectService: $objectService, uuid: $uuid);
+	}//end writeAnchor()
 
 	/**
-	 * Resolve OR's TenantLifecycleService if installed.
+	 * The anchor's fields, read off the Organisation.
 	 *
-	 * @return \OCA\OpenRegister\Service\TenantLifecycleService|null
+	 * @param object $organisation OpenRegister's Organisation entity.
+	 *
+	 * @return array<string, string> The tenant object to write.
 	 */
-	private function getTenantLifecycleService() {
-		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
+	private function anchorFor(object $organisation): array {
+		$slug = trim((string) ($organisation->getSlug() ?? ''));
+		$name = trim((string) ($organisation->getName() ?? ''));
+		if ($slug === '') {
+			$slug = (string) $organisation->getUuid();
+		}
+
+		if ($name === '') {
+			$name = $slug;
+		}
+
+		$anchor = ['slug' => $slug, 'displayName' => $name];
+		$created = $organisation->getCreated();
+		if ($created instanceof DateTimeInterface) {
+			$anchor['createdAt'] = $created->format(DATE_ATOM);
+		}
+
+		return $anchor;
+	}//end anchorFor()
+
+	/**
+	 * Whether a tenant object with this uuid is stored.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $uuid          The tenant uuid.
+	 *
+	 * @return bool True when it is.
+	 */
+	private function anchorExists(object $objectService, string $uuid): bool {
+		try {
+			$found = $objectService->find(
+				$uuid,
+				register: self::REGISTER,
+				schema: self::SCHEMA_TENANT,
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			// DoesNotExistException, and any other lookup failure, reads as absent.
+			return false;
+		}
+
+		return $found !== null;
+	}//end anchorExists()
+
+	/**
+	 * OpenRegister's ObjectService, or null when OpenRegister is unavailable.
+	 *
+	 * @return object|null The service.
+	 */
+	private function getObjectService(): ?object {
+		$installed = (array) $this->appManager->getInstalledApps();
+		if (in_array('openregister', $installed, true) === false) {
 			return null;
 		}
 
 		try {
-			return $this->container->get('OCA\\OpenRegister\\Service\\TenantLifecycleService');
+			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not get TenantLifecycleService',
-				['exception' => $e->getMessage()]
-			);
+			$this->logger->error('Dossiq: could not resolve ObjectService for the tenant audit anchor', ['exception' => $e->getMessage()]);
 			return null;
 		}
-	}//end getTenantLifecycleService()
+	}//end getObjectService()
 }//end class

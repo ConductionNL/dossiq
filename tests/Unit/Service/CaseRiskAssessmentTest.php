@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\CaseRiskAssessmentService;
 use PHPUnit\Framework\TestCase;
 
@@ -219,7 +220,7 @@ class CaseRiskAssessmentTest extends TestCase {
 		$properties = (array)$decoded['components']['schemas']['case']['properties'];
 
 		foreach (['riskAssessment', 'riskLevel'] as $property) {
-			$rules = (array)($properties[$property]['authorization']['read'] ?? []);
+			$rules = (array)($properties[$property][CaseFieldRoleProjector::DECLARED_AUTHORIZATION_KEY]['read'] ?? []);
 			self::assertNotSame(
 				expected: [],
 				actual: $rules,

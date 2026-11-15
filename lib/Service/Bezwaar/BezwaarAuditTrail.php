@@ -3,21 +3,22 @@
 /**
  * Dossiq Bezwaar Audit Trail.
  *
- * The single append-only `auditTrail` writer for every bezwaar domain
- * record. HearingService and AdvisoryCommitteeService each carried their
- * own private `appendAudit()` + `resolveUserId()` pair with identical
- * bodies; the entry shape and the "actor is ALWAYS derived from
- * IUserSession, never from the caller" rule are a single concern and now
- * live here and nowhere else.
+ * The single writer of the bezwaar procedure's Awb and AVG entries. Every
+ * entry is one row on OpenRegister's hash-chained audit trail of the record
+ * it describes, a `hearingSession` or a `bacAdviceRequest`, written through
+ * `AuditTrailMapper::recordObjectEvent()`. It used to be appended to an
+ * `auditTrail` array on that same record, which anyone who could write the
+ * record could edit, and which was not part of the hash chain (gate 23 rule 2).
  *
  * This class also owns the canonical Awb / AVG tag vocabulary (REQ-BH-8).
- * Every downstream consumer — beroep dossier export, the accessibility
- * report — reads these exact values, so they are declared once here and
- * re-exported from HearingService for backwards compatibility.
+ * Every downstream consumer reads these exact values, so they are declared
+ * once here and re-exported from HearingService for backwards compatibility.
  *
- * Entry shape: an untagged entry is `{event, actor, at, payload}`; a
- * tagged entry is `{event, tag, actor, at, payload}`. Key order is part
- * of the contract because consumers compare whole entries.
+ * Entry shape, the row's context: an untagged entry is
+ * `{event, actor, at, payload}`; a tagged entry is
+ * `{event, tag, actor, at, payload}`. Key order is part of the contract
+ * because consumers compare whole entries. The actor always comes from
+ * IUserSession, never from the caller, and is `system` without a session.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Bezwaar
@@ -33,7 +34,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/specs/bezwaar-hearing/spec.md
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
 
 declare(strict_types=1);
@@ -42,14 +43,20 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\BezwaarAuditTrailInterface;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
+use OCP\App\IAppManager;
 use OCP\IUserSession;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
- * Appends entries to a bezwaar record's append-only audit trail.
+ * Writes bezwaar entries onto OpenRegister's audit trail of their record.
  *
- * @spec openspec/specs/bezwaar-hearing/spec.md
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
-class BezwaarAuditTrail {
+class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 
 	/**
 	 * Awb art. 7:2 — hearing scheduled / invitation sent.
@@ -94,28 +101,33 @@ class BezwaarAuditTrail {
 	/**
 	 * Constructor.
 	 *
-	 * @param IUserSession $userSession Acting identity source.
+	 * @param IUserSession       $userSession Acting identity source.
+	 * @param IAppManager        $appManager  OpenRegister availability check.
+	 * @param ContainerInterface $container   Resolves OpenRegister's ObjectService and AuditTrailMapper.
+	 * @param LoggerInterface    $logger      Error log for an entry that could not be written.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IUserSession $userSession,
+		private readonly IAppManager $appManager,
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
 	/**
-	 * Append one entry to an existing audit trail.
+	 * Build one entry in the contract's key order.
 	 *
-	 * @param array<int, array<string, mixed>> $existing Existing audit entries.
-	 * @param string $event Event slug.
+	 * @param string               $event   Event slug.
 	 * @param array<string, mixed> $payload Structured payload.
-	 * @param string $tag Awb / AVG tag, or '' for an untagged entry.
+	 * @param string               $tag     Awb / AVG tag, or '' for an untagged entry.
 	 *
-	 * @return array<int, array<string, mixed>> The trail with the new entry appended.
+	 * @return array<string, mixed> The entry.
 	 *
-	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
-	public function append(array $existing, string $event, array $payload, string $tag = ''): array {
+	public function entry(string $event, array $payload, string $tag = ''): array {
 		$entry = ['event' => $event];
 
 		if ($tag !== '') {
@@ -126,10 +138,392 @@ class BezwaarAuditTrail {
 		$entry['at'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 		$entry['payload'] = $payload;
 
-		$existing[] = $entry;
+		return $entry;
+	}//end entry()
 
-		return $existing;
-	}//end append()
+	/**
+	 * Write one entry as a row on the audit trail of the record it describes.
+	 *
+	 * @param string               $register   The register the record lives in.
+	 * @param string               $schema     The record's schema.
+	 * @param string               $objectUuid The record's uuid.
+	 * @param string               $event      Event slug; the action is `dossiq.bezwaar.<event>`.
+	 * @param array<string, mixed> $payload    Structured payload.
+	 * @param string               $tag        Awb / AVG tag, or '' for an untagged entry.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When OpenRegister is absent, the record does not resolve, or the write fails.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	public function record(
+		string $register,
+		string $schema,
+		string $objectUuid,
+		string $event,
+		array $payload,
+		string $tag = '',
+	): void {
+		$this->write(
+			register: $register,
+			schema: $schema,
+			objectUuid: $objectUuid,
+			action: self::ACTION_PREFIX.$event,
+			context: $this->entry(event: $event, payload: $payload, tag: $tag),
+		);
+	}//end record()
+
+	/**
+	 * Write a prepared context as a row on a record's audit trail.
+	 *
+	 * The repair step that copies the old arrays writes through here, with the
+	 * original entry as context, so a copied row and a live one share one path.
+	 *
+	 * @param string               $register   The register the record lives in.
+	 * @param string               $schema     The record's schema.
+	 * @param string               $objectUuid The record's uuid.
+	 * @param string               $action     The full action.
+	 * @param array<string, mixed> $context    The row's context.
+	 * @param string|null          $actorId    An explicit actor, or null for the session's.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When OpenRegister is absent, the record does not resolve, or the write fails.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	public function write(string $register, string $schema, string $objectUuid, string $action, array $context, ?string $actorId = null): void {
+		$row = [
+			'register' => $register,
+			'schema' => $schema,
+			'objectUuid' => $objectUuid,
+			'action' => $action,
+			'context' => $context,
+			'actorId' => $actorId,
+		];
+
+		$this->assertOpenRegister(row: $row);
+		$this->writeEvent(object: $this->resolvedRecord(row: $row), row: $row);
+	}//end write()
+
+	/**
+	 * Throw when OpenRegister is not installed.
+	 *
+	 * @param array<string, mixed> $row The register, schema, record uuid, full action, context and actor of the row.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When OpenRegister is absent.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private function assertOpenRegister(array $row): void {
+		if (in_array('openregister', (array)$this->appManager->getInstalledApps(), true) === false) {
+			throw new BezwaarEntryNotWrittenException(
+				action: $row['action'],
+				objectUuid: $row['objectUuid'],
+				entry: $row['context'],
+				reason: 'OpenRegister is not available, so the bezwaar entry '.$row['action'].' cannot be written',
+			);
+		}
+	}//end assertOpenRegister()
+
+	/**
+	 * Look the record up; throw, with the lookup's failure as the cause, when it does not resolve.
+	 *
+	 * @param array<string, mixed> $row The register, schema, record uuid, full action, context and actor of the row.
+	 *
+	 * @return object The found record.
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the record does not resolve.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private function resolvedRecord(array $row): object {
+		$object = null;
+		$cause = null;
+		try {
+			$object = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService')
+				->find($row['objectUuid'], register: $row['register'], schema: $row['schema']);
+		} catch (Throwable $e) {
+			$cause = $e;
+		}
+
+		if (is_object($object) === false) {
+			throw new BezwaarEntryNotWrittenException(
+				action: $row['action'],
+				objectUuid: $row['objectUuid'],
+				entry: $row['context'],
+				reason: 'The bezwaar record '.$row['objectUuid'].' could not be resolved for '.$row['action'],
+				previous: $cause,
+			);
+		}
+
+		return $object;
+	}//end resolvedRecord()
+
+	/**
+	 * Write the row on the found record's audit trail.
+	 *
+	 * @param object               $object The record the row describes.
+	 * @param array<string, mixed> $row    The record uuid, full action, context and actor of the row.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the write fails.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private function writeEvent(object $object, array $row): void {
+		$action = $row['action'];
+		try {
+			$this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper')
+				->recordObjectEvent(
+					event: ObjectAuditEvents::of(
+						object: $object,
+						action: $action,
+						context: $row['context'],
+						actorId: $row['actorId'],
+						actorName: $row['actorId']
+					)
+				);
+		} catch (Throwable $e) {
+			throw new BezwaarEntryNotWrittenException(
+				action: $action,
+				objectUuid: $row['objectUuid'],
+				entry: $row['context'],
+				reason: 'The bezwaar entry '.$action.' could not be written',
+				previous: $e,
+			);
+		}
+	}//end writeEvent()
+
+	/**
+	 * Record the entry of a record this act just created, or undo the act.
+	 *
+	 * REQ-BAT-003: an act that creates a record saves it, writes the entry,
+	 * and on a failed entry deletes the record it just created and raises.
+	 * So no hearing or advice request stands without its entry.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService, the one the record was saved through.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The schema.
+	 * @param string               $objectUuid    The record just created.
+	 * @param string               $event         Event slug.
+	 * @param array<string, mixed> $payload       Structured payload.
+	 * @param string               $tag           Awb / AVG tag, or ''.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; the record is deleted first.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	public function recordForNewRecord(
+		object $objectService,
+		string $register,
+		string $schema,
+		string $objectUuid,
+		string $event,
+		array $payload,
+		string $tag = '',
+	): void {
+		$command = new BezwaarEntryCommand(
+			register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag
+		);
+
+		$this->recordOrDelete(objectService: $objectService, command: $command);
+	}//end recordForNewRecord()
+
+	/**
+	 * Write the entry of a record just created; on a failed entry delete the record and raise.
+	 *
+	 * @param object              $objectService OpenRegister's ObjectService, the one the record was saved through.
+	 * @param BezwaarEntryCommand $command       The entry of the record just created.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; the record is deleted first.
+	 */
+	private function recordOrDelete(object $objectService, BezwaarEntryCommand $command): void {
+		try {
+			$this->recordCommand(command: $command);
+		} catch (BezwaarEntryNotWrittenException $notWritten) {
+			$this->logger->error(
+				'Dossiq bezwaar: entry not written, so the record it describes is deleted and the act refused',
+				$notWritten->logContext()
+			);
+			try {
+				$objectService->deleteObject(register: $command->register, schema: $command->schema, uuid: $command->objectUuid);
+			} catch (Throwable $e) {
+				$this->logger->error(
+					'Dossiq bezwaar: the record without an entry could not be deleted',
+					['object' => $command->objectUuid, 'exception' => $e->getMessage()]
+				);
+			}
+
+			throw $notWritten;
+		}//end try
+	}//end recordOrDelete()
+
+	/**
+	 * Write one entry as {@see self::record()} does.
+	 *
+	 * @param BezwaarEntryCommand $command The entry.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written.
+	 */
+	private function recordCommand(BezwaarEntryCommand $command): void {
+		$this->record(
+			register: $command->register,
+			schema: $command->schema,
+			objectUuid: $command->objectUuid,
+			event: $command->event,
+			payload: $command->payload,
+			tag: $command->tag
+		);
+	}//end recordCommand()
+
+	/**
+	 * Record the entry first, then apply the change it records.
+	 *
+	 * REQ-BAT-003: an act that changes a record writes its entry first. A
+	 * failed entry means the change is not made. A change that fails after the
+	 * entry is written gets a `<event>-not-applied` entry, so the trail does
+	 * not claim an act that did not happen, and the failure is raised.
+	 *
+	 * @param string               $register   The register.
+	 * @param string               $schema     The schema.
+	 * @param string               $objectUuid The record.
+	 * @param string               $event      Event slug.
+	 * @param array<string, mixed> $payload    Structured payload.
+	 * @param string               $tag        Awb / AVG tag, or ''.
+	 * @param callable             $apply      Makes the change; its return value is returned.
+	 *
+	 * @return mixed What $apply returned.
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; nothing is changed.
+	 * @throws Throwable The change's own failure, after the not-applied entry.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	public function recordThenApply(
+		string $register,
+		string $schema,
+		string $objectUuid,
+		string $event,
+		array $payload,
+		string $tag,
+		callable $apply,
+	): mixed {
+		$command = new BezwaarEntryCommand(
+			register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag
+		);
+
+		return $this->applyAfterEntry(command: $command, apply: $apply);
+	}//end recordThenApply()
+
+	/**
+	 * Write the entry first, then make the change, as recordThenApply() describes.
+	 *
+	 * @param BezwaarEntryCommand $command The entry.
+	 * @param callable            $apply   Makes the change; its return value is returned.
+	 *
+	 * @return mixed What $apply returned.
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; nothing is changed.
+	 * @throws Throwable The change's own failure, after the not-applied entry.
+	 */
+	private function applyAfterEntry(BezwaarEntryCommand $command, callable $apply): mixed {
+		$this->recordOrRefuseTheChange(command: $command);
+
+		try {
+			return $apply();
+		} catch (Throwable $failure) {
+			$this->recordNotApplied(command: $command, failure: $failure);
+
+			throw $failure;
+		}
+	}//end applyAfterEntry()
+
+	/**
+	 * Write the entry of a change; a failed entry is logged and refuses the change.
+	 *
+	 * @param BezwaarEntryCommand $command The entry.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written.
+	 */
+	private function recordOrRefuseTheChange(BezwaarEntryCommand $command): void {
+		try {
+			$this->recordCommand(command: $command);
+		} catch (BezwaarEntryNotWrittenException $notWritten) {
+			$this->logger->error(
+				'Dossiq bezwaar: entry not written, so the change it records is not made',
+				$notWritten->logContext()
+			);
+
+			throw $notWritten;
+		}
+	}//end recordOrRefuseTheChange()
+
+	/**
+	 * Record that a change whose entry was written did not happen.
+	 *
+	 * @param BezwaarEntryCommand $command The entry of the change.
+	 * @param Throwable           $failure Why the change failed.
+	 *
+	 * @return void
+	 */
+	private function recordNotApplied(BezwaarEntryCommand $command, Throwable $failure): void {
+		$this->recordRefusal(
+			register: $command->register,
+			schema: $command->schema,
+			objectUuid: $command->objectUuid,
+			event: $command->event.'-not-applied',
+			payload: $command->payload + ['error' => $failure->getMessage()],
+			tag: $command->tag,
+		);
+	}//end recordNotApplied()
+
+	/**
+	 * Record a refusal, whether or not the entry can be written.
+	 *
+	 * REQ-BAT-003: a refusal refuses either way. When its entry cannot be
+	 * written, the full entry goes to the error log instead of being lost.
+	 *
+	 * @param string               $register   The register.
+	 * @param string               $schema     The schema.
+	 * @param string               $objectUuid The record.
+	 * @param string               $event      Event slug.
+	 * @param array<string, mixed> $payload    Structured payload.
+	 * @param string               $tag        Awb / AVG tag, or ''.
+	 *
+	 * @return bool Whether the entry was written.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	public function recordRefusal(
+		string $register,
+		string $schema,
+		string $objectUuid,
+		string $event,
+		array $payload,
+		string $tag = '',
+	): bool {
+		try {
+			$this->record(register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag);
+		} catch (BezwaarEntryNotWrittenException $notWritten) {
+			$this->logger->error('Dossiq bezwaar: entry not written', $notWritten->logContext());
+			return false;
+		}
+
+		return true;
+	}//end recordRefusal()
 
 	/**
 	 * Resolve the acting user UID from IUserSession.

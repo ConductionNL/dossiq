@@ -42,12 +42,6 @@
  * - ztc-012: Publish validation — all relations must be published before publish
  * - ztc-013: Cross-catalogus — zaaktype must belong to the specified catalogus
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.TooManyMethods)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
- *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 
@@ -55,14 +49,21 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Zgw\ZtcConceptRules;
+use OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks;
+use OCA\Dossiq\Service\Zgw\ZtcTypeReferences;
+use Psr\Log\LoggerInterface;
+
 /**
  * ZTC (Catalogi API) business rule validation and enrichment.
  *
+ * Holds the create rules of a zaaktype, a besluittype and a
+ * zaaktype-informatieobjecttype, and hands the concept rules, the reference
+ * resolution and the publish and delete checks to their own classes.
+ *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwZtcRulesService extends ZgwRulesBase {
 	/**
@@ -70,40 +71,78 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @var array<string>
 	 */
-	public const CONCEPT_RESOURCES = [
-		'zaaktypen',
-		'besluittypen',
-		'informatieobjecttypen',
-	];
+	public const CONCEPT_RESOURCES = ZtcConceptRules::CONCEPT_RESOURCES;
 
 	/**
 	 * ZTC sub-resources tied to a parent zaaktype (ztc-010).
 	 *
 	 * @var array<string>
 	 */
-	public const ZAAKTYPE_SUB_RESOURCES = [
-		'statustypen',
-		'resultaattypen',
-		'roltypen',
-		'eigenschappen',
-		'zaaktype-informatieobjecttypen',
+	public const ZAAKTYPE_SUB_RESOURCES = ZtcConceptRules::ZAAKTYPE_SUB_RESOURCES;
+
+	/**
+	 * Concept defaults and the protection of published types.
+	 *
+	 * @var ZtcConceptRules
+	 */
+	private ZtcConceptRules $concept;
+
+	/**
+	 * Reference lists of a type, resolved to uuids.
+	 *
+	 * @var ZtcTypeReferences
+	 */
+	private ZtcTypeReferences $references;
+
+	/**
+	 * Publish and delete checks of a case type.
+	 *
+	 * @var ZtcPublishAndDeleteChecks
+	 */
+	private ZtcPublishAndDeleteChecks $lifecycle;
+
+	/**
+	 * The reference arrays a zaaktype create resolves: field, schema key, lookup field.
+	 *
+	 * @var array<int, array{0: string, 1: string, 2: string}>
+	 */
+	private const CASE_TYPE_REFERENCES = [
+		['informatieobjecttypen', 'document_type_schema', 'name'],
+		['besluittypen', 'decision_type_schema', 'name'],
+		['deelzaaktypen', 'case_type_schema', 'identifier'],
 	];
 
 	/**
+	 * The reference arrays a besluittype create resolves: field, schema key, lookup field.
+	 *
+	 * @var array<int, array{0: string, 1: string, 2: string}>
+	 */
+	private const DECISION_TYPE_REFERENCES = [
+		['informatieobjecttypen', 'document_type_schema', 'name'],
+		['zaaktypen', 'case_type_schema', 'identifier'],
+	];
+
+	/**
+	 * Constructor.
+	 *
+	 * Takes what every rules class takes and builds its three collaborators
+	 * over its own lookups and result builder, so they read in the request
+	 * context it is given, and the dispatcher and the container still see one
+	 * ZTC rules service.
+	 *
+	 * @param LoggerInterface $logger The logger.
+	 * @param SettingsService $settingsService The settings service.
+	 * @param FieldValidator $fieldValidator The field validator.
+	 */
+	public function __construct(LoggerInterface $logger, SettingsService $settingsService, FieldValidator $fieldValidator) {
+		parent::__construct(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
+		$this->concept = new ZtcConceptRules(results: $this->results);
+		$this->references = new ZtcTypeReferences(lookups: $this->lookups, settingsService: $settingsService, fieldValidator: $fieldValidator);
+		$this->lifecycle = new ZtcPublishAndDeleteChecks(lookups: $this->lookups, results: $this->results, settingsService: $settingsService);
+	}//end __construct()
+
+	/**
 	 * Check concept/published protection for ZTC resources (ztc-009, ztc-010).
-	 *
-	 * Published types (concept=false) cannot be modified or deleted.
-	 * Sub-resources of published zaaktypen cannot be modified or deleted
-	 * (except CREATE for most sub-resources per VNG test exceptions).
-	 *
-	 * Implements:
-	 * - ztc-009: Protect published (concept=false) types from modification/deletion.
-	 *   Exception: PATCH with only eindeGeldigheid is allowed on published types.
-	 *
-	 * - ztc-010: Protect sub-resources of published zaaktypen.
-	 *   Per VNG tests ztc-010i/k/l/m, CREATE is allowed for eigenschappen, roltypen,
-	 *   statustypen, and ZIOTs on published zaaktypen. Only resultaattypen creation
-	 *   is blocked (ztc-010j). Update/patch/destroy remain blocked for ALL.
 	 *
 	 * @param string $resource The ZGW resource name
 	 * @param string $action The action (create/update/patch/destroy)
@@ -113,10 +152,9 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array|null Validation error result, or null if check passes
 	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
+	 * @see ZtcConceptRules::checkConceptProtection()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function checkConceptProtection(
 		string $resource,
@@ -125,68 +163,33 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 		?array $existingObject,
 		?bool $parentCaseTypeDraft,
 	): ?array {
-		// Ztc-009: Direct concept resources (zaaktypen, besluittypen, informatieobjecttypen).
-		if (in_array($resource, self::CONCEPT_RESOURCES, true) === true) {
-			return $this->checkDirectDraftProtection(
-				resource: $resource,
-				action: $action,
-				body: $body,
-				existingObject: $existingObject
-			);
-		}
-
-		// Ztc-010: Sub-resources of zaaktypen.
-		if (in_array($resource, self::ZAAKTYPE_SUB_RESOURCES, true) === true
-			&& $parentCaseTypeDraft === false
-		) {
-			// Allow creation of all sub-resources except resultaattypen.
-			if ($action === 'create' && $resource !== 'resultaattypen') {
-				return null;
-			}
-
-			// Block resultaattypen creation + update/patch/destroy for all sub-resources.
-			if (in_array($action, ['create', 'update', 'patch', 'destroy'], true) === true) {
-				$detail = 'Het is niet toegestaan om typen van een gepubliceerd zaaktype aan te passen.';
-				return $this->error(
-					status: 400,
-					detail: $detail,
-					invalidParams: [
-						$this->fieldError(fieldName: 'nonFieldErrors', code: 'non-concept-zaaktype', reason: $detail),
-					]
-				);
-			}
-		}
-
-		return null;
+		return $this->concept->checkConceptProtection(
+			resource: $resource,
+			action: $action,
+			body: $body,
+			existingObject: $existingObject,
+			parentCaseTypeDraft: $parentCaseTypeDraft
+		);
 	}//end checkConceptProtection()
 
 	/**
 	 * Default concept=true for new ZTC concept resources.
-	 *
-	 * When creating a new zaaktype, besluittype, or informatieobjecttype,
-	 * concept defaults to true if not explicitly set.
 	 *
 	 * @param array $body The request body
 	 * @param string $resource The resource name
 	 *
 	 * @return array The body with concept defaulted
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @see ZtcConceptRules::defaultConcept()
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function defaultConcept(array $body, string $resource): array {
-		if (in_array($resource, self::CONCEPT_RESOURCES, true) === true
-			&& array_key_exists('concept', $body) === false
-		) {
-			$body['concept'] = true;
-		}
-
-		return $body;
+		return $this->concept->defaultConcept(body: $body, resource: $resource);
 	}//end defaultConcept()
 
 	/**
 	 * Preserve existing concept value on update/patch.
-	 *
-	 * Concept can only be changed via the /publish endpoint, not via PUT/PATCH.
 	 *
 	 * @param array $body The request body
 	 * @param string $resource The resource name
@@ -194,26 +197,46 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The body with concept preserved
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @see ZtcConceptRules::preserveConcept()
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function preserveConcept(array $body, string $resource, ?array $existingObject): array {
-		if ($existingObject === null
-			|| in_array($resource, self::CONCEPT_RESOURCES, true) === false
-		) {
-			return $body;
-		}
-
-		$existingDraft = $existingObject['isDraft'] ?? ($existingObject['concept'] ?? true);
-		if ($existingDraft === 'true' || $existingDraft === '1' || $existingDraft === 1) {
-			$existingDraft = true;
-		} elseif ($existingDraft === 'false' || $existingDraft === '0' || $existingDraft === 0) {
-			$existingDraft = false;
-		}
-
-		$body['concept'] = $existingDraft;
-
-		return $body;
+		return $this->concept->preserveConcept(body: $body, resource: $resource, existingObject: $existingObject);
 	}//end preserveConcept()
+
+	/**
+	 * Validate a caseType is publishable (isDraft true → false).
+	 *
+	 * @param string $register Register slug.
+	 * @param string $caseTypeId Case type id.
+	 *
+	 * @return array<int, string> Error strings (empty = valid).
+	 *
+	 * @see ZtcPublishAndDeleteChecks::validatePublish()
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function validatePublish(string $register, string $caseTypeId): array {
+		return $this->lifecycle->validatePublish(register: $register, caseTypeId: $caseTypeId);
+	}//end validatePublish()
+
+	/**
+	 * Validate a caseType can be safely deleted (no active cases).
+	 *
+	 * @param string $register Register slug.
+	 * @param string $caseTypeId Case type id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @see ZtcPublishAndDeleteChecks::validateDeletion()
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function validateDeletion(string $register, string $caseTypeId): array {
+		return $this->lifecycle->validateDeletion(register: $register, caseTypeId: $caseTypeId);
+	}//end validateDeletion()
+
 
 	/**
 	 * Rules for creating a zaaktype (POST /catalogi/v1/zaaktypen).
@@ -230,74 +253,54 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesZaaktypenCreate(array $body): array {
 		// Ztc-001: Validate selectielijstProcestype URL.
-		$procesTypeUrl = $body['selectielijstProcestype'] ?? '';
-		if (empty($procesTypeUrl) === false) {
-			$procesTypeData = $this->fetchExternalUrl(url: $procesTypeUrl);
-			if ($procesTypeData === null || isset($procesTypeData['nummer']) === false) {
-				return $this->error(
-					status: 400,
-					detail: 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.',
-					invalidParams: [$this->fieldError(
-						fieldName: 'selectielijstProcestype',
-						code: 'invalid-resource',
-						reason: 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.'
-					)
-					]
-				);
-			}
+		$error = $this->checkSelectielijstProcestype(procesTypeUrl: $body['selectielijstProcestype'] ?? '');
+		if ($error !== null) {
+			return $error;
 		}
 
 		// Resolve reference arrays by omschrijving/identificatie to UUIDs.
-		$body = $this->resolveTypeReferences(
-			body: $body,
-			field: 'informatieobjecttypen',
-			schemaKey: 'document_type_schema',
-			lookupField: 'name'
-		);
-		$body = $this->resolveTypeReferences(
-			body: $body,
-			field: 'besluittypen',
-			schemaKey: 'decision_type_schema',
-			lookupField: 'name'
-		);
-		$body = $this->resolveTypeReferences(
-			body: $body,
-			field: 'deelzaaktypen',
-			schemaKey: 'case_type_schema',
-			lookupField: 'identifier'
-		);
-		$body = $this->resolveGerelateerdeZaaktypen(body: $body);
+		$body = $this->resolveReferences(body: $body, references: self::CASE_TYPE_REFERENCES);
+		$body = $this->references->resolveGerelateerdeZaaktypen(body: $body);
 
 		// Store resolved array fields via _directFields (bypasses Twig mapping).
-		$directFields = [];
-		if (isset($body['deelzaaktypen']) === true && is_array($body['deelzaaktypen']) === true) {
-			$directFields['subCaseTypes'] = $body['deelzaaktypen'];
-		}
-
-		if (isset($body['besluittypen']) === true && is_array($body['besluittypen']) === true) {
-			$directFields['decisionTypes'] = $body['besluittypen'];
-		}
-
-		if (isset($body['gerelateerdeZaaktypen']) === true
-			&& is_array($body['gerelateerdeZaaktypen']) === true
-		) {
-			// JSON-encode since relatedCaseTypes is a string field in the schema.
-			$directFields['relatedCaseTypes'] = json_encode($body['gerelateerdeZaaktypen']);
-		}
-
-		if (empty($directFields) === false) {
-			$body['_directFields'] = $directFields;
-		}
+		// RelatedCaseTypes is JSON-encoded since it is a string field in the schema.
+		$body = $this->references->withDirectFields(
+			body: $body,
+			map: ['deelzaaktypen' => 'subCaseTypes', 'besluittypen' => 'decisionTypes', 'gerelateerdeZaaktypen' => 'relatedCaseTypes'],
+			jsonFields: ['relatedCaseTypes']
+		);
 
 		return $this->isValid(body: $body);
 	}//end rulesZaaktypenCreate()
+
+	/**
+	 * Ztc-001: a selectielijstProcestype must resolve to a procestype resource.
+	 *
+	 * @param mixed $procesTypeUrl The selectielijstProcestype from the body
+	 *
+	 * @return array|null The refusal, or null when absent or valid
+	 */
+	private function checkSelectielijstProcestype(mixed $procesTypeUrl): ?array {
+		if (empty($procesTypeUrl) === true) {
+			return null;
+		}
+
+		$procesTypeData = $this->fetchExternalUrl(url: $procesTypeUrl);
+		if ($procesTypeData !== null && isset($procesTypeData['nummer']) === true) {
+			return null;
+		}
+
+		$detail = 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.';
+		return $this->error(
+			status: 400,
+			detail: $detail,
+			invalidParams: [$this->fieldError(fieldName: 'selectielijstProcestype', code: 'invalid-resource', reason: $detail)]
+		);
+	}//end checkSelectielijstProcestype()
 
 	/**
 	 * Rules for creating a besluittype (POST /catalogi/v1/besluittypen).
@@ -309,39 +312,41 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The validation result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesBesluittypenCreate(array $body): array {
 		// Resolve reference arrays by omschrijving/identificatie to UUIDs.
-		$body = $this->resolveTypeReferences(
-			body: $body,
-			field: 'informatieobjecttypen',
-			schemaKey: 'document_type_schema',
-			lookupField: 'name'
-		);
-		$body = $this->resolveTypeReferences(
-			body: $body,
-			field: 'zaaktypen',
-			schemaKey: 'case_type_schema',
-			lookupField: 'identifier'
-		);
+		$body = $this->resolveReferences(body: $body, references: self::DECISION_TYPE_REFERENCES);
 
 		// Store resolved arrays as _directFields (bypass Twig mapping for array fields).
-		$directFields = [];
-		if (isset($body['informatieobjecttypen']) === true && is_array($body['informatieobjecttypen']) === true) {
-			$directFields['documentTypes'] = $body['informatieobjecttypen'];
-		}
-
-		if (isset($body['zaaktypen']) === true && is_array($body['zaaktypen']) === true) {
-			$directFields['caseTypes'] = $body['zaaktypen'];
-		}
-
-		if (empty($directFields) === false) {
-			$body['_directFields'] = $directFields;
-		}
+		$body = $this->references->withDirectFields(
+			body: $body,
+			map: ['informatieobjecttypen' => 'documentTypes', 'zaaktypen' => 'caseTypes']
+		);
 
 		return $this->isValid(body: $body);
 	}//end rulesBesluittypenCreate()
+
+	/**
+	 * Resolve each declared reference array of a body, in order.
+	 *
+	 * @param array                                    $body       The ZGW request body
+	 * @param array<int, array{0: string, 1: string, 2: string}> $references Field, schema key and lookup field per array.
+	 *
+	 * @return array The body with the references resolved
+	 */
+	private function resolveReferences(array $body, array $references): array {
+		foreach ($references as [$field, $schemaKey, $lookupField]) {
+			$body = $this->references->resolveTypeReferences(
+				body: $body,
+				field: $field,
+				schemaKey: $schemaKey,
+				lookupField: $lookupField
+			);
+		}
+
+		return $body;
+	}//end resolveReferences()
 
 	/**
 	 * Rules for creating a zaaktype-informatieobjecttype (ZIOT).
@@ -353,483 +358,49 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The validation result
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW resolution of omschrijving/UUID/URL
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesZaaktypeinformatieobjecttypenCreate(array $body): array {
 		// Resolve informatieobjecttype: omschrijving → UUID, or bare UUID → verify.
 		$iotRef = $body['informatieobjecttype'] ?? '';
-		if ($iotRef !== '' && $this->objectService !== null) {
-			$register = $this->mappingConfig['sourceRegister'] ?? '';
-			$schema = $this->settingsService->getConfigValue(key: 'document_type_schema');
+		$schema = $this->settingsService->getConfigValue(key: 'document_type_schema');
+		$register = $this->mappingConfig['sourceRegister'] ?? '';
+		if ($iotRef === '' || $this->objectService === null || empty($register) === true || empty($schema) === true
+			|| $this->needsNameLookup(iotRef: $iotRef) === false
+		) {
+			return $this->isValid(body: $body);
+		}
 
-			if (empty($register) === false && empty($schema) === false) {
-				$uuid = $this->extractUuid(url: $iotRef);
-
-				// If the value is a URL containing a UUID, keep as-is (reverse mapping extracts it).
-				$isUrl = (str_starts_with($iotRef, 'http://') === true
-					|| str_starts_with($iotRef, 'https://') === true);
-
-				$needsNameLookup = false;
-				if ($isUrl === true) {
-					// URL — let reverse mapping handle UUID extraction.
-				} elseif ($uuid !== null) {
-					// Bare UUID — verify it exists; if not, treat as omschrijving.
-					$existing = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
-					$needsNameLookup = ($existing === null);
-				}
-
-				if ($isUrl === false && ($uuid === null || $needsNameLookup === true)) {
-					// Not a URL, or bare UUID that didn't resolve — resolve by name.
-					$found = $this->findObjectByField(
-						register: $register,
-						schema: $schema,
-						field: 'name',
-						value: $iotRef
-					);
-					if ($found !== null) {
-						$body['informatieobjecttype'] = $found;
-					}
-				}//end if
-			}//end if
-		}//end if
+		// Not a URL, or bare UUID that didn't resolve — resolve by name.
+		$found = $this->findObjectByField(register: $register, schema: $schema, field: 'name', value: $iotRef);
+		if ($found !== null) {
+			$body['informatieobjecttype'] = $found;
+		}
 
 		return $this->isValid(body: $body);
 	}//end rulesZaaktypeinformatieobjecttypenCreate()
 
 	/**
-	 * Check if a direct concept resource is published (ztc-009).
+	 * Whether an informatieobjecttype reference must be resolved by name.
 	 *
-	 * Published types (concept=false) cannot be modified or deleted,
-	 * except PATCH with only eindeGeldigheid.
+	 * A URL is left to the reverse mapping, which extracts its uuid. A bare uuid is kept when it
+	 * names an existing type. Anything else, including a bare uuid that names nothing, is a name.
 	 *
-	 * @param string $resource The resource name
-	 * @param string $action The action
-	 * @param array $body The request body
-	 * @param array|null $existingObject The existing object data
+	 * @param string $iotRef The informatieobjecttype reference
 	 *
-	 * @return array|null Validation error, or null if OK
+	 * @return bool True when the reference is resolved by name
 	 */
-	private function checkDirectDraftProtection(
-		string $resource,
-		string $action,
-		array $body,
-		?array $existingObject,
-	): ?array {
-		if ($existingObject === null) {
-			return null;
+	private function needsNameLookup(string $iotRef): bool {
+		if (str_starts_with($iotRef, 'http://') === true || str_starts_with($iotRef, 'https://') === true) {
+			return false;
 		}
 
-		$isDraft = $existingObject['isDraft'] ?? ($existingObject['concept'] ?? true);
-		if ($isDraft === 'false' || $isDraft === false || $isDraft === '0' || $isDraft === 0) {
-			// Ztc-009c/g/k: PATCH with only geldigheid fields is allowed on published types.
-			if ($action === 'patch') {
-				$metadataKeys = ['_route', 'zgwApi', 'resource', 'uuid', 'concept'];
-				$allowedKeys = ['endValidity', 'startValidity', 'beginObject'];
-				$contentKeys = array_values(array_diff(array_keys($body), $metadataKeys, $allowedKeys));
-				if (count($contentKeys) === 0 && array_key_exists('endValidity', $body) === true) {
-					return null;
-				}
-			}
-
-			$resourceLabel = rtrim($resource, 'n');
-			$detail = "Het is niet toegestaan om een {$resourceLabel} met concept=false " . $this->actionLabel(action: $action) . '.';
-			return $this->error(
-				status: 400,
-				detail: $detail,
-				invalidParams: [
-					$this->fieldError(fieldName: 'nonFieldErrors', code: 'non-concept-object', reason: $detail),
-				]
-			);
-		}//end if
-
-		return null;
-	}//end checkDirectConceptProtection()
-
-	/**
-	 * Get a Dutch action label for error messages.
-	 *
-	 * @param string $action The action
-	 *
-	 * @return string The Dutch label
-	 */
-	private function actionLabel(string $action): string {
-		return match ($action) {
-			'update' => 'bij te werken',
-			'patch' => 'deels bij te werken',
-			'destroy' => 'te verwijderen',
-			default => 'aan te passen',
-		};
-	}//end actionLabel()
-
-	/**
-	 * Resolve non-URL references in a type array field to actual object UUIDs.
-	 *
-	 * When a ZGW type resource has array fields like informatieobjecttypen
-	 * or besluittypen, VNG tests may send references by omschrijving instead
-	 * of URLs. This resolves those to the corresponding object UUIDs.
-	 *
-	 * @param array $body The request body
-	 * @param string $field The field name containing the references
-	 * @param string $schemaKey The settings config key for the target schema
-	 * @param string $lookupField The OpenRegister field to search by
-	 *
-	 * @return array The body with resolved references
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 */
-	private function resolveTypeReferences(
-		array $body,
-		string $field,
-		string $schemaKey,
-		string $lookupField,
-	): array {
-		if (isset($body[$field]) === false || is_array($body[$field]) === false
-			|| $this->objectService === null
-		) {
-			return $body;
+		$uuid = $this->extractUuid(url: $iotRef);
+		if ($uuid === null) {
+			return true;
 		}
 
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
+		return $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema') === null;
+	}//end needsNameLookup()
 
-		if (empty($register) === true || empty($schema) === true) {
-			return $body;
-		}
-
-		$resolved = [];
-		foreach ($body[$field] as $ref) {
-			if (is_string($ref) === false || $ref === '') {
-				continue;
-			}
-
-			// If it's a URL containing a UUID, extract and store just the UUID.
-			if (str_starts_with($ref, 'http://') === true
-				|| str_starts_with($ref, 'https://') === true
-			) {
-				$urlUuid = $this->extractUuid(url: $ref);
-				if ($urlUuid !== null) {
-					$resolved[] = $urlUuid;
-					continue;
-				}
-			}
-
-			// Search by omschrijving/identificatie in OpenRegister.
-			$foundIds = $this->findAllObjectsByField(
-				register: $register,
-				schema: $schema,
-				field: $lookupField,
-				value: $ref
-			);
-			if (empty($foundIds) === false) {
-				foreach ($foundIds as $id) {
-					$resolved[] = $id;
-				}
-
-				continue;
-			}
-
-			// Fallback: if name lookup found nothing and it looks like a UUID, use as-is.
-			$bareUuid = $this->extractUuid(url: $ref);
-			if ($bareUuid !== null) {
-				$resolved[] = $bareUuid;
-			}
-		}//end foreach
-
-		$body[$field] = $resolved;
-
-		return $body;
-	}//end resolveTypeReferences()
-
-	/**
-	 * Resolve gerelateerdeZaaktypen references (nested objects with zaaktype field).
-	 *
-	 * @param array $body The request body
-	 *
-	 * @return array The body with resolved zaaktype references
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — nested object resolution
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — nested object resolution
-	 */
-	private function resolveGerelateerdeZaaktypen(array $body): array {
-		if (isset($body['gerelateerdeZaaktypen']) === false
-			|| is_array($body['gerelateerdeZaaktypen']) === false
-			|| $this->objectService === null
-		) {
-			return $body;
-		}
-
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return $body;
-		}
-
-		$resolved = [];
-		foreach ($body['gerelateerdeZaaktypen'] as $rel) {
-			$caseTypeRef = $rel['caseType'] ?? '';
-			if ($caseTypeRef === '' || is_string($caseTypeRef) === false) {
-				continue;
-			}
-
-			if (str_starts_with($caseTypeRef, 'http://') === true
-				|| str_starts_with($caseTypeRef, 'https://') === true
-			) {
-				$resolved[] = $rel;
-				continue;
-			}
-
-			$foundIds = $this->findAllObjectsByField(
-				register: $register,
-				schema: $schema,
-				field: 'identifier',
-				value: $caseTypeRef
-			);
-			foreach ($foundIds as $id) {
-				$entry = $rel;
-				$entry['caseType'] = $id;
-				$resolved[] = $entry;
-			}
-		}//end foreach
-
-		$body['gerelateerdeZaaktypen'] = $resolved;
-
-		return $body;
-	}//end resolveGerelateerdeZaaktypen()
-
-	/**
-	 * Validate a caseType is publishable (isDraft true → false).
-	 *
-	 * REQ-CT-02b. Loads the case type's statusType objects and verifies
-	 * preconditions: at least one statusType exists, at least one is final,
-	 * and the case type itself has a validFrom date.
-	 *
-	 * @param string $register Register slug.
-	 * @param string $caseTypeId Case type id.
-	 *
-	 * @return array<int, string> Error strings (empty = valid).
-	 *
-	 * @spec openspec/changes/case-types-02-backend-validation/tasks.md#task-ct-08
-	 */
-	public function validatePublish(string $register, string $caseTypeId): array {
-		$errors = [];
-		if ($this->objectService === null) {
-			$errors[] = 'Cannot validate publish: OpenRegister object service unavailable';
-			return $errors;
-		}
-
-		if ($caseTypeId === '') {
-			$errors[] = 'Cannot validate publish: case type id is empty';
-			return $errors;
-		}
-
-		$statusSchema = (string)$this->settingsService->getConfigValue(key: 'status_type_schema');
-		$caseSchema = (string)$this->settingsService->getConfigValue(key: 'case_type_schema');
-
-		try {
-			$statusTypes = $this->searchObjectsAsArrays(
-				objectService: $this->objectService,
-				register: $register,
-				schema: $statusSchema,
-				filters: ['caseType' => $caseTypeId],
-			);
-		} catch (\Throwable $e) {
-			$errors[] = 'Could not load status types for case type';
-			return $errors;
-		}
-
-		if (count($statusTypes) === 0) {
-			$errors[] = 'At least one status type must be defined before publishing';
-		}
-
-		if (count($statusTypes) > 0 && $this->hasFinalStatusType(statusTypes: $statusTypes) === false) {
-			$errors[] = 'At least one status type must be marked as final';
-		}
-
-		$caseType = $this->loadCaseTypeRow(
-			objectService: $this->objectService,
-			register: $register,
-			schema: $caseSchema,
-			caseTypeId: $caseTypeId,
-		);
-
-		$validFrom = (string)($caseType['validFrom'] ?? '');
-		if ($validFrom === '') {
-			$errors[] = "'Valid from' date must be set before publishing";
-		}
-
-		return $errors;
-	}//end validatePublish()
-
-	/**
-	 * Test whether any of the supplied statusType rows is marked final.
-	 *
-	 * @param array<int, mixed> $statusTypes The statusType rows for a case type.
-	 *
-	 * @return bool True when at least one row carries isFinal.
-	 */
-	private function hasFinalStatusType(array $statusTypes): bool {
-		foreach ($statusTypes as $row) {
-			if (is_array($row) === true && (bool)($row['isFinal'] ?? false) === true) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end hasFinalStatusType()
-
-	/**
-	 * Load the caseType row itself, returning an empty array when it cannot be read.
-	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register Register slug.
-	 * @param string $schema Case type schema slug.
-	 * @param string $caseTypeId Case type id.
-	 *
-	 * @return array<string, mixed> The case type row, or an empty array.
-	 */
-	private function loadCaseTypeRow(object $objectService, string $register, string $schema, string $caseTypeId): array {
-		// A top-level `['id' => $caseTypeId]` filter does not resolve in
-		// OpenRegister (ids are metadata, not schema properties) and silently
-		// matches nothing. The get-by-uuid path resolves the id directly.
-		try {
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseTypeId
-			);
-		} catch (\Throwable $e) {
-			return [];
-		}
-
-		return ($caseType ?? []);
-	}//end loadCaseTypeRow()
-
-	/**
-	 * Validate a caseType can be safely deleted (no active cases).
-	 *
-	 * REQ-CT-01d. Returns a triple-shape result:
-	 *
-	 *   ['blocked' => bool, 'requiresConfirmation' => bool, 'message' => string]
-	 *
-	 * - blocked=true   → 409 Conflict; active cases exist.
-	 * - requiresConfirmation=true → 200 OK with confirmation prompt (closed-only cases).
-	 * - otherwise → safe to delete.
-	 *
-	 * @param string $register Register slug.
-	 * @param string $caseTypeId Case type id.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @spec openspec/changes/case-types-02-backend-validation/tasks.md#task-ct-09
-	 */
-	public function validateDeletion(string $register, string $caseTypeId): array {
-		$default = ['blocked' => false, 'requiresConfirmation' => false, 'message' => ''];
-		if ($this->objectService === null || $caseTypeId === '') {
-			return $default;
-		}
-
-		$caseSchema = (string)$this->settingsService->getConfigValue(key: 'case_schema');
-
-		try {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $this->objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['caseType' => $caseTypeId],
-			);
-		} catch (\Throwable $e) {
-			return $default;
-		}
-
-		if (count($cases) === 0) {
-			return $default;
-		}
-
-		$finalSlugs = $this->loadFinalStatusSlugs(
-			objectService: $this->objectService,
-			register: $register,
-			caseTypeId: $caseTypeId,
-		);
-
-		$tally = $this->tallyCaseClosure(cases: $cases, finalSlugs: $finalSlugs);
-		$activeCount = $tally['active'];
-		$closedCount = $tally['closed'];
-
-		if ($activeCount > 0) {
-			return [
-				'blocked' => true,
-				'requiresConfirmation' => false,
-				'message' => "Cannot delete case type: $activeCount active case(s) still use this type. "
-					. 'Close or reassign all cases first.',
-			];
-		}
-
-		return [
-			'blocked' => false,
-			'requiresConfirmation' => true,
-			'message' => "Deleting will affect $closedCount closed case(s). Confirm to proceed.",
-		];
-	}//end validateDeletion()
-
-	/**
-	 * Load the ids of the final statusTypes of a case type, or an empty list when unreadable.
-	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register Register slug.
-	 * @param string $caseTypeId Case type id.
-	 *
-	 * @return array<int, string> The final statusType ids.
-	 */
-	private function loadFinalStatusSlugs(object $objectService, string $register, string $caseTypeId): array {
-		$statusSchema = (string)$this->settingsService->getConfigValue(key: 'status_type_schema');
-		try {
-			$finalStatusTypes = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $statusSchema,
-				filters: ['caseType' => $caseTypeId, 'isFinal' => true],
-			);
-		} catch (\Throwable $e) {
-			return [];
-		}
-
-		$finalSlugs = [];
-		foreach ($finalStatusTypes as $row) {
-			if (is_array($row) === true && isset($row['id']) === true) {
-				$finalSlugs[] = (string)$row['id'];
-			}
-		}
-
-		return $finalSlugs;
-	}//end loadFinalStatusSlugs()
-
-	/**
-	 * Split a case type's cases into closed (their status is one of the final statusTypes) and
-	 * active (everything else, including cases with no status at all).
-	 *
-	 * @param array<int, mixed> $cases The cases that use the case type.
-	 * @param array<int, string> $finalSlugs The final statusType ids.
-	 *
-	 * @return array{active: int, closed: int} The tallies.
-	 */
-	private function tallyCaseClosure(array $cases, array $finalSlugs): array {
-		$activeCount = 0;
-		$closedCount = 0;
-		foreach ($cases as $case) {
-			$caseStatus = (string)($case['status'] ?? '');
-			if ($caseStatus !== '' && in_array($caseStatus, $finalSlugs, true) === true) {
-				$closedCount++;
-				continue;
-			}
-
-			$activeCount++;
-		}
-
-		return ['active' => $activeCount, 'closed' => $closedCount];
-	}//end tallyCaseClosure()
 }//end class

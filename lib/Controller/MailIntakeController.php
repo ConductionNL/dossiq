@@ -35,16 +35,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Email\BounceAction;
-use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
+use OCA\Dossiq\Controller\Support\IntakeRoleGate;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FilterPipelineInterface;
+use OCA\Dossiq\Kernel\Contracts\InboundMailIntakeInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
+use OCA\Dossiq\Kernel\Contracts\JunkRulesInterface;
+use OCA\Dossiq\Kernel\Contracts\MoveActionInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
-use OCA\Dossiq\Service\Email\InboundMailIntake;
 use OCA\Dossiq\Service\Email\InboundMessage;
-use OCA\Dossiq\Service\Email\IntakeLog;
-use OCA\Dossiq\Service\Email\IntakePolicy;
-use OCA\Dossiq\Service\Email\JunkRules;
-use OCA\Dossiq\Service\Email\MoveAction;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -89,29 +91,31 @@ class MailIntakeController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest          $request     Inbound request.
-	 * @param IntakeLog         $log         The intake log.
-	 * @param IntakePolicy      $policy      Who may run intake, and the per-case-type policy.
-	 * @param FilterPipeline    $pipeline    The declared filter order.
-	 * @param JunkRules         $junkRules   The readable junk rules.
-	 * @param BounceAction      $bounce      The doorzendplicht act.
-	 * @param MoveAction        $move        The mailbox act.
-	 * @param InboundMailIntake $intake      The intake path, for a released message.
+	 * @param IntakeLogInterface         $log         The intake log.
+	 * @param IntakePolicyInterface      $policy      Who may run intake, and the per-case-type policy.
+	 * @param FilterPipelineInterface    $pipeline    The declared filter order.
+	 * @param JunkRulesInterface         $junkRules   The readable junk rules.
+	 * @param BounceActionInterface      $bounce      The doorzendplicht act.
+	 * @param MoveActionInterface        $move        The mailbox act.
+	 * @param InboundMailIntakeInterface $intake      The intake path, for a released message.
 	 * @param IUserSession      $userSession The caller.
 	 * @param ITimeFactory      $time        Clock.
+	 * @param CaseAccessGuardInterface   $caseAccessGuard Per-case authorization, for the case a handler picks.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly IntakeLog $log,
-		private readonly IntakePolicy $policy,
-		private readonly FilterPipeline $pipeline,
-		private readonly JunkRules $junkRules,
-		private readonly BounceAction $bounce,
-		private readonly MoveAction $move,
-		private readonly InboundMailIntake $intake,
+		private readonly IntakeLogInterface $log,
+		private readonly IntakePolicyInterface $policy,
+		private readonly FilterPipelineInterface $pipeline,
+		private readonly JunkRulesInterface $junkRules,
+		private readonly BounceActionInterface $bounce,
+		private readonly MoveActionInterface $move,
+		private readonly InboundMailIntakeInterface $intake,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -160,14 +164,9 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(string $entryId): JSONResponse {
-		$refusal = $this->requireIntakeRole();
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
 		}
 
 		return new JSONResponse($entry);
@@ -188,23 +187,33 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function release(string $entryId): JSONResponse {
-		$refusal = $this->requireIntakeRole();
-		if ($refusal !== null) {
-			return $refusal;
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
 		}
 
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		if ((string)($entry['outcome'] ?? '') !== IntakeLog::OUTCOME_QUARANTINED) {
+		if ((string)($entry['outcome'] ?? '') !== IntakeLogInterface::OUTCOME_QUARANTINED) {
 			return new JSONResponse(['message' => 'not_quarantined'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$message = $this->messageOf(entry: $entry);
-		$outcome = $this->intake->fileOnCase(
-			message: $message,
+		$outcome = $this->fileReleased(entry: $entry);
+		$this->markReleased(entryId: $entryId);
+
+		return new JSONResponse(['released' => true, 'outcome' => $outcome]);
+	}//end release()
+
+	/**
+	 * File a quarantined message on its case, accepted by hand.
+	 *
+	 * @param array<string, mixed> $entry The quarantined intake log entry.
+	 *
+	 * @return string The outcome the intake answered.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function fileReleased(array $entry): string {
+		return $this->intake->fileOnCase(
+			message: $this->messageOf(entry: $entry),
 			verdict: FilterVerdict::accept(
 				filterName: 'release',
 				reason: 'Released by hand after a failing sender-authentication verdict.'
@@ -212,18 +221,27 @@ class MailIntakeController extends Controller {
 			results: $this->resultsOf(entry: $entry),
 			caseId: (string)($entry['case'] ?? '')
 		);
+	}//end fileReleased()
 
+	/**
+	 * Record on the intake log entry that it was released, by whom and when.
+	 *
+	 * @param string $entryId The intake log entry.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function markReleased(string $entryId): void {
 		$this->log->amend(
 			entryId: $entryId,
 			changes: [
-				'outcome' => IntakeLog::OUTCOME_RELEASED,
+				'outcome' => IntakeLogInterface::OUTCOME_RELEASED,
 				'releasedBy' => $this->callerId(),
 				'releasedAt' => $this->time->getDateTime()->format(DATE_ATOM),
 			]
 		);
-
-		return new JSONResponse(['released' => true, 'outcome' => $outcome]);
-	}//end release()
+	}//end markReleased()
 
 	/**
 	 * Correct a junk verdict, in either direction.
@@ -241,21 +259,16 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function junk(string $entryId, bool $junk = false): JSONResponse {
-		$refusal = $this->requireIntakeRole();
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
 		}
 
 		if ($junk === true) {
 			$this->log->amend(
 				entryId: $entryId,
 				changes: [
-					'outcome' => IntakeLog::OUTCOME_QUARANTINED,
+					'outcome' => IntakeLogInterface::OUTCOME_QUARANTINED,
 					'junkRule' => 'corrected-by-' . $this->callerId(),
 					'reason' => 'Marked as junk by hand.',
 				]
@@ -289,14 +302,9 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function bounce(string $entryId, string $address = '', string $reason = ''): JSONResponse {
-		$refusal = $this->requireIntakeRole();
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
 		}
 
 		$result = $this->bounce->bounce(
@@ -306,22 +314,34 @@ class MailIntakeController extends Controller {
 			actorId: $this->callerId(),
 			results: $this->resultsOf(entry: $entry)
 		);
+		return $this->bounced(result: $result, forward: ['entryId' => $entryId, 'address' => $address, 'reason' => $reason]);
+	}//end bounce()
+
+	/**
+	 * Log a sent bounce on its entry and answer it, or answer that it failed.
+	 *
+	 * @param array<string, mixed>                                $result  What the bounce answered.
+	 * @param array{entryId: string, address: string, reason: string} $forward The entry, the address it went to and why.
+	 *
+	 * @return JSONResponse Whether it was sent.
+	 */
+	private function bounced(array $result, array $forward): JSONResponse {
 		if ($result['sent'] === false) {
 			return new JSONResponse(['message' => 'bounce_failed'], Http::STATUS_BAD_REQUEST);
 		}
 
 		$this->log->amend(
-			entryId: $entryId,
+			entryId: $forward['entryId'],
 			changes: [
-				'outcome' => IntakeLog::OUTCOME_FORWARDED,
-				'forwardedTo' => InboundMessage::addressIn(value: $address),
+				'outcome' => IntakeLogInterface::OUTCOME_FORWARDED,
+				'forwardedTo' => InboundMessage::addressIn(value: $forward['address']),
 				'forwardedBy' => $this->callerId(),
-				'forwardedReason' => $reason,
+				'forwardedReason' => $forward['reason'],
 			]
 		);
 
 		return new JSONResponse(['sent' => true, 'entryId' => $result['entryId']]);
-	}//end bounce()
+	}//end bounced()
 
 	/**
 	 * File a message in another folder of the same account.
@@ -336,6 +356,234 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function move(string $entryId, string $target = '', string $note = ''): JSONResponse {
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
+		}
+
+		$result = $this->move->move(
+			message: $this->messageOf(entry: $entry),
+			target: $target,
+			note: $note,
+			actorId: $this->callerId(),
+			results: $this->resultsOf(entry: $entry)
+		);
+		return $this->moved(result: $result, filed: ['entryId' => $entryId, 'target' => $target]);
+	}//end move()
+
+	/**
+	 * Log a confirmed move on its entry and answer it, or answer that it failed.
+	 *
+	 * @param array<string, mixed>                   $result What the move answered.
+	 * @param array{entryId: string, target: string} $filed  The entry, and the folder it went to.
+	 *
+	 * @return JSONResponse Whether the mail server confirmed it.
+	 */
+	private function moved(array $result, array $filed): JSONResponse {
+		if ($result['moved'] === false) {
+			return new JSONResponse(['message' => 'move_failed'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$this->log->amend(
+			entryId: $filed['entryId'],
+			changes: [
+				'outcome' => IntakeLogInterface::OUTCOME_MOVED,
+				'movedTo' => $filed['target'],
+				'movedBy' => $this->callerId(),
+			]
+		);
+
+		return new JSONResponse(['moved' => true, 'entryId' => $result['entryId']]);
+	}//end moved()
+
+	/**
+	 * File a logged message on a case a handler picked.
+	 *
+	 * THE AUTOMATIC MATCH KEEPS DECIDING FIRST. This is not a second matcher
+	 * and it changes no rule: it records that ONE person overrode the match on
+	 * ONE message, which is a log line rather than a new rule, so the
+	 * matcher's behaviour does not drift silently per message.
+	 *
+	 * Offered on an entry that became NO case and on one that became the WRONG
+	 * case, because a wrong match is the common reason somebody reaches for
+	 * this. `MailIntakeController::release()` files a message on
+	 * `$entry['case']`, the case the matcher already chose, so a handler who
+	 * knew the message belonged on 2026-114 could do nothing with that
+	 * knowledge before this act existed.
+	 *
+	 * TWO GUARDS, not one. The intake role says who may work the log at all;
+	 * `CaseAccessGuard` says whether THIS caller may see THIS case. Without
+	 * the second, anyone with the intake role could file a message onto any
+	 * case id they cared to guess, and the case would then show a message from
+	 * a citizen to a handler who may not read it.
+	 *
+	 * @param string $entryId The log entry.
+	 * @param string $caseId  The case the handler picked.
+	 * @param string $reason  Why they overrode the match.
+	 *
+	 * @return JSONResponse What happened.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	#[NoAdminRequired]
+	public function fileOnCase(string $entryId, string $caseId = '', string $reason = ''): JSONResponse {
+		$refusal = $this->fileOnCaseRefusal(caseId: $caseId, reason: $reason);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$entry = $this->entryOrNull(entryId: $entryId);
+		if ($entry === null) {
+			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$filing = new ManualFiling();
+		$filing->entryId = $entryId;
+		$filing->entry = $entry;
+		$filing->caseId = trim($caseId);
+		$filing->reason = $reason;
+
+		return $this->fileByHand(filing: $filing);
+	}//end fileOnCase()
+
+	/**
+	 * Refuse a filing by hand the caller may not make, or that says too little.
+	 *
+	 * The intake role first; then a case and a reason; then whether THIS
+	 * caller may see THIS case.
+	 *
+	 * @param string $caseId The case the handler picked.
+	 * @param string $reason Why they overrode the match.
+	 *
+	 * @return JSONResponse|null A refusal, or null when the filing may go ahead.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function fileOnCaseRefusal(string $caseId, string $reason): ?JSONResponse {
+		$refusal = $this->requireIntakeRole();
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		if (trim($caseId) === '') {
+			return new JSONResponse(['message' => 'case_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if (trim($reason) === '') {
+			// The reason is REQUIRED, and that is a policy rather than
+			// validation theatre. This act overrides a decision the matcher
+			// made, and an override nobody accounted for is an audit finding
+			// waiting to happen.
+			return new JSONResponse(['message' => 'reason_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return $this->caseReadRefusal(caseId: trim($caseId));
+	}//end fileOnCaseRefusal()
+
+	/**
+	 * Refuse a caller who may not read the case.
+	 *
+	 * @param string $caseId The case, trimmed.
+	 *
+	 * @return JSONResponse|null A refusal, or null when the caller may read it.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function caseReadRefusal(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(
+				['message' => 'Not authorized', 'case' => $caseId],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return null;
+	}//end caseReadRefusal()
+
+	/**
+	 * File the message on the picked case and record who, why and where it was before.
+	 *
+	 * @param ManualFiling $filing The message being filed by hand.
+	 *
+	 * @return JSONResponse What happened.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function fileByHand(ManualFiling $filing): JSONResponse {
+		$previous = trim((string)($filing->entry['case'] ?? ''));
+
+		$outcome = $this->intake->fileOnCase(
+			message: $this->messageOf(entry: $filing->entry),
+			verdict: FilterVerdict::accept(
+				filterName: 'file-on-case',
+				reason: $filing->reason
+			),
+			results: $this->resultsOf(entry: $filing->entry),
+			caseId: $filing->caseId
+		);
+
+		$this->recordFiledByHand(filing: $filing, previous: $previous);
+
+		return new JSONResponse(
+			[
+				'filed' => true,
+				'case' => $filing->caseId,
+				'previousCase' => $previous,
+				'outcome' => $outcome,
+			]
+		);
+	}//end fileByHand()
+
+	/**
+	 * Record on the log entry who filed it by hand, when, why, and where it was before.
+	 *
+	 * @param ManualFiling $filing   The message filed by hand.
+	 * @param string       $previous The case it was on before, or ''.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function recordFiledByHand(ManualFiling $filing, string $previous): void {
+		$this->log->amend(
+			entryId: $filing->entryId,
+			changes: [
+				'outcome' => IntakeLogInterface::OUTCOME_CASE,
+				'case' => $filing->caseId,
+				'reason' => $filing->reason,
+				'filedBy' => $this->callerId(),
+				'filedAt' => $this->time->getDateTime()->format(DATE_ATOM),
+				'previousCase' => $previous,
+			]
+		);
+	}//end recordFiledByHand()
+
+	/**
+	 * Refuse a caller who is not the intake role.
+	 *
+	 * @return JSONResponse|null A refusal, or null when the caller may proceed.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function requireIntakeRole(): ?JSONResponse {
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->refusal();
+	}//end requireIntakeRole()
+
+	/**
+	 * The entry an intake act works on, or the refusal: the intake role first, then the entry.
+	 *
+	 * @param string $entryId The entry.
+	 *
+	 * @return array<string, mixed>|JSONResponse The entry, or the 401, 403 or 404.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function workableEntry(string $entryId): array|JSONResponse {
 		$refusal = $this->requireIntakeRole();
 		if ($refusal !== null) {
 			return $refusal;
@@ -346,48 +594,8 @@ class MailIntakeController extends Controller {
 			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$result = $this->move->move(
-			message: $this->messageOf(entry: $entry),
-			target: $target,
-			note: $note,
-			actorId: $this->callerId(),
-			results: $this->resultsOf(entry: $entry)
-		);
-		if ($result['moved'] === false) {
-			return new JSONResponse(['message' => 'move_failed'], Http::STATUS_BAD_REQUEST);
-		}
-
-		$this->log->amend(
-			entryId: $entryId,
-			changes: [
-				'outcome' => IntakeLog::OUTCOME_MOVED,
-				'movedTo' => $target,
-				'movedBy' => $this->callerId(),
-			]
-		);
-
-		return new JSONResponse(['moved' => true, 'entryId' => $result['entryId']]);
-	}//end move()
-
-	/**
-	 * Refuse a caller who is not the intake role.
-	 *
-	 * @return JSONResponse|null A refusal, or null when the caller may proceed.
-	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
-	 */
-	private function requireIntakeRole(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->policy->mayRunIntake(userId: $user->getUID()) === false) {
-			return new JSONResponse(['message' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
-	}//end requireIntakeRole()
+		return $entry;
+	}//end workableEntry()
 
 	/**
 	 * One log entry, or null when there is none and when the log cannot answer.
@@ -424,12 +632,7 @@ class MailIntakeController extends Controller {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function callerId(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->callerId();
 	}//end callerId()
 
 	/**

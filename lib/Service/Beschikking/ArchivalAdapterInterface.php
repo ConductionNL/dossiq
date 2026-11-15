@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T25
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T25
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 /**
  * Ingests a beschikking into durable archival storage (OpenRegister).
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T25
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T25
  */
 interface ArchivalAdapterInterface {
 	/**
@@ -45,7 +45,7 @@ interface ArchivalAdapterInterface {
 	 *
 	 * @return array{archiveId: string, destructionDate: string} The archival result.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T25
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T25
 	 */
 	public function ingest(string $decisionId, string $fileId, array $tmloMetadata): array;
 }//end interface

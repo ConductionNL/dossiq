@@ -87,8 +87,7 @@ const FIELD_ROLE_RULES = [
 		rule: 'hidden',
 		groups: [RESTRICTED_GROUP],
 		heldBy: [HOLDING_GROUP],
-		reason:
-			'The quality officer scores the handling, so the handler does not read their own score.',
+		reason: 'The quality officer scores the handling, so the handler does not read their own score.',
 	},
 	{
 		field: READ_ONLY_FIELD,
@@ -252,9 +251,10 @@ test.describe('field rules per role', () => {
 	test.afterAll(async ({ request }) => {
 		await handlerApi?.dispose()
 		await officerApi?.dispose()
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
+	// @e2e case-access-control::a-handler-does-not-receive-the-field-the-rule-hides
 	test('the officer keeps the field and the handler does not receive it', async () => {
 		// The control first. Without it an absence proves only that the seed
 		// never wrote a value, which is the same empty answer a working rule
@@ -303,6 +303,7 @@ test.describe('field rules per role', () => {
 		).toBeTruthy()
 	})
 
+	// @e2e case-access-control::the-access-tab-names-the-rule-behind-the-field-that-is-missing
 	test('the access tab names the rule behind the field that is not there', async ({
 		browser,
 		baseURL,

@@ -1,0 +1,231 @@
+<!--
+  SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+  SPDX-License-Identifier: EUPL-1.2
+
+  The case exactly as OpenRegister stored it, for an administrator who is
+  working out why a surface shows what it shows.
+
+  WHY NOT CnObjectMetadataModal, which the design named. Two reasons, and
+  either one alone would be enough. It takes a REQUIRED `objectData` object,
+  and an `open-modal` action forwards its props verbatim, so there is no way
+  for the manifest to hand it the case. And it renders the `@self` block,
+  which is the metadata around the record rather than the record: it answers
+  who owns the case and when it was written, and never shows a single stored
+  property. The requirement asks for the raw JSON, so this reads the object
+  and prints it.
+
+  It reads the case from the ROUTE, the way CaseCopyDialog does and for the
+  same reason: a manifest `open-modal` carries no object context, and
+  `@objectId` would arrive as that literal string.
+
+  THIS IS A READING SURFACE AND NOT A PERMISSION. Hiding the Inspect entry
+  from a handler is an affordance; the refusal is OpenRegister's, and it is
+  the one that answers this fetch too. A handler who reached this dialog by
+  hand sees the refusal, not the case.
+
+  @spec openspec/specs/case-management/spec.md
+-->
+<template>
+	<CnDialog
+		:subtitle="t('dossiq', 'The case as OpenRegister stores it, nothing left out and nothing renamed.')"
+		:name="t('dossiq', 'Raw data')"
+		size="large"
+		data-testid="case-raw-data-dialog"
+		@closing="$emit('close')">
+		<div class="case-raw-data">
+			<NcLoadingIcon v-if="busy" :size="32" />
+
+			<pre
+				v-else-if="raw !== ''"
+				class="case-raw-data__json"
+				data-testid="case-raw-data-json"
+				>{{ raw }}</pre>
+
+			<p class="case-raw-data__note" data-testid="case-raw-data-note">
+				{{
+					t(
+						'dossiq',
+						'Only for administrators. Reading changes nothing, but opening it is recorded in the processing log.',
+					)
+				}}
+			</p>
+
+			<p
+				v-if="copied"
+				class="case-raw-data__copied"
+				data-testid="case-raw-data-copied"
+				role="status">
+				{{ t('dossiq', 'Copied to your clipboard.') }}
+			</p>
+
+			<p
+				v-if="error"
+				class="case-raw-data__error"
+				data-testid="case-raw-data-error"
+				role="alert">
+				{{ error }}
+			</p>
+		</div>
+
+		<template #actions>
+			<NcButton data-testid="case-raw-data-close" @click="$emit('close')">
+				{{ t('dossiq', 'Cancel') }}
+			</NcButton>
+			<NcButton
+				data-testid="case-raw-data-copy"
+				variant="primary"
+				:disabled="raw === ''"
+				@click="copy">
+				<template #icon>
+					<ContentCopy :size="20" />
+				</template>
+				{{ t('dossiq', 'Copy') }}
+			</NcButton>
+		</template>
+	</CnDialog>
+</template>
+
+<script>
+import { CnDialog } from '@conduction/nextcloud-vue'
+import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
+
+export default {
+	name: 'CaseRawDataDialog',
+
+	components: { NcButton, CnDialog, ContentCopy, NcLoadingIcon },
+
+	props: {
+		/**
+		 * The case to show. Absent when the manifest opened the dialog: an
+		 * `open-modal` action carries no object context, so the route answers.
+		 */
+		caseId: {
+			type: String,
+			default: '',
+		},
+	},
+
+	emits: ['close'],
+
+	data() {
+		return {
+			raw: '',
+			error: '',
+			busy: false,
+			copied: false,
+		}
+	},
+
+	computed: {
+		/**
+		 * @return {string} The case this dialog reads.
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		targetCaseId() {
+			return this.caseId || String(this.$route?.params?.id ?? '')
+		},
+	},
+
+	/**
+	 * Read the case as soon as the dialog is on screen.
+	 *
+	 * @return {Promise<void>} Nothing.
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	async mounted() {
+		await this.load()
+	},
+
+	methods: {
+		t,
+
+		/**
+		 * Put the JSON on the clipboard, and say so.
+		 *
+		 * @return {Promise<void>} Nothing.
+		 * @spec openspec/specs/case-dialogs/spec.md#requirement-ruwe-gegevens-copies-the-stored-case-and-says-who-it-is-for
+		 */
+		async copy() {
+			this.copied = false
+			try {
+				await navigator.clipboard.writeText(this.raw)
+				this.copied = true
+			} catch {
+				this.error = t('dossiq', 'The JSON could not be copied. Select it and copy it by hand.')
+			}
+		},
+
+		/**
+		 * Fetch the stored object and render it as indented JSON.
+		 *
+		 * An unreadable case says so in words. A dialog that opened empty and
+		 * silent is the failure this whole change exists to prevent: the
+		 * reader is here because something is already not adding up.
+		 *
+		 * @return {Promise<void>} Nothing.
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		async load() {
+			if (!this.targetCaseId) {
+				this.error = t('dossiq', 'This dialog was opened without a case.')
+				return
+			}
+			this.busy = true
+			this.error = ''
+			try {
+				const { data } = await axios.get(
+					generateUrl(
+						`/apps/openregister/api/objects/dossiq/case/${encodeURIComponent(this.targetCaseId)}`,
+					),
+				)
+				this.raw = JSON.stringify(data, null, 2)
+			} catch (err) {
+				this.raw = ''
+				this.error =
+					err?.response?.status === 403
+						? t('dossiq', 'You may not read this case.')
+						: t('dossiq', 'The case could not be read.')
+			} finally {
+				this.busy = false
+			}
+		},
+	},
+}
+</script>
+
+<style scoped>
+.case-raw-data {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 8px 0;
+}
+
+.case-raw-data__note,
+.case-raw-data__copied {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	margin: 0;
+}
+
+.case-raw-data__json {
+	background-color: var(--color-background-dark);
+	border-radius: var(--border-radius);
+	margin: 0;
+	max-height: 60vh;
+	overflow: auto;
+	overflow-wrap: anywhere;
+	padding: 12px;
+	white-space: pre-wrap;
+}
+
+.case-raw-data__error {
+	color: var(--color-error);
+	margin: 0;
+}
+</style>

@@ -1,0 +1,4 @@
+- [x] DocumentCopier + PHPUnit
+- [x] ZaakdossierController::bulkCopy + route + PHPUnit
+- [x] BulkDocumentActionDialog copy-to-case + vitest
+- [x] manifest bulk action + l10n

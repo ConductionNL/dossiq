@@ -90,6 +90,9 @@ if (class_exists(TaskInboxCriteria::class) === false) {
 		 * @param DateTime|null      $dueBefore      Only tasks due strictly before this instant.
 		 * @param string             $sort           One of the SORT_* values.
 		 * @param boolean            $sortDescending Whether to invert the sort.
+		 * @param string|null        $kind           Restrict to one task kind.
+		 * @param boolean            $includeBlocked Whether blocked tasks are listed too.
+		 * @param boolean            $openFirst      Whether open tasks sort before finished ones.
 		 *
 		 * @return void
 		 */
@@ -108,6 +111,9 @@ if (class_exists(TaskInboxCriteria::class) === false) {
 			public readonly ?DateTime $dueBefore = null,
 			public readonly string $sort = self::SORT_DUE,
 			public readonly bool $sortDescending = false,
+			public readonly ?string $kind = null,
+			public readonly bool $includeBlocked = false,
+			public readonly bool $openFirst = false,
 		) {
 
 		}//end __construct()

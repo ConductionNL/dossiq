@@ -84,47 +84,47 @@ test.describe('One personal queue', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-caseworker-opens-one-page-not-six
+	// @e2e openspec/specs/my-work/spec.md#a-caseworker-opens-one-page-not-six
 	test('One page holds the work every mechanism put there', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 
 		await expect(
-			page.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`),
+			page.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.mine}`),
 		).toBeVisible(PAGE_LOAD)
 		await expect(
-			page.getByTestId(`queue-item-tasks:task:${tasks.open}`),
+			page.getByTestId(`cn-work-queue-item-tasks:task:${tasks.open}`),
 		).toBeVisible()
 
 		// Two mechanisms, two groups, one page. The assertion is on the GROUPS
 		// rather than on a row count: a queue that merged everything into one
 		// heading would still show both rows.
-		await expect(page.getByTestId('queue-group-assigned-cases')).toBeVisible()
-		await expect(page.getByTestId('queue-group-tasks')).toBeVisible()
+		await expect(page.getByTestId('cn-work-queue-group-assigned-cases')).toBeVisible()
+		await expect(page.getByTestId('cn-work-queue-group-tasks')).toBeVisible()
 
 		expect(errors, errors.join('\n')).toEqual([])
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/add-work-queue/spec.md#a-new-mechanism-reaches-the-queue-by-declaring-itself
+	// @e2e openspec/specs/add-work-queue/spec.md#a-new-mechanism-reaches-the-queue-by-declaring-itself
 	test('Each group says what takes its items off the queue', async ({ page }) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 
-		const group = page.getByTestId('queue-group-tasks')
+		const group = page.getByTestId('cn-work-queue-group-tasks')
 		await expect(group).toBeVisible(PAGE_LOAD)
 		await expect(group).toContainText(
 			'A task leaves when it is completed or cancelled.',
 		)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#an-item-closes-with-its-work
+	// @e2e openspec/specs/my-work/spec.md#an-item-closes-with-its-work
 	test('An item leaves when the task it points at is completed', async ({
 		page,
 		playwright,
 		baseURL,
 	}) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await expect(
-			page.getByTestId(`queue-item-tasks:task:${tasks.closing}`),
+			page.getByTestId(`cn-work-queue-item-tasks:task:${tasks.closing}`),
 		).toBeVisible(PAGE_LOAD)
 
 		const api = await playwright.request.newContext({ baseURL })
@@ -133,23 +133,23 @@ test.describe('One personal queue', () => {
 		await invokeFlowTask(api, token, tasks.closing, 'complete')
 		await api.dispose()
 
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await expect(
-			page.getByTestId(`queue-item-tasks:task:${tasks.closing}`),
+			page.getByTestId(`cn-work-queue-item-tasks:task:${tasks.closing}`),
 		).toHaveCount(0)
 		// The OTHER task is still there, so the row did not vanish because the
 		// whole list failed to load.
 		await expect(
-			page.getByTestId(`queue-item-tasks:task:${tasks.open}`),
+			page.getByTestId(`cn-work-queue-item-tasks:task:${tasks.open}`),
 		).toBeVisible()
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-person-cannot-dismiss-live-work
+	// @e2e openspec/specs/my-work/spec.md#a-person-cannot-dismiss-live-work
 	test('Live work cannot be dismissed, and the group can be hidden instead', async ({
 		page,
 	}) => {
-		await navToRoute(page, 'PersonalQueue')
-		const item = page.getByTestId(`queue-item-assigned-cases:case:${cases.live}`)
+		await navToRoute(page, '/my-queue')
+		const item = page.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.live}`)
 		await expect(item).toBeVisible(PAGE_LOAD)
 
 		// There is no per-item remove control at all. The offer is the group.
@@ -158,27 +158,27 @@ test.describe('One personal queue', () => {
 		).toHaveCount(0)
 
 		await page
-			.getByTestId('queue-group-assigned-cases')
+			.getByTestId('cn-work-queue-group-assigned-cases')
 			.getByRole('button', { name: /hide until tomorrow|verberg tot morgen/i })
 			.click()
 
-		await expect(page.getByTestId('queue-group-assigned-cases')).toHaveCount(0)
-		await expect(page.getByTestId('queue-hidden-assigned-cases')).toBeVisible()
+		await expect(page.getByTestId('cn-work-queue-group-assigned-cases')).toHaveCount(0)
+		await expect(page.getByTestId('cn-work-queue-show-assigned-cases')).toBeVisible()
 
 		// Hidden is not gone: showing it again brings back the same live work.
-		await page.getByTestId('queue-hidden-assigned-cases').click()
+		await page.getByTestId('cn-work-queue-show-assigned-cases').click()
 		await expect(
-			page.getByTestId(`queue-item-assigned-cases:case:${cases.live}`),
+			page.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.live}`),
 		).toBeVisible()
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#the-digest-arrives-at-the-chosen-time
+	// @e2e openspec/specs/my-work/spec.md#the-digest-arrives-at-the-chosen-time
 	test('A digest is composed when work is waiting, and not when none is', async ({
 		page,
 	}) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await expect(
-			page.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`),
+			page.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.mine}`),
 		).toBeVisible(PAGE_LOAD)
 
 		// The queue is not empty, so the person who owns it is due a digest.
@@ -187,54 +187,56 @@ test.describe('One personal queue', () => {
 		// about whether anything was said at all.
 		const queue = await page.request.get(
 			'/index.php/apps/dossiq/api/personal-queue',
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(queue.status()).toBe(200)
 		expect((await queue.json()).total).toBeGreaterThan(0)
 
 		const settings = await page.request.get(
 			'/index.php/apps/dossiq/api/personal-queue/digest',
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(settings.status()).toBe(200)
 		expect((await settings.json()).enabled).toBe(true)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#everything-touched-today-in-one-place
+	// @e2e openspec/specs/my-work/spec.md#everything-touched-today-in-one-place
 	test('The end-of-day screen lists what was opened today', async ({ page }) => {
 		// Open the case first: "touched" is the register's per-reader read
 		// state, so a case nobody opened must NOT appear, and this is the
 		// gesture that makes it appear.
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await page
-			.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`)
+			.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.mine}`)
 			.getByRole('link')
 			.click()
 		await page.waitForLoadState('domcontentloaded')
 
-		await navToRoute(page, 'EndOfDay')
+		await navToRoute(page, '/end-of-day')
 		await expect(
-			page.getByTestId(`end-of-day-item-assigned-cases:case:${cases.mine}`),
+			page.getByTestId(`cn-record-list-note-assigned-cases:case:${cases.mine}`),
 		).toBeVisible(PAGE_LOAD)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#an-update-is-recorded-per-item
+	// @e2e openspec/specs/my-work/spec.md#an-update-is-recorded-per-item
 	test('An update written on the end-of-day screen lands on the case', async ({
 		page,
 	}) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await page
-			.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`)
+			.getByTestId(`cn-work-queue-item-assigned-cases:case:${cases.mine}`)
 			.getByRole('link')
 			.click()
 		await page.waitForLoadState('domcontentloaded')
 
-		await navToRoute(page, 'EndOfDay')
+		await navToRoute(page, '/end-of-day')
 		const field = page.getByTestId(
-			`end-of-day-update-assigned-cases:case:${cases.mine}`,
+			`cn-record-list-note-assigned-cases:case:${cases.mine}`,
 		)
 		await expect(field).toBeVisible(PAGE_LOAD)
 		await field.locator('input').fill(`${RUN_PREFIX} handled the intake`)
 		await page
-			.getByTestId(`end-of-day-save-assigned-cases:case:${cases.mine}`)
+			.getByTestId(`cn-record-list-record-assigned-cases:case:${cases.mine}`)
 			.click()
 
 		// Read the note back off the case, not off a toast: a toast says the
@@ -259,26 +261,37 @@ test.describe('One personal queue', () => {
 			.toContain(`${RUN_PREFIX} handled the intake`)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-planned-item-with-no-case
+	// @e2e openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	test('A note recorded at the end of the day is still listed after a reload', async ({
+		page,
+	}) => {
+		await navToRoute(page, '/end-of-day')
+		await page.reload()
+		await expect(
+			page.getByTestId('cn-record-list').filter({ hasText: `${RUN_PREFIX} handled the intake` }),
+		).toBeVisible(PAGE_LOAD)
+	})
+
+	// @e2e openspec/specs/my-work/spec.md#a-planned-item-with-no-case
 	test('A planned item reaches the queue and is not a case', async ({ page }) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await page
 			.getByRole('button', { name: /plan an item|plan iets in/i })
 			.click()
 
-		const dialog = page.getByTestId('plan-item-dialog')
+		const dialog = page.getByTestId('cn-action-dialog')
 		await expect(dialog).toBeVisible(PAGE_LOAD)
 		await dialog
-			.getByTestId('plan-item-title')
+			.getByTestId('cn-action-dialog-field-title')
 			.locator('input')
 			.fill(`${RUN_PREFIX} call the applicant back`)
 		await dialog
-			.getByTestId('plan-item-when')
+			.getByTestId('cn-action-dialog-field-startsAt')
 			.locator('input')
 			.fill('2026-12-01T09:00')
-		await dialog.getByRole('button', { name: /plan it|plan het in/i }).click()
+		await dialog.getByRole('button', { name: /schedule it|plan it|plan het in|inplannen/i }).click()
 
-		await expect(page.getByTestId('queue-group-planned-items')).toBeVisible(
+		await expect(page.getByTestId('cn-work-queue-group-planned-items')).toBeVisible(
 			PAGE_LOAD,
 		)
 
@@ -293,8 +306,8 @@ test.describe('One personal queue', () => {
 		)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-personal-triage-lane-on-a-shared-case
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#the-cases-own-status-is-unchanged
+	// @e2e openspec/specs/my-work/spec.md#a-personal-triage-lane-on-a-shared-case
+	// @e2e openspec/specs/my-work/spec.md#the-cases-own-status-is-unchanged
 	test('A personal stage is private and leaves the case status alone', async ({
 		page,
 	}) => {

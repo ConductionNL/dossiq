@@ -29,16 +29,16 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseSharingService;
-use OCA\Dossiq\Service\Sharing\CaseLinkShares;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -50,26 +50,26 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
 class CaseAccessLinkController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object
-	 * @param CaseSharingService $caseSharingService Answers whether the caller may open the case
-	 * @param CaseLinkShares $linkShares The share records the links are stored on
+	 * @param CaseSharingServiceInterface $caseSharingService Answers whether the caller may open the case
+	 * @param CaseLinkSharesInterface $linkShares The share records the links are stored on
 	 * @param IUserSession $userSession The user session
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private CaseSharingService $caseSharingService,
-		private CaseLinkShares $linkShares,
+		private CaseSharingServiceInterface $caseSharingService,
+		private CaseLinkSharesInterface $linkShares,
 		private IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -81,7 +81,7 @@ class CaseAccessLinkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function index(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -108,7 +108,7 @@ class CaseAccessLinkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function pause(string $linkId): JSONResponse {
 		$guard = $this->guard(linkId: $linkId);
@@ -141,7 +141,7 @@ class CaseAccessLinkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function preview(string $linkId): JSONResponse {
 		$guard = $this->guard(linkId: $linkId);
@@ -177,7 +177,7 @@ class CaseAccessLinkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function revoke(string $linkId): JSONResponse {
 		$guard = $this->guard(linkId: $linkId);
@@ -206,7 +206,7 @@ class CaseAccessLinkController extends Controller {
 	 *
 	 * @return JSONResponse|string The refusal, or the caller's user id
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function guard(string $linkId): JSONResponse|string {
 		$user = $this->userSession->getUser();

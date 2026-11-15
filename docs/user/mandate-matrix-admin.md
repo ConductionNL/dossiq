@@ -128,7 +128,7 @@ Een rol kan slechts één actieve waarnemer tegelijk hebben. Dossiq weigert over
 Lopende zaken behouden hun originele `MandaatGebruik`-snapshot. Nieuwe besluiten op die zaak gebruiken het nieuwe besluit zodra het geldig is.
 
 **Kan ik de matrix tijdelijk uitzetten?**
-Nee. De authorisatie is integraal onderdeel van procesvoering. Voor ad-hoc beheer (bijv. urgentie buiten kantooruren) is er de noodroute in [openspec/changes/mandaat-matrix-06-temporal-and-conflict](../../openspec/changes/mandaat-matrix-06-temporal-and-conflict/proposal.md).
+Nee. De authorisatie is integraal onderdeel van procesvoering. Voor ad-hoc beheer (bijv. urgentie buiten kantooruren) is er de noodroute in [openspec/changes/mandaat-matrix-06-temporal-and-conflict](https://github.com/ConductionNL/dossiq/tree/development/openspec/changes/archive/2026-06-13-mandaat-matrix-06-temporal-and-conflict).
 
 ## Bijlage A — Rollen-sjabloon (Excel)
 

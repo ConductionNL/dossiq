@@ -7,7 +7,7 @@
  *
  * WHY THIS NEEDS A REAL STORE. The declarations are pinned to the byte by
  * `tests/vitest/caseSearchDeclarations.spec.js`, and the refusal reader by
- * `tests/vitest/searchRefusal.spec.js`. What neither can show is that the
+ * the library CnIndexPage refusal spec. What neither can show is that the
  * declaration REACHES the query: `matchType` is read by openregister's
  * `PropertySearchProfile` out of the imported schema, and an import that never
  * ran leaves every property silent while the register JSON on disk reads
@@ -40,6 +40,7 @@ import {
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { PAGE_LOAD } from './helpers/nav.ts'
 
@@ -93,20 +94,30 @@ test.describe('The case declares how each of its fields is searched', () => {
 			}),
 		)
 
-		const result = objectId(
-			await createObject(api, token, 'result', {
-				title: `${RUN_PREFIX} Toegekend`,
-				description: 'Granted, seeded by the search declarations suite.',
-			}),
-		)
-
+		// A `result` row names its case and its resultType, both required
+		// (dossiq_register.json), so the case is filed first, the result
+		// written against it, and the case then pointed at that result.
 		closedWithResult = objectId(
 			await seedCase(api, token, {
 				title: `${RUN_PREFIX} afgehandeld met resultaat`,
 				caseType,
-				result,
 			}),
 		)
+		const resultType = objectId(
+			await createObject(api, token, 'resultType', {
+				name: `${RUN_PREFIX} Toegekend`,
+				caseType,
+			}),
+		)
+		const result = objectId(
+			await createObject(api, token, 'result', {
+				name: `${RUN_PREFIX} Toegekend`,
+				case: closedWithResult,
+				resultType,
+				description: 'Granted, seeded by the search declarations suite.',
+			}),
+		)
+		await updateObject(api, token, 'case', closedWithResult, { result })
 
 		closedWithoutResult = objectId(
 			await seedCase(api, token, {
@@ -124,6 +135,7 @@ test.describe('The case declares how each of its fields is searched', () => {
 		await api.dispose()
 	})
 
+	// @e2e case-search-and-lists::the-identifier-answers-to-the-whole-case-number
 	test('the identifier answers to the whole case number and not to half of it', async ({
 		playwright,
 		baseURL,
@@ -197,19 +209,21 @@ test.describe('The case declares how each of its fields is searched', () => {
 		await api.dispose()
 	})
 
+	// @e2e case-search-and-lists::the-cases-page-says-where-a-refused-term-broke
 	test('the Cases page says where a refused term broke', async ({ page }) => {
 		await page.goto(
 			`/index.php/apps/dossiq/cases?_search=${encodeURIComponent('(dakkapel AND NOT geweigerd')}`,
 			PAGE_LOAD,
 		)
 
-		const hint = page.getByTestId('case-search-refusal')
+		const hint = page.getByTestId('cn-index-page-search-refusal')
 		await expect(hint).toBeVisible(PAGE_LOAD)
-		await expect(page.getByTestId('case-search-refusal-term')).toContainText(
+		await expect(page.getByTestId('cn-index-page-search-refusal-term')).toContainText(
 			'dakkapel',
 		)
 	})
 
+	// @e2e case-search-and-lists::a-term-the-page-could-read-draws-no-hint
 	test('the Cases page shows no hint for a term it could read', async ({
 		page,
 	}) => {
@@ -218,7 +232,7 @@ test.describe('The case declares how each of its fields is searched', () => {
 			PAGE_LOAD,
 		)
 
-		await expect(page.getByTestId('case-search-refusal')).toHaveCount(0)
+		await expect(page.getByTestId('cn-index-page-search-refusal')).toHaveCount(0)
 	})
 
 	test('the closed cases with no result are one lens away', async ({

@@ -61,6 +61,38 @@ class RefusalCaseStore {
 	public array $cases = [];
 
 	/**
+	 * The `organisatieRol` rows a department/role search answers with.
+	 *
+	 * Keyed by "<department>|<roleName>", so a test says which teams exist
+	 * and the search resolves exactly the ones it declared.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	public array $teams = [];
+
+	/**
+	 * Answer a slug-addressed search.
+	 *
+	 * Only the `organisatieRol` schema is answered: it is the one search the
+	 * refusal makes, to turn a declared department and role into the
+	 * Nextcloud group `case.assignedGroup` holds.
+	 *
+	 * @param string               $register The register slug.
+	 * @param string               $schema   The schema slug.
+	 * @param array<string, mixed> $filters  The field filters.
+	 *
+	 * @return array<int, array<string, mixed>> The matching rows.
+	 */
+	public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+		$key = ($filters['department'] ?? '') . '|' . ($filters['roleName'] ?? '');
+		if (isset($this->teams[$key]) === false) {
+			return [];
+		}
+
+		return [$this->teams[$key]];
+	}//end searchObjectsBySlug()
+
+	/**
 	 * Find one case.
 	 *
 	 * @param string $id       The case id.
@@ -128,6 +160,14 @@ class RefusalOutcomeTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->store = new RefusalCaseStore();
+		$this->store->teams = [
+			'Juridische Zaken|intake' => [
+				'id' => 'rol-juza-intake',
+				'roleName' => 'intake',
+				'department' => 'Juridische Zaken',
+				'ncGroupId' => 'juza-intake',
+			],
+		];
 		$this->caseType = [
 			'title' => 'Handhavingsverzoek',
 			'refusalDestination' => ['department' => 'Juridische Zaken', 'role' => 'intake'],
@@ -153,6 +193,7 @@ class RefusalOutcomeTest extends TestCase {
 				return match ($key) {
 					'register' => 'dossiq',
 					'case_schema' => 'case',
+					'organisatie_rol_schema' => 'organisatieRol',
 					default => '',
 				};
 			}
@@ -212,10 +253,71 @@ class RefusalOutcomeTest extends TestCase {
 			refusedBy: 'jdevries'
 		);
 
-		$this->assertSame('Juridische Zaken', $record['department']);
-		$this->assertSame('intake', $record['role']);
-		$this->assertSame('Juridische Zaken', $this->store->cases[$caseId]['assignedGroup']);
+		$this->assertSame(expected: 'Juridische Zaken', actual: $record['department']);
+		$this->assertSame(expected: 'intake', actual: $record['role']);
+
+		// 🔴 THE GROUP, NEVER THE DEPARTMENT NAME AND NEVER THE ROLE UUID.
+		// This assertion read `'Juridische Zaken'` until 2026-09-19 and the
+		// role uuid until one-team-model: `case.assignedGroup` is a Nextcloud
+		// group id, and the role names its group in `ncGroupId`.
+		$this->assertSame(
+			expected: 'juza-intake',
+			actual: $this->store->cases[$caseId]['assignedGroup']
+		);
 	}//end testARefusedCaseLandsAtItsDeclaredDestination()
+
+	/**
+	 * A destination no team answers to still refuses the case.
+	 *
+	 * Unassigned and recorded beats not refused. The refusal record names the
+	 * department and role it was meant for, so an administrator can finish the
+	 * job by hand.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md#requirement-a-refused-intake-goes-to-a-named-department-and-role-req-triage-04
+	 */
+	public function testADestinationNoTeamAnswersToStillRefusesTheCase(): void {
+		$this->store->teams = [];
+		$caseId = $this->seedCase();
+
+		$record = $this->outcome()->refuse(
+			caseId: $caseId,
+			reason: 'Dit is een melding voor de provincie.',
+			refusedBy: 'jdevries'
+		);
+
+		$this->assertTrue(condition: $record['refused']);
+		$this->assertSame(
+			expected: 'Juridische Zaken',
+			actual: $this->store->cases[$caseId]['intakeRefusal']['department']
+		);
+		$this->assertArrayNotHasKey(key: 'assignedGroup', array: $this->store->cases[$caseId]);
+	}//end testADestinationNoTeamAnswersToStillRefusesTheCase()
+
+	/**
+	 * A destination role that names no group refuses the case, unassigned.
+	 *
+	 * The role's uuid is not a team and its words are not a group id, so
+	 * neither is written. The refusal is still recorded.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
+	 */
+	public function testADestinationRoleWithoutAGroupLeavesTheCaseUnassigned(): void {
+		unset($this->store->teams['Juridische Zaken|intake']['ncGroupId']);
+		$caseId = $this->seedCase();
+
+		$record = $this->outcome()->refuse(
+			caseId: $caseId,
+			reason: 'Dit is een melding voor de provincie.',
+			refusedBy: 'jdevries'
+		);
+
+		$this->assertTrue(condition: $record['refused']);
+		$this->assertArrayNotHasKey(key: 'assignedGroup', array: $this->store->cases[$caseId]);
+	}//end testADestinationRoleWithoutAGroupLeavesTheCaseUnassigned()
 
 	/**
 	 * The reason and the refuser are recorded on the case.

@@ -27,9 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\Transfer\DoorzendingNotifier;
+use OCA\Dossiq\Exception\NoticeNotSentException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -37,9 +39,16 @@ use Psr\Log\LoggerInterface;
  * Who is told a case moved, and who is deliberately not.
  *
  * @covers \OCA\Dossiq\Service\Transfer\DoorzendingNotifier
+ * @covers \OCA\Dossiq\Service\Term\TermNoticeSources
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
+ * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Service\Term\TermLetter
+ * @uses \OCA\Dossiq\Exception\NoticeNotSentException
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class DoorzendingNotificationTest extends TestCase {
 
@@ -83,6 +92,29 @@ class DoorzendingNotificationTest extends TestCase {
 
 		self::assertTrue($result['announced']);
 	}//end testADoorzendingTellsTheApplicant()
+
+	/**
+	 * REQ-WRN-001: a doorzending notice no transport took is not announced.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testANotSentNoticeIsNotRecordedAsSent(): void {
+		$notifications = $this->createMock(originalClassName: TermijnNotificationService::class);
+		$notifications->method('sendTermijnNotification')->willThrowException(
+			new NoticeNotSentException(reasonCode: 'mail-failed', reason: 'The mail server did not accept the notice.')
+		);
+
+		$result = $this->notifier(notifications: $notifications)->announce(
+			case: self::CASE_ROW,
+			transfer: ['doorzending' => true, 'targetTeam' => 'toezicht'],
+		);
+
+		self::assertFalse($result['announced']);
+		self::assertSame('dispatch-failed', $result['reason']);
+		self::assertArrayNotHasKey('payload', $result);
+	}//end testANotSentNoticeIsNotRecordedAsSent()
 
 	/**
 	 * An internal move sends nothing at all.
@@ -142,8 +174,10 @@ class DoorzendingNotificationTest extends TestCase {
 	 */
 	public function testTheWordingNamesTheDestinationInBothLanguages(): void {
 		$service = new TermijnNotificationService(
-			termService: $this->createMock(originalClassName: \OCA\Dossiq\Service\TermijnService::class),
-			router: $this->createMock(originalClassName: \OCA\Dossiq\Service\BerichtenboxRoutingService::class),
+			notices: new TermNoticeSources(
+				termService: $this->createMock(originalClassName: \OCA\Dossiq\Service\TermijnService::class),
+				sender: $this->createMock(originalClassName: \OCA\Dossiq\Service\Termijn\TermNoticeSender::class),
+			),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 

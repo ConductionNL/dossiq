@@ -1,0 +1,305 @@
+<?php
+
+/**
+ * One declared moment's message to the applicant of a case.
+ *
+ * The acknowledgement of receipt is not the only thing a case type writes to
+ * the applicant, and `notificationMoments` was already the list of the others.
+ * What was missing was a way to SEND one: {@see AcknowledgementService} owns
+ * the statutory moment and everything it does is specific to that duty.
+ *
+ * 🔴 A MESSAGE THAT COULD NOT BE SENT NEVER FAILS THE ACT THAT ASKED FOR IT.
+ * An inadmissible verdict closes the case; a case with no address on it would
+ * otherwise stay open because the letter could not go out, which is exactly the
+ * dead phase the verdict exists to prevent. So this reports what happened and
+ * the caller records it, rather than throwing.
+ *
+ * 🔑 IT SENDS NOTHING THE CASE TYPE DID NOT DECLARE. The moment has to be in
+ * `notificationMoments` and switched on. A message that went out because a
+ * service decided to send one is a message nobody can switch off.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Notification
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Notification;
+
+use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseTypeAcknowledgement;
+use OCA\Dossiq\Service\Email\CaseContactDirectory;
+use OCA\Dossiq\Service\TermijnNotificationService;
+use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Sends the message one declared moment owes the applicant, and says what happened.
+ *
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
+ */
+class ApplicantMessage {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseTypeAcknowledgement    $moments       The moments a case type declares.
+	 * @param CaseContactDirectory       $contacts      The addresses on a case.
+	 * @param TermijnService             $terms         The case's own term, which the letter may quote.
+	 * @param TermijnNotificationService $notifications Renders and routes the message.
+	 * @param CaseTimeline               $timeline      Records what the applicant was sent.
+	 * @param LoggerInterface            $logger        Says why a message did not go out.
+	 */
+	public function __construct(
+		private readonly CaseTypeAcknowledgement $moments,
+		private readonly CaseContactDirectory $contacts,
+		private readonly TermijnService $terms,
+		private readonly TermijnNotificationService $notifications,
+		private readonly CaseTimeline $timeline,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * Whether this case type declares a moment, and has it switched on.
+	 *
+	 * A moment declared and switched off is a message somebody decided not to
+	 * send, which is a legitimate choice. A moment nobody declared at all is
+	 * the same answer here and a warning at publication, because the two are
+	 * told apart by the case type and not by this class.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 * @param string               $moment   The moment.
+	 *
+	 * @return bool True when the message is declared and on.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
+	 */
+	public function declares(array $caseType, string $moment): bool {
+		foreach ($this->moments->momentsFor(caseType: $caseType) as $declared) {
+			if (($declared['moment'] ?? '') === $moment) {
+				return (($declared['enabled'] ?? true) !== false);
+			}
+		}
+
+		return false;
+	}//end declares()
+
+	/**
+	 * Send the message this moment owes the applicant.
+	 *
+	 * @param array<string, mixed> $case     The stored case.
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 * @param string               $moment   The declared moment.
+	 * @param string               $template The template to render.
+	 * @param array<string, mixed> $context  What the template needs beside the case.
+	 *
+	 * @return array{sent: bool, reason: string, recipient: string, template: string, sentAt: string}
+	 *         What happened, for the caller to record.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
+	 */
+	public function send(array $case, array $caseType, string $moment, string $template, array $context = []): array {
+		if ($this->declares(caseType: $caseType, moment: $moment) === false) {
+			return $this->outcome(fields: ['sent' => false, 'reason' => 'moment-not-declared']);
+		}
+
+		return $this->deliverNotice(
+			notice: $this->noticeFor(caseRow: $case, message: ['moment' => $moment, 'template' => $template, 'context' => $context])
+		);
+	}//end send()
+
+	/**
+	 * Place the notice on its term, send it and record it; a case without an address gets nothing.
+	 *
+	 * @param ApplicantNotice $notice The message for the case.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function deliverNotice(ApplicantNotice $notice): array {
+		if ($notice->recipient === '') {
+			return $this->noAddress(notice: $notice);
+		}
+
+		$this->placeOnTerm(notice: $notice);
+		if ($this->deliver(notice: $notice) === false) {
+			return $this->outcome(fields: ['sent' => false, 'reason' => 'send-failed', 'recipient' => $notice->recipient]);
+		}
+
+		$this->recordSent(notice: $notice);
+
+		return $this->sentOutcome(notice: $notice);
+	}//end deliverNotice()
+
+	/**
+	 * The notice for one moment of a case, addressed to the applicant on it.
+	 *
+	 * @param array<string, mixed>                                                 $caseRow The stored case.
+	 * @param array{moment: string, template: string, context: array<string, mixed>} $message The declared moment,
+	 *                                                                                      the template to render and
+	 *                                                                                      what the template needs
+	 *                                                                                      beside the case.
+	 *
+	 * @return ApplicantNotice
+	 */
+	private function noticeFor(array $caseRow, array $message): ApplicantNotice {
+		$notice = new ApplicantNotice();
+		$notice->case = $caseRow;
+		$notice->moment = $message['moment'];
+		$notice->template = $message['template'];
+		$notice->context = $message['context'];
+		$notice->recipient = $this->recipientOn(case: $caseRow);
+
+		return $notice;
+	}//end noticeFor()
+
+	/**
+	 * Name the case and the term instance the message goes under, and the moment it is sent.
+	 *
+	 * @param ApplicantNotice $notice The message.
+	 *
+	 * @return void
+	 */
+	private function placeOnTerm(ApplicantNotice $notice): void {
+		$notice->caseId = trim((string)($notice->case['id'] ?? ($notice->case['uuid'] ?? '')));
+		$term = $this->terms->getTermijnInstanceForZaak(caseId: $notice->caseId);
+		$notice->termId = (string)($term['id'] ?? ($term['uuid'] ?? ''));
+		$notice->sentAt = (new DateTimeImmutable())->format('c');
+	}//end placeOnTerm()
+
+	/**
+	 * The outcome of a message that was sent.
+	 *
+	 * @param ApplicantNotice $notice The sent message.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function sentOutcome(ApplicantNotice $notice): array {
+		return $this->outcome(
+			fields: [
+				'sent' => true,
+				'reason' => '',
+				'recipient' => $notice->recipient,
+				'template' => $notice->template,
+				'sentAt' => $notice->sentAt,
+			]
+		);
+	}//end sentOutcome()
+
+	/**
+	 * The outcome, logged, of a message to a case that carries no address.
+	 *
+	 * @param ApplicantNotice $notice The message.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function noAddress(ApplicantNotice $notice): array {
+		$this->logger->warning(
+			'Dossiq applicant message: the case carries no address, so nothing was sent',
+			['moment' => $notice->moment, 'template' => $notice->template],
+		);
+
+		return $this->outcome(fields: ['sent' => false, 'reason' => 'no-address']);
+	}//end noAddress()
+
+	/**
+	 * Send the message; a send that fails is reported, never thrown.
+	 *
+	 * The act that asked for this message has already happened, and failing
+	 * it now would leave a case half ended with nothing saying which half.
+	 *
+	 * @param ApplicantNotice $notice The message, with its recipient and term.
+	 *
+	 * @return bool Whether it was sent.
+	 */
+	private function deliver(ApplicantNotice $notice): bool {
+		try {
+			$this->notifications->sendTermijnNotification(
+				$notice->template,
+				$notice->termId,
+				$notice->recipient,
+				array_merge(['case' => (string)($notice->case['identifier'] ?? $notice->caseId)], $notice->context),
+				// The case row, so the sender also offers the portal inbox and
+				// digital post, and records the result on the case (REQ-WRN-002).
+				$notice->case,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq applicant message: the message could not be sent',
+				['moment' => $notice->moment, 'template' => $notice->template, 'error' => $e->getMessage()],
+			);
+
+			return false;
+		}//end try
+
+		return true;
+	}//end deliver()
+
+	/**
+	 * Record the sent message on the case's public timeline.
+	 *
+	 * PUBLIC, because this is a message the applicant has received. A
+	 * timeline the portal reads that says nothing about a letter somebody
+	 * is holding is worse than no timeline.
+	 *
+	 * @param ApplicantNotice $notice The sent message.
+	 *
+	 * @return void
+	 */
+	private function recordSent(ApplicantNotice $notice): void {
+		$this->timeline->record(
+			caseId: $notice->caseId,
+			kind: TimelineKinds::PORTAL_MESSAGE,
+			message: 'Bericht aan de aanvrager verzonden',
+			fields: ['moment' => $notice->moment, 'template' => $notice->template, 'sentAt' => $notice->sentAt],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
+		);
+	}//end recordSent()
+
+	/**
+	 * The first address on the case, or ''.
+	 *
+	 * @param array<string, mixed> $case The stored case.
+	 *
+	 * @return string The address.
+	 */
+	private function recipientOn(array $case): string {
+		$addresses = $this->contacts->collectAddresses(caseData: $case);
+		if ($addresses === []) {
+			// A resident who reads in the portal is reachable there without
+			// an e-mail address (REQ-WRN-002); the sender puts it in the inbox.
+			return trim((string)($case['portalSubject'] ?? ''));
+		}
+
+		return trim((string)reset($addresses));
+	}//end recipientOn()
+
+	/**
+	 * One answer shape, so no caller has to interpret an absent key.
+	 *
+	 * @param array<string, mixed> $fields Whether the message went out (`sent`), why it did not (`reason`), who it
+	 *                                     went to (`recipient`), which template was rendered (`template`) and when,
+	 *                                     ISO 8601 (`sentAt`); an absent one is ''.
+	 *
+	 * @return array<string, mixed> The answer: sent, reason, recipient, template and sentAt.
+	 */
+	private function outcome(array $fields): array {
+		return array_merge(['sent' => false, 'reason' => '', 'recipient' => '', 'template' => '', 'sentAt' => ''], $fields);
+	}//end outcome()
+}//end class

@@ -1,0 +1,233 @@
+<?php
+
+/**
+ * Which term a case actually gets, and why.
+ *
+ * Every term dossiq knew was one number on one case type. A gemeenschappelijke
+ * regeling runs one case type for five municipalities that agreed different
+ * service norms, so either the norms were wrong or the case type was
+ * duplicated five times and drifted. The same shape appears inside one
+ * organisation the moment a service is offered at two levels, and again once
+ * priority is derived and an urgent case ought to promise less time.
+ *
+ * So a case type may carry several definitions, and this class picks between
+ * them in ONE declared order: the organisation, then the service, then the
+ * priority, then the case type's own term. Any order works as long as it is
+ * one order everybody can read; leaving it implicit is how two municipalities
+ * end up with the same configuration and different dates.
+ *
+ * 🔴 THE RESOLUTION IS RECORDED, NOT RE-DERIVED. A term somebody disputes has
+ * to be explainable a year later, and the configuration will have changed by
+ * then. `snapshotOf()` copies what the decision was made from at the moment it
+ * was made, so the explanation does not depend on the configuration as it
+ * stands now.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Term
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Term;
+
+use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TermResolutionInterface;
+use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermKind;
+
+/**
+ * Resolves a term definition for a case, and says which rule produced it.
+ *
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
+ */
+class TermResolution implements TermResolutionInterface {
+	/**
+	 * The order, most specific first. It is a constant rather than a setting
+	 * because the point of the change is that there is ONE order and everybody
+	 * can read it.
+	 *
+	 * @var array<int, string>
+	 */
+	public const ORDER = ['organisation', 'service', 'priority'];
+
+	/**
+	 * What a resolution answers when nothing more specific was declared.
+	 */
+	public const FALLBACK = 'caseType';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param TermijnService $terms The store of term definitions.
+	 */
+	public function __construct(private readonly TermijnService $terms) {
+	}//end __construct()
+
+	/**
+	 * The definition a case gets, with the rule that produced it.
+	 *
+	 * @param string               $caseType The zaaktype slug.
+	 * @param array<string, mixed> $context  The case's organisation, service and priority.
+	 * @param string               $kind     Which clock is being resolved.
+	 *
+	 * @return array{definition: array<string, mixed>, resolvedFrom: string, snapshot: array<string, mixed>}|null
+	 *         The resolution, or null when the case type declares no term at all.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
+	 */
+	public function resolve(string $caseType, array $context, string $kind = TermKind::STATUTORY): ?array {
+		$candidates = $this->ofKind(rows: $this->terms->definitionsFor(caseType: $caseType), kind: $kind);
+		if ($candidates === []) {
+			return null;
+		}
+
+		// The case type's own term is the fallback: the one declaration that
+		// names no organisation, service or priority. A definition that names
+		// one and did not match is NOT a fallback, because falling back to
+		// somebody else's agreed norm is worse than having none.
+		$chosen = (self::byScope(candidates: $candidates, context: $context) ?? self::general(candidates: $candidates));
+		if ($chosen === null) {
+			return null;
+		}
+
+		return $this->answer(chosen: $chosen, ask: new TermAsk(caseType: $caseType, context: $context));
+	}//end resolve()
+
+	/**
+	 * The service norm a case gets, resolved by the same order as its term.
+	 *
+	 * A case type with no statutory term (a melding, a demo type) still has a
+	 * clock the team works to. It is bound beside the statutory term, never as
+	 * it, which is why it is asked for by its own kind.
+	 *
+	 * @param string               $caseType The zaaktype slug.
+	 * @param array<string, mixed> $context  The case's organisation, service and priority.
+	 *
+	 * @return array<string, mixed>|null The `planned` definition, or null when none resolves.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	public function plannedDefinitionFor(string $caseType, array $context): ?array {
+		$resolved = $this->resolve(caseType: $caseType, context: $context, kind: TermKind::PLANNED);
+
+		return ($resolved['definition'] ?? null);
+	}//end plannedDefinitionFor()
+
+	/**
+	 * The definitions of one kind. An absent kind reads as statutory, because
+	 * every definition written before the kinds existed sets that clock.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The candidates.
+	 * @param string                           $kind The kind wanted.
+	 *
+	 * @return array<int, array<string, mixed>> The candidates of that kind.
+	 */
+	private function ofKind(array $rows, string $kind): array {
+		$matching = [];
+		foreach ($rows as $row) {
+			$declared = trim((string)($row['kind'] ?? ''));
+			if ($declared === '') {
+				$declared = TermKind::STATUTORY;
+			}
+
+			if ($declared === $kind) {
+				$matching[] = $row;
+			}
+		}
+
+		return $matching;
+	}//end ofKind()
+
+	/**
+	 * The first candidate naming the case's organisation, else its service, else its priority.
+	 *
+	 * @param array<int, array<string, mixed>> $candidates The definitions of the wanted kind.
+	 * @param array<string, mixed>             $context    The case's own values.
+	 *
+	 * @return array{definition: array<string, mixed>, resolvedFrom: string}|null The match and its rule.
+	 */
+	private static function byScope(array $candidates, array $context): ?array {
+		foreach (self::scopeOf(values: $context) as $field => $wanted) {
+			foreach ($candidates as $candidate) {
+				if (trim((string)($candidate[$field] ?? '')) === $wanted) {
+					return ['definition' => $candidate, 'resolvedFrom' => $field];
+				}
+			}
+		}
+
+		return null;
+	}//end byScope()
+
+	/**
+	 * The case type's own definition, naming no narrower scope.
+	 *
+	 * @param array<int, array<string, mixed>> $candidates The definitions of the wanted kind.
+	 *
+	 * @return array{definition: array<string, mixed>, resolvedFrom: string}|null The fallback and its rule.
+	 */
+	private static function general(array $candidates): ?array {
+		foreach ($candidates as $candidate) {
+			if (self::scopeOf(values: $candidate) === []) {
+				return ['definition' => $candidate, 'resolvedFrom' => self::FALLBACK];
+			}
+		}
+
+		return null;
+	}//end general()
+
+	/**
+	 * The organisation, service and priority a set of values names, in that order, trimmed.
+	 *
+	 * @param array<string, mixed> $values A case's values or a definition.
+	 *
+	 * @return array<string, string> The non-empty ones, by field.
+	 */
+	private static function scopeOf(array $values): array {
+		$scope = [];
+		foreach (self::ORDER as $field) {
+			$value = trim((string)($values[$field] ?? ''));
+			if ($value !== '') {
+				$scope[$field] = $value;
+			}
+		}
+
+		return $scope;
+	}//end scopeOf()
+
+	/**
+	 * One resolution, with the snapshot that explains it later.
+	 *
+	 * @param array{definition: array<string, mixed>, resolvedFrom: string} $chosen The definition and the rule that chose it.
+	 * @param TermAsk                                                         $ask    The zaaktype and the case's own values.
+	 *
+	 * @return array{definition: array<string, mixed>, resolvedFrom: string, snapshot: array<string, mixed>}
+	 */
+	private function answer(array $chosen, TermAsk $ask): array {
+		return [
+			'definition' => $chosen['definition'],
+			'resolvedFrom' => $chosen['resolvedFrom'],
+			'snapshot' => [
+				'caseType' => $ask->caseType,
+				'organisation' => trim((string)($ask->context['organisation'] ?? '')),
+				'service' => trim((string)($ask->context['service'] ?? '')),
+				'priority' => trim((string)($ask->context['priority'] ?? '')),
+				'durationDays' => (int)($chosen['definition']['standardDurationDays'] ?? 0),
+				'deadlineDefinition' => (string)($chosen['definition']['id'] ?? ''),
+				'resolvedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			],
+		];
+	}//end answer()
+}//end class

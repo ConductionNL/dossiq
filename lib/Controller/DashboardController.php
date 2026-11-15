@@ -33,14 +33,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -62,7 +63,7 @@ use OCP\Util;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
  */
 class DashboardController extends Controller {
 
@@ -98,8 +99,6 @@ class DashboardController extends Controller {
 		'OCA\\Files\\Event\\LoadAdditionalScriptsEvent',
 	];
 
-	public const PREFER_OPENREGISTER_CASE_PLAN = 'cmmn_prefer_openregister_case_plan';
-
 	/**
 	 * App-root-relative location of the bundled PWA assets.
 	 *
@@ -122,7 +121,7 @@ class DashboardController extends Controller {
 	 *
 	 * @param IRequest      $request      HTTP request.
 	 * @param IInitialState $initialState Page initial state, for the roadmap feature list.
-	 * @param IAppConfig    $appConfig    App configuration, for the case-plan read preference.
+	 * @param IAppConfig    $appConfig    App configuration.
 	 * @param IEventDispatcher $eventDispatcher The dispatcher the Files and Viewer load events go through.
 	 */
 	public function __construct(
@@ -131,7 +130,7 @@ class DashboardController extends Controller {
 		private readonly IAppConfig $appConfig,
 		private readonly IEventDispatcher $eventDispatcher,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -143,7 +142,7 @@ class DashboardController extends Controller {
 	 *
 	 * @return TemplateResponse The rendered dossiq index template.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
@@ -156,7 +155,7 @@ class DashboardController extends Controller {
 	 *
 	 * @return TemplateResponse The rendered dossiq index template.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
@@ -175,18 +174,67 @@ class DashboardController extends Controller {
 	 *
 	 * @return TemplateResponse The rendered dossiq index template.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
 	 */
 	protected function renderIndex(): TemplateResponse {
 		$this->loadFilesSurfaces();
 		$this->initialState->provideInitialState('features_roadmap_features', $this->roadmapFeatures());
+		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
+		$this->initialState->provideInitialState('version', $this->installedVersion());
+		$this->initialState->provideInitialState('features_roadmap_app_version', $this->installedVersion());
 		$this->initialState->provideInitialState(
-			self::PREFER_OPENREGISTER_CASE_PLAN,
-			$this->prefersOpenRegisterCasePlan()
+			'staff_app_name',
+			$this->appConfig->getValueString(app: AppIdentity::APP_ID, key: 'staff_app_name', default: '')
 		);
+		$this->initialState->provideInitialState('config', $this->listConfig());
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()
+
+	/**
+	 * The app config the pages resolve `@config.<key>` tokens against.
+	 *
+	 * The contacts and organisations lists open on the municipality's own city
+	 * (`@config.municipalityCity`). An empty value tells the bundle to leave
+	 * that lens out rather than filter on nothing. `portalName` is the resident
+	 * portal's name as portaliq holds it ("Mijn Zuiddrecht"); empty when
+	 * portaliq names none, and the bundle then says "the portal".
+	 *
+	 * @return array{municipalityCity: string, portalName: string} The config.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
+	 */
+	private function listConfig(): array {
+		return [
+			'municipalityCity' => trim(
+				$this->appConfig->getValueString(app: AppIdentity::APP_ID, key: 'municipality_city', default: '')
+			),
+			'portalName'       => trim(
+				$this->appConfig->getValueString(app: 'portaliq', key: 'portalName', default: '')
+			),
+		];
+	}//end listConfig()
+
+	/**
+	 * The dossiq version Nextcloud has installed.
+	 *
+	 * The settings dialog footer prints it. The bundle cannot know it: the
+	 * release writes its version into info.xml after the bundle is built, so a
+	 * build-time value read "dossiq 0.4.47-unstable" on 0.4.48-beta. The
+	 * bundle's `appVersion` reads this initial state in the browser.
+	 *
+	 * @return string The installed version, or '' when none is recorded.
+	 *
+	 * @spec openspec/specs/notification-labels/spec.md
+	 */
+	private function installedVersion(): string {
+		return $this->appConfig->getValueString(
+			app: AppIdentity::APP_ID,
+			key: 'installed_version',
+			default: ''
+		);
+	}//end installedVersion()
 
 	/**
 	 * Put Nextcloud's own Viewer on every dossiq page.
@@ -251,32 +299,23 @@ class DashboardController extends Controller {
 	}//end filesSurfaceEvents()
 
 	/**
-	 * Whether the case-plan panel prefers OpenRegister's rows over the blob.
+	 * Which structure this instance shows: `simple` or `full`.
 	 *
-	 * Default yes, which is the point of the bridge. Setting it to `no` is the
-	 * R1 rollback of retire-cmmn-caseplanstate design.md section 4: the panel
-	 * goes back to reading dossiq's own CMMN engine for every case that still
-	 * carries a `casePlanState` blob, and `occ dossiq:cmmn:rollback-case-plans`
-	 * regenerates a blob for the cases that no longer have one.
+	 * The frontend picks its layout file from this before it builds a single
+	 * route, so it travels as initial state and not over HTTP: a menu that
+	 * arrives after the first render makes the navigation rebuild in front of
+	 * the reader. The default is asked for as an empty string and decided in
+	 * one place, {@see MenuStructure::normalise()}.
 	 *
-	 * It is a read preference and NOT a kill switch for the projection. Plans
-	 * keep being created in OpenRegister at case start either way, because a
-	 * case that started with no plan anywhere cannot be given one later without
-	 * the migration this change has not shipped yet.
+	 * @return string `simple` or `full`.
 	 *
-	 * @return boolean True when rows win over the blob.
-	 *
-	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
 	 */
-	protected function prefersOpenRegisterCasePlan(): bool {
-		$value = $this->appConfig->getValueString(
-			Application::APP_ID,
-			self::PREFER_OPENREGISTER_CASE_PLAN,
-			'yes'
+	protected function menuStructure(): string {
+		return (new MenuStructure())->normalise(
+			stored: $this->appConfig->getValueString(AppIdentity::APP_ID, MenuStructure::KEY, '')
 		);
-
-		return in_array(strtolower(trim($value)), ['no', 'false', '0', 'off'], true) === false;
-	}//end prefersOpenRegisterCasePlan()
+	}//end menuStructure()
 
 	/**
 	 * The committed feature list, or an empty list when it cannot be read.
@@ -287,7 +326,7 @@ class DashboardController extends Controller {
 	 *
 	 * @return array<int, array<string, mixed>> The features from docs/features.json.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
 	 */
 	private function roadmapFeatures(): array {
 		if (is_readable(self::FEATURES_JSON) === false) {

@@ -80,27 +80,33 @@ class RenameDutchValues implements IRepairStep {
 
 		$updated = 0;
 		foreach ($tables as $table) {
-			$columns = $this->gateway->columnsOf($table);
-			if ($columns === []) {
-				continue;
-			}
-
-			$planned = $this->decisions->plannedRewrites(
-				valueMap: RenameDutchValueDecisions::VALUE_MAP,
-				columns: $columns
-			);
-
-			foreach ($planned as $rewrite) {
-				$updated += $this->gateway->rewrite(
-					table: $table,
-					column: $rewrite['column'],
-					old: $rewrite['old'],
-					new: $rewrite['new']
-				);
-			}
+			$updated += $this->rewriteTable(table: $table);
 		}
 
 		$output->info($this->decisions->summaryMessage(updated: $updated));
 
 	}//end run()
+
+	/**
+	 * Rewrite the stored values of one table, column by column.
+	 *
+	 * @param string $table The table.
+	 *
+	 * @return int How many rows were updated.
+	 */
+	private function rewriteTable(string $table): int {
+		$columns = $this->gateway->columnsOf($table);
+		if ($columns === []) {
+			return 0;
+		}
+
+		$planned = $this->decisions->plannedRewrites(valueMap: RenameDutchValueDecisions::VALUE_MAP, columns: $columns);
+
+		$updated = 0;
+		foreach ($planned as $rewrite) {
+			$updated += $this->gateway->rewrite(table: $table, column: $rewrite['column'], old: $rewrite['old'], new: $rewrite['new']);
+		}
+
+		return $updated;
+	}//end rewriteTable()
 }//end class

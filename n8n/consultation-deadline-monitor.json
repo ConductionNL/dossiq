@@ -5,7 +5,10 @@
       "parameters": {
         "rule": {
           "interval": [
-            { "field": "hours", "hoursInterval": 24 }
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
           ]
         }
       },
@@ -13,7 +16,10 @@
       "name": "Daily at 07:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [200, 300]
+      "position": [
+        200,
+        300
+      ]
     },
     {
       "parameters": {
@@ -23,8 +29,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "OCS-APIRequest", "value": "true" },
-            { "name": "Accept", "value": "application/json" }
+            {
+              "name": "OCS-APIRequest",
+              "value": "true"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
           ]
         }
       },
@@ -32,43 +44,51 @@
       "name": "GET /consultations/overdue",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [420, 200]
+      "position": [
+        420,
+        200
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/consultations",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/consultations/due-soon",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "OCS-APIRequest", "value": "true" },
-            { "name": "Accept", "value": "application/json" }
-          ]
-        },
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            { "name": "deadlineWithin", "value": "P5D" },
-            { "name": "status", "value": "uitgevraagd,in_behandeling" }
+            {
+              "name": "OCS-APIRequest",
+              "value": "true"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
           ]
         }
       },
       "id": "fetch-warning",
-      "name": "GET /consultations (deadline ≤ T+5)",
+      "name": "GET /consultations/due-soon (warning offset)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [420, 400]
+      "position": [
+        420,
+        400
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Compose two streams: warning (T-5) and overdue (past uiterlijkeReactiedatum).\n// Each consultation -> a notification for the assigned advisory body's group\n// (internal) or the configured email address (external).\nconst warning = ($input.first().json.results || $input.first().json.data || []);\nconst overdue = ($input.last().json || []);\nconst today = new Date().toISOString().slice(0, 10);\nconst notifications = [];\nfor (const c of warning) {\n  const deadline = c.uiterlijkeReactiedatum || c.deadline || '';\n  if (!deadline || deadline < today) continue;\n  notifications.push({\n    consultationId: c.id,\n    consultationNummer: c.adviesNummer || c.identificatie,\n    caseId: c.caseId || c.zaakId,\n    adviesinstantieId: c.adviesinstantieId,\n    priority: 'warning',\n    template: 'consultation-deadline-warning',\n    daysRemaining: 5,\n    deadline\n  });\n}\nfor (const c of overdue) {\n  notifications.push({\n    consultationId: c.id,\n    consultationNummer: c.adviesNummer || c.identificatie,\n    caseId: c.caseId || c.zaakId,\n    adviesinstantieId: c.adviesinstantieId,\n    priority: 'overdue',\n    template: 'consultation-deadline-overdue',\n    deadline: c.uiterlijkeReactiedatum\n  });\n}\nreturn notifications.map(n => ({ json: n }));"
+        "jsCode": "// Compose two streams: due soon (within the warning offset set in\n// Adviseringsbeheer, GET /api/consultations/due-soon) and overdue (past\n// latestResponseDate, GET /api/consultations/overdue). Each consultation ->\n// a notification for its advisory body.\nconst dueSoon = $input.first().json || {};\nconst warning = dueSoon.results || [];\nconst offset = Number(dueSoon.warningOffsetDays || 0);\nconst overdue = ($input.last().json || {}).results || [];\nconst today = new Date().toISOString().slice(0, 10);\nconst daysUntil = (date) => Math.round((Date.parse(date) - Date.parse(today)) / 86400000);\nconst notifications = [];\nfor (const c of warning) {\n  notifications.push({\n    consultationId: c.id,\n    consultationNummer: c.consultationNumber,\n    caseId: c.parentCase,\n    adviesinstantieId: c.advisoryBodyId || c.adviceAuthority,\n    priority: 'warning',\n    template: 'consultation-deadline-warning',\n    daysRemaining: daysUntil(c.latestResponseDate),\n    warningOffsetDays: offset,\n    deadline: c.latestResponseDate\n  });\n}\nfor (const c of overdue) {\n  notifications.push({\n    consultationId: c.id,\n    consultationNummer: c.consultationNumber,\n    caseId: c.parentCase,\n    adviesinstantieId: c.advisoryBodyId || c.adviceAuthority,\n    priority: 'overdue',\n    template: 'consultation-deadline-overdue',\n    deadline: c.latestResponseDate\n  });\n}\nreturn notifications.map(n => ({ json: n }));"
       },
       "id": "merge",
       "name": "Build notification list",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [640, 300]
+      "position": [
+        640,
+        300
+      ]
     },
     {
       "parameters": {
@@ -79,8 +99,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "OCS-APIRequest", "value": "true" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "OCS-APIRequest",
+              "value": "true"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -91,24 +117,61 @@
       "name": "POST /api/notifications/send",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [860, 300]
+      "position": [
+        860,
+        300
+      ]
     }
   ],
   "connections": {
     "Daily at 07:00": {
-      "main": [[
-        { "node": "GET /consultations (deadline ≤ T+5)", "type": "main", "index": 0 },
-        { "node": "GET /consultations/overdue", "type": "main", "index": 0 }
-      ]]
-    },
-    "GET /consultations (deadline ≤ T+5)": {
-      "main": [[{ "node": "Build notification list", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "GET /consultations/due-soon (warning offset)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET /consultations/overdue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "GET /consultations/overdue": {
-      "main": [[{ "node": "Build notification list", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build notification list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build notification list": {
-      "main": [[{ "node": "POST /api/notifications/send", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "POST /api/notifications/send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /consultations/due-soon (warning offset)": {
+      "main": [
+        [
+          {
+            "node": "Build notification list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {

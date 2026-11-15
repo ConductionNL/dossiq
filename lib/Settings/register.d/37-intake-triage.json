@@ -74,10 +74,11 @@
               "allowedGroups": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "referenceType": "nextcloud-group"
                 },
                 "title": "Allowed teams",
-                "description": "The teams a case of this type may be assigned to. Empty means every team."
+                "description": "The teams a case of this type may go to, as Nextcloud groups. Empty means every team."
               },
               "allowedUsers": {
                 "type": "array",
@@ -130,7 +131,8 @@
                 "department": {
                   "type": "string",
                   "title": "Department",
-                  "description": "The department the opened case belongs to."
+                  "referenceType": "nextcloud-group",
+                  "description": "The team the opened case goes to, a Nextcloud group."
                 },
                 "enabled": {
                   "type": "boolean",

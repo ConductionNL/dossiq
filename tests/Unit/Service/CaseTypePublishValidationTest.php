@@ -26,10 +26,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks;
+use DateTime;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
+use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeReachability;
+use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
+use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
+use OCA\Dossiq\Service\CaseType\PublicationChecks;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -39,6 +46,9 @@ use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCA\Dossiq\Service\Email\SenderIdentity;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -47,6 +57,8 @@ use Psr\Log\NullLogger;
  * Unit tests for the handling-switch half of CaseTypePublishService::validate().
  *
  * @covers \OCA\Dossiq\Service\CaseTypePublishService
+ * @covers \OCA\Dossiq\Service\CaseType\PublicationChecks
+ * @covers \OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks
  *
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\CaseTypeAcknowledgement
@@ -54,8 +66,42 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\UnreadTriggerService
  * @uses \OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow
+ * @uses   \OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration
+ * @uses   \OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration
+ * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeReachability
+ * @uses   \OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypePublishValidationTest extends TestCase {
+
+	/**
+	 * The day the clock in these tests is stopped on.
+	 *
+	 * @var string
+	 */
+	private const TODAY = '2026-09-16';
+
+	/**
+	 * A clock stopped on a day the assertions can name.
+	 *
+	 * The publish path writes `validFrom` on the new version and `validUntil`
+	 * on the one it replaces, so "today" is part of what these tests check. A
+	 * real clock would make the expected value the same expression as the code
+	 * under test, which is a test that cannot fail.
+	 *
+	 * @return ITimeFactory The clock.
+	 */
+	private function clock(): ITimeFactory {
+		$time = $this->createMock(ITimeFactory::class);
+		$time->method('getDateTime')->willReturn(new DateTime(self::TODAY));
+
+		return $time;
+	}//end clock()
+
 
 	/**
 	 * The rows the resolver reads.
@@ -118,11 +164,23 @@ class CaseTypePublishValidationTest extends TestCase {
 
 		return new CaseTypePublishService(
 			settingsService: $settings,
-			caseTypeResolver: new CaseTypeResolver(store: $store),
 			store: $store,
-			acknowledgement: new CaseTypeAcknowledgement(),
-			unreadTriggers: new UnreadTriggerService(),
-			handling: new CaseTypeHandling(),
+			// A REAL checks object over the SAME store and resolver the
+			// assertions read through. Only the wiring lines moved when the
+			// findings and warnings were split out.
+			checks: new PublicationChecks(
+				caseTypeResolver: new CaseTypeResolver(store: $store),
+				store: $store,
+				declarations: new CaseTypeDeclarationChecks(
+					acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+					admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+					remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
+					handling: new CaseTypeHandling(),
+				),
+				unreadTriggers: new UnreadTriggerService(l10n: new SourceL10n()),
+				reachability: new CaseTypeReachability(),
+				senders: $this->createMock(originalClassName: SenderIdentity::class),
+			),
 			fieldRules: new CaseStateFieldRuleProjector(
 				store: $store,
 				declaration: new StatusFieldRuleDeclaration(),
@@ -132,6 +190,12 @@ class CaseTypePublishValidationTest extends TestCase {
 				logger: new NullLogger(),
 			),
 			fieldRoles: $this->createMock(CaseFieldRoleProjector::class),
+			window: new CaseTypeVersionWindow(
+				settingsService: $settings,
+				store: $store,
+				time: $this->clock(),
+				logger: new NullLogger(),
+			),
 			logger: new NullLogger(),
 		);
 	}//end service()

@@ -29,8 +29,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use GuzzleHttp\Client;
+use OCA\Dossiq\Service\Outbound\OutboundUrlGuard;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Support\SuppressesWarnings;
+use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
+use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -39,31 +42,22 @@ use Psr\Log\LoggerInterface;
  * Provides shared utilities: UUID extraction, URL validation,
  * external URL fetching, OpenRegister lookups, error builders.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ * @SuppressWarnings(PHPMD.TooManyMethods)            The total is the sum of small private steps; each method stays under the method thresholds.
  */
 abstract class ZgwRulesBase {
 	use SearchesObjects;
-	use SuppressesWarnings;
 
 	/**
-	 * RFC1918 + loopback + link-local + cloud-metadata CIDR blocks to deny in
-	 * outbound HTTP requests from fetchExternalUrl (SSRF protection — WF1).
+	 * The sentence of each URL error, around the field name.
 	 *
-	 * Must be kept in sync with NotificatieService::BLOCKED_CIDRS.
-	 *
-	 * @var string[]
+	 * @var array<string, string>
 	 */
-	private const BLOCKED_CIDRS = [
-		'10.0.0.0/8',
-		'172.16.0.0/12',
-		'192.168.0.0/16',
-		'127.0.0.0/8',
-		'169.254.0.0/16',
-		'::1/128',
-		'fc00::/7',
+	private const URL_ERRORS = [
+		'bad-url' => 'De %s URL is ongeldig.',
+		'invalid-resource' => 'De %s URL wijst niet naar een geldig object.',
 	];
 
 	/**
@@ -101,11 +95,29 @@ abstract class ZgwRulesBase {
 	protected ?array $mappingConfig = null;
 
 	/**
+	 * Builds the answers of a rule: valid, refused, and the field a refusal names.
+	 *
+	 * @var ZgwRuleResults
+	 */
+	protected readonly ZgwRuleResults $results;
+
+	/**
+	 * Reads the store for the rules, in the request's context.
+	 *
+	 * A rules class hands this same object to a collaborator it builds, so the
+	 * collaborator reads in the same context without being told it again.
+	 *
+	 * @var ZgwRuleLookups
+	 */
+	protected readonly ZgwRuleLookups $lookups;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger The logger
 	 * @param SettingsService $settingsService The settings service
 	 * @param FieldValidator $fieldValidator The stateless field-format validator
+	 * @param LanguageMapText $text Reads a translatable field of a stored type row as text
 	 *
 	 * @return void
 	 */
@@ -113,7 +125,10 @@ abstract class ZgwRulesBase {
 		protected readonly LoggerInterface $logger,
 		protected readonly SettingsService $settingsService,
 		protected readonly FieldValidator $fieldValidator,
+		protected readonly LanguageMapText $text = new LanguageMapText(),
 	) {
+		$this->results = new ZgwRuleResults(logger: $logger);
+		$this->lookups = new ZgwRuleLookups(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -124,11 +139,12 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function setContext(?object $objectService, ?array $mappingConfig): void {
 		$this->objectService = $objectService;
 		$this->mappingConfig = $mappingConfig;
+		$this->lookups->setContext(objectService: $objectService, mappingConfig: $mappingConfig);
 	}//end setContext()
 
 	/**
@@ -138,15 +154,10 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function isValid(array $body): array {
-		return [
-			'valid' => true,
-			'status' => 200,
-			'detail' => '',
-			'enrichedBody' => $body,
-		];
+		return $this->results->isValid(body: $body);
 	}//end isValid()
 
 	/**
@@ -159,7 +170,7 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array{valid: bool, status: int, detail: string, invalidParams: array, enrichedBody: array}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function error(
 		int $status,
@@ -167,18 +178,7 @@ abstract class ZgwRulesBase {
 		array $invalidParams = [],
 		string $code = '',
 	): array {
-		$result = [
-			'valid' => false,
-			'status' => $status,
-			'detail' => $detail,
-			'invalidParams' => $invalidParams,
-			'enrichedBody' => [],
-		];
-		if ($code !== '') {
-			$result['code'] = $code;
-		}
-
-		return $result;
+		return $this->results->error(status: $status, detail: $detail, invalidParams: $invalidParams, code: $code);
 	}//end error()
 
 	/**
@@ -190,14 +190,10 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array{name: string, code: string, reason: string}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function fieldError(string $fieldName, string $code, string $reason): array {
-		return [
-			'name' => $fieldName,
-			'code' => $code,
-			'reason' => $reason,
-		];
+		return $this->results->fieldError(fieldName: $fieldName, code: $code, reason: $reason);
 	}//end fieldError()
 
 	/**
@@ -207,21 +203,10 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array The validation error result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function fieldImmutableError(string $fieldName): array {
-		$detail = "Het veld {$fieldName} mag niet gewijzigd worden.";
-		return $this->error(
-			status: 400,
-			detail: $detail,
-			invalidParams: [
-				$this->fieldError(
-					fieldName: $fieldName,
-					code: 'wijzigen-niet-toegelaten',
-					reason: $detail
-				),
-			]
-		);
+		return $this->results->fieldImmutableError(fieldName: $fieldName);
 	}//end fieldImmutableError()
 
 	/**
@@ -231,7 +216,7 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return string|null The extracted UUID, or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function extractUuid(string $url): ?string {
 		return $this->fieldValidator->extractUuid($url);
@@ -244,7 +229,7 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return bool True if valid
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function isValidUrl(string $url): bool {
 		return $this->fieldValidator->isValidUrl($url);
@@ -288,26 +273,28 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array|null Validation error, or null if valid
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function validateTypeUrl(string $typeUrl, string $fieldName, string $schemaKey): ?array {
 		$extractedUuid = $this->extractUuid(url: $typeUrl);
 		if ($extractedUuid === null) {
-			return $this->error(
-				status: 400,
-				detail: "De {$fieldName} URL is ongeldig.",
-				invalidParams: [
-					$this->fieldError(
-						fieldName: $fieldName,
-						code: 'bad-url',
-						reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
-					),
-				]
-			);
+			return $this->badTypeUrlError(fieldName: $fieldName);
 		}
 
+		return $this->storedTypeError(type: ['uuid' => $extractedUuid, 'schemaKey' => $schemaKey], fieldName: $fieldName);
+	}//end validateTypeUrl()
+
+	/**
+	 * The error for a type that the store does not hold or holds as a draft, or null when it is published.
+	 *
+	 * @param array{uuid: string, schemaKey: string} $type      The type's UUID and the settings key for its schema
+	 * @param string                                 $fieldName The field name for error reporting
+	 *
+	 * @return array|null Validation error, or null if valid
+	 */
+	private function storedTypeError(array $type, string $fieldName): ?array {
 		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
+		$schema = $this->settingsService->getConfigValue(key: $type['schemaKey']);
 
 		if (empty($register) === true || empty($schema) === true) {
 			return null;
@@ -315,24 +302,51 @@ abstract class ZgwRulesBase {
 
 		try {
 			$typeObject = $this->objectService->find(
-				id: $extractedUuid,
+				id: $type['uuid'],
 				register: $register,
 				schema: $schema
 			);
 		} catch (\Throwable $e) {
-			return $this->error(
-				status: 400,
-				detail: "De {$fieldName} URL is ongeldig.",
-				invalidParams: [
-					$this->fieldError(
-						fieldName: $fieldName,
-						code: 'bad-url',
-						reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
-					),
-				]
-			);
+			return $this->badTypeUrlError(fieldName: $fieldName);
 		}
 
+		return $this->draftTypeError(typeObject: $typeObject, fieldName: $fieldName);
+	}//end storedTypeError()
+
+	/**
+	 * The error for a type URL that is malformed or names no type.
+	 *
+	 * @param string $fieldName The field name for error reporting
+	 *
+	 * @return array The validation error
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function badTypeUrlError(string $fieldName): array {
+		return $this->error(
+			status: 400,
+			detail: "De {$fieldName} URL is ongeldig.",
+			invalidParams: [
+				$this->fieldError(
+					fieldName: $fieldName,
+					code: 'bad-url',
+					reason: "De {$fieldName} URL is ongeldig of wijst niet naar een {$fieldName} resource."
+				),
+			]
+		);
+	}//end badTypeUrlError()
+
+	/**
+	 * The error for a type that is still a draft, or null when it is published.
+	 *
+	 * @param mixed $typeObject The stored type
+	 * @param string $fieldName The field name for error reporting
+	 *
+	 * @return array|null Validation error, or null if published
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function draftTypeError(mixed $typeObject, string $fieldName): ?array {
 		$typeData = $typeObject;
 		if (is_array($typeObject) === false) {
 			$typeData = $typeObject->jsonSerialize();
@@ -354,7 +368,7 @@ abstract class ZgwRulesBase {
 		}
 
 		return null;
-	}//end validateTypeUrl()
+	}//end draftTypeError()
 
 	/**
 	 * Validate an informatieobject URL resolves to an existing document.
@@ -363,44 +377,62 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array|null Validation error, or null if valid
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function validateInformatieobjectUrl(string $ioUrl): ?array {
 		if ($this->isValidUrl(url: $ioUrl) === false) {
-			return $this->error(
-				status: 400,
-				detail: 'De informatieobject URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'informatieobject',
-						code: 'bad-url',
-						reason: 'Ongeldige URL.'
-					),
-				]
-			);
+			return $this->badInformatieobjectUrl(reason: 'Ongeldige URL.');
 		}
 
 		$ioUuid = $this->extractUuid(url: $ioUrl);
 
 		// Brc-003a: If UUID extraction fails, the URL doesn't point to a valid resource.
 		if ($ioUuid === null) {
-			return $this->error(
-				status: 400,
-				detail: 'De informatieobject URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'informatieobject',
-						code: 'bad-url',
-						reason: 'De informatieobject URL bevat geen geldig UUID.'
-					),
-				]
-			);
+			return $this->badInformatieobjectUrl(reason: 'De informatieobject URL bevat geen geldig UUID.');
 		}
 
 		// If we can look up the document in our own register, do so.
 		// If the document is not found locally, that is acceptable — it may
 		// be an external informatieobject managed by another DRC instance.
 		// We only reject when the URL is syntactically invalid (checked above).
+		$this->probeLocalInformatieobject(ioUuid: $ioUuid);
+
+		return null;
+	}//end validateInformatieobjectUrl()
+
+	/**
+	 * The validation error for an informatieobject URL that is not usable.
+	 *
+	 * @param string $reason Why the URL is not usable
+	 *
+	 * @return array Validation error
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function badInformatieobjectUrl(string $reason): array {
+		return $this->error(
+			status: 400,
+			detail: 'De informatieobject URL is ongeldig.',
+			invalidParams: [
+				$this->fieldError(
+					fieldName: 'informatieobject',
+					code: 'bad-url',
+					reason: $reason
+				),
+			]
+		);
+	}//end badInformatieobjectUrl()
+
+	/**
+	 * Look the informatieobject up in the own register; a miss is not an error.
+	 *
+	 * @param string $ioUuid The informatieobject UUID
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function probeLocalInformatieobject(string $ioUuid): void {
 		if ($this->objectService !== null) {
 			$register = $this->mappingConfig['sourceRegister'] ?? '';
 			$docSchema = $this->settingsService->getConfigValue(key: 'document_schema');
@@ -419,9 +451,7 @@ abstract class ZgwRulesBase {
 				}
 			}
 		}
-
-		return null;
-	}//end validateInformatieobjectUrl()
+	}//end probeLocalInformatieobject()
 
 	/**
 	 * Validate an external URL is reachable (basic URL + UUID format check).
@@ -431,23 +461,57 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array|null Validation error, or null if valid
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function validateExternalUrl(string $url, string $fieldName): ?array {
 		if ($this->isValidUrl(url: $url) === false) {
-			return $this->error(
-				status: 400,
-				detail: "De {$fieldName} URL is ongeldig.",
-				invalidParams: [
-					$this->fieldError(
-						fieldName: $fieldName,
-						code: 'bad-url',
-						reason: "De {$fieldName} URL is ongeldig."
-					),
-				]
-			);
+			return $this->urlError(fieldName: $fieldName, code: 'bad-url');
 		}
 
+		$lastSegment = $this->lastPathSegment(url: $url);
+
+		if ($this->fieldValidator->isUuid($lastSegment) === false) {
+			return $this->urlError(fieldName: $fieldName, code: 'invalid-resource');
+		}
+
+		return null;
+	}//end validateExternalUrl()
+
+	/**
+	 * The validation error for a URL field, with the same sentence as detail and reason.
+	 *
+	 * @param string $fieldName The field name for error reporting
+	 * @param string $code The error code, one of URL_ERRORS' keys
+	 *
+	 * @return array Validation error
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function urlError(string $fieldName, string $code): array {
+		$message = sprintf(self::URL_ERRORS[$code], $fieldName);
+		return $this->error(
+			status: 400,
+			detail: $message,
+			invalidParams: [
+				$this->fieldError(
+					fieldName: $fieldName,
+					code: $code,
+					reason: $message
+				),
+			]
+		);
+	}//end urlError()
+
+	/**
+	 * The last segment of a URL's path, or an empty string.
+	 *
+	 * @param string $url The URL
+	 *
+	 * @return string The last path segment
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function lastPathSegment(string $url): string {
 		$path = parse_url($url, PHP_URL_PATH) ?? '';
 		$segments = array_filter(explode('/', $path));
 		$lastSegment = end($segments);
@@ -455,208 +519,127 @@ abstract class ZgwRulesBase {
 			$lastSegment = '';
 		}
 
-		if ($this->fieldValidator->isUuid($lastSegment) === false) {
-			return $this->error(
-				status: 400,
-				detail: "De {$fieldName} URL wijst niet naar een geldig object.",
-				invalidParams: [
-					$this->fieldError(
-						fieldName: $fieldName,
-						code: 'invalid-resource',
-						reason: "De {$fieldName} URL wijst niet naar een geldig object."
-					),
-				]
-			);
-		}
-
-		return null;
-	}//end validateExternalUrl()
+		return $lastSegment;
+	}//end lastPathSegment()
 
 	/**
 	 * Fetch data from an external URL (selectielijst, resultaattypeomschrijving).
 	 *
-	 * WF1 fix: added SSRF guard (rejects RFC1918/loopback/link-local/cloud-metadata
-	 * addresses), TLS verification enabled (verify => true), and redirect following
-	 * disabled (allow_redirects => false) to prevent redirect-based bypasses.
+	 * The URL comes from a request body, so {@see OutboundUrlGuard} resolves it
+	 * first: https only, no address inside the instance's own network. The
+	 * request then goes to the address that was inspected, follows no redirect
+	 * and verifies TLS.
 	 *
 	 * @param string $url The URL to fetch
 	 *
 	 * @return array|null The JSON response data, or null on failure
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function fetchExternalUrl(string $url): ?array {
-		// WF1: SSRF guard — reject private/loopback/cloud-metadata URLs before
-		// establishing any outbound connection.
-		if ($this->isSafeExternalUrl(url: $url) === false) {
-			$this->logger->warning(
-				'fetchExternalUrl blocked: URL failed SSRF safety check',
-				['url' => substr($url, 0, 200)]
-			);
+		$guard = $this->outboundGuard();
+		$address = $this->safeAddress(guard: $guard, url: $url);
+		if ($address === null) {
 			return null;
 		}
 
 		try {
-			$client = new Client(
-				[
-					'timeout' => 10,
-					'verify' => true,
-					'allow_redirects' => false,
-				]
-			);
-			$response = $client->get($url);
-			$data = json_decode((string)$response->getBody(), true);
-			if (is_array($data) === false) {
-				return null;
-			}
-
-			return $data;
+			$body = $this->fetchBody(guard: $guard, url: $url, address: $address);
+			return $this->jsonArray(body: $body);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Failed to fetch external URL: ' . $e->getMessage(),
-				['url' => $url]
-			);
+			$this->logger->warning('Failed to fetch external URL: ' . $e->getMessage(), ['url' => $url]);
 			return null;
 		}//end try
 	}//end fetchExternalUrl()
 
 	/**
-	 * Validate that a URL is safe for outbound fetching (SSRF guard).
+	 * The public address a URL resolves to, or null (logged) when it fails the SSRF check.
 	 *
-	 * Requires http or https scheme and verifies that the hostname resolves
-	 * only to public IP addresses — rejects RFC1918, loopback, link-local,
-	 * and cloud-metadata addresses (169.254.169.254).
+	 * @param OutboundUrlGuard $guard The outbound guard.
+	 * @param string           $url   The URL to fetch
 	 *
-	 * Returns false (fail-closed) when the URL is unparseable, the hostname
-	 * resolves to no records, or any resolved address falls in a blocked CIDR.
+	 * @return string|null The address to connect to, or null when blocked.
 	 *
-	 * @param string $url The URL to validate
-	 *
-	 * @return bool True if the URL is safe for outbound fetching
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function isSafeExternalUrl(string $url): bool {
-		$parsed = parse_url($url);
-		$scheme = strtolower($parsed['scheme'] ?? '');
-
-		if (in_array($scheme, ['http', 'https'], true) === false) {
-			return false;
-		}
-
-		$host = $parsed['host'] ?? '';
-		if ($host === '') {
-			return false;
-		}
-
-		// Resolve all A/AAAA records and block private ranges.
-		$records = $this->withoutWarnings(
-			operation: static function () use ($host): mixed {
-				return dns_get_record($host, (DNS_A | DNS_AAAA));
-			}
-		);
-		if ($records === false || count($records) === 0) {
+	private function safeAddress(OutboundUrlGuard $guard, string $url): ?string {
+		$address = $guard->publicAddress(url: $url);
+		if ($address === null) {
 			$this->logger->warning(
-				'fetchExternalUrl SSRF: DNS resolution returned no records',
-				['host' => $host, 'detail' => $this->lastSuppressedWarning()]
+				'fetchExternalUrl blocked: URL failed SSRF safety check',
+				['url' => substr($url, 0, 200)]
 			);
-			return false;
 		}
 
-		foreach ($records as $record) {
-			$ipAddress = $record['ip'] ?? ($record['ipv6'] ?? null);
-			if ($ipAddress === null) {
-				continue;
-			}
-
-			foreach (self::BLOCKED_CIDRS as $cidr) {
-				if ($this->ipInCidr(ipAddress: $ipAddress, cidr: $cidr) === true) {
-					$this->logger->warning(
-						'fetchExternalUrl SSRF: host resolves to private/loopback address',
-						['host' => $host, 'ip' => $ipAddress, 'cidr' => $cidr]
-					);
-					return false;
-				}
-			}
-		}
-
-		return true;
-	}//end isSafeExternalUrl()
+		return $address;
+	}//end safeAddress()
 
 	/**
-	 * Check if an IP address falls within a CIDR range (IPv4 and IPv6).
+	 * GET the URL from the inspected address.
 	 *
-	 * @param string $ipAddress The IP address to test
-	 * @param string $cidr The CIDR block (e.g. '10.0.0.0/8')
+	 * @param OutboundUrlGuard $guard   The outbound guard.
+	 * @param string           $url     The URL to fetch
+	 * @param string           $address The inspected address.
 	 *
-	 * @return bool True if the IP is within the range
+	 * @return string The response body.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function ipInCidr(string $ipAddress, string $cidr): bool {
-		$isIpv6Cidr = str_contains($cidr, ':');
-		$isIpv6Ip = str_contains($ipAddress, ':');
-
-		if ($isIpv6Cidr === true && $isIpv6Ip === true) {
-			return $this->ipv6InCidr(ipAddress: $ipAddress, cidr: $cidr);
-		}
-
-		if ($isIpv6Cidr === false && $isIpv6Ip === false) {
-			return $this->ipv4InCidr(ipAddress: $ipAddress, cidr: $cidr);
-		}
-
-		// Mixed IPv4/IPv6 — not in range.
-		return false;
-	}//end ipInCidr()
+	private function fetchBody(OutboundUrlGuard $guard, string $url, string $address): string {
+		return $this->httpGet(
+			url: $url,
+			options: (['timeout' => 10] + $guard->requestOptions(url: $url, address: $address))
+		);
+	}//end fetchBody()
 
 	/**
-	 * Check if an IPv6 address falls within an IPv6 CIDR range.
+	 * The body decoded as a JSON object or list, or null when it is neither.
 	 *
-	 * @param string $ipAddress The IPv6 address to test
-	 * @param string $cidr The IPv6 CIDR block (e.g. 'fc00::/7')
+	 * @param string $body The response body.
 	 *
-	 * @return bool True if the IP is within the range
+	 * @return array|null The decoded data.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function ipv6InCidr(string $ipAddress, string $cidr): bool {
-		[$network, $prefix] = explode('/', $cidr);
-		$prefixLen = (int)$prefix;
-		$networkBin = inet_pton($network);
-		$ipBin = inet_pton($ipAddress);
-		if ($networkBin === false || $ipBin === false) {
-			return false;
+	private function jsonArray(string $body): ?array {
+		$data = json_decode($body, true);
+		if (is_array($data) === false) {
+			return null;
 		}
 
-		$bytes = (int)ceil($prefixLen / 8);
-		$mask = str_repeat("\xff", intdiv($prefixLen, 8));
-		$remain = $prefixLen % 8;
-		if ($remain > 0) {
-			$mask .= chr(0xff & (0xff << (8 - $remain)));
-		}
-
-		$mask = str_pad($mask, 16, "\x00");
-		return (substr($ipBin, 0, $bytes) & $mask) === (substr($networkBin, 0, $bytes) & $mask);
-	}//end ipv6InCidr()
+		return $data;
+	}//end jsonArray()
 
 	/**
-	 * Check if an IPv4 address falls within an IPv4 CIDR range.
+	 * The guard every outbound fetch of a rules class goes through.
 	 *
-	 * @param string $ipAddress The IPv4 address to test
-	 * @param string $cidr The IPv4 CIDR block (e.g. '10.0.0.0/8')
+	 * Built here, not injected: a rules class is constructed in a dozen places
+	 * from the same three collaborators, and the guard needs only the logger.
 	 *
-	 * @return bool True if the IP is within the range
+	 * @return OutboundUrlGuard
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function ipv4InCidr(string $ipAddress, string $cidr): bool {
-		[$network, $prefix] = explode('/', $cidr);
-		$prefixLen = (int)$prefix;
-		$mask = 0;
-		if ($prefixLen !== 0) {
-			$mask = (~0 << (32 - $prefixLen));
-		}
+	protected function outboundGuard(): OutboundUrlGuard {
+		return new OutboundUrlGuard(logger: $this->logger);
+	}//end outboundGuard()
 
-		$networkLong = ip2long($network);
-		$ipLong = ip2long($ipAddress);
-		if ($networkLong === false || $ipLong === false) {
-			return false;
-		}
-
-		return ($ipLong & $mask) === ($networkLong & $mask);
-	}//end ipv4InCidr()
+	/**
+	 * Make the GET request of an outbound fetch.
+	 *
+	 * Its own method so a test can see the options a fetch connects with:
+	 * Guzzle is Nextcloud's, and is not there when the unit tests run.
+	 *
+	 * @param string $url The URL the guard approved.
+	 * @param array<string, mixed> $options The request options, the guard's included.
+	 *
+	 * @return string The response body.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	protected function httpGet(string $url, array $options): string {
+		return (string)(new Client())->get($url, $options)->getBody();
+	}//end httpGet()
 
 	/**
 	 * Generate a unique identificatie string.
@@ -665,7 +648,7 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return string A unique identifier
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function generateIdentificatie(string $prefix): string {
 		$timestamp = strtoupper(base_convert((string)time(), 10, 36));
@@ -684,7 +667,7 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return string|null The object UUID, or null if not found
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function findObjectByField(
 		string $register,
@@ -692,33 +675,7 @@ abstract class ZgwRulesBase {
 		string $field,
 		string $value,
 	): ?string {
-		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: [$field => $value, '_limit' => 1],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-
-			$results = $result['results'] ?? [];
-			if (empty($results) === true) {
-				return null;
-			}
-
-			$obj = $results[0];
-			$data = $obj;
-			if (is_array($obj) === false) {
-				$data = $obj->jsonSerialize();
-			}
-
-			return $data['id'] ?? ($data['@self']['id'] ?? null);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Reference resolution failed: ' . $e->getMessage(),
-				['field' => $field, 'value' => $value]
-			);
-			return null;
-		}//end try
+		return $this->lookups->findObjectByField(register: $register, schema: $schema, field: $field, value: $value);
 	}//end findObjectByField()
 
 	/**
@@ -731,7 +688,7 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array<string> Array of matching object UUIDs
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function findAllObjectsByField(
 		string $register,
@@ -739,36 +696,24 @@ abstract class ZgwRulesBase {
 		string $field,
 		string $value,
 	): array {
-		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: [$field => $value, '_limit' => 100],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-
-			$ids = [];
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$id = $data['id'] ?? ($data['@self']['id'] ?? null);
-				if ($id !== null) {
-					$ids[] = $id;
-				}
-			}
-
-			return $ids;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Reference resolution failed: ' . $e->getMessage(),
-				['field' => $field, 'value' => $value]
-			);
-			return [];
-		}//end try
+		return $this->lookups->findAllObjectsByField(register: $register, schema: $schema, field: $field, value: $value);
 	}//end findAllObjectsByField()
+
+	/**
+	 * A translatable field of a stored type row as text.
+	 *
+	 * Type names and titles are declared translatable, so a row read from the
+	 * store carries them as a language map rather than a string.
+	 *
+	 * @param mixed $value A string or a language map.
+	 *
+	 * @return string The text, or '' when there is none.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	protected function textOf(mixed $value): string {
+		return $this->text->textOf(value: $value);
+	}//end textOf()
 
 	/**
 	 * Look up an object in OpenRegister by UUID and schema key.
@@ -778,34 +723,10 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array|null The object data, or null on failure
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function findBySchemaKey(string $uuid, string $schemaKey): ?array {
-		if ($this->objectService === null) {
-			return null;
-		}
-
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		try {
-			$obj = $this->objectService->find(
-				id: $uuid,
-				register: $register,
-				schema: $schema
-			);
-			if (is_array($obj) === true) {
-				return $obj;
-			}
-
-			return $obj->jsonSerialize();
-		} catch (\Throwable $e) {
-			return null;
-		}
+		return $this->lookups->findBySchemaKey(uuid: $uuid, schemaKey: $schemaKey);
 	}//end findBySchemaKey()
 
 	/**
@@ -819,9 +740,7 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array|null Validation error if duplicate found, null if unique
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function checkFieldUniqueness(
 		string $field1Value,
@@ -830,84 +749,37 @@ abstract class ZgwRulesBase {
 		string $field2Search,
 		string $errorField,
 	): ?array {
-		if ($field1Value === '' || $this->objectService === null) {
+		$taken = $this->lookups->fieldPairExists(
+			field1Value: $field1Value,
+			field1Search: $field1Search,
+			field2Value: $field2Value,
+			field2Search: $field2Search
+		);
+		if ($taken === false) {
 			return null;
 		}
 
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->mappingConfig['sourceSchema'] ?? '';
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		try {
-			// Build query directly to avoid buildSearchQuery's underscore-splitting
-			// which breaks camelCase field names like sourceOrganisation.
-			// Search only by field1 (identifier) because OpenRegister may store
-			// numeric strings (e.g. "000000000") as integers, which breaks
-			// exact-match search for field2 (sourceOrganisation).
-			$query = [
-				'@self' => [
-					'register' => (int)$register,
-					'schema' => (int)$schema,
-				],
-				$field1Search => $field1Value,
-			];
-
-			$result = $this->objectService->searchObjectsPaginated(
-				query: $query,
-				_rbac: false,
-				_multitenancy: false
-			);
-
-			// Post-filter results by field2 value in memory, comparing both
-			// string and numeric forms to handle integer coercion by OpenRegister.
-			// OpenRegister may store numeric-looking strings (e.g. "000000000")
-			// as integer 0, which the magic mapper may serialize to empty string.
-			// When the stored value is empty but field2 was provided, we still
-			// count it as a match (conservative: assume coercion happened).
-			$matchCount = 0;
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$storedVal = $data[$field2Search] ?? null;
-				$storedStr = (string)$storedVal;
-				$compareStr = (string)$field2Value;
-
-				// Match when: no field2 filter, or values match directly,
-				// or stored is empty/0 (likely coerced from numeric string).
-				$isMatch = ($field2Value === '')
-					|| ($storedStr === $compareStr)
-					|| ($storedStr === '')
-					|| ($storedStr === '0' && preg_match('/^0+$/', $field2Value) === 1);
-
-				if ($isMatch === true) {
-					$matchCount++;
-				}
-			}//end foreach
-
-			if ($matchCount > 0) {
-				return $this->error(
-					status: 400,
-					detail: 'De combinatie is niet uniek.',
-					invalidParams: [
-						$this->fieldError(
-							fieldName: $errorField,
-							code: 'identificatie-niet-uniek',
-							reason: 'De combinatie bestaat al.'
-						),
-					]
-				);
-			}
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Uniqueness check failed: ' . $e->getMessage()
-			);
-		}//end try
-
-		return null;
+		return $this->notUniqueError(errorField: $errorField);
 	}//end checkFieldUniqueness()
+
+	/**
+	 * The validation error for a field combination that already exists.
+	 *
+	 * @param string $errorField Field name for error reporting
+	 *
+	 * @return array Validation error
+	 */
+	private function notUniqueError(string $errorField): array {
+		return $this->error(
+			status: 400,
+			detail: 'De combinatie is niet uniek.',
+			invalidParams: [
+				$this->fieldError(
+					fieldName: $errorField,
+					code: 'identificatie-niet-uniek',
+					reason: 'De combinatie bestaat al.'
+				),
+			]
+		);
+	}//end notUniqueError()
 }//end class

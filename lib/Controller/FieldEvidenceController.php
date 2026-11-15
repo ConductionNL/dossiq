@@ -1,0 +1,372 @@
+<?php
+
+/**
+ * What an inspector captured in the field, reaching the record.
+ *
+ * `EvidenceMetadataService` has validated and enriched field-evidence metadata
+ * since mobiel-inspectie-offline shipped, and `TranscriptionService` has queued
+ * voice memos for transcription just as long. NOTHING CALLED EITHER. There was
+ * no endpoint a device could post a capture to, so a photo or a voice memo
+ * taken at a site reached nobody, and the `fieldEvidence` admin page a sibling
+ * change shipped reads a schema no writer has ever touched.
+ *
+ * 🔴 THE GUARD IS ON THE CASE THE INSPECTION BELONGS TO. A `fieldInspection`
+ * names its `caseRef`, so the ordinary per-case rule applies here exactly as it
+ * does on the checklist beside it. `#[NoAdminRequired]` with no per-object
+ * guard is an IDOR, and this one would let anybody file evidence against
+ * somebody else's inspection, which is the worst possible place for it: the
+ * record is chain-of-evidence for an enforcement decision.
+ *
+ * 🔴 THE FALLBACK POSITION IS THE INSPECTION'S OWN, NOT THE CASE ADDRESS.
+ * `EvidenceMetadataService::classifyGps()` names its fallback `caseAddress`,
+ * and no case record carries coordinates: the address seam is exactly what
+ * leaves `CaseAreaResolver` dark. A `fieldInspection` DOES carry `gpsLocation`,
+ * recorded when the inspector arrived, and it is both nearer to the truth and
+ * a record that exists. When the inspection has none either, the capture is
+ * stored with no location at all rather than one somebody invented.
+ *
+ * @category Controller
+ * @package  OCA\Dossiq\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Controller;
+
+use InvalidArgumentException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\EvidenceMetadataServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TranscriptionServiceInterface;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IRequest;
+use OCP\IUser;
+use OCP\IUserSession;
+
+/**
+ * Take one capture from a device and put it on the inspection.
+ *
+ * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+ */
+class FieldEvidenceController extends Controller {
+	use SearchesObjects;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest                $request       The request.
+	 * @param EvidenceMetadataServiceInterface $metadata      Validates the capture and builds the record.
+	 * @param TranscriptionServiceInterface    $transcription Queues a voice memo to be transcribed.
+	 * @param SettingsServiceInterface         $settings      Register and schema resolution.
+	 * @param CaseAccessGuardInterface         $accessGuard   Per-case authorization, failing closed.
+	 * @param IUserSession            $userSession   The session.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	public function __construct(
+		IRequest $request,
+		private readonly EvidenceMetadataServiceInterface $metadata,
+		private readonly TranscriptionServiceInterface $transcription,
+		private readonly SettingsServiceInterface $settings,
+		private readonly CaseAccessGuardInterface $accessGuard,
+		private readonly IUserSession $userSession,
+	) {
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+	}//end __construct()
+
+	/**
+	 * File one piece of evidence against an inspection.
+	 *
+	 * @param string $inspectionRef UUID of the fieldInspection.
+	 *
+	 * @return JSONResponse The stored record, or the refusal.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	#[NoAdminRequired]
+	public function capture(string $inspectionRef): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$run = $this->evidenceScope(inspectionRef: $inspectionRef);
+		if ($run === null) {
+			return $this->unconfigured();
+		}
+
+		$inspection = $this->inspectionOf(run: $run);
+
+		// An inspection nobody can find and one on somebody else's case get the
+		// SAME answer. Distinguishing them tells an outsider which inspection
+		// ids exist.
+		if ($this->mayCapture(inspection: $inspection, caseId: trim((string)($inspection['caseRef'] ?? '')), user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $this->fileEvidence(run: $run, inspection: $inspection);
+	}//end capture()
+
+	/**
+	 * The 503 for an instance that has not imported the offline register.
+	 *
+	 * 503 and not 500: the instance has not finished importing the offline
+	 * register. That is an operator's job and a temporary state, and telling a
+	 * device it made a bad request would have it discard a capture it cannot
+	 * take again.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function unconfigured(): JSONResponse {
+		return new JSONResponse(
+			['error' => 'The field inspection register is not configured on this instance.'],
+			Http::STATUS_SERVICE_UNAVAILABLE,
+		);
+	}//end unconfigured()
+
+	/**
+	 * The inspection the capture names, or null when nobody can find it.
+	 *
+	 * @param EvidenceCaptureRun $run The capture.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function inspectionOf(EvidenceCaptureRun $run): ?array {
+		return $this->findObjectAsArray(
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->inspectionSchema,
+			id: $run->inspectionRef,
+		);
+	}//end inspectionOf()
+
+	/**
+	 * Build the evidence from the request and store it on the inspection.
+	 *
+	 * @param EvidenceCaptureRun   $run        The capture.
+	 * @param array<string, mixed> $inspection The inspection, which the caller may add to.
+	 *
+	 * @return JSONResponse The stored record, or why it was not stored.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function fileEvidence(EvidenceCaptureRun $run, array $inspection): JSONResponse {
+		try {
+			$payload = $this->metadata->buildEvidencePayload(
+				inspectionRef: $run->inspectionRef,
+				type: $this->capturedType(),
+				extra: $this->capturedExtra(),
+				caseAddress: $this->fallbackPositionOf(inspection: $inspection),
+				gpsReading: $this->capturedReading(),
+			);
+		} catch (InvalidArgumentException $e) {
+			// The service's own sentence. A photo over the compression target
+			// and a memo over five minutes are different things to fix, and one
+			// message over both helps neither.
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		return $this->storeEvidence(run: $run, payload: $payload);
+	}//end fileEvidence()
+
+	/**
+	 * Write the evidence, and queue a spoken memo for transcription.
+	 *
+	 * @param EvidenceCaptureRun   $run     The capture.
+	 * @param array<string, mixed> $payload The evidence record.
+	 *
+	 * @return JSONResponse The record as the device should see it, or a 500.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function storeEvidence(EvidenceCaptureRun $run, array $payload): JSONResponse {
+		$stored = $this->saveObjectAsArray(
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->evidenceSchema,
+			object: $payload,
+		);
+		if ($stored === null) {
+			return new JSONResponse(['error' => 'The evidence could not be stored.'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new JSONResponse($this->queueTranscriptionIfSpoken(stored: $stored));
+	}//end storeEvidence()
+
+	/**
+	 * The object service and the three ids evidence is written against, for one inspection.
+	 *
+	 * @param string $inspectionRef The inspection the capture names.
+	 *
+	 * @return EvidenceCaptureRun|null The capture, or null when the offline
+	 *                                 register has not been imported on this instance.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function evidenceScope(string $inspectionRef): ?EvidenceCaptureRun {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue('register');
+		$evidenceSchema = $this->settings->getConfigValue('field_evidence_schema');
+		$inspectionSchema = $this->settings->getConfigValue('field_inspection_schema');
+
+		if ($objectService === null || $register === '' || $evidenceSchema === '' || $inspectionSchema === '') {
+			return null;
+		}
+
+		$run = new EvidenceCaptureRun();
+		$run->objectService = $objectService;
+		$run->register = $register;
+		$run->evidenceSchema = $evidenceSchema;
+		$run->inspectionSchema = $inspectionSchema;
+		$run->inspectionRef = $inspectionRef;
+		return $run;
+	}//end evidenceScope()
+
+	/**
+	 * Whether this caller may add evidence to this inspection.
+	 *
+	 * An inspection nobody can find and one on somebody else's case get the
+	 * SAME answer. Distinguishing them tells an outsider which inspection ids
+	 * exist.
+	 *
+	 * @param array<string, mixed>|null $inspection The inspection, or null.
+	 * @param string                    $caseId     The case it names.
+	 * @param IUser                     $user       The caller.
+	 *
+	 * @return bool True when the capture may be written.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function mayCapture(?array $inspection, string $caseId, IUser $user): bool {
+		if ($inspection === null || $caseId === '') {
+			return false;
+		}
+
+		return $this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user);
+	}//end mayCapture()
+
+	/**
+	 * Queue a voice memo to be transcribed, and leave anything else alone.
+	 *
+	 * The duration travels on the stored record because `TranscriptionService`
+	 * reads it there to refuse a memo over the limit, and it is declared on the
+	 * schema for the same reason: an undeclared key is dropped in silence, and
+	 * a limit read off a key that is never stored is a limit nothing enforces.
+	 *
+	 * @param array<string, mixed> $stored The stored evidence record.
+	 *
+	 * @return array<string, mixed> The record as the device should see it.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
+	 */
+	private function queueTranscriptionIfSpoken(array $stored): array {
+		if (($stored['type'] ?? '') !== 'voice_memo') {
+			return $stored;
+		}
+
+		try {
+			return $this->transcription->queue(evidence: $stored);
+		} catch (InvalidArgumentException $e) {
+			// THE CAPTURE IS ALREADY STORED, AND IT STAYS STORED. A memo too
+			// long to transcribe automatically is still evidence somebody
+			// recorded at a site, and losing it because a machine cannot read
+			// it aloud is the wrong trade. It is answered with the reason, and
+			// somebody types the transcription.
+			$stored['transcriptionStatus'] = TranscriptionServiceInterface::STATUS_FALLBACK;
+			$stored['transcriptionNote'] = $e->getMessage();
+
+			return $stored;
+		}
+	}//end queueTranscriptionIfSpoken()
+
+	/**
+	 * What kind of evidence this is.
+	 *
+	 * Not validated against the enum here: the schema declares it and
+	 * OpenRegister refuses an undeclared value, so a second copy of the list
+	 * would be one more place for the two to drift apart.
+	 *
+	 * @return string The declared type.
+	 */
+	private function capturedType(): string {
+		return trim((string)$this->request->getParam('type', ''));
+	}//end capturedType()
+
+	/**
+	 * Everything the device sent beside the type and the reading.
+	 *
+	 * @return array<string, mixed> The extra fields.
+	 */
+	private function capturedExtra(): array {
+		$extra = [];
+		foreach (['localBlobRef', 'capturedAt', 'sensitivityLevel', 'byteSize', 'durationSeconds'] as $key) {
+			$value = $this->request->getParam($key);
+			if ($value !== null) {
+				$extra[$key] = $value;
+			}
+		}
+
+		$tags = $this->request->getParam('tags');
+		if (is_array($tags) === true) {
+			$extra['tags'] = $tags;
+		}
+
+		return $extra;
+	}//end capturedExtra()
+
+	/**
+	 * The sensor reading the device took, or null when it had no fix.
+	 *
+	 * @return array<string, mixed>|null The reading.
+	 */
+	private function capturedReading(): ?array {
+		$reading = $this->request->getParam('gpsLocation');
+		if (is_array($reading) === false) {
+			return null;
+		}
+
+		return $reading;
+	}//end capturedReading()
+
+	/**
+	 * Where to say the capture happened when the device had no fix.
+	 *
+	 * @param array<string, mixed> $inspection The inspection record.
+	 *
+	 * @return array<string, mixed>|null The inspection's own position, or null.
+	 */
+	private function fallbackPositionOf(array $inspection): ?array {
+		$position = ($inspection['gpsLocation'] ?? null);
+		if (is_array($position) === false || isset($position['lat']) === false) {
+			return null;
+		}
+
+		return $position;
+	}//end fallbackPositionOf()
+}//end class

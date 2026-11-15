@@ -1,9 +1,12 @@
-const path = require('path')
-const fs = require('fs')
-const webpack = require('webpack')
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
 const webpackConfig = require('@nextcloud/webpack-vue-config')
+const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
-const { readAppVersion } = require('./scripts/appVersion.js')
+const webpack = require('webpack')
+const { appVersionDefinition } = require('./scripts/appVersion.js')
 
 const buildMode = process.env.NODE_ENV
 const isDev = buildMode === 'development'
@@ -28,95 +31,37 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'settings.js'),
 		filename: appId + '-settings.js',
 	},
-	emailSettings: {
-		import: path.join(__dirname, 'src', 'emailSettings.js'),
-		filename: appId + '-email-settings.js',
-	},
-	personalSettings: {
-		import: path.join(__dirname, 'src', 'personalSettings.js'),
-		filename: appId + '-personal-settings.js',
-	},
-	casesOverviewWidget: {
-		import: path.join(__dirname, 'src', 'casesOverviewWidget.js'),
-		filename: appId + '-casesOverviewWidget.js',
-	},
-	overdueCasesWidget: {
-		import: path.join(__dirname, 'src', 'overdueCasesWidget.js'),
-		filename: appId + '-overdueCasesWidget.js',
-	},
-	myTasksWidget: {
-		import: path.join(__dirname, 'src', 'myTasksWidget.js'),
-		filename: appId + '-myTasksWidget.js',
-	},
-	deadlineAlertsWidget: {
-		import: path.join(__dirname, 'src', 'deadlineAlertsWidget.js'),
-		filename: appId + '-deadlineAlertsWidget.js',
-	},
-	taskRemindersWidget: {
-		import: path.join(__dirname, 'src', 'taskRemindersWidget.js'),
-		filename: appId + '-taskRemindersWidget.js',
-	},
-	stalledCasesWidget: {
-		import: path.join(__dirname, 'src', 'stalledCasesWidget.js'),
-		filename: appId + '-stalledCasesWidget.js',
-	},
-	startCaseWidget: {
-		import: path.join(__dirname, 'src', 'startCaseWidget.js'),
-		filename: appId + '-startCaseWidget.js',
+	dashboardWidgets: {
+		import: path.join(__dirname, 'src', 'dashboardWidgets.js'),
+		filename: appId + '-dashboardWidgets.js',
 	},
 }
 
-// USE_LOCAL_LIB is opt-IN (ADR-090). It used to be opt-OUT — unset, which is its
-// normal state, meant "build from whatever sibling checkout happens to be on
-// disk". That is the wrong default for a build that can ship, and here it was
-// not theoretical: with the sibling present this config failed to build at all
-// with
-//   Module not found: Error: Can't resolve 'stream' in '.../node_modules/sax/lib'
-// because compiling the sibling's SOURCE also drags in the sibling's own
-// dependency graph, which needs node core polyfills this app does not configure.
-// The same command with USE_LOCAL_LIB=false succeeds.
+// @conduction/nextcloud-vue resolves normally from node_modules. To build
+// against a local checkout instead, `npm i ../nextcloud-vue/` (npm symlinks
+// it in) and run its own build there.
 //
-// LOCAL_LIB_PATH still repoints the alias at another checkout of the library's
-// `src` (e.g. a worktree on a feature branch), so a library change can be built
-// and tested here without touching the shared sibling checkout.
-//
-// The sibling must satisfy this app's own declared range, and the check fails
-// CLOSED: if it cannot run, the sibling is refused rather than trusted.
-const localLib = process.env.LOCAL_LIB_PATH
-	? path.resolve(process.env.LOCAL_LIB_PATH)
-	: path.resolve(__dirname, '../nextcloud-vue/src')
-const localLibPkg = path.resolve(localLib, '../package.json')
-let useLocalLib = process.env.USE_LOCAL_LIB === 'true' && fs.existsSync(localLib)
-if (useLocalLib) {
-	let localVersion = 'unreadable'
-	let satisfied = false
-	try {
-		// eslint-disable-next-line n/no-extraneous-require
-		const semver = require('semver')
-		const required =
-			require('./package.json').dependencies['@conduction/nextcloud-vue']
-		localVersion = String(
-			JSON.parse(fs.readFileSync(localLibPkg, 'utf8')).version || '',
-		)
-		satisfied = semver.satisfies(localVersion, required, {
-			includePrerelease: true,
-		})
-	} catch (e) {
-		satisfied = false
-	}
-
-	if (!satisfied) {
-		// eslint-disable-next-line no-console
-		console.warn(
-			`[dossiq] IGNORING sibling @conduction/nextcloud-vue@${localVersion} — `
-				+ "it does not satisfy this app's declared range. Building against the npm dist.",
-		)
-		useLocalLib = false
-	}
-}
-
+// This deliberately departs from company ADR-090 decisions 3–4 (an opt-in
+// `USE_LOCAL_LIB` with a version guard here). Which library you build against
+// is decided by the dependency itself, the pinned version or the local install,
+// which is visible in package.json and the lockfile. A shell variable is not,
+// does not work the same in every shell, and needed a version check only
+// because webpack was picking the source instead of npm. That check was itself
+// the bigger problem: a local checkout ahead of the release often still carries
+// the released version number, so the check refused it and had to be patched
+// out for every session of local library work.
 webpackConfig.resolve = {
 	extensions: ['.vue', '.js'],
+	// Resolve the symlinked local checkout from its place INSIDE this app's
+	// node_modules, not its real path. Needed because the library's dist
+	// VENDORS @nextcloud/dialogs and imports it by relative path, which the
+	// `@nextcloud/dialogs$` alias below cannot intercept — so that copy's bare
+	// `@nextcloud/files` request resolves in the lib's own tree, and the
+	// `buffer` polyfill it ends up needing is then searched for by walking up
+	// from `../nextcloud-vue/`, escaping to `/` past the copy this app has
+	// installed. Keeping the symlinked path gives npm-link semantics: the lib's
+	// deps win, ours are the fallback. No effect when nothing is symlinked.
+	symlinks: false,
 	// @nextcloud/dialogs v6's FilePicker chunk imports node's 'path' module
 	// (webpack 5 no longer auto-polyfills node core modules). The FilePicker
 	// UI is not used by this app; stub it out rather than shipping a real
@@ -126,23 +71,22 @@ webpackConfig.resolve = {
 	},
 	alias: {
 		'@': path.resolve(__dirname, 'src'),
-		...(useLocalLib ? { '@conduction/nextcloud-vue': localLib } : {}),
-		// Deduplicate shared packages so the aliased library source uses
-		// the same instances as the app (prevents dual-Pinia / dual-Vue bugs).
+		// Deduplicate shared packages so a symlinked local nextcloud-vue
+		// checkout uses the same instances as the app (prevents dual-Pinia /
+		// dual-Vue bugs).
 		// VUE 3 STAGING (ADR-066): route the runtime `vue` import to @vue/compat
 		// (MODE 2) so the un-migrated Vue-2 template syntax stays correct during
 		// the straddle. vue-loader still finds the real compiler via vue/compiler-sfc.
 		// PURE VUE 3 (ADR-066 task 6.1 — @vue/compat removed): point at the real
-		// Vue 3 runtime, one ABSOLUTE file so dossiq + the aliased lib source share
-		// one copy (dual-copy = two currentRenderingInstance states → CnAppRoot null
-		// crash). The lib + dossiq source are now compat-construct-free, so no
-		// @vue/compat runtime/compiler is needed.
+		// Vue 3 runtime, one ABSOLUTE file so dossiq + a symlinked lib share one
+		// copy (dual-copy = two currentRenderingInstance states → CnAppRoot null
+		// crash).
 		vue$: path.resolve(
 			__dirname,
 			'node_modules/vue/dist/vue.runtime.esm-bundler.js',
 		),
 		pinia$: path.resolve(__dirname, 'node_modules/pinia'),
-		// Dedupe vue-router to ONE copy (absolute file): the aliased lib worktree
+		// Dedupe vue-router to ONE copy (absolute file): a symlinked lib checkout
 		// ships its own vue-router (a different MAJOR), so a per-importer resolve
 		// gives @nextcloud/vue's RouterLink a different router instance than
 		// app.use(router) provided → NcAppNavigationItem's <router-link> scoped
@@ -153,13 +97,13 @@ webpackConfig.resolve = {
 		),
 		// v9 is ESM-only: exports maps '.' -> ./dist/index.mjs with no main/module,
 		// so a directory alias can't resolve it. Point at the explicit entry file
-		// (also dedupes the aliased lib worktree's own v9 copy onto this one).
+		// (also dedupes a symlinked lib checkout's own v9 copy onto this one).
 		'@nextcloud/vue$': path.resolve(
 			__dirname,
 			'node_modules/@nextcloud/vue/dist/index.mjs',
 		),
 		// @nextcloud/dialogs v6 ships its stylesheet at dist/style.css and exposes it
-		// via the package "exports" map. When the aliased nextcloud-vue source imports
+		// via the package "exports" map. When nextcloud-vue imports
 		// '@nextcloud/dialogs/style.css', this webpack build resolves the raw subpath
 		// (not the exports condition), so point it at the real file explicitly.
 		'@nextcloud/dialogs/style.css$': path.resolve(
@@ -180,7 +124,7 @@ webpackConfig.module = {
 			use: ['style-loader', 'css-loader'],
 		},
 		{
-			// SCSS used by aliased @conduction/nextcloud-vue components (e.g. CnCard, CnDataTable)
+			// SCSS used by @conduction/nextcloud-vue components (e.g. CnCard, CnDataTable)
 			test: /\.scss$/,
 			use: ['style-loader', 'css-loader', 'sass-loader'],
 		},
@@ -198,11 +142,13 @@ webpackConfig.module = {
 webpackConfig.plugins = [
 	new VueLoaderPlugin(),
 	new webpack.DefinePlugin({ appName: JSON.stringify(appId) }),
-	// The version Nextcloud installs, from appinfo/info.xml. package.json's
-	// version is 0.1.0 and never bumped, and @nextcloud/vue prints this global
-	// in the settings dialog footer, which read "dossiq 0.1.0" on a 0.3.x install.
+	// The version Nextcloud installed, read in the browser from the page's
+	// `version` initial state, with appinfo/info.xml as the fallback.
+	// @nextcloud/vue prints this global in the settings dialog footer. A build
+	// time literal read "dossiq 0.1.0" (package.json) and later
+	// "dossiq 0.4.47-unstable" on 0.4.48-beta (info.xml before the release bump).
 	new webpack.DefinePlugin({
-		appVersion: JSON.stringify(readAppVersion()),
+		appVersion: appVersionDefinition(appId),
 	}),
 ]
 
@@ -241,10 +187,10 @@ webpackConfig.optimization = {
 			defaultVendors: false,
 			ncVue: {
 				name: appId + '-shared-nc-vue',
-				// Matches both node_modules entries AND the monorepo-dev alias
-				// `../nextcloud-vue/src/...` which webpack resolves outside
-				// node_modules when @conduction/nextcloud-vue is aliased to it.
-				test: /[\\/]node_modules[\\/](@nextcloud[\\/]vue|@conduction[\\/]nextcloud-vue)[\\/]|[\\/]nextcloud-vue[\\/]src[\\/]/,
+				// A symlinked local nextcloud-vue checkout resolves outside
+				// node_modules (webpack follows the symlink to its real path),
+				// so match on the `nextcloud-vue` path segment, not node_modules.
+				test: /[\\/]node_modules[\\/]@nextcloud[\\/]vue[\\/]|[\\/]nextcloud-vue[\\/]/,
 				priority: 30,
 				reuseExistingChunk: true,
 				enforce: true,

@@ -40,32 +40,39 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\DerivedStatusServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusDeclarationsInterface;
+use OCA\Dossiq\Listener\Support\ReadsCaseWrites;
 use OCA\Dossiq\Service\Status\DerivedStatusJournal;
-use OCA\Dossiq\Service\Status\DerivedStatusService;
-use OCA\Dossiq\Service\Status\StatusDeclarations;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Sets a case's status when the case type derives it.
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class DerivedStatusListener implements IEventListener {
+	use ReadsCaseWrites;
+
+	/**
+	 * The check named in the log when a payload cannot be read.
+	 */
+	private const PAYLOAD_CHECK = 'the status derivation';
+
 
 	/**
 	 * The dwell bookkeeping a move settles, and the only keys of it this
@@ -88,16 +95,16 @@ class DerivedStatusListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService      $settingsService Schema slug bridge.
-	 * @param DerivedStatusService $derived         Which status the case type derives.
-	 * @param StatusDeclarations   $declarations    The dwell bookkeeping a move carries.
+	 * @param SettingsServiceInterface      $settingsService Schema slug bridge.
+	 * @param DerivedStatusServiceInterface $derived         Which status the case type derives.
+	 * @param StatusDeclarationsInterface   $declarations    The dwell bookkeeping a move carries.
 	 * @param LoggerInterface      $logger          Structured logger.
 	 * @param DerivedStatusJournal|null $journal    Where a decided move waits for the save to land.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly DerivedStatusService $derived,
-		private readonly StatusDeclarations $declarations,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly DerivedStatusServiceInterface $derived,
+		private readonly StatusDeclarationsInterface $declarations,
 		private readonly LoggerInterface $logger,
 		private readonly ?DerivedStatusJournal $journal = null,
 	) {
@@ -115,37 +122,86 @@ class DerivedStatusListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectUpdatingEvent === false) {
 			return;
 		}
 
-		$payload = $this->payload(entity: $event->getNewObject());
-		if ($payload === null || $this->isCaseSchema(object: $payload) === false) {
+		$payload = $this->casePayload(event: $event);
+		$target = $this->targetOf(payload: $payload);
+		if ($payload === null || $target === null) {
 			return;
 		}
-
-		$modified = $event->getModifiedData();
-		$payload = array_merge($payload, $modified);
-
-		$target = $this->derived->statusFor(case: $payload);
-		if ($target === null) {
-			return;
-		}
-
-		$settled = $this->declarations->applyStatusChange(case: $payload, toStatus: $target);
-		$dwell = array_intersect_key($settled, array_flip(self::DWELL_FIELDS));
 
 		$event->setModifiedData(
 			array_merge(
-				$modified,
-				$dwell,
+				$event->getModifiedData(),
+				$this->dwellOf(payload: $payload, target: $target),
 				['status' => $target],
 			)
 		);
 
+		$this->recordMove(payload: $payload, target: $target);
+	}//end handle()
+
+	/**
+	 * The case as the save will leave it, or null when the save is not of a case.
+	 *
+	 * @param ObjectUpdatingEvent $event The save.
+	 *
+	 * @return array<string, mixed>|null The stored payload with the modified data on top.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function casePayload(ObjectUpdatingEvent $event): ?array {
+		return $this->caseAsSaved(event: $event, entity: $event->getNewObject());
+	}//end casePayload()
+
+	/**
+	 * The declared status the case has become, or null when none did (or there is no case).
+	 *
+	 * @param array<string, mixed>|null $payload The case as the save leaves it.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function targetOf(?array $payload): ?string {
+		if ($payload === null) {
+			return null;
+		}
+
+		return $this->derived->statusFor(case: $payload);
+	}//end targetOf()
+
+	/**
+	 * The dwell fields the move into $target sets.
+	 *
+	 * @param array<string, mixed> $payload The case as the save leaves it.
+	 * @param string               $target  The status the case moves into.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dwellOf(array $payload, string $target): array {
+		$settled = $this->declarations->applyStatusChange(case: $payload, toStatus: $target);
+		return array_intersect_key($settled, array_flip(self::DWELL_FIELDS));
+	}//end dwellOf()
+
+	/**
+	 * Stage the move for the timeline and log it.
+	 *
+	 * @param array<string, mixed> $payload The case as the save leaves it, before the move.
+	 * @param string               $target  The status the case moved into.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function recordMove(array $payload, string $target): void {
 		$caseId = (string)($payload['id'] ?? ($payload['@self']['id'] ?? ''));
 		$from = (string)($payload['status'] ?? '');
 
@@ -162,48 +218,5 @@ class DerivedStatusListener implements IEventListener {
 				'to' => $target,
 			]
 		);
-	}//end handle()
-
-	/**
-	 * Read an entity's payload, or null when it cannot be read.
-	 *
-	 * @param ObjectEntity $entity The entity carried by the event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null.
-	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: the status derivation could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
-	}//end payload()
-
-	/**
-	 * Whether the supplied payload belongs to the `case` schema.
-	 *
-	 * @param array<string, mixed> $object Object payload (incl. `@self`).
-	 *
-	 * @return bool True when this is a case.
-	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
-	 */
-	private function isCaseSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('case_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
-	}//end isCaseSchema()
+	}//end recordMove()
 }//end class

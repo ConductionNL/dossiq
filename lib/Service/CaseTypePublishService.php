@@ -39,8 +39,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypePublishServiceInterface;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector;
+use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
+use OCA\Dossiq\Service\CaseType\PublicationChecks;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -52,30 +55,28 @@ use Throwable;
  *
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseTypePublishService {
+class CaseTypePublishService implements CaseTypePublishServiceInterface {
 	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService         $settingsService  Bridge to OpenRegister + config.
-	 * @param CaseTypeResolver        $caseTypeResolver The effective blueprint.
-	 * @param CaseTypeStore           $store            Reads for the resolver's schemas.
-	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
-	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
-	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
+	 * @param CaseTypeStore           $store            The app's one case type reader.
+	 * @param PublicationChecks       $checks           What stands between this draft and being published.
 	 * @param CaseStateFieldRuleProjector $fieldRules   What each status asks of the fields on the case.
 	 * @param CaseFieldRoleProjector  $fieldRoles       What each role may see and change on the case.
+	 * @param CaseTypeVersionWindow   $window           When a version starts and stops being offered.
 	 * @param LoggerInterface         $logger           The logger.
+	 * @param CaseTypeRuleProjector|null $rules         What the case type's conditional rules do, on the engines that own the actions.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly CaseTypeStore $store,
-		private readonly CaseTypeAcknowledgement $acknowledgement,
-		private readonly UnreadTriggerService $unreadTriggers,
-		private readonly CaseTypeHandling $handling,
+		private readonly PublicationChecks $checks,
 		private readonly CaseStateFieldRuleProjector $fieldRules,
 		private readonly CaseFieldRoleProjector $fieldRoles,
+		private readonly CaseTypeVersionWindow $window,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseTypeRuleProjector $rules = null,
 	) {
 	}//end __construct()
 
@@ -94,18 +95,10 @@ class CaseTypePublishService {
 	 *
 	 * @return array<int, string> The warnings, empty when nothing is off.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function warnings(string $caseTypeId): array {
-		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);
-		if ($caseType === []) {
-			return [];
-		}
-
-		return array_merge(
-			$this->acknowledgement->publicationWarnings(caseType: $caseType),
-			$this->unreadTriggers->publicationWarnings(caseType: $caseType)
-		);
+		return $this->checks->warnings(caseTypeId: $caseTypeId);
 	}//end warnings()
 
 	/**
@@ -122,93 +115,8 @@ class CaseTypePublishService {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function validate(string $caseTypeId): array {
-		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);
-		if ($caseType === []) {
-			return ['This case type could not be read.'];
-		}
-
-		$findings = [];
-		$statuses = $this->caseTypeResolver->statusTypesFor(caseTypeId: $caseTypeId);
-
-		if ($statuses === []) {
-			$findings[] = 'Give the case type at least one status.';
-		}
-
-		if ($statuses !== [] && $this->hasFinalStatus(statuses: $statuses) === false) {
-			$findings[] = 'Mark one of the statuses as the final one, so a case can close.';
-		}
-
-		if ($statuses !== [] && $this->initialStatusIsOwn(caseType: $caseType, statuses: $statuses) === false) {
-			$findings[] = 'Pick the status a new case of this type starts in.';
-		}
-
-		if (trim((string)($caseType['title'] ?? '')) === '') {
-			$findings[] = 'Give the case type a title.';
-		}
-
-		$cycle = $this->cycleFinding(caseTypeId: $caseTypeId, caseType: $caseType);
-		if ($cycle !== '') {
-			$findings[] = $cycle;
-		}
-
-		return array_merge($findings, $this->handlingFindings(caseType: $caseType));
+		return $this->checks->validate(caseTypeId: $caseTypeId);
 	}//end validate()
-
-	/**
-	 * The findings the handling block produces, if it produces any.
-	 *
-	 * A switch declared on a case type and read by nothing is a promise the
-	 * product does not keep, and it is invisible until somebody relies on it.
-	 * Extracted from `validate()` rather than inlined, so that method's
-	 * complexity stays inside the threshold the analyser enforces.
-	 *
-	 * @param array<string, mixed> $caseType The effective case type row.
-	 *
-	 * @return array<int, string> The findings, empty when every switch is read.
-	 *
-	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
-	 */
-	private function handlingFindings(array $caseType): array {
-		$findings = [];
-		foreach ($this->handling->unreadSwitches(caseType: $caseType) as $switch) {
-			$findings[] = ('Nothing reads the handling switch "' . $switch . '". Remove it, or name a switch that is read.');
-		}
-
-		return $findings;
-	}//end handlingFindings()
-
-	/**
-	 * The finding a looping parent chain produces, if it loops.
-	 *
-	 * 🔴 THIS IS THE ONLY PLACE DOSSIQ CAN REFUSE A CYCLE. The spec words the
-	 * refusal as "on save", and dossiq does not own the save: a case type is
-	 * written straight to OpenRegister's object API by the page, and no dossiq
-	 * code runs in between. Publishing is the one write dossiq does own, so it
-	 * is where a type whose chain returns to itself is stopped. `chainFor()`
-	 * degrades safely on a chain already stored that way — it stops rather
-	 * than looping — so a mis-saved type stays readable while it is unpublished.
-	 *
-	 * @param string               $caseTypeId The type being published.
-	 * @param array<string, mixed> $caseType   Its effective row.
-	 *
-	 * @return string The finding, or '' when the chain is sound.
-	 *
-	 * @spec openspec/specs/case-types/spec.md
-	 */
-	private function cycleFinding(string $caseTypeId, array $caseType): string {
-		$parent = $this->store->referenceId(value: ($caseType['parentCaseType'] ?? ''));
-		if ($parent === '') {
-			return '';
-		}
-
-		try {
-			$this->caseTypeResolver->assertNoCycle(caseTypeId: $caseTypeId, parentCaseTypeId: $parent);
-		} catch (Throwable $e) {
-			return $e->getMessage();
-		}
-
-		return '';
-	}//end cycleFinding()
 
 	/**
 	 * Publish a draft case type.
@@ -223,36 +131,91 @@ class CaseTypePublishService {
 	 * @return array<string, mixed> `{published: bool, findings: string[], warnings: string[], version: ?int}`.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function publish(string $caseTypeId, string $changeNote): array {
 		$findings = $this->validate(caseTypeId: $caseTypeId);
 		$warnings = $this->warnings(caseTypeId: $caseTypeId);
 		if ($findings !== []) {
-			return [
-				'published' => false,
-				'findings' => $findings,
-				'warnings' => $warnings,
-				'version' => null,
-			];
+			return $this->notPublished(findings: $findings, warnings: $warnings);
 		}
 
+		$today = $this->window->today();
+
+		$caseType = $this->publishableCaseType(caseTypeId: $caseTypeId);
+
+		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
+			return $this->notPublished(findings: ['The case type could not be saved.'], warnings: $warnings);
+		}
+
+		$this->window->closePrevious(
+			caseType: $caseType,
+			caseTypeId: $caseTypeId,
+			takesEffect: (string)($caseType['validFrom'] ?? $today)
+		);
+
+		$warnings = $this->publishProjections(caseTypeId: $caseTypeId, warnings: $warnings);
+
+		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
+
+		return $this->published(caseTypeId: $caseTypeId, outcome: ['warnings' => $warnings, 'version' => $version]);
+	}//end publish()
+
+	/**
+	 * The answer for a publish that did not happen.
+	 *
+	 * @param array<int, string> $findings Why it did not happen.
+	 * @param array<int, string> $warnings The warnings found beside them.
+	 *
+	 * @return array<string, mixed> `{published: false, findings: string[], warnings: string[], version: null}`.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function notPublished(array $findings, array $warnings): array {
+		return [
+			'published' => false,
+			'findings' => $findings,
+			'warnings' => $warnings,
+			'version' => null,
+		];
+	}//end notPublished()
+
+	/**
+	 * The stored case type, marked published, opened in its validity window,
+	 * with its entry requirements derived.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<string, mixed> The case type, ready to save.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function publishableCaseType(string $caseTypeId): array {
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
 		$caseType['isDraft'] = false;
 		if ((int)($caseType['version'] ?? 0) < 1) {
 			$caseType['version'] = 1;
 		}
 
-		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
-			return [
-				'published' => false,
-				'findings' => ['The case type could not be saved.'],
-				'warnings' => $warnings,
-				'version' => null,
-			];
+		$caseType = $this->window->open(caseType: $caseType);
+		if ($this->rules !== null) {
+			$caseType['entryRequirements'] = $this->rules->entryRequirements(caseType: $caseType);
 		}
 
-		$this->retire(caseType: $caseType, caseTypeId: $caseTypeId);
+		return $caseType;
+	}//end publishableCaseType()
 
+	/**
+	 * Write the field and role projections and the rules onto the case schema.
+	 *
+	 * @param string             $caseTypeId CaseType UUID.
+	 * @param array<int, string> $warnings   The warnings so far.
+	 *
+	 * @return array<int, string> The warnings, with the rules' own added.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function publishProjections(string $caseTypeId, array $warnings): array {
 		// What each status asks of the fields goes onto the case schema HERE,
 		// at the one moment a case type stops being a draft. Any earlier and a
 		// half-written status would start refusing saves on cases already
@@ -269,8 +232,25 @@ class CaseTypePublishService {
 		// from the role there. It never fails the publish either.
 		$this->fieldRoles->publish(caseTypeId: $caseTypeId);
 
-		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
+		if ($this->rules !== null) {
+			$warnings = array_merge($warnings, $this->rules->publish(caseTypeId: $caseTypeId));
+		}
 
+		return $warnings;
+	}//end publishProjections()
+
+	/**
+	 * The answer for a publish that happened, logged when it carries warnings.
+	 *
+	 * @param string                                             $caseTypeId CaseType UUID.
+	 * @param array{warnings: array<int, string>, version: int|null} $outcome    The warnings, and the published template version.
+	 *
+	 * @return array<string, mixed> `{published: true, findings: [], warnings: string[], version: ?int}`.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function published(string $caseTypeId, array $outcome): array {
+		['warnings' => $warnings, 'version' => $version] = $outcome;
 		if ($warnings !== []) {
 			$this->logger->warning(
 				'Case type publish: published with warnings',
@@ -284,58 +264,7 @@ class CaseTypePublishService {
 			'warnings' => $warnings,
 			'version' => $version,
 		];
-	}//end publish()
-
-	/**
-	 * Close the version this one replaces.
-	 *
-	 * 🔴 THIS IS THE MOMENT A CASE TYPE VERSION STOPS BEING OFFERED, AND THE
-	 * ONLY ONE. Publishing is the single write dossiq owns on a case type (the
-	 * page writes everything else straight to OpenRegister), so the forward
-	 * link has to be written here or nowhere. Written anywhere else it would be
-	 * a rule with two implementations, and the failure mode is silent: two
-	 * versions of one case type both offered in the picker, under the same
-	 * name, and no way for the person choosing to tell them apart.
-	 *
-	 * The previous version keeps `isDraft: false` on purpose. Its cases are
-	 * still running on it and still resolve their statuses, results and
-	 * deadlines through it. It is closed to NEW cases, not retired.
-	 *
-	 * A failure here is logged and not fatal. The new version is already
-	 * published, and refusing after that write would leave the two halves
-	 * disagreeing with nothing to say which one ran.
-	 *
-	 * @param array<string, mixed> $caseType   The version just published.
-	 * @param string               $caseTypeId Its id.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	private function retire(array $caseType, string $caseTypeId): void {
-		$previousId = $this->store->referenceId(value: ($caseType['previousVersion'] ?? ''));
-		if ($previousId === '' || $previousId === $caseTypeId) {
-			return;
-		}
-
-		$previous = $this->store->readCaseType(caseTypeId: $previousId);
-		if ($previous === []) {
-			$this->logger->warning(
-				'Case type publish: the previous version could not be read, so it was not closed',
-				['caseType' => $caseTypeId, 'previousVersion' => $previousId]
-			);
-			return;
-		}
-
-		$previous['supersededBy'] = $caseTypeId;
-
-		if ($this->save(schemaKey: 'case_type_schema', object: $previous) === false) {
-			$this->logger->warning(
-				'Case type publish: the previous version stays open for new cases',
-				['caseType' => $caseTypeId, 'previousVersion' => $previousId]
-			);
-		}
-	}//end retire()
+	}//end published()
 
 	/**
 	 * Mark the case type's active workflow template published, with the note.
@@ -350,7 +279,7 @@ class CaseTypePublishService {
 	 * @return integer|null The published template's version, or null when there is none.
 	 */
 	private function publishActiveTemplate(string $caseTypeId, string $changeNote): ?int {
-		$template = $this->activeTemplate(caseTypeId: $caseTypeId);
+		$template = $this->store->activeTemplate(caseTypeId: $caseTypeId);
 		if ($template === []) {
 			return null;
 		}
@@ -367,74 +296,6 @@ class CaseTypePublishService {
 
 		return (int)($template['version'] ?? 1);
 	}//end publishActiveTemplate()
-
-	/**
-	 * The case type's active workflow template.
-	 *
-	 * @param string $caseTypeId CaseType UUID.
-	 *
-	 * @return array<string, mixed> The template, or an empty array when there is none.
-	 */
-	private function activeTemplate(string $caseTypeId): array {
-		$rows = $this->store->rowsOfType(schemaKey: 'workflow_template_schema', caseTypeId: $caseTypeId);
-
-		$fallback = [];
-		foreach ($rows as $row) {
-			if (($row['isActive'] ?? false) === true) {
-				return $row;
-			}
-
-			if ($fallback === []) {
-				$fallback = $row;
-			}
-		}
-
-		return $fallback;
-	}//end activeTemplate()
-
-	/**
-	 * Whether one of the statuses closes a case.
-	 *
-	 * @param array<int, array<string, mixed>> $statuses The resolved statuses.
-	 *
-	 * @return boolean True when at least one is final.
-	 */
-	private function hasFinalStatus(array $statuses): bool {
-		foreach ($statuses as $status) {
-			if (in_array(($status['isFinal'] ?? false), [true, 1, '1', 'true'], true) === true) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end hasFinalStatus()
-
-	/**
-	 * Whether the type's initial status is one of the statuses it resolves to.
-	 *
-	 * An initial status pointing at a status the type does not have is worse
-	 * than none: a new case is filed into a status its own lifecycle cannot
-	 * move it out of.
-	 *
-	 * @param array<string, mixed>             $caseType The effective case type.
-	 * @param array<int, array<string, mixed>> $statuses The resolved statuses.
-	 *
-	 * @return boolean True when the initial status resolves.
-	 */
-	private function initialStatusIsOwn(array $caseType, array $statuses): bool {
-		$initial = $this->store->referenceId(value: ($caseType['initialStatus'] ?? ''));
-		if ($initial === '') {
-			return false;
-		}
-
-		foreach ($statuses as $status) {
-			if ($this->store->rowId(row: $status) === $initial) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end initialStatusIsOwn()
 
 	/**
 	 * Write one object back to its configured schema.

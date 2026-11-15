@@ -1,0 +1,687 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
+<!--
+	Who has held this case, and who is asking for it.
+
+	The timeline beside this one says what CHANGED. This panel says who HELD
+	it, which is the question a complaint, a WOO request or an internal review
+	actually asks, and the one a sequence of diffs cannot answer.
+
+	🔴 EVERY HOLDING IS DRAWN WITH BOTH ENDS. A row that showed only the unit
+	and the start would look complete on a chain with a gap in it, which is the
+	one defect this record exists to prevent. The open holding is the only one
+	allowed to have no end, and it says so in words rather than by a blank.
+
+	🔴 A REFUSAL IS NOT AN EMPTY CHAIN, AND THE TWO ARE DRAWN APART. Reading
+	the custody needs read access to the case, so a reader without it is
+	refused. Drawing that as "this case has never changed hands" would be a
+	claim about the history that this reader was never told.
+
+	🔴 THE PANEL WRITES NO HOLDING. Accept and refuse answer a REQUEST; the
+	holding that follows an accept is opened server-side by the move itself. A
+	browser that could write a holding would be a second way for the chain to
+	disagree with the case.
+
+	@spec openspec/specs/case-management/spec.md
+-->
+<template>
+	<div class="case-custody cn-rule-above" data-testid="case-custody">
+		<NcLoadingIcon v-if="loading" :size="24" />
+
+		<NcEmptyContent
+			v-else-if="refused"
+			:name="
+				t(
+					'dossiq',
+					'Only somebody who may open this case sees who has held it',
+				)
+			"
+			:description="t('dossiq', 'Nothing changed.')" />
+
+		<NcEmptyContent
+			v-else-if="failed"
+			:name="t('dossiq', 'We could not read who has held this case')"
+			:description="
+				t('dossiq', 'The case has not moved. Try again in a moment.')
+			" />
+
+		<template v-else>
+			<section class="case-custody__section">
+				<h4 class="case-custody__heading hidden-visually">
+					{{ t('dossiq', 'Who has held this case') }}
+				</h4>
+
+				<NcEmptyContent
+					v-if="holdings.length === 0"
+					:name="t('dossiq', 'This case has not changed hands yet')"
+					:description="
+						t(
+							'dossiq',
+							'Its first holding opens when the case is registered.',
+						)
+					" />
+
+				<ol v-else class="case-custody__chain">
+					<li
+						v-for="holding in holdings"
+						:key="holding.id || holding.sequence"
+						class="case-custody__holding"
+						:class="{
+							'case-custody__holding--open': holding.open === true,
+						}"
+						data-testid="case-custody-holding">
+						<span class="case-custody__mark" aria-hidden="true">{{
+							initialsOf(holding.organisationUnit)
+						}}</span>
+						<span class="case-custody__text">
+							<span class="case-custody__unit">{{
+								holding.organisationUnit
+							}}</span>
+							<span class="case-custody__meta">{{
+								metaOf(holding)
+							}}</span>
+						</span>
+						<span
+							class="case-custody__pill"
+							:class="{
+								'case-custody__pill--holder': holding.open === true,
+							}">{{
+								holding.open === true
+									? t('dossiq', 'Holder now')
+									: t('dossiq', 'Handed over')
+							}}</span>
+					</li>
+				</ol>
+			</section>
+
+			<section class="case-custody__section">
+				<h4 class="case-custody__heading">
+					{{ t('dossiq', 'Request for this case') }}
+				</h4>
+
+				<NcEmptyContent
+					v-if="takeovers.length === 0"
+					:name="t('dossiq', 'Nobody has asked for this case')"
+					:description="
+						t(
+							'dossiq',
+							'A colleague can ask the holder for it, with a reason.',
+						)
+					" />
+
+				<ul v-else class="case-custody__requests">
+					<li
+						v-for="request in takeovers"
+						:key="request.id"
+						class="case-custody__request"
+						:data-status="request.status"
+						data-testid="case-custody-request">
+						<span class="case-custody__mark" aria-hidden="true">{{
+							initialsOf(request.requestedBy)
+						}}</span>
+						<span class="case-custody__text">
+							<span class="case-custody__unit">{{
+								t('dossiq', '{asker} asks for this case', { asker: request.requestedBy })
+							}}</span>
+							<span class="case-custody__meta">{{
+								requestMetaOf(request)
+							}}</span>
+							<span
+								v-if="request.refusalReason"
+								class="case-custody__meta">
+								{{ request.refusalReason }}
+							</span>
+						</span>
+
+						<span v-if="isOpen(request)" class="case-custody__answer">
+							<NcButton
+								variant="secondary"
+								:disabled="answering"
+								data-testid="case-custody-accept"
+								@click="accept(request)">
+								{{ t('dossiq', 'Hand it over') }}
+							</NcButton>
+							<NcButton
+								variant="secondary"
+								:disabled="answering"
+								:aria-expanded="isKeeping(request) ? 'true' : 'false'"
+								data-testid="case-custody-keep"
+								@click="startKeeping(request)">
+								{{ t('dossiq', 'Keep, with a reason') }}
+							</NcButton>
+						</span>
+
+						<span
+							v-if="isOpen(request) && isKeeping(request)"
+							class="case-custody__keep">
+							<NcTextField
+								v-model="refusalReasons[request.id]"
+								:label="t('dossiq', 'Why you are keeping it')"
+								data-testid="case-custody-refusal-reason" />
+							<NcButton
+								variant="secondary"
+								:disabled="answering || !hasReason(request)"
+								data-testid="case-custody-refuse"
+								@click="refuse(request)">
+								{{ t('dossiq', 'Keep it, and say why') }}
+							</NcButton>
+						</span>
+					</li>
+				</ul>
+			</section>
+
+			<p
+				v-if="error"
+				class="case-custody__error"
+				data-testid="case-custody-error">
+				{{ error }}
+			</p>
+		</template>
+	</div>
+</template>
+
+<script>
+import { translate as t } from '@nextcloud/l10n'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
+import {
+	acceptTakeover,
+	readChain,
+	readTakeovers,
+	refuseTakeover,
+} from '../../services/custodyApi.js'
+
+/** The reason the custody backfill writes on the holdings it opens (lib/Repair/BackfillCaseCustody.php). */
+const BACKFILL_REASON = 'Opened by the custody backfill from the case as it stood'
+
+export default {
+	name: 'CaseCustodyPanel',
+
+	components: {
+		NcButton,
+		NcEmptyContent,
+		NcLoadingIcon,
+		NcTextField,
+	},
+
+	props: {
+		/** The case this panel belongs to, bound by CnTabsWidget. */
+		objectId: {
+			type: [String, Number],
+			default: '',
+		},
+	},
+
+	data() {
+		return {
+			loading: true,
+			/** The read was refused because this reader may not open the case. */
+			refused: false,
+			/** The read failed for any other reason. */
+			failed: false,
+			/** An answer that did not land, said in words rather than swallowed. */
+			error: '',
+			/** True while an accept or refuse is in flight. */
+			answering: false,
+			holdings: [],
+			takeovers: [],
+			/** The reason typed against each open request, keyed by request id. */
+			refusalReasons: {},
+			/** The request whose reason field is open. */
+			keepingId: null,
+		}
+	},
+
+	computed: {
+		/**
+		 * The case this panel is about.
+		 *
+		 * @return {string} The case uuid, or the empty string.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		caseId() {
+			return String(this.objectId || this.$route?.params?.id || '')
+		},
+	},
+
+	watch: {
+		caseId: {
+			immediate: true,
+
+			/**
+			 * Read the chain of whichever case this panel is now about.
+			 *
+			 * `immediate`, and a watcher rather than `mounted()`, because the
+			 * tab host mounts this panel before the route has settled on some
+			 * paths: read once at mount and the id can still be empty, and the
+			 * panel would then draw "no recorded holdings" for a case whose
+			 * chain was never asked for.
+			 *
+			 * @return {void}
+			 * @spec openspec/specs/case-management/spec.md
+			 */
+			handler() {
+				this.load()
+			},
+		},
+	},
+
+	methods: {
+		t,
+
+		/**
+		 * Read the chain and the requests.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+		 */
+		async load() {
+			if (this.caseId === '') {
+				this.loading = false
+				return
+			}
+
+			this.loading = true
+			this.refused = false
+			this.failed = false
+			this.error = ''
+
+			try {
+				const [chain, requests] = await Promise.all([
+					readChain(this.caseId),
+					readTakeovers(this.caseId),
+				])
+				this.holdings = chain.holdings ?? []
+				this.takeovers = requests
+			} catch (readError) {
+				// 403 is the server saying this reader may not open the case,
+				// which is a different answer from a case that never moved.
+				if (readError?.response?.status === 403) {
+					this.refused = true
+				} else {
+					this.failed = true
+				}
+
+				this.holdings = []
+				this.takeovers = []
+			} finally {
+				this.loading = false
+			}
+		},
+
+		/**
+		 * Whether a request is still waiting for an answer.
+		 *
+		 * `escalated` counts as open: the question moved to the unit, it was
+		 * not answered, and the two are not the same fact.
+		 *
+		 * @param {object} request The request row.
+		 * @return {boolean} True when it can still be answered.
+		 *
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 */
+		isOpen(request) {
+			return request?.status === 'pending' || request?.status === 'escalated'
+		},
+
+		/**
+		 * Whether a refusal has been given a reason to carry.
+		 *
+		 * @param {object} request The request row.
+		 * @return {boolean} True when there is something to send.
+		 *
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 */
+		hasReason(request) {
+			return String(this.refusalReasons[request?.id] ?? '').trim() !== ''
+		},
+
+		/**
+		 * Hand the case to whoever asked for it.
+		 *
+		 * @param {object} request The request row.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 */
+		/**
+		 * Whether the reason field of a request is open.
+		 *
+		 * @param {object} request The takeover request.
+		 *
+		 * @return {boolean} True while the holder is writing why they keep it.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		isKeeping(request) {
+			return this.keepingId !== null && this.keepingId === request?.id
+		},
+
+		/**
+		 * Open the reason field of a request, or close it again.
+		 *
+		 * @param {object} request The takeover request.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		startKeeping(request) {
+			this.keepingId = this.isKeeping(request) ? null : request.id
+		},
+
+		async accept(request) {
+			await this.answer(() => acceptTakeover(this.caseId, request.id))
+		},
+
+		/**
+		 * Keep the case, and record why.
+		 *
+		 * @param {object} request The request row.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 */
+		async refuse(request) {
+			const reason = String(this.refusalReasons[request?.id] ?? '').trim()
+			if (reason === '') {
+				this.error = t(
+					'dossiq',
+					'Say why you are keeping the case, so the answer means something.',
+				)
+				return
+			}
+
+			await this.answer(() => refuseTakeover(this.caseId, request.id, reason))
+		},
+
+		/**
+		 * Send one answer and read the case back.
+		 *
+		 * Re-reads rather than patching the row in place: an accept opens a
+		 * holding this panel did not write, and a panel that only rewrote the
+		 * request would show an answered request beside a chain that had not
+		 * moved.
+		 *
+		 * @param {() => Promise<object>} send The call that carries the answer.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 */
+		async answer(send) {
+			this.answering = true
+			this.error = ''
+
+			try {
+				await send()
+				await this.load()
+			} catch (answerError) {
+				this.error = String(
+					answerError?.response?.data?.message
+						?? t(
+							'dossiq',
+							'We did not record the answer, so the case has not moved.',
+						),
+				)
+			} finally {
+				this.answering = false
+			}
+		},
+
+		/**
+		 * The period a holding ran for, in words.
+		 *
+		 * @param {object} holding The holding row.
+		 * @return {string} The sentence.
+		 *
+		 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+		 */
+		periodOf(holding) {
+			if (holding?.open === true) {
+				return t('dossiq', 'In hand since {date}', {
+					date: this.dateOf(holding?.from),
+				})
+			}
+
+			return t('dossiq', 'From {from} to {to}', {
+				from: this.momentOf(holding?.from),
+				to: this.momentOf(holding?.until),
+			})
+		},
+
+		/**
+		 * The line under a holding's unit: its period, the handler and the
+		 * reason it was opened, as far as they are known.
+		 *
+		 * @param {object} holding The holding row.
+		 * @return {string} The line.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		metaOf(holding) {
+			const reason = String(holding?.reason ?? '')
+			return [
+				this.periodOf(holding),
+				String(holding?.handler ?? ''),
+				// A stored reason is shown as written; the backfill's own
+				// sentence is a source string with a translation.
+				reason === BACKFILL_REASON ? t('dossiq', BACKFILL_REASON) : reason,
+			].filter((part) => part !== '').join(' · ')
+		},
+
+		/**
+		 * Up to two initials of a unit's name, for its round mark.
+		 *
+		 * @param {string} name The unit.
+		 * @return {string} The initials.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		/**
+		 * The line under a request: since when, why, and what became of it.
+		 * A request still waiting says nothing more: its buttons say that.
+		 *
+		 * @param {object} request The takeover request.
+		 *
+		 * @return {string} The line.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		requestMetaOf(request) {
+			return [
+				request?.requestedAt ? t('dossiq', 'Since {date}', { date: this.dateOf(request.requestedAt) }) : '',
+				request?.reason ? t('dossiq', 'reason: {reason}', { reason: request.reason }) : '',
+				request?.status === 'pending' ? '' : this.statusOf(request),
+			].filter((part) => part !== '').join(' · ')
+		},
+
+		initialsOf(name) {
+			return String(name ?? '')
+				.split(/[\s_-]+/)
+				.filter((word) => /^[A-Za-zÀ-ÿ]/.test(word) && !/^(team|en|of|van|de|het|and|the)$/i.test(word))
+				.slice(0, 2)
+				.map((word) => word.charAt(0).toUpperCase())
+				.join('')
+		},
+
+		/**
+		 * What a request stands at, in words.
+		 *
+		 * @param {object} request The request row.
+		 * @return {string} The sentence.
+		 *
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 */
+		statusOf(request) {
+			const sentences = {
+				accepted: t('dossiq', 'Handed over'),
+				refused: t('dossiq', 'Kept by the holder'),
+				escalated: t(
+					'dossiq',
+					'Nobody answered, so the question went to the unit',
+				),
+			}
+
+			return sentences[request?.status] ?? String(request?.status ?? '')
+		},
+
+		/**
+		 * One date, readable.
+		 *
+		 * @param {string} raw The stored moment.
+		 * @return {string} The date, or the raw value when it cannot be read.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		dateOf(raw) {
+			if (!raw) {
+				return ''
+			}
+
+			const moment = new Date(raw)
+			if (Number.isNaN(moment.getTime())) {
+				return String(raw)
+			}
+
+			return moment.toLocaleDateString(undefined, {
+				month: 'short',
+				day: 'numeric',
+			})
+		},
+
+		/**
+		 * One moment, readable: the day and the time.
+		 *
+		 * @param {string} raw The stored moment.
+		 * @return {string} The moment, or the raw value when it cannot be read.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		momentOf(raw) {
+			const moment = new Date(raw)
+			if (!raw || Number.isNaN(moment.getTime())) {
+				return this.dateOf(raw)
+			}
+
+			return this.dateOf(raw) + ' ' + moment.toLocaleTimeString(undefined, {
+				hour: '2-digit',
+				minute: '2-digit',
+			})
+		},
+	},
+}
+</script>
+
+<style scoped>
+.case-custody__section {
+	margin-bottom: calc(var(--default-grid-baseline, 4px) * 4);
+}
+
+/* The card title already names the holdings, so their heading is for
+   screen readers only; the request heading sits as the board's subhead. */
+.case-custody__heading {
+	margin: 6px 0 8px;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.case-custody__chain,
+.case-custody__requests {
+	display: flex;
+	flex-direction: column;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+/* A holding is a row as DqZaakArchivering draws it: a round mark with the
+   unit's initials, the unit over its period, a pill at the end. */
+.case-custody__holding {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 0;
+	border-top: 1px solid var(--color-border);
+}
+
+.case-custody__mark {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--color-background-dark);
+	color: var(--cn-board-text-soft, var(--color-main-text));
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.case-custody__text {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.case-custody__unit {
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.case-custody__meta {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
+.case-custody__pill {
+	flex: none;
+	padding: 3px 10px;
+	border-radius: 12px;
+	background: var(--color-background-dark);
+	color: var(--cn-board-text-soft, var(--color-main-text));
+	font-size: 13px;
+	font-weight: 600;
+	line-height: normal;
+	white-space: nowrap;
+}
+
+.case-custody__pill--holder {
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-light-text);
+}
+
+.case-custody__request {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	padding: 12px 0;
+	border-top: 1px solid var(--color-border);
+}
+
+.case-custody__answer {
+	display: flex;
+	flex: none;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline, 4px) * 2);
+}
+
+.case-custody__keep {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: calc(var(--default-grid-baseline, 4px) * 2);
+	width: 100%;
+}
+
+.case-custody__error {
+	color: var(--color-error);
+}
+</style>

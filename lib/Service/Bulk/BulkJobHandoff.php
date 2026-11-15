@@ -24,10 +24,13 @@ namespace OCA\Dossiq\Service\Bulk;
 
 use InvalidArgumentException;
 use OCA\Dossiq\BulkAction\LifecycleCasesAction;
+use OCA\Dossiq\BulkAction\MoveCaseTypeVersionAction;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\BulkAction\SetCaseAttributeAction;
 use OCA\Dossiq\BulkAction\TransitionCasesAction;
+use OCA\Dossiq\Kernel\Contracts\BulkJobHandoffInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -46,9 +49,9 @@ use Throwable;
  * cases is a thing a coordinator has to explain (D-3). The action declares it
  * too, so an act handed over by any other caller is refused just the same.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
-class BulkJobHandoff {
+class BulkJobHandoff implements BulkJobHandoffInterface {
 
 	/**
 	 * OpenRegister's job service, resolved by name so dossiq stays installable
@@ -56,7 +59,7 @@ class BulkJobHandoff {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private const JOB_SERVICE = 'OCA\OpenRegister\Service\BulkJob\BulkJobService';
 
@@ -70,18 +73,19 @@ class BulkJobHandoff {
 	/**
 	 * The actions dossiq offers over cases, and whether each needs a reason.
 	 *
-	 * Read by the catalogue endpoint so a caller sees dossiq's four without
+	 * Read by the catalogue endpoint so a caller sees dossiq's own without
 	 * having to know OpenRegister's whole registry.
 	 *
 	 * @var array<int, string>
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public const ACTIONS = [
 		TransitionCasesAction::ID,
 		LifecycleCasesAction::ID,
 		ReassignCasesAction::ID,
 		SetCaseAttributeAction::ID,
+		MoveCaseTypeVersionAction::ID,
 	];
 
 	/**
@@ -93,7 +97,7 @@ class BulkJobHandoff {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -117,7 +121,7 @@ class BulkJobHandoff {
 	 * @throws MixedCaseTypeVersionsException When the selection spans case type versions.
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function create(
 		string $actionId,
@@ -163,7 +167,7 @@ class BulkJobHandoff {
 	 *
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function commit(array $job, ?string $justification = null): array {
 		$id = ($job['id'] ?? null);
@@ -189,10 +193,14 @@ class BulkJobHandoff {
 	 * Run dossiq's own refusals over the selection, before anything is
 	 * rehearsed.
 	 *
-	 * Only the attribute write is guarded: a transition, a lifecycle gesture
+	 * Two acts are guarded and three are not. A transition, a lifecycle gesture
 	 * and a redistribution all mean the same thing on every version of a case
 	 * type, so refusing them would refuse a selection there is no reason to
-	 * refuse.
+	 * refuse. The attribute write means two different things across two
+	 * versions. The version move takes ONE target version, so a selection
+	 * spanning two would move half the cases and tell the other half they are
+	 * already there; the target is chosen from one version's chain, and a case
+	 * from another chain is not on it at all.
 	 *
 	 * A selection given as a QUERY is not resolved here. OpenRegister's own
 	 * `homogeneity` guard still refuses it at creation, before a single object
@@ -206,10 +214,11 @@ class BulkJobHandoff {
 	 *
 	 * @throws MixedCaseTypeVersionsException When the selection spans case type versions.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function guardSelection(string $actionId, array $selection): void {
-		if ($actionId !== SetCaseAttributeAction::ID) {
+		$guarded = [SetCaseAttributeAction::ID, MoveCaseTypeVersionAction::ID];
+		if (in_array($actionId, $guarded, true) === false) {
 			return;
 		}
 
@@ -232,7 +241,7 @@ class BulkJobHandoff {
 	 *
 	 * @throws RuntimeException When either cannot be resolved.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function scope(): array {
 		$registerId = $this->registerId(slug: (string)$this->settingsService->getConfigValue('register'));
@@ -255,7 +264,7 @@ class BulkJobHandoff {
 	 *
 	 * @return int The numeric id, or 0 when it cannot be resolved.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function registerId(string $slug): int {
 		$slug = trim($slug);
@@ -293,7 +302,7 @@ class BulkJobHandoff {
 	 *
 	 * @throws RuntimeException When OpenRegister is not installed or enabled.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function jobService(): object {
 		$service = $this->settingsService->getOpenRegisterClass(self::JOB_SERVICE);
@@ -311,21 +320,9 @@ class BulkJobHandoff {
 	 *
 	 * @return array<string, mixed> The job.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function asArray(mixed $job): array {
-		if (is_array($job) === true) {
-			return $job;
-		}
-
-		if (is_object($job) === true && method_exists($job, 'jsonSerialize') === true) {
-			$serialised = $job->jsonSerialize();
-
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $job);
 	}//end asArray()
 }//end class

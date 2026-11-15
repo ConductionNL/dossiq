@@ -1,0 +1,259 @@
+{
+    "duty: no object service": {
+        "answer": [],
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "case_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "duty: case missing": {
+        "answer": [],
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectService::find",
+                {
+                    "id": "case-1",
+                    "register": "reg",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "duty: register throws": {
+        "answer": {
+            "thrown": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "acknowledgement_case_unreadable",
+            "code": 0,
+            "previous": "register down",
+            "rule": "acknowledgement-case-unreadable",
+            "status": 503,
+            "sentence": "We could not read the case, so we cannot say whether receipt was confirmed."
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectService::find",
+                {
+                    "id": "case-1",
+                    "register": "reg",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: case case-1 for its acknowledgement of receipt could not be read: register down",
+                []
+            ]
+        ]
+    },
+    "duty: none on the case": {
+        "answer": [],
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectService::find",
+                {
+                    "id": "case-1",
+                    "register": "reg",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "duty: not an array": {
+        "answer": [],
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectService::find",
+                {
+                    "id": "case-1",
+                    "register": "reg",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "duty: met": {
+        "answer": {
+            "status": "met",
+            "channel": "email"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectService::find",
+                {
+                    "id": "case-1",
+                    "register": "reg",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "another way: no object service": {
+        "answer": {
+            "thrown": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "acknowledgement_register_not_configured",
+            "code": 0,
+            "previous": null,
+            "rule": "acknowledgement-register-not-configured",
+            "status": 503,
+            "sentence": "We could not read the case, so nothing was recorded."
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "case_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "another way: case missing": {
+        "answer": {
+            "thrown": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "acknowledgement_register_not_configured",
+            "code": 0,
+            "previous": null,
+            "rule": "acknowledgement-register-not-configured",
+            "status": 503,
+            "sentence": "We could not read the case, so nothing was recorded."
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectService::find",
+                {
+                    "id": "case-1",
+                    "register": "reg",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    }
+}

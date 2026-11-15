@@ -143,13 +143,17 @@ class SetupDeclaredMatchesReportedTest extends TestCase {
 	}//end testAReadinessItemIsNotAWizardStep()
 
 	/**
-	 * Only `register-check` is required, so no readiness item can block the app.
+	 * No wizard step is required, so nothing in the wizard can block the app.
+	 *
+	 * `register-check` used to be the one gate. Initialising the register is
+	 * an admin settings action now (wizard-dataset-card-load).
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
 	 */
-	public function testOnlyRegisterCheckGates(): void {
+	public function testNoWizardStepGates(): void {
 		$manifest = json_decode((string)file_get_contents(__DIR__ . '/../../../src/manifest.json'), true);
 
 		$required = [];
@@ -159,7 +163,7 @@ class SetupDeclaredMatchesReportedTest extends TestCase {
 			}
 		}
 
-		$this->assertSame(['register-check'], $required);
-	}//end testOnlyRegisterCheckGates()
+		$this->assertSame([], $required);
+	}//end testNoWizardStepGates()
 
 }//end class

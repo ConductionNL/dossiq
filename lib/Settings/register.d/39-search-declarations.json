@@ -16,6 +16,10 @@
             "matchType": "exact",
             "inputControl": "text"
           },
+          "formerReferences": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
           "tags": {
             "matchType": "fuzzy",
             "inputControl": "multiselect"
@@ -38,6 +42,10 @@
             "inputControl": "boolean"
           },
           "waitingOn": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "statusRole": {
             "matchType": "exact",
             "inputControl": "select"
           },
@@ -91,6 +99,14 @@
             "inputControl": "date-range"
           },
           "deadline": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "lastActivityAt": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "statutoryDeadline": {
             "matchType": "range",
             "inputControl": "date-range"
           },
@@ -197,6 +213,10 @@
             "matchType": "exact",
             "inputControl": "text"
           },
+          "statutoryExtension": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
           "archiveNomination": {
             "matchType": "exact",
             "inputControl": "select"
@@ -244,6 +264,9 @@
           "deadlineDate": {
             "matchType": "range",
             "inputControl": "date-range"
+          },
+          "deadlineOverdue": {
+            "inputControl": "boolean"
           },
           "competentAuthority": {
             "matchType": "prefix",
@@ -369,6 +392,10 @@
             "matchType": "range",
             "inputControl": "date-range"
           },
+          "legalDecisionDate": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
           "dsoStatus": {
             "matchType": "exact",
             "inputControl": "select"
@@ -431,6 +458,18 @@
           },
           "subjectExportReady": {
             "inputControl": "boolean"
+          },
+          "externalReference": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "contestedCase": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "contestedDecision": {
+            "matchType": "exact",
+            "inputControl": "text"
           }
         }
       }

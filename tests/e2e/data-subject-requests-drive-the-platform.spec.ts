@@ -61,7 +61,7 @@ test.describe('data subject requests drive the platform', () => {
 		const machine = await seedStateMachine(request, token)
 		const created = await seedCase(request, token, {
 			title: `${RUN_PREFIX} verwijderverzoek`,
-			caseType: machine.caseType,
+			caseType: machine.caseTypeId,
 			dataSubjectRequestType: 'verwijdering',
 			dataSubject: `${RUN_PREFIX}@example.invalid`,
 			dataSubjectType: 'email',
@@ -89,7 +89,7 @@ test.describe('data subject requests drive the platform', () => {
 
 		// And the case now carries it, so a handler reading this file in a
 		// year is not re-running a computation over an index that has moved.
-		const stored = await showObject(request, token, 'case', caseId)
+		const stored = await showObject(request, 'case', caseId)
 		expect(stored.erasurePreviewId).toBe(preview.uuid)
 		expect(stored.erasureDigest).toBe(preview.digest)
 		expect(stored.erasureCounts).toBeTruthy()
@@ -109,7 +109,7 @@ test.describe('data subject requests drive the platform', () => {
 		const machine = await seedStateMachine(request, token)
 		const created = await seedCase(request, token, {
 			title: `${RUN_PREFIX} verwijderverzoek ongoedgekeurd`,
-			caseType: machine.caseType,
+			caseType: machine.caseTypeId,
 			dataSubjectRequestType: 'verwijdering',
 			dataSubject: `${RUN_PREFIX}-2@example.invalid`,
 		})
@@ -132,7 +132,7 @@ test.describe('data subject requests drive the platform', () => {
 		expect(res.status()).toBe(409)
 		expect((await res.json()).error).toBe('erasure-not-approved')
 
-		const stored = await showObject(request, token, 'case', caseId)
+		const stored = await showObject(request, 'case', caseId)
 		expect(stored.erasureOutcome ?? []).toEqual([])
 		expect(stored.erasureApprovedBy ?? '').toBe('')
 	})
@@ -144,7 +144,7 @@ test.describe('data subject requests drive the platform', () => {
 		const machine = await seedStateMachine(request, token)
 		const created = await seedCase(request, token, {
 			title: `${RUN_PREFIX} verwijderverzoek onvoltooid`,
-			caseType: machine.caseType,
+			caseType: machine.caseTypeId,
 			dataSubjectRequestType: 'verwijdering',
 			dataSubject: `${RUN_PREFIX}-3@example.invalid`,
 		})
@@ -185,7 +185,7 @@ test.describe('data subject requests drive the platform', () => {
 		const machine = await seedStateMachine(request, token)
 		const created = await seedCase(request, token, {
 			title: `${RUN_PREFIX} inzageverzoek`,
-			caseType: machine.caseType,
+			caseType: machine.caseTypeId,
 			dataSubjectRequestType: 'inzage',
 			dataSubject: `${RUN_PREFIX}-4@example.invalid`,
 		})

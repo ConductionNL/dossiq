@@ -111,7 +111,7 @@ integriq `signed-outbound-webhooks` and `objecten-api-facade`, portaliq
 | `intake-says-when-the-term-starts` | Q8.21 | S | openregister `working-calendar-admin` (to be specified), dossiq `terms-on-the-engine-calendar` (open) |
 | `archived-cases-leave-the-lenses` | Q2.33 | S | openregister `object-archive-state` (open) |
 | `deelzaken-inherit-the-parent-grants` | Q13.23 | S | openregister `rbac-inherits-to-children` (open) |
-| `cases-views-are-places` | Q9.16 | S | nextcloud-vue `saved-view-as-a-place` (open); openregister `saved-search-views` (shipped) |
+| `cases-views-are-places` | Q9.16 | S | ~~nextcloud-vue `saved-view-as-a-place`~~; openregister `saved-search-views` (shipped). **Built and retracted** by `a-saved-view-is-not-a-place`, 2026-09-23: the route worked, but the sort it wrote into the address was a format nothing in the stack read. Do not re-propose the row without reading that change first. |
 
 ### The batch 11 row that indicts us, opened 2026-09-13
 
@@ -356,7 +356,7 @@ change that already covers the area.
 
 | row | owner | covering artefact | dossiq task |
 |---|---|---|---|
-| 1.1 | portaliq | `dossiq/openspec/changes/leaf-integrations/proposal.md (the Forms half;` | caseType.intakeFormRef and FormsIntakeService (leaf-integrations); the portal journey targets the same intake |
+| 1.1 | portaliq | `dossiq/openspec/specs/leaf-integrations/spec.md (the Forms half;` | caseType.intakeFormRef and FormsIntakeService (leaf-integrations); the portal journey targets the same intake |
 | 1.5 | integriq | `integriq/openspec/changes/mail-intake-creates-cases/proposal.md` | accept the start-a-case offer (mailObjectTemplate from leaf-integrations) and the link offer |
 | 2.1 | openregister | `openregister/openspec/changes/generated-identifier/proposal.md` (merged #3785) | `case-number-and-favourites`: case.identifier and complaint.complaintNumber declare x-openregister-generated; ComplaintService's own counter retired |
 | 2.19 | openregister | `openregister/openspec/changes/favourites-and-recent/proposal.md` (merged #3766) | `case-number-and-favourites`: a star on the case and on every row, Favourites and Recently opened chips on Cases and the same two as dashboard tiles |

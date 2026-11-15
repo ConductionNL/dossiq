@@ -43,6 +43,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
+import { anonymousContext } from './helpers/principals.ts'
 
 /** dossiq's own share surface, where a link is minted. */
 const SHARES = '/index.php/apps/dossiq/api/shares'
@@ -93,7 +94,13 @@ test.describe('A case share is an access link', () => {
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		api = await playwright.request.newContext({ baseURL })
-		anonymous = await playwright.request.newContext({ baseURL })
+		// 🔴 A REAL OUTSIDER, OR THE 200 BELOW PROVES NOTHING. This was the
+		// same `newContext({ baseURL })` call as the line above, which
+		// inherits the admin's captured `storageState`, so "the outsider can
+		// open the link" was the admin opening a case they could already
+		// read, and "the read-only link refuses a comment" was checked
+		// against a principal the link never governs.
+		anonymous = await anonymousContext(playwright, String(baseURL))
 		token = await getRequestToken(api)
 		const caseType = await ensureCaseType(api, token)
 		const seeded = await seedCase(api, token, {
@@ -114,6 +121,7 @@ test.describe('A case share is an access link', () => {
 	// The load-bearing pair is the mint and the anonymous read. A mint that
 	// returns a URL nobody can open is the failure an authenticated assertion
 	// cannot see, because the handler's own session would open the case anyway.
+	// @e2e case-access-control::an-outsider-opens-the-case-without-an-account
 	test('a handler shares a case with an outsider, and the outsider can open it without an account', async () => {
 		const minted = await api.post(SHARES, {
 			headers: { requesttoken: token },
@@ -185,6 +193,7 @@ test.describe('A case share is an access link', () => {
 	//
 	// A link switched off must read as switched off rather than disappearing:
 	// a handler who cannot see a paused link cannot switch it back on.
+	// @e2e case-access-control::the-handler-sees-the-state-of-every-link-on-the-case
 	test('the handler sees the state of every link on the case', async () => {
 		const minted = await api.post(SHARES, {
 			headers: { requesttoken: token },
@@ -239,5 +248,11 @@ test.describe('A case share is an access link', () => {
 		})
 
 		expect(refused.status(), await refused.text()).toBe(403)
+
+		// AND THE COMMENT DID NOT LAND. A 403 written after the write is a
+		// refusal in name only, and the status alone cannot tell the two
+		// apart.
+		const reread = await anonymous.get(`${PUBLIC_LINKS}/${anchor}`)
+		expect(await reread.text()).not.toContain('should not land')
 	})
 })

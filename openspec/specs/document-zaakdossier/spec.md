@@ -339,3 +339,267 @@ informatieobject MUST be skipped.
 - **AND** existing records MUST remain unchanged
 
 @e2e exclude Repair-step idempotence is proven by running the step twice and comparing record counts — a PHPUnit-level assertion (repair-step unit tests); there is no UI that re-runs a repair step.
+
+### Requirement: REQ-ZAK-020 The version history of a case file opens from the file
+
+The Files tab of a case SHALL offer Versions on every file row, and that
+action SHALL open the version history of the file that was clicked. The
+history SHALL list each version with its moment, its author and its size,
+and SHALL offer download and restore on each. A property the server did
+not send SHALL be shown as absent rather than as a value: an author
+nobody recorded reads Unknown, and a size nobody sent is left off the
+line rather than written as nought bytes.
+
+Opening a version in a viewer is deliberately not required. Download is
+how a reader opens an old version, because the Nextcloud viewer resolves
+a file by its node and a version is not one. A separate View that only
+downloaded would be a second name for one act.
+
+dossiq SHALL store no version chain of its own: the versions are the
+platform's, read and restored through the Nextcloud Files versions API.
+
+#### Scenario: Versions opens on the file the row named
+
+- **GIVEN** a case whose folder holds `besluit.pdf` with three versions
+- **WHEN** a handler opens the row menu on `besluit.pdf` and picks Versions
+- **THEN** the panel SHALL list three versions of `besluit.pdf`
+- **AND** restoring the oldest SHALL make it the current file in the folder
+
+#### Scenario: The panel reads the file the browser clicked, not a row it was never given
+@e2e exclude a prop-precedence branch with one gesture behind it; covered by the VersionHistoryPanel unit test
+
+- **GIVEN** the panel is opened with a file id and with a row naming another file
+- **WHEN** it reads the version history
+- **THEN** it SHALL read the versions of the file id
+- **AND** the row SHALL be used only when no file id arrived
+
+#### Scenario: A panel handed no file refuses instead of showing an empty list
+@e2e exclude a defensive branch with no reachable gesture; covered by the VersionHistoryPanel unit test, which mounts it with neither prop
+
+- **GIVEN** the panel is opened with neither a file id nor a document row
+- **WHEN** it renders
+- **THEN** it SHALL say which file it could not find
+- **AND** it SHALL NOT render an empty version list, because no versions and
+  no file look identical to a reader
+
+### Requirement: REQ-ZAK-021 A case file can be marked final or reclassified from its row
+
+The Files tab SHALL offer mark final and change confidentiality on a file
+row, and each act SHALL report what it changed. A file the act could not be
+applied to SHALL be named rather than silently skipped, and an act that
+found no document to work on SHALL refuse rather than report that it
+changed nothing.
+
+Acting on SEVERAL files at once is deliberately not required here. The
+files browser carries no selection bar: the Files app's own list, its
+selection bar and its inline rename are bound to the Files app's router and
+cannot be mounted on a case page, which the component says of itself. A
+bulk-actions declaration on that widget would therefore be read by nothing,
+and a declared capability nobody can reach is the exact failure this change
+exists to end. The whole case file as one download is REQ-ZAK-022.
+
+#### Scenario: A file is marked final from its row
+
+- **GIVEN** a case whose folder holds a file with a document record
+- **WHEN** the handler picks Mark as final on that row and applies it
+- **THEN** that document SHALL read final
+- **AND** the other files in the folder SHALL be unchanged
+
+#### Scenario: A file with no document record refuses rather than reporting nothing
+@e2e exclude a timing branch that needs the projection listener held back; covered by the BulkDocumentActionDialog unit test
+
+- **GIVEN** a file whose informatieobject record has not been written yet
+- **WHEN** the handler marks it final
+- **THEN** the act SHALL say no document record was found
+- **AND** it SHALL NOT report a count of zero as a success
+
+### Requirement: REQ-ZAK-022 The case file can be exported as one download
+
+A case detail page SHALL offer Export dossier, and that action SHALL return
+the case file as a zip carrying its manifest. A reader who may not read the
+case SHALL be refused with a status and no bytes.
+
+#### Scenario: A handler downloads the case file
+
+- **GIVEN** a case with two documents and a reader who may read it
+- **WHEN** that reader presses Export dossier
+- **THEN** a zip SHALL download
+- **AND** it SHALL contain both documents and a manifest naming them
+
+#### Scenario: A reader who may not read the case gets nothing
+@e2e exclude an authorization branch driven from the API; covered by the DossierExportController guard test
+
+- **GIVEN** a reader with no access to the case
+- **WHEN** that reader calls the export endpoint for it
+- **THEN** the response SHALL be 403
+- **AND** no part of the zip SHALL be written to the response
+
+### Requirement: REQ-ZAK-023 A registered dialog that no page opens fails the suite
+
+Every modal registered in the app registry SHALL be named by at least one
+manifest action, or SHALL carry a written reason for being registered
+without one. The check SHALL assert how many entries it examined, so a run
+that matched nothing cannot report success.
+
+#### Scenario: Retiring a tab that owned a dialog turns the suite red
+@e2e exclude a build-time check over two source files; covered by the registry orphan unit test
+
+- **GIVEN** a registered modal opened only by one tab's row actions
+- **WHEN** that tab is removed from the manifest and the entry is left behind
+- **THEN** the registry orphan test SHALL fail
+- **AND** it SHALL name the modal that no page opens
+
+### Requirement: REQ-ZAK-024 A document carries free keywords
+
+An `informatieobject` SHALL carry `keywords`, an optional list of free-text
+strings of at most 64 characters each, declared facetable on the schema
+(`lib/Settings/register.d/70-document-zaakdossier.json`). A keyword carries no
+confidentiality default and no type: a document has one type and any number of
+keywords. A handler SHALL edit them in the Document properties dialog that the
+Files tab offers on every file row (`src/modals/DocumentMetadataDialog.vue`,
+opened by the `rowActions` of the CaseDetail Files tab in `src/manifest.json`).
+The dialog SHALL trim each keyword, drop empty and duplicate entries, cut each
+to 64 characters and send plain strings, whether the person typed the keyword
+or picked it. The metadata endpoint (`ZaakdossierController`, the `keywords`
+parameter) SHALL store the list on the record and SHALL leave it untouched when
+the request carries no `keywords`. A document written before the property
+existed SHALL read as carrying no keywords, never as an error
+(`documentKeywords()` in `src/utils/dossierHelpers.js`).
+
+Not covered today: the keywords are not shown on the file row and the case page
+offers no keyword filter. The helpers that did both (`collectKeywords()`,
+`filterGroupsByKeywords()`) lost their caller when the Documents tab was
+retired on 2026-09-13.
+
+#### Scenario: A handler tags a document from its row
+@e2e exclude no e2e drives the Document properties dialog yet; the write is covered by tests/Unit/Service/Zaakdossier/InformatieobjectMetadataWriteTest.php
+
+- **GIVEN** a case with a file in its Files tab
+- **WHEN** the handler opens Document properties on that row, types `bouwtekening` and ` bezwaar ` and saves
+- **THEN** the document's record SHALL carry the keywords `bouwtekening` and `bezwaar`
+- **AND** reopening the dialog SHALL show both keywords
+
+#### Scenario: A document without keywords reads as an empty list
+@e2e exclude a pure helper over a stored record; covered by tests/vitest/dossierHelpers.spec.js
+
+- **GIVEN** a document record with no `keywords` property, or with `keywords` set to null
+- **WHEN** its keywords are read
+- **THEN** the result SHALL be an empty list
+- **AND** no error SHALL be raised
+
+### Requirement: REQ-ZAK-011 A document names its sender and its recipients, and both are parties
+
+The `informatieobject` schema SHALL carry `sender` and `recipients`. Each
+value SHALL be a party of the case the document is on, identified by the
+party uuid or by the contact uid of a link written before the party model.
+A value that no party of the case answers to SHALL be dropped rather than
+stored, and a free-text name SHALL never be stored.
+
+#### Scenario: A submitted name that matches no party is dropped
+@e2e exclude a rule over the parties listing; covered by DocumentCorrespondentsTest, which passes a typed name and a matching uuid through the same call
+
+- **GIVEN** a case whose parties are Jan Jansen and Gemeente Utrecht
+- **WHEN** a document is saved with `sender` set to the words `Jan Jansen`
+- **THEN** `sender` SHALL be empty
+- **AND** saving the same document with Jan Jansen's party uuid SHALL store that uuid
+
+#### Scenario: A correspondent is resolved by e-mail address
+@e2e exclude the resolver runs server side with no surface of its own; covered by DocumentCorrespondentsTest over a parties listing carrying an e-mail address
+
+- **GIVEN** a party of the case holding the address `jan@example.org`
+- **WHEN** a document is saved with `sender` set to `JAN@EXAMPLE.ORG`
+- **THEN** `sender` SHALL hold that party's uuid
+
+### Requirement: REQ-ZAK-012 Direction decides which correspondent a document may carry
+
+An outgoing document SHALL carry recipients and no sender. An incoming
+document SHALL carry a sender and no recipients. An internal document MAY
+carry either. A correspondent that contradicts the direction SHALL be
+dropped, and the document SHALL still be saved.
+
+#### Scenario: A sender on an outgoing document is dropped
+@e2e exclude a rule with no surface; covered by DocumentCorrespondentsTest
+
+- **GIVEN** a document with `direction` outgoing
+- **WHEN** it is saved with both a sender and a recipient, each a party of the case
+- **THEN** the stored `sender` SHALL be empty
+- **AND** the stored `recipients` SHALL hold the recipient
+
+### Requirement: REQ-ZAK-013 The writers set the correspondent, not the person
+
+A write that files an outgoing document on a case SHALL set `recipients`
+from the parties addressed by that send and SHALL set `direction` to
+outgoing. The mail intake SHALL set `sender` from the message's From
+address, matched against the parties of the case, and SHALL set
+`direction` to incoming. An address no party holds SHALL leave `sender`
+empty rather than create a party.
+
+#### Scenario: A generated letter names its addressee
+@e2e tests/e2e/document-correspondents.spec.ts
+
+- **GIVEN** a case whose requester is a party
+- **WHEN** a letter is generated on the case from a library template
+- **AND** you open the letter's properties on the Files tab
+- **THEN** Recipients SHALL name the requester
+- **AND** Direction SHALL read outgoing
+
+#### Scenario: An intake attachment names its sender
+@e2e exclude the inbound writer runs in the mail intake listener, which has no page to drive; covered by InboundMailIntake's unit test over a fixture message with a From header
+
+- **GIVEN** a mail from `jan@example.org` filed on a case whose party holds that address
+- **WHEN** the document the intake filed is read
+- **THEN** `sender` SHALL hold that party's uuid
+- **AND** `direction` SHALL be incoming
+
+### Requirement: REQ-ZAK-014 A dispatch record is written per correspondent
+
+Every correspondent set on a document SHALL be recorded as a `dispatch`
+row carrying the document, the case, the party and the role `afzender` or
+`geadresseerde`, with `sendDate` on an outgoing document and
+`receiveDate` on an incoming one. `contactPersonName` SHALL NOT be
+written.
+
+#### Scenario: Two recipients give two dispatch rows
+@e2e exclude a write with no surface of its own; covered by CorrespondentWriterTest over a doubled record store
+
+- **GIVEN** an outgoing document on a case with two parties addressed
+- **WHEN** the correspondents are written
+- **THEN** two dispatch rows SHALL exist, each naming one party in the role `geadresseerde`
+- **AND** each SHALL carry the document, the case and a `sendDate`
+
+### Requirement: REQ-ZAK-015 The correspondents are on screen and can be filtered
+
+The document properties dialog SHALL edit `sender` and `recipients` with a
+picker offering the parties of the case. The dossier listing SHALL carry
+both resolved to names and SHALL accept a `correspondent` filter naming
+one party. The People tab SHALL list, per party, the documents that party
+sent or received.
+
+#### Scenario: The properties dialog offers the parties of the case
+@e2e tests/e2e/document-correspondents.spec.ts
+
+- **GIVEN** a case with two parties and a document on it
+- **WHEN** you open the document's properties
+- **THEN** the Sender picker SHALL offer exactly those two parties
+- **AND** saving a sender SHALL show that party's name on the People tab under the documents they sent
+
+### Requirement: REQ-ZAK-013 A document row shows its scan verdict
+
+The Files tab SHALL declare a Scan column showing the verdict
+`files_antivirus` recorded for the node (clean with time, infected, not
+scanned) and the properties dialog SHALL show it beside the hash. An
+absent scanner SHALL read as not scanned.
+
+#### Scenario: A scanned file reads clean
+@e2e exclude the scanner is a platform app not driven in e2e; covered by a unit test over a stubbed verdict reader
+
+- **GIVEN** a file `files_antivirus` marked clean at 09:00
+- **WHEN** the row is rendered
+- **THEN** Scan SHALL read clean, 09:00
+
+#### Scenario: No scanner, no claim
+@e2e tests/e2e/scan-verdict.spec.ts
+
+- **GIVEN** `files_antivirus` is not installed
+- **WHEN** you open a document's properties
+- **THEN** Scan SHALL read not scanned

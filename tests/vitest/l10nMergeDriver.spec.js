@@ -27,7 +27,12 @@ import { describe, expect, it } from 'vitest'
 
 const require = createRequire(import.meta.url)
 const { renderJs } = require('../../scripts/build-l10n-js.js')
-const { mergeCatalogues, mergeValue, parseCatalogue, sortKeys } = require('../../tools/merge-l10n.js')
+const {
+	mergeCatalogues,
+	mergeValue,
+	parseCatalogue,
+	sortKeys,
+} = require('../../tools/merge-l10n.js')
 
 /**
  * Build a catalogue document the way l10n/<locale>.json is written on disk.
@@ -43,7 +48,11 @@ describe('the merge driver on the case that costs lanes time', () => {
 	it('keeps a key each side added, where a line merge would conflict', () => {
 		const base = json({ Alpha: 'Alpha', Zulu: 'Zulu' })
 		const ours = json({ Alpha: 'Alpha', Zulu: 'Zulu', 'Zzz ours': 'Zzz ours' })
-		const theirs = json({ Alpha: 'Alpha', Zulu: 'Zulu', 'Zzz theirs': 'Zzz theirs' })
+		const theirs = json({
+			Alpha: 'Alpha',
+			Zulu: 'Zulu',
+			'Zzz theirs': 'Zzz theirs',
+		})
 
 		const result = mergeCatalogues(base, ours, theirs)
 
@@ -51,7 +60,10 @@ describe('the merge driver on the case that costs lanes time', () => {
 		expect(result.conflicts).toEqual([])
 		const merged = JSON.parse(result.text).translations
 		expect(Object.keys(merged)).toEqual([
-			'Alpha', 'Zulu', 'Zzz ours', 'Zzz theirs',
+			'Alpha',
+			'Zulu',
+			'Zzz ours',
+			'Zzz theirs',
 		])
 	})
 
@@ -71,8 +83,11 @@ describe('the merge driver on the case that costs lanes time', () => {
 			json({ middle: 'middle', Zebra: 'Zebra' }),
 			json({ middle: 'middle', apple: 'apple' }),
 		)
-		expect(Object.keys(JSON.parse(result.text).translations))
-			.toEqual(['apple', 'middle', 'Zebra'])
+		expect(Object.keys(JSON.parse(result.text).translations)).toEqual([
+			'apple',
+			'middle',
+			'Zebra',
+		])
 	})
 })
 
@@ -126,7 +141,9 @@ describe('what the driver does with each kind of change', () => {
 })
 
 describe('plural entries, whose value is an array', () => {
-	const plural = { '_{count} day_::_{count} days_': ['{count} day', '{count} days'] }
+	const plural = {
+		'_{count} day_::_{count} days_': ['{count} day', '{count} days'],
+	}
 
 	it('does not manufacture a conflict when neither side touched them', () => {
 		// `===` on two equal arrays is false, so an identity test would have
@@ -137,8 +154,9 @@ describe('plural entries, whose value is an array', () => {
 			json({ ...plural, B: 'B' }),
 		)
 		expect(result.conflicts).toEqual([])
-		expect(JSON.parse(result.text).translations['_{count} day_::_{count} days_'])
-			.toEqual(['{count} day', '{count} days'])
+		expect(
+			JSON.parse(result.text).translations['_{count} day_::_{count} days_'],
+		).toEqual(['{count} day', '{count} days'])
 	})
 
 	it('compares array values by content', () => {
@@ -153,7 +171,8 @@ describe('plural entries, whose value is an array', () => {
 })
 
 describe('the generated OC.L10N.register catalogue', () => {
-	const js = (translations) => renderJs('dossiq', translations, 'nplurals=2; plural=(n != 1);')
+	const js = (translations) =>
+		renderJs('dossiq', translations, 'nplurals=2; plural=(n != 1);')
 
 	it('merges both sides and comes out byte-identical to a rebuild', () => {
 		const base = js({ Alpha: 'Alpha' })
@@ -164,11 +183,13 @@ describe('the generated OC.L10N.register catalogue', () => {
 
 		expect(result.error).toBe(null)
 		expect(result.conflicts).toEqual([])
-		expect(result.text).toBe(js({
-			Alpha: 'Alpha',
-			'Zzz ours': 'Zzz ours',
-			'Zzz theirs': 'Zzz theirs',
-		}))
+		expect(result.text).toBe(
+			js({
+				Alpha: 'Alpha',
+				'Zzz ours': 'Zzz ours',
+				'Zzz theirs': 'Zzz theirs',
+			}),
+		)
 	})
 
 	it('reads back the id, the plural form and an array value', () => {
@@ -197,7 +218,11 @@ describe('when the driver cannot be sure', () => {
 
 describe('the canonical order itself', () => {
 	it('sorts case-insensitively so related keys stay together', () => {
-		expect(sortKeys(['Zebra', 'apple', 'Banana'])).toEqual(['apple', 'Banana', 'Zebra'])
+		expect(sortKeys(['Zebra', 'apple', 'Banana'])).toEqual([
+			'apple',
+			'Banana',
+			'Zebra',
+		])
 	})
 
 	it('still gives two keys differing only in case one defined order', () => {
@@ -205,7 +230,7 @@ describe('the canonical order itself', () => {
 		expect(sortKeys(['Case', 'case'])).toEqual(['Case', 'case'])
 	})
 
-	it('is idempotent, so a second writer never reorders the first one\'s output', () => {
+	it("is idempotent, so a second writer never reorders the first one's output", () => {
 		const keys = ['Zoom to fit', 'Add a case', '{count} days', '%n working day']
 		expect(sortKeys(sortKeys(keys))).toEqual(sortKeys(keys))
 	})

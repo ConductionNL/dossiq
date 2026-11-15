@@ -1,0 +1,123 @@
+{
+    "zgwResource": "zaak",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "case-s",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "identificatie": "{{ identifier }}",
+        "bronorganisatie": "{{ sourceOrganisation }}",
+        "omschrijving": "{{ title }}",
+        "notes": "{{ description }}",
+        "caseType": "{{ _baseUrl | replace({\"zaken/v1/zaken\": \"catalogi/v1/zaaktypen\"}) }}/{{ caseType }}",
+        "registrationDate": "{{ _created }}",
+        "startdatum": "{{ startDate }}",
+        "endDate": "{{ endDate }}",
+        "einddatumGepland": "{{ plannedEndDate }}",
+        "uiterlijkeEinddatumAfdoening": "{{ deadline }}",
+        "vertrouwelijkheidaanduiding": "{{ confidentiality }}",
+        "verantwoordelijkeOrganisatie": "{{ assignee }}",
+        "archiefnominatie": "{{ archiveNomination }}",
+        "archiefactiedatum": "{{ archiveActionDate }}",
+        "archiefstatus": "{{ archiveStatus | default(\"\") | zgw_enum(\"archiveStatus\", _valueMappings) }}",
+        "betalingsindicatie": "{{ paymentIndication | default(\"\") | zgw_enum(\"paymentIndication\", _valueMappings) }}",
+        "laatsteBetaaldatum": "{{ lastPaymentDate }}",
+        "hoofdzaak": "{% if parentCase %}{{ _baseUrl }}/{{ parentCase }}{% endif %}"
+    },
+    "reverseMapping": {
+        "title": "{{ omschrijving }}",
+        "description": "{{ toelichting }}",
+        "identifier": "{{ identificatie }}",
+        "sourceOrganisation": "{{ bronorganisatie }}",
+        "caseType": "{{ zaaktype | zgw_extract_uuid }}",
+        "startDate": "{{ startdatum }}",
+        "endDate": "{{ einddatum }}",
+        "plannedEndDate": "{{ einddatumGepland }}",
+        "deadline": "{{ uiterlijkeEinddatumAfdoening }}",
+        "confidentiality": "{{ vertrouwelijkheidaanduiding }}",
+        "assignee": "{{ verantwoordelijkeOrganisatie }}",
+        "archiveNomination": "{{ archiefnominatie }}",
+        "archiveActionDate": "{{ archiefactiedatum }}",
+        "archiveStatus": "{{ archiefstatus | default(\"\") | zgw_enum_reverse(\"archiveStatus\", _valueMappings) }}",
+        "paymentIndication": "{{ betalingsindicatie | default(\"\") | zgw_enum_reverse(\"paymentIndication\", _valueMappings) }}",
+        "lastPaymentDate": "{{ laatsteBetaaldatum }}",
+        "parentCase": "{{ hoofdzaak | zgw_extract_uuid }}"
+    },
+    "valueMapping": {
+        "confidentiality": {
+            "openbaar": "openbaar",
+            "beperkt_openbaar": "beperkt_openbaar",
+            "intern": "intern",
+            "zaakvertrouwelijk": "zaakvertrouwelijk",
+            "vertrouwelijk": "vertrouwelijk",
+            "confidentieel": "confidentieel",
+            "geheim": "geheim",
+            "zeer_geheim": "zeer_geheim"
+        },
+        "archiveStatus": {
+            "nog_te_archiveren": "nog_te_archiveren",
+            "archived": "gearchiveerd",
+            "archived_retention_period_unknown": "gearchiveerd_procestermijn_onbekend",
+            "overgedragen": "overgedragen"
+        },
+        "paymentIndication": {
+            "nvt": "nvt",
+            "not_yet": "nog_niet",
+            "gedeeltelijk": "gedeeltelijk",
+            "geheel": "geheel"
+        }
+    },
+    "nullableFields": [
+        "endDate",
+        "einddatumGepland",
+        "uiterlijkeEinddatumAfdoening",
+        "archiefnominatie",
+        "archiefactiedatum",
+        "archiefstatus",
+        "betalingsindicatie",
+        "laatsteBetaaldatum",
+        "hoofdzaak"
+    ],
+    "queryParameterMapping": {
+        "caseType": {
+            "field": "caseType",
+            "extractUuid": true
+        },
+        "identificatie": {
+            "field": "identifier"
+        },
+        "bronorganisatie": {
+            "field": "sourceOrganisation"
+        },
+        "startdatum": {
+            "field": "startDate"
+        },
+        "startdatum__gte": {
+            "field": "startDate",
+            "operator": "gte"
+        },
+        "startdatum__lte": {
+            "field": "startDate",
+            "operator": "lte"
+        },
+        "endDate": {
+            "field": "endDate"
+        },
+        "einddatum__isnull": {
+            "field": "endDate",
+            "operator": "isnull"
+        },
+        "archiefnominatie": {
+            "field": "archiveNomination"
+        },
+        "archiefactiedatum__lt": {
+            "field": "archiveActionDate",
+            "operator": "lt"
+        },
+        "archiefstatus": {
+            "field": "archiveStatus"
+        }
+    }
+}

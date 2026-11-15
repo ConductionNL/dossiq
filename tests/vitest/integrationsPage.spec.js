@@ -17,7 +17,7 @@
  * to stop exactly this class of quiet untruth, so the guard has to be here
  * rather than in a reviewer's eye.
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'
@@ -35,7 +35,8 @@ const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const declaration = readJson('lib', 'Settings', 'connections.json')
 const iconsSource = read('src', 'icons.js')
 const adminRoot = read('src', 'views', 'settings', 'AdminRoot.vue')
-const customComponentsSource = read('src', 'customComponents.js')
+const registrySource = read('src', 'registry.js')
+const integriqSource = read('src', 'utils', 'integriqConnections.js')
 const en = readJson('l10n', 'en.json').translations
 const nl = readJson('l10n', 'nl.json').translations
 
@@ -115,11 +116,13 @@ describe('the Integrations page', () => {
 		expect(add).toBeDefined()
 		expect(add.label).toBe('Add integration')
 		expect(add.handler).toBe('openIntegriqConnections')
-		// Defined AND in the default export, or the renderer cannot resolve it.
-		expect(customComponentsSource).toContain('function openIntegriqConnections(')
-		expect(customComponentsSource).toMatch(/^\topenIntegriqConnections,$/m)
-		expect(customComponentsSource).toContain(
+		// Defined AND registered as a handler, or the renderer cannot resolve it.
+		expect(integriqSource).toContain('export function openIntegriqConnections(')
+		expect(integriqSource).toContain(
 			"'/apps/integriq/connections?app=dossiq&link=1'",
+		)
+		expect(registrySource).toMatch(
+			/\n\topenIntegriqConnections: \{\n\t\tkind: 'handler',\n\t\thandler: openIntegriqConnections,\n/,
 		)
 		expect(iconsSource).toContain(`\n\t${add.icon},`)
 	})
@@ -167,7 +170,7 @@ describe('the connection declaration', () => {
 		expect(declaration.app).toBe('dossiq')
 	})
 
-	it('keeps the twelve keys the page used, in placement order', () => {
+	it('keeps the keys the page used, Kadaster added after BRP, in placement order', () => {
 		expect(connections.map((c) => c.key)).toEqual([
 			'zgw',
 			'stuf',
@@ -177,10 +180,13 @@ describe('the connection declaration', () => {
 			'store',
 			'financial',
 			'brp',
+			'kadaster',
 			'kvk',
 			'pdok',
 			'berichtenbox',
 			'templates',
+			'smartdocuments',
+			'xential',
 		])
 		const orders = connections.map((c) => c.order)
 		expect([...orders].sort((a, b) => a - b)).toEqual(orders)
@@ -194,11 +200,11 @@ describe('the connection declaration', () => {
 
 	// BRP and KvK were both once marked "Specified, not built yet", which was
 	// false for both. What separates them is who calls them: nothing injects
-	// the KvK adapter.
+	// a KvK lookup, and dossiq ships no KvK client (ADR-118).
 	it('declares only KvK unavailable, and says why', () => {
 		const unavailable = connections.filter((c) => c.available === false)
 		expect(unavailable.map((c) => c.key)).toEqual(['kvk'])
-		expect(byKey.kvk.unavailableMessage).toMatch(/built and bound/i)
+		expect(byKey.kvk.unavailableMessage).toMatch(/no KvK client/i)
 		expect(byKey.kvk.unavailableMessage).not.toMatch(/not built/i)
 		expect(byKey.kvk.settingsUrl).toBeUndefined()
 	})
@@ -206,10 +212,14 @@ describe('the connection declaration', () => {
 	// The rows this page exists for. A mock adapter WORKS and delivers
 	// nothing, so integriq shows Simulated while the adapter key is empty, and
 	// the message has to say the word.
-	// BRP is built and called, and reaches nothing until its tier key moves.
-	// No admin section writes that key, so the row's message has to name it.
-	it('names the key that wakes BRP, and offers no settings link', () => {
-		expect(byKey.brp.unconfiguredMessage).toMatch(/integration\.brp\.mode/)
+	// Dossiq ships no BRP client (ADR-118). The conflict-of-interest check
+	// reads family relations through integriq's BRP source, which stays off
+	// until relationFields is set there. No admin section in dossiq writes
+	// that, so the row's message has to name it.
+	it('names the setting that wakes BRP, and offers no settings link', () => {
+		expect(byKey.brp.unconfiguredMessage).toMatch(/relationFields/)
+		expect(byKey.brp.unconfiguredMessage).toMatch(/Integriq/)
+		expect(byKey.brp.unconfiguredMessage).not.toMatch(/integration\.brp\.mode/)
 		expect(byKey.brp.unconfiguredMessage).not.toMatch(/not built/i)
 		expect(byKey.brp.settingsUrl).toBeUndefined()
 	})
@@ -226,19 +236,35 @@ describe('the connection declaration', () => {
 	})
 
 	// Contract D4 rule 3 (hydra#673) matches the key's value against
-	// `simulatedValues`, default only the empty string. Naming the mock class
-	// in the key binds the mock too, so the list has to carry that class or
-	// the row reads Configured while the mock answers.
-	it('reads Simulated when the key is empty or names the mock class', () => {
+	// `simulatedValues`. Naming the mock class in the key binds the mock too,
+	// so the list has to carry that class or the row reads Configured while
+	// the mock answers.
+	//
+	// The two seams differ about the empty string, and that is deliberate.
+	// An empty `beschikking_template_adapter` still falls back to its mock, so
+	// empty is simulated there. An empty `berichtenbox_adapter` binds
+	// IntegriqAdapter, which refuses rather than simulating, so listing empty
+	// there reported a mock that was not answering.
+	it('reads Simulated only when a mock really answers', () => {
 		expect(byKey.berichtenbox.adapter.simulatedValues).toEqual([
-			'',
 			'OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter',
+			'mock',
 		])
+		// An empty template key binds filinq's adapter when filinq is enabled,
+		// so only the mock class itself reads Simulated; dossiq reports the
+		// rest (IntegrationStatusService::recordTemplates()).
 		expect(byKey.templates.adapter.simulatedValues).toEqual([
-			'',
 			'OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter',
 		])
 		expect(connections.some((c) => 'reportedOnly' in c)).toBe(false)
+	})
+
+	// No admin section writes `digital_post_source`, and integriq refuses a
+	// send over an empty one before it looks anything up. So the row names the
+	// key, the way the BRP row names its own.
+	it('names the digital post source the Berichtenbox row needs', () => {
+		expect(byKey.berichtenbox.requiredConfig).toEqual(['digital_post_source'])
+		expect(byKey.berichtenbox.unconfiguredMessage).toMatch(/digital_post_source/)
 	})
 
 	it('lets the probed connections arrive as reports', () => {
@@ -250,11 +276,11 @@ describe('the connection declaration', () => {
 
 	it('links only to an anchor AdminRoot.vue actually carries', () => {
 		const linked = connections.filter((c) => c.settingsUrl !== undefined)
-		expect(linked).toHaveLength(7)
+		expect(linked).toHaveLength(8)
 		for (const connection of linked) {
 			const anchor = connection.settingsUrl.split('#')[1]
 			expect(
-				connection.settingsUrl.startsWith('/settings/admin/dossiq#'),
+				connection.settingsUrl.startsWith('/settings/admin/dossiq?tab='),
 			).toBe(true)
 			expect(adminRoot).toContain(`id="${anchor}"`)
 		}

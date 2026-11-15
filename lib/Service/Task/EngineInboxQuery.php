@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\EngineInboxQueryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
  */
-class EngineInboxQuery {
+class EngineInboxQuery implements EngineInboxQueryInterface {
 
     /**
      * OpenRegister's inbox criteria, reached by name.
@@ -112,7 +113,7 @@ class EngineInboxQuery {
      * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
      */
     public function rows(array $criteria, int $limit, array $failure): array {
-        return $this->rowsOf(value: $this->envelope(criteria: $criteria, limit: $limit, failure: $failure));
+        return $this->rowsOf(value: $this->envelope(read: ['criteria' => $criteria, 'limit' => $limit], failure: $failure));
     }//end rows()
 
     /**
@@ -133,7 +134,7 @@ class EngineInboxQuery {
      * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
      */
     public function total(array $criteria, array $failure): int {
-        $page = $this->envelope(criteria: $criteria, limit: 1, failure: $failure);
+        $page = $this->envelope(read: ['criteria' => $criteria, 'limit' => 1], failure: $failure);
         if (is_array($page) === false) {
             return 0;
         }
@@ -206,8 +207,8 @@ class EngineInboxQuery {
      * nothing; `lastError()` is how a caller that must fail closed tells
      * that apart from a genuinely empty answer.
      *
-     * @param array<string, mixed> $criteria Named arguments for the criteria.
-     * @param integer              $limit    How many rows at most.
+     * @param array{criteria: array<string, mixed>, limit: int} $read Named arguments for the criteria, and how many
+     *                                                           rows at most.
      * @param array{0: string, 1: array<string, mixed>} $failure Log message and context.
      *
      * @return mixed The engine's response, or null.
@@ -226,7 +227,8 @@ class EngineInboxQuery {
      *
      * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
      */
-    private function envelope(array $criteria, int $limit, array $failure): mixed {
+    private function envelope(array $read, array $failure): mixed {
+        ['criteria' => $criteria, 'limit' => $limit] = $read;
         // NOTE: no `class_exists` guard on the criteria, deliberately. The
         // catch below already handles an absent class -- a missing class
         // throws `Error`, which is a `Throwable` -- and it LOGS, where a
@@ -312,9 +314,6 @@ class EngineInboxQuery {
      * an empty array and pass whatever the body did.
      *
      * @return object|null The service, or null when unavailable.
-     *
-     * @psalm-suppress MixedReturnStatement
-     * @psalm-suppress MixedInferredReturnType
      *
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */

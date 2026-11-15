@@ -78,7 +78,7 @@
             "type": "object",
             "title": "Risk assessment",
             "description": "What this organisation assessed the risk on this case to be, on what ground, by whom and when it is due to be looked at again. Available to every domain rather than to VTH alone. A level with no ground is a number nobody can defend or revise, so the ground is part of the assessment rather than an optional note beside it.",
-            "authorization": {
+            "x-openregister-authorization": {
               "read": [
                 {
                   "group": "dossiq-risk-assessment"
@@ -156,7 +156,7 @@
             "title": "Risk level",
             "description": "The assessed level, mirrored at the top level so the work list can facet on it. Behind the same rule as the assessment itself, so it is absent from the row entirely for a reader without the permission rather than being blanked in a column they can see. Derived from the assessment on every save and never typed.",
             "facetable": true,
-            "authorization": {
+            "x-openregister-authorization": {
               "read": [
                 {
                   "group": "dossiq-risk-assessment"

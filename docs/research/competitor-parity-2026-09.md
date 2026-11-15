@@ -16,6 +16,8 @@ Ledger v10 also folded the gap register's own numbering. Every row and every pen
 
 Ledger v10.1 and register v4.1 closed the last of it on 2026-09-14. Every gap the register can act on, every pending proposal that asks dossiq for work, and every discovery cluster now names a change you can open. What is left uncarried is nine gaps, 22 pending proposals and 18 candidates, and each of them says in the register why nothing is open rather than waiting to be rediscovered. Nothing in that remainder is a backlog item.
 
+**The build that followed is finished.** All 277 OpenSpec changes are merged, across fifteen repositories. That is a build count and not a parity claim, and [what is built](#what-is-built) at the foot of this page says what it does and does not mean. Read the 225 rows and their verdicts instead.
+
 ## Method
 
 ### Installed and driven, or rated from documents
@@ -422,19 +424,69 @@ Row 11.2 is the one that runs the other way, and it is the hollow-green shape th
 
 Two further defects turned up on the way, neither of them a ledger row. `propertyDefinition.requiredAtStatus` is authored in `PropertiesTab.vue:155`, stored in the schema and read by no backend code, because it is not in the `x-openregister-extends-form.map`. And `WorkflowEditor` does not honour `lifecycleStatus: published`, which the schema's own description calls immutable: the canvas, node create, drag and delete and the whole `TransitionConfigPanel` stay editable on a published template.
 
-## What is built so far
+## What is built
 
-Eighteen pull requests that change behaviour are merged on `development`, in five repositories. A specification is not a feature, so the OpenSpec pull requests listed above are not in this table.
+The build is finished. Every OpenSpec change this programme opened is merged: **277 of 277**. 371 pull request entries carry them, 361 distinct pull requests, because one pull request can close more than one change.
 
-| repository | merged |
-|---|---|
-| dossiq | [#2719](https://github.com/ConductionNL/dossiq/pull/2719), [#2721](https://github.com/ConductionNL/dossiq/pull/2721), [#2723](https://github.com/ConductionNL/dossiq/pull/2723), [#2729](https://github.com/ConductionNL/dossiq/pull/2729), [#2732](https://github.com/ConductionNL/dossiq/pull/2732), [#2744](https://github.com/ConductionNL/dossiq/pull/2744), [#2746](https://github.com/ConductionNL/dossiq/pull/2746), [#2748](https://github.com/ConductionNL/dossiq/pull/2748), [#2752](https://github.com/ConductionNL/dossiq/pull/2752), [#2754](https://github.com/ConductionNL/dossiq/pull/2754) |
-| openregister | [#3707](https://github.com/ConductionNL/openregister/pull/3707), [#3711](https://github.com/ConductionNL/openregister/pull/3711), [#3714](https://github.com/ConductionNL/openregister/pull/3714), [#3719](https://github.com/ConductionNL/openregister/pull/3719), [#3724](https://github.com/ConductionNL/openregister/pull/3724) |
-| filinq | [#1090](https://github.com/ConductionNL/filinq/pull/1090) |
-| integriq | [#2015](https://github.com/ConductionNL/integriq/pull/2015) |
-| portaliq | [#551](https://github.com/ConductionNL/portaliq/pull/551) |
+Fourteen repositories hold a change. Fifteen received a pull request. planninq took one pull request and owns no change of its own, which is why both counts are right.
 
-More build lanes are in flight and are not counted here. They are not merged, so nothing on this page counts them. A change directory that appears in the register and not in the table above is specified and not yet shipped.
+| repository | pull requests | changes owned |
+|---|---:|---:|
+| openregister | 135 | 95 |
+| dossiq | 114 | 91 |
+| integriq | 26 | 21 |
+| nextcloud-vue | 22 | 12 |
+| filinq | 18 | 14 |
+| portaliq | 17 | 11 |
+| pipelinq | 8 | 8 |
+| buildiq | 7 | 5 |
+| hermiq | 6 | 5 |
+| humaniq | 5 | 4 |
+| decidiq | 4 | 3 |
+| shillinq | 4 | 4 |
+| opencatalogi | 3 | 3 |
+| launchpad | 1 | 1 |
+| planninq | 1 | 0 |
+| **total** | **371** | **277** |
+
+Eleven repositories carry a `parity/round2` integration branch, holding 329 commits between them. pipelinq, hermiq and humaniq carry none, so their changes went to `development` directly.
+
+### 277 of 277 is a build count, not a parity claim
+
+Read that number as work finished, never as rows passed. A merged change means code landed. Whether a matrix row now reads `yes` is a separate reading, taken against the corpus. The claim this page stands behind is the 225 rows and their verdicts, not the build total.
+
+### The 86 rows no change touched
+
+86 of the 225 rows carried no change when the build finished. A closing scan read every one of them and gave it a verdict, with the evidence written down per row. None is left unexplained.
+
+| verdict | rows | what it means |
+|---|---:|---|
+| a sibling app already has it | 28 | The capability lives in another Conduction app and dossiq consumes it. |
+| dossiq already had it | 19 | Shipped before this round. The row's note was stale. |
+| a real gap | 17 | dossiq's own work, still to build. |
+| a sibling app has to build it | 10 | Owned elsewhere, named, not yet built. |
+| the platform's | 10 | Nextcloud does it. |
+| a recorded decision not to build | 2 | Decided, with the reasoning written down. |
+
+### Logic lives in the app that owns it
+
+This is the architecture rule, and it accounts for 38 of those 86 rows. dossiq reaches full comparability on the matrix. Logic that belongs to another app is built in that app, and dossiq consumes it. So a row can be covered without a line of dossiq code, and 38 of these rows are somebody else's job rather than a gap.
+
+openregister owns 19 of the 28 already built elsewhere: search, retention, per-case access control, the process engine. integriq owns three. buildiq, nextcloud-vue, portaliq, pipelinq, humaniq and thematiq own one each. The ten still to build sit with integriq, nextcloud-vue and openregister, three each, and buildiq once.
+
+Ten further rows are Nextcloud's own: in-browser editing, per-file sharing, locking, trash, previews, case files in the file manager, staff SSO, object storage, and two-factor with login history. Running on Nextcloud is why dossiq does not build them.
+
+### The 17 gaps
+
+Sixteen of the seventeen name an OpenSpec change a reader can open, in the repository that owns it. Row 4.6, Office add-ins and a Teams app, names none on purpose. An add-in is a separate distributable outside the Nextcloud app model, so no fleet repository can carry it today.
+
+Two rows are recorded decisions rather than work. Row 3.5 shipped three of its four lenses, and the fourth waits on a value nextcloud-vue cannot resolve yet. Row 6.16, the satisfaction survey after a case closes, is a deliberate no: a municipality owes an outcome, not a rating request. That row needs correcting in the ledger, which also marks it built by a pipelinq capability belonging to pipelinq's clients rather than to a closed case.
+
+Row 13.14, locked rows for restricted cases, is a disclosure question before it is a feature. Today a case you may not read is absent from the list, not locked, because openregister filters it inside the query. Drawing a locked row means returning a redacted stub, and the existence of a case is itself personal data.
+
+### Where the record is
+
+The capability record, the scan evidence per row and the build state are published to `ConductionNL/market-intelligence`, in [#152](https://github.com/ConductionNL/market-intelligence/pull/152) and [#153](https://github.com/ConductionNL/market-intelligence/pull/153). Open those before quoting any number on this page, and quote the row rather than the total.
 
 ## Where to check a cell
 

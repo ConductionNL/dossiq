@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
 use OCA\Dossiq\Service\Sharing\CaseLinkShares;
@@ -37,6 +38,7 @@ use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
+use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -177,6 +179,9 @@ class CaseSharingServiceFederationTest extends TestCase {
 	 * @param ContainerInterface $container DI container (mock).
 	 * @param LoggerInterface $logger Logger (mock).
 	 * @param TenantAuditTrailService $audit Audit trail (mock).
+	 * @param IGroupManager $groupManager Group manager (mock); a bare one answers
+	 *                                    "not an admin", which is what every
+	 *                                    assertion in this class assumes.
 	 *
 	 * @return CaseSharingService
 	 */
@@ -186,6 +191,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 		ContainerInterface $container,
 		LoggerInterface $logger,
 		TenantAuditTrailService $audit,
+		IGroupManager $groupManager,
 	): CaseSharingService {
 		$gateway = new OpenRegisterSharingGateway($appManager, $container, $logger);
 
@@ -194,13 +200,40 @@ class CaseSharingServiceFederationTest extends TestCase {
 		return new CaseSharingService(
 			settingsService: $settings,
 			gateway: $gateway,
-			accessPolicy: new CaseAccessPolicy($settings, $gateway, $logger),
+			accessPolicy: new CaseAccessPolicy($settings, $gateway, $groupManager, $logger),
 			accessLinks: $accessLinks,
 			linkShares: new CaseLinkShares($settings, $gateway, $accessLinks, $logger),
 			federatedShares: new FederatedCaseShareService($settings, $gateway, $logger, $audit),
+			consent: self::allowingConsentGate(),
 			logger: $logger,
 		);
 	}//end makeSharingService()
+
+	/**
+	 * A consent gate that lets every partner and federated share through.
+	 *
+	 * Stubbed here because this test's subject is the federated share and the
+	 * access link, not the consent. REQ-CST-01 and REQ-CST-02 are watched
+	 * against a real in-memory register in PartnerShareScopeTest.
+	 *
+	 * @return CaseTransferConsentGate The gate.
+	 */
+	private static function allowingConsentGate(): CaseTransferConsentGate {
+		$allowed = [
+			'allowed' => true,
+			'rule' => '',
+			'sentence' => '',
+			'consent' => null,
+			'scope' => [],
+			'until' => '',
+			'crossesOrganisation' => true,
+		];
+		$gate = self::createStub(CaseTransferConsentGate::class);
+		$gate->method('assess')->willReturn($allowed);
+		$gate->method('assessSharing')->willReturn($allowed);
+
+		return $gate;
+	}//end allowingConsentGate()
 
 	/**
 	 * @return void
@@ -243,6 +276,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			$this->container,
 			$this->createMock(LoggerInterface::class),
 			$this->audit,
+			$this->createMock(IGroupManager::class),
 		);
 
 		$this->objects->objects['case-1'] = [
@@ -383,6 +417,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			$container,
 			$this->createMock(LoggerInterface::class),
 			$this->createMock(TenantAuditTrailService::class),
+			$this->createMock(IGroupManager::class),
 		);
 
 		$result = $service->createFederatedShare('case-1', 'partner@remote.example', ['title'], [], 'bekijken', 'alice');
@@ -419,6 +454,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			$this->createMock(ContainerInterface::class),
 			$this->createMock(LoggerInterface::class),
 			$this->createMock(TenantAuditTrailService::class),
+			$this->createMock(IGroupManager::class),
 		);
 
 		$result = $service->revokeFederatedShare('anything', 'bob');

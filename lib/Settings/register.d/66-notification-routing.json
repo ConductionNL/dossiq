@@ -1,5 +1,5 @@
 {
-  "_note": "notifications-route-by-role-and-domain. Consumes openregister#3757 (notification-routing-per-group-and-scope). THREE declarations, none of which resolves a recipient in PHP. ONE, `case.authorization.roles` says which Nextcloud groups hold each role a notification rule may address. The dispatcher reads this map to turn `{kind: role, role: behandelaar}` into the people to tell, and it reads it at dispatch, so a colleague who joins the team tomorrow is reached by a rule written today. The same map is what a lifecycle transition reads, so the assignment changes in one place instead of in every rule that names the role. Every group named here is provisioned by \\OCA\\Dossiq\\Repair\\ProvisionAssignedGroups; a role assigned a group the server does not have records `recipient-unresolved` rather than delivering to nobody in silence, which is why the two lists are swept against each other by AuthorizationRolesAreProvisionedTest. TWO, each rule declares the `domain` it belongs to, which becomes the scope `domain:<name>`. A person may then pin one preference to `domain:zaken` and another to `domain:werkvoorraad`, and the dispatcher matches the rule's own domain. The domain is a literal on the rule, not a field read off the object: OpenRegister resolves no per-object domain, so dossiq declares one domain per rule and `caseType.notificationDomain` offers exactly those, never a free word that would pin a preference nothing ever matches. THREE, `caseType.notificationDomain` is the authoring surface for which domain a case type's notices fall under. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "_note": "notifications-route-by-role-and-domain. Consumes openregister#3757 (notification-routing-per-group-and-scope). THREE declarations, none of which resolves a recipient in PHP. ONE, `case.authorization.roles` says which Nextcloud groups hold each role a notification rule may address. The dispatcher reads this map to turn `{kind: role, role: behandelaar}` into the people to tell, and it reads it at dispatch, so a colleague who joins the team tomorrow is reached by a rule written today. The same map is what a lifecycle transition reads, so the assignment changes in one place instead of in every rule that names the role. Every group named here is provisioned by \\OCA\\Dossiq\\Repair\\ProvisionAssignedGroups; a role assigned a group the server does not have records `recipient-unresolved` rather than delivering to nobody in silence, which is why the two lists are swept against each other by AuthorizationRolesAreProvisionedTest. TWO, each rule declares the `domain` it belongs to, which becomes the scope `domain:<name>`. A person may then pin one preference to `domain:zaken` and another to `domain:werkvoorraad`, and the dispatcher matches the rule's own domain. The domain is a literal on the rule, not a field read off the object: OpenRegister resolves no per-object domain, so dossiq declares one domain per rule and `caseType.notificationDomain` offers exactly those, never a free word that would pin a preference nothing ever matches. THREE, `caseType.notificationDomain` is the authoring surface for which domain a case type's notices fall under. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once. FOUR, added by case-access-by-handling-team (Ruben, 2026-10-11): the same block now also says who may act on a case, because a block with roles only expanded to nothing (the register declares no role definitions) and OpenRegister read that as no rule, which is open to every signed in account. The assignee reads and updates the case, the background service account reads and updates it, the staff group creates, and only administrators delete. The handling team rules, one per team over the case types it handles, are written onto the live schema by CaseTeamAccessProjector, because they follow the case type rows and not this file.",
   "components": {
     "schemas": {
       "case": {
@@ -15,7 +15,32 @@
               "behandelaars",
               "coordinatoren"
             ]
-          }
+          },
+          "read": [
+            {
+              "group": "authenticated",
+              "match": {
+                "assignee": "$userId"
+              }
+            },
+            "dossiq-background-service"
+          ],
+          "create": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "update": [
+            {
+              "group": "authenticated",
+              "match": {
+                "assignee": "$userId"
+              }
+            },
+            "dossiq-background-service"
+          ],
+          "delete": [
+            "admin"
+          ]
         },
         "x-openregister-notifications": {
           "caseAssigned": {

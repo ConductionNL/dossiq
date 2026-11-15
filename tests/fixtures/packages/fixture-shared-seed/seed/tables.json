@@ -1,0 +1,12 @@
+{
+  "schema": {
+    "app": "fixture-app",
+    "register": ["fixture-register", "fixture-register-old"],
+    "slug": "fixture_source"
+  },
+  "match": "key",
+  "rows": [
+    {"id": "0f1c0000-0000-4000-8000-000000000071", "key": "fixture.first", "name": "Fixture first"},
+    {"id": "0f1c0000-0000-4000-8000-000000000072", "key": "fixture.second", "name": "Fixture second"}
+  ]
+}

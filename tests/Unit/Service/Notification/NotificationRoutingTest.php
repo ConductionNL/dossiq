@@ -31,9 +31,64 @@ namespace OCA\Dossiq\Tests\Unit\Service\Notification;
 
 use OCA\Dossiq\Service\Notification\NotificationRouting;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\NotificationPreferencesInterface;
+use OCA\OpenRegister\Kernel\Contracts\PreferenceAddress;
+use OCA\OpenRegister\Kernel\Contracts\PreferenceWrite;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+
+/**
+ * The preference calls a double does not exercise, so each double states only what its test reads or writes.
+ */
+abstract class PreferencesDouble implements NotificationPreferencesInterface {
+
+	/**
+	 * @param string            $userId The person.
+	 * @param array<int,string> $scopes The scopes asked for.
+	 *
+	 * @return array<int, array<string, mixed>> Nothing.
+	 */
+	public function getEffectiveForUser(string $userId, array $scopes = []): array {
+		return [];
+	}//end getEffectiveForUser()
+
+	/**
+	 * @param string            $groupId The group.
+	 * @param PreferenceAddress $address The rule and its scope.
+	 *
+	 * @return array<string, mixed>|null Nothing.
+	 */
+	public function groupDefaultAt(string $groupId, PreferenceAddress $address): ?array {
+		return null;
+	}//end groupDefaultAt()
+
+	/**
+	 * @param string            $userId  The person.
+	 * @param PreferenceAddress $address The rule and its scope.
+	 *
+	 * @return array<string, mixed>|null Nothing.
+	 */
+	public function overrideAt(string $userId, PreferenceAddress $address): ?array {
+		return null;
+	}//end overrideAt()
+
+	/**
+	 * @param PreferenceWrite $write The group default.
+	 *
+	 * @return void
+	 */
+	public function storeGroupDefault(PreferenceWrite $write): void {
+	}//end storeGroupDefault()
+
+	/**
+	 * @param PreferenceWrite $write The override.
+	 *
+	 * @return void
+	 */
+	public function storeOverride(PreferenceWrite $write): void {
+	}//end storeOverride()
+}//end class
 
 /**
  * The seam onto OpenRegister's layered preference read.
@@ -68,7 +123,7 @@ class NotificationRoutingTest extends TestCase {
 	 * @return object The double.
 	 */
 	private function platform(array $entries): object {
-		return new class($entries) {
+		return new class($entries) extends PreferencesDouble {
 			/**
 			 * Every write this double received.
 			 *
@@ -108,21 +163,16 @@ class NotificationRoutingTest extends TestCase {
 			/**
 			 * Record one override.
 			 *
-			 * @param string            $userId          The person.
-			 * @param string            $schemaSlug      The schema.
-			 * @param string            $notificationKey The rule.
-			 * @param array|null        $override        The value.
-			 * @param string|null       $scope           The scope.
+			 * @param PreferenceWrite $write The person, the rule and its scope, and the value.
 			 *
 			 * @return void
 			 */
-			public function setOverride(
-				string $userId,
-				string $schemaSlug,
-				string $notificationKey,
-				?array $override,
-				?string $scope = null
-			): void {
+			public function storeOverride(PreferenceWrite $write): void {
+				$userId = $write->party;
+				$schemaSlug = $write->address->schemaSlug;
+				$notificationKey = $write->address->notificationKey;
+				$override = $write->value;
+				$scope = $write->address->scope;
 				$this->writes[] = [
 					'userId' => $userId,
 					'schema' => $schemaSlug,
@@ -197,6 +247,126 @@ class NotificationRoutingTest extends TestCase {
 			message: 'Half an answer must not read as a whole one.'
 		);
 	}//end testAServiceWithoutTheLayeredReadIsTreatedAsAbsent()
+
+	/**
+	 * A layered read that answers something other than a list is no routing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+	 */
+	public function testANonListAnswerReadsAsUnrouted(): void {
+		$odd = new class {
+			/**
+			 * A layered read that answers a non-list.
+			 *
+			 * @param string            $userId The person.
+			 * @param array<int,string> $scopes The scopes asked for.
+			 *
+			 * @return string Not a list.
+			 */
+			public function getEffectiveForUser(string $userId, array $scopes = []): string {
+				return 'enabled';
+			}
+		};
+		$routing = $this->routing(service: $odd);
+
+		$this->assertTrue(condition: $routing->isAvailable());
+		$this->assertNull(actual: $routing->effectiveFor(userId: 'alice'));
+		$this->assertNull(actual: $routing->digestEnabledFor(userId: 'alice'));
+		$this->assertNull(actual: $routing->digestDecidedBy(userId: 'alice'));
+	}//end testANonListAnswerReadsAsUnrouted()
+
+	/**
+	 * A layered read without the preference contract cannot store a switch.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
+	 */
+	public function testAReadOnlyServiceDoesNotStoreTheSwitch(): void {
+		$readOnly = new class {
+			/**
+			 * Overrides that reached this double.
+			 *
+			 * @var array<int, mixed>
+			 */
+			public array $writes = [];
+
+			/**
+			 * A layered read with nothing in it.
+			 *
+			 * @param string            $userId The person.
+			 * @param array<int,string> $scopes The scopes asked for.
+			 *
+			 * @return array<int, mixed> Nothing.
+			 */
+			public function getEffectiveForUser(string $userId, array $scopes = []): array {
+				return [];
+			}
+
+			/**
+			 * A write method outside the contract.
+			 *
+			 * @param mixed $write The write.
+			 *
+			 * @return void
+			 */
+			public function storeOverride(mixed $write): void {
+				$this->writes[] = $write;
+			}
+		};
+
+		$this->assertFalse(condition: $this->routing(service: $readOnly)->setDigestEnabled(userId: 'alice', enabled: true));
+		$this->assertSame(expected: [], actual: $readOnly->writes);
+	}//end testAReadOnlyServiceDoesNotStoreTheSwitch()
+
+	/**
+	 * Without an acting person nothing is stored.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
+	 */
+	public function testNoSwitchIsStoredWithoutAPerson(): void {
+		$platform = $this->platform(entries: []);
+
+		$this->assertFalse(condition: $this->routing(service: $platform)->setDigestEnabled(userId: '', enabled: true));
+		$this->assertSame(expected: [], actual: $platform->writes);
+	}//end testNoSwitchIsStoredWithoutAPerson()
+
+	/**
+	 * When no layer holds the digest rule, nothing decided it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+	 */
+	public function testNoDigestEntryMeansNothingDecided(): void {
+		$other = $this->digestEntry(enabled: true, source: 'user-override');
+		$other['notification'] = 'workDigestFailed';
+		$routing = $this->routing(service: $this->platform(entries: [$other]));
+
+		$this->assertNull(actual: $routing->digestDecidedBy(userId: 'alice'));
+		$this->assertNull(actual: $routing->digestEnabledFor(userId: 'alice'));
+	}//end testNoDigestEntryMeansNothingDecided()
+
+	/**
+	 * An entry without source or scope is named as the schema default, globally.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+	 */
+	public function testAnEntryWithoutLayerIsTheGlobalSchemaDefault(): void {
+		$bare = $this->digestEntry(enabled: true, source: 'x');
+		unset($bare['source'], $bare['scope']);
+
+		$this->assertSame(
+			expected: ['source' => 'schema-default', 'scope' => 'global'],
+			actual: $this->routing(service: $this->platform(entries: [$bare]))->digestDecidedBy(userId: 'alice')
+		);
+	}//end testAnEntryWithoutLayerIsTheGlobalSchemaDefault()
 
 	/**
 	 * The deciding layer comes back with the value.
@@ -327,7 +497,7 @@ class NotificationRoutingTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
 	 */
 	public function testAThrowingReadPropagatesRatherThanReadingAsUnrouted(): void {
-		$angry = new class {
+		$angry = new class extends PreferencesDouble {
 			/**
 			 * Always throws.
 			 *
@@ -343,21 +513,16 @@ class NotificationRoutingTest extends TestCase {
 			/**
 			 * Always throws.
 			 *
-			 * @param string      $userId          The person.
-			 * @param string      $schemaSlug      The schema.
-			 * @param string      $notificationKey The rule.
-			 * @param array|null  $override        The value.
-			 * @param string|null $scope           The scope.
+			 * @param PreferenceWrite $write The person, the rule and its scope, and the value.
 			 *
 			 * @return void
 			 */
-			public function setOverride(
-				string $userId,
-				string $schemaSlug,
-				string $notificationKey,
-				?array $override,
-				?string $scope = null
-			): void {
+			public function storeOverride(PreferenceWrite $write): void {
+				$userId = $write->party;
+				$schemaSlug = $write->address->schemaSlug;
+				$notificationKey = $write->address->notificationKey;
+				$override = $write->value;
+				$scope = $write->address->scope;
 				throw new \RuntimeException('the register is down');
 			}
 		};
@@ -379,7 +544,7 @@ class NotificationRoutingTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
 	 */
 	public function testAThrowingWriteIsReportedAsNotRouted(): void {
-		$angry = new class {
+		$angry = new class extends PreferencesDouble {
 			/**
 			 * Answers, so the seam reads as available.
 			 *
@@ -395,21 +560,16 @@ class NotificationRoutingTest extends TestCase {
 			/**
 			 * Always throws.
 			 *
-			 * @param string      $userId          The person.
-			 * @param string      $schemaSlug      The schema.
-			 * @param string      $notificationKey The rule.
-			 * @param array|null  $override        The value.
-			 * @param string|null $scope           The scope.
+			 * @param PreferenceWrite $write The person, the rule and its scope, and the value.
 			 *
 			 * @return void
 			 */
-			public function setOverride(
-				string $userId,
-				string $schemaSlug,
-				string $notificationKey,
-				?array $override,
-				?string $scope = null
-			): void {
+			public function storeOverride(PreferenceWrite $write): void {
+				$userId = $write->party;
+				$schemaSlug = $write->address->schemaSlug;
+				$notificationKey = $write->address->notificationKey;
+				$override = $write->value;
+				$scope = $write->address->scope;
 				throw new \RuntimeException('the register is down');
 			}
 		};

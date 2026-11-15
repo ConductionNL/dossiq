@@ -34,16 +34,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\ConflictOfInterestService;
-use OCA\Dossiq\Service\External\Brp\BrpHaalCentraalAdapterInterface;
-use OCA\Dossiq\Service\External\Brp\BrpLookupResult;
 use OCA\Dossiq\Service\MedewerkerIdentityResolverInterface;
+use OCA\Dossiq\Service\Registry\PersonRelationReader;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\ConflictOfInterestService
- *
- * @uses \OCA\Dossiq\Service\External\Brp\BrpLookupResult
  */
 class ConflictOfInterestServiceTest extends TestCase {
 
@@ -266,93 +263,155 @@ class ConflictOfInterestServiceTest extends TestCase {
 	// above.
 
 	/**
-	 * A dormant BRP adapter yields no relation — with identity resolved, that is
-	 * a genuine "no conflict" rather than an unanswered question.
+	 * A relation read that answers the given result.
 	 *
-	 * @return void
+	 * @param array<string, mixed> $answer What the registry read answers.
+	 *
+	 * @return PersonRelationReader
 	 */
-	public function testDormantBrpAdapterLeavesConflictOpen(): void {
-		$brp = $this->createMock(BrpHaalCentraalAdapterInterface::class);
-		$brp->method('lookup')->willReturn(
-			new BrpLookupResult(
-				lookupStatus: 'LOOKUP_DEFERRED',
-				persoon: [],
-				dormant: true,
-			)
-		);
+	private function relations(array $answer): PersonRelationReader {
+		$reader = $this->createMock(PersonRelationReader::class);
+		$reader->method('read')->willReturn($answer);
 
-		$svc = new ConflictOfInterestService(
-			$this->createMock(LoggerInterface::class),
-			$brp,
-			$this->resolverFor('111'),
-		);
-
-		$r = $svc->checkConflict('alice', 'Z/2026/6', ['applicantBsn' => '222']);
-
-		self::assertFalse($r['conflict']);
-	}//end testDormantBrpAdapterLeavesConflictOpen()
+		return $reader;
+	}//end relations()
 
 	/**
-	 * An active BRP adapter detects a family relation.
+	 * The case worker's partner is the applicant: a conflict, named.
 	 *
-	 * This is why the resolver returns a BSN rather than a hash: Haal Centraal
-	 * can only be queried by BSN. A hash-only seam would strand this capability.
+	 * This is why the resolver returns a BSN rather than a hash: the registry
+	 * can only be asked by BSN. A hash-only seam would strand this capability.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
 	 */
-	public function testActiveBrpAdapterDetectsRelation(): void {
-		$brp = $this->createMock(BrpHaalCentraalAdapterInterface::class);
-		$brp->method('lookup')->willReturn(
-			new BrpLookupResult(
-				lookupStatus: 'FOUND',
-				persoon: [
-					'relaties' => [
-						['citizenServiceNumber' => '222', 'relatie' => 'partner'],
-					],
+	public function testARelationToTheApplicantIsAConflict(): void {
+		$reader = $this->createMock(PersonRelationReader::class);
+		$reader->expects($this->once())->method('read')->with('111')->willReturn(
+			[
+				'available' => true,
+				'reason' => '',
+				'relations' => [
+					['relation' => 'parent', 'burgerservicenummer' => '999'],
+					['relation' => 'partner', 'burgerservicenummer' => '222'],
 				],
-				dormant: false,
-			)
+			]
 		);
 
-		$svc = new ConflictOfInterestService(
-			$this->createMock(LoggerInterface::class),
-			$brp,
-			$this->resolverFor('111'),
-		);
-
+		$svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class), $reader, $this->resolverFor('111'));
 		$r = $svc->checkConflict('alice', 'Z/2026/7', ['applicantBsn' => '222']);
 
 		self::assertTrue($r['conflict']);
 		self::assertSame('partner', $r['reason']);
-	}//end testActiveBrpAdapterDetectsRelation()
+	}//end testARelationToTheApplicantIsAConflict()
 
 	/**
-	 * A BRP relation to a different person is not a conflict.
+	 * A relation to somebody else is no conflict, and the answer says the
+	 * relation step ran.
 	 *
 	 * @return void
 	 */
-	public function testBrpAdapterRelationOnlyFiresWhenBsnMatches(): void {
-		$brp = $this->createMock(BrpHaalCentraalAdapterInterface::class);
-		$brp->method('lookup')->willReturn(
-			new BrpLookupResult(
-				lookupStatus: 'FOUND',
-				persoon: [
-					'relaties' => [
-						['citizenServiceNumber' => '999', 'relatie' => 'parent'],
-					],
-				],
-				dormant: false,
-			)
-		);
+	public function testARelationToSomebodyElseIsNoConflict(): void {
+		$reader = $this->relations(['available' => true, 'reason' => '', 'relations' => [['relation' => 'parent', 'burgerservicenummer' => '999']]]);
 
-		$svc = new ConflictOfInterestService(
-			$this->createMock(LoggerInterface::class),
-			$brp,
-			$this->resolverFor('111'),
-		);
-
+		$svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class), $reader, $this->resolverFor('111'));
 		$r = $svc->checkConflict('alice', 'Z/2026/8', ['applicantBsn' => '222']);
 
 		self::assertFalse($r['conflict']);
-	}//end testBrpAdapterRelationOnlyFiresWhenBsnMatches()
+		self::assertSame(ConflictOfInterestService::RELATION_CHECK_DONE, $r['relationCheck']);
+		self::assertArrayNotHasKey('relationCheckReason', $r);
+	}//end testARelationToSomebodyElseIsNoConflict()
+
+	/**
+	 * Where the relation read cannot run (integriq absent, or the BRP source
+	 * not switched on for relations) the step says "not available". It does
+	 * not pass in silence: before this, a dormant client answered nothing and
+	 * the result read exactly like a check that had found no relation.
+	 *
+	 * @param string|null $answered The reason the read gives, or null when no reader is bound.
+	 * @param string $reason The reason expected in the answer.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider notAvailable
+	 */
+	public function testARelationStepThatCannotRunSaysNotAvailable(?string $answered, string $reason): void {
+		$reader = null;
+		if ($answered !== null) {
+			$reader = $this->relations(['available' => false, 'reason' => $answered, 'relations' => []]);
+		}
+
+		$svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class), $reader, $this->resolverFor('111'));
+		$r = $svc->checkConflict('alice', 'Z/2026/6', ['applicantBsn' => '222']);
+
+		self::assertFalse($r['conflict']);
+		self::assertSame(ConflictOfInterestService::RELATION_CHECK_NOT_AVAILABLE, $r['relationCheck']);
+		self::assertSame($reason, $r['relationCheckReason']);
+	}//end testARelationStepThatCannotRunSaysNotAvailable()
+
+	/**
+	 * The ways the relation read is not there to be asked.
+	 *
+	 * @return array<string, array{0: string|null, 1: string}>
+	 */
+	public static function notAvailable(): array {
+		return [
+			'no reader bound' => [null, PersonRelationReader::REASON_NO_INTEGRIQ],
+			'integriq not installed' => [PersonRelationReader::REASON_NO_INTEGRIQ, PersonRelationReader::REASON_NO_INTEGRIQ],
+			'integriq without the read' => [PersonRelationReader::REASON_NO_READER, PersonRelationReader::REASON_NO_READER],
+			'source not switched on' => ['relations-not-enabled', 'relations-not-enabled'],
+			'no source' => ['no-source', 'no-source'],
+		];
+	}//end notAvailable()
+
+	/**
+	 * A relation read that is switched on and gets no answer is
+	 * indeterminate: the question was asked and not answered. That blocks.
+	 *
+	 * @param string $reason The reason the read gave.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider unanswered
+	 */
+	public function testARelationReadThatGetsNoAnswerBlocks(string $reason): void {
+		$reader = $this->relations(['available' => false, 'reason' => $reason, 'relations' => []]);
+
+		$svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class), $reader, $this->resolverFor('111'));
+		$r = $svc->checkConflict('alice', 'Z/2026/9', ['applicantBsn' => '222']);
+
+		self::assertTrue($r['conflict']);
+		self::assertSame(ConflictOfInterestService::REASON_RELATION_INDETERMINATE, $r['reason']);
+	}//end testARelationReadThatGetsNoAnswerBlocks()
+
+	/**
+	 * Reasons that mean "asked, not answered", including one this version does not know.
+	 *
+	 * @return array<string, array{0: string}>
+	 */
+	public static function unanswered(): array {
+		return [
+			'unreachable' => [PersonRelationReader::REASON_UNREACHABLE],
+			'invalid-identifier' => ['invalid-identifier'],
+			'a reason from a later integriq' => ['something-new'],
+			'no reason at all' => [''],
+		];
+	}//end unanswered()
+
+	/**
+	 * A relation read that throws blocks as well.
+	 *
+	 * @return void
+	 */
+	public function testARelationReadThatThrowsBlocks(): void {
+		$reader = $this->createMock(PersonRelationReader::class);
+		$reader->method('read')->willThrowException(new \RuntimeException('down'));
+
+		$svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class), $reader, $this->resolverFor('111'));
+		$r = $svc->checkConflict('alice', 'Z/2026/10', ['applicantBsn' => '222']);
+
+		self::assertTrue($r['conflict']);
+		self::assertSame(ConflictOfInterestService::REASON_RELATION_INDETERMINATE, $r['reason']);
+	}//end testARelationReadThatThrowsBlocks()
 }//end class

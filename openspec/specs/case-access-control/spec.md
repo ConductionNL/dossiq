@@ -1,0 +1,436 @@
+---
+status: done
+---
+
+# case-access-control Specification (dossiq consumer, OpenRegister engine)
+
+**Scope:** dossiq. The permission engine is OpenRegister's.
+**Depends on:** OpenRegister grant provenance (`PermissionHandler::provenanceFor()`, openregister#3726), grants that reach a declared hierarchy edge (openregister#3873), access links (openregister#3817), object watchers, and field level property authorization (`PropertyRbacHandler`).
+**Capability area:** `access-and-privacy` in `openspec/parity/capabilities.json`.
+
+## Purpose
+
+A handler asks who else can open this dossier, and why. A jurist wants to follow a
+case nobody assigned to them. An auditor asks who could read it last March. This
+capability is the set of answers dossiq gives, and the line it draws while giving
+them.
+
+dossiq evaluates no permission of its own. ADR-022 and decision D22 put the grant on
+the object, the object in OpenRegister, and the evaluation there. Two evaluators are
+two answers, and the first time they disagree the disagreement is a disclosure.
+`tests/Unit/Architecture/NoSecondPermissionEvaluatorTest.php` is what keeps that
+true: it scans `lib/` for an effective permission evaluator and fails when one
+appears.
+
+What dossiq owns is the zaak shaped half. Which relationship on a case counts, what
+a case type declares about departments, roles and confidentiality, which fields a
+role keeps, who follows the case, and every surface that shows a person the answer.
+
+This spec is the index of that capability for the features page. Each requirement
+names the change that built it rather than restating that change's rules, so there
+is one copy of every rule.
+
+## Where the line runs
+
+| Question | Answered by | Rule lives in |
+|---|---|---|
+| May this account read or change this object | OpenRegister | the grant on the object |
+| Is this person named on this case | dossiq | `lib/Service/CaseAccessGuard.php` |
+| Which departments and roles does this case type grant, at which confidentiality | dossiq | the case type rights matrix |
+| Which fields does a role keep | dossiq declares, OpenRegister enforces | `lib/Service/Access/CaseFieldRoleProjector.php` |
+| Which roles a case type knows | dossiq | `roleType` objects, edited on the Roles tab in settings |
+| Who belongs to which group | Nextcloud | the platform, not this app |
+| Who signed in, with which second factor | Nextcloud | the platform, not this app |
+
+## Requirements
+
+### Requirement: dossiq keeps no permission evaluator of its own (REQ-ACC-01)
+
+dossiq SHALL ask OpenRegister whether an account may act on a case, and SHALL NOT
+compute an effective permission, store a copy of a grant, or summarise a provenance
+into a value of its own. `lib/Service/Access/OpenRegisterGrantsGateway.php` SHALL
+stay the single reader of those answers, and SHALL return `null` rather than an
+empty list when OpenRegister cannot answer, so that no caller can read "no answer"
+as "granted nothing".
+
+`CaseAccessGuard` SHALL add one question on top: is this account named on this case.
+It SHALL fail closed on every branch, including an absent OpenRegister.
+
+Built by `case-grants-name-their-source` and `deelzaken-inherit-the-parent-grants`.
+
+#### Scenario: A colleague with no grant is refused the write
+@e2e tests/e2e/deelzaken-inherit-the-parent-grants.spec.ts
+
+- **GIVEN** a case, a deelzaak below it, and an account holding no grant on either
+- **WHEN** that account changes a field on the deelzaak
+- **THEN** the write SHALL be refused
+
+### Requirement: A grant on a case reaches the cases hanging under it (REQ-ACC-02)
+
+The `case` schema SHALL declare `parentCase` as its hierarchy edge, so a grant on a
+case answers for its deelzaken and their deelzaken without a second grant.
+`relatedCases` SHALL NOT be an edge: a case somebody linked is not a case somebody
+owns. The edge SHALL inherit the read and SHALL NOT inherit the write, so a
+colleague let into a parent cannot change what hangs under it.
+
+Built by `deelzaken-inherit-the-parent-grants`, requirement REQ-DZ-20.
+
+#### Scenario: The hierarchy edge reached the instance
+@e2e tests/e2e/deelzaken-inherit-the-parent-grants.spec.ts
+
+- **GIVEN** the `case` schema on a running instance
+- **WHEN** its configuration is read
+- **THEN** it SHALL name `parentCase` as the parent field
+- **AND** it SHALL inherit the read verb and no other
+
+### Requirement: A case says who holds which right, and where that right came from (REQ-ACC-03)
+
+A case SHALL be able to list every holder of a right on it with the source of that
+holder's grant, read from OpenRegister's provenance. A row SHALL name the rule
+behind it rather than only the holder. A reader who may not review access SHALL be
+told so, and SHALL NOT be shown an empty panel.
+
+Built by `case-grants-name-their-source`, requirements REQ-CGP-01 and REQ-CGP-05.
+
+#### Scenario: An auditor reads who could open this dossier
+@e2e tests/e2e/case-grants-name-their-source.spec.ts
+
+- **GIVEN** a case whose grants come from a role, a group and a share
+- **WHEN** an authorised reader opens its access panel
+- **THEN** every holder SHALL be listed with the source of their grant
+
+#### Scenario: A reader who may not review access is told so
+@e2e tests/e2e/case-grants-history-and-scope.spec.ts
+
+- **GIVEN** a case and a reader without the right to review its access
+- **WHEN** that reader opens the access panel
+- **THEN** the panel SHALL say they may not review access
+- **AND** it SHALL NOT render an empty list of holders
+
+### Requirement: A right may run out, and the row says when (REQ-ACC-04)
+
+A grant that ends SHALL show its last day on the access panel. A case type SHALL be
+able to declare that a right it grants ends after a period, so that a stand in
+granted access for a holiday loses it when the holiday ends without anybody
+remembering to take it away.
+
+Built by `case-grants-name-their-source`, requirements REQ-CGP-07 and REQ-CGP-08.
+
+#### Scenario: A grant that runs out names its last day
+@e2e tests/e2e/case-grants-history-and-scope.spec.ts
+
+- **GIVEN** a case carrying a grant with an end date
+- **WHEN** a reader opens the access panel
+- **THEN** that row SHALL name the day the grant stops
+
+### Requirement: Confidentiality is an axis of the case type, never a role name (REQ-ACC-05)
+
+A case type SHALL declare its rights as a matrix of department by role, held
+separately per confidentiality level. Confidentiality SHALL NOT be folded into a
+role name, because a vocabulary of `behandelaar-vertrouwelijk` multiplies every
+department by every level and no reader can audit the result.
+
+Built by `case-grants-name-their-source`, requirement REQ-CGP-03.
+
+#### Scenario: A case type grants per department, role and confidentiality
+@e2e tests/e2e/case-grants-name-their-source.spec.ts
+
+- **GIVEN** a case type granting a department read at the public level only
+- **WHEN** the stored rights matrix is read back
+- **THEN** the row SHALL carry its confidentiality level as a field of its own
+- **AND** no role name SHALL carry a confidentiality level
+
+### Requirement: A case type decides which roles keep a field (REQ-ACC-06)
+
+A case type SHALL declare `fieldRoleRules` naming the field, whether it is hidden or
+read only, the roles that lose it and the roles that keep it. dossiq SHALL project
+those onto the live `case` schema and SHALL filter no field in its own code, so that
+the rule holds on every read path OpenRegister has, including list, search and
+export.
+
+The access tab SHALL name the rule behind a field a reader does not get, so that a
+gap on the page is explainable rather than a bug report.
+
+Built by `field-rules-declared`, requirements REQ-SEC-FR-1 to REQ-SEC-FR-3.
+
+#### Scenario: A handler does not receive the field the rule hides
+@e2e tests/e2e/field-rules.spec.ts
+
+- **GIVEN** a case type hiding a field from handlers and holding it for quality officers
+- **WHEN** a member of each group reads the same case
+- **THEN** the quality officer SHALL receive the field
+- **AND** the handler SHALL NOT receive it
+
+#### Scenario: The access tab names the rule behind the field that is missing
+@e2e tests/e2e/field-rules.spec.ts
+
+- **GIVEN** a handler reading a case whose type hides a field from them
+- **WHEN** they open the access tab
+- **THEN** the tab SHALL name the field, the role that loses it and the role that keeps it
+
+### Requirement: Reading a sensitive field is accountable (REQ-ACC-07)
+
+A field a case type puts behind an extra permission SHALL be readable only by the
+roles that hold it, and a read of it SHALL be recorded by the platform. dossiq SHALL
+write no audit row of its own for that read.
+
+Built by `sensitive-fields-declared`.
+
+#### Scenario: A reveal leaves a field access row
+@e2e tests/e2e/sensitive-fields.spec.ts
+
+- **GIVEN** a person record whose citizen service number is held for one group
+- **WHEN** a member of that group reads it
+- **AND** the platform carries a field access audit trail
+- **THEN** that read SHALL appear in the field access audit trail
+
+### Requirement: Somebody without an account reads a case through a link that can end (REQ-ACC-08)
+
+A case SHALL be shareable with somebody who has no account by minting an
+OpenRegister access link over it. OpenRegister SHALL own the expiry, the password,
+the revoke and the single not found answer that covers unknown, revoked, paused and
+expired alike. dossiq SHALL own only which subject is published and what its holder
+may do.
+
+The handler SHALL see the state of every link on the case, so that a link nobody
+revoked is visible rather than forgotten.
+
+Built by `case-sharing-mints-access-links`.
+
+#### Scenario: An outsider opens the case without an account
+@e2e tests/e2e/case-sharing-mints-access-links.spec.ts
+
+- **GIVEN** a handler who shares a case with somebody outside the organisation
+- **WHEN** that person opens the link
+- **THEN** they SHALL read the published subject
+- **AND** they SHALL NOT need an account
+
+#### Scenario: The handler sees the state of every link on the case
+@e2e tests/e2e/case-sharing-mints-access-links.spec.ts
+
+- **GIVEN** a case carrying more than one access link
+- **WHEN** the handler opens the sharing tab
+- **THEN** each link SHALL show its own state
+
+### Requirement: A colleague follows a case they do not handle (REQ-ACC-09)
+
+A case SHALL offer one Follow control and Unfollow, taking the platform's follow of the signed in user on that case, with a switch that turns the notifications of that follow on or off. The Cases page SHALL carry a Following lens over the platform's followed by me query, and the People tab SHALL list every follower, quiet follows included, so that interest in a case is visible to the person handling it. A favourite is a follow with notifications off and is listed the same way.
+
+Following SHALL grant nothing. It is a subscription, not a right.
+
+Built by `case-followers`, requirement REQ-CM-40, and amended by `one-follow-control`.
+
+#### Scenario: Follow survives a reload
+@e2e tests/e2e/case-followers.spec.ts
+
+- **GIVEN** a case assigned to somebody else
+- **WHEN** you press Follow and reload the page
+- **THEN** the case SHALL still be followed
+
+#### Scenario: The People tab names who follows the case
+@e2e tests/e2e/case-followers.spec.ts
+
+- **GIVEN** a case you follow
+- **WHEN** a handler opens the People tab
+- **THEN** you SHALL be listed under the followers
+
+#### Scenario: A quiet follow is still listed
+@e2e exclude {the follower list is OpenRegister's GET .../watchers, which lists every row of openregister_watchers whatever its notify switch; asserted in openregister tests/Unit/Service/Interaction/WatcherServiceTest.php}
+
+- **GIVEN** a colleague who follows a case with notifications off
+- **WHEN** the handler opens the People tab
+- **THEN** the colleague SHALL be listed under the followers
+
+### Requirement: A team is a Nextcloud group, a case type's handling team reads its cases, and the handler acts after claiming (REQ-ACC-10)
+
+dossiq SHALL have one team model: a team is a Nextcloud group, and who belongs
+to it is Nextcloud's answer (`IGroupManager`), never a member list dossiq
+keeps. Every place dossiq names a team SHALL hold a Nextcloud group id: the
+case's `assignedGroup`, the case type's `handling.defaultGroup` and
+`handling.teams`, `assigneeNarrowing.allowedGroups`, an organisation role's
+`ncGroupId`, and the team a handover names.
+
+Decided by Ruben on 2026-10-11, reversing the earlier rule that being the team
+grants nothing: the handling teams of a case type (`handling.defaultGroup` and
+`handling.teams`, read through `CaseTypeHandling::teams()`) SHALL read and
+update the cases of that case type, and the case's `assignee` SHALL read and
+update that case. Delete SHALL stay with administrators. OpenRegister's
+administrator and owner bypasses stay. A signed in user who is none of these
+SHALL NOT read the case, list it, or change its files.
+
+The rule SHALL be declared on the case schema as OpenRegister conditional
+entries and evaluated by OpenRegister (REQ-ACC-01): one entry per handling
+team, `{"group": <team>, "match": {"caseType": {"$in": [<case type uuids>]}}}`,
+and one assignee entry, `{"group": "authenticated", "match": {"assignee": "$userId"}}`.
+
+Amended by Ruben on 2026-10-16, "claim before acting", keeping the behaviour
+#3966 shipped: the handling team READS the cases of its case type; the case's
+HANDLER (its `assignee`) EDITS it. A team member who wants to act on a case
+claims it first, which makes them its handler. dossiq's own per-case checks
+SHALL enforce this: every act on a case (a status move, an ending, a gesture,
+a document, a publication) SHALL be refused with 403 to a reader who is not
+its handler, with the sentence that says to claim it first, and the acts read
+SHALL list every act as refused for such a reader rather than hide it
+(REQ-ACC-11 of a-handling-team-opens-its-unclaimed-cases). The update right
+the team entries carry at the register level is what lets a team member write
+the claim itself; it SHALL NOT be read by dossiq as leave to act on the case.
+Administrators keep their bypass.
+`CaseTeamAccessProjector` SHALL compute the team entries from every case type
+row and write them onto the live case schema after every register import, when
+a case type is published and when a case type row is saved.
+
+Amended by Ruben on 2026-11-03: the members of a case's `assignedGroup` SHALL
+READ that case, and only read it: no update, no move, no status change, no
+files. The read SHALL hold up to and including the confidentiality level
+`vertrouwelijk`; a case marked `confidentieel`, `geheim` or `zeer_geheim`, or
+with a missing or unknown level, SHALL NOT be read through its group, and
+needs its handler or explicit rights. The read SHALL hold only within the
+case's own active organisation. dossiq SHALL express it as matrix rows on the
+case schema's `assignedGroup` matrix, one per group of the signed-in user
+(`AssignedGroupReadRows`). A member taken out of the group SHALL lose the read.
+
+An organisation role (`organisatieRol`) stays the unit of the mandate matrix
+and the rights matrix, and reaches a team only through its `ncGroupId`. The
+rights matrix (REQ-ACC-05) SHALL be honoured: dossiq hands its rows to
+OpenRegister through `MatrixRowsRequestedEvent`, naming itself as the app that
+answers. A rights row SHALL NOT grant `delete` on a case, whatever it names:
+deleting a case stays with administrators.
+
+#### Scenario: A member of the case's group reads it, and only reads it
+@e2e exclude Enforced by OpenRegister; pinned on its real PermissionHandler and SQL list in tests/Unit/Service/Access/CaseTypeRightsEnforcedAccessTest.php.
+- **GIVEN** a case at `vertrouwelijk` whose `assignedGroup` is a group the user is in
+- **WHEN** the user reads it
+- **THEN** the read SHALL be allowed
+- **AND** update, delete and every file verb SHALL be refused
+
+#### Scenario: The group read stops above vertrouwelijk and at the organisation
+@e2e exclude Enforced by OpenRegister; pinned in tests/Unit/Service/Access/CaseTypeRightsEnforcedAccessTest.php.
+- **GIVEN** a user in a case's `assignedGroup`
+- **WHEN** the case is `confidentieel`, has no level, or belongs to another organisation
+- **THEN** the user SHALL NOT read it through the group
+
+#### Scenario: The case's team is stored as a group id
+@e2e tests/e2e/case-parties.spec.ts
+- **GIVEN** a Nextcloud group exists
+- **WHEN** a case is given that group as its team
+- **THEN** the stored `assignedGroup` SHALL be the group id
+- **AND** the case's personal assignee SHALL be unchanged
+
+#### Scenario: The schema declares a group, not a reference
+@e2e exclude A declaration on the shipped register, pinned in tests/Unit/Settings/RegisterSchemaGroupFieldsTest.php for the live and the mock register.
+- **GIVEN** the shipped live and mock registers
+- **WHEN** the case schema's `assignedGroup` is read
+- **THEN** it SHALL declare `referenceType` `nextcloud-group`
+- **AND** it SHALL declare no `$ref` and no `format`
+
+#### Scenario: A handling team member reads the cases of its case type and may claim one
+@e2e exclude The rule is OpenRegister's evaluation of a block dossiq writes. The block is pinned in tests/Unit/Service/Access/CaseTeamAccessRulesTest.php and its evaluation in openregister's PermissionHandlerHandlingTeamRuleTest; the live proof on the review instance is in the PR body.
+- **GIVEN** a case type whose handling teams are `["vergunningen"]`
+- **AND** a case of that type, owned and assigned by somebody else
+- **WHEN** a member of `vergunningen` reads it, and claims it
+- **THEN** both SHALL be allowed
+- **AND** a delete by that member SHALL be refused
+
+#### Scenario: A team member acts only after claiming
+@e2e exclude dossiq's per-case check; asserted in tests/Unit/Controller/CaseActsControllerContractTest.php and tests/Unit/Controller/WOOAssessmentControllerAuthorizationTest.php.
+- **GIVEN** a case of a type handled by `vergunningen`, assigned to `bea`
+- **WHEN** `jan`, a member of `vergunningen`, tries to move, end or publish it
+- **THEN** each act SHALL be refused with 403 and "Claim this case first: only its handler acts on it."
+- **AND** once `jan` has claimed the case, the same acts SHALL be allowed
+
+#### Scenario: A user in no team and not assigned is refused the case and its files
+@e2e exclude Same block and evaluation as above; the files endpoint reads the object's update rule (openregister ObjectFileAccess::mayUpdate), asserted in openregister's PermissionHandlerHandlingTeamRuleTest.
+- **GIVEN** a signed in user in no group
+- **WHEN** they list cases, read one, or open its folder
+- **THEN** the list SHALL be empty, the read SHALL be refused
+- **AND** the folder SHALL NOT answer `canChange: true`
+
+#### Scenario: The assignee reads a case outside their teams
+@e2e exclude Same block and evaluation as above.
+- **GIVEN** a case assigned to `bea` whose case type names no team bea is in
+- **WHEN** bea reads it
+- **THEN** the read SHALL be allowed
+
+### Requirement: The dossiq register is closed to anybody outside its staff group (REQ-ACC-11)
+
+The dossiq register SHALL declare a register level `authorization` block that
+grants read, create, update and delete to `dossiq-medewerkers` and to the
+background service group `dossiq-background-service`, so that OpenRegister
+applies it to every dossiq schema that declares no block of its own. A dossiq
+schema that declares its own block SHALL NOT grant any action to
+`authenticated` or `public`; where it restricts a write to administrators or
+another group, that restriction stays. `ProvisionAssignedGroups` SHALL
+provision `dossiq-medewerkers`.
+
+#### Scenario: Every dossiq schema is closed to an unlisted user
+@e2e exclude A declaration on the shipped register, swept in tests/Unit/Settings/RegisterAccessDeclaredTest.php over the fragment-merged live register.
+- **GIVEN** the fragment-merged dossiq register
+- **WHEN** every schema's effective block is read, its own or the register's
+- **THEN** none SHALL grant an action to `authenticated` or `public`
+- **AND** every block SHALL name the background service group for the writes the background jobs make
+
+### Requirement: Nobody loses dossiq on the upgrade that closes it (REQ-ACC-12)
+
+A repair step SHALL add to `dossiq-medewerkers` every member of a group that
+is a handling team of a case type and every user that is the assignee of a
+case. It SHALL run once per instance and record that it ran, so that a member
+an administrator removes afterwards is not put back.
+
+#### Scenario: The current handlers and assignees are seeded once
+@e2e exclude A repair step; asserted in tests/Unit/Repair/SeedStaffGroupTest.php.
+- **GIVEN** a case type handled by `vergunningen`, with members `bea` and `jan`
+- **AND** a case assigned to `piet`
+- **WHEN** the repair step runs
+- **THEN** `bea`, `jan` and `piet` SHALL be members of `dossiq-medewerkers`
+- **AND** a second run SHALL add nobody
+
+### Requirement: An act that writes another app's register runs as the system, for the case's handler at its step (REQ-ACC-13)
+
+An act on a case that writes to a register the handler holds no rights on (publishing a decision into OpenCatalogi, withdrawing it) SHALL run as the system, and only after dossiq has checked that the caller is the case's handler and that the case is at the act's step. A caller who is not the handler SHALL be refused with 403, and a case not at the step with 422, both with a sentence in the reader's language. Neither refusal SHALL reach the write, and neither SHALL answer 500.
+
+#### Scenario: The handler publishes the decision
+@e2e exclude {asserted in tests/Unit/Controller/WOOAssessmentControllerAuthorizationTest.php with an object service that records the system run; the OpenCatalogi write is not available to e2e}
+
+- **GIVEN** a Woo request whose decision is ready to publish, claimed by Thomas
+- **WHEN** Thomas presses Publiceren (Woo)
+- **THEN** the publication SHALL be written as the system
+- **AND** the case SHALL read published
+
+#### Scenario: Somebody else is refused
+- **GIVEN** the same case, and a team member who has not claimed it
+- **WHEN** they post the publish
+- **THEN** the answer SHALL be 403 with "Pak deze zaak eerst op: alleen de behandelaar kan dit doen."
+- **AND** nothing SHALL be published
+
+## What this capability does not cover
+
+Stated here rather than left for a reader to discover.
+
+### Answered by a sibling capability
+
+- **Somebody is away, and their work must still be seen.** `handler-vervanging-waarneming`
+  registers a vervanging as an object, routes the absent handler's cases and tasks to the
+  waarnemer for a bounded period, stamps every act taken in that capacity, and reads leave
+  from humaniq (`lib/Service/Substitution/HumaniqLeaveReader.php`). It grants no permission of
+  its own, which is why it sits beside this capability rather than inside it.
+- **Somebody decides on behalf of somebody else.** The mandaat matrix
+  (`openspec/specs/mandaat-matrix/spec.md`, `lib/Service/Mandaat`) resolves who may sign a
+  besluit on a given date.
+- **A departing handler's caseload.** `CaseReassignmentService` and the coordinator bulk
+  reassignment in `handler-vervanging-waarneming` move open work in one previewed, audited
+  batch.
+- **Which reads were logged, and why.** `avg-verwerkingenlogging` contributes dossiq's
+  processing activity catalogue to OpenRegister, which does the logging.
+
+### Not built
+
+- **A locked row for a case you may not open.** A case outside your grants is absent from the
+  list, not present and greyed. Nothing says a case exists and is not for you.
+- **Sign in and the second factor.** dossiq has no credentials of its own. Two factor
+  authentication, password policy and login history are Nextcloud's.
+- **A tamper evident audit chain.** `lib/Service/Beschikking/AuditPacketBuilder.php` stamps one
+  beschikking export with a digest. No hash links one entry of the trail to the next.
+- **A token narrower than the person who issued it.** An API token carries what its issuer
+  carries.
+- **A right attached to a slot rather than to a person.** Replacing whoever fills a named role
+  on a case means editing the grants.

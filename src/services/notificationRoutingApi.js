@@ -66,6 +66,7 @@ export async function fetchPreferences(scope = null) {
  * @param {string} preference.schema The schema the rule lives on.
  * @param {string} preference.notification The rule's own key.
  * @param {boolean} preference.enabled Whether they want it.
+ * @param {?Array<string>} preference.channels The channels they want it on, when they chose per channel.
  * @param {?string} preference.scope The scope to pin it to, or null for global.
  * @return {Promise<object>} What the platform stored.
  *
@@ -75,9 +76,13 @@ export async function savePreference({
 	schema,
 	notification,
 	enabled,
+	channels = null,
 	scope = null,
 }) {
 	const body = { schema, notification, enabled }
+	if (Array.isArray(channels)) {
+		body.channels = channels
+	}
 	if (scope) {
 		body.scope = scope
 	}
@@ -92,6 +97,13 @@ export async function savePreference({
 
 /**
  * Clear this person's own value, so the layer below decides again.
+ *
+ * NOT CALLED TODAY, AND KEPT ON PURPOSE. dossiq's own list had a per-row "use
+ * the setting from my team" button; the shared screen it now renders emits
+ * true or false and has no third state to hang one on. The store behind that
+ * screen already accepts a null to clear, so the control belongs in the
+ * component, and this is dossiq's side of it. The gap is named in
+ * openspec/changes/notification-settings-on-the-shared-screen/proposal.md.
  *
  * @param {object} preference Which one to clear.
  * @param {string} preference.schema The schema the rule lives on.

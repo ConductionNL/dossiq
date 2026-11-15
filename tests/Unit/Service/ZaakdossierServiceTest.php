@@ -29,9 +29,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\People\PersonLinkReader;
+use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
@@ -107,6 +112,12 @@ interface DossierObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentStatusMove
+ * @uses \OCA\Dossiq\Service\Zaakdossier\StoredDocument
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class ZaakdossierServiceTest extends TestCase {
 
@@ -217,6 +228,7 @@ class ZaakdossierServiceTest extends TestCase {
 			settingsService: $this->settings,
 			groupManager: $this->createMock(\OCP\IGroupManager::class),
 			logger: $this->createMock(LoggerInterface::class),
+			exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 		);
 		// A REAL lifecycle collaborator over the same mocked settings, so the
 		// status-transition tests below still exercise the production state
@@ -232,6 +244,13 @@ class ZaakdossierServiceTest extends TestCase {
 			// exercise the production coercion rather than a mock's answers.
 			normaliser: new InformatieobjectMetadataNormaliser(),
 			recordStore: new DocumentRecordStore(settingsService: $this->settings),
+			correspondents: new CorrespondentWriter(
+				rules: new DocumentCorrespondents(),
+				people: $this->createMock(originalClassName: PersonLinkReader::class),
+				settingsService: $this->settings,
+				store: new DocumentRecordStore(settingsService: $this->settings),
+				labels: new DocumentListingLabels(settingsService: $this->settings),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 

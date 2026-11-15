@@ -29,10 +29,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Lifecycle\CaseActionList;
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Money\CasePaymentReader;
+use OCA\Dossiq\Service\Money\CasePaymentState;
+use OCA\Dossiq\Service\Money\UnpaidCaseGate;
+use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -42,7 +47,10 @@ use RuntimeException;
  * The declaration, and what it does to the lifecycle menu.
  *
  * @covers \OCA\Dossiq\Service\Cases\ExternalHome
+ * @uses \OCA\Dossiq\Lifecycle\CaseActionList
  * @uses \OCA\Dossiq\Lifecycle\CaseActionProvider
+ * @uses \OCA\Dossiq\Service\Money\UnpaidCaseGate
+ * @uses   \OCA\Dossiq\Service\Money\CasePaymentState
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */
@@ -156,9 +164,18 @@ class ExternallyHomedCaseTest extends TestCase {
 
 		$provider = new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $this->createMock(originalClassName: CaseResultWriter::class),
 			grants: $this->createMock(originalClassName: OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->createMock(originalClassName: CaseResultWriter::class),
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
@@ -194,9 +211,15 @@ class ExternallyHomedCaseTest extends TestCase {
 
 		return new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $resultWriter,
 			grants: $this->createMock(originalClassName: OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
+			actions: new CaseActionList(
+				resultWriter: $resultWriter,
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end provider()

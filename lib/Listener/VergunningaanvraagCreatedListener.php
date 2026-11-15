@@ -3,11 +3,12 @@
 /**
  * Vergunningaanvraag Created Listener
  *
- * Listens for ObjectCreatedEvent from OpenRegister and triggers
- * automatic zaak creation for new vergunningaanvraag objects matching
- * the configured schema. This wires the DSO intake flow into the
- * Dossiq case management engine without coupling the object storage
- * layer to the domain logic.
+ * Listens for OpenRegister object writes on the configured DSO intake schema
+ * and triggers automatic zaak creation. The intake record is integriq's
+ * `dso_verzoek`: integriq creates it as `received` and then writes the
+ * activity mapping onto it (`mapped`, with `mappedCaseTypes`), so the case is
+ * made on the write that carries the mapping, which is an update. A legacy
+ * vergunningaanvraag that is created complete is handled on its create.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -18,34 +19,50 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
+ * @spec openspec/specs/vth-dso-integration/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\DsoCaseService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
 /**
- * Listens for new OpenRegister objects and creates a DSO zaak when the
- * schema matches the configured vergunningaanvraag schema.
+ * Listens for DSO intake records and creates a DSO zaak for each.
  *
- * Idempotency: duplicate ObjectCreatedEvents for the same object ID within
- * a single PHP request are suppressed via a static per-request guard.
- * Cross-request uniqueness is the responsibility of the zaak-creation service.
+ * Idempotency: repeated events for the same object ID within a single PHP
+ * request are suppressed via a static per-request guard. Across requests,
+ * DsoCaseService answers the case an earlier event already made.
+ *
+ * Account: the writer is whoever is signed in. On a STAM push that is the
+ * account integriq's DSO connection acts as. A write that reaches here with
+ * nobody signed in (integriq's attachment job under cron) runs as dossiq's
+ * background service account, because OpenRegister refuses a write from
+ * nobody.
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
+ * @spec openspec/specs/vth-dso-integration/spec.md
  */
 class VergunningaanvraagCreatedListener implements IEventListener {
+
+	/**
+	 * integriq's states in which the record is not ready to become a case.
+	 *
+	 * `received` is written before the activity mapping, so it names no case
+	 * type yet; `failed` is a verzoek integriq could not translate.
+	 */
+	private const NOT_READY = ['received', 'failed'];
 
 	/**
 	 * Per-request guard tracking already-processed object IDs to prevent duplicate zaak creation.
@@ -58,108 +75,192 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig The application config service
-	 * @param DsoCaseService $dsoCaseService The DSO case service
+	 * @param DsoCaseServiceInterface $dsoCaseService The DSO case service
 	 * @param LoggerInterface $logger The logger
+	 * @param BackgroundServiceAccount $serviceAccount Writes when nobody is signed in
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
-		private readonly DsoCaseService $dsoCaseService,
+		private readonly DsoCaseServiceInterface $dsoCaseService,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 	}//end __construct()
 
 	/**
 	 * Handle an incoming event.
 	 *
-	 * Checks whether the event is an ObjectCreatedEvent for a vergunningaanvraag
-	 * object and, if so, triggers zaak creation via DsoCaseService.
+	 * Checks whether the event is a create or update of a DSO intake record
+	 * that is ready to become a case and, if so, triggers zaak creation via
+	 * DsoCaseService.
 	 *
 	 * @param Event $event The dispatched event
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
+	 * @spec openspec/specs/vth-dso-integration/spec.md
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
 		$object = $this->normaliseEventObject(event: $event);
 		if ($object === null) {
 			return;
 		}
 
-		$schemaId = $this->resolveSchemaId(object: $object);
-		if ($schemaId === '') {
+		$objectId = $this->readyIntakeId(object: $object);
+		if ($objectId === '') {
 			return;
 		}
 
+		if ($this->alreadyHandled(objectId: $objectId) === true) {
+			return;
+		}
+
+		$this->makeCase(objectId: $objectId, object: $object);
+	}//end handle()
+
+	/**
+	 * Whether this record was handled before in this process; marks it handled when not.
+	 *
+	 * @param string $objectId The record's uuid
+	 *
+	 * @return bool True for a duplicate event, which is logged and skipped
+	 */
+	private function alreadyHandled(string $objectId): bool {
+		if (isset(self::$processedIds[$objectId]) === true) {
+			$this->logger->info(
+				'Dossiq DSO listener: skipping duplicate event for vergunningaanvraag ' . $objectId,
+				['app' => AppIdentity::APP_ID]
+			);
+			return true;
+		}
+
+		self::$processedIds[$objectId] = true;
+		return false;
+	}//end alreadyHandled()
+
+	/**
+	 * Make the case from the record, as the service account when nobody is signed in.
+	 *
+	 * @param string               $objectId The record's uuid
+	 * @param array<string, mixed> $object   The record
+	 *
+	 * @return void
+	 */
+	private function makeCase(string $objectId, array $object): void {
+		try {
+			$this->serviceAccount->runAsWhenNobodyIsSignedIn(
+				operation: fn () => $this->dsoCaseService->createZaakFromVergunningaanvraag(
+					permitApplicationId: $objectId,
+					permitApplication: $object
+				)
+			);
+
+			$this->logger->info(
+				'Dossiq DSO listener: zaak created for vergunningaanvraag',
+				[
+					'app' => AppIdentity::APP_ID,
+					'objectId' => $objectId,
+				]
+			);
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins; nothing was written.
+			return;
+		} catch (\Throwable $e) {
+			$this->caseFailed(objectId: $objectId, exception: $e);
+		}//end try
+	}//end makeCase()
+
+	/**
+	 * Log a case that could not be made from the record.
+	 *
+	 * @param string     $objectId  The record's uuid
+	 * @param \Throwable $exception The failure
+	 *
+	 * @return void
+	 */
+	private function caseFailed(string $objectId, \Throwable $exception): void {
+		$this->logger->error(
+			'Dossiq DSO listener: failed to create zaak for vergunningaanvraag ' . $objectId . ': ' . $exception->getMessage(),
+			[
+				'app' => AppIdentity::APP_ID,
+				'objectId' => $objectId,
+				'exception' => $exception->getMessage(),
+			]
+		);
+	}//end caseFailed()
+
+	/**
+	 * The id of the intake record, when this write is one to make a case from.
+	 *
+	 * A write on another schema, a record without an id, and integriq's
+	 * records before mapping all answer ''.
+	 *
+	 * @param array<string, mixed> $object The written object
+	 *
+	 * @return string The record's uuid, or ''
+	 */
+	private function readyIntakeId(array $object): string {
+		if ($this->onIntakeSchema(object: $object) === false) {
+			return '';
+		}
+
+		$objectId = (string)($object['id'] ?? ($object['uuid'] ?? ($object['@self']['id'] ?? '')));
+		if ($objectId === '') {
+			$this->logger->warning(
+				'Dossiq DSO listener: event for vergunningaanvraag schema but no object id found',
+				['app' => AppIdentity::APP_ID]
+			);
+			return '';
+		}
+
+		if (in_array((string)($object['status'] ?? ''), self::NOT_READY, true) === true) {
+			return '';
+		}
+
+		return $objectId;
+	}//end readyIntakeId()
+
+	/**
+	 * Whether the object is on the intake schema this app makes cases from.
+	 *
+	 * @param array<string, mixed> $object The written object
+	 *
+	 * @return bool
+	 */
+	private function onIntakeSchema(array $object): bool {
+		$schemaId = $this->resolveSchemaId(object: $object);
+		if ($schemaId === '') {
+			return false;
+		}
+
 		$configuredSchemaId = $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: 'dso_vergunningaanvraag_schema',
 			default: ''
 		);
 
-		if ($configuredSchemaId === '' || $schemaId !== $configuredSchemaId) {
-			return;
-		}
-
-		$objectId = (string)($object['id'] ?? ($object['uuid'] ?? ''));
-		if ($objectId === '') {
-			$this->logger->warning(
-				'Dossiq DSO listener: ObjectCreatedEvent for vergunningaanvraag schema but no object id found',
-				['app' => Application::APP_ID]
-			);
-			return;
-		}
-
-		if (isset(self::$processedIds[$objectId]) === true) {
-			$this->logger->info(
-				'Dossiq DSO listener: skipping duplicate ObjectCreatedEvent for vergunningaanvraag ' . $objectId,
-				['app' => Application::APP_ID]
-			);
-			return;
-		}
-
-		self::$processedIds[$objectId] = true;
-
-		try {
-			$this->dsoCaseService->createZaakFromVergunningaanvraag(permitApplicationId: $objectId);
-			$this->logger->info(
-				'Dossiq DSO listener: zaak created for vergunningaanvraag',
-				[
-					'app' => Application::APP_ID,
-					'objectId' => $objectId,
-				]
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq DSO listener: failed to create zaak for vergunningaanvraag ' . $objectId . ': ' . $e->getMessage(),
-				[
-					'app' => Application::APP_ID,
-					'objectId' => $objectId,
-					'exception' => $e->getMessage(),
-				]
-			);
-		}
-	}//end handle()
+		return $configuredSchemaId !== '' && $schemaId === $configuredSchemaId;
+	}//end onIntakeSchema()
 
 	/**
-	 * Normalise the event payload to the array shape the schema/id resolution
-	 * expects.
+	 * Extract the object payload from a create or update event as an array.
 	 *
-	 * OpenRegister's ObjectCreatedEvent::getObject() returns an ObjectEntity
-	 * (JsonSerializable). A bare array is also accepted for resilience against
-	 * alternate event shapes / test doubles.
+	 * The event carries an ObjectEntity; this serialises it so the listener
+	 * can read the id and `@self` metadata uniformly.
 	 *
-	 * @param ObjectCreatedEvent $event The dispatched creation event
+	 * @param Event $event The dispatched event
 	 *
 	 * @return array<string, mixed>|null The object array, or null when the
-	 *                                   payload is not array-shaped
+	 *                                   event is neither or carries no object
 	 */
-	private function normaliseEventObject(ObjectCreatedEvent $event): ?array {
-		$object = $event->getObject();
+	private function normaliseEventObject(Event $event): ?array {
+		$object = null;
+		if ($event instanceof ObjectCreatedEvent) {
+			$object = $event->getObject();
+		} else if ($event instanceof ObjectUpdatedEvent) {
+			$object = $event->getNewObject();
+		}
+
 		if ($object instanceof \JsonSerializable === true) {
 			$object = $object->jsonSerialize();
 		}
@@ -170,6 +271,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 
 		return $object;
 	}//end normaliseEventObject()
+
 
 	/**
 	 * Resolve the schema identifier from an OR object payload.

@@ -27,11 +27,14 @@ import {
 	earliestFollowUpDate,
 	endOptions,
 	isPlanComplete,
-	plannedRows,
 	proposedCopyTitle,
-	recurrenceLabel,
 	recurrenceOptions,
 } from '../../src/utils/caseActionsHelpers.js'
+import {
+	buildActsMenu,
+	endpointFor,
+	inputsFor,
+} from '../../src/utils/caseActsMenu.js'
 const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -249,8 +252,14 @@ describe('Planning a series', () => {
 	})
 
 	it('says nothing about repeating for a follow-up that happens once', () => {
-		expect(recurrenceLabel('none', t)).toBe('')
-		expect(recurrenceLabel('yearly', t)).toBe('every year')
+		// The planned row names the recurrence through the related widget's
+		// value labels, with `none` mapped to nothing.
+		const planned = panels.caseWidget('case-related').content.extraSources.find((source) => source.key === 'planned')
+		expect(planned.valueLabels.recurrence.none).toBe('')
+		expect(planned.valueLabels.recurrence.yearly).toBe('Every year')
+		for (const option of recurrenceOptions(t).filter((entry) => entry.id !== 'none')) {
+			expect(planned.valueLabels.recurrence[option.id], option.id).toBe(option.label)
+		}
 	})
 
 	it('needs an end date on or after the first occurrence', () => {
@@ -318,10 +327,10 @@ describe('The Related cases tab', () => {
 		return caseDetail().config.widgets
 	}
 
-	it('is rendered by a widget whose TYPE the registry answers to', () => {
+	it('is the library related widget, which the catalogue renders by type', () => {
 		const widget = panels.caseWidget('case-related')
-		expect(widget.type).toBe('case-related-planned')
-		expect(registryDeclares('case-related-planned', 'widget')).toBe(true)
+		expect(widget.type).toBe('related')
+		expect(registryDeclares('case-related-planned', 'widget')).toBe(false)
 	})
 
 	it('is not type custom, which resolves to nothing inside a tab panel', () => {
@@ -354,9 +363,16 @@ describe('The Related cases tab', () => {
 			.caseWidget('case-related-panel')
 			.content.sections.map((section) => section.widget.id)
 		// Objects joined the Related tab on 2026-09-13, from the retired
-		// Objects and locations tab. Related cases stays FIRST, which is what
-		// this test is about; the list is exact so a silent reorder reddens.
-		expect(sections).toEqual(['case-related', 'case-sub-cases', 'case-objects'])
+		// Objects and locations tab, and the Data model link followed it
+		// (data-model-link). Related cases stays FIRST, which is what this
+		// test is about; the list is exact so a silent reorder reddens.
+		expect(sections).toEqual([
+			'case-related',
+			'case-programme',
+			'case-sub-cases',
+			'case-objects',
+			'case-object-types-link',
+		])
 	})
 
 	it('stays out of the layout, which would render it twice', () => {
@@ -465,109 +481,350 @@ describe('Plan a follow-up', () => {
 	})
 })
 
-describe('plannedRows', () => {
-	const t = (s) => s
+describe('the planned rows', () => {
+	// The row label is library config now: the related widget fills each part
+	// and leaves the empty ones out (nextcloud-vue CnRelatedObjectsWidget,
+	// `itemLabel.parts`, with the label cases ported to its spec).
+	const planned = panels.caseWidget('case-related').content.extraSources.find((source) => source.key === 'planned')
 
-	it('carries the date, which is the only thing a planned row adds', () => {
-		const rows = plannedRows(
-			[{ id: 'flow-1', title: 'Controle', date: '2026-10-15' }],
-			t,
-		)
-		expect(rows).toHaveLength(1)
-		expect(rows[0].key).toBe('flow-1')
-		expect(rows[0].label).toContain('Controle')
-		expect(rows[0].label).toContain('2026-10-15')
+	it('carries the title, how often it comes back, the next date and how many it opened', () => {
+		expect(planned.itemLabel.parts).toEqual(['{title}', '{recurrence|lower}', 'next on {date}', '{occurrences|count} opened so far'])
+		expect(planned.itemLabel.separator).toBe(', ')
 	})
 
-	it('uses no em-dash in the label', () => {
-		const rows = plannedRows(
-			[{ id: 'f', title: 'Controle', date: '2026-10-15' }],
-			t,
-		)
-		expect(rows[0].label).not.toContain('—')
-	})
-
-	it('drops a row with no id rather than rendering a keyless one', () => {
-		expect(plannedRows([{ title: 'Controle' }], t)).toEqual([])
-		expect(plannedRows(null, t)).toEqual([])
-	})
-
-	it('says how often a series comes back and how many it has opened', () => {
-		const rows = plannedRows(
-			[
-				{
-					id: 'flow-1',
-					title: 'Jaarlijkse controle',
-					date: '2027-03-01',
-					recurrence: 'yearly',
-					occurrences: [
-						{ id: 'case-a', title: 'Controle 2026' },
-						{ id: 'case-b', title: 'Controle 2027' },
-					],
-				},
-			],
-			t,
-		)
-		expect(rows[0].recurrence).toBe('yearly')
-		expect(rows[0].label).toContain('every year')
-		expect(rows[0].label).toContain('2027-03-01')
-		expect(rows[0].label).toContain('2 opened so far')
-		expect(rows[0].occurrences).toHaveLength(2)
-	})
-
-	it('leaves a single follow-up reading as it did', () => {
-		const rows = plannedRows(
-			[{ id: 'flow-2', title: 'Controle', date: '2026-10-15' }],
-			t,
-		)
-		expect(rows[0].recurrence).toBe('none')
-		expect(rows[0].label).not.toContain('every')
-		expect(rows[0].occurrences).toEqual([])
-	})
-
-	it('uses no em-dash in a series label either', () => {
-		const rows = plannedRows(
-			[
-				{
-					id: 'f',
-					title: 'Controle',
-					date: '2026-10-15',
-					recurrence: 'quarterly',
-					occurrences: [{ id: 'c' }],
-				},
-			],
-			t,
-		)
-		expect(rows[0].label).not.toContain('—')
-		expect(rows[0].label).not.toContain('--')
+	it('uses no em-dash in any part', () => {
+		for (const part of planned.itemLabel.parts) {
+			expect(part).not.toContain('—')
+			expect(part).not.toContain('--')
+		}
 	})
 })
 
 describe('The series row on the Related tab', () => {
-	const widget = fs.readFileSync(
-		path.join(ROOT, 'src', 'components', 'case', 'CasePlannedWidget.vue'),
-		'utf8',
-	)
+	const planned = panels.caseWidget('case-related').content.extraSources.find((source) => source.key === 'planned')
 
 	it('offers Stop series, and posts it to the endpoint the routes declare', () => {
-		expect(widget).toContain('case-planned-stop-')
-		expect(widget).toContain('/planned/${encodeURIComponent(flowId)}/stop')
+		expect(planned.rowActions[0]).toMatchObject({ label: 'Stop series', endpoint: '/apps/dossiq/api/case/@objectId/planned/{id}/stop' })
 		expect(routes).toContain('/api/case/{caseId}/planned/{flowId}/stop')
 	})
 
-	it('lists the occurrences under the series row', () => {
-		expect(widget).toContain('case-planned-occurrence-')
-		expect(widget).toContain('row.occurrences')
+	it('lists the occurrences under the series row, each opening its case', () => {
+		expect(planned.children).toEqual({ path: 'occurrences', label: '{title}', route: { name: 'CaseDetail', params: { id: '{id}' } } })
 	})
 
 	it('offers Stop series only on the rows that repeat', () => {
-		expect(widget).toContain("row.recurrence !== 'none'")
+		expect(planned.rowActions[0].when).toEqual({ field: 'recurrence', op: 'neq', value: 'none' })
 	})
 
-	it('says out loud when a stop is refused', () => {
-		// A stop that silently does nothing and a stop that worked look
-		// identical on this tab: the row only disappears on the reload.
-		expect(widget).toContain('case-planned-error')
-		expect(widget).toContain('caseActionRefusal')
+	it('opens nothing for a planned row, which is a flow and not a case', () => {
+		// A stop that is refused shows the server's sentence: the library
+		// related widget's, with that case ported to its spec.
+		expect(planned.static).toBe(true)
+	})
+})
+
+describe('Inspect, for an administrator', () => {
+	/** The gate both entries carry. */
+	const GATE = {
+		endpoint: '/index.php/apps/dossiq/api/inspect/availability',
+		field: 'isAdmin',
+		op: 'eq',
+		value: true,
+	}
+
+	it('is TWO flat header actions, because a detail page drops children', () => {
+		// 🔴 THE ASSERTION THIS BLOCK EXISTS FOR. The design asked for one
+		// Inspect action carrying two children. CnDetailPage runs
+		// CnActionButtons in `display: "menu"`, and that mode renders no
+		// buttons itself: it emits `menuEntries`, which maps the visible
+		// actions and never looks at `children`. The chevron the `children`
+		// key documents renders only in the inline `barActions` mode, which a
+		// detail page never uses. A parent with children would have shown one
+		// menu item and neither entry, warning nobody.
+		for (const id of ['case-inspect-raw', 'case-inspect-runs']) {
+			expect(
+				headerAction(id),
+				`${id} must be a header action of its own`,
+			).toBeTruthy()
+			expect(headerAction(id).children).toBeUndefined()
+		}
+		expect(headerAction('case-inspect')).toBeUndefined()
+	})
+
+	it('gates BOTH entries on the READER, which only an endpoint can ask about', () => {
+		// The design named `adminOnly`. There is no such key: an action is a
+		// CLOSED object in the schema, so the manifest would not have
+		// validated with one. Of visibleWhen's three modes only `endpoint`
+		// knows who is looking: a local gate dot-paths into the case record
+		// and a source gate queries OpenRegister objects.
+		for (const id of ['case-inspect-raw', 'case-inspect-runs']) {
+			expect(headerAction(id).visibleWhen).toEqual(GATE)
+			expect(headerAction(id).adminOnly).toBeUndefined()
+		}
+	})
+
+	it('has the endpoint behind it', () => {
+		expect(routes).toContain("'inspect#availability'")
+		expect(routes).toContain('/api/inspect/availability')
+	})
+
+	it('names icons that are registered', () => {
+		for (const id of ['case-inspect-raw', 'case-inspect-runs']) {
+			expect(iconIsRegistered(headerAction(id).icon)).toBe(true)
+		}
+	})
+
+	it('opens the raw data on a modal the registry declares', () => {
+		// An `open-modal` whose target is not a registry entry of kind `modal`
+		// opens NOTHING and logs one console warning. The design named
+		// `CnObjectMetadataModal`, a library component that is in no registry.
+		expect(headerAction('case-inspect-raw').type).toBe('open-modal')
+		expect(headerAction('case-inspect-raw').target).toBe('CaseRawDataDialog')
+		expect(registryDeclares('CaseRawDataDialog', 'modal')).toBe(true)
+	})
+
+	it('sends the flow runs to the OpenRegister runs page, filtered to this case', () => {
+		expect(headerAction('case-inspect-runs').type).toBe('navigate')
+		expect(headerAction('case-inspect-runs').target).toContain(
+			'/apps/openregister/#/flows/runs',
+		)
+		// `{objectId}`, the spelling the library interpolates. `{id}` resolved to
+		// nothing and reached the address bar as those four characters.
+		expect(headerAction('case-inspect-runs').target).toContain(
+			'subjectUuid={objectId}',
+		)
+	})
+
+	it('labels both entries in sentence case, with no em-dash', () => {
+		for (const id of ['case-inspect-raw', 'case-inspect-runs']) {
+			const label = headerAction(id).label
+			expect(label).not.toContain('—')
+			expect(label.split(' ').slice(1).join(' ')).toBe(
+				label.split(' ').slice(1).join(' ').toLowerCase(),
+			)
+		}
+	})
+})
+
+describe('The Raw data dialog', () => {
+	const dialog = fs.readFileSync(
+		path.join(ROOT, 'src', 'dialogs', 'CaseRawDataDialog.vue'),
+		'utf8',
+	)
+
+	it('reads the case from the route, because open-modal carries no object', () => {
+		expect(dialog).toContain('this.$route?.params?.id')
+	})
+
+	it('reads the stored object from OpenRegister, not from a dossiq copy', () => {
+		expect(dialog).toContain('/apps/openregister/api/objects/dossiq/case/')
+	})
+
+	it('prints the whole record, indented', () => {
+		expect(dialog).toContain('JSON.stringify(data, null, 2)')
+		expect(dialog).toContain('case-raw-data-json')
+	})
+
+	it('says out loud when the case cannot be read', () => {
+		// A dialog that opens blank on a refusal is the failure this whole
+		// change exists to prevent: the reader is already here because
+		// something does not add up.
+		expect(dialog).toContain('case-raw-data-error')
+		expect(dialog).toContain('You may not read this case.')
+	})
+})
+
+describe('Archive and Restore on the case page', () => {
+	const menuSource = fs.readFileSync(
+		path.join(ROOT, 'src', 'utils', 'caseActsMenu.js'),
+		'utf8',
+	)
+
+	/**
+	 * One source file with its prose taken out.
+	 *
+	 * The assertions below are about what the code READS, and both files
+	 * explain in a comment why they do not read `archiveStatus`. Matching the
+	 * raw text would fail on the sentence that documents the rule, which is
+	 * the test punishing the explanation.
+	 *
+	 * @param {string} source The file contents.
+	 * @return {string} The source with block, line and HTML comments removed.
+	 */
+	const codeOf = (source) => {
+		// A plain scan, not a regex replace: everything from an opener to its
+		// closer goes, and an opener without a closer takes the rest of the
+		// file with it, so no comment can survive in pieces.
+		const dropBetween = (text, open, close) => {
+			let out = ''
+			let at = 0
+			for (;;) {
+				const start = text.indexOf(open, at)
+				if (start === -1) {
+					return out + text.slice(at)
+				}
+				out += text.slice(at, start)
+				const end = text.indexOf(close, start + open.length)
+				if (end === -1) {
+					return out
+				}
+				at = end + close.length
+			}
+		}
+
+		return dropBetween(dropBetween(source, '<!--', '-->'), '/*', '*/')
+			.split('\n')
+			.filter((line) => !line.trim().startsWith('//'))
+			.join('\n')
+	}
+
+	/** An `/acts` answer where the handler may perform every ending act. */
+	const allowed = {
+		acts: [
+			{ act: 'finish', allowed: true, role: '', reason: '' },
+			{ act: 'abort', allowed: true, role: '', reason: '' },
+			{ act: 'archive', allowed: true, role: '', reason: '' },
+		],
+	}
+
+	/** The menu ids for one `/acts` answer. @param {object} acts The answer. @return {Array<string>} The ids. */
+	const ids = (acts) => buildActsMenu({ acts }).map((entry) => entry.id)
+
+	it('offers Archive on a case that is not archived', () => {
+		expect(ids(allowed)).toContain('archive')
+		expect(ids(allowed)).not.toContain('unarchive')
+	})
+
+	it('offers Restore instead of Archive once the case is archived', () => {
+		// Never both. The platform treats a second archive as a no-op rather
+		// than a refusal, so an Archive entry left beside Restore would be a
+		// button that changes nothing and says nothing.
+		const menu = ids({ ...allowed, archived: true })
+		expect(menu).toContain('unarchive')
+		expect(menu).not.toContain('archive')
+	})
+
+	it('keeps Finish and Abort on an archived case, refused by their own guards', () => {
+		const menu = ids({ ...allowed, archived: true })
+		expect(menu).toContain('finish')
+		expect(menu).toContain('abort')
+	})
+
+	it('reads the archived flag the way every JSON boolean in this app is read', () => {
+		expect(ids({ ...allowed, archived: 'true' })).toContain('unarchive')
+		expect(ids({ ...allowed, archived: 1 })).toContain('unarchive')
+		expect(ids({ ...allowed, archived: false })).not.toContain('unarchive')
+		expect(ids(allowed)).not.toContain('unarchive')
+	})
+
+	it('gives Restore the verdict archiving carries, because it needs the same role', () => {
+		const refused = {
+			archived: true,
+			acts: [
+				{
+					act: 'archive',
+					allowed: false,
+					role: 'archivaris',
+					reason: 'This act needs the archivaris group.',
+				},
+			],
+		}
+		const entry = buildActsMenu({ acts: refused }).find(
+			(row) => row.id === 'unarchive',
+		)
+		expect(entry.disabled).toBe(true)
+		expect(entry.reason).toContain('archivaris')
+		expect(entry.role).toBe('archivaris')
+	})
+
+	it('disables Restore when the acts read failed, rather than offering it', () => {
+		const entry = buildActsMenu({ acts: { archived: true } }).find(
+			(row) => row.id === 'unarchive',
+		)
+		expect(entry.disabled).toBe(true)
+		expect(entry.reason).not.toBe('')
+	})
+
+	it('asks for a reason before it posts, and posts to the route that exists', () => {
+		const entry = buildActsMenu({ acts: { ...allowed, archived: true } }).find(
+			(row) => row.id === 'unarchive',
+		)
+		expect(inputsFor(entry).reason).toBe(true)
+		expect(endpointFor(entry)).toBe('unarchive')
+		expect(routes).toContain('/api/case/{caseId}/unarchive')
+	})
+
+	it('reads the platform marker and never the ZGW field', () => {
+		// 🔴 `archiveStatus` is the ZGW fact and the lists do not look at it.
+		// A menu built on it would offer Restore on a case imported carrying
+		// `archiefstatus: gearchiveerd` that is still in every working lens,
+		// and the button would take nothing back.
+		expect(codeOf(menuSource)).not.toContain('archiveStatus')
+	})
+
+	it('renders the strip from the marker on the object the page already holds', () => {
+		// A banner whose condition is the case's own `@self.archived`, never
+		// the ZGW `archiveStatus`: the host binds the loaded case as
+		// `objectData`, which the banner reads (nextcloud-vue CnBannerWidget).
+		const strip = panels.allCaseWidgets().find((w) => w.id === 'case-archived')
+		expect(strip.type).toBe('banner')
+		expect(strip.content.visibleWhen).toEqual({ field: '@self.archived', op: 'notEmpty' })
+		expect(JSON.stringify(strip.content)).not.toContain('archiveStatus')
+	})
+
+	it('leads the banner stack, which is the one row the page mounts the strips in', () => {
+		const stack = caseDetail().config.widgets.find((w) => w.id === 'case-banner-stack')
+		expect(stack.content.sections[0].widgetId).toBe('case-archived')
+
+		const banners = caseDetail().config.layout.find(
+			(entry) => entry.widgetId === 'case-banner-stack',
+		)
+		const panelsCell = caseDetail().config.layout.find(
+			(entry) => entry.widgetId === 'case-panels',
+		)
+		expect(banners, 'the banner row is missing from the layout').toBeTruthy()
+		expect(banners.gridY).toBeLessThan(panelsCell.gridY)
+	})
+
+	it('names an icon that is registered', () => {
+		const strip = panels.allCaseWidgets().find((w) => w.id === 'case-archived')
+		expect(strip.content.icon).toBe('ArchiveOutline')
+		expect(iconsSource).toContain('\n\tArchiveOutline,\n')
+	})
+
+	it('hides the nine write actions on an archived case and keeps the lifecycle menu', () => {
+		// REQ-CM-43. The marker is read off the case object the page already
+		// holds, so the gate costs no round trip. The operator is `empty`,
+		// because OpenRegister leaves the key off until a case is archived.
+		const gated = caseDetail()
+			.config.headerActions.filter(
+				(action) => action.visibleWhen?.field === '@self.archived',
+			)
+			.map((action) => action.id)
+		expect(gated).toEqual([
+			'add-party',
+			'link-object',
+			'log-contact',
+			'generate-document',
+			'advice-request',
+			// Asking a partner hands work to someone outside on the case
+			// (capability-rows-said-and-planned T04), a write like the others.
+			'ask-partner',
+			'case-acknowledgement-met',
+			'plan-follow-up',
+			// A reminder is work somebody is asked to do on the case, so it is
+			// gated with the other writes: a task due next week on a case that
+			// closed last month is a notification nobody can act on.
+			'case-remind',
+		])
+		for (const id of gated) {
+			expect(headerAction(id).visibleWhen).toEqual({
+				field: '@self.archived',
+				op: 'empty',
+			})
+		}
+		// Restore lives inside the Lifecycle menu, so gating that entry would
+		// hide the one act that undoes the archive.
+		expect(headerAction('case-lifecycle-menu').visibleWhen).toBeUndefined()
 	})
 })

@@ -87,4 +87,32 @@ class WorkflowJsonProperty {
 
 		return [];
 	}//end decodeList()
+
+	/**
+	 * A workflow definition's steps, decoded.
+	 *
+	 * One place decodes the property, so a store that round-trips it through
+	 * a text column is read the same way wherever the steps are needed.
+	 *
+	 * This sits on the JSON property rather than on a reader, because a
+	 * reader that resolves definitions would drag the whole definition
+	 * service in behind it. Decoding a row somebody already holds needs
+	 * nothing but the decoder.
+	 *
+	 * @param array<string, mixed> $definition The workflow definition row.
+	 *
+	 * @return array<int, array<string, mixed>> The steps.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	public function stepsOf(array $definition): array {
+		$steps = [];
+		foreach ($this->decodeList(raw: ($definition['steps'] ?? '')) as $step) {
+			if (is_array($step) === true) {
+				$steps[] = $step;
+			}
+		}
+
+		return $steps;
+	}//end stepsOf()
 }//end class

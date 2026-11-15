@@ -171,6 +171,10 @@ describe('the Add party action', () => {
 			'name',
 			'roleType',
 			'participant',
+			// gemachtigde-role-on-every-case-type (#2918): a Gemachtigde acts
+			// FOR somebody, so the form asks whom, and a role that represents
+			// nobody is the one case the picker has to be able to express.
+			'representedParty',
 			'delegate',
 			'delegateUntil',
 			'description',
@@ -240,35 +244,38 @@ describe('the Team column and the Mine chip', () => {
 	const INDEXES = [['Cases', 'case', 'assignedGroup']]
 
 	it.each(INDEXES)(
-		'%s shows a Team column reading the expanded team name',
+		'%s shows a Team column reading the group id',
 		(id, slug, property) => {
 			const config = page(id).config
 			const keys = config.columns.map((column) =>
 				typeof column === 'string' ? column : column.key,
 			)
 
-			// The nested key, not the bare property: `assignedGroup` is a $ref
-			// and CnIndexPage renders a plain key raw, so a bare column would
-			// show a uuid in every row and look like data rather than an error.
-			expect(keys).toContain(`${property}.roleName`)
-			expect(
-				config.extend,
-				'a nested column key only resolves when OpenRegister expands the reference on the fetch',
-			).toContain(property)
+			// The bare property: since one-team-model `assignedGroup` is a
+			// Nextcloud group id, not a $ref. A nested `.roleName` key would
+			// read nothing on every row, and an `extend` would ask OpenRegister
+			// to expand a reference that is not there.
+			expect(keys).toContain(property)
+			expect(keys).not.toContain(`${property}.roleName`)
+			expect(config.extend ?? []).not.toContain(property)
 			// Beside the personal assignee, never instead of it.
 			expect(keys).toContain('assignee')
-			expect(keys.indexOf(`${property}.roleName`)).toBeGreaterThan(
-				keys.indexOf('assignee'),
+			expect(keys.indexOf(property)).toBeGreaterThan(keys.indexOf('assignee'))
+			// my-teams-queue: the group cell shows the team's display name,
+			// not the raw group id (nextcloud-vue nextcloud-group-surfaces).
+			const team = config.columns.find(
+				(column) => typeof column === 'object' && column.key === property,
 			)
+			expect(team && team.widget).toBe('group')
 		},
 	)
 
 	it.each(INDEXES)(
 		'%s can be narrowed to a team by facet',
 		(id, slug, property) => {
-			// The Team quick-filter chip is blocked on the platform resolving the
-			// signed-in handler's organisatieRol rows, so the sidebar facet is the
-			// only way to pick a team. A facet is opt-in per property.
+			// No Team quick-filter chip ships yet (a "my teams" token needs the
+			// reader's groups), so the sidebar facet is the only way to pick a
+			// team. A facet is opt-in per property.
 			expect(page(id).config.sidebar.enabled).toBe(true)
 			expect(schema(slug).properties[property].facetable).toBe(true)
 		},
@@ -368,29 +375,21 @@ describe('the team on the detail forms', () => {
 	})
 
 	it('the task page still names the team the task sits with', () => {
-		// This used to read the manifest: TaskDetail was `type: "detail"` and
-		// its `task-data` widget named no `include`, so every property the
-		// schema gained appeared on the page and `assignedGroup` came for
-		// free. remove-casetask 2.1 retyped the page to `custom` and there is
-		// no widget config left to read, so the fact list is the component's
-		// and has to be checked there.
-		//
 		// The FIELD moved with the store. `caseTask` had one `assignedGroup`;
 		// the engine has `candidateGroups`, a list, because a task can be
 		// offered to more than one team. What has not moved is the reason it
 		// is on the page: a handler deciding whether to pick a task up needs
-		// to know whose queue it is in.
-		//
-		// Asserted on the source rather than by mounting, matching the
-		// registry assertions in manifestCaseTaskPane.spec.js. The BEHAVIOUR
-		// (two groups render as one comma-separated row, no groups renders no
-		// row at all) is `tests/vitest/taskDetailView.spec.js`.
-		const view = fs.readFileSync(
-			path.resolve(__dirname, '../../src/views/tasks/TaskDetailView.vue'),
-			'utf8',
+		// to know whose queue it is in. The page is a manifest detail page
+		// again (task-page-on-the-manifest), so the Task card is read there.
+		const manifest = JSON.parse(
+			fs.readFileSync(path.resolve(__dirname, '../../src/manifest.json'), 'utf8'),
 		)
+		const taskPage = manifest.pages.find((entry) => entry.id === 'TaskDetail')
+		const card = taskPage.config.sideColumn.find((entry) => entry.id === 'side-task')
 
-		expect(view).toContain('candidateGroups')
-		expect(view).toContain("key: 'team'")
+		expect(card.content.fields.find((field) => field.key === 'team')).toMatchObject({
+			path: 'candidateGroups',
+			format: 'list',
+		})
 	})
 })

@@ -45,6 +45,8 @@ use Psr\Log\LoggerInterface;
  *
  * @uses \OCA\Dossiq\Service\External\Brk\BrkLookupResult
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
+ * @uses \OCA\Dossiq\Service\External\HalResponseBody
  */
 class BrkContractTest extends TestCase {
 	private const FIXTURES = __DIR__ . '/../../../../fixtures/contracts/brk';
@@ -109,7 +111,7 @@ class BrkContractTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'A', perceelnummer: '1234');
+		$result = $adapter->lookupByKadastraleAanduiding(municipalityCode: 'VBSTD', section: 'A', perceelnummer: '1234');
 		$this->assertSame('FOUND', $result->lookupStatus);
 		$this->assertSame('Voorbeeldstad', $result->parcel['kadastraleGemeente']);
 		$this->assertSame('VBSTD', $result->parcel['kadastraleGemeenteCode']);

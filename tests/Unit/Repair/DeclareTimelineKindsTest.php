@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -192,7 +192,7 @@ class DeclareTimelineKindsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testEveryKindIsDeclared(): void {
 		$this->step()->run($this->repairOutput());
@@ -213,7 +213,7 @@ class DeclareTimelineKindsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheStandardNotesAreSeeded(): void {
 		$this->step()->run($this->repairOutput());
@@ -230,7 +230,7 @@ class DeclareTimelineKindsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testRunningTwiceChangesNothing(): void {
 		$step = $this->step();
@@ -249,7 +249,7 @@ class DeclareTimelineKindsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAnOpenRegisterWithoutTheTimelineDoesNotThrow(): void {
 		$this->step(resolves: false)->run($this->repairOutput());
@@ -264,7 +264,7 @@ class DeclareTimelineKindsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testOneRefusedKindDoesNotStopTheRest(): void {
 		$this->kinds->refuses = [TimelineKinds::MAIL_IN];
@@ -284,7 +284,7 @@ class DeclareTimelineKindsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheStepNamesItself(): void {
 		$this->assertStringContainsString('timeline', $this->step()->getName());

@@ -1,7 +1,7 @@
 <template>
 	<div class="transition-config-panel">
 		<div class="transition-config-panel__header">
-			<h4>{{ t('dossiq', 'Transition Configuration') }}</h4>
+			<h4>{{ t('dossiq', 'Transition configuration') }}</h4>
 			<NcButton
 				type="tertiary"
 				:aria-label="t('dossiq', 'Close transition configuration')"
@@ -173,9 +173,10 @@
 						<option value="createSubCase">
 							{{ t('dossiq', 'Create sub-case') }}
 						</option>
-						<option value="webhook">
-							{{ t('dossiq', 'Call webhook') }}
-						</option>
+						<!-- No "Call webhook": dossiq no longer calls a URL itself
+							(flow-nodes-to-their-owners). Integriq owns outbound
+							calls, through a configured source. An action saved
+							earlier still shows its URL below. -->
 						<option value="setField">
 							{{ t('dossiq', 'Set field value') }}
 						</option>
@@ -308,6 +309,7 @@
 <script>
 import { NcButton } from '@nextcloud/vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import { parseJsonList } from './workflowConfigParsing.js'
 
 export default {
 	name: 'TransitionConfigPanel',
@@ -366,15 +368,7 @@ export default {
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		parseGuards(guards) {
-			if (!guards) return []
-			if (typeof guards === 'string') {
-				try {
-					return JSON.parse(guards)
-				} catch {
-					return []
-				}
-			}
-			return [...guards]
+			return parseJsonList(guards)
 		},
 
 		/**
@@ -382,15 +376,7 @@ export default {
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		parseActions(actions) {
-			if (!actions) return []
-			if (typeof actions === 'string') {
-				try {
-					return JSON.parse(actions)
-				} catch {
-					return []
-				}
-			}
-			return [...actions]
+			return parseJsonList(actions)
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */

@@ -67,4 +67,4 @@ Structured inter-departmental and external advisory consultations (adviesaanvrag
 - `adviceResponse`
 - `advisoryBody`
 
-See [ADR-000](../../openspec/architecture/adr-000-data-model.md) for field definitions.
+See [ADR-000](https://github.com/ConductionNL/dossiq/blob/development/openspec/architecture/adr-000-data-model.md) for field definitions.

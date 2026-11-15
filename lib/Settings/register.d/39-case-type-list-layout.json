@@ -1,0 +1,57 @@
+{
+  "_note": "columns-follow-the-case-type, row 11.9. A permit and a complaint want different columns and the Cases list showed the same nine to both. nextcloud-vue PR 1213 shipped the mechanism: a `folderSidebar` scope carries `columns`, `defaultSort` and `searchFields`, and a scope that declares none inherits the page's. dossiq's Cases sidebar is `source: \"register\"` over `caseType`, so it has NO manifest folder entries to declare on; for a register-derived folder list `CnIndexPage` reads the same three keys off each ROW's `x-index` block, keyed by the folder id. So the declaration belongs on the case type RECORD, which is where a municipality can edit it, and `x-index` has to be a declared property of `caseType` or it never arrives: OpenRegister's magic mapper is a whitelist by omission, so an undeclared key is answered 200 and stored nowhere, which reads on screen as a case type that simply has no columns of its own. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "x-index": {
+            "type": "object",
+            "title": "Columns for this case type",
+            "description": "What the case list shows while this case type is picked in the sidebar. Leave it empty and the list shows the page's own columns, which is what every case type does today. A column names one of the columns the Cases page declares: the page decides which columns exist, this decides which of them this case type shows and in what order, so a column named here that the page does not carry is dropped rather than rendered empty.",
+            "properties": {
+              "columns": {
+                "type": "array",
+                "title": "Columns",
+                "description": "The columns to show, in order, named by the key the Cases page declares them under.",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "defaultSort": {
+                "type": "array",
+                "title": "Order",
+                "description": "How to order the list while this case type is picked. Each entry names a key and a direction. A case type that says nothing here keeps whatever order the reader last chose, which is not the same as asking for the order to be reset.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "title": "Field",
+                      "description": "The field the list is ordered on."
+                    },
+                    "order": {
+                      "type": "string",
+                      "title": "Direction",
+                      "enum": ["asc", "desc"],
+                      "default": "asc",
+                      "description": "Ascending or descending."
+                    }
+                  },
+                  "required": ["key"]
+                }
+              },
+              "searchFields": {
+                "type": "array",
+                "title": "Search over",
+                "description": "The fields the search box searches while this case type is picked. Empty means the page's own fields.",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

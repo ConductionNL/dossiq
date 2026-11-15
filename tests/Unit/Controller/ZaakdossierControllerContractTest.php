@@ -46,11 +46,19 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
+use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds;
 
 /**
  * Wire-contract tests for ZaakdossierController.
  *
  * @covers \OCA\Dossiq\Controller\ZaakdossierController
+ * @uses \OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard
  */
 class ZaakdossierControllerContractTest extends TestCase {
 
@@ -90,11 +98,39 @@ class ZaakdossierControllerContractTest extends TestCase {
 	private IUserSession $userSession;
 
 	/**
+	 * The approval-clearance mock (required to construct since #3004).
+	 *
+	 * @var DocumentApprovalClearance|MockObject
+	 */
+	private DocumentApprovalClearance $approvals;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var ZaakdossierController
 	 */
 	private ZaakdossierController $controller;
+
+	/**
+	 * The cases each document belongs to, by document id.
+	 *
+	 * @var array<string, list<string>>
+	 */
+	private array $casesOf = [];
+
+	/**
+	 * The cases the caller may not change.
+	 *
+	 * @var list<string>
+	 */
+	private array $lockedCases = [];
+
+	/**
+	 * Whether the signed-in caller may add to the case the route names.
+	 *
+	 * @var bool
+	 */
+	private bool $mayAddToCase = true;
 
 	/**
 	 * Build the controller with all collaborators mocked.
@@ -108,7 +144,18 @@ class ZaakdossierControllerContractTest extends TestCase {
 		$this->fileService = $this->createMock(ZaakdossierService::class);
 		$this->reader = $this->createMock(InformatieobjectReader::class);
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
+		$store = $this->createMock(originalClassName: DocumentCaseIds::class);
+		$store->method('caseIdsOf')->willReturnCallback(callback: fn (string $recordId): array => $this->casesOf[$recordId] ?? []);
+		$this->uploadHandler->method('hasCaseUploadAccess')->willReturnCallback(
+			callback: fn (IUser $user, string $caseId): bool => $this->mayAddToCase && in_array($caseId, $this->lockedCases, true) === false
+		);
 		$this->userSession = $this->createMock(IUserSession::class);
+
+		// The seventh collaborator arrived with the approval chain on a
+		// document (#3004). It is mocked rather than left out because every
+		// test in this file builds the controller in setUp(), so one missing
+		// argument reads as the whole contract being unreachable.
+		$this->approvals = $this->createMock(DocumentApprovalClearance::class);
 
 		$this->controller = new ZaakdossierController(
 			appName: 'dossiq',
@@ -117,6 +164,17 @@ class ZaakdossierControllerContractTest extends TestCase {
 			reader: $this->reader,
 			uploadHandler: $this->uploadHandler,
 			userSession: $this->userSession,
+			approvals: $this->approvals,
+			// A REAL bulk actions object over the SAME reader and dossier
+			// service the assertions read through. Only the wiring line moved
+			// when one act over many documents was split out.
+			writes: new DocumentWriteGate(
+				caseWrites: new DocumentCaseWriteGuard(caseIds: $store, uploads: $this->uploadHandler),
+				bulk: new BulkDocumentActions(
+					reader: $this->reader,
+					fileService: $this->fileService,
+				),
+			),
 		);
 	}//end setUp()
 
@@ -424,4 +482,196 @@ class ZaakdossierControllerContractTest extends TestCase {
 			$response->getData()
 		);
 	}//end testBulkUpdateMetadataReportsAPerIdFailureWithoutAbortingTheBatch()
+	/**
+	 * A document the caller may not read is left out of the markers.
+	 *
+	 * Contract coverage for `zaakdossier#approvalMarkers` (gate-25). The
+	 * endpoint takes a COMMA-SEPARATED `ids` parameter and answers a map keyed
+	 * by id, and the two ways a document can be absent from that map are
+	 * different facts: the caller may not read it, or it is not routed for
+	 * approval at all. Both must be silent OMISSIONS, because a marker that
+	 * appeared with `routed: false` would confirm the id exists.
+	 *
+	 * @return void
+	 */
+	public function testApprovalMarkersOmitsADocumentTheCallerMayNotRead(): void {
+		$this->signIn();
+		$this->request->method('getParam')->willReturnCallback(
+			static fn (string $key, $default = null) => ($key === 'ids' ? 'doc-a,doc-b' : $default)
+		);
+
+		$this->reader->method('guardReadable')->willReturnCallback(
+			static fn (IUser $user, string $infoObjectId) => (
+				$infoObjectId === 'doc-b' ? new JSONResponse([], Http::STATUS_FORBIDDEN) : null
+			)
+		);
+		$this->approvals->method('forDocument')->willReturn(
+			['routed' => true, 'cleared' => false, 'waitingOn' => ['teamleider']]
+		);
+		$this->approvals->method('describe')->willReturn('Waiting on the teamleider.');
+
+		$markers = $this->controller->approvalMarkers()->getData()['markers'];
+
+		self::assertArrayHasKey('doc-a', $markers);
+		// OMITTED, not present with routed:false. A refused document that
+		// still appeared in the map would confirm that id exists.
+		self::assertArrayNotHasKey('doc-b', $markers);
+	}//end testApprovalMarkersOmitsADocumentTheCallerMayNotRead()
+
+	/**
+	 * A document nobody routed for approval carries no marker.
+	 *
+	 * @return void
+	 */
+	public function testApprovalMarkersOmitsADocumentThatWasNeverRouted(): void {
+		$this->signIn();
+		$this->request->method('getParam')->willReturnCallback(
+			static fn (string $key, $default = null) => ($key === 'ids' ? 'doc-a' : $default)
+		);
+
+		$this->reader->method('guardReadable')->willReturn(null);
+		$this->approvals->method('forDocument')->willReturn(['routed' => false]);
+
+		self::assertSame([], $this->controller->approvalMarkers()->getData()['markers']);
+	}//end testApprovalMarkersOmitsADocumentThatWasNeverRouted()
+
+	/**
+	 * A routed document carries its clearance, who it waits on and why.
+	 *
+	 * @return void
+	 */
+	public function testApprovalMarkersCarriesTheClearanceAndItsSentence(): void {
+		$this->signIn();
+		$this->request->method('getParam')->willReturnCallback(
+			// SPACES AROUND THE COMMA are trimmed. A client that pretty-prints
+			// its id list must not silently get an empty map.
+			static fn (string $key, $default = null) => ($key === 'ids' ? 'doc-a , doc-c' : $default)
+		);
+
+		$this->reader->method('guardReadable')->willReturn(null);
+		$this->approvals->method('forDocument')->willReturn(
+			['routed' => true, 'cleared' => true, 'waitingOn' => []]
+		);
+		$this->approvals->method('describe')->willReturn('Approved by the teamleider on 3 March.');
+
+		$markers = $this->controller->approvalMarkers()->getData()['markers'];
+
+		self::assertSame(['doc-a', 'doc-c'], array_keys($markers));
+		self::assertTrue($markers['doc-a']['routed']);
+		self::assertTrue($markers['doc-a']['cleared']);
+		self::assertSame('Approved by the teamleider on 3 March.', $markers['doc-a']['reason']);
+	}//end testApprovalMarkersCarriesTheClearanceAndItsSentence()
+
+	/**
+	 * An anonymous caller is refused before any document is looked at.
+	 *
+	 * @return void
+	 */
+	public function testApprovalMarkersRefusesAnAnonymousCaller(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->reader->expects(self::never())->method('guardReadable');
+
+		self::assertSame(
+			Http::STATUS_UNAUTHORIZED,
+			$this->controller->approvalMarkers()->getStatus()
+		);
+	}//end testApprovalMarkersRefusesAnAnonymousCaller()
+
+	/**
+	 * SECURITY: linking a document into a case the caller may not add to is
+	 * refused before the document is read or anything is linked.
+	 *
+	 * @return void
+	 */
+	public function testLinkExistingRefusesACaseTheCallerMayNotAddToBeforeReadingOrLinking(): void {
+		$this->signIn();
+		$this->mayAddToCase = false;
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('linkExistingInformatieobject');
+
+		$response = $this->controller->linkExisting(caseId: 'someone-elses-case', infoObjectId: 'io-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+	}//end testLinkExistingRefusesACaseTheCallerMayNotAddToBeforeReadingOrLinking()
+
+	/**
+	 * SECURITY: unlinking a document from a case the caller may not change is
+	 * refused before the document is read or anything is unlinked.
+	 *
+	 * @return void
+	 */
+	public function testUnlinkDocumentRefusesACaseTheCallerMayNotChangeBeforeReadingOrUnlinking(): void {
+		$this->signIn();
+		$this->mayAddToCase = false;
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('unlinkInformatieobject');
+
+		$response = $this->controller->unlinkDocument(caseId: 'someone-elses-case', infoObjectId: 'io-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+	}//end testUnlinkDocumentRefusesACaseTheCallerMayNotChangeBeforeReadingOrUnlinking()
+
+	/**
+	 * SECURITY: a document on a case the caller may not change cannot have its
+	 * metadata or status written, and the refusal comes before it is read.
+	 *
+	 * @return void
+	 */
+	public function testASingleDocumentWriteNeedsTheChangeRightOnEveryCase(): void {
+		$this->signIn();
+		$this->casesOf = ['io-1' => ['case-mine', 'case-locked']];
+		$this->lockedCases = ['case-locked'];
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('updateMetadata');
+		$this->fileService->expects($this->never())->method('transitionStatus');
+
+		$metadata = $this->controller->updateMetadata(infoObjectId: 'io-1');
+		$status = $this->controller->transitionStatus(infoObjectId: 'io-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $metadata->getStatus());
+		$this->assertSame(expected: 'case-locked', actual: $metadata->getData()['caseId']);
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $status->getStatus());
+	}//end testASingleDocumentWriteNeedsTheChangeRightOnEveryCase()
+
+	/**
+	 * SECURITY: one document on a locked case refuses the whole bulk write,
+	 * naming that document, before anything is read or written.
+	 *
+	 * @return void
+	 */
+	public function testABulkWriteIsRefusedWholeAndNamesTheDocument(): void {
+		$this->signIn();
+		$this->casesOf = ['io-1' => ['case-mine'], 'io-2' => ['case-locked']];
+		$this->lockedCases = ['case-locked'];
+		$this->request->method('getParam')->willReturnMap(
+			valueMap: [['ids', [], ['io-1', 'io-2']], ['status', '', 'final'], ['metadata', [], ['title' => 'x']]]
+		);
+		$this->reader->expects($this->never())->method('guardReadable');
+		$this->fileService->expects($this->never())->method('bulkTransitionStatus');
+		$this->fileService->expects($this->never())->method('updateMetadata');
+
+		$status = $this->controller->bulkTransitionStatus();
+		$metadata = $this->controller->bulkUpdateMetadata();
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $status->getStatus());
+		$this->assertSame(expected: 'io-2', actual: $status->getData()['documentId']);
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $metadata->getStatus());
+		$this->assertSame(expected: 'io-2', actual: $metadata->getData()['documentId']);
+	}//end testABulkWriteIsRefusedWholeAndNamesTheDocument()
+
+	/**
+	 * A document on no case keeps today's rule: the read clearance decides.
+	 *
+	 * @return void
+	 */
+	public function testADocumentOnNoCaseKeepsTheReadClearanceRule(): void {
+		$this->signIn();
+		$this->casesOf = [];
+		$this->reader->expects($this->once())->method('guardReadable')->willReturn(null);
+		$this->fileService->expects($this->once())->method('transitionStatus')->willReturn(['id' => 'io-loose']);
+
+		$response = $this->controller->transitionStatus(infoObjectId: 'io-loose');
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+	}//end testADocumentOnNoCaseKeepsTheReadClearanceRule()
 }//end class

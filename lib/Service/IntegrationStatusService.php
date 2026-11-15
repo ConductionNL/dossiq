@@ -23,25 +23,32 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntegrationStatusServiceInterface;
+use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+use OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Sends connection reports and refresh requests to integriq.
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
-class IntegrationStatusService {
+class IntegrationStatusService implements IntegrationStatusServiceInterface {
 
 	/**
 	 * Integriq's report event (ADR-041). Named by string so dossiq stays
@@ -74,10 +81,13 @@ class IntegrationStatusService {
 		'store',
 		'financial',
 		'brp',
+		'kadaster',
 		'kvk',
 		'pdok',
 		'berichtenbox',
 		'templates',
+		'smartdocuments',
+		'xential',
 	];
 
 	/**
@@ -107,8 +117,8 @@ class IntegrationStatusService {
 	/**
 	 * App-config keys per connection whose save asks integriq to resolve that
 	 * connection again. Each list is the connection's `requiredConfig` plus its
-	 * `adapter.configKey` in `lib/Settings/connections.json`; a unit test keeps
-	 * the two equal.
+	 * `adapter.configKey` and `switch.configKey` in `lib/Settings/connections.json`;
+	 * a unit test keeps the two equal.
 	 *
 	 * StUF, the mailbox and the store are absent on purpose: dossiq probes them
 	 * and reports the outcome, and a saved form says less than a probe does.
@@ -119,8 +129,9 @@ class IntegrationStatusService {
 		'zgw' => ['register', 'case_schema'],
 		'kcc' => ['identification_method'],
 		'dmn' => ['decision_table_schema'],
-		'financial' => ['dwangsom_callback_secret'],
-		'berichtenbox' => ['berichtenbox_adapter'],
+		'financial' => [MoneyConfigKeys::PAYOUT_CALLBACK_SECRET_KEY],
+		'kadaster' => ['integration.brk.mode'],
+		'berichtenbox' => ['digital_post_source', 'berichtenbox_adapter'],
 		'templates' => ['beschikking_template_adapter'],
 	];
 
@@ -129,12 +140,70 @@ class IntegrationStatusService {
 	 *
 	 * @param IEventDispatcher $eventDispatcher Sends the integriq events (ADR-041).
 	 * @param LoggerInterface $logger Records what could not be sent.
+	 * @param TemplateAdapterChoice|null $templateChoice The template seam's own rule, for the templates card.
+	 * @param IAppConfig|null $appConfig Reads the template adapter key, for the templates card.
 	 */
 	public function __construct(
 		private readonly IEventDispatcher $eventDispatcher,
 		private readonly LoggerInterface $logger,
+		private readonly ?TemplateAdapterChoice $templateChoice = null,
+		private readonly ?IAppConfig $appConfig = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * What the Document templates card should read: Live or Simulated.
+	 *
+	 * THE CARD ASKS THE SEAM'S QUESTION. An empty `beschikking_template_adapter`
+	 * binds filinq's adapter when filinq is enabled and the mock otherwise
+	 * ({@see TemplateAdapterChoice}), so an empty
+	 * key no longer means a mock. integriq cannot see whether filinq is
+	 * enabled, so dossiq reports the answer rather than leaving it to the
+	 * declaration's `simulatedValues`.
+	 *
+	 * @return array{status: string, message: string}|null The status and its words, or null without the readers.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function templatesStatus(): ?array {
+		if ($this->templateChoice === null || $this->appConfig === null) {
+			return null;
+		}
+
+		$named = trim($this->appConfig->getValueString(AppIdentity::APP_ID, SubstitutableAdapterRegistrar::TEMPLATE_CONFIG_KEY, ''));
+		$adapter = $this->templateChoice->adapterFor(named: $named);
+
+		if ($adapter === MockTemplateEngineAdapter::class) {
+			$message = 'Filinq is not installed. A mock adapter answers here and no template reaches Filinq.';
+			if ($named !== '') {
+				$message = 'beschikking_template_adapter names the mock. No template reaches Filinq. Clear it to render through Filinq.';
+			}
+
+			return ['status' => 'simulated', 'message' => $message];
+		}
+
+		if ($adapter === FilinqTemplateEngineAdapter::class) {
+			return ['status' => 'configured', 'message' => 'Filinq renders the templates.'];
+		}
+
+		return ['status' => 'configured', 'message' => $adapter . ' renders the templates.'];
+	}//end templatesStatus()
+
+	/**
+	 * Report the Document templates card to integriq.
+	 *
+	 * @return bool True when the report was sent.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function recordTemplates(): bool {
+		$status = $this->templatesStatus();
+		if ($status === null) {
+			return false;
+		}
+
+		return $this->record(key: 'templates', status: $status['status'], message: $status['message']);
+	}//end recordTemplates()
 
 	/**
 	 * Report a connection's status to integriq.
@@ -150,22 +219,10 @@ class IntegrationStatusService {
 	 *
 	 * @return bool True when the report was sent.
 	 *
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function record(string $key, string $status, string $message = ''): bool {
-		if (in_array($key, self::KEYS, true) === false) {
-			$this->logger->warning(
-				'Dossiq: refusing to report an unknown connection key',
-				['key' => $key]
-			);
-			return false;
-		}
-
-		if (in_array($status, self::STATUSES, true) === false) {
-			$this->logger->warning(
-				'Dossiq: refusing to report an unknown connection status',
-				['key' => $key, 'status' => $status]
-			);
+		if ($this->isKnownReport(key: $key, status: $status) === false) {
 			return false;
 		}
 
@@ -174,16 +231,54 @@ class IntegrationStatusService {
 			return false;
 		}
 
+		return $this->sendStatus(eventClass: $eventClass, report: ['key' => $key, 'status' => $status, 'message' => $message]);
+	}//end record()
+
+	/**
+	 * Whether the key and status are known, logging the one that is not.
+	 *
+	 * @param string $key    The connection key.
+	 * @param string $status The connection status.
+	 *
+	 * @return bool True when both are known.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function isKnownReport(string $key, string $status): bool {
+		if (in_array($key, self::KEYS, true) === false) {
+			$this->logger->warning('Dossiq: refusing to report an unknown connection key', ['key' => $key]);
+			return false;
+		}
+
+		if (in_array($status, self::STATUSES, true) === false) {
+			$this->logger->warning('Dossiq: refusing to report an unknown connection status', ['key' => $key, 'status' => $status]);
+			return false;
+		}
+
+		return true;
+	}//end isKnownReport()
+
+	/**
+	 * Send one connection status event.
+	 *
+	 * @param string                                           $eventClass The resolved status event class.
+	 * @param array{key: string, status: string, message: string} $report     The connection key, its status and what the probe reported.
+	 *
+	 * @return bool True when the report was sent.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function sendStatus(string $eventClass, array $report): bool {
 		return $this->send(
-			key: $key,
+			key: $report['key'],
 			build: static fn (): object => new $eventClass(
-				app: Application::APP_ID,
-				key: $key,
-				status: $status,
-				message: $message,
+				app: AppIdentity::APP_ID,
+				key: $report['key'],
+				status: $report['status'],
+				message: $report['message'],
 			)
 		);
-	}//end record()
+	}//end sendStatus()
 
 	/**
 	 * Ask integriq to resolve every connection whose settings the save touched.
@@ -196,7 +291,7 @@ class IntegrationStatusService {
 	 *
 	 * @return array<int, string> The connection keys a refresh was sent for.
 	 *
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function recordFromSave(array $saved): array {
 		$eventClass = $this->resolveEventClass(eventClass: self::REFRESH_EVENT);
@@ -204,26 +299,58 @@ class IntegrationStatusService {
 			return [];
 		}
 
+		$refreshed = $this->refreshedKeys(eventClass: $eventClass, saved: $saved);
+
+		// The templates card is the one row integriq cannot resolve from the
+		// saved value alone: an empty key reads Live or Simulated depending on
+		// whether filinq is enabled. So the save also reports what the seam binds.
+		if (in_array('templates', $refreshed, true) === true) {
+			$this->recordTemplates();
+		}
+
+		return $refreshed;
+	}//end recordFromSave()
+
+	/**
+	 * Send a refresh for every integration key the save touched.
+	 *
+	 * @param string               $eventClass The refresh event class.
+	 * @param array<string, mixed> $saved      The saved settings.
+	 *
+	 * @return array<int, string> The keys whose refresh was sent.
+	 */
+	private function refreshedKeys(string $eventClass, array $saved): array {
 		$refreshed = [];
 		foreach (self::SAVE_REQUIRED_KEYS as $key => $configKeys) {
 			if (array_intersect($configKeys, array_keys($saved)) === []) {
 				continue;
 			}
 
-			$sent = $this->send(
-				key: $key,
-				build: static fn (): object => new $eventClass(
-					app: Application::APP_ID,
-					key: $key,
-				)
-			);
-			if ($sent === true) {
+			if ($this->sendRefresh(eventClass: $eventClass, key: $key) === true) {
 				$refreshed[] = $key;
 			}
 		}
 
 		return $refreshed;
-	}//end recordFromSave()
+	}//end refreshedKeys()
+
+	/**
+	 * Send one integration key's refresh event.
+	 *
+	 * @param string $eventClass The refresh event class.
+	 * @param string $key        The integration key.
+	 *
+	 * @return bool Whether it was sent.
+	 */
+	private function sendRefresh(string $eventClass, string $key): bool {
+		return $this->send(
+			key: $key,
+			build: static fn (): object => new $eventClass(
+				app: AppIdentity::APP_ID,
+				key: $key,
+			)
+		);
+	}//end sendRefresh()
 
 	/**
 	 * The event class to instantiate, or null when integriq does not ship it.
@@ -232,7 +359,7 @@ class IntegrationStatusService {
 	 *
 	 * @return string|null The class name to instantiate, or null when absent.
 	 *
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	protected function resolveEventClass(string $eventClass): ?string {
 		$qualified = '\\' . $eventClass;

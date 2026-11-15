@@ -46,6 +46,17 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\TermijnTimerService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\PauseRegistrationRun
+ * @uses \OCA\Dossiq\Service\TermTimerFields
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
+ * @uses \OCA\Dossiq\Service\TimerArmRun
+ * @uses \OCA\Dossiq\Service\ExtensionRun
  */
 class DeadlinePauseExtensionServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -271,10 +282,25 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$resumed = $this->pauseService->resumeAfterPauze($id, $resumeAt);
 
 		// Dossiq case-data side: base end +14 at pause, -10 unused at
-		// resume, net +4 = start + 60, landed on the next day the
-		// administered calendar works (Awb 1:1 Algemene termijnenwet), so
-		// the assertion holds on the runs where start + 60 is a weekend.
-		$expected = $this->firstWorkingDayFrom($start->modify('+60 days'))->format('Y-m-d');
+		// resume, net +4.
+		//
+		// 🔑 THE BASE END IS THE ROLLED ONE, AND THE NET IS ADDED TO THAT.
+		// `createTermijnInstance` already put start + 56 on the next
+		// working day (Awt art. 1) and stored it, and both the pause
+		// arithmetic and the armed timer's budget read that stored date.
+		//
+		// The expectation used to be re-derived from `start` as
+		// `roll(start + 60)`, which skips that first roll. Swept over 400
+		// consecutive start dates, `roll(start + 60)` disagrees with what
+		// the service computes on 114 of them, and every one of the 114 is
+		// a Saturday or a Sunday start. Anchored on `today`, that is a
+		// test whose result is the day of the week it ran on. The two
+		// models this fixture actually compares, the case-data chain and
+		// the engine's consumed-budget projection, agree on all 400.
+		//
+		// So the expectation is taken from the term the service created.
+		$base = new DateTimeImmutable((string)$instance['endDateCalculated']);
+		$expected = $this->firstWorkingDayFrom($base->modify('+4 days'))->format('Y-m-d');
 		self::assertSame($expected, $resumed['endDateCurrent']);
 
 		// Engine side: suspend was evidenced with the Awb basis, and the
@@ -349,6 +375,41 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$this->extService->requestSupervisorExtension($id, 'supervisor akkoord', '2026-09-30');
 		self::assertSame(30, $this->engine->calls['extendWithOverride'][0]['amount']);
 		self::assertSame('supervisor', $this->engine->calls['extendWithOverride'][0]['actor']);
+	}
+
+	/**
+	 * Each verlenging records one `verleng` event with the basis and actor of
+	 * its mode, its rationale, its day impact and its document link, and
+	 * stores the end as asked beside the end it got.
+	 *
+	 * @return void
+	 */
+	public function testEachExtensionRecordsItsEventAndTheEndAsAsked(): void {
+		$instance = $this->newInstance();
+		$id = (string)$instance['id'];
+
+		$first = $this->extService->requestExtension($id, 'Complex zaak', '2026-08-31', 'doc:brief-1');
+		$second = $this->extService->requestSupervisorExtension($id, 'supervisor akkoord', '2026-09-30');
+
+		$events = [];
+		foreach (($this->objects->store['termijnGebeurtenis'] ?? []) as $event) {
+			if (($event['type'] ?? '') !== 'verleng') {
+				continue;
+			}
+
+			$events[] = array_intersect_key($event, array_flip(['deadlineInstance', 'type', 'actor', 'basis', 'rationale', 'daysImpact', 'documentLink']));
+		}
+
+		self::assertSame(
+			[
+				['deadlineInstance' => $id, 'type' => 'verleng', 'actor' => 'system', 'basis' => 'AWB 4:14 lid 1', 'rationale' => 'Complex zaak', 'daysImpact' => 35, 'documentLink' => 'doc:brief-1'],
+				['deadlineInstance' => $id, 'type' => 'verleng', 'actor' => 'supervisor', 'basis' => 'AWB 4:14 lid 3 (supervisor)', 'rationale' => 'supervisor akkoord', 'daysImpact' => 30],
+			],
+			$events
+		);
+		self::assertSame(['2026-08-31', '2026-08-31', 'verlengd', 1], [$first['endDateCurrent'], $first['endDateBeforeRoll'], $first['status'], $first['countExtensions']]);
+		self::assertSame(['2026-09-30', '2026-09-30', 'verlengd', 2], [$second['endDateCurrent'], $second['endDateBeforeRoll'], $second['status'], $second['countExtensions']]);
+		self::assertSame([], $second['notificatiesVerstuurd']);
 	}
 
 	/**

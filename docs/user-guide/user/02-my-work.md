@@ -31,7 +31,7 @@ By the end you will have opened My Work, used the tabs to switch between cases a
 
    ![Show completed toggle](/screenshots/tutorials/user/02-my-work-03.png)
 
-4. Scroll to the **Ter parafering** panel at the bottom: proposals waiting on your initial as part of the paraferingsroute (see [BW Parafering](../../Features/bw-parafering.md)). Empty means there is nothing waiting on you.
+4. Scroll to the **Ter parafering** panel at the bottom: proposals waiting on your initial as part of the paraferingsroute. Empty means there is nothing waiting on you.
 
    ![Ter parafering panel](/screenshots/tutorials/user/02-my-work-04.png)
 
@@ -50,4 +50,3 @@ You are set up correctly when: the My Work page shows counts on each tab, and th
 ## Reference
 
 - [Case management](../../Features/case-management.md): the data model behind My Work entries.
-- [BW Parafering](../../Features/bw-parafering.md): how items end up in *Ter parafering*.

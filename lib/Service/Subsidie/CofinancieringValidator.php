@@ -34,7 +34,7 @@ namespace OCA\Dossiq\Service\Subsidie;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class CofinancieringValidator {
 	/**
@@ -51,12 +51,22 @@ class CofinancieringValidator {
 	 *
 	 * @return float The total in EUR.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function sumBedragen(array $rows): float {
 		$sum = 0.0;
 		foreach ($rows as $row) {
-			$sum += (float)($row['amount'] ?? 0);
+			// 🔴 `bedrag` FIRST, BECAUSE THAT IS WHAT THE SCHEMA DECLARES.
+			// `subsidieAanvraag.coFinancingList` says `[{partij, bedrag,
+			// percentage}]`, and this method read `amount` only. Nothing
+			// reported the mismatch because nothing called this class: its own
+			// suite was written against the implementation rather than the
+			// declaration, so the test and the code agreed with each other and
+			// neither agreed with the data. Every real row would have summed to
+			// zero and every declared budget would have been refused.
+			// `amount` is still read as a fallback, for that suite and for any
+			// row an earlier caller may have written in its shape.
+			$sum += (float)($row['bedrag'] ?? ($row['amount'] ?? 0));
 		}
 
 		return round($sum, 2);
@@ -72,7 +82,7 @@ class CofinancieringValidator {
 	 *
 	 * @return bool True when the funding sources reconcile to the total.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function reconciles(float $subsidyAmount, array $cofinanciering, float $projectTotal): bool {
 		$total = ($subsidyAmount + $this->sumBedragen(rows: $cofinanciering));
@@ -86,7 +96,7 @@ class CofinancieringValidator {
 	 *
 	 * @return bool True when EU co-financing is present.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function hasEuCofinanciering(array $cofinanciering): bool {
 		foreach ($cofinanciering as $row) {
@@ -111,7 +121,7 @@ class CofinancieringValidator {
 	 *
 	 * @return array{valid: bool, error: string|null, euCofinanciering: bool}
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function validate(float $subsidyAmount, array $cofinanciering, float $projectTotal): array {
 		if ($projectTotal <= 0.0) {

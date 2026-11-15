@@ -47,6 +47,8 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
+import { anonymousContext } from './helpers/principals.ts'
+import { expectRefused, REFUSED_ANONYMOUS } from './helpers/refusals.ts'
 
 /** dossiq's own hand-off, the one the dialogs call. */
 const HANDOFF = '/index.php/apps/dossiq/api/cases/bulk-jobs'
@@ -365,18 +367,47 @@ test.describe('A bulk act on cases is a job that reports what it skipped', () =>
 		expect(body.counts).toBeTruthy()
 	})
 
-	test("someone else's job is not readable, and says not found rather than forbidden", async ({
+	test("someone else's job is not readable, and says why", async ({
 		playwright,
 		baseURL,
 	}) => {
-		// A 403 would confirm the job exists, which is a different leak from
-		// the one the 404 avoids.
-		const anonymous = await playwright.request.newContext({ baseURL })
-		const response = await anonymous.get(`${JOBS}/999999999`, {
+		// 🔴 A REAL JOB, AND A REAL STRANGER.
+		//
+		// This probe used to read id 999999999 through
+		// `newContext({ baseURL })`. Both halves were wrong and they hid each
+		// other: `newContext({ baseURL })` inherits `use.storageState`, which
+		// is the ADMIN's captured session, so the reader was an admin; and
+		// 999999999 is an id no job has, so the 404 it asserted was "no such
+		// row" rather than "you may not read this one". The test passed, and
+		// would have passed just as well against an endpoint with no guard at
+		// all.
+		//
+		// So: a job this run genuinely created, read by a caller that has
+		// never signed in.
+		const created = await api.post(HANDOFF, {
+			headers: writeHeaders(token),
+			data: {
+				action: 'dossiq:reassign-cases',
+				parameters: { toUser: 'admin', reason: `${RUN_PREFIX} privacy` },
+				selection: { ids: seeded },
+				justification: `${RUN_PREFIX} privacy`,
+			},
+		})
+		expect(created.status()).toBe(201)
+		const job = await created.json()
+
+		const anonymous = await anonymousContext(playwright, String(baseURL))
+		const response = await anonymous.get(`${JOBS}/${job.id}`, {
 			headers: { 'OCS-APIRequest': 'true' },
 		})
 
-		expect([401, 404]).toContain(response.status())
+		await expectRefused(
+			response,
+			REFUSED_ANONYMOUS,
+			"a stranger reading somebody else's bulk job",
+		)
+		// And nothing of the job crossed on the way out.
+		expect(await response.text()).not.toContain(RUN_PREFIX)
 		await anonymous.dispose()
 	})
 })

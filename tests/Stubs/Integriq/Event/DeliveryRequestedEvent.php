@@ -55,6 +55,8 @@ class DeliveryRequestedEvent extends Event {
 	 */
 	private int $matchedSubscriptions = 0;
 
+	private ?array $refusal = null;
+
 	/**
 	 * Constructor.
 	 *
@@ -246,4 +248,25 @@ class DeliveryRequestedEvent extends Event {
 	public function getMatchedSubscriptions(): int {
 		return $this->matchedSubscriptions;
 	}//end getMatchedSubscriptions()
+
+	/**
+	 * Record the opt-out refusal, as integriq's real event does.
+	 *
+	 * @param string $reason Why the delivery was refused.
+	 * @param string $code   The refusal code.
+	 *
+	 * @return void
+	 */
+	public function setRefusal(string $reason, string $code): void {
+		$this->refusal = ['code' => $code, 'reason' => $reason];
+	}//end setRefusal()
+
+	/**
+	 * The opt-out refusal, when there was one.
+	 *
+	 * @return array<string,mixed>|null The refusal.
+	 */
+	public function getRefusal(): ?array {
+		return $this->refusal;
+	}//end getRefusal()
 }//end class

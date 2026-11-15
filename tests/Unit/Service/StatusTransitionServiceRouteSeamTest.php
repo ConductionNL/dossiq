@@ -30,6 +30,8 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseDeclarations;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
@@ -68,6 +70,10 @@ interface RouteSeamObjectServiceStub {
  * The engine resolves the workflow through the case.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionStep
+ * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
+ * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver
  * @uses \OCA\Dossiq\Service\Archival\ArchivalNominationDeriver
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
@@ -78,6 +84,10 @@ interface RouteSeamObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class StatusTransitionServiceRouteSeamTest extends TestCase {
 	use MakesStatusDeclarations;
@@ -181,24 +191,30 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 
 		$this->service = new StatusTransitionService(
-			$this->templateLoader,
-			$this->guardRegistry,
-			$this->dispatcher,
-			new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $logger),
-			new TransitionAuthorizer($this->groupManager, $logger),
-			new TransitionSpecReader(),
-			$this->createMock(IUserSession::class),
-			$logger,
-			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $logger)),
-			$this->statusChecklist,
-			$this->undeclaredStatuses(),
-			$this->undeclaredTransitions(),
-			$this->offeredTransitions(
-				guards: $this->guardRegistry,
-				reader: new TransitionSpecReader(),
-				statuses: $this->undeclaredStatuses(),
-			),
+			templateLoader: $this->templateLoader,
+			guardRegistry: $this->guardRegistry,
+			authorizer: new TransitionAuthorizer($this->groupManager, $logger),
+			specReader: new TransitionSpecReader(),
+			userSession: $this->createMock(IUserSession::class),
+			logger: $logger,
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
+			declarations: new CaseDeclarations(
+				statuses: $this->undeclaredStatuses(),
+				moves: $this->undeclaredTransitions(),
+				offered: $this->offeredTransitions(
+					guards: $this->guardRegistry,
+					reader: new TransitionSpecReader(),
+					statuses: $this->undeclaredStatuses(),
+				),
+				checklist: $this->statusChecklist,
+				store: new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $logger),
+			),
+			ledger: new CaseMoveLedger(
+				store: new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $logger),
+				resultWriter: new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $logger)),
+				dispatcher: $this->dispatcher,
+				logger: $logger,
+			),
 		);
 	}//end setUp()
 
@@ -367,8 +383,14 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 		$this->service->getAvailableTransitions(caseId: 'case-1', userId: 'alice');
 
 		self::assertSame(
-			['statusChecklist'],
+			['statusChecklist', 'statusCapacity'],
 			array_map(static fn (array $guard): string => (string)$guard['type'], $seen)
 		);
+
+		// The capacity guard carries the TARGET, which is the one thing it
+		// cannot read off the case: the case still holds the status it is
+		// leaving. A guard entry appended without it passes everything,
+		// silently, which is the same green as a status that had room.
+		self::assertSame('st-behandeling', $seen[1]['toStatus']);
 	}//end testEveryTransitionIsCheckedAgainstTheStatusChecklist()
 }//end class

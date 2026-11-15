@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -60,6 +60,7 @@ class ConnectionsDeclarationTest extends TestCase {
 		'unconfiguredMessage',
 		'sourceTemplate',
 		'reportedOnly',
+		'switch',
 	];
 
 	/**
@@ -149,7 +150,7 @@ class ConnectionsDeclarationTest extends TestCase {
 		$keys = array_column($this->declaration()['connections'], 'key');
 
 		$this->assertSame(expected: IntegrationStatusService::KEYS, actual: $keys);
-		$this->assertCount(expectedCount: 12, haystack: $keys);
+		$this->assertCount(expectedCount: 15, haystack: $keys);
 	}//end testTheTwelveKeysAreTheOnesTheServiceAccepts()
 
 	/**
@@ -205,17 +206,30 @@ class ConnectionsDeclarationTest extends TestCase {
 			}
 
 			$url = (string)$connection['settingsUrl'];
-			$this->assertStringStartsWith(prefix: '/settings/admin/dossiq#section-', string: $url, message: $connection['key']);
+			$this->assertMatchesRegularExpression(
+				pattern: '#^/settings/admin/dossiq\\?tab=[a-z-]+\\#section-[a-z-]+$#',
+				string: $url,
+				message: $connection['key']
+			);
+			$tab    = substr($url, strpos($url, '=') + 1, strpos($url, '#') - strpos($url, '=') - 1);
 			$anchor = substr($url, strpos($url, '#') + 1);
+			// The first tab's panel is the shell's default slot: everything before the first named tab.
+			if ($tab === 'general') {
+				$panel = substr($adminRoot, 0, (int)strpos($adminRoot, '<template #tab-'));
+			} else {
+				$start = strpos($adminRoot, '<template #tab-' . $tab . '>');
+				$this->assertNotFalse(condition: $start, message: $connection['key'] . ' links to a missing tab');
+				$panel = substr($adminRoot, (int)$start, strpos($adminRoot, "\n\t\t</template>", (int)$start) - (int)$start);
+			}
 			$this->assertStringContainsString(
 				needle: 'id="' . $anchor . '"',
-				haystack: $adminRoot,
-				message: $connection['key'] . ' links to a missing section'
+				haystack: $panel,
+				message: $connection['key'] . ' links to a section that is not on its tab'
 			);
 			$linked++;
 		}
 
-		$this->assertSame(expected: 7, actual: $linked);
+		$this->assertSame(expected: 8, actual: $linked);
 		$this->assertStringNotContainsString(needle: 'id="section-pdok"', haystack: $adminRoot);
 	}//end testEverySettingsLinkPointsAtAnExistingSection()
 
@@ -234,6 +248,10 @@ class ConnectionsDeclarationTest extends TestCase {
 			$keys = ($connection['requiredConfig'] ?? []);
 			if (isset($connection['adapter']['configKey']) === true) {
 				$keys[] = $connection['adapter']['configKey'];
+			}
+
+			if (isset($connection['switch']['configKey']) === true) {
+				$keys[] = $connection['switch']['configKey'];
 			}
 
 			$keys = array_values(array_unique($keys));
@@ -266,7 +284,7 @@ class ConnectionsDeclarationTest extends TestCase {
 	 * Only KvK is declared unavailable, and it says why in words that are true.
 	 *
 	 * BRP and KvK were both once marked "Specified, not built yet", which was
-	 * false for both. KvK's adapter is built and bound and nothing calls it.
+	 * false for both. Dossiq ships no KvK client (ADR-118): integriq holds the source.
 	 *
 	 * @return void
 	 */
@@ -278,16 +296,19 @@ class ConnectionsDeclarationTest extends TestCase {
 
 		$this->assertSame(expected: ['kvk'], actual: array_column($unavailable, 'key'));
 		$message = (string)$this->connectionsByKey()['kvk']['unavailableMessage'];
-		$this->assertMatchesRegularExpression(pattern: '/built and bound/i', string: $message);
+		$this->assertMatchesRegularExpression(pattern: '/no KvK client/i', string: $message);
 		$this->assertDoesNotMatchRegularExpression(pattern: '/not built/i', string: $message);
 	}//end testOnlyKvkIsUnavailableAndSaysWhy()
 
 	/**
-	 * BRP names the key that wakes it, and offers no settings link.
+	 * BRP names the setting that wakes it, and offers no settings link.
 	 *
-	 * BRP is built and called, and reaches nothing until its tier key moves off
-	 * `log`. No admin section writes that key, so the row's message is the only
-	 * place an integrator learns it (REQ-ADMIN-019).
+	 * Dossiq ships no BRP client (ADR-118). The conflict-of-interest check
+	 * reads family relations through integriq's BRP source, and that read is
+	 * off until `relationFields` is set on the source. No admin section in
+	 * dossiq writes it, so the row's message is the only place an
+	 * administrator learns it (REQ-ADMIN-019). The retired tier key is gone
+	 * from the message: setting it changes nothing any more.
 	 *
 	 * @return void
 	 */
@@ -296,11 +317,38 @@ class ConnectionsDeclarationTest extends TestCase {
 
 		$message = (string)($brp['unconfiguredMessage'] ?? '');
 
-		$this->assertMatchesRegularExpression(pattern: '/integration\\.brp\\.mode/', string: $message);
+		$this->assertMatchesRegularExpression(pattern: '/relationFields/', string: $message);
+		$this->assertMatchesRegularExpression(pattern: '/Integriq/', string: $message);
+		$this->assertDoesNotMatchRegularExpression(pattern: '/integration\\.brp\\.mode/', string: $message);
 		$this->assertDoesNotMatchRegularExpression(pattern: '/not built/i', string: $message);
 		$this->assertArrayNotHasKey(key: 'settingsUrl', array: $brp);
 		$this->assertArrayNotHasKey(key: 'available', array: $brp);
 	}//end testBrpNamesTheKeyThatWakesIt()
+
+	/**
+	 * Each document vendor's card probes integriq's source of the engine's slug.
+	 *
+	 * A decision template on `vendor:<slug>` renders through integriq's source
+	 * of that slug, so the card that says whether the vendor is reachable has
+	 * to watch that same source, and tell an administrator where to switch it on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.4
+	 */
+	public function testEachVendorCardProbesTheSourceItsEngineNames(): void {
+		$connections = $this->connectionsByKey();
+
+		foreach (['smartdocuments' => 'SmartDocuments', 'xential' => 'Xential'] as $slug => $name) {
+			$card = $connections[$slug];
+
+			$this->assertSame(expected: $slug, actual: $card['sourceTemplate']);
+			$this->assertSame(expected: $name, actual: $card['title']);
+			$this->assertStringContainsString(needle: 'vendor:' . $slug, haystack: (string)$card['description']);
+			$this->assertMatchesRegularExpression(pattern: '/Integriq/', string: (string)$card['unconfiguredMessage']);
+			$this->assertArrayNotHasKey(key: 'settingsUrl', array: $card);
+		}
+	}//end testEachVendorCardProbesTheSourceItsEngineNames()
 
 	/**
 	 * An adapter block uses only D2 fields, and `simulatedValues` is a list of strings.
@@ -325,31 +373,74 @@ class ConnectionsDeclarationTest extends TestCase {
 	}//end testAdapterBlocksUseOnlyD2Fields()
 
 	/**
-	 * A mock-backed seam reads Simulated when its key is empty or names the mock.
+	 * A seam reads Simulated exactly when a mock is really what answers.
 	 *
-	 * Contract D4 rule 3 matches the key's value against `simulatedValues`. The
-	 * default is only the empty string, so an admin who typed the mock class
-	 * into the key would read Configured under rule 5 while the mock answered.
-	 * Each list therefore names the exact class the registrar falls back to,
-	 * and that class must exist and implement the seam, or the entry matches a
-	 * value nothing can bind.
+	 * Contract D4 rule 3 matches the key's value against `simulatedValues`,
+	 * and an admin who typed the mock class into the key would otherwise read
+	 * Configured under rule 5 while the mock answered. So each list names the
+	 * class, and that class must exist and implement the seam, or the entry
+	 * matches a value nothing can bind.
+	 *
+	 * NEITHER SEAM LISTS THE EMPTY STRING. `beschikking_template_adapter`
+	 * binds filinq's adapter when filinq is enabled and the mock otherwise, so
+	 * an empty key says nothing on its own: dossiq reports that card itself
+	 * (IntegrationStatusService::recordTemplates()). `berichtenbox_adapter` falls back
+	 * to {@see \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter}, which
+	 * refuses rather than simulating, so listing empty there told an admin a
+	 * mock was answering when nothing was. `mock` is listed beside the class
+	 * because the registrar accepts it as a shorthand.
 	 *
 	 * @return void
 	 */
 	public function testMockBackedSeamsNameTheirMockAsSimulated(): void {
 		$byKey = $this->connectionsByKey();
 		$seams = [
-			'berichtenbox' => [MockAdapter::class, BerichtenboxAdapterInterface::class],
-			'templates' => [MockTemplateEngineAdapter::class, TemplateEngineAdapterInterface::class],
+			'berichtenbox' => [
+				[MockAdapter::class, 'mock'],
+				MockAdapter::class,
+				BerichtenboxAdapterInterface::class,
+			],
+			'templates' => [
+				[MockTemplateEngineAdapter::class],
+				MockTemplateEngineAdapter::class,
+				TemplateEngineAdapterInterface::class,
+			],
 		];
 
-		foreach ($seams as $key => [$mockClass, $interface]) {
+		foreach ($seams as $key => [$expected, $mockClass, $interface]) {
 			$values = $byKey[$key]['adapter']['simulatedValues'] ?? null;
 
-			$this->assertSame(expected: ['', $mockClass], actual: $values, message: $key);
+			$this->assertSame(expected: $expected, actual: $values, message: $key);
 			$this->assertTrue(condition: is_a($mockClass, $interface, true), message: $mockClass . ' does not implement ' . $interface);
 		}
+
+		// The default adapter refuses, so an instance that set nothing is not
+		// simulating. A regression that put '' back here would say it was.
+		$this->assertNotContains(
+			needle: '',
+			haystack: $byKey['berichtenbox']['adapter']['simulatedValues'],
+			message: 'an empty berichtenbox_adapter binds the integriq adapter, which never simulates'
+		);
 	}//end testMockBackedSeamsNameTheirMockAsSimulated()
+
+	/**
+	 * The Berichtenbox row names the key an administrator has to set.
+	 *
+	 * The seam is bound and real, and a send still cannot leave until
+	 * `digital_post_source` names an integriq digital post source: integriq's
+	 * `DigitalPostService::sourceConfig()` returns null on the empty string
+	 * before it looks anything up. No admin section writes the key, so the row
+	 * has to name it, the way the BRP row names its own.
+	 *
+	 * @return void
+	 */
+	public function testBerichtenboxNamesTheSourceKeyItNeeds(): void {
+		$row = $this->connectionsByKey()['berichtenbox'];
+
+		$this->assertSame(expected: ['digital_post_source'], actual: $row['requiredConfig']);
+		$this->assertStringContainsString(needle: 'digital_post_source', haystack: $row['unconfiguredMessage']);
+		$this->assertArrayNotHasKey(key: 'settingsUrl', array: $row);
+	}//end testBerichtenboxNamesTheSourceKeyItNeeds()
 
 	/**
 	 * No dossiq row is `reportedOnly`.
@@ -366,4 +457,19 @@ class ConnectionsDeclarationTest extends TestCase {
 			$this->assertArrayNotHasKey(key: 'reportedOnly', array: $connection, message: $connection['key']);
 		}
 	}//end testNoRowIsReportedOnly()
+
+	/**
+	 * Kadaster (BRK) and WOZ is off while its source is "None": the mode `log`
+	 * sends no request outside, so integriq reads the row as switched off
+	 * rather than as configured (DqInstellingen "Uit").
+	 *
+	 * @return void
+	 */
+	public function testKadasterIsOffWhileItsSourceIsNone(): void {
+		$kadaster = $this->connectionsByKey()['kadaster'];
+
+		$this->assertSame(expected: '/settings/admin/dossiq?tab=integrations#section-kadaster', actual: $kadaster['settingsUrl']);
+		$this->assertSame(expected: ['configKey' => 'integration.brk.mode', 'offValues' => ['', 'log']], actual: $kadaster['switch']);
+		$this->assertArrayNotHasKey(key: 'requiredConfig', array: $kadaster);
+	}//end testKadasterIsOffWhileItsSourceIsNone()
 }//end class

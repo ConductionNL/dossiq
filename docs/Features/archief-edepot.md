@@ -54,4 +54,4 @@ Automated overdracht (handover) of closed cases to a municipal or regional e-Dep
 - `ArchiefBewijs`
 - `OverdrachtAuditLog`
 
-See [ADR-000](../../openspec/architecture/adr-000-data-model.md) for field definitions.
+See [ADR-000](https://github.com/ConductionNL/dossiq/blob/development/openspec/architecture/adr-000-data-model.md) for field definitions.

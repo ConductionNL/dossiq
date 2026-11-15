@@ -47,6 +47,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -305,8 +306,7 @@ async function cancelEngineTasks(): Promise<void> {
  *
  * The transition strip is gone: Ruben ruled on 2026-09-12 that clicking a
  * status in the timeline sets that status, so the moves are stages of the
- * configured `stages` widget and the status badge is the library's own pill
- * inside a configured `stat` tile.
+ * configured `stages` widget, which also marks the current status.
  *
  * @param page The Playwright page.
  * @param id   The case to open.
@@ -317,9 +317,8 @@ async function openCase(page: Page, id: string): Promise<void> {
 	await expect(page.getByTestId('cn-stages-widget')).toBeVisible({
 		timeout: 30_000,
 	})
-	await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible({
-		timeout: 30_000,
-	})
+	// No status pill to wait for: 353a31777 removed the identity row's
+	// Status tile, and the stages widget above carries the current status.
 }
 
 /**
@@ -366,12 +365,11 @@ async function openTasksTab(page: Page, id: string) {
 
 	const strip = page.locator('.cn-tabs-widget')
 	await expect(strip).toBeVisible({ timeout: 30_000 })
-	// Tasks is the first SECTION of the Work tab since the strip came down
-	// from fourteen tabs to six; Appointments is the second.
-	await strip.getByRole('tab', { name: 'Work', exact: true }).click()
+	// Tasks is the first section of the Tasks tab; Appointments is the second.
+	await openCaseTab(page, /^(Tasks|Taken)\b/)
 
 	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
-	await expect(panel.locator('[data-testid="case-task-pane"]')).toBeVisible({
+	await expect(panel.locator('.cn-tasks-widget')).toBeVisible({
 		timeout: 20_000,
 	})
 	return panel

@@ -162,7 +162,13 @@ function mergeValue(base, ours, theirs) {
 function parseCatalogue(text) {
 	const trimmed = text.trim()
 	if (trimmed === '') {
-		return { kind: 'empty', id: undefined, pluralForm: undefined, translations: {}, extra: {} }
+		return {
+			kind: 'empty',
+			id: undefined,
+			pluralForm: undefined,
+			translations: {},
+			extra: {},
+		}
 	}
 
 	if (trimmed.startsWith('{')) {
@@ -185,9 +191,10 @@ function parseCatalogue(text) {
 			kind: 'json',
 			id: undefined,
 			pluralForm: undefined,
-			translations: doc.translations !== null && typeof doc.translations === 'object'
-				? doc.translations
-				: {},
+			translations:
+				doc.translations !== null && typeof doc.translations === 'object'
+					? doc.translations
+					: {},
 			extra,
 		}
 	}
@@ -207,7 +214,9 @@ function parseCatalogue(text) {
 	if (open === -1 || close === -1 || close < open) {
 		return null
 	}
-	const idMatch = trimmed.slice('OC.L10N.register('.length, open).match(/"(?:[^"\\]|\\.)*"/)
+	const idMatch = trimmed
+		.slice('OC.L10N.register('.length, open)
+		.match(/"(?:[^"\\]|\\.)*"/)
 	const tail = trimmed.slice(close + 1, closeParen === -1 ? undefined : closeParen)
 	const pluralMatch = tail.match(/"(?:[^"\\]|\\.)*"/)
 	if (idMatch === null || pluralMatch === null) {
@@ -287,9 +296,9 @@ function renderValueLine(key, value, compact, comma) {
 	const rendered = compact
 		? JSON.stringify(value)
 		: JSON.stringify(value, null, 4)
-			.split('\n')
-			.map((line, i) => (i === 0 ? line : ENTRY_INDENT + line))
-			.join('\n')
+				.split('\n')
+				.map((line, i) => (i === 0 ? line : ENTRY_INDENT + line))
+				.join('\n')
 	return `${ENTRY_INDENT}${JSON.stringify(key)}: ${rendered}${comma}`
 }
 
@@ -351,7 +360,10 @@ function toObject(entries) {
  */
 function renderJson(entries, extra, hasConflicts) {
 	if (!hasConflicts) {
-		return JSON.stringify({ ...extra, translations: toObject(entries) }, null, 4) + '\n'
+		return (
+			JSON.stringify({ ...extra, translations: toObject(entries) }, null, 4)
+			+ '\n'
+		)
 	}
 	const lines = ['{']
 	for (const [key, value] of Object.entries(extra)) {
@@ -432,11 +444,16 @@ function mergeCatalogues(baseText, oursText, theirsText) {
 
 	// An empty ancestor carries no shape of its own, so the kind comes from
 	// whichever real version is at hand.
-	const kind = [ours.kind, theirs.kind, base.kind].find((k) => k !== 'empty') || 'json'
+	const kind =
+		[ours.kind, theirs.kind, base.kind].find((k) => k !== 'empty') || 'json'
 
 	if (kind === 'js') {
 		const id = mergeValue(base.id, ours.id, theirs.id)
-		const plural = mergeValue(base.pluralForm, ours.pluralForm, theirs.pluralForm)
+		const plural = mergeValue(
+			base.pluralForm,
+			ours.pluralForm,
+			theirs.pluralForm,
+		)
 		if (id.conflict || plural.conflict) {
 			return {
 				text: oursText,
@@ -460,7 +477,11 @@ function mergeCatalogues(baseText, oursText, theirsText) {
 		]),
 	]
 	for (const key of extraKeys) {
-		const merged = mergeValue(base.extra[key], ours.extra[key], theirs.extra[key])
+		const merged = mergeValue(
+			base.extra[key],
+			ours.extra[key],
+			theirs.extra[key],
+		)
 		if (merged.conflict) {
 			return {
 				text: oursText,
@@ -508,7 +529,7 @@ function main() {
 	if (result.conflicts.length > 0) {
 		console.error(
 			`merge-l10n: ${label}: ${result.conflicts.length} key(s) translated `
-			+ 'differently on both sides; conflict markers written:',
+				+ 'differently on both sides; conflict markers written:',
 		)
 		for (const entry of result.conflicts.slice(0, 20)) {
 			console.error(`  • ${JSON.stringify(entry.key)}`)
