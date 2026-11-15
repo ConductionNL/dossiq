@@ -435,11 +435,11 @@ class DossiqAskPersonNode implements IFlowNode {
         }
 
         $task = $this->readTask(taskId: $taskId, run: $run);
-        $this->assertCompleted(task: $task, taskId: $taskId, config: $config);
+        $this->assertCompleted(task: $task, run: $run);
 
         return $this->placeAnswer(
             run: $run,
-            answer: $this->answerFor(task: $task, taskId: $taskId, run: $run)
+            answer: $this->answerFor(task: $task, run: $run)
         );
 
     }//end execute()
@@ -506,16 +506,17 @@ class DossiqAskPersonNode implements IFlowNode {
     /**
      * Suspend while the task is open, refuse when it ended without an answer.
      *
-     * @param array  $task   The task.
-     * @param string $taskId The task id.
-     * @param array  $config The step configuration.
+     * @param array        $task The task.
+     * @param AskPersonRun $run  The step configuration, and the resume slot holding the task id.
      *
      * @return void
      *
      * @throws FlowSuspension While the task is outstanding.
      * @throws RuntimeException When the task ended other than completed.
      */
-    private function assertCompleted(array $task, string $taskId, array $config): void {
+    private function assertCompleted(array $task, AskPersonRun $run): void {
+        $config = $run->config;
+        $taskId = trim((string) $run->resume->get(key: 'taskId', default: ''));
         $status = strtolower(trim((string) ($task['status'] ?? '')));
         if (in_array($status, self::TERMINAL_STATUSES, true) === false) {
             // Reassigned, re-dated, a checklist item ticked: none of those is
@@ -548,7 +549,7 @@ class DossiqAskPersonNode implements IFlowNode {
         $caseId   = $this->caseIdFrom(items: $run->items);
         $assignee = $this->renderedAssignee(config: $run->config, items: $run->items);
         $taskId   = $this->tasks->create(
-            task: $this->buildTask(caseId: $caseId, assignee: $assignee, run: $run)
+            task: $this->buildTask(addressee: ['case' => $caseId, 'assignee' => $assignee], run: $run)
         );
 
         $run->resume->merge(
@@ -607,15 +608,15 @@ class DossiqAskPersonNode implements IFlowNode {
      * there is no payload at all, and `recovered` says so, because a run that
      * advanced without its wake is worth being able to find afterwards.
      *
-     * @param array        $task   The terminal task.
-     * @param string       $taskId The task id held in the slot.
-     * @param AskPersonRun $run    The run context and this node's resume slot.
+     * @param array        $task The terminal task.
+     * @param AskPersonRun $run  The run context and this node's resume slot, which holds the task id.
      *
      * @return array The answer bag.
      *
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
-    private function answerFor(array $task, string $taskId, AskPersonRun $run): array {
+    private function answerFor(array $task, AskPersonRun $run): array {
+        $taskId = trim((string) $run->resume->get(key: 'taskId', default: ''));
         $signal = ($run->context[FlowRunService::SIGNAL_CONTEXT_KEY] ?? null);
         if (is_array($signal) === false) {
             $signal = [];
@@ -795,24 +796,24 @@ class DossiqAskPersonNode implements IFlowNode {
     /**
      * The task record this step asks somebody to complete.
      *
-     * @param string       $caseId   The case the task belongs to.
-     * @param string       $assignee The RENDERED assignee, never the raw template.
-     * @param AskPersonRun $run      The step configuration, run context and resume slot.
+     * @param array{case: string, assignee: string} $addressee The case the task belongs to, and the RENDERED
+     *                                                         assignee, never the raw template.
+     * @param AskPersonRun                          $run       The step configuration, run context and resume slot.
      *
      * @return array The task to persist.
      *
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
-    private function buildTask(string $caseId, string $assignee, AskPersonRun $run): array {
+    private function buildTask(array $addressee, AskPersonRun $run): array {
         $config  = $run->config;
         $context = $run->context;
         $resume  = $run->resume;
         $task    = [
             'title'       => trim((string) ($config['question'] ?? '')),
             'description' => trim((string) ($config['details'] ?? '')),
-            'case'        => $caseId,
+            'case'        => $addressee['case'],
             'status'      => 'available',
-            'assignee'    => $assignee,
+            'assignee'    => $addressee['assignee'],
             // The two fields that make this task an answer to a specific
             // question rather than a loose to-do. Both are required to resume:
             // the run alone cannot say which of its awaiting nodes this is for.
