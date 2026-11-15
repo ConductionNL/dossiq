@@ -154,11 +154,11 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import { modalForm } from '../mixins/modalForm.js'
 import {
 	executeReassignment,
 	previewReassignment,
 } from '../services/substitutionApi.js'
-import { useObjectStore } from '../store/modules/object.js'
 
 export default {
 	name: 'BulkReassignModal',
@@ -170,6 +170,8 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
+	mixins: [modalForm],
 
 	emits: ['reassigned', 'close'],
 	data() {
@@ -188,11 +190,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
-		objectStore() {
-			return useObjectStore()
-		},
-
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		previewCount() {
 			if (!this.preview) {
@@ -298,16 +295,6 @@ export default {
 					|| t('dossiq', 'Reassignment failed.')
 			} finally {
 				this.executing = false
-			}
-		},
-
-		/**
-		 * @param {boolean} open Whether the open is set.
-		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
-		 */
-		onDialogClose(open) {
-			if (!open) {
-				this.$emit('close')
 			}
 		},
 	},

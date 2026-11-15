@@ -161,9 +161,9 @@ import {
 } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import logger from '../logger.js'
+import { modalForm } from '../mixins/modalForm.js'
 import { createSubCase } from '../services/deelzaakApi.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
-import { useObjectStore } from '../store/modules/object.js'
 import {
 	calculateDeadline,
 	DEFAULT_CASE_CONFIDENTIALITY,
@@ -424,6 +424,8 @@ export default {
 		AlertCircleOutline,
 	},
 
+	mixins: [modalForm],
+
 	props: {
 		/** Parent case UUID — will be set as `parentCase` on the new sub-case. */
 		parentCase: {
@@ -460,10 +462,6 @@ export default {
 	},
 
 	computed: {
-		objectStore() {
-			return useObjectStore()
-		},
-
 		deelzaakStore() {
 			return useDeelzaakStore()
 		},
@@ -620,12 +618,6 @@ export default {
 			}
 		},
 
-
-		onDialogClose(open) {
-			if (!open) {
-				this.$emit('close')
-			}
-		},
 	},
 }
 </script>

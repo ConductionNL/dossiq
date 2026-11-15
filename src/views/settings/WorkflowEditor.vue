@@ -98,7 +98,7 @@ import WorkflowNode from './components/WorkflowNode.vue'
 import WorkflowPalette from './components/WorkflowPalette.vue'
 import WorkflowTransitionArrow from './components/WorkflowTransitionArrow.vue'
 import WorkflowValidationBanner from './components/WorkflowValidationBanner.vue'
-import { useObjectStore } from '../../store/modules/object.js'
+import { objectStoreAccess } from '../../mixins/objectStore.js'
 import { useWorkflowStore } from '../../store/modules/workflow.js'
 
 export default {
@@ -111,6 +111,8 @@ export default {
 		StepConfigPanel,
 		TransitionConfigPanel,
 	},
+
+	mixins: [objectStoreAccess],
 
 	props: {
 		caseTypeId: {
@@ -163,11 +165,6 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
-		},
-
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
-		objectStore() {
-			return useObjectStore()
 		},
 
 		/** @spec openspec/specs/workflow-definition-model/spec.md */

@@ -124,8 +124,8 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import { modalForm } from '../mixins/modalForm.js'
 import { createSubstitution } from '../services/substitutionApi.js'
-import { useObjectStore } from '../store/modules/object.js'
 
 /**
  * Why a registration failed: the server's reason, the error's own message, or
@@ -149,6 +149,8 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
+	mixins: [modalForm],
 
 	props: {
 		/** When true the absentee field is shown (coordinator acts for others). */
@@ -180,11 +182,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
-		objectStore() {
-			return useObjectStore()
-		},
-
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		reasonOptions() {
 			return [
@@ -283,16 +280,6 @@ export default {
 					scope === 'caseTypes'
 						? this.selectedCaseTypes.map((ct) => ct.id)
 						: [],
-			}
-		},
-
-		/**
-		 * @param {boolean} open Whether the open is set.
-		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
-		 */
-		onDialogClose(open) {
-			if (!open) {
-				this.$emit('close')
 			}
 		},
 	},

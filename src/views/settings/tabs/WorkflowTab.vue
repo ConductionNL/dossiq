@@ -136,7 +136,7 @@
 <script>
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import WorkflowEditor from '../WorkflowEditor.vue'
-import { useObjectStore } from '../../../store/modules/object.js'
+import { objectStoreAccess } from '../../../mixins/objectStore.js'
 import { useWorkflowStore } from '../../../store/modules/workflow.js'
 
 export default {
@@ -146,6 +146,8 @@ export default {
 		NcLoadingIcon,
 		WorkflowEditor,
 	},
+
+	mixins: [objectStoreAccess],
 
 	props: {
 		caseTypeId: {
@@ -170,11 +172,6 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
-		},
-
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
-		objectStore() {
-			return useObjectStore()
 		},
 
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
