@@ -142,14 +142,26 @@ class AdviceNotifier {
 		}
 
 		if ($to === 'received' && $callerId !== '') {
-			$this->sendUserNotification(
-				userId: $callerId,
-				subject: 'advies_ontvangen',
-				objectId: $adviceId,
-				message: $summary
-			);
+			$this->notifyReceived(callerId: $callerId, advice: ['id' => $adviceId, 'summary' => $summary]);
 		}
 	}//end fireTransitionNotification()
+
+	/**
+	 * Tell the caller their requested advice was received.
+	 *
+	 * @param string                           $callerId Who asked for the advice.
+	 * @param array{id: string, summary: string} $advice   The advice id, and its conclusion and text.
+	 *
+	 * @return void
+	 */
+	private function notifyReceived(string $callerId, array $advice): void {
+		$this->sendUserNotification(
+			userId: $callerId,
+			subject: 'advies_ontvangen',
+			objectId: $advice['id'],
+			message: $advice['summary']
+		);
+	}//end notifyReceived()
 
 	/**
 	 * Tell the advisor an advice was requested of them, when the advice names one.
