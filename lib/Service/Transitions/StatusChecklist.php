@@ -306,6 +306,20 @@ class StatusChecklist {
 			return [];
 		}
 
+		return $this->tasksAs(read: $read, asked: ['statusTypeId' => $statusTypeId, 'actor' => $actor]);
+	}//end tasksFor()
+
+	/**
+	 * The case's tasks on the status, read as the acting identity; a read that cannot be made reads as none.
+	 *
+	 * @param array<string, mixed>                   $read  The case to read, and what the log names.
+	 * @param array{statusTypeId: string, actor: string} $asked The statusType UUID and the acting identity.
+	 *
+	 * @return array<int, array<string, mixed>> The tasks.
+	 */
+	private function tasksAs(array $read, array $asked): array {
+		['statusTypeId' => $statusTypeId, 'actor' => $actor] = $asked;
+
 		// 🔑 AN EMPTY IDENTITY IS NOT A WIDE READ, IT IS AN EMPTY ONE.
 		// `TaskInboxService::inbox()` answers an empty page for a blank uid and
 		// reports no failure doing it, so a path with no identity behind it
@@ -332,7 +346,7 @@ class StatusChecklist {
 		}
 
 		return self::onStatus(tasks: $tasks, statusTypeId: $statusTypeId);
-	}//end tasksFor()
+	}//end tasksAs()
 
 	/**
 	 * The case and status a task read is about, null when either is missing.
