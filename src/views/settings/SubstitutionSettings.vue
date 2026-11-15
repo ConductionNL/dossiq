@@ -87,6 +87,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
+import { loadOnMount } from '../../mixins/loadOnMount.js'
 import {
 	listSubstitutions,
 	revokeSubstitution,
@@ -101,6 +102,8 @@ export default {
 		AccountSwitch,
 		SubstitutionFormModal,
 	},
+
+	mixins: [loadOnMount],
 
 	data() {
 		return {
@@ -120,10 +123,6 @@ export default {
 		ownSubstitutions() {
 			return this.substitutions.filter((s) => s.absentee === this.currentUser)
 		},
-	},
-
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

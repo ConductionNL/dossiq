@@ -263,6 +263,7 @@
 <script>
 import { NcLoadingIcon } from '@nextcloud/vue'
 import { caseTab } from '../../../mixins/caseTab.js'
+import { loadOnMount } from '../../../mixins/loadOnMount.js'
 import {
 	asOfRows,
 	fetchAccessHistory,
@@ -339,7 +340,7 @@ export default {
 		NcLoadingIcon,
 	},
 
-	mixins: [caseTab],
+	mixins: [caseTab, loadOnMount],
 
 	data() {
 		return {
@@ -432,10 +433,6 @@ export default {
 				'Refusals are staged: a rule below is recorded, and removes a right once it is switched on.',
 			)
 		},
-	},
-
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

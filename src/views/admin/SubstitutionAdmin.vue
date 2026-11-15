@@ -122,6 +122,7 @@ import AccountArrowRight from 'vue-material-design-icons/AccountArrowRight.vue'
 import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import BulkReassignModal from '../../modals/BulkReassignModal.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
+import { loadOnMount } from '../../mixins/loadOnMount.js'
 import {
 	fetchSubstitutionActions,
 	listSubstitutions,
@@ -139,6 +140,8 @@ export default {
 		SubstitutionFormModal,
 		BulkReassignModal,
 	},
+
+	mixins: [loadOnMount],
 
 	data() {
 		return {
@@ -165,10 +168,6 @@ export default {
 					|| (s.substitute || '').toLowerCase().includes(q),
 			)
 		},
-	},
-
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

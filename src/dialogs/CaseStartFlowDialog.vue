@@ -101,6 +101,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { caseDialogFromRoute } from '../mixins/caseDialog.js'
+import { loadOnMount } from '../mixins/loadOnMount.js'
 import { caseActionRefusalOf } from '../utils/caseActionsHelpers.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -110,7 +111,7 @@ export default {
 
 	components: { NcButton, NcCheckboxRadioSwitch, CnDialog, NcLoadingIcon },
 
-	mixins: [caseDialogFromRoute],
+	mixins: [caseDialogFromRoute, loadOnMount],
 
 	emits: ['close'],
 
@@ -132,16 +133,6 @@ export default {
 		canRun() {
 			return this.busy === false && this.chosen !== ''
 		},
-	},
-
-	/**
-	 * Read the flows this case's type allows.
-	 *
-	 * @return {Promise<void>} Nothing.
-	 * @spec openspec/specs/workflow-definition-engine/spec.md
-	 */
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

@@ -267,6 +267,7 @@ import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import AiSuggestionDecision from './AiSuggestionDecision.vue'
 import { caseTab } from '../../mixins/caseTab.js'
+import { loadOnMount } from '../../mixins/loadOnMount.js'
 import { createSuggestionTracker } from '../../services/aiSuggestionTracker.js'
 import { converse } from '../../services/assistantApi.js'
 import {
@@ -375,7 +376,7 @@ export default {
 		NcNoteCard,
 	},
 
-	mixins: [caseTab],
+	mixins: [caseTab, loadOnMount],
 
 	data() {
 		return {
@@ -401,10 +402,6 @@ export default {
 		this.tracker = createSuggestionTracker({ caseId: this.objectId })
 		this.onPageHide = () => this.tracker.closeAll({ leaving: true })
 		window.addEventListener('pagehide', this.onPageHide)
-	},
-
-	async mounted() {
-		await this.load()
 	},
 
 	/**

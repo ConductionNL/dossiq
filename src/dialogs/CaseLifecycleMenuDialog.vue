@@ -161,6 +161,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import manifest from '../manifest.json'
 import { caseDialogFromRoute } from '../mixins/caseDialog.js'
+import { loadOnMount } from '../mixins/loadOnMount.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { actForm } from '../utils/caseActInputs.js'
 import { buildActsMenu, endpointFor, iconFor } from '../utils/caseActsMenu.js'
@@ -368,7 +369,7 @@ export default {
 		NcLoadingIcon,
 	},
 
-	mixins: [caseDialogFromRoute],
+	mixins: [caseDialogFromRoute, loadOnMount],
 
 	inject: {
 		/** The page's action dispatcher, to open an act's own dialog. */
@@ -564,16 +565,6 @@ export default {
 		canConfirm() {
 			return !this.busy && this.chosen !== null && this.answers.complete
 		},
-	},
-
-	/**
-	 * Read what the case allows before anything is on screen.
-	 *
-	 * @return {Promise<void>}
-	 * @spec openspec/specs/case-management/spec.md
-	 */
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

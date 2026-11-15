@@ -183,6 +183,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
+import { loadOnMount } from '../../mixins/loadOnMount.js'
 import {
 	identityKinds,
 	portalStateFrom,
@@ -203,7 +204,7 @@ export default {
 		NcTextField,
 	},
 
-	mixins: [caseTypeWidget],
+	mixins: [caseTypeWidget, loadOnMount],
 
 	data() {
 		return {
@@ -249,10 +250,6 @@ export default {
 				}))
 				.filter((option) => option.id !== '')
 		},
-	},
-
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {
