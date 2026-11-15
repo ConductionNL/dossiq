@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Setup;
 use OCA\Dossiq\Kernel\Contracts\FirstRunReadinessInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\IAppConfig;
 use RuntimeException;
 use Throwable;
@@ -270,12 +271,7 @@ class FirstRunReadiness implements FirstRunReadinessInterface {
 			return [];
 		}
 
-		$parsed = json_decode($raw, true);
-		if (is_array($parsed) === false) {
-			return [];
-		}
-
-		return $parsed;
+		return StoredArray::from(value: $raw);
 	}//end readJsonFile()
 
 	/**

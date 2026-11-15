@@ -34,6 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Workflow;
 
+use OCA\Dossiq\Service\Support\StoredArray;
+
 /**
  * Encodes into, and decodes out of, the JSON-string properties a
  * workflowTemplate stores.
@@ -72,20 +74,7 @@ class WorkflowJsonProperty {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function decodeList(mixed $raw): array {
-		if (is_array($raw) === true) {
-			return $raw;
-		}
-
-		if (is_string($raw) === false || $raw === '') {
-			return [];
-		}
-
-		$decoded = json_decode($raw, true);
-		if (is_array($decoded) === true) {
-			return $decoded;
-		}
-
-		return [];
+		return StoredArray::from(value: $raw);
 	}//end decodeList()
 
 	/**
