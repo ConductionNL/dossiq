@@ -195,6 +195,20 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 		$mapping = $this->normalisedMapping(mapping: $mapping);
 
 		$requirements = $this->unmetRequirements(caseType: $caseType, mapping: $mapping);
+
+		return $this->withValidatorFindings(requirements: $requirements, check: ['mapping' => $mapping, 'audience' => $audience]);
+	}//end findingsOfMapping()
+
+	/**
+	 * The validator's findings before the intake requirements, or the requirements alone (logged) without a validator.
+	 *
+	 * @param array<int, array<string, mixed>>                        $requirements The unmet intake requirements.
+	 * @param array{mapping: array<string, mixed>, audience: ?string} $check        The normalised mapping, and the form's audience.
+	 *
+	 * @return array<int, array<string, mixed>> The findings.
+	 */
+	private function withValidatorFindings(array $requirements, array $check): array {
+		[$mapping, $audience] = [$check['mapping'], $check['audience']];
 		$validator = $this->settingsService->getOpenRegisterClass(self::VALIDATOR);
 		$schema = $this->caseSchema();
 		if ($validator === null || $schema === null || method_exists($validator, 'validate') === false) {
@@ -210,7 +224,7 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 			$this->validatorFindings(validator: $validator, check: ['schema' => $schema, 'mapping' => $mapping, 'audience' => $audience]),
 			$requirements
 		);
-	}//end findingsOfMapping()
+	}//end withValidatorFindings()
 
 	/**
 	 * A mapping reduced to its `fields` (each an array) and `fixed` values.

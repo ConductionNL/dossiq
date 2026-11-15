@@ -523,20 +523,31 @@ class TermijnService implements TermijnServiceInterface {
 		string $documentLink = '',
 		string $rationale = '',
 	): ?array {
-		$voltooiDatum = ($voltooiDatum ?? new DateTimeImmutable());
+		return $this->complete(
+			termInstanceId: $termInstanceId,
+			completion: ['voltooiDatum' => ($voltooiDatum ?? new DateTimeImmutable()), 'documentLink' => $documentLink, 'rationale' => $rationale]
+		);
+	}//end markTermijnCompleted()
 
-		$patch = ['status' => 'completed', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')];
+	/**
+	 * Set the instance completed and, once written, record the completion.
+	 *
+	 * @param string               $termInstanceId Instance id.
+	 * @param array<string, mixed> $completion     When completed (`voltooiDatum`, a DateTimeImmutable), the optional
+	 *                                             document ref (`documentLink`) and why the term ended (`rationale`).
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function complete(string $termInstanceId, array $completion): ?array {
+		$patch = ['status' => 'completed', 'voltooiDatum' => $completion['voltooiDatum']->format('Y-m-d')];
 		$updated = $this->updateTermijnInstance(termInstanceId: $termInstanceId, patch: $patch);
 
 		if ($updated !== null) {
-			$this->recordCompletion(
-				termInstanceId: $termInstanceId,
-				completion: ['voltooiDatum' => $voltooiDatum, 'documentLink' => $documentLink, 'rationale' => $rationale]
-			);
+			$this->recordCompletion(termInstanceId: $termInstanceId, completion: $completion);
 		}
 
 		return $updated;
-	}//end markTermijnCompleted()
+	}//end complete()
 
 	/**
 	 * Record the completion event and cancel every open timer of the instance.

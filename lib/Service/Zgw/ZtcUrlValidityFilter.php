@@ -81,16 +81,28 @@ class ZtcUrlValidityFilter implements ZtcUrlValidityFilterInterface {
 			return $data;
 		}
 
-		foreach ($fieldConfigs as $field => $config) {
+		return $this->withKeptItems(data: $data, check: ['fieldConfigs' => $fieldConfigs, 'today' => $today]);
+	}//end filter()
+
+	/**
+	 * The data with each configured list field narrowed to the items still valid today.
+	 *
+	 * @param array<string, mixed>                                     $data  The request body.
+	 * @param array{fieldConfigs: array<string, mixed>, today: string} $check The field configurations, and today.
+	 *
+	 * @return array<string, mixed> The data.
+	 */
+	private function withKeptItems(array $data, array $check): array {
+		foreach ($check['fieldConfigs'] as $field => $config) {
 			if (isset($data[$field]) === false || is_array($data[$field]) === false) {
 				continue;
 			}
 
-			$data[$field] = $this->keptItems(items: $data[$field], config: $config + ['today' => $today]);
+			$data[$field] = $this->keptItems(items: $data[$field], config: $config + ['today' => $check['today']]);
 		}
 
 		return $data;
-	}//end filter()
+	}//end withKeptItems()
 
 	/**
 	 * The list items that may stay.
