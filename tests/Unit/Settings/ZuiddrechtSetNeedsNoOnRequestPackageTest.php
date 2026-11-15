@@ -110,9 +110,9 @@ class ZuiddrechtSetNeedsNoOnRequestPackageTest extends TestCase {
 	public function testNoLookupNeedsAnOnRequestPackage(): void {
 		$onRequest = $this->onRequestOnly();
 		self::assertArrayHasKey(
-			key: 'melding-jeugdwet',
+			key: 'aanbesteding',
 			array: $onRequest['caseType'],
-			message: 'The Jeugdwet case type ships only on request; this test reads the packages wrongly if it is missing.'
+			message: 'The Aanbesteding case type ships only on request; this test reads the packages wrongly if it is missing.'
 		);
 		self::assertArrayHasKey(
 			key: 'Voorzitter commissie',

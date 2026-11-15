@@ -38,9 +38,11 @@ namespace OCA\Dossiq\Service\DecisionDocument;
 use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\DecisionLetterInterface;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
 
 /**
@@ -48,7 +50,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver;
  *
  * @spec openspec/specs/decision-document/spec.md
  */
-class DecisionLetter {
+class DecisionLetter implements DecisionLetterInterface {
 
 	use SearchesObjects;
 
@@ -57,10 +59,12 @@ class DecisionLetter {
 	 *
 	 * @param SettingsService    $settingsService Bridge to OpenRegister + config.
 	 * @param CaseDocumentDrafts $drafts          The case type's draft declarations.
+	 * @param TranslatedText     $text            Reads a declared language map in the reader's language.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseDocumentDrafts $drafts,
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -70,8 +74,15 @@ class DecisionLetter {
 	 * @param string $caseId  The case uuid.
 	 * @param string $purpose The declared purpose, for example `decision`.
 	 *
-	 * @return array{declaration: array{title: string, documentType: string}|null, document: array<string, mixed>|null}
-	 *         `declaration` is null when the case type declares no letter for the purpose.
+	 * @return array{
+	 *     declaration: array{
+	 *         title: string, documentType: string, templateSlug: string, format: string, signing: string, delivery: string
+	 *     }|null,
+	 *     document: array<string, mixed>|null,
+	 *     empty: bool
+	 * }
+	 *         `declaration` is null when the case type declares no letter for the purpose; `empty` is true
+	 *         while the case holds no such letter, so a facts card can show its empty text (`emptyWhen`).
 	 *
 	 * @spec openspec/specs/decision-document/spec.md
 	 */
@@ -79,10 +90,30 @@ class DecisionLetter {
 		$declared = $this->drafts->declarationForCase(caseId: $caseId, purpose: $purpose);
 		$typeName = trim((string)($declared['documentType'] ?? ''));
 		if ($declared === [] || $typeName === '') {
-			return ['declaration' => null, 'document' => null];
+			return ['declaration' => null, 'document' => null, 'empty' => true];
 		}
 
 		$types = array_unique([$typeName, (new DocumentTypeResolver(settingsService: $this->settingsService))->resolve(name: $typeName)]);
+		$document = $this->documentSummary(newest: $this->newestOfTypes(caseId: $caseId, types: $types));
+
+		return [
+			'declaration' => $this->declarationSummary(declared: $declared, typeName: $typeName),
+			'document' => $document,
+			'empty' => $document === null,
+		];
+	}//end forCase()
+
+	/**
+	 * The case's newest document of one of the types.
+	 *
+	 * @param string             $caseId The case uuid.
+	 * @param array<int, string> $types  The document type names and urls.
+	 *
+	 * @return array<string, mixed>|null The document, or null when the case holds none.
+	 *
+	 * @spec openspec/specs/decision-document/spec.md
+	 */
+	private function newestOfTypes(string $caseId, array $types): ?array {
 		$newest = null;
 		foreach ($this->caseDocuments(caseId: $caseId) as $document) {
 			if (in_array((string)($document['informatieobjecttype'] ?? ''), $types, true) === false) {
@@ -94,6 +125,19 @@ class DecisionLetter {
 			}
 		}
 
+		return $newest;
+	}//end newestOfTypes()
+
+	/**
+	 * The fields of a letter document a facts card shows.
+	 *
+	 * @param array<string, mixed>|null $newest The document, or null.
+	 *
+	 * @return array<string, string>|null The summary, or null when there is no document.
+	 *
+	 * @spec openspec/specs/decision-document/spec.md
+	 */
+	private function documentSummary(?array $newest): ?array {
 		$document = null;
 		if ($newest !== null) {
 			$document = [
@@ -105,14 +149,29 @@ class DecisionLetter {
 			];
 		}
 
+		return $document;
+	}//end documentSummary()
+
+	/**
+	 * The declared letter, in the words a reader sees.
+	 *
+	 * @param array<string, mixed> $declared The declaration.
+	 * @param string               $typeName The declared document type.
+	 *
+	 * @return array{title: string, documentType: string, templateSlug: string, format: string, signing: string, delivery: string} The declaration.
+	 *
+	 * @spec openspec/specs/decision-document/spec.md
+	 */
+	private function declarationSummary(array $declared, string $typeName): array {
 		return [
-			'declaration' => [
-				'title' => trim((string)($declared['title'] ?? '')),
-				'documentType' => $typeName,
-			],
-			'document' => $document,
+			'title' => trim((string)($declared['title'] ?? '')),
+			'documentType' => $typeName,
+			'templateSlug' => trim((string)($declared['templateSlug'] ?? '')),
+			'format' => trim((string)($declared['format'] ?? '')),
+			'signing' => $this->text->forReader(value: ($declared['signing'] ?? '')),
+			'delivery' => $this->text->forReader(value: ($declared['delivery'] ?? '')),
 		];
-	}//end forCase()
+	}//end declarationSummary()
 
 	/**
 	 * Refuse a letter that is not a document of the case.

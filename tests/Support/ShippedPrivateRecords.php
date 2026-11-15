@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Access\CaseRecordGrantsBackfill;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\OpenRegister\Service\Rbac\SpecialRightGrant;
 use OCP\IAppConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
@@ -286,8 +287,8 @@ class ShippedPrivateRecords {
 			public function __construct(private readonly ShippedPrivateRecords $shipped) {
 			}
 
-			public function giveInEveryOrganisation(string $right, string $group, ?string $register = null, ?array $schemas = null): array {
-				return $this->shipped->give(right: $right, group: $group, register: $register, schemas: $schemas);
+			public function giveInEveryOrganisation(SpecialRightGrant $grant): array {
+				return $this->shipped->give(right: $grant->right, group: $grant->group, register: $grant->register, schemas: $grant->schemas);
 			}
 		};
 		$container = $this->mock(ContainerInterface::class);

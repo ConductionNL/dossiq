@@ -4,7 +4,7 @@
  *
  * Board DqZaaktypeOverzicht, Controle: the case type's Overview tab shows the
  * warnings publishing would give, read from the publish check, as one warning
- * notice. The board draws it on Overview alone, so it is no side card.
+ * notice. The board draws it in the side column beside Overview alone.
  *
  * @spec openspec/specs/case-types/spec.md
  */
@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest'
 import layout from '../../src/menu-layout.simple.json'
 
 const page = layout.pages.find((p) => p.id === 'CaseTypeDetail')
-const card = page.configAppend.widgets.find((w) => w.id === 'case-type-check')
+const card = page.config.sideColumn.find((w) => w.id === 'side-case-type-check')
 const tabs = page.configAppend.widgets.find((w) => w.id === 'case-type-panels').content.tabs
 const tabWidgets = (tab) => [tab.widgetId, ...(tab.widgetIds || []), ...(tab.layout || []).map((l) => l.widgetId)].filter(Boolean)
 
@@ -24,12 +24,10 @@ describe('the check card of a case type', () => {
 		expect(card.content.variant).toBe('warning')
 	})
 
-	it('shows on the Overview tab only, not in the side column', () => {
-		const sideIds = page.config.sideColumn.map((entry) => (typeof entry === 'string' ? entry : entry.id))
-		expect(sideIds).not.toContain('side-case-type-check')
-		expect(sideIds).not.toContain('case-type-check')
-		const holding = tabs.filter((tab) => tabWidgets(tab).includes('case-type-check')).map((tab) => tab.label)
-		expect(holding).toEqual(['Overview'])
+	it('shows in the side column beside the Overview tab only, not in a tab body', () => {
+		expect(card.tabs).toEqual(['overview'])
+		expect(tabs.find((tab) => tab.id === 'overview').label).toBe('Overview')
+		expect(tabs.filter((tab) => tabWidgets(tab).includes('case-type-check'))).toEqual([])
 	})
 
 	it('stays one compact box: one warning drawn, the count in a plural-free lead', () => {

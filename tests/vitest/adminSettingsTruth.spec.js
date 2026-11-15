@@ -14,7 +14,7 @@
  * - Tenant onboarding put its empty-state text in a slot NcEmptyContent does
  *   not render, so the section showed a bare icon.
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 import fs from 'node:fs'
 import path from 'node:path'

@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Status\DerivedStatusEvaluator;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\Dossiq\Service\Transitions\TransitionDestination;
 use OCA\Dossiq\Service\Transitions\TransitionPreconditions;
 use OCA\Dossiq\Service\Zgw\BrcDocumentLinkRules;
 use OCA\Dossiq\Service\Zgw\ZtcRelatedTypeLookup;
@@ -50,6 +51,11 @@ use ReflectionMethod;
  * @covers \OCA\Dossiq\Service\ZgwBrcRulesService
  * @covers \OCA\Dossiq\Service\Zgw\BrcDocumentLinkRules
  * @covers \OCA\Dossiq\Service\Zgw\ZtcRelatedTypeLookup
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  */
 class TranslatableNamesInLookupsTest extends TestCase {
 
@@ -110,7 +116,7 @@ class TranslatableNamesInLookupsTest extends TestCase {
 			evaluator: $this->createMock(DerivedStatusEvaluator::class),
 		);
 
-		$reason = (new ReflectionMethod($preconditions, 'obligationReason'))->invoke($preconditions, [], 'case-1', 'st-2', false);
+		$reason = (new ReflectionMethod($preconditions, 'obligationReason'))->invoke($preconditions, [], new TransitionDestination(case: [], caseId: 'case-1', toStatus: 'st-2', toIsClosing: false));
 
 		self::assertSame('Zienswijze van de belanghebbende', $reason);
 	}//end testAnObligationIsNamedByItsTitleAsText()
@@ -130,8 +136,7 @@ class TranslatableNamesInLookupsTest extends TestCase {
 		$matches = (new ReflectionMethod($rules, 'caseTypeListsDecisionType'))->invoke(
 			$rules,
 			'ct-1',
-			'00000000-0000-4000-a000-000000000099',
-			['name' => ['nl' => 'Omgevingsvergunning verleend']]
+			['uuid' => '00000000-0000-4000-a000-000000000099', 'data' => ['name' => ['nl' => 'Omgevingsvergunning verleend']]]
 		);
 
 		self::assertTrue($matches);

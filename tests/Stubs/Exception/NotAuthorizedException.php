@@ -9,7 +9,7 @@
  * use, not as a check that could not run, and a ZGW delete answers 403 for it
  * rather than 503. Neither can be exercised without a class to throw.
  *
- * The signature is mirrored whole, defaults included, per the discipline
+ * The class is mirrored whole, defaults included, per the discipline
  * StubApiDriftTest enforces. It extends Exception as the real one does.
  * Self-skips when the real class is present.
  *
@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace OCA\OpenRegister\Exception;
 
 use Exception;
-use Throwable;
 
 if (class_exists('\\OCA\\OpenRegister\\Exception\\NotAuthorizedException', false) === false) {
 	/**
@@ -30,18 +29,17 @@ if (class_exists('\\OCA\\OpenRegister\\Exception\\NotAuthorizedException', false
 	 */
 	class NotAuthorizedException extends Exception {
 		/**
-		 * Constructor.
+		 * The default message.
 		 *
-		 * @param string $message The error message describing authorization failure
-		 * @param int $code The error code (default: 403 Forbidden)
-		 * @param Throwable|null $previous The previous exception that caused this one
+		 * @var string
 		 */
-		public function __construct(
-			string $message = 'You are not authorized to perform this action',
-			int $code = 403,
-			?Throwable $previous = null,
-		) {
-			parent::__construct(message: $message, code: $code, previous: $previous);
-		}//end __construct()
+		protected $message = 'You are not authorized to perform this action';
+
+		/**
+		 * The default code: 403 Forbidden.
+		 *
+		 * @var integer
+		 */
+		protected $code = 403;
 	}//end class
 }//end if

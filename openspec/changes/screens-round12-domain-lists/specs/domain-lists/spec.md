@@ -29,4 +29,5 @@ renewal-decision, termination-decision and ending.
 
 - **GIVEN** a contract with status renewal-decision
 - **WHEN** you open Contracts and pick Decision needed
-- **THEN** the list SHALL show that contract with the status Renewal: decision pending
+- **THEN** the list SHALL show that contract under the chip "Besluit nodig", as the board DqContracten draws it
+- **AND** the list SHALL say that renewing and ending are decisions dossiq asks for in decidiq

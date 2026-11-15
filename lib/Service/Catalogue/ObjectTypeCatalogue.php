@@ -5,11 +5,12 @@
  *
  * The object types the catalogue page lists: the distinct `objectType`
  * values of the objects cases actually link (`caseObject`), each with the
- * number of cases that link one. Schemas are not listed: a register holds
- * case, task and the other record schemas, which are not object types.
+ * number of cases that link one and the number of distinct case types those
+ * cases are of. Schemas are not listed: a register holds case, task and the
+ * other record schemas, which are not object types.
  *
- * A case type does not reference an object type, so no "used in N case types"
- * count is derived here.
+ * A case type does not declare its object types, so "used in N case types" is
+ * read off the cases that link the type.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Catalogue
@@ -32,8 +33,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Catalogue;
 
+use OCA\Dossiq\Kernel\Contracts\ObjectTypeCatalogueInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IL10N;
 use RuntimeException;
 
 /**
@@ -41,7 +44,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
  */
-class ObjectTypeCatalogue {
+class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 
 	use SearchesObjects;
 
@@ -64,10 +67,12 @@ class ObjectTypeCatalogue {
 	 *
 	 * @param SettingsService          $settingsService Config and OpenRegister's ObjectService.
 	 * @param ObjectTypeSchemaResolver $schemas         The schema a linked object's URL names.
+	 * @param IL10N                    $l10n            Words the schema line is written in.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ObjectTypeSchemaResolver $schemas,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -78,7 +83,10 @@ class ObjectTypeCatalogue {
 	 * configured, or when no case links an object. A read OpenRegister refuses
 	 * throws, so the caller can tell a failed read from an empty catalogue.
 	 *
-	 * @return array<int, array{id: string, title: string, cases: int, schema: string, properties: int|null, views: array<int, string>}> The rows.
+	 * @return array<int, array{
+	 *     id: string, title: string, cases: int, schema: string, schemaLine: string,
+	 *     properties: int|null, objects: int|null, views: array<int, string>
+	 * }> The rows.
 	 *
 	 * @throws RuntimeException When OpenRegister is not available.
 	 *
@@ -91,17 +99,55 @@ class ObjectTypeCatalogue {
 			return [];
 		}
 
+		$objectService = $this->requireObjectService();
+
+		$target = new CatalogueRegister(objectService: $objectService, register: $register);
+		$collected = $this->collectAll(target: $target, schema: $schema);
+
+		$caseTypeOf = $this->caseTypesOf(target: $target, caseIds: $this->caseIdsIn(casesByType: $collected[0]));
+
+		$rows = $this->rowsFor(collected: $collected, caseTypeOf: $caseTypeOf);
+
+		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
+
+		return $rows;
+	}//end list()
+
+	/**
+	 * OpenRegister's ObjectService.
+	 *
+	 * @return object The ObjectService.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 *
+	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 */
+	private function requireObjectService(): object {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * Page through the case-object links, collecting the cases and an object url per type.
+	 *
+	 * @param CatalogueRegister $target OpenRegister's ObjectService and the register.
+	 * @param string            $schema The case-object schema.
+	 *
+	 * @return array{0: array<string, array<string, true>>, 1: array<string, string>} The cases and the urls, by type.
+	 *
+	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 */
+	private function collectAll(CatalogueRegister $target, string $schema): array {
 		$casesByType = [];
 		$urlByType   = [];
 		for ($page = 1; $page <= self::MAX_PAGES; $page++) {
 			$links = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
+				objectService: $target->objectService,
+				register: $target->register,
 				schema: $schema,
 				filters: ['_limit' => self::PAGE_SIZE, '_offset' => (($page - 1) * self::PAGE_SIZE)]
 			);
@@ -112,15 +158,30 @@ class ObjectTypeCatalogue {
 			}
 		}
 
+		return [$casesByType, $urlByType];
+	}//end collectAll()
+
+	/**
+	 * One catalogue row per object type, with its case type count.
+	 *
+	 * @param array{0: array<string, array<string, true>>, 1: array<string, string>} $collected  The cases by type, and an object url by type.
+	 * @param array<string, string>|null                                         $caseTypeOf The case type of each case, null when unknown.
+	 *
+	 * @return array<int, array<string, mixed>> The unsorted rows.
+	 *
+	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 */
+	private function rowsFor(array $collected, ?array $caseTypeOf): array {
+		[$casesByType, $urlByType] = $collected;
 		$rows = [];
 		foreach ($casesByType as $type => $cases) {
-			$rows[] = $this->rowFor(type: (string)$type, cases: count($cases), objectUrl: ($urlByType[$type] ?? ''));
+			$row = $this->rowFor(type: (string)$type, cases: count($cases), objectUrl: ($urlByType[$type] ?? ''));
+			$row['caseTypes'] = $this->caseTypeCount(cases: array_keys($cases), caseTypeOf: $caseTypeOf);
+			$rows[] = $row;
 		}
 
-		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
-
 		return $rows;
-	}//end list()
+	}//end rowsFor()
 
 	/**
 	 * Add one page of case-object links to the cases seen per object type.
@@ -170,14 +231,19 @@ class ObjectTypeCatalogue {
 
 	/**
 	 * One catalogue row: the type, its case count and, when a link names an
-	 * OpenRegister schema, that schema's title, property count and views. A
-	 * free-text type leaves the schema columns empty.
+	 * OpenRegister schema, that schema's title, property count, views and
+	 * object count, with the line under the type ("Bomenregister · 5
+	 * objecten"). A free-text type leaves the schema columns empty.
 	 *
 	 * @param string $type      The object type.
 	 * @param int    $cases     The cases that link one.
 	 * @param string $objectUrl A link URL naming the schema, or ''.
 	 *
-	 * @return array{id: string, title: string, cases: int, schema: string, properties: int|null, views: array<int, string>} The row.
+	 * @return array{
+	 *     id: string, title: string, cases: int, schema: string, schemaLine: string,
+	 *     schemaName: string, propertyLine: string, properties: int|null, objects: int|null,
+	 *     views: array<int, string>, schemaId: string
+	 * } The row.
 	 */
 	private function rowFor(string $type, int $cases, string $objectUrl): array {
 		$schema = null;
@@ -190,10 +256,192 @@ class ObjectTypeCatalogue {
 			'title'      => $type,
 			'cases'      => $cases,
 			'schema'     => ($schema['title'] ?? ''),
+			'schemaLine' => $this->schemaLine(title: ($schema['title'] ?? ''), objects: ($schema['objects'] ?? null)),
+			'schemaName' => $this->schemaName(title: ($schema['title'] ?? '')),
+			'propertyLine' => $this->propertyLine(properties: ($schema['properties'] ?? null)),
 			'properties' => ($schema['properties'] ?? null),
+			'objects'    => ($schema['objects'] ?? null),
 			'views'      => ($schema['views'] ?? []),
+			'schemaId'   => ($schema['id'] ?? ''),
 		];
 	}//end rowFor()
+
+	/**
+	 * The line under an object type: the schema title and, when it could be
+	 * counted, how many objects it holds ("Bomenregister · 5 objecten").
+	 *
+	 * @param string   $title   The schema title, '' for a free-text type.
+	 * @param int|null $objects The object count, null when unknown.
+	 *
+	 * @return string The line, '' without a schema.
+	 *
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	private function schemaLine(string $title, ?int $objects): string {
+		if ($title === '' || $objects === null) {
+			return $title;
+		}
+
+		return $title.' · '.$this->l10n->n('%n object', '%n objects', $objects);
+	}//end schemaLine()
+
+	/**
+	 * The Schema cell: the schema's title, or why a free-text type has none.
+	 *
+	 * @param string $title The schema title, '' for a free-text type.
+	 *
+	 * @return string The cell text.
+	 *
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	private function schemaName(string $title): string {
+		if ($title === '') {
+			return $this->l10n->t('No schema: the links point to no register');
+		}
+
+		return $title;
+	}//end schemaName()
+
+	/**
+	 * The line under the schema: how many properties it has.
+	 *
+	 * @param int|null $properties The property count, null without a schema.
+	 *
+	 * @return string The line, '' without a count.
+	 *
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	private function propertyLine(?int $properties): string {
+		if ($properties === null) {
+			return '';
+		}
+
+		return $this->l10n->n('%n property', '%n properties', $properties);
+	}//end propertyLine()
+
+	/**
+	 * Every case id that links an object, once.
+	 *
+	 * @param array<string, array<string, bool>> $casesByType The cases per type.
+	 *
+	 * @return array<int, string> The case ids.
+	 *
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	private function caseIdsIn(array $casesByType): array {
+		$ids = [];
+		foreach ($casesByType as $cases) {
+			foreach (array_keys($cases) as $case) {
+				$ids[(string)$case] = true;
+			}
+		}
+
+		return array_keys($ids);
+	}//end caseIdsIn()
+
+	/**
+	 * The case type of each case, read in batches; null when the case schema
+	 * is not configured, so the count stays unknown rather than zero.
+	 *
+	 * @param CatalogueRegister  $target  The OpenRegister ObjectService and the register id.
+	 * @param array<int, string> $caseIds The cases to read.
+	 *
+	 * @return array<string, string>|null The case type id per case id.
+	 *
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	private function caseTypesOf(CatalogueRegister $target, array $caseIds): ?array {
+		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
+		if ($schema === '') {
+			return null;
+		}
+
+		$caseTypeOf = [];
+		foreach (array_chunk($caseIds, self::PAGE_SIZE) as $chunk) {
+			$caseTypeOf = $this->withCaseTypes(caseTypeOf: $caseTypeOf, cases: $this->casesIn(target: $target, schema: $schema, chunk: $chunk));
+		}
+
+		return $caseTypeOf;
+	}//end caseTypesOf()
+
+	/**
+	 * One chunk of cases, read by id.
+	 *
+	 * @param CatalogueRegister  $target The register the cases live in.
+	 * @param string             $schema The case schema.
+	 * @param array<int, string> $chunk  The case ids.
+	 *
+	 * @return array<int, array<string, mixed>> The cases.
+	 */
+	private function casesIn(CatalogueRegister $target, string $schema, array $chunk): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $schema,
+			filters: ['_ids' => $chunk, '_limit' => count($chunk)]
+		);
+	}//end casesIn()
+
+	/**
+	 * Add each case's case type id, keyed by the case id, skipping a case without either.
+	 *
+	 * @param array<string, string>            $caseTypeOf The case type ids so far.
+	 * @param array<int, array<string, mixed>> $cases      The cases.
+	 *
+	 * @return array<string, string> The case type ids.
+	 */
+	private function withCaseTypes(array $caseTypeOf, array $cases): array {
+		foreach ($cases as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+			$type = $this->caseTypeRef(row: $row);
+			if ($id !== '' && is_string($type) === true && $type !== '') {
+				$caseTypeOf[$id] = $type;
+			}
+		}
+
+		return $caseTypeOf;
+	}//end withCaseTypes()
+
+	/**
+	 * The case type a case names: the id or uuid of an object, or the value itself.
+	 *
+	 * @param array<string, mixed> $row The case.
+	 *
+	 * @return mixed The case type reference.
+	 */
+	private function caseTypeRef(array $row): mixed {
+		$type = ($row['caseType'] ?? '');
+		if (is_array($type) === true) {
+			$type = ($type['id'] ?? ($type['uuid'] ?? ''));
+		}
+
+		return $type;
+	}//end caseTypeRef()
+
+	/**
+	 * How many distinct case types the given cases are of.
+	 *
+	 * @param array<int, int|string>     $cases      The case ids.
+	 * @param array<string, string>|null $caseTypeOf The case type per case, null when unknown.
+	 *
+	 * @return int|null The count, null when the case types could not be read.
+	 *
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	private function caseTypeCount(array $cases, ?array $caseTypeOf): ?int {
+		if ($caseTypeOf === null) {
+			return null;
+		}
+
+		$types = [];
+		foreach ($cases as $case) {
+			if (isset($caseTypeOf[(string)$case]) === true) {
+				$types[$caseTypeOf[(string)$case]] = true;
+			}
+		}
+
+		return count($types);
+	}//end caseTypeCount()
 
 	/**
 	 * Order rows by the number of cases, most first, then by name.

@@ -58,6 +58,8 @@ const SEEDED_KEYS = [
 	'pdok',
 	'berichtenbox',
 	'templates',
+	'smartdocuments',
+	'xential',
 ]
 
 /**
@@ -82,7 +84,7 @@ const UNAVAILABLE_KEYS = ['kvk']
 const DORMANT_KEYS = ['brp']
 
 /** Declared without a settings section. */
-const UNLINKED_KEYS = ['brp', 'kvk', 'pdok', 'berichtenbox', 'templates']
+const UNLINKED_KEYS = ['brp', 'kvk', 'pdok', 'berichtenbox', 'templates', 'smartdocuments', 'xential']
 
 /** Integriq's objects endpoint for dossiq's connection rows. */
 const CONNECTIONS_API =
@@ -208,12 +210,12 @@ test.describe('Integrations', () => {
 	test('offers a settings link that lands on the section', async ({ page }) => {
 		const byKey = await integrationsByKey(api)
 		expect(byKey.stuf.settingsUrl).toBe(
-			'/settings/admin/dossiq?tab=integrations#section-stuf',
+			'/settings/admin/dossiq?tab=advanced#section-stuf',
 		)
 
 		await openIntegrations(page)
 		const link = page.locator(
-			'a[href="/settings/admin/dossiq?tab=integrations#section-stuf"]',
+			'a[href="/settings/admin/dossiq?tab=advanced#section-stuf"]',
 		)
 		await expect(link).toBeVisible({ timeout: 30_000 })
 
@@ -227,7 +229,7 @@ test.describe('Integrations', () => {
 			link.click(),
 		])
 		await expect(settings).toHaveURL(
-			/\/settings\/admin\/dossiq\?tab=integrations#section-stuf$/,
+			/\/settings\/admin\/dossiq\?tab=advanced#section-stuf$/,
 		)
 		await expect(settings.locator('#section-stuf')).toBeVisible({
 			timeout: 30_000,

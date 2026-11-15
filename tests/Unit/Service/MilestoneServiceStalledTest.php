@@ -29,6 +29,8 @@ use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
 use OCA\Dossiq\Service\MilestoneService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Service\Term\DayCount;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -38,11 +40,18 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\MilestoneService
  * @covers \OCA\Dossiq\Service\Milestone\StalledCaseDetector
  * @covers \OCA\Dossiq\Service\Milestone\MilestoneRepository
+ * @uses \OCA\Dossiq\Service\Milestone\MilestoneProjection
+ * @uses \OCA\Dossiq\Service\Milestone\ChainStep
+ * @uses \OCA\Dossiq\Service\Milestone\CycleSearch
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Milestone\MilestoneSchedule
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @covers \OCA\Dossiq\Service\Milestone\StallCandidate
+ * @covers \OCA\Dossiq\Service\Milestone\StallWindow
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class MilestoneServiceStalledTest extends TestCase {
+	use MatchesGoldenFiles;
 
 	/**
 	 * The mocked settings service.
@@ -409,4 +418,97 @@ class MilestoneServiceStalledTest extends TestCase {
 		$this->assertGreaterThan($today, $row['deadline']);
 		$this->assertSame(expected: [], actual: $detector->findStalledCases(thresholdDays: 0));
 	}//end testWaitingOnNamesTheMilestoneBeforeItIsLate()
+
+	/**
+	 * One mixed world, pinned whole: closed, untyped, undated and unscheduled
+	 * cases, milestones out of order, reached on a date or with a broken one,
+	 * a dependent milestone, a case still on track, and three thresholds. The
+	 * days overdue are checked against the reported deadline and then left out,
+	 * so the file does not move with the calendar.
+	 *
+	 * @return void
+	 */
+	public function testGoldenStallWorld(): void {
+		$case = static fn (string $id, string $type, string $start, array $extra = []): array => array_merge(
+			['id' => $id, 'title' => 'T ' . $id, 'caseType' => $type, 'status' => 'in_handling', 'assignee' => 'u-' . $id, 'startDate' => $start],
+			$extra
+		);
+		$objectService = $this->fakeObjectService(
+			[
+				'1' => [
+					$case('a', 'ct-1', '2020-03-02'),
+					$case('b', 'ct-1', '2020-03-02'),
+					$case('c', 'ct-1', '2099-01-05'),
+					$case('d', 'ct-2', '2020-03-02'),
+					$case('e', 'ct-1', '2020-03-02', ['status' => 'Afgesloten']),
+					$case('e2', 'ct-1', '2020-03-02', ['status' => 'Case WITHDRAWN']),
+					$case('f', '', '2020-03-02'),
+					$case('g', 'ct-1', ''),
+					$case('h', 'ct-1', 'garbage'),
+					array_diff_key($case('i', 'ct-1', '2020-03-02', ['uuid' => 'i-uuid']), ['id' => true]),
+					$case('', 'ct-1', '2020-03-02'),
+					$case('j', 'ct-none', '2020-03-02'),
+					array_diff_key($case('k', 'ct-1', '', ['created' => '2020-05-04T10:00:00Z', 'title' => null]), ['startDate' => true]),
+					$case('l', 'ct-3', '2020-03-02'),
+					$case('m', 'ct-1', '2020-03-02'),
+				],
+				'2' => [
+					['id' => 'd2', 'caseType' => 'ct-1', 'identifier' => 'second', 'name' => 'Second', 'order' => 2, 'expectedDurationWorkingDays' => 10, 'dependsOn' => ['first']],
+					['id' => 'd1', 'caseType' => 'ct-1', 'identifier' => 'first', 'label' => 'First', 'order' => 1, 'expectedDurationWorkingDays' => 5],
+					['uuid' => 'd3', 'caseType' => 'ct-1', 'identifier' => 'third', 'order' => 3],
+					['id' => 'e1', 'caseType' => 'ct-2', 'identifier' => 'only', 'label' => 'Only', 'order' => 1, 'expectedDurationWorkingDays' => 3],
+					['id' => 'f1', 'caseType' => 'ct-3', 'label' => 'Nameless', 'expectedDurationWorkingDays' => 4],
+					['id' => 'z1', 'caseType' => '', 'identifier' => 'untyped', 'order' => 1, 'expectedDurationWorkingDays' => 1],
+				],
+				'3' => [
+					['case' => 'b', 'milestoneDefinition' => 'd1', 'milestoneIdentifier' => 'first', 'reachedAt' => '2020-04-01T09:00:00Z'],
+					['case' => 'b', 'milestoneDefinition' => 'd2', 'milestoneIdentifier' => 'second', 'reached' => false, 'reachedAt' => '2020-04-02'],
+					['case' => 'd', 'milestoneDefinition' => 'e1', 'milestoneIdentifier' => 'only', 'reachedAt' => 'not-a-date'],
+					['case' => 'k', 'milestoneDefinition' => 'd1', 'milestoneIdentifier' => 'first'],
+					['case' => 'm', 'milestoneDefinition' => 'd1', 'milestoneIdentifier' => 'first', 'reachedAt' => '2020-03-05'],
+					['case' => 'm', 'milestoneDefinition' => 'd2', 'milestoneIdentifier' => 'second', 'reachedAt' => '2020-03-20'],
+					['case' => 'm', 'milestoneDefinition' => 'd3', 'milestoneIdentifier' => 'third'],
+				],
+			]
+		);
+		$this->wireSettings($objectService);
+		$service = $this->buildService();
+		$today = new \DateTimeImmutable('today');
+		$days = new DayCount();
+
+		$world = [];
+		foreach ([0, 30, 100000] as $threshold) {
+			$rows = $service->findStalledCases(thresholdDays: $threshold);
+			foreach ($rows as $index => $row) {
+				$this->assertSame($days->signed(from: new \DateTimeImmutable($row['deadline']), to: $today), $row['daysOverdue']);
+				unset($rows[$index]['daysOverdue']);
+			}
+
+			$world['threshold ' . $threshold] = $rows;
+		}
+
+		// A case exactly as many days past its deadline as the grace allows is not stalled; one day less grace and it is.
+		$atDeadline = $days->signed(from: new \DateTimeImmutable('2020-03-09'), to: $today);
+		$world['grace equal to the days overdue'] = array_column($service->findStalledCases(thresholdDays: $atDeadline), 'caseId');
+		$world['grace one day less'] = array_column($service->findStalledCases(thresholdDays: ($atDeadline - 1)), 'caseId');
+
+		$repository = new MilestoneRepository(settingsService: $this->settingsService);
+		$detector = new StalledCaseDetector(
+			settingsService: $this->settingsService,
+			repository: $repository,
+			workingDays: new WorkingDayCalculator(),
+			schedule: new MilestoneSchedule(workingDays: new WorkingDayCalculator()),
+		);
+		foreach (['c' => $case('c', 'ct-1', '2099-01-05'), 'a' => $case('a', 'ct-1', '2020-03-02'), 'closed' => $case('x', 'ct-1', '2020-03-02', ['status' => 'closed']), 'd' => $case('d', 'ct-2', '2020-03-02')] as $label => $one) {
+			$row = $detector->waitingOn($one);
+			if ($row !== null) {
+				$this->assertSame($days->signed(from: new \DateTimeImmutable($row['deadline']), to: $today), $row['daysOverdue']);
+				unset($row['daysOverdue']);
+			}
+
+			$world['waitingOn ' . $label] = $row;
+		}
+
+		$this->assertMatchesGolden('stalled-case-world', $world);
+	}//end testGoldenStallWorld()
 }//end class

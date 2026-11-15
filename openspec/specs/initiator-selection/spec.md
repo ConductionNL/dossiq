@@ -126,3 +126,12 @@ SHALL declare `implements: ["https://openregister.app/ns#Requester"]`.
 - **GIVEN** the imported register configuration
 - **WHEN** a handler opens New case on `Dashboard`
 - **THEN** the Requester field SHALL NOT carry the disabled state or the no-provider tooltip
+
+### Requirement: Contact is a kind of requester on the new case form
+
+The new case form's requester switch SHALL offer Person, Organisation and Contact. A picked contact SHALL be stored as a contact reference (`initiatorType` contact, `initiatorSourceId`, `initiatorDisplayName`), with `requester` pointing at the party that holds its address when OpenRegister knows one, and left out otherwise; Ruben, 5 Nov.
+
+#### Scenario: A contact with no party
+
+- **WHEN** a handler picks a contact whose address no party holds
+- **THEN** the case SHALL be saved with the contact's projection and no `requester`

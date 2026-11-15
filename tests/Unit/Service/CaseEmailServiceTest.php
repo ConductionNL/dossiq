@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Email\OutboundMailPolicy;
+use OCA\Dossiq\Service\Email\OutboundMailRules;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
@@ -44,7 +46,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\OptOutGate;
 use OCA\Dossiq\Tests\Support\FakeIntegriqOptOuts;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
-use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
+use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\Mail\IMailer;
@@ -58,6 +60,8 @@ use Psr\Log\NullLogger;
  * Covers C4 (IDOR + file-disclosure), H6 (XSS + reserved-domain), L1 (log-injection).
  *
  * @covers \OCA\Dossiq\Service\CaseEmailService
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailRules
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailPolicy
  *
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
@@ -71,6 +75,9 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\CaseMailSend
+ * @uses \OCA\Dossiq\Service\Email\SentCaseMail
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class CaseEmailServiceTest extends TestCase {
 
@@ -182,13 +189,15 @@ class CaseEmailServiceTest extends TestCase {
 		// CaseEmailService, and the repository is still driven entirely by the
 		// mocked SettingsService (getObjectService() === null ⇒ no case data).
 		$this->service = new CaseEmailService(
-			$this->logger,
-			new CaseEmailRepository($this->settingsService),
-			new CaseContactDirectory(),
-			$this->outbound(),
-			new RecipientAllowlist($this->appConfig),
-			$this->createMock(CaseTimeline::class),
-			new CaseMailOptOut($this->gate(), $this->l10n(), new UnsubscribeHeaders(new NullLogger())),
+			logger: $this->logger,
+			repository: new CaseEmailRepository(settingsService: $this->settingsService),
+			contactDirectory: new CaseContactDirectory(),
+			sending: new OutboundMailRules(
+				outbound: $this->outbound(),
+				allowlist: new RecipientAllowlist(appConfig: $this->appConfig),
+				optOut: new CaseMailOptOut(gate: $this->gate(), l10n: $this->l10n(), unsubscribeHeaders: new UnsubscribeHeaders(new NullLogger())),
+			),
+			timeline: $this->createMock(originalClassName: CaseTimeline::class),
 		);
 
 	}//end setUp()
@@ -239,13 +248,15 @@ class CaseEmailServiceTest extends TestCase {
 		$repository->method('loadCaseVariables')->willReturn([]);
 
 		return new CaseEmailService(
-			$this->logger,
-			$repository,
-			new CaseContactDirectory(),
-			$this->outbound(),
-			new RecipientAllowlist($this->appConfig),
-			($timeline ?? $this->createMock(CaseTimeline::class)),
-			new CaseMailOptOut($this->gate(), $this->l10n(), new UnsubscribeHeaders(new NullLogger())),
+			logger: $this->logger,
+			repository: $repository,
+			contactDirectory: new CaseContactDirectory(),
+			sending: new OutboundMailRules(
+				outbound: $this->outbound(),
+				allowlist: new RecipientAllowlist(appConfig: $this->appConfig),
+				optOut: new CaseMailOptOut(gate: $this->gate(), l10n: $this->l10n(), unsubscribeHeaders: new UnsubscribeHeaders(new NullLogger())),
+			),
+			timeline: ($timeline ?? $this->createMock(originalClassName: CaseTimeline::class)),
 		);
 	}//end serviceWithCase()
 
@@ -307,6 +318,50 @@ class CaseEmailServiceTest extends TestCase {
 
 		$this->assertSame('TEAM@partner.nl', $result['to']);
 	}//end testSendEmailAllowsRecipientOnConfiguredAllowlist()
+
+	/**
+	 * A malformed recipient is refused before the allow-list is read, and nothing leaves.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedRecipientIsRefusedAndNothingIsSent(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '*',
+		);
+
+		$this->mailer->expects($this->never())->method('sendMessage');
+
+		try {
+			$service->sendEmail(caseId: 'case-1', to: 'geen-adres', subject: 'Hallo', body: 'Tekst');
+			$this->fail('A malformed recipient must be refused.');
+		} catch (\RuntimeException $e) {
+			$this->assertSame('Ongeldig e-mailadres opgegeven.', $e->getMessage());
+		}
+
+		$this->assertSame(0, $this->sentRecords);
+	}//end testAMalformedRecipientIsRefusedAndNothingIsSent()
+
+	/**
+	 * A sent mail answers its whole result: the stored id, both addresses, the subject and the state.
+	 *
+	 * @return void
+	 */
+	public function testASentMailAnswersItsWholeResult(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '@gemeente.nl',
+		);
+
+		$result = $service->sendEmail(caseId: 'case-1', to: 'burger@gemeente.nl', subject: 'Hallo', body: 'Tekst');
+
+		$this->assertSame(['messageId', 'to', 'from', 'subject', 'state', 'sentAt'], array_keys($result));
+		$this->assertSame('msg-test', $result['messageId']);
+		$this->assertSame('burger@gemeente.nl', $result['to']);
+		$this->assertSame('zaken@gemeente.nl', $result['from']);
+		$this->assertSame('Hallo', $result['subject']);
+		$this->assertSame(1, $this->sentRecords);
+	}//end testASentMailAnswersItsWholeResult()
 
 	/**
 	 * A sent mail puts a PUBLIC line on the case's timeline, carrying the
@@ -691,13 +746,20 @@ class CaseEmailServiceTest extends TestCase {
 		$store->method('referenceId')->willReturnCallback(static fn ($value): string => trim((string)$value));
 
 		return new OutboundCaseMail(
-			$this->mailer,
-			new SenderIdentity($this->mailer, new IntakeAccount($this->appConfig), $caseTypes, $store),
-			new MailTransportPolicy($this->appConfig),
-			new CaseMailOptOut($this->gate(), $this->l10n(), new UnsubscribeHeaders(new NullLogger())),
-			$this->createMock(IMailer::class),
-			$this->appConfig,
-			new NullLogger()
+			gateway: $this->mailer,
+			transport: new OutboundMailPolicy(
+				identity: new SenderIdentity(
+					gateway: $this->mailer,
+					intakeAccount: new IntakeAccount(appConfig: $this->appConfig),
+					caseTypes: $caseTypes,
+					store: $store
+				),
+				policy: new MailTransportPolicy(appConfig: $this->appConfig),
+				optOut: new CaseMailOptOut(gate: $this->gate(), l10n: $this->l10n(), unsubscribeHeaders: new UnsubscribeHeaders(new NullLogger())),
+			),
+			mailer: $this->createMock(originalClassName: IMailer::class),
+			appConfig: $this->appConfig,
+			logger: new NullLogger()
 		);
 	}//end outbound()
 

@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service\ProcessMining;
 /**
  * Shapes the per case type dwell statistics into the page's matrix and list.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class PhaseSummary {
 
@@ -57,7 +57,7 @@ class PhaseSummary {
 	 *
 	 * @return array{phaseDays: array{mean: array<string, mixed>, median: array<string, mixed>}, stuck: array<int, array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function forPage(array $caseTypes): array {
 		return [
@@ -72,7 +72,7 @@ class PhaseSummary {
 	/**
 	 * The days per phase per case type, as columns and rows a matrix reads.
 	 *
-	 * Columns are the named phases in the order they first appear, rows the
+	 * Columns are the named phases in the case types' flow order, rows the
 	 * case types that passed at least one of them; a case type that
 	 * never passes a phase has the word `none` in that cell, which the page
 	 * shows translated rather than as an empty cell.
@@ -82,37 +82,167 @@ class PhaseSummary {
 	 *
 	 * @return array{columns: array<int, string>, rows: array<int, array{label: string, values: array<int, int|string>}>}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function matrix(array $caseTypes, string $measure='meanHours'): array {
-		$columns = [];
-		$rows = [];
-		foreach ($caseTypes as $report) {
-			$byName = [];
-			foreach ($this->namedStats(report: $report) as $stat) {
-				$name = (string)$stat['statusName'];
-				$byName[$name] = (int)round(((float)($stat[$measure] ?? 0)) / self::HOURS_PER_DAY);
-				if (in_array($name, $columns, true) === false) {
-					$columns[] = $name;
-				}
-			}
-
-			if ($byName !== []) {
-				$rows[] = ['label' => (string)($report['title'] ?? ''), 'byName' => $byName];
-			}
-		}
+		$phases = array_map(fn (array $report): array => $this->phaseDays(report: $report, measure: $measure), $caseTypes);
+		$named = array_map(static fn (array $phase): array => array_keys($phase['byName']), $phases);
+		$columns = $this->inFlowOrder(
+			columns: array_values(array_unique(array_merge([], ...$named))),
+			sequences: array_map(fn (array $phase): array => $this->sequenceOf(firstOrder: $phase['firstOrder']), $phases),
+		);
+		$rows = array_filter($phases, static fn (array $phase): bool => $phase['byName'] !== []);
 
 		return [
 			'columns' => $columns,
-			'rows' => array_map(
-				static fn (array $row): array => [
-					'label' => $row['label'],
-					'values' => array_map(static fn (string $name): int|string => ($row['byName'][$name] ?? self::NONE), $columns),
-				],
-				$rows
-			),
+			'rows' => array_values(array_map(static fn (array $row): array => self::cellsOf(row: $row, columns: $columns), $rows)),
 		];
 	}//end matrix()
+
+	/**
+	 * One case type's days per named phase, its label, and each phase's first status order.
+	 *
+	 * @param array<string, mixed> $report  The case type's report.
+	 * @param string               $measure `meanHours` or `medianHours`.
+	 *
+	 * @return array{label: string, byName: array<string, int>, firstOrder: array<string, int|null>} The phases.
+	 */
+	private function phaseDays(array $report, string $measure): array {
+		$hours = [];
+		$firstOrder = [];
+		foreach ($this->columnsOf(stats: $this->namedStats(report: $report, key: 'dwellTimeCompleted')) as $column => $stats) {
+			$hours[$column] = array_sum(array_map(static fn (array $stat): float => (float)($stat[$measure] ?? 0), $stats));
+			$firstOrder[$column] = $this->firstOrder(stats: $stats);
+		}
+
+		return [
+			'label' => (string)($report['title'] ?? ''),
+			'byName' => array_map(static fn (float $sum): int => (int)round($sum / self::HOURS_PER_DAY), $hours),
+			'firstOrder' => $firstOrder,
+		];
+	}//end phaseDays()
+
+	/**
+	 * A matrix row: the label, and per column the days or the word `none`.
+	 *
+	 * @param array{label: string, byName: array<string, int>} $row     The case type's phases.
+	 * @param array<int, string>                               $columns The columns in order.
+	 *
+	 * @return array{label: string, values: array<int, int|string>} The row.
+	 */
+	private static function cellsOf(array $row, array $columns): array {
+		return [
+			'label' => $row['label'],
+			'values' => array_map(static fn (string $name): int|string => ($row['byName'][$name] ?? self::NONE), $columns),
+		];
+	}//end cellsOf()
+
+	/**
+	 * The lowest status order among a column's statistics, or null when none has one.
+	 *
+	 * @param array<int, array<string, mixed>> $stats One column's statistics.
+	 *
+	 * @return int|null
+	 */
+	private function firstOrder(array $stats): ?int {
+		$orders = array_filter(
+			array_map(static fn (array $stat): mixed => ($stat['statusOrder'] ?? null), $stats),
+			static fn (mixed $order): bool => is_int($order)
+		);
+		if ($orders === []) {
+			return null;
+		}
+
+		return min($orders);
+	}//end firstOrder()
+
+	/**
+	 * One case type's columns in its own flow order, those without an order left out.
+	 *
+	 * @param array<string, int|null> $firstOrder Column => its lowest status order.
+	 *
+	 * @return array<int, string>
+	 */
+	private function sequenceOf(array $firstOrder): array {
+		$ordered = array_filter($firstOrder, static fn (?int $order): bool => $order !== null);
+		asort($ordered);
+
+		return array_map('strval', array_keys($ordered));
+	}//end sequenceOf()
+
+	/**
+	 * The columns in the order the case types' flows put them.
+	 *
+	 * One column goes before another when more case types that have both pass
+	 * it first (Advies before Besluit), so the order is the flows', never the
+	 * alphabet's or that of the first case type read. Columns no flow places
+	 * against each other keep the order they first appeared in.
+	 *
+	 * @param array<int, string>             $columns   The columns, in first-appearance order.
+	 * @param array<int, array<int, string>> $sequences Each case type's columns in its flow order.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/phase-columns-in-case-type-order/spec.md#requirement-the-phase-columns-follow-the-case-types-order
+	 */
+	private function inFlowOrder(array $columns, array $sequences): array {
+		$before = [];
+		foreach ($sequences as $sequence) {
+			foreach ($sequence as $index => $earlier) {
+				foreach (array_slice($sequence, ($index + 1)) as $later) {
+					$before[$earlier][$later] = (($before[$earlier][$later] ?? 0) + 1);
+				}
+			}
+		}
+
+		$ordered = [];
+		foreach ($columns as $column) {
+			$slot = count($ordered);
+			foreach ($ordered as $position => $placed) {
+				if (($before[$column][$placed] ?? 0) > ($before[$placed][$column] ?? 0)) {
+					$slot = $position;
+					break;
+				}
+			}
+
+			$ordered = [...array_slice($ordered, 0, $slot), $column, ...array_slice($ordered, $slot)];
+		}
+
+		return $ordered;
+	}//end inFlowOrder()
+
+	/**
+	 * A case type's statistics per matrix column. A status that names a
+	 * phase goes under its phase (the days of a phase are the days of its
+	 * statuses together), any other under its own name. When the case type
+	 * uses phases, its final statuses are no column: the case has left the
+	 * process there.
+	 *
+	 * @param array<int, array<string, mixed>> $stats The named dwell statistics.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>> Column => statistics.
+	 *
+	 * @spec openspec/changes/status-type-phase/specs/process-mining/spec.md#requirement-days-per-phase-groups-statuses-by-their-phase
+	 */
+	private function columnsOf(array $stats): array {
+		$phased = array_filter($stats, static fn (array $stat): bool => (string)($stat['statusPhase'] ?? '') !== '') !== [];
+
+		$columns = [];
+		foreach ($stats as $stat) {
+			if ($phased === true && ($stat['statusFinal'] ?? false) === true) {
+				continue;
+			}
+
+			$column = (string)($stat['statusPhase'] ?? '');
+			if ($column === '') {
+				$column = (string)$stat['statusName'];
+			}
+
+			$columns[$column][] = $stat;
+		}
+
+		return $columns;
+	}//end columnsOf()
 
 	/**
 	 * The dwell statistics of a report whose status resolved to a name. A
@@ -120,15 +250,17 @@ class PhaseSummary {
 	 * is no phase a reader recognises, so it is left out.
 	 *
 	 * @param array<string, mixed> $report One case type's report.
+	 * @param string               $key    The statistics to read: `dwellTimeCompleted` for days per phase (visits that
+	 *                                     ended, falling back to `dwellTime` for a report without them).
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/specs/phase-days-from-completed-visits/spec.md#requirement-days-per-phase-counts-completed-visits
 	 */
-	private function namedStats(array $report): array {
+	private function namedStats(array $report, string $key='dwellTime'): array {
 		return array_values(
 			array_filter(
-				(array)($report['dwellTime'] ?? []),
+				(array)($report[$key] ?? ($report['dwellTime'] ?? [])),
 				static function (array $stat): bool {
 					$name = (string)($stat['statusName'] ?? '');
 					return $name !== '' && $name !== (string)($stat['statusId'] ?? '');
@@ -148,30 +280,59 @@ class PhaseSummary {
 	 *
 	 * @return array<int, array{id: string, caseType: string, phase: string, days: int, visits: int, level: string}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function stuck(array $caseTypes, int $limit=5): array {
 		$candidates = [];
 		foreach ($caseTypes as $report) {
-			$top = ($report['bottlenecks'][0] ?? null);
-			if (is_array($top) === false) {
-				continue;
+			$candidate = $this->candidateOf(report: $report);
+			if ($candidate !== null) {
+				$candidates[] = $candidate;
 			}
-
-			$candidates[] = [
-				'id' => (string)($report['id'] ?? '') . ':' . (string)($top['statusId'] ?? ''),
-				'caseType' => (string)($report['title'] ?? ''),
-				'phase' => (string)($top['statusName'] ?? ''),
-				'days' => (int)round(((float)($top['medianHours'] ?? 0)) / self::HOURS_PER_DAY),
-				'visits' => (int)($top['visitCount'] ?? 0),
-				'score' => (float)($top['score'] ?? 0),
-			];
 		}
 
 		usort($candidates, static fn (array $left, array $right): int => ($right['score'] <=> $left['score']));
 
+		return $this->levelled(rows: array_slice($candidates, 0, $limit));
+	}//end stuck()
+
+	/**
+	 * A case type's highest ranked bottleneck as a candidate, or null when it has none.
+	 *
+	 * @param array<string, mixed> $report The case type's report.
+	 *
+	 * @return array{id: string, caseType: string, phase: string, days: int, visits: int, score: float}|null The candidate.
+	 *
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function candidateOf(array $report): ?array {
+		$top = ($report['bottlenecks'][0] ?? null);
+		if (is_array($top) === false) {
+			return null;
+		}
+
+		return [
+			'id' => (string)($report['id'] ?? '') . ':' . (string)($top['statusId'] ?? ''),
+			'caseType' => (string)($report['title'] ?? ''),
+			'phase' => (string)($top['statusName'] ?? ''),
+			'days' => (int)round(((float)($top['medianHours'] ?? 0)) / self::HOURS_PER_DAY),
+			'visits' => (int)($top['visitCount'] ?? 0),
+			'score' => (float)($top['score'] ?? 0),
+		];
+	}//end candidateOf()
+
+	/**
+	 * The ranked candidates without their score, the first marked `bottleneck` and the rest `watch`.
+	 *
+	 * @param array<int, array{id: string, caseType: string, phase: string, days: int, visits: int, score: float}> $rows The ranked candidates.
+	 *
+	 * @return array<int, array{id: string, caseType: string, phase: string, days: int, visits: int, level: string}>
+	 *
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function levelled(array $rows): array {
 		$out = [];
-		foreach (array_slice($candidates, 0, $limit) as $index => $row) {
+		foreach ($rows as $index => $row) {
 			unset($row['score']);
 			$row['level'] = 'watch';
 			if ($index === 0) {
@@ -182,5 +343,5 @@ class PhaseSummary {
 		}
 
 		return $out;
-	}//end stuck()
+	}//end levelled()
 }//end class

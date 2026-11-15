@@ -37,6 +37,7 @@ use RuntimeException;
  * Unit tests for TenantMigrationService.
  *
  * @covers \OCA\Dossiq\Service\TenantMigrationService
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class TenantMigrationServiceTest extends TestCase {
 	/**
@@ -620,6 +621,37 @@ class TenantMigrationServiceTest extends TestCase {
 	}
 
 	/**
+	 * A repair out of `archived` clears a deprovisionedAt left behind there.
+	 *
+	 * The purge measures its window from that column, so a stale value would
+	 * delete the organisation the moment anything returned it to `archived`.
+	 *
+	 * @return void
+	 */
+	public function testRepairOutOfArchivedClearsALeftoverDeprovisionDate(): void {
+		$damaged = new Organisation();
+		$damaged->setUuid('tenant-term');
+		$damaged->setSlug('gemeente-stopgezet');
+		$damaged->setStatus('archived');
+		$damaged->setDeprovisionedAt(new \DateTime('2024-02-02 10:00:00'));
+
+		$mapper = $this->mapperWith(['gemeente-stopgezet' => $damaged]);
+		$service = $this->makeService(
+			$this->objectServiceWithRows(
+				[['id' => 'tenant-term', 'slug' => 'gemeente-stopgezet', 'status' => 'terminated']]
+			),
+			$mapper,
+		);
+
+		$summary = $service->migrate();
+
+		$this->assertSame(1, $summary['repaired']);
+		$this->assertSame('retained', $damaged->getStatus());
+		$this->assertNull($damaged->getDeprovisionedAt(), 'a repaired organisation must carry no deletion date');
+		$this->assertNotNull($damaged->getRetainedAt(), 'and its retention must be dated');
+	}
+
+	/**
 	 * A tenant the June mapping left in `provisioning` is repaired to `active`.
 	 *
 	 * @return void
@@ -887,4 +919,52 @@ class TenantMigrationServiceTest extends TestCase {
 		$this->assertCount(0, $mapper->inserted);
 	}
 
-}//end class
+	/**
+	 * A preview over a new, a repairable, a colliding and an unkeyed row reports what an apply
+	 * would do and writes nothing; the apply then writes exactly that.
+	 *
+	 * @return void
+	 */
+	public function testAPreviewReportsTheRunAndWritesNothing(): void {
+		$damaged = new Organisation();
+		$damaged->setUuid('tenant-term');
+		$damaged->setSlug('gemeente-stopgezet');
+		$damaged->setStatus('archived');
+		$other = new Organisation();
+		$other->setUuid('org-other');
+		$other->setSlug('bezet');
+
+		$rows = [
+			['id' => 'tenant-new', 'slug' => 'gemeente-nieuw', 'status' => 'active'],
+			['id' => 'tenant-term', 'slug' => 'gemeente-stopgezet', 'status' => 'terminated'],
+			['id' => 'tenant-clash', 'slug' => 'bezet', 'status' => 'active'],
+			['slug' => 'zonder-id'],
+		];
+		$mapper  = $this->mapperWith(['gemeente-stopgezet' => $damaged, 'bezet' => $other]);
+		$service = $this->makeService($this->objectServiceWithRows($rows), $mapper);
+
+		$preview = $service->migrate(TenantMigrationService::MODE_PREVIEW);
+		$this->assertSame(
+			[
+				'migrated' => 1,
+				'repaired' => 1,
+				'skipped' => 0,
+				'refused' => 1,
+				'failed' => 1,
+				'total' => 4,
+				'unmigrated' => 3,
+				'dryRun' => true,
+				'mappings' => [['tenant' => 'tenant-new', 'organisation' => 'tenant-new']],
+				'collisions' => [['tenant' => 'tenant-clash', 'slug' => 'bezet', 'heldBy' => 'org-other']],
+			],
+			$preview
+		);
+		$this->assertSame([[], []], [$mapper->inserted, $mapper->updated]);
+		$this->assertSame('archived', $damaged->getStatus());
+
+		$applied = $service->migrate();
+		$this->assertSame([1, 1, 1, 1, 2, false], [$applied['migrated'], $applied['repaired'], $applied['refused'], $applied['failed'], $applied['unmigrated'], $applied['dryRun']]);
+		$this->assertCount(1, $mapper->inserted);
+		$this->assertCount(1, $mapper->updated);
+	}
+}

@@ -1359,6 +1359,7 @@
         "SLA": "SLA",
         "SLA Compliance": "SLA usklađenost",
         "SLA Compliance %": "SLA usklađenost %",
+        "SLA Compliance %%": "SLA usklađenost %%",
         "SLA Target: {days}d": "SLA cilj: {days}d",
         "SLA adherence and processing time analysis": "Pridržavanje SLA i analiza vremena obrade",
         "SLA breaches": "SLA prekršaji",

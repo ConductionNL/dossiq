@@ -1684,6 +1684,7 @@ OC.L10N.register(
         "SLA adherence and processing time analysis": "Ανάλυση τήρησης SLA και χρόνου επεξεργασίας",
         "SLA Compliance": "Συμμόρφωση SLA",
         "SLA Compliance %": "Συμμόρφωση SLA %",
+        "SLA Compliance %%": "Συμμόρφωση SLA %%",
         "SLA override (days)": "Παράκαμψη SLA (ημέρες)",
         "SLA Target: {days}d": "Στόχος SLA: {days}d",
         "Sloopmelding": "Sloopmelding",

@@ -13,7 +13,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/the-redaction-stage-waits-for-every-redacted-copy/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+ * @spec openspec/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
  */
 
 declare(strict_types=1);
@@ -31,6 +31,11 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Service\Assessment\DocumentSearchOutcome
+ * @uses \OCA\Dossiq\Service\Transitions\GuardResult
+ * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  */
 class DocumentAssessmentGuardRedactedTest extends TestCase {
 

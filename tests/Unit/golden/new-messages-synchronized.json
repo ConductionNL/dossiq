@@ -1,0 +1,27 @@
+{
+    "no intake account configured": [],
+    "not a synchronisation": [
+        "unpack"
+    ],
+    "another account or mailbox": [
+        "unpack",
+        "matches 4 INBOX"
+    ],
+    "intake fails": [
+        "unpack",
+        "matches 4 INBOX",
+        "processBatch 2 rows 4 INBOX",
+        "error: Dossiq: intake failed on a Mail synchronisation event {\"error\":\"register offline\"}"
+    ],
+    "nothing to report": [
+        "unpack",
+        "matches 4 INBOX",
+        "processBatch 2 rows 4 INBOX"
+    ],
+    "processed": [
+        "unpack",
+        "matches 4 INBOX",
+        "processBatch 2 rows 4 INBOX",
+        "info: Dossiq: intake processed a synchronised batch {\"outcomes\":{\"linked\":1,\"unmatched\":1}}"
+    ]
+}

@@ -42,6 +42,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * Suspend, resume, extend and reopen behind their guards.
@@ -156,7 +157,7 @@ class CaseLifecycleControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function testSuspendPassesThePauseReasonAndRefusesAnUndeclaredOne(): void {
 		$request = $this->createMock(IRequest::class);
@@ -365,7 +366,10 @@ class CaseLifecycleControllerTest extends TestCase {
 				 *
 				 * @throws HookStoppedException Always.
 				 */
-				public function deleteObject(string $uuid, string $register, string $schema): bool {
+				public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+					$uuid = $deletion->uuid;
+					$register = $deletion->target->register;
+					$schema = $deletion->target->schema;
 					throw new HookStoppedException(
 						'You cannot delete this case yet.',
 						['blockedBy' => ['open-term']]
@@ -453,7 +457,10 @@ class CaseLifecycleControllerTest extends TestCase {
 			 *
 			 * @return bool Always true.
 			 */
-			public function deleteObject(string $uuid, string $register, string $schema): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$this->seen = [$uuid, $register, $schema];
 				return true;
 			}

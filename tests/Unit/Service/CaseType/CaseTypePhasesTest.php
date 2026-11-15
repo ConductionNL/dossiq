@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 
 use OCA\Dossiq\Service\CaseType\CaseTypePhases;
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Task\TaskDeclaration;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
@@ -37,6 +38,11 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the phases a case type page shows.
  *
  * @covers \OCA\Dossiq\Service\CaseType\CaseTypePhases
+ * @uses \OCA\Dossiq\Service\CaseType\AlwaysAvailableActDeclaration
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Task\TaskDeclaration
  */
 class CaseTypePhasesTest extends TestCase {
 
@@ -47,20 +53,33 @@ class CaseTypePhasesTest extends TestCase {
 	 * @param array<int, array<string, mixed>>       $statuses The statuses.
 	 * @param array<string, mixed>|null              $template The active template.
 	 * @param string                                 $language The reader's language.
+	 * @param array<int, array<string, mixed>>       $roles    The role types.
 	 *
 	 * @return CaseTypePhases The service.
 	 */
-	private function phases(array $caseType, array $statuses, ?array $template, string $language = 'nl'): CaseTypePhases {
+	private function phases(array $caseType, array $statuses, ?array $template, string $language = 'nl', array $roles = []): CaseTypePhases {
 		$resolver = $this->createMock(CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturn($caseType);
 		$resolver->method('statusTypesFor')->willReturn($statuses);
+		$resolver->method('chainFor')->willReturn([['id' => 'ct']]);
+		$store = $this->createMock(originalClassName: CaseTypeStore::class);
+		$store->method('rowsOfType')->willReturnMap([['role_type_schema', 'ct', $roles]]);
+		$store->method('rowId')->willReturnCallback(
+			static fn (array $row): string => (string) ($row['id'] ?? ($row['@self']['id'] ?? ''))
+		);
 		$templates = $this->createMock(WorkflowTemplateLoader::class);
 		$templates->method('getActiveTemplate')->willReturn($template);
 
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('getLanguageCode')->willReturn($language);
 
-		return new CaseTypePhases(resolver: $resolver, templates: $templates, declarations: new TaskDeclaration(), text: new TranslatedText(l10n: $l10n));
+		return new CaseTypePhases(
+			resolver: $resolver,
+			templates: $templates,
+			declarations: new TaskDeclaration(),
+			text: new TranslatedText(l10n: $l10n),
+			store: $store
+		);
 	}//end phases()
 
 	/**
@@ -89,6 +108,7 @@ class CaseTypePhasesTest extends TestCase {
 		$result = $this->phases(caseType: ['id' => 'ct'], statuses: $this->statuses(), template: $template)->phasesFor(caseTypeId: 'ct');
 
 		$this->assertSame(['s1', 's2'], array_column($result['phases'], 'id'));
+		$this->assertSame(['ct', 'ct'], array_column($result['phases'], 'caseTypeId'));
 		$this->assertSame(['Volledigheid toetsen', 'Ontvangstbevestiging'], array_column($result['phases'][0]['tasks'], 'title'));
 		$this->assertSame(5, $result['phases'][0]['tasks'][0]['leadTimeDays']);
 		$this->assertSame(['Intaker'], $result['phases'][0]['tasks'][0]['candidateGroups']);
@@ -130,12 +150,49 @@ class CaseTypePhasesTest extends TestCase {
 		$this->assertNull($this->phases(caseType: [], statuses: [], template: null)->phasesFor(caseTypeId: 'missing'));
 	}//end testAlwaysAvailableActsAndAnUnreadableType()
 	/**
+	 * Statuses that name one phase share it: named by the phase, ordered by the
+	 * first of them, holding the tasks of all of them. A final status with no
+	 * phase and no task is not a phase once the type is phased; without any
+	 * phase every status stays its own phase.
+	 *
+	 * @return void
+	 */
+	public function testStatusesThatNameOnePhaseShareIt(): void {
+		$statuses = [
+			['id' => 'ontv', 'name' => 'Ontvangen', 'order' => 1, 'phase' => 'Ontvangst'],
+			['id' => 'aanv', 'name' => 'Aanvullende gegevens gevraagd', 'order' => 2, 'phase' => 'Ontvangst'],
+			['id' => 'beh', 'name' => 'In behandeling', 'order' => 3, 'phase' => 'Beoordeling'],
+			['id' => 'bes', 'name' => 'Besluit', 'order' => 4, 'phase' => ['nl' => 'Besluit', 'en' => 'Decision']],
+			['id' => 'verl', 'name' => 'Verleend', 'order' => 5, 'isFinal' => true],
+			['id' => 'weig', 'name' => 'Geweigerd', 'order' => 6, 'isFinal' => true],
+		];
+		$template = ['steps' => [
+			['id' => 't1', 'title' => 'Volledigheid toetsen', 'status' => 'ontv', 'order' => 1],
+			['id' => 't2', 'title' => 'Ontvangstbevestiging', 'status' => 'aanv', 'order' => 2],
+			['id' => 't3', 'title' => 'Toets aan het omgevingsplan', 'status' => 'beh', 'order' => 1],
+			['id' => 't4', 'title' => 'Besluit opstellen', 'status' => 'bes', 'order' => 1],
+		]];
+		$result = $this->phases(caseType: ['id' => 'ct'], statuses: $statuses, template: $template)->phasesFor(caseTypeId: 'ct');
+
+		$this->assertSame(['Ontvangst', 'Beoordeling', 'Besluit'], array_column($result['phases'], 'name'));
+		$this->assertSame(['ontv', 'aanv'], $result['phases'][0]['statusIds']);
+		$this->assertSame(['Volledigheid toetsen', 'Ontvangstbevestiging'], array_column($result['phases'][0]['tasks'], 'title'));
+		$this->assertSame(['Besluit opstellen'], array_column($result['phases'][2]['tasks'], 'title'));
+		$this->assertSame([], $result['unplaced']);
+		// Numbered by place, not by the first status's order (3 and 4): "Fase 2: Beoordeling".
+		$this->assertSame(expected: [1, 2, 3], actual: array_column(array: $result['phases'], column_key: 'number'));
+
+		$plain = $this->phases(caseType: ['id' => 'ct'], statuses: $this->statuses(), template: null)->phasesFor(caseTypeId: 'ct');
+		$this->assertSame(['Ontvangst', 'Beoordeling'], array_column($plain['phases'], 'name'));
+	}//end testStatusesThatNameOnePhaseShareIt()
+
+	/**
 	 * A status name is translatable, so the store answers a language map; the
 	 * endpoint answers it as text in the reader's language.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testAPhaseIsNamedAsTextInTheReadersLanguage(): void {
 		$result = $this->phases(
@@ -147,4 +204,86 @@ class CaseTypePhasesTest extends TestCase {
 
 		self::assertSame('Intake', $result['phases'][0]['name']);
 	}//end testAPhaseIsNamedAsTextInTheReadersLanguage()
+
+	/**
+	 * A task names the role it routes to, in the reader's language, and keeps
+	 * its description: DqZaaktype reads "Intaker · 5 werkdagen" on a task with
+	 * a term, and the description on one without. A task routed to no role, or
+	 * to a role the type does not have, names none.
+	 *
+	 * @return void
+	 */
+	public function testATaskNamesItsRoleAndKeepsItsDescription(): void {
+		$template = ['steps' => [
+			[
+				'id'          => 't1',
+				'title'       => 'Volledigheid toetsen',
+				'status'      => 's1',
+				'order'       => 1,
+				'routingRule' => ['roleType' => 'r-in'],
+				'task'        => ['leadTimeDays' => 5],
+			],
+			['id' => 't2', 'title' => 'Ontvangstbevestiging', 'status' => 's1', 'order' => 2, 'description' => ' Automatisch, bericht aan de aanvrager '],
+			['id' => 't3', 'title' => 'Besluit opstellen', 'status' => 's2', 'order' => 1, 'assigneeRole' => 'r-vv'],
+			['id' => 't4', 'title' => 'Zwerver', 'status' => 's2', 'order' => 2, 'routingRule' => ['roleType' => 'r-gone']],
+		]];
+		$roles    = [
+			['id' => 'r-in', 'name' => ['nl' => 'Intaker', 'en' => 'Intake officer']],
+			['@self' => ['id' => 'r-vv'], 'name' => 'Vergunningverlener'],
+		];
+		$result   = $this->phases(
+			caseType: ['id' => 'ct'],
+			statuses: $this->statuses(),
+			template: $template,
+			roles: $roles
+		)->phasesFor(caseTypeId: 'ct');
+
+		self::assertSame(expected: ['Intaker', ''], actual: array_column($result['phases'][0]['tasks'], 'roleName'));
+		self::assertSame(expected: ['', 'Automatisch, bericht aan de aanvrager'], actual: array_column($result['phases'][0]['tasks'], 'description'));
+		self::assertSame(expected: ['Vergunningverlener', ''], actual: array_column($result['phases'][1]['tasks'], 'roleName'));
+	}//end testATaskNamesItsRoleAndKeepsItsDescription()
+	/**
+	 * A phase is identified and ordered by its EARLIEST status, whatever order
+	 * the statuses arrive in; a status with no id belongs to no phase.
+	 *
+	 * @return void
+	 */
+	public function testAPhaseTakesItsEarliestStatusWhateverTheWireOrder(): void {
+		$statuses = [
+			['name' => 'Zonder id', 'order' => 0, 'phase' => 'Spook'],
+			['id' => 'beh', 'name' => 'In behandeling', 'order' => 3, 'phase' => 'Beoordeling'],
+			['id' => 'aanv', 'name' => 'Aanvullende gegevens gevraagd', 'order' => 2, 'phase' => 'Ontvangst'],
+			['id' => 'ontv', 'name' => 'Ontvangen', 'order' => 1, 'phase' => 'ontvangst'],
+		];
+		$template = ['steps' => [
+			['id' => 't1', 'title' => 'Volledigheid toetsen', 'status' => 'ontv', 'order' => 1, 'routingRule' => 'r-in', 'assigneeRole' => 'r-in'],
+		]];
+		$result = $this->phases(
+			caseType: ['id' => 'ct'],
+			statuses: $statuses,
+			template: $template,
+			roles: [['id' => 'r-in', 'name' => 'Intaker']]
+		)->phasesFor(caseTypeId: 'ct');
+
+		$this->assertSame(['Ontvangst', 'Beoordeling'], array_column($result['phases'], 'name'));
+		$this->assertSame(['ontv', 'beh'], array_column($result['phases'], 'id'));
+		$this->assertSame([1, 3], array_column($result['phases'], 'order'));
+		$this->assertSame(['aanv', 'ontv'], $result['phases'][0]['statusIds']);
+		// A routing rule that is not an object routes by the step's own assignee role.
+		$this->assertSame('r-in', $result['phases'][0]['tasks'][0]['roleTypeId']);
+		$this->assertSame('Intaker', $result['phases'][0]['tasks'][0]['roleName']);
+	}//end testAPhaseTakesItsEarliestStatusWhateverTheWireOrder()
+
+	/**
+	 * A template whose steps are not a list runs no task, rather than failing.
+	 *
+	 * @return void
+	 */
+	public function testATemplateWithoutAStepListRunsNoTask(): void {
+		$result = $this->phases(caseType: ['id' => 'ct'], statuses: $this->statuses(), template: ['steps' => 'broken'])->phasesFor(caseTypeId: 'ct');
+
+		$this->assertSame(0, $result['taskCount']);
+		$this->assertSame([[], []], array_column($result['phases'], 'tasks'));
+		$this->assertSame([], $result['unplaced']);
+	}//end testATemplateWithoutAStepListRunsNoTask()
 }//end class

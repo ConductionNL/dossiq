@@ -49,6 +49,8 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Minimal ObjectService surface used by RoutingController::reroute().
@@ -69,7 +71,7 @@ interface RoutingControllerContractObjectService {
 	 *
 	 * @return mixed The object.
 	 */
-	public function find(int|string $id, string $register = '', string $schema = ''): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -77,6 +79,7 @@ interface RoutingControllerContractObjectService {
  *
  * @covers \OCA\Dossiq\Controller\RoutingController
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Support\ObjectArray
  */
 class RoutingControllerContractTest extends TestCase {
 
@@ -244,7 +247,11 @@ class RoutingControllerContractTest extends TestCase {
 		$objectService = $this->createMock(RoutingControllerContractObjectService::class);
 		$objectService->expects($this->once())
 			->method('find')
-			->with('zaak-1', 'dossiq', 'zaak')
+			->with(...LegacyObjectArgs::with(method: 'find', expected: [
+					'id' => 'zaak-1',
+					'register' => 'dossiq',
+					'schema' => 'zaak',
+				]))
 			->willReturn(['id' => 'zaak-1', 'workflowTemplate' => '']);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);

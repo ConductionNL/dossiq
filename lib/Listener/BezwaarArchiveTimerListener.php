@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTriggerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTimer;
-use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -60,15 +60,15 @@ class BezwaarArchiveTimerListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param SettingsService       $settingsService Names the watched schema.
-	 * @param BezwaarArchiveTimer   $timer           Arms and cancels the timer.
-	 * @param BezwaarArchiveTrigger $trigger         Acts on a trigger already due.
+	 * @param SettingsServiceInterface       $settingsService Names the watched schema.
+	 * @param BezwaarArchiveTimerInterface   $timer           Arms and cancels the timer.
+	 * @param BezwaarArchiveTriggerInterface $trigger         Acts on a trigger already due.
 	 * @param LoggerInterface       $logger          Logs a failed sync.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly BezwaarArchiveTimer $timer,
-		private readonly BezwaarArchiveTrigger $trigger,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly BezwaarArchiveTimerInterface $timer,
+		private readonly BezwaarArchiveTriggerInterface $trigger,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -85,7 +85,7 @@ class BezwaarArchiveTimerListener implements IEventListener {
 	public function handle(Event $event): void {
 		try {
 			$saved  = $this->savedObject(event: $event);
-			$schema = (string) $this->settingsService->getConfigValue(BezwaarArchiveTrigger::SCHEMA_CONFIG_KEY);
+			$schema = (string) $this->settingsService->getConfigValue(BezwaarArchiveTriggerInterface::SCHEMA_CONFIG_KEY);
 			if ($saved === null
 				|| $this->inSchema(object: $saved, configured: $schema) === false
 				|| $this->unchanged(before: $this->previousObject(event: $event), after: $saved, fields: self::TIMED_FIELDS) === true
@@ -93,7 +93,7 @@ class BezwaarArchiveTimerListener implements IEventListener {
 				return;
 			}
 
-			if ($this->timer->sync(trigger: $saved) === BezwaarArchiveTimer::DUE) {
+			if ($this->timer->sync(trigger: $saved) === BezwaarArchiveTimerInterface::DUE) {
 				$this->trigger->process(trigger: $saved);
 			}
 		} catch (Throwable $e) {

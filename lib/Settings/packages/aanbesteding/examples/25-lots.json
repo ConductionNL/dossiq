@@ -1,0 +1,49 @@
+{
+  "schema": "case_schema",
+  "rows": [
+    {
+      "id": "cc1188cd-b4b4-5679-9889-9ccc75bede3f",
+      "title": "Perceel 1: ambulante jeugdhulp regio Noord",
+      "description": "Ambulante jeugdhulp voor de gemeenten in het noorden van de regio.",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "status": "f7d821cb-59f6-52b4-bc18-772734ad5336",
+      "parentCase": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "intakeChannel": "manual",
+      "confidentiality": "zaakvertrouwelijk",
+      "startDate": "{{date:-35}}",
+      "receivedAt": "{{datetime:-35 08:10}}",
+      "currentStatusEnteredAt": "{{datetime:-11 12:10}}",
+      "statusHistory": [
+        {
+          "status": "f7d821cb-59f6-52b4-bc18-772734ad5336",
+          "enteredAt": "{{datetime:-11 12:10}}"
+        }
+      ],
+      "tags": [
+        "voorbeeld"
+      ]
+    },
+    {
+      "id": "0cfc0e1c-0a23-5641-95d7-4c8128f597d6",
+      "title": "Perceel 2: ambulante jeugdhulp regio Zuid",
+      "description": "Ambulante jeugdhulp voor de gemeenten in het zuiden van de regio.",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "status": "f7d821cb-59f6-52b4-bc18-772734ad5336",
+      "parentCase": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "intakeChannel": "manual",
+      "confidentiality": "zaakvertrouwelijk",
+      "startDate": "{{date:-35}}",
+      "receivedAt": "{{datetime:-35 08:10}}",
+      "currentStatusEnteredAt": "{{datetime:-11 12:10}}",
+      "statusHistory": [
+        {
+          "status": "f7d821cb-59f6-52b4-bc18-772734ad5336",
+          "enteredAt": "{{datetime:-11 12:10}}"
+        }
+      ],
+      "tags": [
+        "voorbeeld"
+      ]
+    }
+  ]
+}

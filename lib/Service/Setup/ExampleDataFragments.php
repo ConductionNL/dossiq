@@ -16,7 +16,10 @@
  * - `@myGroup`: that user's first group other than `admin`, by id, the team
  *   whose queue the example cases land in;
  * - `@today`, `@today+3d`, `@today-2d`: a date relative to the load day;
- * - `@now`, `@now-1d`: a date-time relative to the moment of loading.
+ * - `@now`, `@now-1d`: a date-time relative to the moment of loading;
+ * - `@ref:<schema>:<slug>` naming no fragment object: the id of the stored
+ *   register object with that slug, such as a case type the register ships.
+ *   A reference to another fragment object is left for the importer.
  * Everything in these files is fictional.
  *
  * @category Service
@@ -33,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 
 declare(strict_types=1);
@@ -42,18 +45,23 @@ namespace OCA\Dossiq\Service\Setup;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IGroupManager;
 use OCP\IUserSession;
+use Throwable;
 
 /**
  * Reads the curated example data fragments and fills in their load-time tokens.
  *
- * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 class ExampleDataFragments {
+
+	use SearchesObjects;
 
 	/**
 	 * App-relative directory of the fragments.
@@ -69,12 +77,14 @@ class ExampleDataFragments {
 	 * @param IUserSession  $userSession The user loading the example data.
 	 * @param ITimeFactory  $time        The clock the relative dates count from.
 	 * @param IGroupManager $groups      The loading user's groups, for `@myGroup`.
+	 * @param SettingsService|null $settingsService The register and the ObjectService, for stored references.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
 		private readonly IGroupManager $groups,
+		private readonly ?SettingsService $settingsService = null,
 	) {
 	}//end __construct()
 
@@ -83,7 +93,7 @@ class ExampleDataFragments {
 	 *
 	 * @return array<int, string> The slugs.
 	 *
-	 * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function slugs(): array {
 		return array_values(
@@ -99,10 +109,10 @@ class ExampleDataFragments {
 	 *
 	 * @return array<int, array<string, mixed>> The objects, in file name order.
 	 *
-	 * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function rawObjects(): array {
-		$files = glob($this->appManager->getAppPath(Application::APP_ID) . self::DIRECTORY . '/*.json');
+		$files = glob($this->appManager->getAppPath(AppIdentity::APP_ID) . self::DIRECTORY . '/*.json');
 		if ($files === false) {
 			return [];
 		}
@@ -131,7 +141,7 @@ class ExampleDataFragments {
 	 *
 	 * @return array<int, array<string, mixed>> The objects.
 	 *
-	 * @spec openspec/changes/example-data-fills-the-work-pages/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function objects(array $skipSlugs = []): array {
 		$who = ['@me' => '', '@myGroup' => ''];
@@ -143,16 +153,109 @@ class ExampleDataFragments {
 
 		$now = $this->time->now();
 
+		$raw = $this->rawObjects();
 		$fresh = array_filter(
-			$this->rawObjects(),
+			$raw,
 			static fn (array $object): bool => in_array((string)($object['@self']['slug'] ?? ''), $skipSlugs, true) === false
 		);
+		$who = array_merge($who, $this->storedReferences(objects: $fresh, siblings: $raw));
 
 		return array_map(
-			fn (array $object): array => $this->resolve(value: $object, who: $who, now: $now),
+			fn (array $object): array => $this->resolve(value: $object, tokens: ['who' => $who, 'now' => $now]),
 			array_values($fresh)
 		);
 	}//end objects()
+
+	/**
+	 * The stored ids behind the `@ref:<schema>:<slug>` tokens that name no fragment object.
+	 *
+	 * A token that cannot be resolved is left out, so it stays in the object
+	 * and the importer reports it as unresolved.
+	 *
+	 * @param array<int, array<string, mixed>> $objects  The objects being loaded.
+	 * @param array<int, array<string, mixed>> $siblings Every fragment object.
+	 *
+	 * @return array<string, string> The ids, keyed by token.
+	 */
+	private function storedReferences(array $objects, array $siblings): array {
+		$fragments = $this->siblingFragments(siblings: $siblings);
+		$tokens = [];
+		array_walk_recursive(
+			$objects,
+			static function (mixed $value) use (&$tokens, $fragments): void {
+				if (is_string($value) === true && preg_match('/^@ref:[^:]+:.+$/', $value) === 1 && isset($fragments[$value]) === false) {
+					$tokens[$value] = true;
+				}
+			}
+		);
+
+		return $this->storedIdsOf(tokens: array_keys($tokens));
+	}//end storedReferences()
+
+	/**
+	 * The reference tokens the fragment's own objects answer to.
+	 *
+	 * @param array<int, array<string, mixed>> $siblings The fragment's objects.
+	 *
+	 * @return array<string, true>
+	 */
+	private function siblingFragments(array $siblings): array {
+		$fragments = [];
+		foreach ($siblings as $sibling) {
+			$fragments['@ref:' . (string)($sibling['@self']['schema'] ?? '') . ':' . (string)($sibling['@self']['slug'] ?? '')] = true;
+		}
+
+		return $fragments;
+	}//end siblingFragments()
+
+	/**
+	 * The stored id of each reference token, keyed by the token; a token nothing answers to is left out.
+	 *
+	 * @param array<int, string> $tokens The `@ref:<schema>:<slug>` tokens.
+	 *
+	 * @return array<string, string>
+	 */
+	private function storedIdsOf(array $tokens): array {
+		$ids = [];
+		foreach ($tokens as $token) {
+			[, $schema, $slug] = explode(':', $token, 3);
+			$id = $this->storedId(schema: $schema, slug: $slug);
+			if ($id !== '') {
+				$ids[$token] = $id;
+			}
+		}
+
+		return $ids;
+	}//end storedIdsOf()
+
+	/**
+	 * The id of the stored register object of a schema with a slug.
+	 *
+	 * @param string $schema The schema slug.
+	 * @param string $slug   The object slug.
+	 *
+	 * @return string The id, or '' when it is not stored or cannot be read.
+	 */
+	private function storedId(string $schema, string $slug): string {
+		$objectService = $this->settingsService?->getObjectService();
+		if ($objectService === null) {
+			return '';
+		}
+
+		$register = $this->settingsService->getConfigValue('register', AppIdentity::APP_ID);
+
+		try {
+			$row = $this->asSystemWithoutUser(
+				objectService: $objectService,
+				userSession: $this->userSession,
+				operation: fn (): ?array => $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $slug),
+			);
+		} catch (Throwable) {
+			return '';
+		}
+
+		return (string)($row['@self']['id'] ?? $row['id'] ?? '');
+	}//end storedId()
 
 	/**
 	 * The loading user's team: the first of their groups, by id, that is not
@@ -173,33 +276,15 @@ class ExampleDataFragments {
 	 * Fill the tokens in one value, recursively.
 	 *
 	 * @param array<array-key, mixed> $value The object, or a nested object or list.
-	 * @param array<string, string> $who   `@me` and `@myGroup`, '' when unknown.
-	 * @param DateTimeImmutable     $now   The moment of loading.
+	 * @param array{who: array<string, string>, now: DateTimeImmutable} $tokens `@me`, `@myGroup` and stored
+	 *        references ('' when unknown), and the moment of loading.
 	 *
 	 * @return array<array-key, mixed> The value with tokens filled in.
 	 */
-	private function resolve(array $value, array $who, DateTimeImmutable $now): array {
+	private function resolve(array $value, array $tokens): array {
 		$isList = array_is_list($value);
-		foreach ($value as $key => $item) {
-			if (is_array($item) === true) {
-				$value[$key] = $this->resolve(value: $item, who: $who, now: $now);
-				continue;
-			}
-
-			if (is_string($item) === false) {
-				continue;
-			}
-
-			if (array_key_exists($item, $who) === true) {
-				$value[$key] = $who[$item];
-				if ($who[$item] === '') {
-					unset($value[$key]);
-				}
-
-				continue;
-			}
-
-			$value[$key] = $this->date(token: $item, now: $now);
+		foreach (array_keys($value) as $key) {
+			$value = $this->resolvedEntry(value: $value, entry: ['key' => $key] + $tokens);
 		}
 
 		// A dropped list element must not leave a gap: a list with a gap
@@ -210,6 +295,57 @@ class ExampleDataFragments {
 
 		return $value;
 	}//end resolve()
+
+	/**
+	 * Resolve one entry of a fragment value: a nested array in full, a person token to its
+	 * user (dropped when that user is empty), anything else as a date token.
+	 *
+	 * @param array                 $value The value being resolved.
+	 * @param array{key: int|string, who: array<string, string>, now: DateTimeImmutable} $entry The entry's key, the
+	 *        person tokens and the users they resolve to, and the moment date tokens are relative to.
+	 *
+	 * @return array The value with this entry resolved.
+	 */
+	private function resolvedEntry(array $value, array $entry): array {
+		['key' => $key, 'who' => $who, 'now' => $now] = $entry;
+		$item = $value[$key];
+		if (is_array($item) === true) {
+			$value[$key] = $this->resolve(value: $item, tokens: ['who' => $who, 'now' => $now]);
+			return $value;
+		}
+
+		if (is_string($item) === false) {
+			return $value;
+		}
+
+		if (array_key_exists($item, $who) === true) {
+			return $this->withPerson(value: $value, entry: $entry);
+		}
+
+		$value[$key] = $this->date(token: $item, now: $now);
+
+		return $value;
+	}//end resolvedEntry()
+
+	/**
+	 * Resolve a person token entry to its user, dropping the entry when that user is empty.
+	 *
+	 * @param array                 $value The value being resolved.
+	 * @param array{key: int|string, who: array<string, string>} $entry The entry's key, holding a person token, and
+	 *        the person tokens and the users they resolve to.
+	 *
+	 * @return array The value with this entry resolved.
+	 */
+	private function withPerson(array $value, array $entry): array {
+		['key' => $key, 'who' => $who] = $entry;
+		$item = $value[$key];
+		$value[$key] = $who[$item];
+		if ($who[$item] === '') {
+			unset($value[$key]);
+		}
+
+		return $value;
+	}//end withPerson()
 
 	/**
 	 * Fill one date token; any other string is returned as it is.

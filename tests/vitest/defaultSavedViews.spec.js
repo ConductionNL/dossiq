@@ -7,7 +7,7 @@
  * equal to the chip it came from: a default that drifted from its chip would
  * count one set of cases while the chip beside it counts another.
  *
- * @spec openspec/changes/saved-views-default-views/specs/case-lists/spec.md
+ * @spec openspec/specs/case-lists/spec.md
  */
 
 import fs from 'node:fs'
@@ -21,13 +21,31 @@ const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const chip = (label) => page('Cases').config.quickFilters.find((q) => q.label === label).filter
-const byslug = (id) => Object.fromEntries(page(id).config.defaultSavedViews.map((d) => [d.slug, d.filters]))
+// A view's base conditions: its own filters, plus the ones it locks.
+const byslug = (id) => Object.fromEntries(page(id).config.defaultSavedViews.map((d) => [d.slug, { ...d.filters, ...d.overrides?.lockedFilters }]))
+
+const defaults = byslug('Cases')
 
 describe('default views on Cases', () => {
-	const defaults = byslug('Cases')
 
-	it('ships four, each with a Dutch name', () => {
-		expect(Object.keys(defaults)).toEqual(['mine-overdue', 'mine-due-this-week', 'unclaimed-overdue', 'woo-requests'])
+	// DqFilterBeheren leads with the board's three (default-views-board-first);
+	// the ten before them follow, re-integration pathways among them.
+	it('ships thirteen, the board\'s three first, each with a Dutch name', () => {
+		expect(Object.keys(defaults)).toEqual([
+			'my-cases',
+			'all-open-cases',
+			'deadline-passed',
+			'mine-overdue',
+			'mine-due-this-week',
+			'unclaimed-overdue',
+			'woo-requests',
+			'subsidies',
+			're-integration-pathways',
+			'my-work',
+			'team-queue',
+			'unclaimed-due-this-week',
+			'data-subject-requests',
+		])
 		for (const d of page('Cases').config.defaultSavedViews) {
 			expect(nl[d.name]).toBeTruthy()
 		}
@@ -48,11 +66,30 @@ describe('Woo requests as a view of Cases', () => {
 	})
 })
 
-describe('default views on Queue', () => {
-	it('narrow the queue by the Overdue and Due this week windows only', () => {
-		const defaults = byslug('Queue')
-		const window = (f) => Object.fromEntries(Object.entries(f).filter(([k]) => k.startsWith('deadline[')))
-		expect(defaults.late).toEqual(window(chip('Overdue')))
-		expect(defaults['this-week']).toEqual(window(chip('Due this week')))
+describe('lists that were pages, as views of Cases', () => {
+	it('keeps the team queue equal to the Unclaimed chip on the reader\'s team, with its late and this-week windows', () => {
+		expect(defaults['team-queue']).toEqual({ ...chip('Unclaimed'), assignedGroup: '@myTeam' })
+		expect(defaults['unclaimed-overdue']).toEqual({ ...chip('Unclaimed'), ...chip('Overdue') })
+		expect(defaults['unclaimed-due-this-week']).toEqual({ ...chip('Unclaimed'), ...chip('Due this week') })
+	})
+
+	it('opens Assigned to me on the urgency order, which the Cases sort offers from the work queue', () => {
+		const view = page('Cases').config.defaultSavedViews.find((d) => d.slug === 'my-work')
+		expect(view.overrides.lockedFilters.assignee).toBe('@me')
+		expect(view.overrides.sortOption).toBe('urgency')
+		const option = page('Cases').config.sortSelectOptions.find((o) => o.value === view.overrides.sortOption)
+		expect(option.source.url).toBe('/apps/dossiq/api/work-queue')
+	})
+
+	it('keeps the data subject requests on the request kind', () => {
+		expect(defaults['data-subject-requests']).toEqual({ dataSubjectRequestType: ['inzage', 'correctie', 'verwijdering'] })
+	})
+})
+
+describe('Re-integration pathways as a view of Cases', () => {
+	it('lists the cases of the re-integration case type, newest start first', () => {
+		const view = page('Cases').config.defaultSavedViews.find((d) => d.slug === 're-integration-pathways')
+		expect(view.filters).toEqual({ caseTypeIdentifier: 're-integratietraject', statusHiddenInLists: false, isDraft: false })
+		expect(view.overrides.defaultSort).toEqual([{ key: 'startDate', order: 'desc' }])
 	})
 })

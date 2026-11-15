@@ -42,7 +42,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 declare(strict_types=1);
@@ -51,6 +51,7 @@ namespace OCA\Dossiq\Service\SociaalDomein;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CrossDomainExistenceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -58,9 +59,9 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
-class CrossDomainExistence {
+class CrossDomainExistence implements CrossDomainExistenceInterface {
 
 	/**
 	 * The schema the log is written to.
@@ -79,22 +80,6 @@ class CrossDomainExistence {
 	 * @var string
 	 */
 	public const ACTION = 'existence-lookup';
-
-	/**
-	 * The grounds a lookup may be made on.
-	 *
-	 * A CLOSED list, because an open text field is a field that fills up with
-	 * "onderzoek" and answers nobody's question afterwards. Each of these is a
-	 * ground somebody can be held to.
-	 *
-	 * @var array<string, string>
-	 */
-	public const GROUNDS = [
-		'wettelijke-taak' => 'Carrying out a statutory task in this domain',
-		'toestemming' => 'The person has consented to this lookup',
-		'vitaal-belang' => 'A vital interest of the person or of another',
-		'samenwerkingsafspraak' => 'A recorded cooperation agreement between the domains',
-	];
 
 	/**
 	 * The three fields the answer carries, and there are no others.
@@ -132,11 +117,92 @@ class CrossDomainExistence {
 	 *
 	 * @throws RefusedException When no ground is chosen, or the store cannot be read.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
 	 */
 	public function lookUp(string $bsn, string $ownDomain, string $ground, string $requester): array {
 		$this->assertGround(ground: $ground);
 
+		$bsn = $this->requirePerson(bsn: $bsn);
+
+		$found = $this->foundElsewhere(bsn: $bsn, ownDomain: $ownDomain);
+
+		// The log is written in the same act as the answer, including when the
+		// answer is that nothing exists: a lookup that found nothing is still a
+		// lookup that happened, and it is exactly the one a person asking what
+		// was looked up about them would otherwise never hear about.
+		$this->log(bsn: $bsn, ground: $ground, requester: $requester, returned: $this->describe(found: $found));
+
+		return $found;
+	}//end lookUp()
+
+	/**
+	 * One entry per other domain holding an open case or record about the person.
+	 *
+	 * @param string $bsn The person looked up.
+	 * @param string $ownDomain The domain the caller works in, which is excluded.
+	 *
+	 * @return array<int, array{exists: bool, domain: string, contact: string}> The entries.
+	 *
+	 * @throws RefusedException When the store cannot be read.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function foundElsewhere(string $bsn, string $ownDomain): array {
+		$found = [];
+		// Procedures that moved onto a case type answer through their cases.
+		$caseContacts = $this->store->openCaseContactsAbout(bsn: $bsn);
+		foreach (SociaalDomeinStore::DOMAINS as $domain => $declaration) {
+			if ($domain === $ownDomain) {
+				continue;
+			}
+
+			$contact = $this->domainContact(
+				lookup: new DomainLookup(domain: $domain, declaration: $declaration, bsn: $bsn),
+				caseContacts: $caseContacts
+			);
+			if ($contact === null) {
+				continue;
+			}
+
+			// FIELD BY FIELD. Nothing of the row or the case travels: not its
+			// title, not its status, not its dates and not its number. A
+			// property added to either tomorrow appears in nothing here.
+			$found[] = ['exists' => true, 'domain' => $domain, 'contact' => $contact];
+		}
+
+		return $found;
+	}//end foundElsewhere()
+
+	/**
+	 * Who to contact in a domain: its open record's contact, else its open case's.
+	 *
+	 * @param DomainLookup          $lookup       The domain, its declaration and the person looked up.
+	 * @param array<string, string> $caseContacts The open cases' contacts by domain.
+	 *
+	 * @return string|null The contact, or null when the domain holds nothing open.
+	 *
+	 * @throws RefusedException When the store cannot be read.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function domainContact(DomainLookup $lookup, array $caseContacts): ?string {
+		$contact = $this->openRecordContact(lookup: $lookup);
+
+		return ($contact ?? ($caseContacts[$lookup->domain] ?? null));
+	}//end domainContact()
+
+	/**
+	 * The trimmed BSN, refusing an empty one.
+	 *
+	 * @param string $bsn The person looked up.
+	 *
+	 * @return string The trimmed BSN.
+	 *
+	 * @throws RefusedException When no person is named.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function requirePerson(string $bsn): string {
 		$bsn = trim($bsn);
 		if ($bsn === '') {
 			throw new RefusedException(
@@ -146,48 +212,39 @@ class CrossDomainExistence {
 			);
 		}
 
-		$found = [];
-		foreach (SociaalDomeinStore::DOMAINS as $domain => $declaration) {
-			if ($domain === $ownDomain) {
+		return $bsn;
+	}//end requirePerson()
+
+	/**
+	 * The contact of the first open, unmigrated record a domain holds about the person.
+	 *
+	 * @param DomainLookup $lookup The domain, its declaration and the person looked up.
+	 *
+	 * @return string|null The contact, or null when the domain holds no open record.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 */
+	private function openRecordContact(DomainLookup $lookup): ?string {
+		$declaration = $lookup->declaration;
+		// The BSN KEY comes from the domain's own declaration, because the
+		// three schemas do not spell it the same way: a Jeugdwet case names
+		// the juvenile in `jeugdigeBsn`. Filtering it on `bsn` answers a
+		// clean "nothing here" rather than an error.
+		$filters = [$declaration['bsnKey'] => $lookup->bsn];
+
+		$contact = null;
+		foreach ($this->store->rows(schema: $declaration['schema'], filters: $filters) as $row) {
+			// A record that moved onto a case answers through its case.
+			if ($this->isOpen(row: $row) === false || trim((string)($row['migratedTo'] ?? '')) !== '') {
 				continue;
 			}
 
-			// The BSN KEY comes from the domain's own declaration, because the
-			// three schemas do not spell it the same way: a Jeugdwet case names
-			// the juvenile in `jeugdigeBsn`. Filtering it on `bsn` answers a
-			// clean "nothing here" rather than an error.
-			$filters = [$declaration['bsnKey'] => $bsn];
-
-			foreach ($this->store->rows(schema: $declaration['schema'], filters: $filters) as $row) {
-				if ($this->isOpen(row: $row) === false) {
-					continue;
-				}
-
-				// FIELD BY FIELD. Nothing of the row travels: not its title,
-				// not its status, not its dates and not its number. A property
-				// added to that schema tomorrow appears in nothing here.
-				$found[] = [
-					'exists' => true,
-					'domain' => $domain,
-					'contact' => $this->contactFor(row: $row, domain: $domain),
-				];
-				break;
-			}
+			$contact = $this->contactFor(row: $row, domain: $lookup->domain);
+			break;
 		}
 
-		// The log is written in the same act as the answer, including when the
-		// answer is that nothing exists: a lookup that found nothing is still a
-		// lookup that happened, and it is exactly the one a person asking what
-		// was looked up about them would otherwise never hear about.
-		$this->log(
-			bsn: $bsn,
-			ground: $ground,
-			requester: $requester,
-			returned: $this->describe(found: $found)
-		);
-
-		return $found;
-	}//end lookUp()
+		return $contact;
+	}//end openRecordContact()
 
 	/**
 	 * What was looked up about one person, with the grounds and the dates.
@@ -198,7 +255,7 @@ class CrossDomainExistence {
 	 *
 	 * @throws RefusedException When the log cannot be read.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	public function lookupsAbout(string $bsn): array {
 		$bsn = trim($bsn);
@@ -238,7 +295,7 @@ class CrossDomainExistence {
 	 *
 	 * @throws RefusedException When the ground is absent or unknown.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	public function assertGround(string $ground): void {
 		$ground = trim($ground);
@@ -272,7 +329,7 @@ class CrossDomainExistence {
 	 *
 	 * @throws RefusedException When the log cannot be written.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	private function log(string $bsn, string $ground, string $requester, string $returned): void {
 		$this->store->write(

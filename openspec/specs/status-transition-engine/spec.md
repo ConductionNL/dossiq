@@ -819,3 +819,69 @@ The DMN decision tables SHALL keep working unchanged, as the neighbour of the
 - **WHEN** the administrator tries the rule against the case
 - **THEN** the verdict SHALL be shown with the operand and the value it read
 - **AND** nothing SHALL be written to the case
+
+### Requirement: A lifecycle gesture saves the case as the term left it (REQ-STE-15)
+
+Suspending, resuming, extending and reopening a case SHALL save the case as it is
+stored after the statutory term moved, plus only the fields the gesture itself
+sets. A gesture SHALL NOT save a copy of the case read before the term moved: the
+deadline mirror writes the term's new end onto the case during the term gesture,
+and `deadline` is readOnly. An unexpected failure SHALL answer with the code
+`change_failed`, which the page translates.
+
+#### Scenario: Pausing a case with a statutory term succeeds
+@e2e exclude the readOnly refusal comes from OpenRegister's store, so it is reproduced by a store fake that refuses the same way; proven by tests/Unit/Service/CaseLifecycleServiceTest.php::testPauseOnATermSavesTheCaseTheMirrorWrote
+
+- **GIVEN** a case with a statutory term instance
+- **WHEN** a handler pauses it and the mirror moves the case's deadline
+- **THEN** the gesture SHALL succeed and the case SHALL keep the term's new end
+
+#### Scenario: Extending a case with a statutory term succeeds
+@e2e exclude the readOnly refusal comes from OpenRegister's store, so it is reproduced by a store fake that refuses the same way; proven by tests/Unit/Service/CaseLifecycleServiceTest.php::testExtendOnATermSavesTheCaseTheMirrorWrote
+
+- **GIVEN** a case with a statutory term instance
+- **WHEN** a handler extends it
+- **THEN** the case SHALL carry the new planned end date and extension count on top of the deadline the mirror wrote
+
+#### Scenario: An unexpected failure answers a code the page translates
+@e2e exclude an unexpected failure cannot be provoked from a browser; proven by tests/Unit/Controller/CaseLifecycleControllerTest.php::testAnUnexpectedFailureWithholdsItsDetail
+
+- **GIVEN** a gesture that fails for a reason that is not a refusal
+- **WHEN** the controller answers
+- **THEN** the answer SHALL be HTTP 500 with `code` `change_failed` and no detail of the failure
+
+### Requirement: A move MAY require every partly public document redacted
+
+The guard kind `documentAssessment` SHALL accept `require: redacted`. It SHALL pass only when every document of the case assessed as partly public has a redacted copy (`redactedDocumentRef`), and SHALL pass when the case has none. It SHALL read the assessments regardless of the caller. When they cannot be read, it SHALL fail with a sentence saying so. The Woo request flow SHALL require it, beside `assessed`, on the move from Lakken / Anonimiseren to Besluit, and the `woo-verzoek` package version SHALL rise so existing installs receive the flow.
+
+@e2e exclude The redacted copy needs filinq or the redaction upload route, which the e2e Woo journey does not exercise yet. Covered by DocumentAssessmentGuardRedactedTest and WooFlowGuardsTest through the real engine.
+
+#### Scenario: One copy is missing
+
+- **GIVEN** a Woo request in Lakken / Anonimiseren with two partly public documents, one with a redacted copy
+- **WHEN** the handler opens the moves out of its status
+- **THEN** "Besluit voorbereiden" is disabled with "1 van 2 deels openbare documenten wachten nog op een gelakte versie"
+
+#### Scenario: Every copy is there
+
+- **GIVEN** the same case after the second redacted copy is recorded
+- **THEN** "Besluit voorbereiden" is offered
+
+#### Scenario: An existing install receives the guard
+
+- **GIVEN** an instance that installed `woo-verzoek` 1.0.0 and never edited its flow
+- **WHEN** it upgrades to a dossiq shipping 1.1.0
+- **THEN** its Woo request flow carries the `redacted` requirement
+
+### Requirement: A required-field guard sees a sensitive answer without showing it (REQ-STE-SENS-001)
+
+When a case does not carry the guarded field at the top level or in `properties`, the required-field
+guard SHALL check the case's `sensitiveProperties` read as the system, and SHALL answer only
+whether the field is answered: the guard's details and message SHALL carry the field name and
+never the value. A case that cannot be read SHALL fail the guard.
+
+#### Scenario: A klantmanager outside dossiq-sensitive completes the tests
+- **GIVEN** a Bijstandsaanvraag whose asset and income tests are answered in `sensitiveProperties`
+- **AND** a mover who cannot read them
+- **WHEN** the mover takes "Toetsing afronden"
+- **THEN** the guard SHALL pass, and nothing of the tests SHALL be in its answer

@@ -37,6 +37,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
  * @uses   \OCA\Dossiq\Service\Intake\IntakeTermStart
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
+ * @uses   \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses   \OCA\Dossiq\Service\Support\ReferencedUuid
+ * @uses   \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class DeadlineCaseCreatedListenerTest extends TestCase {
 
@@ -179,7 +182,7 @@ class DeadlineCaseCreatedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testAnImportedReceiptDateStartsTheTerm(): void {
 		$this->listener(answer: null)->handle(

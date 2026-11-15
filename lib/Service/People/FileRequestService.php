@@ -14,9 +14,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\FileRequestServiceInterface;
+use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\Constants;
-use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
+use OCP\Files\Folder;
+use OCP\IUser;
 use OCP\IUserSession;
 use OCP\Share\IManager as IShareManager;
 use OCP\Share\IShare;
@@ -34,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
-class FileRequestService {
+class FileRequestService implements FileRequestServiceInterface {
 
 	/**
 	 * How long a request stands when the caller names no expiry.
@@ -84,14 +87,56 @@ class FileRequestService {
 			throw new RuntimeException('This person is not on this case', 404);
 		}
 
+		$request = new UploadRequest();
+		$request->email = $this->addressOf(person: $person);
+		$this->refuseWhenIndicated(person: $person);
+		$request->folder = $this->caseFolder(caseId: $caseId);
+		$request->user = $this->caller();
+		$request->expires = new DateTime('+' . $this->daysOf(days: $days) . ' days');
+		$request->note = $note;
+
+		$created = $this->createdShare(share: $this->uploadShare(request: $request));
+
+		return [
+			'recipient' => $request->email,
+			'recipientName' => $this->people->nameOf(link: $person),
+			'token' => (string)$created->getToken(),
+			'expiresAt' => $request->expires->format('Y-m-d'),
+		];
+	}//end request()
+
+	/**
+	 * The person's address, or a refusal when there is none.
+	 *
+	 * @param array<string, mixed> $person The person on the case.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When the person has no address (422).
+	 */
+	private function addressOf(array $person): string {
 		$email = $this->people->emailOf(link: $person);
 		if ($email === '') {
 			throw new RuntimeException('This person has no email address, so there is nobody to send the request to', 422);
 		}
 
-		// The refusal is evaluated HERE, where the message goes out, and not
-		// only in the dialog that lists who can be asked. A check that lives
-		// in one caller is a check the next caller does not have.
+		return $email;
+	}//end addressOf()
+
+	/**
+	 * Refuse a request the party's indicator refuses.
+	 *
+	 * The refusal is evaluated HERE, where the message goes out, and not
+	 * only in the dialog that lists who can be asked. A check that lives
+	 * in one caller is a check the next caller does not have.
+	 *
+	 * @param array<string, mixed> $person The person on the case.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When an indicator refuses the send (403).
+	 */
+	private function refuseWhenIndicated(array $person): void {
 		$partyUuid = $this->indicators->partyUuidOf(link: $person);
 
 		$refusal = $this->refusalFor(partyUuid: $partyUuid);
@@ -103,45 +148,84 @@ class FileRequestService {
 				403
 			);
 		}
+	}//end refuseWhenIndicated()
 
+	/**
+	 * The case folder, or a refusal when the case has none yet.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return Folder
+	 *
+	 * @throws RuntimeException When there is no folder (422).
+	 */
+	private function caseFolder(string $caseId): Folder {
 		$folder = $this->folders->folderOf(objectId: $caseId);
 		if ($folder === null) {
 			throw new RuntimeException('This case has no folder yet, so there is nowhere to upload to', 422);
 		}
 
+		return $folder;
+	}//end caseFolder()
+
+	/**
+	 * The signed-in caller, or a refusal.
+	 *
+	 * @return IUser
+	 *
+	 * @throws RuntimeException When nobody is signed in (401).
+	 */
+	private function caller(): IUser {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new RuntimeException('Not authenticated', 401);
 		}
 
-		$expires = new DateTime('+' . $this->daysOf(days: $days) . ' days');
+		return $user;
+	}//end caller()
+
+	/**
+	 * The create-only email share of the case folder.
+	 *
+	 * Create and nothing else: the party may put a file in, and can neither
+	 * read nor change what is already in the case folder.
+	 *
+	 * @param UploadRequest $request The checked request.
+	 *
+	 * @return IShare
+	 */
+	private function uploadShare(UploadRequest $request): IShare {
 		$share = $this->shares->newShare();
-		$share->setNode($folder);
+		$share->setNode($request->folder);
 		$share->setShareType(IShare::TYPE_EMAIL);
-		$share->setSharedWith($email);
-		$share->setSharedBy($user->getUID());
-		$share->setShareOwner($folder->getOwner()?->getUID() ?? $user->getUID());
-		// Create and nothing else: the party may put a file in, and can
-		// neither read nor change what is already in the case folder.
+		$share->setSharedWith($request->email);
+		$share->setSharedBy($request->user->getUID());
+		$share->setShareOwner($request->folder->getOwner()?->getUID() ?? $request->user->getUID());
 		$share->setPermissions(Constants::PERMISSION_CREATE);
-		$share->setExpirationDate($expires);
-		if ($note !== '') {
-			$share->setNote($note);
+		$share->setExpirationDate($request->expires);
+		if ($request->note !== '') {
+			$share->setNote($request->note);
 		}
 
+		return $share;
+	}//end uploadShare()
+
+	/**
+	 * Create the share; a refusal of the share manager is reported.
+	 *
+	 * @param IShare $share The share.
+	 *
+	 * @return IShare The created share.
+	 *
+	 * @throws RuntimeException When the share could not be created (500).
+	 */
+	private function createdShare(IShare $share): IShare {
 		try {
-			$created = $this->shares->createShare($share);
+			return $this->shares->createShare($share);
 		} catch (Throwable $e) {
 			throw new RuntimeException('The file request could not be sent: ' . $e->getMessage(), 500, $e);
 		}
-
-		return [
-			'recipient' => $email,
-			'recipientName' => $this->people->nameOf(link: $person),
-			'token' => (string)$created->getToken(),
-			'expiresAt' => $expires->format('Y-m-d'),
-		];
-	}//end request()
+	}//end createdShare()
 
 	/**
 	 * The indicator refusing a send to this party, or null when nothing refuses.

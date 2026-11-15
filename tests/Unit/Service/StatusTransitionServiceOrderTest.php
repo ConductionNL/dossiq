@@ -53,6 +53,8 @@ use RuntimeException;
  * The order of the engine's checks and writes.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionStep
  * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
  * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -536,6 +538,30 @@ class StatusTransitionServiceOrderTest extends TestCase {
 		$this->assertTrue($this->calls[2][1]['noWorkflowTemplate']);
 		$this->assertSame(['status', 'statusRecord', 'dispatchedActions', 'failedActions'], array_keys($answer));
 	}//end testTheFreeFormRefusalsAndTheFreeFormMove()
+
+	/**
+	 * An administrator's free-form move on a case that does not exist writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testAFreeFormMoveOnAMissingCaseIsRefused(): void {
+		$this->world['cases'] = [null];
+
+		$this->assertSame('case_not_found', $this->refusalOf(fn () => $this->engine()->executeFreeForm('case-404', 'st-elsewhere', null, 'jan')));
+		$this->assertSame([], $this->calls);
+	}//end testAFreeFormMoveOnAMissingCaseIsRefused()
+
+	/**
+	 * isAdmin answers what the group gate answers.
+	 *
+	 * @return void
+	 */
+	public function testIsAdminAsksTheGroupGate(): void {
+		$this->assertTrue($this->engine()->isAdmin('jan'));
+
+		$this->world['admin'] = false;
+		$this->assertFalse($this->engine()->isAdmin('jan'));
+	}//end testIsAdminAsksTheGroupGate()
 
 	/**
 	 * The available transitions: empty without a case; the status facts and an empty `withheld`

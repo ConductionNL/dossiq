@@ -57,6 +57,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Typed stub for the OpenRegister ObjectService (named-argument safe).
@@ -71,7 +72,7 @@ interface WooCaseObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -262,7 +263,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 	 *
 	 * @dataProvider publicationEndpointProvider
 	 *
-	 * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function testANonHandlerIsRefusedPublicationWithA403(string $method): void {
 		$this->publicationService->expects($this->never())->method('publish');
@@ -288,7 +289,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function testTheHandlerPublishesAsTheSystem(): void {
 		$inSystem = null;
@@ -303,7 +304,9 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(int|string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => 'case-1', 'assignee' => 'alice'];
 			}
 
@@ -345,7 +348,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function testTheHandlerIsRefusedBeforeThePublicationStep(): void {
 		$this->publicationService->expects($this->never())->method('publish');

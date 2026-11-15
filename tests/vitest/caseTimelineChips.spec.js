@@ -1,86 +1,44 @@
-// @vitest-environment jsdom
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
 /**
- * The History tab's kind chips (board DqZaakHistorie): All with the total,
- * then every kind the case has entries of, each with its count; choosing
- * one filters the list without reading it again.
+ * The case's Timeline tab is the library `timeline` widget in manage mode.
+ *
+ * The kind chips (All, then each kind present with counts, filtering without
+ * a second read), the CSV export of what the chips show and the board look of
+ * the heading and chips are pinned by nextcloud-vue
+ * (tests/components/CnTimelineManage.spec.js). What is pinned here is the
+ * dossiq half: the tab declares manage mode, keeps its own heading and file
+ * name, and the heading is translated by dossiq.
  *
  * @spec openspec/specs/case-history-surface/spec.md
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import fs from 'fs'
+import path from 'path'
+import { describe, expect, it } from 'vitest'
 
-vi.mock('@nextcloud/l10n', async (importOriginal) => ({
-	...(await importOriginal()),
-	translate: (app, text, vars) => String(text).replace(/\{(\w+)\}/g, (m, k) => (vars && k in vars ? String(vars[k]) : m)),
-	translatePlural: (app, one) => one,
-}))
-vi.mock('@nextcloud/axios', () => ({ default: { get: vi.fn(), post: vi.fn() } }))
-vi.mock('@nextcloud/router', async (importOriginal) => ({ ...(await importOriginal()), generateUrl: (u) => u }))
+const ROOT = path.resolve(__dirname, '../..')
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
+const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
 
-const { default: CaseTimelineTab } = await import('../../src/views/cases/components/CaseTimelineTab.vue')
-const { kindChips, kindOptions } = CaseTimelineTab.computed
-const { chooseKind, applyKindFilter } = CaseTimelineTab.methods
+const pane = manifest.pages
+	.find((page) => page.id === 'CaseDetail')
+	.config.widgets.find((widget) => widget.id === 'case-timeline-panel')
 
-const ENTRIES = [
-	{ id: '1', kind: '' },
-	{ id: '2', kind: 'status' },
-	{ id: '3', kind: 'status' },
-	{ id: '4', kind: 'document' },
-]
-const KINDS = [
-	{ slug: 'status', title: 'Status' },
-	{ slug: 'document', title: 'Documents' },
-	{ slug: 'task', title: 'Tasks' },
-]
-
-/**
- * A component context with the given filter.
- *
- * @param {object|null} kindFilter The chosen kind.
- * @return {object} The context.
- */
-function context(kindFilter = null) {
-	const ctx = { allEntries: ENTRIES, kinds: KINDS, kindFilter, entries: [], applyKindFilter }
-	ctx.kindOptions = kindOptions.call(ctx)
-	return ctx
-}
-
-describe('the History tab kind chips', () => {
-	it('starts with All and lists only the kinds the case has, with counts', () => {
-		const chips = kindChips.call(context())
-		expect(chips.map((chip) => [chip.label, chip.count, chip.active])).toEqual([
-			['All', 4, true],
-			['Note', 1, false],
-			['Status', 2, false],
-			['Documents', 1, false],
-		])
+describe('the case Timeline tab', () => {
+	it('is the library timeline in manage mode', () => {
+		expect(pane.type).toBe('timeline')
+		expect(pane.content.manage).toBe(true)
 	})
 
-	it('exports the entries the chips show as CSV, quotes escaped', () => {
-		const ctx = {
-			entries: [{ created: '2026-10-04T10:24:00Z', kind: 'status', author: 'Pieter "PJ" Jansen', visibility: 'public', message: 'Status gewijzigd' }],
-			kindLabel: () => 'Status',
-		}
-		const csv = CaseTimelineTab.methods.entriesCsv.call(ctx)
-		const [head, row] = csv.split('\r\n')
-		expect(head).toBe('"When","Kind","Who","Visibility","Message"')
-		expect(row).toBe('"2026-10-04T10:24:00Z","Status","Pieter ""PJ"" Jansen","public","Status gewijzigd"')
+	it('keeps the case heading and the case-history file name', () => {
+		expect(pane.content.title).toBe('History of the case')
+		expect(nl['History of the case']).toBeTruthy()
+		expect(pane.content.exportName).toBe('case-history')
 	})
 
-	it('marks the chosen kind', () => {
-		const chips = kindChips.call(context({ id: 'status' }))
-		expect(chips.find((chip) => chip.active).label).toBe('Status')
-	})
-
-	it('filters the list without reading it again, and All shows every entry', () => {
-		const ctx = context()
-		chooseKind.call(ctx, 'status')
-		expect(ctx.entries.map((entry) => entry.id)).toEqual(['2', '3'])
-		chooseKind.call(ctx, null)
-		expect(ctx.kindFilter).toBe(null)
-		expect(ctx.entries).toHaveLength(4)
+	it('translates the Reply label', () => {
+		expect(nl.Reply).toBeTruthy()
 	})
 })

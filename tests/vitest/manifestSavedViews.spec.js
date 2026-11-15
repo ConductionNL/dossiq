@@ -27,8 +27,12 @@ const indexPages = files.flatMap((file) => {
 	return (Array.isArray(doc.pages) ? doc.pages : []).filter((page) => page.type === 'index')
 })
 
-/** Index pages with no filter sidebar: a left-hand list or a plain inbox, so there is nothing to save but a search term. */
-const NO_FILTER_SIDEBAR = ['Flows', 'EnvironmentOrganisations', 'Departments', 'Postvak']
+/**
+ * Index pages with no filter sidebar: a left-hand list or a plain inbox, so there is nothing to save but a search term.
+ */
+const NO_FILTER_SIDEBAR = ['Flows', 'EnvironmentOrganisations', 'Departments']
+// The mailbox has a filter panel (DqPostvak's Filter button) but no saved views: its board draws no Save view.
+const NO_SAVED_VIEWS = [...NO_FILTER_SIDEBAR, 'Postvak']
 
 /**
  * The scope a page's views are kept under, as nextcloud-vue builds it.
@@ -62,10 +66,10 @@ function offersSavedViews(config) {
 describe('saved views on every dossiq index page', () => {
 	it('finds the index pages', () => {
 		expect(indexPages.length).toBeGreaterThan(20)
-		expect(indexPages.map((page) => page.id)).toEqual(expect.arrayContaining(['Cases', 'Tasks', 'Contacts', 'Organisations', 'Queue']))
+		expect(indexPages.map((page) => page.id)).toEqual(expect.arrayContaining(['Cases', 'Tasks', 'Contacts', 'Organisations']))
 	})
 
-	it.each(indexPages.filter((page) => !NO_FILTER_SIDEBAR.includes(page.id)).map((page) => [page.id, page]))('%s offers saved views', (id, page) => {
+	it.each(indexPages.filter((page) => !NO_SAVED_VIEWS.includes(page.id)).map((page) => [page.id, page]))('%s offers saved views', (id, page) => {
 		const config = page.config || {}
 		expect(offersSavedViews(config)).toBe(true)
 		expect(scopeOf(config)).not.toBe('')

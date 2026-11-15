@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\Pause\PauseChaseSources;
 use DateTimeImmutable;
 use OCA\Dossiq\BackgroundJob\PauseChaseJob;
 use OCA\Dossiq\Notification\Notifier;
@@ -59,6 +60,9 @@ use Psr\Log\NullLogger;
 use ReflectionMethod;
 use RuntimeException;
 use Stringable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The reminder job's writes run as the configured account, or not at all.
@@ -66,6 +70,7 @@ use Stringable;
  * @covers \OCA\Dossiq\BackgroundJob\PauseChaseJob
  * @covers \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  * @covers \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @covers \OCA\Dossiq\Service\Pause\PauseChaseSources
  * @uses \OCA\Dossiq\Service\Pause\PauseChaseService
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
@@ -329,9 +334,11 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 
 		$chases = new PauseChaseService(
 			termService: new TermijnService(settingsService: $settings, logger: new NullLogger()),
-			reasons: $reasons,
-			schedule: new ChaseSchedule(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
-			notifications: $notifications,
+			chase: new PauseChaseSources(
+				reasons: $reasons,
+				schedule: new ChaseSchedule(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
+				notifications: $notifications,
+			),
 			timeline: $this->createMock(CaseTimeline::class),
 			settings: $settings,
 			logger: new NullLogger(),
@@ -503,7 +510,9 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, int|string $register = '', int|string $schema = ''): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				return $this->test->row(id: $id);
 			}
 
@@ -517,7 +526,10 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				return $this->test->write(schema: (string)$schema, object: $object);
 			}
 
@@ -530,8 +542,10 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed ...$rest): array {
-				return $this->test->write(schema: (string)($rest['schema'] ?? ''), object: array_merge(['id' => $objectId], $data));
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true, mixed ...$rest): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				return $this->test->write(schema: (string)($patch->target->schema ?? ''), object: array_merge(['id' => $objectId], $data));
 			}
 		};
 	}//end objectService()

@@ -295,7 +295,7 @@ export default {
 
 		/**
 		 * @param {string} level the permission level slug.
-		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.2
+		 * @spec openspec/changes/archive/2026-06-15-migrate-public-share-to-shares-leaf/tasks.md#P2.2
 		 */
 		permissionLabel(level) {
 			const labels = {

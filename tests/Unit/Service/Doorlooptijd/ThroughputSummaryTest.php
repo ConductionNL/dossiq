@@ -31,6 +31,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator
  * @covers \OCA\Dossiq\Service\Doorlooptijd\CaseTypeThroughputCalculator
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Doorlooptijd\ThroughputBuckets
+ * @uses \OCA\Dossiq\Service\Doorlooptijd\ClosedCaseTally
  *
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
@@ -77,6 +79,97 @@ class ThroughputSummaryTest extends TestCase {
 		self::assertSame(['2026-08', '2026-09', '2026-10'], $summary['monthlyAvgDays']['labels']);
 		self::assertSame([10, 25, null], $summary['monthlyAvgDays']['values']);
 	}//end testSummaryAveragesClosedCasesPerMonth()
+
+	/**
+	 * A year grouped per quarter: the window stays twelve months, the
+	 * averages are per quarter (board DqDoorlooptijd "Kwartaal").
+	 *
+	 * @return void
+	 */
+	public function testSummaryGroupsTheWindowPerQuarter(): void {
+		$cases = [
+			$this->closed('woo', '2026-09-10', 20, null),
+			$this->closed('woo', '2026-07-20', 30, null),
+			$this->closed('bezwaar', '2026-02-05', 10, null),
+			$this->closed('bezwaar', '2025-06-01', 99, null),
+		];
+
+		$summary = (new DeadlineComplianceCalculator())->computeSummary($cases, '12m', new DateTimeImmutable('2026-10-16'), 'quarter');
+
+		self::assertSame('quarter', $summary['granularity']);
+		self::assertSame(['2025-Q4', '2026-Q1', '2026-Q2', '2026-Q3', '2026-Q4'], $summary['monthlyAvgDays']['labels']);
+		self::assertSame([null, 10, null, 25, null], $summary['monthlyAvgDays']['values']);
+	}//end testSummaryGroupsTheWindowPerQuarter()
+
+	/**
+	 * A quarter grouped per ISO week, each week once, today's week last.
+	 *
+	 * @return void
+	 */
+	public function testSummaryGroupsTheWindowPerWeek(): void {
+		$cases = [
+			$this->closed('woo', '2026-10-13', 4, null),
+			$this->closed('woo', '2026-10-15', 6, null),
+			$this->closed('woo', '2026-08-03', 8, null),
+		];
+
+		$summary = (new DeadlineComplianceCalculator())->computeSummary($cases, '3m', new DateTimeImmutable('2026-10-16'), 'week');
+
+		$labels = $summary['monthlyAvgDays']['labels'];
+		self::assertSame('week', $summary['granularity']);
+		self::assertSame('2026-W31', $labels[0]);
+		self::assertSame('2026-W42', end($labels));
+		self::assertSame(count($labels), count(array_unique($labels)));
+		$values = array_combine($labels, $summary['monthlyAvgDays']['values']);
+		self::assertSame(5, $values['2026-W42']);
+		self::assertSame(8, $values['2026-W32']);
+	}//end testSummaryGroupsTheWindowPerWeek()
+
+	/**
+	 * Per month is the default and says so.
+	 *
+	 * @return void
+	 */
+	public function testSummaryGroupsPerMonthByDefault(): void {
+		$summary = (new DeadlineComplianceCalculator())->computeSummary([], '12m', new DateTimeImmutable('2026-10-16'));
+
+		self::assertSame('month', $summary['granularity']);
+		self::assertCount(12, $summary['monthlyAvgDays']['labels']);
+		self::assertSame('2025-11', $summary['monthlyAvgDays']['labels'][0]);
+	}//end testSummaryGroupsPerMonthByDefault()
+
+	/**
+	 * Per year: the twelve-month window spans two calendar years.
+	 *
+	 * @return void
+	 */
+	public function testSummaryGroupsTheWindowPerYear(): void {
+		$cases = [$this->closed('woo', '2026-03-10', 12, null), $this->closed('woo', '2025-12-01', 6, null)];
+
+		$summary = (new DeadlineComplianceCalculator())->computeSummary($cases, '12m', new DateTimeImmutable('2026-10-16'), 'year');
+
+		self::assertSame(['2025', '2026'], $summary['monthlyAvgDays']['labels']);
+		self::assertSame([6, 12], $summary['monthlyAvgDays']['values']);
+	}//end testSummaryGroupsTheWindowPerYear()
+
+	/**
+	 * An unknown grouping falls back to per month, and a closed case without
+	 * a day count or without an end date is left out of every figure.
+	 *
+	 * @return void
+	 */
+	public function testSummaryFallsBackToMonthAndSkipsIncompleteCases(): void {
+		$incomplete = $this->closed('woo', '2026-09-10', null, null);
+		$noEnd = ['caseType' => 'woo', '_isOpen' => false, '_endDate' => null, '_throughputDays' => 7, '_deadline' => null];
+		$cases = [$this->closed('woo', '2026-10-01', 4, null), $incomplete, $noEnd];
+
+		$summary = (new DeadlineComplianceCalculator())->computeSummary($cases, 'bogus', new DateTimeImmutable('2026-10-16'), 'decade');
+
+		self::assertSame('month', $summary['granularity']);
+		self::assertSame(4, $summary['avgDays']);
+		self::assertSame(1, $summary['closedThisYear']);
+		self::assertSame([null, 4], array_slice($summary['monthlyAvgDays']['values'], -2));
+	}//end testSummaryFallsBackToMonthAndSkipsIncompleteCases()
 
 	/**
 	 * The share within the norm is counted per case type, by its title.

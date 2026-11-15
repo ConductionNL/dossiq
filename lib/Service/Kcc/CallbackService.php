@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
  */
 
 declare(strict_types=1);
@@ -30,7 +30,12 @@ namespace OCA\Dossiq\Service\Kcc;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\CallbackServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 
@@ -42,9 +47,9 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $isPrivileged is the standard
  * cross-agent/own-record scoping flag used across the app's controllers.
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
  */
-class CallbackService {
+class CallbackService implements CallbackServiceInterface {
 	/**
 	 * Maximum number of callback attempts before the request fails.
 	 */
@@ -74,21 +79,12 @@ class CallbackService {
 	 *
 	 * @throws OCSBadRequestException When validation fails.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
 	 */
 	public function buildPayload(array $data, string $agentId): array {
 		$phone = trim((string)($data['customerPhone'] ?? ''));
 		if ($phone === '') {
 			throw new OCSBadRequestException('customerPhone is required');
-		}
-
-		$scheduledFor = trim((string)($data['scheduledFor'] ?? ''));
-		if ($scheduledFor !== '') {
-			try {
-				$scheduledFor = (new DateTimeImmutable($scheduledFor))->format(DateTimeInterface::ATOM);
-			} catch (\Throwable $e) {
-				throw new OCSBadRequestException('Invalid scheduledFor');
-			}
 		}
 
 		$payload = [
@@ -99,6 +95,47 @@ class CallbackService {
 			'preferredAgent' => trim((string)($data['preferredAgent'] ?? $agentId)),
 		];
 
+		return $this->withOptionalFields(payload: $payload, data: $data);
+	}//end buildPayload()
+
+	/**
+	 * The requested callback moment as ISO 8601, or '' when none is asked.
+	 *
+	 * @param array<string, mixed> $data The request data.
+	 *
+	 * @return string The moment, or ''.
+	 *
+	 * @throws OCSBadRequestException When the moment cannot be read.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+	 */
+	private function scheduledFor(array $data): string {
+		$scheduledFor = trim((string)($data['scheduledFor'] ?? ''));
+		if ($scheduledFor !== '') {
+			try {
+				$scheduledFor = (new DateTimeImmutable($scheduledFor))->format(DateTimeInterface::ATOM);
+			} catch (\Throwable $e) {
+				throw new OCSBadRequestException('Invalid scheduledFor');
+			}
+		}
+
+		return $scheduledFor;
+	}//end scheduledFor()
+
+	/**
+	 * Add the moment and the contactmoment reference to the payload when they are given.
+	 *
+	 * @param array<string, mixed> $payload The payload so far.
+	 * @param array<string, mixed> $data    The request data.
+	 *
+	 * @return array<string, mixed> The callback payload.
+	 *
+	 * @throws OCSBadRequestException When the moment cannot be read.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+	 */
+	private function withOptionalFields(array $payload, array $data): array {
+		$scheduledFor = $this->scheduledFor(data: $data);
 		if ($scheduledFor !== '') {
 			$payload['scheduledFor'] = $scheduledFor;
 		}
@@ -108,7 +145,7 @@ class CallbackService {
 		}
 
 		return $payload;
-	}//end buildPayload()
+	}//end withOptionalFields()
 
 	/**
 	 * Schedule a new callback request.
@@ -126,7 +163,10 @@ class CallbackService {
 		$payload = $this->buildPayload(data: $data, agentId: $agentId);
 
 		[$objectService, $register, $schema] = $this->resolve();
-		$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
+		$saved = $objectService->saveObject(
+			object: $payload,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 
 		$this->logger->info('Dossiq KCC: callback scheduled', ['agent' => $agentId]);
 
@@ -190,19 +230,18 @@ class CallbackService {
 	 */
 	public function cancel(string $id, string $agentId, bool $isPrivileged = false): array {
 		[$objectService, $register, $schema] = $this->resolve();
-		$existing = $this->findOwned(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id,
-			agentId: $agentId,
-			isPrivileged: $isPrivileged,
-		);
+		$existing = $this->found(store: new CallbackStore(objectService: $objectService, register: $register, schema: $schema), id: $id);
+		if ($isPrivileged === false && ((string)($existing['preferredAgent'] ?? '')) !== $agentId) {
+			throw new OCSBadRequestException('Callback request not found');
+		}
 
 		$existing['status'] = 'cancelled';
 		$existing['nextAttemptAt'] = null;
 
-		$saved = $objectService->saveObject(object: $existing, register: $register, schema: $schema, uuid: (string)$id);
+		$saved = $objectService->saveObject(
+			object: $existing,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+		);
 		return $this->toArray(value: $saved);
 	}//end cancel()
 
@@ -245,7 +284,10 @@ class CallbackService {
 	 */
 	public function persist(string $id, array $callback): array {
 		[$objectService, $register, $schema] = $this->resolve();
-		$saved = $objectService->saveObject(object: $callback, register: $register, schema: $schema, uuid: (string)$id);
+		$saved = $objectService->saveObject(
+			object: $callback,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+		);
 		return $this->toArray(value: $saved);
 	}//end persist()
 
@@ -273,22 +315,18 @@ class CallbackService {
 	}//end resolve()
 
 	/**
-	 * Find a callback by id and enforce ownership.
+	 * Find a callback by id.
 	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema The schema id.
+	 * @param CallbackStore $store Where the callbacks live.
 	 * @param string $id The callback id.
-	 * @param string $agentId The authenticated agent's user id.
-	 * @param bool $isPrivileged Whether ownership is bypassed.
 	 *
 	 * @return array<string, mixed> The callback record.
 	 *
-	 * @throws OCSBadRequestException When not found or not owned.
+	 * @throws OCSBadRequestException When not found.
 	 */
-	private function findOwned(object $objectService, string $register, string $schema, string $id, string $agentId, bool $isPrivileged): array {
+	private function found(CallbackStore $store, string $id): array {
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $store->objectService->find($id, new ObjectFindOptions(register: $store->register, schema: $store->schema));
 		} catch (\Throwable $e) {
 			throw new OCSBadRequestException('Callback request not found');
 		}
@@ -298,12 +336,8 @@ class CallbackService {
 			throw new OCSBadRequestException('Callback request not found');
 		}
 
-		if ($isPrivileged === false && ((string)($arr['preferredAgent'] ?? '')) !== $agentId) {
-			throw new OCSBadRequestException('Callback request not found');
-		}
-
 		return $arr;
-	}//end findOwned()
+	}//end found()
 
 	/**
 	 * Normalise an ObjectService result to a plain array.
@@ -313,19 +347,6 @@ class CallbackService {
 	 * @return array<string, mixed> The normalised array.
 	 */
 	private function toArray(mixed $value): array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-
-			return [];
-		}
-
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

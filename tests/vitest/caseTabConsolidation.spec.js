@@ -121,21 +121,21 @@ const TAB_CEILING = 15
 
 /** The fifteen labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
-	['case-data-panel', 'Data'],
+	['case-data-panel', 'Overview'],
 	['case-files', 'Files'],
-	['case-document-review', 'Review'],
+	['case-communication-panel', 'Contact'],
+	['case-work-panel', 'Tasks'],
+	['case-timeline-panel', 'Case history'],
 	['case-notes-panel', 'Notes'],
-	['case-timeline-panel', 'Timeline'],
 	['case-people-panel', 'People'],
-	['case-communication-panel', 'Communication'],
 	['case-email-panel', 'Email'],
-	['case-work-panel', 'Work'],
-	['case-change-proposals', 'Proposals'],
 	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
 	['case-custody-panel', 'Custody'],
 	['case-archival-panel', 'Archiving'],
 	['case-knowledge-panel', 'Knowledge'],
+	['case-document-review', 'Review'],
+	['case-change-proposals', 'Proposals'],
 ]
 
 /**
@@ -195,6 +195,12 @@ describe('the case page tab strip', () => {
 
 	it('names the fifteen tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
+	})
+
+	it('shows five tabs and puts the rest under More (REQ-CDV-16)', () => {
+		const content = widget('case-panels').content
+		expect(content.maxVisibleTabs).toBe(5)
+		expect(content.moreLabel).toBe('More')
 	})
 
 	it('labels every tab in sentence case, with no em-dash', () => {
@@ -348,12 +354,6 @@ describe('the container type this change depends on', () => {
 		// and renders nothing, silently, when the key is missing, and these
 		// components were registered only as sidebar `component:` entries.
 		const PANES = {
-			'case-notes-panel': 'case-notes-pane',
-			'case-decisions-panel': 'case-decisions-pane',
-			// Timeline arrived with #2846: every note, call and message on the
-			// case in one order. A single surface, keyed by TYPE like the three
-			// above it.
-			'case-timeline-panel': 'case-timeline-pane',
 			// Archiving arrived with #2850 as `type: "custom"` plus a
 			// `widget-case-archival` slot on the page, and this file carried a
 			// branch that asserted exactly that. The slot name did not match
@@ -371,7 +371,7 @@ describe('the container type this change depends on', () => {
 			'case-custody-panel': 'case-custody-pane',
 			// Review arrived with woo-review-triage: where a document review
 			// stands. A single surface keyed by TYPE (registry.js), like the rest.
-			'case-document-review': 'document-review',
+			'case-document-review': 'document-relevance-review',
 		}
 
 		// The tabs the LIBRARY draws from another app's leaf. Files is the
@@ -386,18 +386,30 @@ describe('the container type this change depends on', () => {
 		// empty tab and logs nothing.
 		const LEAVES = {
 			'case-files': 'files',
+			// Notes is the library notes leaf, wired by the manifest with the
+			// mention endpoint and the one note action dossiq adds.
+			'case-notes-panel': 'notes',
 			'case-change-proposals': 'portaliq-change-proposal-queue',
 		}
 
 		// The tabs a library widget type draws from the manifest alone.
 		const LIBRARY_TYPES = {
 			'case-email-panel': 'mail',
+			// Timeline arrived with #2846: every note, call and message on the
+			// case in one order, now the library timeline in manage mode.
+			'case-timeline-panel': 'timeline',
 		}
 
 		// A leaf that lives inside a group, as `{ widgetId: [sectionWidgetId,
 		// integrationId] }`. Same failure it guards against, one level down.
 		const NESTED_LEAVES = {
 			'case-knowledge-panel': ['case-knowledge-pages', 'collectives'],
+			// decidiq's decisions, through the library integration widget,
+			// which says "Decidiq not available" when the leaf is absent. A
+			// group since the advice a decision table gave joined it
+			// (enforcement-intervention-from-the-case 3.3); the leaf moved one
+			// level down and the assertion follows it.
+			'case-decisions-panel': ['case-decidiq-decisions', 'decidesk-decisions'],
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 

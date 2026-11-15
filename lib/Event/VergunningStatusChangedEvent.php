@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -28,7 +28,7 @@ use OCP\EventDispatcher\Event;
 /**
  * Event raised after each vergunningaanvraag status transition.
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T01
  */
 class VergunningStatusChangedEvent extends Event {
 	/**
@@ -41,7 +41,7 @@ class VergunningStatusChangedEvent extends Event {
 	 * @param string|null $notes Optional explanation text
 	 * @param string $userId The Nextcloud user UID who triggered the transition
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T01
 	 */
 	public function __construct(
 		private readonly string $requestRef,
@@ -59,7 +59,7 @@ class VergunningStatusChangedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T01
 	 */
 	public function getVergunningaanvraagRef(): string {
 		return $this->requestRef;
@@ -70,7 +70,7 @@ class VergunningStatusChangedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T01
 	 */
 	public function getOldStatus(): string {
 		return $this->oldStatus;
@@ -81,7 +81,7 @@ class VergunningStatusChangedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T01
 	 */
 	public function getNewStatus(): string {
 		return $this->newStatus;
@@ -92,7 +92,7 @@ class VergunningStatusChangedEvent extends Event {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T01
 	 */
 	public function getBesluitdatum(): ?string {
 		return $this->besluitdatum;
@@ -103,7 +103,7 @@ class VergunningStatusChangedEvent extends Event {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T01
 	 */
 	public function getToelichting(): ?string {
 		return $this->notes;
@@ -114,7 +114,7 @@ class VergunningStatusChangedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T01
 	 */
 	public function getUserId(): string {
 		return $this->userId;

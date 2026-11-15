@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
@@ -39,7 +40,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Tests\Support\UuidAnsweringRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use OCP\App\IAppManager;
 use OCP\Files\IRootFolder;
@@ -59,12 +60,12 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
  * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
- * @uses   \OCA\Dossiq\Woo\WooCaseLedger
+ * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Woo\WooRequestForm
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
@@ -78,6 +79,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 
@@ -175,7 +177,9 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 		$this->store->seed(schema: 'case', uuid: self::CASE, row: ['title' => 'Parkeren', 'caseType' => WooRequestIntake::CASE_TYPE_ID]);
 		$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-1', row: ['caseRef' => self::CASE, 'documentRef' => 'io-1', 'classification' => 'openbaar']);
 
-		$service = new WOODecisionService($this->settings, $assessments, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class));
+		$delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$delegation->method('raiseDecision')->willReturn('decidiq-decision-1');
+		$service = new WOODecisionService($this->settings, $assessments, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class), decisionDelegation: $delegation);
 		$result = $service->assembleDecision(caseId: self::CASE);
 
 		$decision = $this->store->row(schema: 'decision', uuid: $result['decisionId']);
@@ -259,7 +263,7 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 			$apps,
 			$this->createMock(LoggerInterface::class),
 			null,
-			new WooCaseLedger(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
 			new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class)),
 		);
 

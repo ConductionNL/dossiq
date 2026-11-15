@@ -26,7 +26,7 @@
  * derivation would eventually offer a move the write refuses, and the handler
  * would meet that disagreement as a button that fails after they press it.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import {
@@ -66,8 +66,8 @@ export const TERM_GESTURES = [
 	{
 		act: 'reopen',
 		flag: 'canReopen',
-		label: 'Reopen',
-		reason: 'Only a closed case can be reopened.',
+		label: 'Reopen or restore from the archive',
+		reason: 'Only for a finished or archived case.',
 	},
 ]
 
@@ -128,6 +128,9 @@ function gestureExplainer(gesture, state) {
 	if (gesture.act === 'suspend') {
 		return 'The term stands still until the answer is in.'
 	}
+	if (gesture.act === 'reopen') {
+		return 'Only for a finished or archived case.'
+	}
 	if (gesture.act !== 'extend') {
 		return ''
 	}
@@ -175,7 +178,7 @@ function yes(value) {
  *
  * @param {Array<object>} transitions The `/available-transitions` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function transitionEntries(transitions) {
 	return (Array.isArray(transitions) ? transitions : [])
@@ -191,6 +194,7 @@ function transitionEntries(transitions) {
 			disabled: transitionIsBlocked(row),
 			reason: transitionBlockReason(row),
 			toStatus: String(row.toStatus ?? ''),
+			toStatusName: String(row.toStatusName ?? ''),
 			// Copied from the engine's answer, never derived here: whether
 			// the move closes the case, and the results it may close with.
 			closesCase: row.closesCase === true,
@@ -222,7 +226,7 @@ function resultChoices(rows) {
  *
  * @param {object|null} state The `/lifecycle` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function gestureEntries(state) {
 	// An unreadable state offers the gestures ENABLED rather than hiding them.
@@ -250,7 +254,7 @@ function gestureEntries(state) {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function endingEntries(acts) {
 	const verdicts = Array.isArray(acts?.acts) ? acts.acts : []
@@ -304,7 +308,7 @@ function endingEntries(acts) {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function archiveStateEntries(acts) {
 	if (!yes(acts?.archived)) {
@@ -318,9 +322,8 @@ function archiveStateEntries(acts) {
 		{
 			kind: 'state',
 			id: 'unarchive',
-			label: 'Restore from the archive',
-			explainer:
-				'The case comes back into the working lists and can be edited again.',
+			label: 'Reopen or restore from the archive',
+			explainer: 'Only for a finished or archived case.',
 			// Restoring asks the same role archiving does, so the verdict on
 			// `archive` is the verdict on this. An absent verdict disables it
 			// and says so, exactly as the ending acts do: this one writes an
@@ -335,49 +338,37 @@ function archiveStateEntries(acts) {
 }
 
 /**
+ * The label and explainer of each act that depends on the case's own state.
+ */
+const STATE_ACTS = {
+	'release-hold': { label: 'Take off hold', explainer: 'You pick the case up again before its date.' },
+	hold: { label: 'Hold', explainer: 'Park it internally, the term keeps running.' },
+	promote: { label: 'Promote to case', explainer: 'The term starts now. The case leaves your drafts.' },
+}
+
+/**
  * Hold, release and promote, which depend on the case's own state.
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function stateEntries(acts) {
-	const held = yes(acts?.held)
-	const draft = yes(acts?.draft)
-	const entries = []
-
-	if (held) {
-		entries.push({
-			kind: 'state',
-			id: 'release-hold',
-			label: 'Take off hold',
-			explainer: 'You pick the case up again before its date.',
-			disabled: false,
-			reason: '',
-		})
-	} else {
-		entries.push({
-			kind: 'state',
-			id: 'hold',
-			label: 'Hold',
-			explainer: 'Park it internally, the term keeps running.',
-			disabled: false,
-			reason: '',
-		})
+	const entries = [stateEntry(yes(acts?.held) ? 'release-hold' : 'hold')]
+	if (yes(acts?.draft)) {
+		entries.push(stateEntry('promote'))
 	}
-
-	if (draft) {
-		entries.push({
-			kind: 'state',
-			id: 'promote',
-			label: 'Promote to case',
-			explainer: 'The term starts now. The case leaves your drafts.',
-			disabled: false,
-			reason: '',
-		})
-	}
-
 	return entries
+}
+
+/**
+ * One state act as a menu entry.
+ *
+ * @param {string} id The act, a key of STATE_ACTS.
+ * @return {object} The entry.
+ */
+function stateEntry(id) {
+	return { kind: 'state', id, label: STATE_ACTS[id].label, explainer: STATE_ACTS[id].explainer, disabled: false, reason: '' }
 }
 
 /**
@@ -419,6 +410,7 @@ export const ACT_ICONS = {
 	archive: 'ArchiveOutline',
 	unarchive: 'Restore',
 	reopen: 'History',
+	remedy: 'ScaleBalance',
 }
 
 /**
@@ -426,7 +418,7 @@ export const ACT_ICONS = {
  *
  * @param {object} entry One menu entry.
  * @return {string} A registered icon name.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function iconFor(entry) {
 	if (entry?.kind === 'transition') {
@@ -434,6 +426,9 @@ export function iconFor(entry) {
 	}
 	if (entry?.kind === 'always') {
 		return String(entry.icon ?? '')
+	}
+	if (entry?.kind === 'remedy') {
+		return ACT_ICONS.remedy
 	}
 
 	return ACT_ICONS[String(entry?.id ?? '')] ?? ''
@@ -451,25 +446,59 @@ export function iconFor(entry) {
  * @param {object|null} [answers.acts] The `/acts` answer, carrying both the
  *   role-gated ending acts and the case type's always-available ones.
  * @return {Array<object>} The menu entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function buildActsMenu({ transitions, state, acts } = {}) {
 	const rank = (entry) => {
 		const at = ACT_ORDER.indexOf(entry.id)
 		return at === -1 ? ACT_ORDER.length : at
 	}
+	// Reopen and Restore are one entry, as board DqVolgendeStap draws it:
+	// an archived case refuses every write until it is restored, so on an
+	// archived case the entry restores, and otherwise it reopens.
+	const restore = archiveStateEntries(acts)
+	const gestures = gestureEntries(state)
+		.filter((entry) => restore.length === 0 || entry.id !== 'reopen')
 	const acting = [
-		...gestureEntries(state),
+		...gestures,
 		...endingEntries(acts),
 		...stateEntries(acts),
-		...archiveStateEntries(acts),
+		...restore,
 	].sort((a, b) => rank(a) - rank(b))
 
 	return [
 		...transitionEntries(transitions),
 		...alwaysAvailableEntries(acts),
 		...acting,
+		...remedyEntries(acts),
 	]
+}
+
+/**
+ * The remedies the case type declares against its decisions, last in the
+ * menu as board DqVolgendeStap draws "Bezwaar registreren".
+ *
+ * The server answers whether each is open now (a decision was made known)
+ * and says why not; the label and description are the case type's own, so
+ * nothing here names a procedure.
+ *
+ * @param {object|null} acts The `/acts` answer.
+ * @return {Array<object>} The entries.
+ * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-from-the-case-page-req-rml-003
+ */
+function remedyEntries(acts) {
+	const declared = Array.isArray(acts?.remedies) ? acts.remedies : []
+
+	return declared
+		.filter((remedy) => String(remedy?.id ?? '').trim() !== '')
+		.map((remedy) => ({
+			kind: 'remedy',
+			id: String(remedy.id).trim(),
+			label: String(remedy.label ?? remedy.id).trim(),
+			explainer: String(remedy.description ?? '').trim(),
+			disabled: remedy.available === false,
+			reason: remedy.available === false ? String(remedy.reason ?? '').trim() : '',
+		}))
 }
 
 /**
@@ -487,7 +516,7 @@ export function buildActsMenu({ transitions, state, acts } = {}) {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 function alwaysAvailableEntries(acts) {
 	const declared = Array.isArray(acts?.alwaysAvailable) ? acts.alwaysAvailable : []
@@ -517,7 +546,7 @@ function alwaysAvailableEntries(acts) {
  *
  * @param {object} entry One menu entry.
  * @return {{reason: boolean, result: boolean, until: boolean, days: boolean}} What to ask for.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function inputsFor(entry) {
 	const id = String(entry?.id ?? '')
@@ -547,7 +576,7 @@ export function inputsFor(entry) {
  *
  * @param {object} entry One menu entry.
  * @return {string} The path after `/api/case/{id}/`, empty for a transition.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function endpointFor(entry) {
 	if (!entry || entry.kind === 'transition') {

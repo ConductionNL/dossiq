@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md
+ * @spec openspec/specs/document-redaction/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -29,9 +29,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Redaction\DocumentRedactionService;
-use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRedactionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -44,7 +44,7 @@ use OCP\IUserSession;
 /**
  * REST API of the redaction step.
  *
- * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md
+ * @spec openspec/specs/document-redaction/spec.md
  */
 class DocumentRedactionController extends Controller {
 
@@ -53,18 +53,18 @@ class DocumentRedactionController extends Controller {
 	 *
 	 * @param string                   $appName     The app name.
 	 * @param IRequest                 $request     The request.
-	 * @param DocumentRedactionService $redactions  The redaction step.
-	 * @param CaseAccessGuard          $caseAccess  Per-case mutation authorization (fails closed).
-	 * @param DossierUploadHandler     $uploads     Reads an uploaded file and refuses executables.
+	 * @param DocumentRedactionServiceInterface $redactions  The redaction step.
+	 * @param CaseAccessGuardInterface          $caseAccess  Per-case mutation authorization (fails closed).
+	 * @param DossierUploadHandlerInterface     $uploads     Reads an uploaded file and refuses executables.
 	 * @param IUserSession             $userSession The signed-in officer.
 	 * @param IL10N                    $l10n        The refusals this controller writes itself.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DocumentRedactionService $redactions,
-		private readonly CaseAccessGuard $caseAccess,
-		private readonly DossierUploadHandler $uploads,
+		private readonly DocumentRedactionServiceInterface $redactions,
+		private readonly CaseAccessGuardInterface $caseAccess,
+		private readonly DossierUploadHandlerInterface $uploads,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
@@ -78,7 +78,7 @@ class DocumentRedactionController extends Controller {
 	 *
 	 * @return JSONResponse `{documents: [...]}`
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
 	 */
 	#[NoAdminRequired]
 	public function index(string $id): JSONResponse {
@@ -93,7 +93,7 @@ class DocumentRedactionController extends Controller {
 	 *
 	 * @return JSONResponse `{documentRef, title, text, redaction, redactedDocumentRef}`
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
 	 */
 	#[NoAdminRequired]
 	public function detect(string $id, string $documentRef): JSONResponse {
@@ -111,7 +111,7 @@ class DocumentRedactionController extends Controller {
 	 *
 	 * @return JSONResponse `{redaction}`
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
 	#[NoAdminRequired]
 	public function check(string $id, string $documentRef): JSONResponse {
@@ -136,7 +136,7 @@ class DocumentRedactionController extends Controller {
 	 *
 	 * @return JSONResponse `{redactedDocumentRef, redaction}`
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
 	 */
 	#[NoAdminRequired]
 	public function redact(string $id, string $documentRef): JSONResponse {
@@ -154,7 +154,7 @@ class DocumentRedactionController extends Controller {
 	 *
 	 * @return JSONResponse `{redactedDocumentRef, redaction}`
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
 	 */
 	#[NoAdminRequired]
 	public function upload(string $id, string $documentRef): JSONResponse {

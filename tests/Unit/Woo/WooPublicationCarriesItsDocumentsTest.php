@@ -21,7 +21,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/the-woo-publication-carries-its-documents/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCP\App\IAppManager;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -51,12 +51,13 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @covers \OCA\Dossiq\Service\Support\FindsFilesById
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
- * @uses   \OCA\Dossiq\Woo\WooCaseLedger
+ * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses   \OCA\Dossiq\Woo\WooResultLink
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses   \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses   \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooPublicationCarriesItsDocumentsTest extends TestCase {
 
@@ -162,6 +163,26 @@ class WooPublicationCarriesItsDocumentsTest extends TestCase {
 	}//end testAPublicationWhoseFilesCannotBeReadIsRefused()
 
 	/**
+	 * A disclosable document that names its only readers is not published, and nothing goes out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-never-published
+	 */
+	public function testAPublicationWithADocumentUnderAnAccessExceptionIsRefused(): void {
+		$row = $this->store->row(schema: 'informatieobject', uuid: 'io-public');
+		$row['accessException'] = ['users' => ['pieter'], 'groups' => [], 'reason' => 'Bedrijfsgevoelig'];
+		$this->store->seed(schema: 'informatieobject', uuid: 'io-public', row: $row);
+
+		$published = $this->service(fileService: $this->openRegisterFiles())->publish(self::CASE);
+
+		self::assertFalse($published['available']);
+		self::assertSame('documents_restricted', $published['reason']);
+		self::assertSame(['klachtenoverzicht.pdf'], $published['documents']);
+		self::assertSame([], $this->attached);
+	}//end testAPublicationWithADocumentUnderAnAccessExceptionIsRefused()
+
+	/**
 	 * OpenRegister's file service as the case files see it: it knows every file by id.
 	 *
 	 * @return object
@@ -240,7 +261,7 @@ class WooPublicationCarriesItsDocumentsTest extends TestCase {
 			$apps,
 			$logger,
 			null,
-			new WooCaseLedger(settingsService: $settings, logger: $logger, urlGenerator: $urls),
+			new CasePublicationState(settingsService: $settings, logger: $logger, urlGenerator: $urls),
 			new WooCaseDocuments(settingsService: $settings, rootFolder: $root, logger: $logger),
 		);
 	}//end service()

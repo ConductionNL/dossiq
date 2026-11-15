@@ -67,40 +67,73 @@ class DocumentDefaults {
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function forNewFile(File $node, array $case): array {
-		$actor = $this->userSession->getUser();
-		$actorId = '';
-		$author = '';
-		if ($actor !== null) {
-			$actorId = $actor->getUID();
-			$author = $actor->getDisplayName();
-		}
-
-		$direction = 'incoming';
-		if ($actorId !== '' && $actorId === (string)($case['assignee'] ?? '')) {
-			$direction = 'internal';
-		}
-
+		[$actorId, $author]       = $this->actor();
 		[$type, $classification] = $this->documentDefaults(case: $case);
+		$record = self::fileFacts(node: $node) + [
+			'vertrouwelijkheidaanduiding' => $classification,
+			'auteur' => $author,
+			'status' => 'draft',
+			'informatieobjecttype' => $type,
+			'direction' => self::directionOf(actorId: $actorId, caseRow: $case),
+		];
 
+		return $record + self::registrationDefaults() + ['integrity' => $this->integrityOf(node: $node), 'fileId' => $node->getId()];
+	}//end forNewFile()
+
+	/**
+	 * Who is signed in: their user id and display name, both '' when nobody is.
+	 *
+	 * @return array{0: string, 1: string} The id and the name.
+	 */
+	private function actor(): array {
+		$actor = $this->userSession->getUser();
+		if ($actor === null) {
+			return ['', ''];
+		}
+
+		return [$actor->getUID(), $actor->getDisplayName()];
+	}//end actor()
+
+	/**
+	 * A file's name, size and format as the record carries them.
+	 *
+	 * @param File $node The file.
+	 *
+	 * @return array<string, mixed> The title, file name, size and format.
+	 */
+	private static function fileFacts(File $node): array {
 		return [
 			'title' => pathinfo($node->getName(), PATHINFO_FILENAME),
 			'fileName' => $node->getName(),
 			'bestandsomvang' => $node->getSize(),
 			'format' => $node->getMimeType(),
-			'vertrouwelijkheidaanduiding' => $classification,
-			'auteur' => $author,
-			'status' => 'draft',
-			'informatieobjecttype' => $type,
-			'direction' => $direction,
-			'keywords' => [],
-			'creatiedatum' => date('Y-m-d'),
-			'bronorganisatie' => '',
-			'taal' => 'nld',
-			'description' => '',
-			'integrity' => $this->integrityOf(node: $node),
-			'fileId' => $node->getId(),
 		];
-	}//end forNewFile()
+	}//end fileFacts()
+
+	/**
+	 * Internal when the case's own handler adds the file, incoming otherwise.
+	 *
+	 * @param string               $actorId Who adds the file, '' when nobody is signed in.
+	 * @param array<string, mixed> $caseRow The case row.
+	 *
+	 * @return string The direction.
+	 */
+	private static function directionOf(string $actorId, array $caseRow): string {
+		if ($actorId !== '' && $actorId === (string)($caseRow['assignee'] ?? '')) {
+			return 'internal';
+		}
+
+		return 'incoming';
+	}//end directionOf()
+
+	/**
+	 * The fields every new record starts with, dated today.
+	 *
+	 * @return array<string, mixed> The keywords, creation date, source organisation, language and description.
+	 */
+	private static function registrationDefaults(): array {
+		return ['keywords' => [], 'creatiedatum' => date('Y-m-d'), 'bronorganisatie' => '', 'taal' => 'nld', 'description' => ''];
+	}//end registrationDefaults()
 
 	/**
 	 * The document type and confidentiality a case's documents default to.

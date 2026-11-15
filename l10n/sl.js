@@ -1684,6 +1684,7 @@ OC.L10N.register(
         "SLA adherence and processing time analysis": "Spoštovanje SLA in analiza časa obdelave",
         "SLA Compliance": "Skladnost s SLA",
         "SLA Compliance %": "Skladnost s SLA %",
+        "SLA Compliance %%": "Skladnost s SLA %%",
         "SLA override (days)": "Preglasitev SLA (dni)",
         "SLA Target: {days}d": "Cilj SLA: {days}d",
         "Sloopmelding": "Obvestilo o rušenju",

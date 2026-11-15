@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Service\Email\OutboundMailRules;
 use OCA\Dossiq\Listener\FlowEmailSentListener;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
@@ -36,12 +37,17 @@ use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Event\FlowEmailItem;
+use OCA\OpenRegister\Event\FlowEmailMessage;
+use OCA\OpenRegister\Event\FlowEmailOrigin;
 
 /**
  * @covers \OCA\Dossiq\Listener\FlowEmailSentListener
  * @covers \OCA\Dossiq\Service\CaseEmailService::recordSentEmail
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailRules
  * @uses \OCA\Dossiq\Service\CaseEmailService
  * @uses \OCA\Dossiq\Service\Support\CaseObjectReference
+ * @uses \OCA\Dossiq\Service\Email\SentCaseMail
  */
 class FlowEmailSentListenerTest extends TestCase {
 
@@ -100,13 +106,15 @@ class FlowEmailSentListenerTest extends TestCase {
 		);
 
 		$emails = new CaseEmailService(
-			new NullLogger(),
-			$repository,
-			$this->createMock(CaseContactDirectory::class),
-			$this->createMock(OutboundCaseMail::class),
-			$this->createMock(RecipientAllowlist::class),
-			$timeline,
-			$this->createMock(CaseMailOptOut::class)
+			logger: new NullLogger(),
+			repository: $repository,
+			contactDirectory: $this->createMock(originalClassName: CaseContactDirectory::class),
+			sending: new OutboundMailRules(
+				outbound: $this->createMock(originalClassName: OutboundCaseMail::class),
+				allowlist: $this->createMock(originalClassName: RecipientAllowlist::class),
+				optOut: $this->createMock(originalClassName: CaseMailOptOut::class),
+			),
+			timeline: $timeline
 		);
 
 		$user = $this->createMock(IUser::class);
@@ -128,17 +136,9 @@ class FlowEmailSentListenerTest extends TestCase {
 	 */
 	private function event(string $recipient, string $kind, ?string $schema = '34'): FlowEmailSentEvent {
 		return new FlowEmailSentEvent(
-			register: '12',
-			schema: $schema,
-			objectUuid: 'case-1',
-			recipient: $recipient,
-			channelKind: $kind,
-			subject: 'Uw aanvraag',
-			body: 'Wij hebben uw aanvraag ontvangen.',
-			flowId: 'flow-1',
-			runId: 'run-1',
-			stepName: 'mail-indiener',
-			actingUser: 'jan'
+			item: new FlowEmailItem(register: '12', schema: $schema, objectUuid: 'case-1'),
+			message: new FlowEmailMessage(recipient: $recipient, channelKind: $kind, subject: 'Uw aanvraag', body: 'Wij hebben uw aanvraag ontvangen.'),
+			origin: new FlowEmailOrigin(flowId: 'flow-1', runId: 'run-1', stepName: 'mail-indiener', actingUser: 'jan')
 		);
 	}//end event()
 

@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps;
 use DateTimeImmutable;
 use OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob;
 use OCA\Dossiq\Exception\RefusedException;
@@ -50,6 +51,8 @@ use OCP\IGroupManager;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Only an opted-in case type's silent case closes, and it closes as the account.
@@ -57,6 +60,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob
  * @covers \OCA\Dossiq\Service\Lifecycle\LifecycleActorGate
  * @covers \OCA\Dossiq\Service\Lifecycle\LifecycleCaseTypeRules
+ * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  * @uses \OCA\Dossiq\Service\Lifecycle\SilenceCloseService
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
@@ -64,6 +68,9 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\BackgroundJob\OpenCaseSweep
+ * @uses \OCA\Dossiq\Service\Archival\ReadsConfiguredRows
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;
@@ -276,7 +283,7 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 			static fn (string $caseId): ?array => ($register->rows['case'][$caseId] ?? null)
 		);
 		$store->method('saveCase')->willReturnCallback(
-			static fn (array $case): array => $register->saveObject(object: $case, schema: 'case', uuid: (string)$case['id'])
+			static fn (array $case): array => $register->saveObject(object: $case, options: new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'), uuid: (string)$case['id']))
 		);
 
 		$endings = $this->createMock(CaseEndingActs::class);
@@ -286,7 +293,7 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 				$gate->require(act: 'abort', case: $case);
 				$this->aborted[] = $this->actingUid().':'.$caseId;
 				$case['isFinalStatus'] = true;
-				$register->saveObject(object: $case, schema: 'case', uuid: $caseId);
+				$register->saveObject(object: $case, options: new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'), uuid: $caseId));
 
 				return ['caseId' => $caseId];
 			}
@@ -299,9 +306,11 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 			time: $this->createMock(ITimeFactory::class),
 			silence: new SilenceCloseService(
 				store: $store,
-				rules: new LifecycleCaseTypeRules(settingsService: $this->settings()),
-				endings: $endings,
-				journal: new CaseJournal(userSession: $this->backgroundSession()),
+				steps: new SilenceCloseSteps(
+					rules: new LifecycleCaseTypeRules(settingsService: $this->settings()),
+					endings: $endings,
+					journal: new CaseJournal(userSession: $this->backgroundSession()),
+				),
 				dates: $this->caseDates(),
 				logger: new NullLogger(),
 			),

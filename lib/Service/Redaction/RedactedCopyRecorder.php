@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
+ * @spec openspec/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service\Redaction;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\FindsFilesById;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\RestrictedDocumentReaders;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use RuntimeException;
@@ -39,7 +40,7 @@ use RuntimeException;
 /**
  * Records a redacted copy as an informatieobject of the case.
  *
- * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
+ * @spec openspec/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
  */
 class RedactedCopyRecorder {
 
@@ -58,11 +59,13 @@ class RedactedCopyRecorder {
 	 * @param DocumentRecordStore  $store           Reads and writes informatieobjecten and their case joins.
 	 * @param IRootFolder          $rootFolder      Reads the copy's file by its id, outside OpenRegister's tree.
 	 * @param SettingsService|null $settingsService OpenRegister's file service, which reads the copy on the case.
+	 * @param RestrictedDocumentReaders|null $readers Gives the copy the original's access exception. Null only in legacy fixtures.
 	 */
 	public function __construct(
 		private readonly DocumentRecordStore $store,
 		private readonly IRootFolder $rootFolder,
 		private readonly ?SettingsService $settingsService = null,
+		private readonly ?RestrictedDocumentReaders $readers = null,
 	) {
 	}//end __construct()
 
@@ -77,7 +80,7 @@ class RedactedCopyRecorder {
 	 *
 	 * @throws RuntimeException When the file cannot be found or the record not written.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redacted-copy-is-recorded-as-a-document-of-the-case-req-drd-003
 	 */
 	public function recordFile(string $caseId, array $original, int $fileId): string {
 		$recordId = (string)($this->store->findRecord(fileId: $fileId)['id'] ?? '');
@@ -90,6 +93,9 @@ class RedactedCopyRecorder {
 		}
 
 		$this->store->ensureJoin(caseId: $caseId, recordId: $recordId);
+
+		// A copy of a document only some people may see is seen by the same people.
+		$this->readers?->inherit(original: $original, fileId: $fileId);
 
 		return $recordId;
 	}//end recordFile()
@@ -109,7 +115,7 @@ class RedactedCopyRecorder {
 	 *
 	 * @throws RuntimeException When the file cannot be stored or recorded.
 	 *
-	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
 	 */
 	public function storeUpload(string $caseId, array $original, string $fileName, string $content): array {
 		$base = pathinfo((string)($original['fileName'] ?? ($original['title'] ?? 'document')), PATHINFO_FILENAME);

@@ -9,54 +9,16 @@
  * leaves here. Instead we replicate the pure, side-effect-free computed logic
  * that drives each new component's rendering and assert it directly:
  *
- *   - DeelzaakList.sortedSubCases   (open-before-closed, then deadline asc)
- *   - DeelzaakList.rollUpText       (completed/total roll-up)
- *   - DeelzaakList.canCreate        (gating: closed / grandchild / no allowed types)
  *   - DeelzaakCreateModal.availableCaseTypes (filter to parent.subCaseTypes)
  *
  * Each function below is a faithful copy of the component's computed/method
  * body (kept in lock-step with the source). Behavioural drift in the source
  * that is not mirrored here will surface as a coverage gap, not a false green.
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T05
  * @spec openspec/changes/deelzaak-support/tasks.md#T08
  */
 
 import { describe, expect, it } from 'vitest'
-
-// --- DeelzaakList.sortedSubCases (verbatim from the component) ---------------
-function sortedSubCases(subCases) {
-	return [...subCases].sort((a, b) => {
-		const aOpen = !a.endDate
-		const bOpen = !b.endDate
-		if (aOpen !== bOpen) {
-			return aOpen ? -1 : 1
-		}
-		const aDeadline = a.deadline
-			? new Date(a.deadline).getTime()
-			: Number.POSITIVE_INFINITY
-		const bDeadline = b.deadline
-			? new Date(b.deadline).getTime()
-			: Number.POSITIVE_INFINITY
-		return aDeadline - bDeadline
-	})
-}
-
-// --- DeelzaakList.rollUpText -------------------------------------------------
-function rollUp(subCases) {
-	const completed = subCases.filter((sc) => sc.endDate).length
-	const total = subCases.length
-	return { completed, total, text: `(${completed}/${total} completed)` }
-}
-
-// --- DeelzaakList.canCreate (verbatim gating) -------------------------------
-function canCreate(parent, parentCaseType) {
-	if (!parent) return false
-	if (parent.endDate) return false
-	if (parent.parentCase) return false
-	const allowed = parentCaseType?.subCaseTypes || []
-	return Array.isArray(allowed) && allowed.length > 0
-}
 
 // --- DeelzaakCreateModal.availableCaseTypes (verbatim filter) ---------------
 function availableCaseTypes(caseTypes, parentCaseType) {
@@ -72,82 +34,6 @@ function availableCaseTypes(caseTypes, parentCaseType) {
 			|| allowedSet.has(String(ct.uuid)),
 	)
 }
-
-describe('DeelzaakList.sortedSubCases', () => {
-	it('orders open cases before closed ones', () => {
-		const rows = [{ id: 'closed', endDate: '2026-01-01' }, { id: 'open' }]
-		expect(sortedSubCases(rows).map((r) => r.id)).toEqual(['open', 'closed'])
-	})
-
-	it('within the open group, sorts by deadline ascending; no-deadline sinks last', () => {
-		const rows = [
-			{ id: 'later', deadline: '2026-06-10' },
-			{ id: 'none' },
-			{ id: 'sooner', deadline: '2026-06-01' },
-		]
-		expect(sortedSubCases(rows).map((r) => r.id)).toEqual([
-			'sooner',
-			'later',
-			'none',
-		])
-	})
-
-	it('does not mutate the input array', () => {
-		const rows = [{ id: 'b', endDate: '2026-01-01' }, { id: 'a' }]
-		const snapshot = rows.map((r) => r.id)
-		sortedSubCases(rows)
-		expect(rows.map((r) => r.id)).toEqual(snapshot)
-	})
-})
-
-describe('DeelzaakList.rollUpText', () => {
-	it('counts completed (endDate present) over total', () => {
-		const rows = [
-			{ id: 'a', endDate: '2026-01-01' },
-			{ id: 'b' },
-			{ id: 'c', endDate: '2026-02-01' },
-		]
-		expect(rollUp(rows)).toEqual({
-			completed: 2,
-			total: 3,
-			text: '(2/3 completed)',
-		})
-	})
-
-	it('handles an all-open and an empty list', () => {
-		expect(rollUp([{ id: 'a' }, { id: 'b' }]).text).toBe('(0/2 completed)')
-		expect(rollUp([]).text).toBe('(0/0 completed)')
-	})
-})
-
-describe('DeelzaakList.canCreate', () => {
-	const parentType = { subCaseTypes: ['ct-1', 'ct-2'] }
-
-	it('allows creation for an open top-level parent whose type permits sub-cases', () => {
-		expect(canCreate({ id: 'p1' }, parentType)).toBe(true)
-	})
-
-	it('blocks when the parent is closed', () => {
-		expect(canCreate({ id: 'p1', endDate: '2026-01-01' }, parentType)).toBe(
-			false,
-		)
-	})
-
-	it('blocks grandchildren (parent is itself a sub-case)', () => {
-		expect(canCreate({ id: 'p1', parentCase: 'grandparent' }, parentType)).toBe(
-			false,
-		)
-	})
-
-	it('blocks when the case type allows no sub-case types', () => {
-		expect(canCreate({ id: 'p1' }, { subCaseTypes: [] })).toBe(false)
-		expect(canCreate({ id: 'p1' }, null)).toBe(false)
-	})
-
-	it('blocks when there is no parent at all', () => {
-		expect(canCreate(null, parentType)).toBe(false)
-	})
-})
 
 describe('DeelzaakCreateModal.availableCaseTypes', () => {
 	const caseTypes = [

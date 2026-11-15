@@ -27,11 +27,15 @@ use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Runs the return against an in-memory register holding a C1-shaped dossier.
  *
  * @covers \OCA\Dossiq\Woo\WooDossierReturn
+ * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  */
 class WooDossierReturnTest extends TestCase {
 
@@ -75,12 +79,16 @@ class WooDossierReturnTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				if ((string)$schema === 'collection' && ($_rbac === true || $_multitenancy === true)) {
 					return null;
 				}
 
-				return parent::find(id: $id, register: $register, schema: $schema);
+				return parent::find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 			}
 
 			/**
@@ -95,12 +103,15 @@ class WooDossierReturnTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				if ((string)$schema === 'collection' && ($_rbac === true || $_multitenancy === true)) {
 					throw new \RuntimeException('not permitted');
 				}
 
-				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				return parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 			}
 		};
 		$this->store->seed(

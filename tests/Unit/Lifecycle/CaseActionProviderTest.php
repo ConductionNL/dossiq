@@ -67,6 +67,8 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Lifecycle\CaseActionList
  * @uses \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionStep
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  * @uses \OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway
  * @uses \OCA\Dossiq\Service\Cases\ExternalHome

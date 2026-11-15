@@ -30,7 +30,7 @@ const manifest = JSON.parse(
 const STUB = {}
 
 /** The pages a handler triages from, which are the only ones that split. */
-const TRIAGED_FROM = ['Cases', 'Queue']
+const TRIAGED_FROM = ['Cases']
 
 /**
  * One page of the shipped manifest.
@@ -76,6 +76,11 @@ describe('a case opens as its own page', () => {
 
 	it('offers a reference its summary in place', () => {
 		expect(page('CaseDetail').referencePreview).toBe(true)
+	})
+
+	it('steps to the next and previous case of the list it was opened from', () => {
+		// nextcloud-vue lists navigation only for a detail page that opts in.
+		expect(page('CaseDetail').listNavigation).toBe(true)
 	})
 
 	it('is still a detail page reached at /cases/:id', () => {

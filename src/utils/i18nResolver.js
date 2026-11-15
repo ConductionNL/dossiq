@@ -21,7 +21,7 @@ const APP_DEFAULT_LOCALE = 'nl'
  *
  * @return {string} BCP 47 language code (e.g., 'nl', 'en', 'de')
  */
-/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 export function getUserLocale() {
 	if (typeof OC !== 'undefined' && typeof OC.getLanguage === 'function') {
 		const lang = OC.getLanguage()
@@ -46,7 +46,7 @@ export function getUserLocale() {
  * @param {string} [locale] The preferred locale (defaults to user's locale)
  * @param {string} [fallbackLocale] The fallback locale (defaults to app default 'nl')
  * @return {{ text: string, lang: string|null, isFallback: boolean }}
- * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
  */
 export function resolveTranslatable(value, locale, fallbackLocale) {
 	// Null/undefined -> empty string
@@ -61,9 +61,21 @@ export function resolveTranslatable(value, locale, fallbackLocale) {
 
 	// Language-tagged object
 	const userLocale = locale || getUserLocale()
-	const fallback = fallbackLocale || APP_DEFAULT_LOCALE
+	const chain = localeChain(userLocale, fallbackLocale || APP_DEFAULT_LOCALE)
 
-	// Build fallback chain (deduplicated, ordered)
+	// Try each language in order; the last resort is the first available language.
+	return firstInChain(value, { chain, userLocale }) ?? firstAvailable(value)
+}
+
+/**
+ * The locales to try, deduplicated and in order: the user's, the fallback,
+ * the app default and English.
+ *
+ * @param {string} userLocale The preferred locale.
+ * @param {string} fallback The fallback locale.
+ * @return {Array<string>} The chain.
+ */
+function localeChain(userLocale, fallback) {
 	const chain = []
 	const seen = new Set()
 	for (const lang of [userLocale, fallback, APP_DEFAULT_LOCALE, 'en']) {
@@ -72,23 +84,47 @@ export function resolveTranslatable(value, locale, fallbackLocale) {
 			seen.add(lang)
 		}
 	}
+	return chain
+}
 
-	// Try each language in order
-	for (const lang of chain) {
-		if (
-			value[lang] !== undefined
-			&& value[lang] !== null
-			&& value[lang] !== ''
-		) {
-			return {
-				text: String(value[lang]),
-				lang,
-				isFallback: lang !== userLocale,
-			}
-		}
+/**
+ * The first language of the chain that carries a text, or null.
+ *
+ * @param {object} value The language-tagged object.
+ * @param {{chain: Array<string>, userLocale: string}} locales The chain and the preferred locale.
+ * @return {{ text: string, lang: string, isFallback: boolean }|null} The resolved text.
+ */
+function firstInChain(value, locales) {
+	const lang = locales.chain.find((candidate) => hasText(value[candidate]))
+	if (lang === undefined) {
+		return null
 	}
+	return {
+		text: String(value[lang]),
+		lang,
+		isFallback: lang !== locales.userLocale,
+	}
+}
 
-	// Last resort: first available language
+/**
+ * Whether a language's entry carries a text.
+ *
+ * @param {unknown} text The entry.
+ * @return {boolean} True unless undefined, null or empty.
+ */
+function hasText(text) {
+	return text !== undefined
+		&& text !== null
+		&& text !== ''
+}
+
+/**
+ * The first language the object carries, or an empty text.
+ *
+ * @param {object} value The language-tagged object.
+ * @return {{ text: string, lang: string|null, isFallback: boolean }} The resolved text.
+ */
+function firstAvailable(value) {
 	const keys = Object.keys(value)
 	if (keys.length > 0) {
 		const firstLang = keys[0]
@@ -110,7 +146,7 @@ export function resolveTranslatable(value, locale, fallbackLocale) {
  * @param {string} field The field name to resolve
  * @param {string} [locale] The preferred locale
  * @return {{ text: string, lang: string|null, isFallback: boolean }}
- * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
  */
 export function resolveField(obj, field, locale) {
 	if (!obj || typeof obj !== 'object') {
@@ -126,7 +162,7 @@ export function resolveField(obj, field, locale) {
  * @param {string} field The field name to resolve
  * @param {string} [locale] The preferred locale
  * @return {string} The resolved text
- * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
  */
 export function resolveText(obj, field, locale) {
 	return resolveField(obj, field, locale).text

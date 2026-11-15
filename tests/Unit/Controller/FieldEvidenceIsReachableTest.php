@@ -318,6 +318,22 @@ class FieldEvidenceIsReachableTest extends TestCase {
 	}//end testAnUnauthenticatedCallerIsToldToSignIn()
 
 	/**
+	 * A store that refuses the write is not answered here: the refusal reaches the caller's error handling.
+	 *
+	 * @return void
+	 */
+	public function testARefusedWriteIsNotSwallowed(): void {
+		$this->store->refusedSchemas = ['fieldEvidence'];
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Save refused for fieldEvidence');
+
+		$this->controller(
+			params: ['type' => 'photo', 'localBlobRef' => 'idb://capture-2', 'byteSize' => 1000]
+		)->capture(inspectionRef: 'inspection-1');
+	}//end testARefusedWriteIsNotSwallowed()
+
+	/**
 	 * An instance that has not imported the offline register says so.
 	 *
 	 * 503 and not 500: a device told it made a bad request discards a capture
@@ -375,7 +391,6 @@ class FieldEvidenceIsReachableTest extends TestCase {
 		$settings = $this->settings(configured: $configured);
 
 		return new FieldEvidenceController(
-			appName: 'dossiq',
 			request: $request,
 			metadata: new EvidenceMetadataService(),
 			transcription: new TranscriptionService(

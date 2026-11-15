@@ -13,7 +13,7 @@ Provide a human-in-the-loop AI surface for casehandlers: classify documents, ext
 
 ## Requirements
 
-### REQ-001: AI REST surface for classify / extract / ask / summarize / suggestRouting / suggestNext
+### Requirement: REQ-001: AI REST surface for classify / extract / ask / summarize / suggestRouting / suggestNext
 
 The system SHALL expose six `@NoAdminRequired` JSON endpoints on `AiController` — `classify`, `extract`, `ask`, `summarize`, `suggestRouting`, `suggestNext` — that validate required parameters, resolve the calling user (or `'anonymous'`), delegate to `AiService`, and return the service result as JSON.
 
@@ -32,7 +32,7 @@ The system SHALL expose six `@NoAdminRequired` JSON endpoints on `AiController` 
 - WHEN no session user is present
 - THEN `getCurrentUserId()` SHALL return `'anonymous'` and downstream service calls SHALL still proceed
 
-### REQ-002: Human-in-the-loop action recording and audit-trail listing
+### Requirement: REQ-002: Human-in-the-loop action recording and audit-trail listing
 
 The system SHALL expose `recordAction` (record what the user did with a given AI suggestion: accepted / rejected / overridden / etc.) and `auditIndex` (list AI audit entries filterable by `caseId`, `type`, `limit`, `offset`) endpoints — these underpin Algoritmeregister-style traceability for every AI suggestion.
 

@@ -11,7 +11,7 @@
  * (round-4 check), and a real report would have read "[object Object]". These
  * tests feed the shapes openregister actually sends.
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

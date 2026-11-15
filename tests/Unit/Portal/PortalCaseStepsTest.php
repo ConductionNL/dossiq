@@ -30,12 +30,15 @@ use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Portal\PortalCaseSteps
  * @uses   \OCA\Dossiq\Portal\CaseSteps
  * @uses   \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses   \OCA\Dossiq\Service\Transitions\StatusPublicLabels
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Portal\PortalCaseReads
  */
 class PortalCaseStepsTest extends TestCase {
 	private const CASE_ID = '22222222-2222-4222-8222-222222222222';
@@ -56,7 +59,11 @@ class PortalCaseStepsTest extends TestCase {
 	private function service(): PortalCaseSteps {
 		$objects = $this->createMock(ObjectServiceInterface::class);
 		$objects->method('runAsSystem')->willReturnCallback(static fn (callable $operation) => $operation());
-		$objects->method('find')->willReturnCallback(function ($id, $_extend = [], $files = false, $register = null, $schema = null, $_rbac = true, $_multitenancy = true) {
+		$objects->method('find')->willReturnCallback(function ($id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true) {
+			$_extend = $options?->extend ?? [];
+			$files = $options?->files ?? false;
+			$register = $options?->register;
+			$schema = $options?->schema;
 			$this->findScopes[] = [$_rbac, $_multitenancy];
 			if ($id !== self::CASE_ID || $_rbac !== false || $_multitenancy !== false) {
 				return null;
