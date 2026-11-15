@@ -209,28 +209,43 @@ class RecordImportReferences {
 	 * @spec openspec/specs/case-record-import/spec.md
 	 */
 	public function repoint(object $objectService, array $import, array $oldValues, string $caseId): int {
+		$move = [
+			'objectService' => $objectService,
+			'oldValues' => array_values(array_unique(array_filter($oldValues, static fn (string $value): bool => trim($value) !== ''))),
+			'caseId' => $caseId,
+		];
+
 		$moved = 0;
 		foreach ((array)($import['references'] ?? []) as $reference) {
-			$where = $this->referenceWhere(reference: $reference, import: $import);
-			if ($where === null) {
-				continue;
-			}
-
-			$move = [
-				'objectService' => $objectService,
-				'oldValues' => array_values(array_unique(array_filter($oldValues, static fn (string $value): bool => trim($value) !== ''))),
-				'caseId' => $caseId,
-			];
-			if (($reference['list'] ?? false) === true) {
-				$moved += $this->repointLists(where: $where, move: $move);
-				continue;
-			}
-
-			$moved += $this->repointRows(where: $where, move: $move);
+			$moved += $this->repointReference(reference: $reference, move: $move + ['import' => $import]);
 		}
 
 		return $moved;
 	}//end repoint()
+
+	/**
+	 * Point the values one `references` entry names at the case.
+	 *
+	 * @param mixed                $reference The `references` entry.
+	 * @param array<string, mixed> $move      The ObjectService, the moved record's id and slug, the case and the
+	 *                                        declaration (`import`).
+	 *
+	 * @return int How many references moved.
+	 *
+	 * @throws Throwable When a referencing record cannot be read or written.
+	 */
+	private function repointReference(mixed $reference, array $move): int {
+		$where = $this->referenceWhere(reference: $reference, import: $move['import']);
+		if ($where === null) {
+			return 0;
+		}
+
+		if (($reference['list'] ?? false) === true) {
+			return $this->repointLists(where: $where, move: $move);
+		}
+
+		return $this->repointRows(where: $where, move: $move);
+	}//end repointReference()
 
 	/**
 	 * The register, schema and field one `references` entry names.

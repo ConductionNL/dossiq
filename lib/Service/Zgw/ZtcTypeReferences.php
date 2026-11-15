@@ -110,19 +110,32 @@ class ZtcTypeReferences {
 			return $body;
 		}
 
+		$body[$field] = $this->resolvedAll(refs: $body[$field], lookup: ['scope' => $scope, 'field' => $lookupField]);
+
+		return $body;
+	}//end resolveTypeReferences()
+
+	/**
+	 * Every reference in the list resolved to the uuids it names, in order.
+	 *
+	 * @param array<int, mixed>                                       $refs   The references.
+	 * @param array{scope: array{0: string, 1: string}, field: string} $lookup The register and schema to search, and the
+	 *                                                                        OpenRegister field to search by.
+	 *
+	 * @return array<int, string> The uuids.
+	 */
+	private function resolvedAll(array $refs, array $lookup): array {
 		$resolved = [];
-		foreach ($body[$field] as $ref) {
+		foreach ($refs as $ref) {
 			if (is_string($ref) === false || $ref === '') {
 				continue;
 			}
 
-			array_push($resolved, ...$this->resolveReference(ref: $ref, lookup: ['scope' => $scope, 'field' => $lookupField]));
+			array_push($resolved, ...$this->resolveReference(ref: $ref, lookup: $lookup));
 		}
 
-		$body[$field] = $resolved;
-
-		return $body;
-	}//end resolveTypeReferences()
+		return $resolved;
+	}//end resolvedAll()
 
 	/**
 	 * Resolve one type reference to the uuids it names.
