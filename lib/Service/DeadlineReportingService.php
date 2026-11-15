@@ -442,19 +442,18 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 			'totaal' => $total,
 			'binnenTermijnPct' => $binnenPct,
 			'gemiddeldeDoorlooptijdDagen' => $avgDur,
-		] + $this->typeCounts(b: $b, total: $total, binnenPct: $binnenPct);
+		] + $this->typeCounts(b: $b, binnenPct: $binnenPct);
 	}//end reducedType()
 
 	/**
 	 * The counted figures of one zaaktype's aggregate.
 	 *
-	 * @param array<string, mixed> $b         The raw tally.
-	 * @param int                  $total     The number of terms counted.
+	 * @param array<string, mixed> $b         The raw tally, with the number of terms counted as `totaal`.
 	 * @param float|null           $binnenPct The share of decided terms that were met.
 	 *
 	 * @return array<string, mixed> The counted figures.
 	 */
-	private function typeCounts(array $b, int $total, ?float $binnenPct): array {
+	private function typeCounts(array $b, ?float $binnenPct): array {
 		return [
 			'verlengingen' => $b['verlengingen'],
 			'overschrijdingen' => $b['overschrijdingen'],
@@ -462,7 +461,7 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 			'dwangsomTotalCents' => $b['dwangsomTotalCents'],
 			// The listing selects terms by start date in the quarter, so every
 			// counted term arrived in it.
-			'received' => $total,
+			'received' => $b['totaal'],
 			'met' => $b['met'],
 			'missed' => $b['missed'],
 			'running' => $b['running'],
