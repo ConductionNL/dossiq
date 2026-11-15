@@ -26,6 +26,7 @@ use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetVerifierInterface;
 use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetWriterInterface;
 use OCA\Dossiq\Kernel\Contracts\WooGatherAddInterface;
 use OCA\Dossiq\Kernel\Contracts\WooReceivedAnswersInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRecordedDeliveryInterface;
 use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
 use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
@@ -63,6 +64,7 @@ class WooContractRegistrar {
 		$context->registerServiceAlias(WooDeliveredSetWriterInterface::class, WooDeliveredSetWriter::class);
 		$context->registerServiceAlias(WooGatherAddInterface::class, WooGatherAdd::class);
 		$context->registerServiceAlias(WooReceivedAnswersInterface::class, WooReceivedAnswers::class);
+		$context->registerServiceAlias(WooRecordedDeliveryInterface::class, WooDeliveredSetWriter::class);
 		$context->registerServiceAlias(WooReportReadLogInterface::class, WooReportReadLog::class);
 		$context->registerServiceAlias(WooRequestIntakeInterface::class, WooRequestIntake::class);
 		$context->registerServiceAlias(WooSearchPlansInterface::class, WooSearchPlans::class);

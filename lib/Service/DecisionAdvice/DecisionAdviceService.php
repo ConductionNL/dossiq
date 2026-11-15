@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\DecisionAdvice;
 
 use DateTimeInterface;
+use OCA\Dossiq\Kernel\Contracts\DecisionAdviceServiceInterface;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCP\AppFramework\Http;
@@ -35,7 +36,7 @@ use Throwable;
  *
  * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md#requirement-a-handler-asks-the-case-types-decision-table-for-advice-on-the-case-req-lhs-case-01
  */
-class DecisionAdviceService {
+class DecisionAdviceService implements DecisionAdviceServiceInterface {
 
 	/**
 	 * The refusal of a deviation without a reason, as the handler reads it.
