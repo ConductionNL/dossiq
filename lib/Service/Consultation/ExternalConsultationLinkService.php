@@ -120,17 +120,31 @@ class ExternalConsultationLinkService implements ExternalConsultationLinkService
 			]
 		);
 
+		return $this->invited(share: $share, invite: ['consultation' => $consultation, 'consultationId' => $consultationId, 'body' => $body]);
+	}//end invite()
+
+	/**
+	 * The minted link with where it goes, refusing when the share could not be minted.
+	 *
+	 * @param array<string, mixed> $share  What minting the link answered.
+	 * @param array<string, mixed> $invite The `consultation`, its `consultationId` and the advisory `body`.
+	 *
+	 * @return array<string, mixed> The link, with the address it goes to.
+	 *
+	 * @throws RuntimeException When the share answered an error.
+	 */
+	private function invited(array $share, array $invite): array {
 		if (isset($share['error']) === true) {
 			throw new RuntimeException((string)$share['error']);
 		}
 
 		$this->logger->info(
 			'Dossiq: an external advisory body was invited over a case access link',
-			['consultationId' => $consultationId, 'advisoryBody' => $body]
+			['consultationId' => $invite['consultationId'], 'advisoryBody' => $invite['body']]
 		);
 
-		return $this->withAddress(share: $share, consultation: $consultation);
-	}//end invite()
+		return $this->withAddress(share: $share, consultation: $invite['consultation']);
+	}//end invited()
 
 	/**
 	 * The consultation, its case and its advisory body, when it can carry a link.
