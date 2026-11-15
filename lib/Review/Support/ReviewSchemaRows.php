@@ -28,7 +28,7 @@ use Throwable;
 /**
  * Whether a review store's schema can be used, and its refusals.
  *
- * The using class provides `$reviews` (CaseReviewerAccessInterface),
+ * The using class provides `$reviews` (DocumentRelevance),
  * `$settingsService` and the `SCHEMA_KEY` constant.
  *
  * @spec exclude shared plumbing of the triage rule and review batch stores, covered by their own specs

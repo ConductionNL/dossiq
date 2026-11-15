@@ -17,8 +17,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Review\Support;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\Support\ReviewSchemaRows;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -39,7 +39,7 @@ class ReviewSchemaRowsTest extends TestCase {
 	 * @return object
 	 */
 	private function store(bool $reviews, string $schema): object {
-		$access = $this->createMock(CaseReviewerAccessInterface::class);
+		$access = $this->createMock(DocumentRelevance::class);
 		$access->method('isAvailable')->willReturn($reviews);
 		$settings = $this->createMock(SettingsServiceInterface::class);
 		$settings->method('getConfigValue')->willReturn($schema);
@@ -50,7 +50,7 @@ class ReviewSchemaRowsTest extends TestCase {
 			private const SCHEMA_KEY = 'test_schema';
 
 			public function __construct(
-				private readonly CaseReviewerAccessInterface $reviews,
+				private readonly DocumentRelevance $reviews,
 				private readonly SettingsServiceInterface $settingsService,
 			) {
 			}
