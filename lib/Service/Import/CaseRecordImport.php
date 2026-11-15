@@ -272,7 +272,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 
 		$state = ['cases' => null, 'byKey' => null];
 		foreach ($sources as $source) {
-			$outcome = $this->moveRecord(run: $run, source: $source, state: $state);
+			$outcome = $this->moveRecord(run: $run + ['source' => $source], state: $state);
 			if ($outcome['kind'] === 'stop') {
 				$answer['failed'][] = $outcome['row'];
 				return $answer;
@@ -308,13 +308,14 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Move one source record onto a case, or say why it was not.
 	 *
-	 * @param array<string, mixed> $run The run: objectService, caseType, import, dryRun.
-	 * @param array<string, mixed> $source The source record.
-	 * @param array<string, mixed> $state  The cases read so far, by source and by number; read once, on first need.
+	 * @param array<string, mixed> $run   The run: objectService, caseType, import, dryRun, and the source record as `source`.
+	 * @param array<string, mixed> $state The cases read so far, by source and by number; read once, on first need.
 	 *
 	 * @return array{kind: string, row: array<string, mixed>} `kind` is alreadyImported, unmigrated, failed, duplicate, migrated or stop.
 	 */
-	private function moveRecord(array $run, array $source, array &$state): array {
+	private function moveRecord(array $run, array &$state): array {
+		$source = $run['source'];
+		unset($run['source']);
 		$skipped = $this->skippedAs(source: $source, run: $run);
 		if ($skipped !== '') {
 			return ['kind' => $skipped, 'row' => []];
@@ -433,7 +434,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return $failed($placed['reason']);
 		}
 
-		$moved = $this->moveAndStamp(run: $run, source: $source, caseId: $placed['caseId']);
+		$moved = $this->moveAndStamp(run: $run + ['caseId' => $placed['caseId']], source: $source);
 		if (isset($moved['reason']) === true) {
 			return $failed($moved['reason']);
 		}
@@ -445,13 +446,13 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Move the records pointing at the source onto the case, then stamp the source as moved.
 	 *
-	 * @param array<string, mixed> $run    The run: objectService, caseType, import, existing.
+	 * @param array<string, mixed> $run    The run: objectService, caseType, import, existing, and the case written for the source as `caseId`.
 	 * @param array<string, mixed> $source The source record.
-	 * @param string               $caseId The case written for it.
 	 *
 	 * @return array{repointed?: mixed, reason?: string} How many references moved, or why the record is not moved.
 	 */
-	private function moveAndStamp(array $run, array $source, string $caseId): array {
+	private function moveAndStamp(array $run, array $source): array {
+		$caseId = (string)$run['caseId'];
 		$sourceId = $this->steps->store->idOf(row: $source);
 		// References are moved before the stamp: a record whose references
 		// could not all be moved stays unstamped, so the next run tries again.
