@@ -33,6 +33,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateInterval;
+use OCA\Dossiq\Kernel\Contracts\ApplicantTermNoteInterface;
+use OCA\Dossiq\Service\Support\ReadableDay;
 use Throwable;
 
 /**
@@ -40,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-applicant-reads-the-decision-date-and-the-state-of-the-term-req-wds-002
  */
-class ApplicantTermNote {
+class ApplicantTermNote implements ApplicantTermNoteInterface {
 
 	/**
 	 * The case field that holds the sentence.
@@ -62,27 +64,6 @@ class ApplicantTermNote {
 	 * @var int
 	 */
 	public const MAX_LENGTH = 200;
-
-	/**
-	 * Dutch month names, because the applicant reads Dutch and a server's
-	 * locale is not the applicant's.
-	 *
-	 * @var list<string>
-	 */
-	private const MONTHS = [
-		'januari',
-		'februari',
-		'maart',
-		'april',
-		'mei',
-		'juni',
-		'juli',
-		'augustus',
-		'september',
-		'oktober',
-		'november',
-		'december',
-	];
 
 	/**
 	 * Dutch number words for the periods a case type usually states.
@@ -223,6 +204,9 @@ class ApplicantTermNote {
 	/**
 	 * A moment as a Dutch day, "6 oktober 2026", or the empty string.
 	 *
+	 * Dutch month names, because the applicant reads Dutch and a server's
+	 * locale is not the applicant's.
+	 *
 	 * @param string $moment An ISO 8601 date or date-time.
 	 *
 	 * @return string The day in words.
@@ -232,7 +216,7 @@ class ApplicantTermNote {
 			return '';
 		}
 
-		$month = (self::MONTHS[((int)$parts[2] - 1)] ?? '');
+		$month = (ReadableDay::MONTHS_NL[((int)$parts[2] - 1)] ?? '');
 		if ($month === '' || (int)$parts[3] < 1 || (int)$parts[3] > 31) {
 			return '';
 		}

@@ -18,7 +18,7 @@
   SPDX-License-Identifier: EUPL-1.2
   SPDX-FileCopyrightText: 2026 Conduction B.V.
 
-  @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<NcDialog
@@ -140,7 +140,7 @@ export default {
 		/**
 		 * @return {string} The dialog title.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		title() {
 			return t('dossiq', 'Give the cases to another handler')
@@ -151,7 +151,7 @@ export default {
 		 *
 		 * @return {boolean} Whether the act can be rehearsed.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		canRehearse() {
 			return (
@@ -174,7 +174,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the job has been rehearsed.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async rehearse() {
 			this.busy = true

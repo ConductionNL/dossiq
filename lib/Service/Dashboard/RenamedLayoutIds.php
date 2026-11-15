@@ -112,7 +112,7 @@ final class RenamedLayoutIds {
 	 *
 	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
 	 */
-	public static function rewrite(mixed $value, ?string $key = null): mixed {
+	public function rewrite(mixed $value, ?string $key = null): mixed {
 		if (is_string($value) === true) {
 			return self::rewriteString(value: $value, key: $key);
 		}
@@ -133,11 +133,11 @@ final class RenamedLayoutIds {
 		$out = [];
 		foreach ($value as $childKey => $child) {
 			if (is_int($childKey) === true) {
-				$out[$childKey] = self::rewrite(value: $child);
+				$out[$childKey] = $this->rewrite(value: $child);
 				continue;
 			}
 
-			$out[(self::IDS[$childKey] ?? $childKey)] = self::rewrite(value: $child, key: $childKey);
+			$out[(self::IDS[$childKey] ?? $childKey)] = $this->rewrite(value: $child, key: $childKey);
 		}
 
 		return $out;

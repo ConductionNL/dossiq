@@ -15,7 +15,7 @@
   type. A version is this case type later on: same name, same identifier, and
   the cases running today stay where they are.
 
-  @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+  @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
 	<NcDialog
@@ -67,12 +67,13 @@
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
-import { copiedCaseTypeId, publishRefusalMessage } from '../utils/caseTypePublish.js'
+import {
+	caseTypeRefusalMessages,
+	postAndLand,
+} from '../utils/caseTypeDialogs.js'
 
 export default {
 	name: 'CaseTypeNewVersionDialog',
@@ -101,25 +102,12 @@ export default {
 		/**
 		 * The sentences a refusal can carry, already translated.
 		 *
-		 * Written as literal t() calls here rather than inside the helper,
-		 * because `tests/l10n/check-l10n.js` extracts by finding a literal in a
-		 * t() call for this app and cannot see a string passing through a
-		 * callback.
-		 *
 		 * @return {object} The messages.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		refusalMessages() {
-			return {
-				signIn: t('dossiq', 'Sign in again and retry.'),
-				forbidden: t('dossiq', 'Your account may not do this.'),
-				missing: t('dossiq', 'This case type no longer exists.'),
-				generic: t(
-					'dossiq',
-					'That did not work. Try again, or ask an administrator.',
-				),
-			}
+			return caseTypeRefusalMessages()
 		},
 
 		/**
@@ -127,7 +115,7 @@ export default {
 		 *
 		 * @return {string} The id.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		id() {
 			return this.caseTypeId || String(this.$route?.params?.id ?? '')
@@ -142,37 +130,16 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async confirm() {
-			this.busy = true
 			this.error = ''
-			try {
-				const { data } = await axios.post(
-					generateUrl(
-						`/apps/dossiq/api/case-definitions/${encodeURIComponent(this.id)}/new-version`,
-					),
-				)
-				const draftId = copiedCaseTypeId(data)
-				this.$emit('close')
-				if (draftId) {
-					this.$router.push({
-						name: 'CaseTypeDetail',
-						params: { id: draftId },
-					})
-					return
-				}
-				// A draft that was made but cannot be located is still a draft:
-				// say nothing false, and leave the person where they were.
-				this.error = t(
-					'dossiq',
-					'The draft was made but could not be opened.',
-				)
-			} catch (e) {
-				this.error = publishRefusalMessage(e, this.refusalMessages)
-			} finally {
-				this.busy = false
-			}
+			// A draft that was made but cannot be located is still a draft:
+			// say nothing false, and leave the person where they were.
+			await postAndLand(this, {
+				action: 'new-version',
+				lost: t('dossiq', 'The draft was made but could not be opened.'),
+			})
 		},
 	},
 }

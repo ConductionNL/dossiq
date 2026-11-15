@@ -31,6 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCP\AppFramework\Db\DoesNotExistException;
+
 /**
  * An in-memory stand-in for OpenRegister's ObjectService.
  */
@@ -75,6 +77,13 @@ class InMemoryRegister {
 	 * @var bool
 	 */
 	public bool $pages = false;
+
+	/**
+	 * Schemas the register does not hold: a search on one throws, as an unresolvable slug does in OpenRegister.
+	 *
+	 * @var list<string>
+	 */
+	public array $missingSchemas = [];
 
 	/**
 	 * Schemas whose saves fail, as an OpenRegister write that throws.
@@ -181,6 +190,10 @@ class InMemoryRegister {
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		if (in_array($schema, $this->missingSchemas, true) === true) {
+			throw new DoesNotExistException('No schema '.$schema.' in this register');
+		}
+
 		$matches = [];
 		if ($_rbac === true && in_array($schema, $this->hiddenFromCaller, true) === true) {
 			return $matches;
@@ -277,7 +290,13 @@ class InMemoryRegister {
 				continue;
 			}
 
-			if (($row[$key] ?? null) !== $value) {
+			// A list against a scalar property is "any of", as OpenRegister matches it.
+			$anyOf = (is_array($value) === true && array_is_list($value) === true && is_array($row[$key] ?? null) === false);
+			if ($anyOf === true && in_array(($row[$key] ?? null), $value, true) === false) {
+				return false;
+			}
+
+			if ($anyOf === false && ($row[$key] ?? null) !== $value) {
 				return false;
 			}
 		}

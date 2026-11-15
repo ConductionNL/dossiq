@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-declared-access-exception-is-applied/specs/document-access-exception/spec.md#requirement-an-exception-written-straight-onto-a-document-is-applied-as-the-writer-applies-it
+ * @spec openspec/specs/document-access-exception/spec.md#requirement-an-exception-written-straight-onto-a-document-is-applied-as-the-writer-applies-it
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -22,9 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Zaakdossier\DeclaredAccessExceptions;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DeclaredAccessExceptionsInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -37,7 +37,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/a-declared-access-exception-is-applied/specs/document-access-exception/spec.md#requirement-an-exception-written-straight-onto-a-document-is-applied-as-the-writer-applies-it
+ * @spec openspec/specs/document-access-exception/spec.md#requirement-an-exception-written-straight-onto-a-document-is-applied-as-the-writer-applies-it
  */
 class DeclaredAccessExceptionListener implements IEventListener {
 
@@ -49,15 +49,15 @@ class DeclaredAccessExceptionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param DeclaredAccessExceptions $exceptions   Applies an exception that is out of step.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves a schema id to its slug.
+	 * @param DeclaredAccessExceptionsInterface $exceptions   Applies an exception that is out of step.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 * @param LoggerInterface          $logger       Where a failure is reported.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly DeclaredAccessExceptions $exceptions,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly DeclaredAccessExceptionsInterface $exceptions,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -69,7 +69,7 @@ class DeclaredAccessExceptionListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/a-declared-access-exception-is-applied/specs/document-access-exception/spec.md#requirement-an-exception-written-straight-onto-a-document-is-applied-as-the-writer-applies-it
+	 * @spec openspec/specs/document-access-exception/spec.md#requirement-an-exception-written-straight-onto-a-document-is-applied-as-the-writer-applies-it
 	 */
 	public function handle(Event $event): void {
 		$record = null;
@@ -92,7 +92,7 @@ class DeclaredAccessExceptionListener implements IEventListener {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the access exception stored on a document could not be applied',
-				['app' => Application::APP_ID, 'documentId' => (string)($record['id'] ?? ''), 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'documentId' => (string)($record['id'] ?? ''), 'exception' => $e->getMessage()]
 			);
 		}
 	}//end handle()

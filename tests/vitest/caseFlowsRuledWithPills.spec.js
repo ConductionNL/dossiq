@@ -7,7 +7,7 @@
  * CnFlowRunsWidget statusPill); and its Werkinstructie card, the page's title
  * and where it lives. Read from the layout and the catalogue.
  *
- * @spec openspec/changes/flow-runs-ruled-with-pills/specs/cn-flow-runs-widget/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 import fs from 'fs'
 import path from 'path'

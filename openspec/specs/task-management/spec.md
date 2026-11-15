@@ -196,7 +196,7 @@ The system MUST enforce the CMMN PlanItem lifecycle for task status transitions,
 
 ---
 
-### REQ-TASK-003: Task Assignment
+### Requirement: REQ-TASK-003: Task Assignment
 
 The system MUST support assigning tasks to Nextcloud users.
 
@@ -1199,7 +1199,7 @@ available effects.
 - **GIVEN** a task whose declared handler cannot be resolved
 - **WHEN** a handler completes it
 - **THEN** the completion SHALL be refused
-- **AND** the refusal SHALL name the handler
+- **AND** the refusal SHALL name the handler, in the pattern the board `DqZaakTaken` draws for a refused cancel: "Annuleren geweigerd voor Documenten beoordelen: de engine staat annuleren niet toe zolang de stap Beoordeling loopt."
 
 #### Scenario: an unknown handler refuses publication
 @e2e exclude Publishing a workflow is an admin API call with no surface of its own yet. Asserted in tests/Unit/Service/Task/PerTaskConfigurationTest.php::testAnUnknownEffectRefusesPublication.

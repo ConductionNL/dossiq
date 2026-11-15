@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Intake\BoundFormsCheck;
+use OCA\Dossiq\Kernel\Contracts\BoundFormsCheckInterface;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -49,11 +49,11 @@ class CaseTypeBoundFormsListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param BoundFormsCheck $check  Judges the forms and applies the outcome.
+	 * @param BoundFormsCheckInterface $check  Judges the forms and applies the outcome.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly BoundFormsCheck $check,
+		private readonly BoundFormsCheckInterface $check,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -110,8 +110,8 @@ class CaseTypeBoundFormsListener implements IEventListener {
 		$event->setErrors(
 			[
 				'message' => $this->check->sentenceFor(assessment: $assessment),
-				'error' => BoundFormsCheck::RULE,
-				'code' => BoundFormsCheck::RULE,
+				'error' => BoundFormsCheckInterface::RULE,
+				'code' => BoundFormsCheckInterface::RULE,
 				'forms' => $this->check->listed(assessment: $assessment),
 			]
 		);

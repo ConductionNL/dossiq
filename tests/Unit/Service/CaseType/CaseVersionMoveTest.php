@@ -60,6 +60,10 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Transitions\StatusPublicLabels
+ * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
+ * @uses \OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseVersionMoveTest extends TestCase {
 
@@ -251,18 +255,19 @@ class CaseVersionMoveTest extends TestCase {
 			/**
 			 * Record a write and apply it to the store.
 			 *
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 * @param string               $id       The object id.
-			 * @param array<string, mixed> $object   The object.
+			 * @param string               $objectId      The object id.
+			 * @param array<string, mixed> $data          The object's complete new data.
+			 * @param bool                 $_rbac         Apply register RBAC.
+			 * @param bool                 $_multitenancy Apply organisation scoping.
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function updateObject(string $register, string $schema, string $id, array $object): array {
-				$this->writes[] = ['schema' => $schema, 'id' => $id, 'object' => $object];
-				$this->store[$id] = ['__schema' => $schema, 'data' => $object];
+			public function updateObject(string $objectId, array $data, bool $_rbac = true, bool $_multitenancy = true): array {
+				$schema = (string)($this->store[$objectId]['__schema'] ?? '');
+				$this->writes[] = ['schema' => $schema, 'id' => $objectId, 'object' => $data];
+				$this->store[$objectId] = ['__schema' => $schema, 'data' => $data];
 
-				return $object;
+				return $data;
 			}//end updateObject()
 		};
 	}//end objectService()
@@ -525,4 +530,257 @@ class CaseVersionMoveTest extends TestCase {
 
 		$this->service()->options(caseId: 'case-1');
 	}//end testACaseWithNoCaseTypeIsRefused()
+	/**
+	 * A move that names no target version is refused before the diff is read.
+	 *
+	 * @return void
+	 */
+	public function testAMoveWithNoTargetIsRefused(): void {
+		try {
+			$this->service()->preview(caseId: 'case-1', targetCaseTypeId: '');
+			self::fail('a preview without a target was not refused');
+		} catch (RefusedException $e) {
+			self::assertSame('version-move-target-missing', $e->getRule());
+			self::assertSame('Name the version this case should move to.', $e->getSentence());
+			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $e->getStatus());
+		}
+
+		self::assertSame([], $this->writes);
+	}//end testAMoveWithNoTargetIsRefused()
+
+	/**
+	 * The journal appends to an activity log stored as a JSON string.
+	 *
+	 * The register keeps `activity` as text, so the entries already there have
+	 * to survive the move; an append that started a fresh list would erase the
+	 * case's history.
+	 *
+	 * @return void
+	 */
+	public function testTheMoveAppendsToAnActivityLogStoredAsJson(): void {
+		$this->store['case-1']['data']['activity'] = json_encode([['type' => 'created', 'actor' => 'anna']]);
+
+		$this->service()->move(caseId: 'case-1', targetCaseTypeId: 'ct-2', reason: 'Nieuwe regels', actorUid: 'ruben');
+
+		$activity = $this->storedActivity();
+		self::assertCount(2, $activity);
+		self::assertSame(['type' => 'created', 'actor' => 'anna'], $activity[0]);
+		self::assertSame('case-type-version-move', $activity[1]['type']);
+		self::assertSame('Ontvangen', $activity[1]['status']);
+	}//end testTheMoveAppendsToAnActivityLogStoredAsJson()
+
+	/**
+	 * The journal appends to an activity log that arrives as an array too.
+	 *
+	 * @return void
+	 */
+	public function testTheMoveAppendsToAnActivityLogStoredAsAnArray(): void {
+		$this->store['case-1']['data']['activity'] = [['type' => 'created', 'actor' => 'anna']];
+
+		$this->service()->move(caseId: 'case-1', targetCaseTypeId: 'ct-2', reason: 'Nieuwe regels', actorUid: 'ruben');
+
+		$activity = $this->storedActivity();
+		self::assertCount(2, $activity);
+		self::assertSame('created', $activity[0]['type']);
+		self::assertSame('ruben', $activity[1]['actor']);
+	}//end testTheMoveAppendsToAnActivityLogStoredAsAnArray()
+
+	/**
+	 * A case that does not exist is refused as not found, not answered empty.
+	 *
+	 * @return void
+	 */
+	public function testAMissingCaseIsRefusedAsNotFound(): void {
+		try {
+			$this->service()->options(caseId: 'no-such-case');
+			self::fail('a missing case was not refused');
+		} catch (RefusedException $e) {
+			self::assertSame('case-not-found', $e->getRule());
+			self::assertSame('This case could not be found.', $e->getSentence());
+			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $e->getStatus());
+		}
+	}//end testAMissingCaseIsRefusedAsNotFound()
+
+	/**
+	 * A store that throws on read is indeterminate, and keeps the cause.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableCaseIsIndeterminate(): void {
+		$cause = new \RuntimeException('database gone');
+		$objectService = new class($cause) {
+			/**
+			 * @param \RuntimeException $cause What every read throws.
+			 */
+			public function __construct(private \RuntimeException $cause) {
+			}//end __construct()
+
+			/**
+			 * Always fails.
+			 *
+			 * @param string $id       The id.
+			 * @param mixed  $register The register.
+			 * @param mixed  $schema   The schema.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function find(string $id, $register = null, $schema = null): array {
+				throw $this->cause;
+			}//end find()
+		};
+
+		try {
+			$this->serviceOver(objectService: $objectService)->options(caseId: 'case-1');
+			self::fail('an unreadable case was not refused');
+		} catch (RefusedException $e) {
+			self::assertSame('case-unreadable', $e->getRule());
+			self::assertSame('This case could not be read, so it was not moved.', $e->getSentence());
+			self::assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+			self::assertSame($cause, $e->getPrevious());
+		}
+	}//end testAnUnreadableCaseIsIndeterminate()
+
+	/**
+	 * A failing write is refused as indeterminate, never reported as moved.
+	 *
+	 * @return void
+	 */
+	public function testAFailedWriteIsRefusedAndNotReportedAsMoved(): void {
+		$inner = $this->objectService();
+		$cause = new \RuntimeException('disk full');
+		$objectService = new class($inner, $cause) {
+			/**
+			 * @param object             $inner The in-memory store for reads.
+			 * @param \RuntimeException $cause What every write throws.
+			 */
+			public function __construct(private object $inner, private \RuntimeException $cause) {
+			}//end __construct()
+
+			/**
+			 * Read through.
+			 *
+			 * @param string $id       The id.
+			 * @param mixed  $register The register.
+			 * @param mixed  $schema   The schema.
+			 *
+			 * @return array<string, mixed>|null
+			 */
+			public function find(string $id, $register = null, $schema = null): ?array {
+				return $this->inner->find($id, $register, $schema);
+			}//end find()
+
+			/**
+			 * Search through.
+			 *
+			 * @param array<string, mixed> $query The query.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjects(array $query): array {
+				return $this->inner->searchObjects($query);
+			}//end searchObjects()
+
+			/**
+			 * Always fails.
+			 *
+			 * @param string               $objectId The id.
+			 * @param array<string, mixed> $data     The data.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function updateObject(string $objectId, array $data): array {
+				throw $this->cause;
+			}//end updateObject()
+		};
+
+		try {
+			$this->serviceOver(objectService: $objectService)->move(
+				caseId: 'case-1',
+				targetCaseTypeId: 'ct-2',
+				reason: 'Nieuwe regels',
+				actorUid: 'ruben'
+			);
+			self::fail('a failed write was reported as a move');
+		} catch (RefusedException $e) {
+			self::assertSame('version-move-not-written', $e->getRule());
+			self::assertSame('The case was not moved, because the change could not be saved.', $e->getSentence());
+			self::assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+			self::assertSame($cause, $e->getPrevious());
+		}
+
+		self::assertSame('ct-1', $this->store['case-1']['data']['caseType']);
+	}//end testAFailedWriteIsRefusedAndNotReportedAsMoved()
+
+	/**
+	 * Without OpenRegister the move is indeterminate, before anything is read.
+	 *
+	 * @return void
+	 */
+	public function testNoObjectServiceIsIndeterminate(): void {
+		try {
+			$this->serviceOver(objectService: null)->options(caseId: 'case-1');
+			self::fail('a missing object service was not refused');
+		} catch (RefusedException $e) {
+			self::assertSame('case-store-unavailable', $e->getRule());
+			self::assertSame('The case register could not be reached, so nothing was moved.', $e->getSentence());
+			self::assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+		}
+	}//end testNoObjectServiceIsIndeterminate()
+
+	/**
+	 * The service over a given object service, with the same configuration.
+	 *
+	 * @param object|null $objectService The object service, or null for none.
+	 *
+	 * @return CaseVersionMove The service.
+	 */
+	private function serviceOver(?object $objectService): CaseVersionMove {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key, string $default = ''): string {
+				return match ($key) {
+					'register' => 'dossiq',
+					'case_schema' => 'case',
+					'case_type_schema' => 'caseType',
+					'status_type_schema' => 'statusType',
+					'property_definition_schema' => 'propertyDefinition',
+					'workflow_template_schema' => 'workflowTemplate',
+					default => $default,
+				};
+			}
+		);
+
+		$store = new CaseTypeStore($settings);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn('en');
+		$chain = new CaseTypeVersionChain(store: $store, payloads: new DerivedCaseTypePayload(), text: new TranslatedText(l10n: $l10n));
+
+		return new CaseVersionMove(
+			settingsService: $settings,
+			store: $store,
+			chain: $chain,
+			diff: new CaseVersionDiff(
+				store: $store,
+				resolver: new CaseTypeResolver(store: $store),
+				chain: $chain,
+				answers: new CaseAnswerReader(store: $store, converter: $this->rebindConverter()),
+				text: new TranslatedText(l10n: $l10n),
+			),
+			logger: new NullLogger(),
+		);
+	}//end serviceOver()
+	/**
+	 * The case's activity journal as the move stored it: a JSON string, decoded.
+	 *
+	 * @return array<int, array<string, mixed>> The entries.
+	 */
+	private function storedActivity(): array {
+		$stored = ($this->store['case-1']['data']['activity'] ?? null);
+		self::assertIsString($stored);
+		$activity = json_decode($stored, true);
+		self::assertIsArray($activity);
+
+		return $activity;
+	}//end storedActivity()
 }//end class

@@ -43,9 +43,6 @@ $extra = [
         // Backend manifest delta — case-type navigation (case-type-navigation).
         // Consumed by useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' }).
     ['name' => 'manifest#manifest',  'url' => '/api/manifest',           'verb' => 'GET'],
-        // The case types each user chose for My case types (case-types-in-my-menu).
-    ['name' => 'menuCaseTypes#index',  'url' => '/api/menu-case-types', 'verb' => 'GET'],
-    ['name' => 'menuCaseTypes#update', 'url' => '/api/menu-case-types', 'verb' => 'PUT'],
         // The current user's primary team, for the @myTeam filter token (my-team-queue).
     ['name' => 'myTeam#show', 'url' => '/api/me/team', 'verb' => 'GET'],
 
@@ -142,6 +139,7 @@ $extra = [
     ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
     ['name' => 'caseTypePhases#index',     'url' => '/api/case-types/{id}/phases',           'verb' => 'GET'],
     ['name' => 'caseTypeTerms#index',      'url' => '/api/case-types/{id}/terms',            'verb' => 'GET'],
+    ['name' => 'caseTypeRules#index',      'url' => '/api/case-types/{id}/rules',            'verb' => 'GET'],
     ['name' => 'caseTypeRights#index',     'url' => '/api/case-types/{id}/rights-by-role',   'verb' => 'GET'],
     ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
     ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
@@ -156,6 +154,8 @@ $extra = [
     ['name' => 'caseNextStatus#show',          'url' => '/api/cases/{caseId}/next-status', 'verb' => 'GET'],
     // The instalments of the payment schedules on a case's decisions, with their states and totals (grant-cases-from-application-to-settlement).
     ['name' => 'paymentSchedule#forCase', 'url' => '/api/cases/{caseId}/payment-schedule', 'verb' => 'GET'],
+    // The settlements of a case, reached through its applications and their executions (overview-cards-per-case-type).
+    ['name' => 'settlement#forCase', 'url' => '/api/cases/{caseId}/settlements', 'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],
@@ -205,6 +205,7 @@ $extra = [
     ['name' => 'sociaalDomeinPlan#closeGoal',        'url' => '/api/family-plan-goals/{goalId}/close',         'verb' => 'POST'],
     ['name' => 'caseGoal#index',                     'url' => '/api/cases/{caseId}/goals',                     'verb' => 'GET'],
     ['name' => 'caseGoal#create',                    'url' => '/api/cases/{caseId}/goals',                     'verb' => 'POST'],
+    ['name' => 'caseGoal#close',                     'url' => '/api/cases/{caseId}/goals/{goalId}/close',      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#grounds',          'url' => '/api/cross-domain/grounds',                     'verb' => 'GET'],
     ['name' => 'sociaalDomeinPlan#lookUp',           'url' => '/api/cross-domain/lookup',                      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#lookupsAbout',     'url' => '/api/cross-domain/lookups/{bsn}',               'verb' => 'GET'],
@@ -212,6 +213,9 @@ $extra = [
         // chosen ground, logged, and kept in the reader's session.
     ['name' => 'householdCases#index',  'url' => '/api/cases/{caseId}/household-cases',        'verb' => 'GET'],
     ['name' => 'householdCases#lookUp', 'url' => '/api/cases/{caseId}/household-cases/lookup', 'verb' => 'POST'],
+
+        // The OpenAPI document of dossiq's own API (ApiContract), public, served under /api/v1/ too.
+    ['name' => 'openApi#show', 'url' => '/api/openapi.json', 'verb' => 'GET'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
         // Literal routes registered before the ZGW {resource}-wildcard
@@ -412,6 +416,7 @@ $extra = [
         // Intelligent work-queue: urgency-scored personal queue + coordinator workload.
     ['name' => 'workQueue#index',    'url' => '/api/work-queue',          'verb' => 'GET'],
     ['name' => 'workQueue#workload', 'url' => '/api/work-queue/workload', 'verb' => 'GET'],
+    ['name' => 'workQueueSources#index', 'url' => '/api/work-queue/sources', 'verb' => 'GET'],
 
         // One personal queue, fed by the declared sources (one-personal-queue).
         // Nothing here takes a user id: every endpoint answers for the caller.
@@ -512,6 +517,7 @@ $extra = [
     // in OpenRegister's recycle state; restoring and destroying are two
     // separate acts, and destroying needs the role the case type declares.
     ['name' => 'caseRecycle#deleted',            'url' => '/api/cases/deleted',                     'verb' => 'GET'],
+    ['name' => 'caseChanges#index',              'url' => '/api/cases/changes',                     'verb' => 'GET'],
     ['name' => 'caseRecycle#restore',            'url' => '/api/case/{caseId}/restore',             'verb' => 'POST'],
     ['name' => 'caseRecycle#destructionPreview', 'url' => '/api/case/{caseId}/destruction-preview', 'verb' => 'GET'],
     ['name' => 'caseRecycle#destroy',            'url' => '/api/case/{caseId}/destroy',             'verb' => 'POST'],
@@ -604,6 +610,7 @@ $extra = [
     ['name' => 'inspect#availability', 'url' => '/api/inspect/availability', 'verb' => 'GET'],
     ['name' => 'caseTask#complete',     'url' => '/api/case-tasks/{taskId}/complete',    'verb' => 'POST'],
     ['name' => 'caseTask#claim',        'url' => '/api/case-tasks/{taskId}/claim',       'verb' => 'POST'],
+    ['name' => 'caseTaskCancel#cancel', 'url' => '/api/case-tasks/{taskId}/cancel',      'verb' => 'POST'],
     ['name' => 'caseTask#attach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments', 'verb' => 'POST'],
     ['name' => 'caseTask#detach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments/{fileId}', 'verb' => 'DELETE'],
 
@@ -616,6 +623,8 @@ $extra = [
         //
         // The two `bulk-transition` routes this replaces looped in dossiq.
     ['name' => 'bulkJobHandoff#create', 'url' => '/api/cases/bulk-jobs', 'verb' => 'POST'],
+        // The anonymised variant of the list export (social-domain-consent-and-safeguards, REQ-SDC-ANON-01).
+    ['name' => 'caseAnonymisedExport#export', 'url' => '/api/cases/anonymised-export', 'verb' => 'POST'],
 
         // The tenant CRUD + lifecycle routes retired with the tenant admin store
         // (tenancy-onto-openregister-organisation 6.9): a tenant is an OpenRegister
@@ -671,6 +680,9 @@ $extra = [
     ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
     ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
     ['name' => 'caseAccessLink#index',         'url' => '/api/access-links/case/{caseId}',   'verb' => 'GET'],
+        // Every share of a case outside the organisation, and revoking one (case read access, the share must be the case's).
+    ['name' => 'caseShare#index',              'url' => '/api/cases/{caseId}/shares',        'verb' => 'GET'],
+    ['name' => 'caseShare#destroy',            'url' => '/api/cases/{caseId}/shares/{shareId}', 'verb' => 'DELETE'],
     ['name' => 'caseAccessLink#preview',       'url' => '/api/access-links/{linkId}/preview', 'verb' => 'GET'],
     ['name' => 'caseAccessLink#pause',         'url' => '/api/access-links/{linkId}',    'verb' => 'PUT'],
     ['name' => 'caseAccessLink#revoke',        'url' => '/api/access-links/{linkId}',    'verb' => 'DELETE'],
@@ -712,6 +724,12 @@ $extra = [
     ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
     ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
+        // Advice from the decision table a case type names (REQ-LHS-CASE-01): ask on a case, then accept or deviate with a reason.
+        // @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
+    ['name' => 'decisionAdvice#form',      'url' => '/api/decision-advice/case/{caseId}/form', 'verb' => 'GET'],
+    ['name' => 'decisionAdvice#recommend', 'url' => '/api/decision-advice/recommend', 'verb' => 'POST'],
+    ['name' => 'decisionAdvice#override',  'url' => '/api/decision-advice/override',  'verb' => 'POST'],
+
         // Checklist templates (admin).
     ['name' => 'checklistTemplate#index',   'url' => '/api/checklists',       'verb' => 'GET'],
     ['name' => 'checklistTemplate#create',  'url' => '/api/checklists',       'verb' => 'POST'],
@@ -736,6 +754,8 @@ $extra = [
         // and had no door, so a photo or a voice memo reached nobody and the
         // fieldEvidence page read a schema nothing wrote.
     ['name' => 'fieldEvidence#capture', 'url' => '/api/inspections/{inspectionRef}/evidence', 'verb' => 'POST'],
+        // The sync frame's conflict card keeps the device's text or the office's.
+    ['name' => 'conflictRecord#resolve', 'url' => '/api/conflict-records/{id}/resolve', 'verb' => 'POST'],
         // Per-case advice requests, on any case type.
     ['name' => 'advice#createForCase', 'url' => '/api/cases/{id}/advice-requests', 'verb' => 'POST'],
     ['name' => 'advice#getForCase',    'url' => '/api/cases/{id}/advice-requests', 'verb' => 'GET'],
@@ -832,6 +852,8 @@ $extra = [
     // per-case guard `refuse` does, because it mutates a case and, on an
     // inadmissible verdict, closes it.
     ['name' => 'intakeTriage#judgeAdmissibility', 'url' => '/api/cases/{caseId}/admissibility',          'verb' => 'POST'],
+    // The completeness items the case type declares, ticked against the case (case read access).
+    ['name' => 'caseCompleteness#show',     'url' => '/api/cases/{caseId}/completeness',                 'verb' => 'GET'],
     ['name' => 'intakeTriage#queue',        'url' => '/api/intake/triage',                               'verb' => 'GET'],
     ['name' => 'intakeTriage#sleepItem',    'url' => '/api/intake/triage/{entryId}/sleep',                'verb' => 'POST'],
     ['name' => 'intakeTriage#fanOut',       'url' => '/api/intake/fan-out',                              'verb' => 'POST'],
@@ -1007,6 +1029,7 @@ $extra = [
     ['name' => 'complaint#deadlineAlerts',              'url' => '/api/complaints/deadline-alerts',    'verb' => 'GET'],
     ['name' => 'complaintAnalytics#analytics',          'url' => '/api/complaints/analytics',          'verb' => 'GET'],
     ['name' => 'complaintAnalytics#kpi',                'url' => '/api/complaints/kpi',                'verb' => 'GET'],
+    ['name' => 'complaintPatterns#index',               'url' => '/api/complaints/patterns',           'verb' => 'GET'],
     ['name' => 'complaint#show',               'url' => '/api/complaints/{id}',                        'verb' => 'GET'],
     ['name' => 'complaint#update',             'url' => '/api/complaints/{id}',                        'verb' => 'PUT'],
     ['name' => 'complaint#transition',         'url' => '/api/complaints/{id}/transition',             'verb' => 'POST'],
@@ -1031,6 +1054,10 @@ $extra = [
         // awb-art-7:7 audit entry on late corrections; the `hearingSession`
         // schema has no manifest page, so this is the only way in.
     ['name' => 'bezwaarHearing#recordAttendance', 'url' => '/api/bezwaar/hearings/{sessionId}/attendance', 'verb' => 'POST'],
+
+    // The advisory committee's move of an advice request (Awb 7:13). The only
+    // writer DeliberationStartGuard lets into advice-issued or inadmissible.
+    ['name' => 'bezwaarAdviceRequest#transition', 'url' => '/api/bezwaar/advice-requests/{id}/transition', 'verb' => 'POST'],
 
     // The decision on an objection, Awb 7:11. `DecisionService` has held the
     // whole disposition matrix since the bezwaar lifecycle shipped and no
@@ -1143,12 +1170,12 @@ $extra = [
     ['name' => 'termijn#verleng',    'url' => '/api/deadlines/instances/{id}/extend',    'verb' => 'POST'],
     ['name' => 'termijn#voltooi',    'url' => '/api/deadlines/instances/{id}/complete',  'verb' => 'POST'],
         // deprecated alias: /api/deadlines/instances*, remove after the next major.
-    ['name' => 'termijn#createLegacyPath',  'url' => '/api/termijn/instances',             'verb' => 'POST'],
-    ['name' => 'termijn#showLegacyPath',    'url' => '/api/termijn/instances/{id}',        'verb' => 'GET'],
-    ['name' => 'termijn#pauzeLegacyPath',   'url' => '/api/termijn/instances/{id}/pauze',  'verb' => 'POST'],
-    ['name' => 'termijn#hervatLegacyPath',  'url' => '/api/termijn/instances/{id}/hervat', 'verb' => 'POST'],
-    ['name' => 'termijn#verlengLegacyPath', 'url' => '/api/termijn/instances/{id}/verleng', 'verb' => 'POST'],
-    ['name' => 'termijn#voltooiLegacyPath', 'url' => '/api/termijn/instances/{id}/voltooi', 'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#create',  'url' => '/api/termijn/instances',             'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#show',    'url' => '/api/termijn/instances/{id}',        'verb' => 'GET'],
+    ['name' => 'deadlineInstanceLegacyPath#pauze',   'url' => '/api/termijn/instances/{id}/pauze',  'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#hervat',  'url' => '/api/termijn/instances/{id}/hervat', 'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#verleng', 'url' => '/api/termijn/instances/{id}/verleng', 'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#voltooi', 'url' => '/api/termijn/instances/{id}/voltooi', 'verb' => 'POST'],
         // The four clocks on ONE CASE. Addressed by case and not by instance,
         // because a case page holds a case id and there are four instances
         // behind it: a statutory term, a planned end, an internal target and a
@@ -1203,6 +1230,7 @@ $extra = [
         // (case-money-is-configuration, REQ-DQM-003). Named for what they do.
     ['name' => 'accrualNotice#register',     'url' => '/api/notices-of-default',                       'verb' => 'POST'],
     ['name' => 'accrualNotice#show',         'url' => '/api/notices-of-default/{id}',                  'verb' => 'GET'],
+    ['name' => 'caseNoticesOfDefault#index', 'url' => '/api/cases/{caseId}/notices-of-default',       'verb' => 'GET'],
     ['name' => 'accruingAmount#show',        'url' => '/api/accruing-amounts/{id}',                    'verb' => 'GET'],
     ['name' => 'accruingAmount#settle',      'url' => '/api/accruing-amounts/{id}/settle',             'verb' => 'POST'],
     ['name' => 'payout#prepare',             'url' => '/api/accruing-amounts/{id}/payout',             'verb' => 'POST'],
@@ -1222,6 +1250,7 @@ $extra = [
     ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/deadlines/reports/annual',         'verb' => 'GET'],
     ['name' => 'deadlineReporting#penaltyPayments',  'url' => '/api/deadlines/reports/penalty-payments', 'verb' => 'GET'],
     ['name' => 'deadlineNotices#notices',            'url' => '/api/deadlines/notices',                'verb' => 'GET'],
+    ['name' => 'deadlineEndingFirst#index',          'url' => '/api/deadlines/ending-first',           'verb' => 'GET'],
         // The first response, counted and averaged from what was stored on the
         // cases at the time (term-configuration-beyond-the-case-type, row 8.24).
     ['name' => 'deadlineReporting#firstResponseReport', 'url' => '/api/deadlines/reports/first-response', 'verb' => 'GET'],
@@ -1297,6 +1326,13 @@ $extra = [
         // its own — discovery belongs to the engine.
     ['name' => 'store#search',       'url' => '/api/store/items',                 'verb' => 'GET'],
     ['name' => 'store#install',      'url' => '/api/store/items/{slug}/install',  'verb' => 'POST', 'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
+    ['name' => 'storePackage#index',   'url' => '/api/store/packages',              'verb' => 'GET'],
+    [
+        'name' => 'storePackage#install',
+        'url' => '/api/store/packages/{id}/install',
+        'verb' => 'POST',
+        'requirements' => ['id' => '[a-z0-9][a-z0-9-]*[a-z0-9]'],
+    ],
     ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
     ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
     // Also in OpenRegister's canonical table; declared here so it is visible
@@ -1334,7 +1370,8 @@ $extra = [
 // Preferred path: the OpenRegister AppHost owns the canonical route table.
 // `class_exists()` autoloads without fatalling when the class is unavailable.
 if (class_exists('OCA\OpenRegister\AppHost\Routes') === true) {
-    return \OCA\OpenRegister\AppHost\Routes::standard($extra);
+    // Every unversioned API route is also served under /api/v1/; see ApiPathAliases.
+    return \OCA\Dossiq\Middleware\Support\ApiPathAliases::withVersionedAliases(\OCA\OpenRegister\AppHost\Routes::standard($extra));
 }
 
 // Fallback: openregister is not installed. Reproduce `Routes::standard()`
@@ -1379,4 +1416,4 @@ foreach ($canonicalRoutes as $canonicalRoute) {
 $mergedRoutes   = array_merge($mergedRoutes, $extra);
 $mergedRoutes[] = $catchAllRoute;
 
-return ['routes' => $mergedRoutes];
+return \OCA\Dossiq\Middleware\Support\ApiPathAliases::withVersionedAliases(['routes' => $mergedRoutes]);

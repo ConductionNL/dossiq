@@ -264,4 +264,18 @@ class CaseIntakeFilingTest extends TestCase {
 		$this->expectException(RefusedException::class);
 		$this->filing(storage: false)->file(type: 'type-1', subject: 'Iets', person: '', messages: []);
 	}//end testNoStorageFilesNothing()
+
+	/**
+	 * A transcript entry that is no message is passed over, and a message without a channel carries no tag.
+	 *
+	 * @return void
+	 */
+	public function testAnEntryThatIsNoMessageIsLeftOutOfTheTranscript(): void {
+		// A transcript decoded from a caller's JSON, as the intake tool receives it: not every entry is a message.
+		/** @var array<int, array<string, mixed>> $messages */
+		$messages = json_decode('["just a string", {"text": "Zonder kanaal"}, null, {"channel": "web", "text": "Met kanaal"}]', true);
+		$payload = $this->filing()->payload(caseTypeId: 'type-1', subject: 'Iets', person: '', messages: $messages);
+
+		$this->assertSame("Zonder kanaal\n[web] Met kanaal", $payload['description']);
+	}//end testAnEntryThatIsNoMessageIsLeftOutOfTheTranscript()
 }//end class

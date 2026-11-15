@@ -50,4 +50,12 @@ describe('the Beoordelen button on a document row', () => {
 		expect(button.primaryWhen).toEqual({ key: 'reviewVerdict', values: ['open'] })
 		expect(nl[button.label]).toBe('Beoordelen')
 	})
+
+	it('is drawn only on a document under review, so not on the case\'s own draft', () => {
+		// The rows under review are the ones the verdict count reads, and only
+		// they carry a reviewVerdict ('open' until assessed). The case's own
+		// draft carries none, so it stays listed without the button.
+		expect(props.rowButton.visibleIf).toEqual({ row: { reviewVerdict: { notEmpty: true } } })
+		expect(JSON.stringify(props.rowButton)).not.toMatch(/concept|\.docx/i)
+	})
 })

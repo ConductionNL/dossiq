@@ -108,7 +108,7 @@ export default {
 
 		/**
 		 * @param {string} status The status.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		badgeClass(status) {
 			const s = (status || '').toLowerCase()

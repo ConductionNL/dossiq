@@ -1,3 +1,5 @@
 # Screens
 
-- No screen: moves the statutory deadline clocks (term, advice, bezwaartermijn, DSO, milestones, KCC) from app cron jobs onto OpenRegister engine timers; nothing a person sees changes, the deadlines and reminders land on the same days.
+- dossiq/DqZaakTermijn termijnen op de timers van de engine https://identity.conduction.nl/screens/board?id=dossiq/DqZaakTermijn
+
+Components: CnActionDialog, CnAppNav, CnBuildiqEditButton, CnCountdownWidget, CnTransitionInputDialog

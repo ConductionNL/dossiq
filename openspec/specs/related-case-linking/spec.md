@@ -188,11 +188,11 @@ far side SHALL be read back rather than written, and each side SHALL read the
 relation under the half of the pair that belongs to that side. The same type
 declared from both cases SHALL be refused.
 
-#### Scenario: the followed case reads "heeft vervolg"
+#### Scenario: the followed case reads its RGBZ type
 
 - **GIVEN** case A related to case B as a vervolg
 - **WHEN** B's Related cases tab is opened
-- **THEN** A SHALL appear under "heeft vervolg" and not under "vervolg op"
+- **THEN** A SHALL appear with "Relatie: vervolg (RGBZ)", under the group of the half of the pair that belongs to B
 - @e2e exclude {needs two related cases in the e2e register and the label pair resolved from the shipped schema; asserted in tests/Unit/Service/CaseRelationServiceTest.php::testEachSideReadsItsOwnHalfOfTheLabelPair}
 
 #### Scenario: the same type from both sides is refused
@@ -281,3 +281,22 @@ Reading a case's typed relations SHALL ask OpenRegister under the configured reg
 - AND an earlier call in the request left another schema set on the object service
 - WHEN the related cases card reads the case's relations
 - THEN it lists the case under "Wacht op"
+
+### Requirement: A link the RGBZ forbids is refused in a card notice
+
+A case SHALL hang as the subject under one case only, and a subject chain SHALL NOT loop back. A link that breaks
+either rule SHALL be refused with 409 and an error notice titled "Niet gekoppeld:" that names the cases.
+
+#### Scenario: Subject already taken
+
+- **GIVEN** ZAAK-B hangs as the subject under ZAAK-C
+- **WHEN** a handler links ZAAK-B as the subject of ZAAK-A
+- **THEN** the answer is 409 with the text "ZAAK-B hangt al als onderwerp onder ZAAK-C. Een zaak kan maar onder één
+  zaak als onderwerp hangen."
+- **AND** nothing is written on ZAAK-A
+
+#### Scenario: Loop
+
+- **GIVEN** ZAAK-A hangs under ZAAK-C and ZAAK-C under ZAAK-B
+- **WHEN** a handler links ZAAK-B as the subject of ZAAK-A
+- **THEN** the link is refused

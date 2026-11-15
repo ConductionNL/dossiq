@@ -35,7 +35,7 @@
  * @link https://conduction.nl
  * @link https://kadaster.github.io/BRK-bevragen/
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -60,7 +60,7 @@ namespace OCA\Dossiq\Service\External\Brk;
  *  3. `Application::register()` already binds `BrkApiAdapter` once the
  *     mode resolves to a non-`log` tier — no further code change needed.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 interface BrkAdapterInterface {
 	/**
@@ -80,7 +80,7 @@ interface BrkAdapterInterface {
 	 * @return BrkLookupResult The lookup outcome (status + normalized
 	 *                         parcel envelope, empty unless FOUND).
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
 		string $municipalityCode,
@@ -101,7 +101,7 @@ interface BrkAdapterInterface {
 	 * @return BrkLookupResult The lookup outcome (status + normalized
 	 *                         envelope, empty unless FOUND).
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupObject(string $id, array $context = []): BrkLookupResult;
 
@@ -111,7 +111,7 @@ interface BrkAdapterInterface {
 	 *
 	 * @return bool TRUE when the adapter is a log-only stub.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function isDormant(): bool;
 }//end interface

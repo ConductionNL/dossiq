@@ -5,7 +5,7 @@
  * Board DqInspectie: the day's inspections read "09:30 · <checklist>" with the
  * state as a toned word (Klaar green, Bezig blue, Gepland neutral), the outbox
  * says Wacht (amber) or Conflict (red), and the running checklist opens at its
- * first open question.
+ * first open question, keeping where each answer was given.
  *
  * @spec openspec/changes/archive/2026-10-30-screens-round12-field-inspection/tasks.md
  */
@@ -83,12 +83,30 @@ describe('the field inspection board', () => {
 		expect(widget('inspection-sync-queue').content.cardPillAside).toBe(true)
 	})
 
-	it('opens the running checklist at its first open question', () => {
-		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
+	it('opens the running checklist where the inspector last answered', () => {
+		expect(widget('checklist-run').content.startAt).toBe('lastAnswered')
+	})
+
+	it('titles the checklist frame by the inspection underway and dates the last synchronisation', () => {
+		const frames = widget('inspection-frames').content
+		const checklist = frames.frames.find((f) => f.key === 'checklist')
+		expect(checklist.titleFrom).toEqual({ source: { register: 'dossiq', schema: 'fieldInspection', filter: { inspectorRef: '@me', status: 'in_progress' }, sort: { field: 'startedAt', dir: 'desc' } }, field: 'location' })
+		expect(frames.status.syncedFrom).toEqual({ source: { register: 'dossiq', schema: 'syncQueue', filter: { status: 'synced' } }, field: 'lastAttemptAt' })
+		const nl = JSON.parse(fs.readFileSync(path.join(__dirname, '../../l10n/nl.json'), 'utf8')).translations
+		expect(nl[frames.status.offlineSyncedText]).toBe('Offline · gesynchroniseerd om {time}')
 	})
 
 	it('asks for a note only under an answer of no, as the board draws it', () => {
 		const run = widget('checklist-run').content
 		expect(run.noteWhen).toEqual({ answers: [run.choiceValues.no] })
+	})
+
+	it('keeps where each answer was given in a field the run schema declares, rough beyond 50 metres', () => {
+		const run = widget('checklist-run').content
+		const schema = read('lib/Settings/dossiq_register.json').components.schemas.inspectionChecklistRun
+		const answer = schema.properties[run.answersPath].items.properties[run.captureLocation.field]
+
+		expect(run.captureLocation).toEqual({ field: 'gpsAtAnswer', goodAccuracy: 50 })
+		expect(Object.keys(answer.properties)).toEqual(['lat', 'lng', 'accuracy', 'at', 'low', 'address'])
 	})
 })

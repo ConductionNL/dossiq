@@ -34,7 +34,8 @@ use Psr\Log\NullLogger;
  */
 class TemplateLibraryFillsTest extends TestCase {
 	/**
-	 * The adjournment letter names the decision deadline and the extension it fills in.
+	 * The adjournment letter names the decision deadline and the extension it fills in,
+	 * the reasons it still needs and the status it is generated in.
 	 *
 	 * @return void
 	 */
@@ -47,11 +48,34 @@ class TemplateLibraryFillsTest extends TestCase {
 
 		$this->assertSame(
 			expected: [
-				['label' => 'Decision deadline', 'field' => 'legalDecisionDate', 'as' => 'date'],
+				['label' => 'Decision deadline', 'field' => 'legalDecisionDate', 'as' => 'deadline', 'term' => 'statutoryTerm'],
 				['label' => 'Adjournment', 'field' => 'statutoryExtension', 'as' => 'extension', 'from' => 'legalDecisionDate'],
+				['label' => 'Effective date', 'field' => 'statutoryExtension', 'as' => 'after-extension', 'from' => 'legalDecisionDate'],
+				['label' => 'Statement of reasons', 'field' => 'extensionReason', 'required' => true],
+				['label' => 'Status after generating', 'value' => 'Draft (concept)'],
 			],
 			actual: $byId['verdagingsbrief']['fills']
 		);
 		$this->assertSame(expected: [], actual: $byId['ontvangstbevestiging']['fills']);
 	}//end testTheAdjournmentLetterListsWhatItFillsIn()
+
+	/**
+	 * The Woo decision templates forward their note about the objection period; a template without notes answers [].
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/generate-fills-per-template/spec.md#requirement-a-template-carries-notes-for-the-generate-dialog
+	 */
+	public function testTheWooDecisionTemplatesCarryTheirNotes(): void {
+		$service = new TemplateLibraryService(settingsService: $this->createMock(originalClassName: SettingsService::class), logger: new NullLogger());
+		$byId = [];
+		foreach ($service->listTemplates() as $template) {
+			$byId[$template['id']] = $template;
+		}
+
+		$this->assertCount(expectedCount: 1, haystack: $byId['woo-besluit-openbaar']['notes']);
+		$this->assertStringContainsString(needle: 'bezwaartermijn', haystack: $byId['woo-besluit-openbaar']['notes'][0]);
+		$this->assertCount(expectedCount: 1, haystack: $byId['woo-besluit-deels-openbaar']['notes']);
+		$this->assertSame(expected: [], actual: $byId['ontvangstbevestiging']['notes']);
+	}//end testTheWooDecisionTemplatesCarryTheirNotes()
 }//end class

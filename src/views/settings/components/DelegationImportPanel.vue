@@ -126,7 +126,7 @@ export default {
 		t,
 		/**
 		 * @param {Event} e The originating DOM event.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		onFileChange(e) {
 			const f = e.target.files?.[0]
@@ -138,7 +138,7 @@ export default {
 			reader.readAsText(f)
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		async preview() {
 			this.running = true
 			this.error = null
@@ -161,7 +161,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		async approve() {
 			if (!this.importId) return
 			this.approving = true

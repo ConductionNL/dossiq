@@ -83,7 +83,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		tabOptions() {
 			return [
 				{ id: 'besluiten', label: t('dossiq', 'Decisions') },
@@ -103,7 +103,7 @@ export default {
 			return this.tabOptions.find((opt) => opt.id === this.active) || this.tabOptions[0]
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		roleOptions() {
 			return (this.roles || []).map((r) => ({
 				id: r.id,
@@ -117,7 +117,7 @@ export default {
 			immediate: true,
 			/**
 			 * @param {string|number|boolean|object} v The new value.
-			 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+			 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 			 */
 			handler(v) {
 				if (v === 'besluiten') this.loadBesluiten()
@@ -129,7 +129,7 @@ export default {
 
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		async loadBesluiten() {
 			this.loading = true
 			try {
@@ -146,7 +146,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		async loadRoles() {
 			this.loading = true
 			try {
@@ -163,7 +163,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		async loadAssignments() {
 			this.loading = true
 			try {
@@ -182,25 +182,25 @@ export default {
 
 		/**
 		 * @param {object} mandaat The mandaat.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		openEditor(mandaat) {
 			this.editingMandaat = mandaat
 			this.editorOpen = true
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingMandaat = null
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		openImport() {
 			this.active = 'import'
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		onImported() {
 			this.active = 'besluiten'
 			this.loadBesluiten()
@@ -208,7 +208,7 @@ export default {
 
 		/**
 		 * @param {object} payload The payload.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		async onMandaatSave(payload) {
 			try {

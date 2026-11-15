@@ -34,6 +34,51 @@ use PHPUnit\Framework\TestCase;
  */
 class TermResolutionTest extends TestCase {
 	/**
+	 * The whole answer for each rule, apart from the moment it was resolved.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeAnswerForEachRule(): void {
+		$general  = ['id' => 'general', 'kind' => ' ', 'standardDurationDays' => '30', 'organisation' => ' '];
+		$service  = ['id' => 'svc', 'service' => ' balie ', 'standardDurationDays' => 20];
+		$priority = ['id' => 'prio', 'priority' => 'spoed', 'standardDurationDays' => 5];
+		$planned  = ['id' => 'plan', 'kind' => TermKind::PLANNED, 'organisation' => 'alkmaar'];
+		$resolution = $this->resolution([$priority, $planned, $service, $general]);
+		$answer = static function (?array $resolved): ?array {
+			if ($resolved !== null) {
+				unset($resolved['snapshot']['resolvedAt']);
+			}
+
+			return $resolved;
+		};
+
+		$this->assertSame(
+			[
+				'definition' => $service,
+				'resolvedFrom' => 'service',
+				'snapshot' => ['caseType' => 'vergunning', 'organisation' => 'alkmaar', 'service' => 'balie', 'priority' => 'spoed', 'durationDays' => 20, 'deadlineDefinition' => 'svc'],
+			],
+			$answer($resolution->resolve(caseType: 'vergunning', context: ['organisation' => ' alkmaar', 'service' => 'balie ', 'priority' => 'spoed']))
+		);
+		$this->assertSame(
+			[
+				'definition' => $general,
+				'resolvedFrom' => TermResolution::FALLBACK,
+				'snapshot' => ['caseType' => 'x', 'organisation' => '', 'service' => '', 'priority' => '', 'durationDays' => 30, 'deadlineDefinition' => 'general'],
+			],
+			$answer($resolution->resolve(caseType: 'x', context: ['priority' => ' ']))
+		);
+		$this->assertSame('prio', $resolution->resolve(caseType: 'x', context: ['priority' => 'spoed'])['definition']['id']);
+		$this->assertSame($planned, $resolution->plannedDefinitionFor(caseType: 'x', context: ['organisation' => 'alkmaar']));
+		$this->assertNull($resolution->plannedDefinitionFor(caseType: 'x', context: ['organisation' => 'bergen']));
+		$this->assertNull($resolution->resolve(caseType: 'x', context: [], kind: 'internal'));
+		$this->assertMatchesRegularExpression(
+			'/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/',
+			$resolution->resolve(caseType: 'x', context: [])['snapshot']['resolvedAt']
+		);
+	}//end testTheWholeAnswerForEachRule()
+
+	/**
 	 * Scenario: One case type, two municipal norms.
 	 *
 	 * @return void
@@ -250,6 +295,29 @@ class TermResolutionTest extends TestCase {
 		$this->assertSame('td-committee', $resolved['definition']['id']);
 		$this->assertSame(70, $resolved['snapshot']['durationDays']);
 	}//end testThePickIsReadOffTheCaseType()
+
+	/**
+	 * A case type that cannot be read picks nothing: the case still gets its
+	 * default term instead of the read failure escaping the resolution.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableCaseTypeFallsBackToTheDefaultTerm(): void {
+		$terms = $this->createMock(TermijnService::class);
+		$terms->method('definitionsFor')->willReturn([
+			$this->definition(overrides: ['id' => 'td-committee', 'standardDurationDays' => 70, 'pickedByCaseType' => true]),
+			$this->definition(overrides: ['id' => 'td-default', 'standardDurationDays' => 42]),
+		]);
+		$declarations = $this->createMock(TermDeclarationReader::class);
+		$declarations->expects($this->once())->method('forCaseType')->with('ct-uuid')
+			->willThrowException(new \RuntimeException('read failed'));
+
+		$resolved = (new TermResolution(terms: $terms, declarations: $declarations))
+			->resolve(caseType: 'vergunning', context: ['caseTypeId' => 'ct-uuid']);
+
+		$this->assertSame('td-default', $resolved['definition']['id']);
+		$this->assertSame(TermResolution::FALLBACK, $resolved['resolvedFrom']);
+	}//end testAnUnreadableCaseTypeFallsBackToTheDefaultTerm()
 
 	/**
 	 * One definition row.

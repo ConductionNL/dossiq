@@ -386,6 +386,12 @@
 								"responsePath": "progress.steps"
 							},
 							"limit": 7,
+							"meta": "{note}",
+							"next": {
+								"when": { "field": "isNext", "op": "eq", "value": true },
+								"label": "Next step",
+								"action": { "labelField": "action.label", "hrefField": "action.href" }
+							},
 							"presentation": "checklist",
 							"title": "{step}",
 							"valueLabels": {

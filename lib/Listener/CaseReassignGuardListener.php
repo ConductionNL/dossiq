@@ -33,9 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
@@ -62,14 +62,14 @@ class CaseReassignGuardListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService The configured case schema.
-	 * @param CaseReviewerAccess $access          Who supervises, and the reconciler.
+	 * @param SettingsServiceInterface    $settingsService The configured case schema.
+	 * @param CaseReviewerAccessInterface $access          Who supervises, and the reconciler.
 	 * @param IUserSession       $userSession     The caller.
 	 * @param LoggerInterface    $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseReviewerAccess $access,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseReviewerAccessInterface $access,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

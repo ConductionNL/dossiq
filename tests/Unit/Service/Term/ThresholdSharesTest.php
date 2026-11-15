@@ -31,6 +31,47 @@ use PHPUnit\Framework\TestCase;
  */
 class ThresholdSharesTest extends TestCase {
 	/**
+	 * Every rule whole, for every kind of rung, longest offset first.
+	 *
+	 * @return void
+	 */
+	public function testEveryRuleWhole(): void {
+		$rule = static fn (int $offset, string $priority = 'medium', string $message = 'termijn-drempel'): array => [
+			'trigger' => 'preBreach',
+			'offset' => $offset,
+			'offsetUnit' => 'calendarDays',
+			'notifyRole' => ['handler'],
+			'escalateToRole' => [],
+			'priority' => $priority,
+			'message' => $message,
+			'openIncident' => false,
+		];
+
+		$this->assertSame(
+			[$rule(20), $rule(20), $rule(19), $rule(10, 'high', 'helft'), $rule(10), $rule(7, 'low'), $rule(3), $rule(0)],
+			(new ThresholdShares())->rulesFor(
+				ladder: [
+					['days' => 3],
+					'not-a-rung',
+					['share' => 0.5, 'priority' => 'high', 'message' => 'helft'],
+					['days' => '7', 'priority' => 'low', 'message' => ''],
+					['days' => 21],
+					['days' => -1],
+					['days' => null, 'share' => '0.0'],
+					['share' => 1],
+					['share' => 1.5],
+					['share' => 'abc'],
+					['days' => 'x', 'share' => 0.5],
+					[],
+					['days' => 20],
+					['share' => 0.04],
+				],
+				slaDays: 20
+			)
+		);
+	}//end testEveryRuleWhole()
+
+	/**
 	 * Scenario: A quarter of the term means two different dates.
 	 *
 	 * @return void

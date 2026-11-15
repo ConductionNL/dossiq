@@ -47,7 +47,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+ * @spec openspec/specs/avg-processing-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -55,6 +55,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Gdpr;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\OpenRegister\Service\Gdpr\SubjectQuery;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -64,7 +65,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass Injected into DataSubjectRequestCase and the controller.
  *
- * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+ * @spec openspec/specs/avg-processing-surface/spec.md
  */
 class PlatformDataSubjectRights {
 
@@ -139,7 +140,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @return bool True when the platform's erasure services resolve.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function isAvailable(): bool {
 		return $this->container->has(self::PREVIEW_SERVICE)
@@ -163,7 +164,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the platform is absent or refuses.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function previewErasure(
 		string $subject,
@@ -176,8 +177,7 @@ class PlatformDataSubjectRights {
 
 		return $this->guarded(call: function () use ($previewService, $store, $subject, $type, $eraseMode, $requestId) {
 			$preview = $previewService->preview(
-				subjectId: $subject,
-				type: $type,
+				subject: new SubjectQuery(subjectId: $subject, type: $type),
 				eraseMode: $this->knownMode(mode: $eraseMode),
 			);
 
@@ -194,7 +194,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the platform is absent or does not know it.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function preview(string $previewId): array {
 		$store = $this->service(name: self::PREVIEW_STORE);
@@ -215,7 +215,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the platform refuses the approval.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function approvePreview(string $previewId): array {
 		$store = $this->service(name: self::PREVIEW_STORE);
@@ -232,7 +232,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the preview is unapproved, spent or stale.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function runErasure(string $previewId): array {
 		$store = $this->service(name: self::PREVIEW_STORE);
@@ -258,7 +258,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the platform is absent or refuses.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function requestExport(string $subject, ?string $type, ?string $requestId): array {
 		$service = $this->service(name: self::EXPORT_SERVICE);
@@ -284,7 +284,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @return array<string, mixed> The export record, or an empty array when it is gone.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function export(string $exportId): array {
 		$service = $this->service(name: self::EXPORT_SERVICE);
@@ -308,7 +308,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When this instance's OpenRegister does not have it.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function service(string $name): object {
 		try {
@@ -341,43 +341,82 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the platform refused, with its own rule.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function guarded(callable $call): array {
 		try {
 			return $call();
 		} catch (Throwable $e) {
-			if (is_a($e, self::REFUSAL) === true
-				&& is_callable([$e, 'getRule']) === true
-				&& is_callable([$e, 'getStatusCode']) === true
-			) {
-				// Called through `call_user_func` rather than `$e->getRule()`:
-				// the class is resolved by name, so nothing in this app
-				// type-hints it and the analysers see only a Throwable. A
-				// `@var` claiming otherwise is a claim about a class they
-				// cannot read, which is how a docblock starts disagreeing with
-				// the code under it.
-				throw new RefusedException(
-					rule: (string)call_user_func([$e, 'getRule']),
-					sentence: $e->getMessage(),
-					status: (int)call_user_func([$e, 'getStatusCode']),
-					previous: $e,
-				);
-			}
-
-			$this->logger->error(
-				'OpenRegister refused a data subject rights call for a reason it does not name',
-				['exception' => $e->getMessage()]
-			);
-
-			throw new RefusedException(
-				rule: 'data-subject-rights-failed',
-				sentence: 'OpenRegister could not complete this request. Nothing was erased.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->translated(error: $e);
 		}//end try
 	}//end guarded()
+
+	/**
+	 * The refusal a failed platform call becomes: the platform's own rule when it named one.
+	 *
+	 * @param Throwable $error What the platform threw.
+	 *
+	 * @return RefusedException The refusal.
+	 *
+	 * @spec openspec/specs/avg-processing-surface/spec.md
+	 */
+	private function translated(Throwable $error): RefusedException {
+		if (is_a($error, self::REFUSAL) === true
+			&& is_callable([$error, 'getRule']) === true
+			&& is_callable([$error, 'getStatusCode']) === true
+		) {
+			return $this->platformRefusal(error: $error);
+		}
+
+		return $this->unnamedFailure(error: $error);
+	}//end translated()
+
+	/**
+	 * The platform's refusal, with its own rule and status.
+	 *
+	 * @param Throwable $error The platform's refusal.
+	 *
+	 * @return RefusedException The refusal.
+	 *
+	 * @spec openspec/specs/avg-processing-surface/spec.md
+	 */
+	private function platformRefusal(Throwable $error): RefusedException {
+		// Called through `call_user_func` rather than `$e->getRule()`:
+		// the class is resolved by name, so nothing in this app
+		// type-hints it and the analysers see only a Throwable. A
+		// `@var` claiming otherwise is a claim about a class they
+		// cannot read, which is how a docblock starts disagreeing with
+		// the code under it.
+		return new RefusedException(
+			rule: (string)call_user_func([$error, 'getRule']),
+			sentence: $error->getMessage(),
+			status: (int)call_user_func([$error, 'getStatusCode']),
+			previous: $error,
+		);
+	}//end platformRefusal()
+
+	/**
+	 * Log a failure the platform did not name, and the refusal it becomes.
+	 *
+	 * @param Throwable $error What the platform threw.
+	 *
+	 * @return RefusedException The refusal.
+	 *
+	 * @spec openspec/specs/avg-processing-surface/spec.md
+	 */
+	private function unnamedFailure(Throwable $error): RefusedException {
+		$this->logger->error(
+			'OpenRegister refused a data subject rights call for a reason it does not name',
+			['exception' => $error->getMessage()]
+		);
+
+		return new RefusedException(
+			rule: 'data-subject-rights-failed',
+			sentence: 'OpenRegister could not complete this request. Nothing was erased.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $error,
+		);
+	}//end unnamedFailure()
 
 	/**
 	 * The erase mode, or the safer of the two when the value is not one.
@@ -391,7 +430,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @return string A mode the platform knows.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function knownMode(string $mode): string {
 		if (trim($mode) === self::MODE_WHOLE_OBJECT) {

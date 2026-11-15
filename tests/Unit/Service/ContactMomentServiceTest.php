@@ -62,6 +62,7 @@ interface ContactMomentObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ContactMomentService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Support\CastArray
  */
 class ContactMomentServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

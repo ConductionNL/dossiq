@@ -28,9 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessPurposeService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessPurposeServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,17 +49,17 @@ class CaseAccessPurposeController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                 $request     Inbound request.
-	 * @param CaseAccessPurposeService $purposes    Records the purpose.
+	 * @param CaseAccessPurposeServiceInterface $purposes    Records the purpose.
 	 * @param IUserSession             $userSession The reader.
 	 * @param IL10N                    $l10n        The translations.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAccessPurposeService $purposes,
+		private readonly CaseAccessPurposeServiceInterface $purposes,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

@@ -44,6 +44,9 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\ZgwService
  * @covers \OCA\Dossiq\Service\Zgw\StoreFailureAnswer
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
+ * @uses \OCA\Dossiq\Service\Zgw\ResourceRoute
+ * @uses \OCA\Dossiq\Service\Zgw\ResourceWrite
+ * @uses \OCA\Dossiq\Service\Zgw\RuleFlags
  *
  * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
  */

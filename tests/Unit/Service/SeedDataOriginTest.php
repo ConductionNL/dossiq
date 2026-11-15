@@ -37,10 +37,16 @@ use Psr\Log\NullLogger;
  * Unit tests for ShippedConfigurationService and its fingerprint.
  *
  * @covers \OCA\Dossiq\Service\Starter\ShippedConfigurationService
+ * @covers \OCA\Dossiq\Service\Starter\ShippedRowAdopter
  * @covers \OCA\Dossiq\Service\Starter\ShippedFingerprint
  *
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
  * @uses \OCA\Dossiq\Service\Starter\ShippedSets
+ * @uses \OCA\Dossiq\Service\Starter\ShippedLedgerTargets
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
+ * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class SeedDataOriginTest extends TestCase {
 

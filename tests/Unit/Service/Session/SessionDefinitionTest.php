@@ -71,6 +71,8 @@ class SessionDefinitionTest extends TestCase {
 			'empty role'         => [['key' => 'h', 'inviteeRoles' => ['']]],
 			'unknown step'       => [['key' => 'h', 'statuses' => ['archived' => 'gearchiveerd']]],
 			'empty status'       => [['key' => 'h', 'statuses' => ['planned' => ' ']]],
+			'statuses not a map' => [['key' => 'h', 'statuses' => 'planned']],
+			'key not text'       => [['key' => 7]],
 		];
 	}//end malformedEntries()
 
@@ -89,6 +91,16 @@ class SessionDefinitionTest extends TestCase {
 	}//end testAMalformedEntryIsRefused()
 
 	/**
+	 * A label that is not text falls back to the key, and a padded label is trimmed.
+	 *
+	 * @return void
+	 */
+	public function testALabelThatIsNotTextFallsBackToTheKey(): void {
+		self::assertSame('talk', (new SessionDefinition(config: ['key' => 'talk', 'label' => ['Talk']]))->label);
+		self::assertSame('Talk', (new SessionDefinition(config: ['key' => 'talk', 'label' => '  Talk ']))->label);
+	}//end testALabelThatIsNotTextFallsBackToTheKey()
+
+	/**
 	 * A session planned inside the inspection floor is refused, on the floor is accepted.
 	 *
 	 * @return void
@@ -103,6 +115,23 @@ class SessionDefinitionTest extends TestCase {
 		$this->expectException(InvalidArgumentException::class);
 		$definition->rules()->assertInspectionFloor(scheduled: new DateTimeImmutable('2026-10-18T08:59:00+00:00'), now: $now);
 	}//end testTheInspectionFloorIsKept()
+
+	/**
+	 * A stored recording consent denial only accepts minutes that keep it.
+	 *
+	 * @return void
+	 */
+	public function testAStoredDenialIsKept(): void {
+		$rules = (new SessionDefinition(config: ['key' => 'hearing']))->rules();
+
+		$rules->assertDenialKept(stored: 'denied', asked: 'denied');
+		$rules->assertDenialKept(stored: 'not_requested', asked: 'granted');
+		$rules->assertDenialKept(stored: '', asked: 'granted');
+		$rules->assertDenialKept(stored: 'granted', asked: 'denied');
+
+		$this->expectException(InvalidArgumentException::class);
+		$rules->assertDenialKept(stored: 'denied', asked: 'granted');
+	}//end testAStoredDenialIsKept()
 
 	/**
 	 * Only declared invitee roles are accepted, and the minimum is kept.

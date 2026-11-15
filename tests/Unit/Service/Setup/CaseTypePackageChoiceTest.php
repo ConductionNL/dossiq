@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Setup;
 
+use OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
 use OCP\IAppConfig;
@@ -64,7 +65,7 @@ class CaseTypePackageChoiceTest extends TestCase {
 			}
 		);
 
-		return new CaseTypePackageChoice(packages: $packages, appConfig: $appConfig);
+		return new CaseTypePackageChoice(packages: $packages, appConfig: $appConfig, examples: $this->createMock(InstalledPackageExamples::class));
 
 	}//end choice()
 
@@ -99,6 +100,23 @@ class CaseTypePackageChoiceTest extends TestCase {
 	}//end testOffersValidOnRequestPackagesOnly()
 
 	/**
+	 * An offered package that is already installed is described as installed.
+	 *
+	 * @return void
+	 */
+	public function testAnInstalledPackageIsDescribedAsInstalled(): void {
+		$written = [];
+		$options = $this->choice(catalogue: $this->catalogue(installed: '2.1.0'), config: [], outcome: null, written: $written)->options();
+
+		$this->assertSame(expected: ['none', 'subsidie'], actual: array_column($options, 'id'));
+		$this->assertSame(expected: 'Subsidie', actual: $options[1]['label']);
+		$this->assertSame(expected: 'Installed', actual: $options[1]['description']);
+		$this->assertSame(expected: 'FolderCogOutline', actual: $options[1]['icon']);
+		$this->assertSame(expected: [], actual: $written);
+
+	}//end testAnInstalledPackageIsDescribedAsInstalled()
+
+	/**
 	 * The step is decided by a stored choice or by an installed package.
 	 *
 	 * @return void
@@ -110,6 +128,29 @@ class CaseTypePackageChoiceTest extends TestCase {
 		$this->assertTrue($this->choice($this->catalogue('1.0.0'), [], null, $written)->isDecided());
 
 	}//end testDecidedByAChoiceOrAnInstall()
+
+	/**
+	 * The marketplace lists valid packages with a summary, whatever their
+	 * install mode, and only an on-request package is on offer.
+	 *
+	 * @return void
+	 */
+	public function testShippedListsPackagesWithASummary(): void {
+		$written = [];
+		$base = ['title' => 'A package', 'version' => '1.0.0', 'summary' => 'Grants', 'install' => 'on-request', 'installed' => '', 'valid' => true];
+		$catalogue = [
+			[...$base, 'id' => 'subsidie'],
+			[...$base, 'id' => 'vth', 'install' => 'auto', 'installed' => '1.0.0'],
+			[...$base, 'id' => 'lhs-matrix', 'summary' => ''],
+			[...$base, 'id' => 'broken', 'valid' => false],
+		];
+		$choice = $this->choice(catalogue: $catalogue, config: [], outcome: null, written: $written);
+
+		self::assertSame(expected: ['subsidie', 'vth'], actual: array_column(array: $choice->shipped(), column_key: 'id'));
+		self::assertSame(expected: [true, false], actual: array_column(array: $choice->shipped(), column_key: 'onRequest'));
+		self::assertTrue(condition: $choice->isOffered(id: 'subsidie'));
+		self::assertFalse(condition: $choice->isOffered(id: 'vth'));
+	}//end testShippedListsPackagesWithASummary()
 
 	/**
 	 * A successful install records the choice.
@@ -156,4 +197,51 @@ class CaseTypePackageChoiceTest extends TestCase {
 		$this->assertFalse($choice->install('none')['success']);
 
 	}//end testAPackageTheStepDoesNotOfferIsRefused()
+
+	/**
+	 * The examples of the installed packages are written through the example
+	 * writer, and its outcomes are handed back as they are.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testTheExamplesOfInstalledPackagesAreWrittenThroughTheWriter(): void {
+		$outcomes = [['status' => PackageInstaller::INSTALLED, 'package' => 'woo', 'version' => '1.1.0', 'message' => 'ok', 'written' => 3]];
+		$examples = $this->createMock(InstalledPackageExamples::class);
+		$examples->expects($this->once())->method('forInstalled')->willReturn($outcomes);
+
+		$choice = new CaseTypePackageChoice(
+			packages: $this->createMock(PackageInstaller::class),
+			appConfig: $this->createMock(IAppConfig::class),
+			examples: $examples
+		);
+
+		$this->assertSame($outcomes, $choice->writeExamplesOfInstalled());
+
+	}//end testTheExamplesOfInstalledPackagesAreWrittenThroughTheWriter()
+
+	/**
+	 * A writer that throws is answered as one failed outcome, not thrown on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testAThrowingExampleWriterIsAnsweredAsAFailedOutcome(): void {
+		$examples = $this->createMock(InstalledPackageExamples::class);
+		$examples->method('forInstalled')->willThrowException(new \RuntimeException('the register is gone'));
+
+		$choice = new CaseTypePackageChoice(
+			packages: $this->createMock(PackageInstaller::class),
+			appConfig: $this->createMock(IAppConfig::class),
+			examples: $examples
+		);
+
+		$this->assertSame(
+			[['status' => PackageInstaller::FAILED, 'package' => '', 'version' => '', 'message' => 'the register is gone']],
+			$choice->writeExamplesOfInstalled()
+		);
+
+	}//end testAThrowingExampleWriterIsAnsweredAsAFailedOutcome()
 }//end class

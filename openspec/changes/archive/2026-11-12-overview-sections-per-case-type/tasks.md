@@ -1,0 +1,5 @@
+- [x] caseType `overviewSections` (register.d 99)
+- [x] CaseOverviewSections and src/utils/caseOverviewSections.js
+- [x] Sections on Klacht behandeling, Aanbesteding and Subsidie
+- [x] Voorschotten status and moves in the Subsidie package
+- [x] Tests in tests/vitest/caseOverviewSections.spec.js

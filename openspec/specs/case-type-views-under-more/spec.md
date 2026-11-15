@@ -12,4 +12,4 @@ the panel lists them under "Meer standaardweergaven" and never shows a case type
 
 #### Scenario: Complaints and a pinned case type
 - GIVEN an instance with case type klacht-behandeling and a user who pinned Bezwaar
-- THEN both views are secondary, described "Case type complaint handling" and "Bezwaar"
+- THEN both views are secondary, described "Zaaktype klachtbehandeling, lopend" and "Zaaktype bezwaar, lopend", as board IndexZijpaneel draws them

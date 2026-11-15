@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
@@ -254,9 +255,11 @@ class RemedyTermBindingTest extends TestCase {
 		]);
 
 		$terms = new CaseTermsService(
-			termService: $termService,
-			declarations: $this->createMock(originalClassName: TermDeclarationReader::class),
-			timers: $this->createMock(originalClassName: TermijnTimerService::class),
+			sources: new CaseTermSources(
+				termService: $termService,
+				declarations: $this->createMock(originalClassName: TermDeclarationReader::class),
+				timers: $this->createMock(originalClassName: TermijnTimerService::class),
+			),
 			logger: new NullLogger(),
 		);
 

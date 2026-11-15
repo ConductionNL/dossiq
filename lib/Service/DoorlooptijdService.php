@@ -28,27 +28,33 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\DoorlooptijdServiceInterface;
 use OCA\Dossiq\Service\Doorlooptijd\CaseEnricher;
 use OCA\Dossiq\Service\Doorlooptijd\CaseTypeThroughputCalculator;
 use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
 use OCA\Dossiq\Service\Doorlooptijd\NormAverage;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 
 /**
  * Computes throughput-time metrics for the case dashboard.
  *
- * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
  */
-class DoorlooptijdService {
+class DoorlooptijdService implements DoorlooptijdServiceInterface {
 
-	use SearchesObjects;
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -62,12 +68,13 @@ class DoorlooptijdService {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly CaseEnricher $caseEnricher,
 		private readonly DeadlineComplianceCalculator $complianceCalculator,
 		private readonly CaseTypeThroughputCalculator $throughputCalculator,
 		private readonly NormAverage $norms = new NormAverage(),
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -77,32 +84,13 @@ class DoorlooptijdService {
 	 *
 	 * @return array<string, mixed> The structured response body.
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function getMetrics(array $params): array {
-		$caseTypeFilter = null;
-		if (isset($params['caseType']) === true && is_string($params['caseType']) === true) {
-			$caseTypeFilter = $params['caseType'];
-		}
-
-		$period = '12m';
-		if (isset($params['period']) === true && is_string($params['period']) === true) {
-			$period = $params['period'];
-		}
-
-		$granularity = 'month';
-		if (isset($params['granularity']) === true && is_string($params['granularity']) === true) {
-			$granularity = $params['granularity'];
-		}
-
-		$atRiskDays = 5;
-		if (isset($params['atRiskDays']) === true) {
-			$atRiskDays = (int)$params['atRiskDays'];
-		}
-
-		if ($atRiskDays < 0) {
-			$atRiskDays = 0;
-		}
+		$caseTypeFilter = $this->stringParam(params: $params, key: 'caseType');
+		$period = ($this->stringParam(params: $params, key: 'period') ?? '12m');
+		$granularity = ($this->stringParam(params: $params, key: 'granularity') ?? 'month');
+		$atRiskDays = $this->atRiskDays(params: $params);
 
 		$cases = $this->loadCases(caseTypeFilter: $caseTypeFilter);
 		$caseTypes = $this->loadCaseTypes();
@@ -122,6 +110,46 @@ class DoorlooptijdService {
 			],
 		];
 	}//end getMetrics()
+
+	/**
+	 * A query parameter when it is set and a string.
+	 *
+	 * @param array<string, mixed> $params Query parameters from the controller.
+	 * @param string               $key    The parameter.
+	 *
+	 * @return string|null The parameter, or null when it is absent or not a string.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
+	 */
+	private function stringParam(array $params, string $key): ?string {
+		if (isset($params[$key]) === true && is_string($params[$key]) === true) {
+			return $params[$key];
+		}
+
+		return null;
+	}//end stringParam()
+
+	/**
+	 * The at-risk window in days, 5 when absent and never negative.
+	 *
+	 * @param array<string, mixed> $params Query parameters from the controller.
+	 *
+	 * @return int The window in days.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
+	 */
+	private function atRiskDays(array $params): int {
+		$atRiskDays = 5;
+		if (isset($params['atRiskDays']) === true) {
+			$atRiskDays = (int)$params['atRiskDays'];
+		}
+
+		if ($atRiskDays < 0) {
+			$atRiskDays = 0;
+		}
+
+		return $atRiskDays;
+	}//end atRiskDays()
 
 	/**
 	 * The processing-time figures per case type and month, for a download.
@@ -162,7 +190,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array{open: int, atRisk: int, overdue: int, onTimePercent: int}
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function computeKpi(array $cases, int $atRiskDays): array {
 		return $this->complianceCalculator->computeKpi(cases: $cases, atRiskDays: $atRiskDays);
@@ -178,7 +206,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array<int, array{month: string, onTime: int, late: int, percent: int}>
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function computeMonthlyCompliance(array $cases, string $period): array {
 		return $this->complianceCalculator->computeMonthlyCompliance(cases: $cases, period: $period);
@@ -194,7 +222,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array<int, array{id: string, title: string, avgDays: int, count: int}>
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function computeCaseTypeBreakdown(array $cases, array $caseTypes): array {
 		return $this->throughputCalculator->computeCaseTypeBreakdown(cases: $cases, caseTypes: $caseTypes);
@@ -210,7 +238,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function buildCaseList(array $cases, int $atRiskDays): array {
 		return $this->complianceCalculator->buildCaseList(cases: $cases, atRiskDays: $atRiskDays);
@@ -226,7 +254,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function enrichCases(array $cases, array $caseTypes): array {
 		return $this->caseEnricher->enrichCases(cases: $cases, caseTypes: $caseTypes);
@@ -240,28 +268,12 @@ class DoorlooptijdService {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function loadCases(?string $caseTypeFilter): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
 		$filters = ['_limit' => 1000];
 		if ($caseTypeFilter !== null && $caseTypeFilter !== '') {
 			$filters['caseType'] = $caseTypeFilter;
 		}
 
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: $filters,
-		);
+		return $this->rows->search(schemaKey: 'case_schema', filters: $filters);
 	}//end loadCases()
 
 	/**
@@ -271,22 +283,6 @@ class DoorlooptijdService {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function loadCaseTypes(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => 500],
-		);
+		return $this->rows->search(schemaKey: 'case_type_schema', filters: ['_limit' => 500]);
 	}//end loadCaseTypes()
 }//end class

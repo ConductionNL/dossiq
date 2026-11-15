@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\PersonLinkReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Throwable;
 
@@ -25,7 +26,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md
  */
-class PersonLinkReader {
+class PersonLinkReader implements PersonLinkReaderInterface {
 
 	/**
 	 * @param SettingsService $settingsService OpenRegister access.

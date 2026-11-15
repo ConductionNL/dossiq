@@ -1,0 +1,23 @@
+{
+    "status": 400,
+    "data": {
+        "message": "Refused by createTermijnInstance"
+    },
+    "calls": [
+        {
+            "call": "term::createTermijnInstance",
+            "args": [
+                "case-1",
+                "slug-bezwaar",
+                null,
+                null
+            ]
+        },
+        {
+            "call": "logger::info",
+            "args": [
+                "Termijn create failed: Refused by createTermijnInstance"
+            ]
+        }
+    ]
+}

@@ -40,7 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseReassignmentService;
+use OCA\Dossiq\Kernel\Contracts\CaseReassignmentServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -61,7 +61,7 @@ class CaseReassignmentController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param CaseReassignmentService      $reassignmentService Bulk reassignment.
+	 * @param CaseReassignmentServiceInterface      $reassignmentService Bulk reassignment.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager Group manager (admin checks).
 	 * @param LoggerInterface $logger The logger.
@@ -71,7 +71,7 @@ class CaseReassignmentController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseReassignmentService $reassignmentService,
+		private readonly CaseReassignmentServiceInterface $reassignmentService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,

@@ -28,11 +28,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Woo\WooCollection;
-use OCA\Dossiq\Woo\WooCollectionQueries;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionQueriesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
 use OCA\Dossiq\Woo\WooCorpusRefused;
-use OCA\Dossiq\Woo\WooSearchPlans;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,20 +55,20 @@ class WooCollectionController extends Controller {
 	 *
 	 * @param string               $appName     The app name.
 	 * @param IRequest             $request     The request.
-	 * @param WooSearchPlans       $plans       The search plan.
-	 * @param WooCollection        $collection  The report and the exclusions.
-	 * @param WooCollectionQueries $queries     The stored queries.
-	 * @param CaseAccessGuard      $accessGuard Per-case read and change access, failing closed.
+	 * @param WooSearchPlansInterface       $plans       The search plan.
+	 * @param WooCollectionInterface        $collection  The report and the exclusions.
+	 * @param WooCollectionQueriesInterface $queries     The stored queries.
+	 * @param CaseAccessGuardInterface      $accessGuard Per-case read and change access, failing closed.
 	 * @param IUserSession         $userSession The caller.
 	 * @param IL10N                $l10n        Refusal sentences.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly WooSearchPlans $plans,
-		private readonly WooCollection $collection,
-		private readonly WooCollectionQueries $queries,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly WooSearchPlansInterface $plans,
+		private readonly WooCollectionInterface $collection,
+		private readonly WooCollectionQueriesInterface $queries,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
@@ -247,6 +247,18 @@ class WooCollectionController extends Controller {
 			return new JSONResponse(['error' => 'forbidden', 'message' => $this->l10n->t('You do not have access to this case.')], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->attempt(step: $step, user: $user);
+	}//end run()
+
+	/**
+	 * Run a step for the caller, answering a refusal or an unreachable register as JSON.
+	 *
+	 * @param callable(IUser): JSONResponse $step The step.
+	 * @param IUser                         $user The caller.
+	 *
+	 * @return JSONResponse The step's answer, or the refusal.
+	 */
+	private function attempt(callable $step, IUser $user): JSONResponse {
 		try {
 			return $step($user);
 		} catch (WooCorpusRefused $refused) {
@@ -256,7 +268,7 @@ class WooCollectionController extends Controller {
 			$message = $this->l10n->t('OpenRegister is not available.');
 			return new JSONResponse(['error' => 'unavailable', 'message' => $message], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
-	}//end run()
+	}//end attempt()
 
 	/**
 	 * The sentence for a refusal.

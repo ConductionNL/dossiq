@@ -10,6 +10,8 @@
         "version": "1.37.0",
         "properties": {
           "recordImports": {
+            "title": "Record imports",
+            "description": "How another app's stored records become cases of this type (case-record-import). Each entry names the source app, register and schema, maps source fields onto case fields (dot paths reach nested objects), maps each source status onto a case status and a term state (running, suspended or closed, with an optional result type), names the source fields that carry the term (endDate, extensions, extensionReason, closedOn), the case field that holds the source uuid (matchField), the former reference kept, and the source fields stamped once a record has moved. Run with occ dossiq:case:import-records.",
             "items": {
               "properties": {
                 "dedupeBy": {

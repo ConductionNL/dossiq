@@ -35,9 +35,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Consultation;
 
+use OCA\Dossiq\Kernel\Contracts\ExternalConsultationLinkServiceInterface;
 use OCA\Dossiq\Service\CaseSharingService;
-use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\ConsultationService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -50,7 +51,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
  */
-class ExternalConsultationLinkService {
+class ExternalConsultationLinkService implements ExternalConsultationLinkServiceInterface {
 	/**
 	 * The actor type OpenRegister writes on a comment made through a link.
 	 *
@@ -103,20 +104,7 @@ class ExternalConsultationLinkService {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function invite(string $consultationId, string $userId, ?string $password = null): array {
-		$consultation = $this->consultations->getConsultation(consultationId: $consultationId);
-		if ($consultation === null) {
-			throw new RuntimeException('That consultation is not there');
-		}
-
-		$caseId = trim((string)($consultation['parentCase'] ?? ''));
-		if ($caseId === '') {
-			throw new RuntimeException('A consultation without a case has nothing to publish');
-		}
-
-		$body = trim((string)($consultation['adviceAuthority'] ?? ''));
-		if ($body === '') {
-			throw new RuntimeException('Name the advisory body before you invite it');
-		}
+		[$consultation, $caseId, $body] = $this->invitable(consultationId: $consultationId);
 
 		$share = $this->shares->createTokenShare(
 			caseId: $caseId,
@@ -141,13 +129,57 @@ class ExternalConsultationLinkService {
 			['consultationId' => $consultationId, 'advisoryBody' => $body]
 		);
 
+		return $this->withAddress(share: $share, consultation: $consultation);
+	}//end invite()
+
+	/**
+	 * The consultation, its case and its advisory body, when it can carry a link.
+	 *
+	 * @param string $consultationId The consultation UUID.
+	 *
+	 * @return array{0: array<string, mixed>, 1: string, 2: string} The consultation, the case id and the advisory body.
+	 *
+	 * @throws RuntimeException When the consultation cannot carry a link.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function invitable(string $consultationId): array {
+		$consultation = $this->consultations->getConsultation(consultationId: $consultationId);
+		if ($consultation === null) {
+			throw new RuntimeException('That consultation is not there');
+		}
+
+		$caseId = trim((string)($consultation['parentCase'] ?? ''));
+		if ($caseId === '') {
+			throw new RuntimeException('A consultation without a case has nothing to publish');
+		}
+
+		$body = trim((string)($consultation['adviceAuthority'] ?? ''));
+		if ($body === '') {
+			throw new RuntimeException('Name the advisory body before you invite it');
+		}
+
+		return [$consultation, $caseId, $body];
+	}//end invitable()
+
+	/**
+	 * The share with the address to send and the message that carries it.
+	 *
+	 * @param array<string, mixed> $share        The created share.
+	 * @param array<string, mixed> $consultation The consultation.
+	 *
+	 * @return array<string, mixed> The share with `responseUrl` and `message`.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function withAddress(array $share, array $consultation): array {
 		// The address to send: the configured response address, else the link.
 		$terms = $this->consultations->terms();
 		$share['responseUrl'] = $terms->responseAddress(linkUrl: (string)($share['url'] ?? ''));
 		$share['message'] = $terms->invitationMessage(consultation: $consultation, address: $share['responseUrl']);
 
 		return $share;
-	}//end invite()
+	}//end withAddress()
 
 	/**
 	 * Collect the advisory body's comment onto the consultation.
@@ -177,36 +209,73 @@ class ExternalConsultationLinkService {
 		}
 
 		$caseId = trim((string)($consultation['parentCase'] ?? ''));
-		$share = $this->shareFor(consultationId: $consultationId, caseId: $caseId);
-		if ($share === null) {
-			throw new RuntimeException('That consultation carries no link, so nobody outside can have answered it');
-		}
-
-		$actorId = 'link:' . trim((string)($share['accessLinkUuid'] ?? ''));
-		$alreadyCollected = (int)($share['lastCollectedNote'] ?? 0);
-
-		$newest = $this->newestComment(
-			caseId: $caseId,
-			actorId: $actorId,
-			after: $alreadyCollected
-		);
+		$share = $this->requireShare(consultationId: $consultationId, caseId: $caseId);
+		$newest = $this->newestFromLink(caseId: $caseId, share: $share);
 
 		if ($newest === null) {
 			return ['collected' => false];
 		}
 
-		$recorded = $this->consultations->submitResponse(
-			consultationId: $consultationId,
-			response: [
-				'advice' => $advice,
-				'notes' => (string)($share['advisoryBody'] ?? '') . ': ' . (string)$newest['message'],
-			]
+		return $this->recordAdvice(consultationId: $consultationId, advice: $advice, share: $share, newest: $newest);
+	}//end collect()
+
+	/**
+	 * The share this consultation was published through, or an exception when it has none.
+	 *
+	 * @param string $consultationId The consultation UUID.
+	 * @param string $caseId         The case the consultation hangs off.
+	 *
+	 * @return array<string, mixed> The share.
+	 *
+	 * @throws RuntimeException When the consultation carries no link.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function requireShare(string $consultationId, string $caseId): array {
+		$share = $this->shareFor(consultationId: $consultationId, caseId: $caseId);
+		if ($share === null) {
+			throw new RuntimeException('That consultation carries no link, so nobody outside can have answered it');
+		}
+
+		return $share;
+	}//end requireShare()
+
+	/**
+	 * The newest comment written through the share's link and not collected yet.
+	 *
+	 * @param string               $caseId The case the consultation hangs off.
+	 * @param array<string, mixed> $share  The share.
+	 *
+	 * @return array<string, mixed>|null The comment, or null when there is nothing new.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function newestFromLink(string $caseId, array $share): ?array {
+		$cursor = new LinkCommentCursor(
+			actorId: 'link:' . trim((string)($share['accessLinkUuid'] ?? '')),
+			after: (int)($share['lastCollectedNote'] ?? 0)
 		);
 
-		$this->linkShares->markCollected(
-			shareId: (string)($share['id'] ?? $share['uuid'] ?? ''),
-			noteId: (int)$newest['id']
-		);
+		return $this->newestComment(caseId: $caseId, cursor: $cursor);
+	}//end newestFromLink()
+
+	/**
+	 * Record the comment as the consultation's response, and mark it collected on the share.
+	 *
+	 * @param string               $consultationId The consultation UUID.
+	 * @param string               $advice         The codified outcome the handler reads in the comment.
+	 * @param array<string, mixed> $share          The share.
+	 * @param array<string, mixed> $newest         The comment.
+	 *
+	 * @return array<string, mixed> What was recorded.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function recordAdvice(string $consultationId, string $advice, array $share, array $newest): array {
+		$notes = (string)($share['advisoryBody'] ?? '') . ': ' . (string)$newest['message'];
+		$recorded = $this->consultations->submitResponse(consultationId: $consultationId, response: ['advice' => $advice, 'notes' => $notes]);
+
+		$this->linkShares->markCollected(shareId: (string)($share['id'] ?? $share['uuid'] ?? ''), noteId: (int)$newest['id']);
 
 		return [
 			'collected' => true,
@@ -214,7 +283,7 @@ class ExternalConsultationLinkService {
 			'noteId' => (int)$newest['id'],
 			'consultation' => $recorded,
 		];
-	}//end collect()
+	}//end recordAdvice()
 
 	/**
 	 * The share this consultation was published through.
@@ -244,9 +313,8 @@ class ExternalConsultationLinkService {
 	 * The newest comment on the case written as this link, later than the one
 	 * already collected.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $actorId The link principal, `link:<uuid>`.
-	 * @param int $after The id already collected.
+	 * @param string            $caseId The case UUID.
+	 * @param LinkCommentCursor $cursor The link principal and the id already collected.
 	 *
 	 * @return array<string, mixed>|null The comment, or null when there is nothing new.
 	 *
@@ -254,7 +322,7 @@ class ExternalConsultationLinkService {
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
-	private function newestComment(string $caseId, string $actorId, int $after): ?array {
+	private function newestComment(string $caseId, LinkCommentCursor $cursor): ?array {
 		// A read that could not be made must not answer "nothing new". The
 		// handler would read that as "the body has not replied", press on, and
 		// close a consultation whose advice was sitting there unread.
@@ -263,6 +331,20 @@ class ExternalConsultationLinkService {
 			throw new RuntimeException('This instance cannot read the comments on a case, so advice cannot be collected');
 		}
 
+		return $this->newestOf(rows: $this->commentRows(notes: $notes, caseId: $caseId), cursor: $cursor);
+	}//end newestComment()
+
+	/**
+	 * The comments on a case, within the note window.
+	 *
+	 * @param object $notes  OpenRegister's note service.
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return mixed The comment rows.
+	 *
+	 * @throws RuntimeException When the comments could not be read.
+	 */
+	private function commentRows(object $notes, string $caseId): mixed {
 		try {
 			$rows = $notes->getNotesForObject($caseId, self::NOTE_WINDOW);
 		} catch (\Throwable $failure) {
@@ -273,33 +355,56 @@ class ExternalConsultationLinkService {
 			throw new RuntimeException('The comments on this case could not be read, so advice cannot be collected');
 		}
 
+		return $rows;
+	}//end commentRows()
+
+	/**
+	 * The newest link comment not collected yet.
+	 *
+	 * @param mixed             $rows   The comment rows.
+	 * @param LinkCommentCursor $cursor The consultation link's actor id and the id the last collected comment had.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function newestOf(mixed $rows, LinkCommentCursor $cursor): ?array {
 		$newest = null;
 		foreach ((array)$rows as $row) {
-			if ($this->isUncollectedLinkComment(row: $row, actorId: $actorId, after: $after) === false) {
+			if ($this->isUncollectedLinkComment(row: $row, cursor: $cursor) === false) {
 				continue;
 			}
 
-			if ($newest === null || (int)$row['id'] > (int)$newest['id']) {
+			if ($this->isNewer(row: $row, newest: $newest) === true) {
 				$newest = $row;
 			}
 		}
 
 		return $newest;
-	}//end newestComment()
+	}//end newestOf()
+
+	/**
+	 * Whether a comment is newer than the newest one found so far.
+	 *
+	 * @param array<string, mixed>      $row    The comment.
+	 * @param array<string, mixed>|null $newest The newest so far, null when none.
+	 *
+	 * @return bool
+	 */
+	private function isNewer(array $row, ?array $newest): bool {
+		return $newest === null || (int)$row['id'] > (int)$newest['id'];
+	}//end isNewer()
 
 	/**
 	 * Whether one comment is this link's, and newer than the one already
 	 * collected.
 	 *
-	 * @param mixed $row The comment as OpenRegister returned it.
-	 * @param string $actorId The link principal, `link:<uuid>`.
-	 * @param int $after The id already collected.
+	 * @param mixed             $row    The comment as OpenRegister returned it.
+	 * @param LinkCommentCursor $cursor The link principal and the id already collected.
 	 *
 	 * @return bool True when it counts as advice nobody has recorded yet.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
-	private function isUncollectedLinkComment(mixed $row, string $actorId, int $after): bool {
+	private function isUncollectedLinkComment(mixed $row, LinkCommentCursor $cursor): bool {
 		if (is_array($row) === false) {
 			return false;
 		}
@@ -308,11 +413,11 @@ class ExternalConsultationLinkService {
 			return false;
 		}
 
-		if ((string)($row['actorId'] ?? '') !== $actorId) {
+		if ((string)($row['actorId'] ?? '') !== $cursor->actorId) {
 			return false;
 		}
 
-		return ((int)($row['id'] ?? 0) > $after);
+		return ((int)($row['id'] ?? 0) > $cursor->after);
 	}//end isUncollectedLinkComment()
 
 	/**

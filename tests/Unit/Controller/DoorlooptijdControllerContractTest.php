@@ -47,6 +47,7 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for DoorlooptijdController::metrics().
  *
  * @covers \OCA\Dossiq\Controller\DoorlooptijdController
+ * @uses \OCA\Dossiq\Service\Csv\CsvWriter
  */
 class DoorlooptijdControllerContractTest extends TestCase {
 

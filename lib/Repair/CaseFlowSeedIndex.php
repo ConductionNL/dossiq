@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\DemoDataService;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use RuntimeException;
 use Throwable;
 
@@ -46,10 +46,10 @@ class CaseFlowSeedIndex {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the ObjectService and reads the seed markers.
+	 * @param SettingsServiceInterface $settingsService Resolves the ObjectService and reads the seed markers.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
 
@@ -69,7 +69,7 @@ class CaseFlowSeedIndex {
 	 * @spec openspec/specs/seed-cases-once/spec.md#requirement-the-demo-cases-are-seeded-once
 	 */
 	public function casesDue(array $data): bool {
-		if ($this->settingsService->getConfigValue(key: DemoDataService::DECIDED_KEY) !== DemoDataService::DECIDED_INSTALLED) {
+		if ($this->settingsService->getConfigValue(key: DemoDataServiceInterface::DECIDED_KEY) !== DemoDataServiceInterface::DECIDED_INSTALLED) {
 			return false;
 		}
 

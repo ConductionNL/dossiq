@@ -24,10 +24,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Access;
 
 use OCA\Dossiq\Listener\CaseTypeRightsRowsListener;
+use OCA\Dossiq\Service\Access\AssignedGroupReadRows;
+use OCA\Dossiq\Service\Access\CaseRightsRowSources;
+use OCA\Dossiq\Service\Access\CaseTeamAccessRules;
 use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
 use OCA\Dossiq\Service\Access\OrganisationRoles;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Tests\Support\SiblingOpenRegister;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IDBConnection;
@@ -50,8 +54,6 @@ use Psr\Log\NullLogger;
  */
 class CaseTypeRightsEnforcedAccessTest extends TestCase {
 
-	private const OPENREGISTER = __DIR__ . '/../../../../../openregister';
-
 	/**
 	 * Cases: case type, team, status, confidentiality, assignee.
 	 *
@@ -63,6 +65,11 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		'c-3' => ['ct-permit', 'team-toezicht', 'st-ontvangen', 'intern', ''],
 		'c-4' => ['ct-permit', 'team-vergunningen', 'st-ontvangen', 'geheim', ''],
 		'c-5' => ['ct-other', 'team-vergunningen', 'st-behandeling', 'intern', 'dirk'],
+		'c-6' => ['ct-other', 'team-toezicht', 'st-ontvangen', 'intern', '', 'org-away'],
+		'c-7' => ['ct-other', 'team-toezicht', 'st-ontvangen', 'vertrouwelijk', ''],
+		'c-8' => ['ct-other', 'team-toezicht', 'st-ontvangen', 'confidentieel', ''],
+		'c-9' => ['ct-other', 'team-toezicht', 'st-ontvangen', '', ''],
+		'c-10' => ['ct-other', 'team-toezicht', 'st-ontvangen', 'topgeheim', ''],
 	];
 
 	/**
@@ -75,7 +82,16 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		'bram' => ['vergunningverleners'],
 		'carla' => ['toezichthouders'],
 		'dirk' => ['team-toezicht'],
+		'femke' => ['team-toezicht'],
+		'gijs' => ['team-elders'],
 	];
+
+	/**
+	 * Groups per user for this test, starting from {@see self::GROUPS}.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private array $groupsOf = self::GROUPS;
 
 	/**
 	 * The organisation roles: three functions and two teams.
@@ -108,11 +124,8 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$lib = realpath(self::OPENREGISTER . '/lib');
-		$dbal = realpath(self::OPENREGISTER . '/vendor/doctrine/dbal/src');
-		if ($lib === false || $dbal === false) {
-			self::markTestSkipped('No sibling openregister checkout with its vendor at ' . self::OPENREGISTER . '. CI clones it, so this runs there.');
-		}
+		$lib = SiblingOpenRegister::path(relative: 'lib');
+		$dbal = SiblingOpenRegister::path(relative: 'vendor/doctrine/dbal/src');
 
 		spl_autoload_register(
 			static function (string $class) use ($lib, $dbal): void {
@@ -146,16 +159,24 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		$schema->setId(71);
 		$schema->setSlug('case');
 		$schema->setProperties($case['properties']);
-		$schema->setAuthorization($case['authorization']);
+		// The handling team rules the projector writes onto the live schema. A
+		// team rule makes OpenRegister drop the organisation filter for a caller
+		// it qualifies, so the teams here hold a case type with no cases: they
+		// grant nothing and still switch that filter off.
+		$teams = [['id' => 'ct-archief', 'teams' => ['team-toezicht', 'team-vergunningen']]];
+		$schema->setAuthorization((new CaseTeamAccessRules())->block(shipped: $case['authorization'], caseTypes: $teams));
 		return $schema;
 	}//end caseSchema()
 
 	/**
 	 * Dossiq's real listener over a faked store and role list.
 	 *
+	 * @param IUserSession  $session The signed-in user.
+	 * @param IGroupManager $groups  Their groups.
+	 *
 	 * @return CaseTypeRightsRowsListener
 	 */
-	private function listener(): CaseTypeRightsRowsListener {
+	private function listener(IUserSession $session, IGroupManager $groups): CaseTypeRightsRowsListener {
 		$store = $this->createMock(CaseTypeStore::class);
 		$store->method('everyCaseType')->willReturn(
 			[
@@ -169,7 +190,12 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		$roles = $this->getMockBuilder(OrganisationRoles::class)->disableOriginalConstructor()->onlyMethods(['allUnscoped'])->getMock();
 		$roles->method('allUnscoped')->willReturn(self::ROLES);
 
-		return new CaseTypeRightsRowsListener(store: $store, roles: $roles, translate: new CaseTypeRightsMatrixRows(), logger: new NullLogger());
+		$sources = new CaseRightsRowSources(
+			caseTypes: new CaseTypeRightsMatrixRows(),
+			assignedGroup: new AssignedGroupReadRows(session: $session, groups: $groups),
+		);
+
+		return new CaseTypeRightsRowsListener(store: $store, roles: $roles, sources: $sources, logger: new NullLogger());
 	}//end listener()
 
 	/**
@@ -187,14 +213,15 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		$users = $this->createMock(IUserManager::class);
 		$users->method('get')->willReturn($user);
 		$groups = $this->createMock(IGroupManager::class);
-		$groups->method('getUserGroupIds')->willReturn(self::GROUPS[$uid]);
+		$groups->method('getUserGroupIds')->willReturn($this->groupsOf[$uid]);
 		$groups->method('isAdmin')->willReturn(false);
-		$groups->method('isInGroup')->willReturnCallback(static fn (string $who, string $group): bool => in_array($group, self::GROUPS[$uid], true));
+		$memberOf = $this->groupsOf[$uid];
+		$groups->method('isInGroup')->willReturnCallback(static fn (string $who, string $group): bool => in_array($group, $memberOf, true));
 
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueBool')->willReturnCallback(static fn (string $app, string $key, bool $default = false): bool => $default);
 
-		$listener = $this->listener();
+		$listener = $this->listener(session: $session, groups: $groups);
 		$dispatcher = $this->createMock(IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willReturnCallback(static fn (object $event) => $listener->handle($event));
 
@@ -214,19 +241,52 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 			$memberOfThird = $container;
 		}
 
-		$memberOf = new $memberOfClass($schemas, $registers, $memberOfThird, $evaluator, new NullLogger());
-		$matcher = new $matcherClass($session, $container, $evaluator, new NullLogger(), $groups, $memberOf);
+		// From 70e55704 on, OpenRegister takes the two mappers as one SchemaRegisterLookup.
+		$lookupClass = 'OCA\\OpenRegister\\Service\\Rbac\\SchemaRegisterLookup';
+		$first = (new \ReflectionMethod(objectOrMethod: $memberOfClass, method: '__construct'))->getParameters()[0]->getType();
+		$memberOf = null;
+		if ($first instanceof \ReflectionNamedType && $first->getName() === $lookupClass) {
+			$memberOf = new $memberOfClass(new $lookupClass($schemas, $registers), $container, $evaluator, new NullLogger());
+		}
+
+		if ($memberOf === null) {
+			$memberOf = new $memberOfClass($schemas, $registers, $memberOfThird, $evaluator, new NullLogger());
+		}
+
+		// OpenRegister main takes the caller, its groups and the member-of
+		// resolver as one ConditionUserResolvers.
+		$usersClass = 'OCA\\OpenRegister\\Service\\ConditionUserResolvers';
+		if (class_exists(class: $usersClass) === true) {
+			$matcher = new $matcherClass(new $usersClass($session, $groups, $memberOf), $container, $evaluator, new NullLogger());
+		}
+
+		if (class_exists(class: $usersClass) === false) {
+			$matcher = new $matcherClass($session, $container, $evaluator, new NullLogger(), $groups, $memberOf);
+		}
 
 		$permissionClass = 'OCA\\OpenRegister\\Service\\Object\\PermissionHandler';
-		$permissions = new $permissionClass($session, $users, $groups, $schemas, $objects, $matcher, $appConfig, new NullLogger(), $container, $dispatcher);
+		// OpenRegister takes the collaborators as four bundles once PermissionCallerServices exists.
+		$bundle = 'OCA\\OpenRegister\\Service\\Object\\Permission\\';
+		if (class_exists(class: $bundle . 'PermissionCallerServices') === true) {
+			$permissions = new $permissionClass(
+				new ($bundle . 'PermissionCallerServices')($session, $users, $groups, $appConfig),
+				new ($bundle . 'PermissionDataServices')($schemas, $objects, $container, new NullLogger()),
+				new ($bundle . 'PermissionRuleServices')($matcher, $dispatcher),
+				new ($bundle . 'PermissionGrantServices')(new ($bundle . 'PermissionDenyServices')(), new ($bundle . 'PermissionDerivedGrantServices')())
+			);
+		}
+
+		if (class_exists(class: $bundle . 'PermissionCallerServices') === false) {
+			$permissions = new $permissionClass($session, $users, $groups, $schemas, $objects, $matcher, $appConfig, new NullLogger(), $container, $dispatcher);
+		}
 
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($permissions, $registers, $objects, $permissionClass) {
-				if ($id === $permissionClass) {
+				if ($id === $permissionClass || $id === $permissionClass . 'Interface') {
 					return $permissions;
 				}
 
-				if ($id === 'OCA\\OpenRegister\\Db\\RegisterMapper') {
+				if ($id === 'OCA\\OpenRegister\\Db\\RegisterMapper' || $id === 'OCA\\OpenRegister\\Db\\RegisterMapperInterface') {
 					return $registers;
 				}
 
@@ -234,11 +294,42 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 					return $objects;
 				}
 
+				if ($id === 'OCA\\OpenRegister\\Service\\OrganisationService' || $id === 'OCA\\OpenRegister\\Service\\OrganisationServiceInterface') {
+					return new class {
+						/**
+						 * @return object The caller's active organisation.
+						 */
+						public function getActiveOrganisation(): object {
+							return new class {
+								/**
+								 * @return string The uuid.
+								 */
+								public function getUuid(): string {
+									return 'org-home';
+								}
+							};
+						}
+					};
+				}
+
 				throw new \RuntimeException('Not in this test: ' . $id);
 			}
 		);
 
 		$rbacClass = 'OCA\\OpenRegister\\Db\\MagicMapper\\MagicRbacHandler';
+		// OpenRegister main takes the caller, the settings and the support services as three bundles.
+		$magic = 'OCA\\OpenRegister\\Db\\MagicMapper\\';
+		if (class_exists(class: $magic . 'MagicMapperIdentity') === true) {
+			return [
+				$permissions,
+				new $rbacClass(
+					new ($magic . 'MagicMapperIdentity')($session, $groups, $users),
+					new ($magic . 'MagicRbacSettings')($appConfig),
+					new ($magic . 'MagicRbacSupport')($matcher, $container, new NullLogger())
+				),
+			];
+		}
+
 		return [$permissions, new $rbacClass($session, $groups, $users, $appConfig, $matcher, $container, new NullLogger())];
 	}//end handlers()
 
@@ -256,9 +347,11 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		$entityClass = 'OCA\\OpenRegister\\Db\\ObjectEntity';
 
 		$admitted = [];
-		foreach (self::CASES as $uuid => [$caseType, $team, $status, $level, $assignee]) {
+		foreach (self::CASES as $uuid => $row) {
+			[$caseType, $team, $status, $level, $assignee] = $row;
 			$object = new $entityClass();
 			$object->setUuid($uuid);
+			$object->setOrganisation(($row[5] ?? 'org-home'));
 			$object->setOwner('intake');
 			$object->setObject(['caseType' => $caseType, 'assignedGroup' => $team, 'status' => $status, 'confidentiality' => $level, 'assignee' => $assignee]);
 			if ($permissions->hasPermission(schema: $schema, action: $action, userId: $uid, objectOwner: 'intake', object: $object) === true) {
@@ -303,7 +396,17 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 			$this->createMock('OCA\\OpenRegister\\Service\\DateTimeNormalizer'),
 			relatedRows: $this->createMock('OCA\\OpenRegister\\Service\\Query\\RelatedRowQueryApplier')
 		);
-		$conditions = $search->buildWhereConditionsSql(query: [], schema: $this->caseSchema());
+		// OpenRegister main asks for one WhereClauseRequest over a MagicReadTable.
+		$magic = 'OCA\\OpenRegister\\Db\\MagicMapper\\';
+		if (method_exists($search, 'buildWhereClause') === true) {
+			$conditions = $search->buildWhereClause(
+				request: new ($magic . 'WhereClauseRequest')(query: [], table: new ($magic . 'MagicReadTable')(schema: $this->caseSchema()))
+			);
+		}
+
+		if (method_exists($search, 'buildWhereClause') === false) {
+			$conditions = $search->buildWhereConditionsSql(query: [], schema: $this->caseSchema());
+		}
 
 		$pdo = new PDO('sqlite::memory:');
 		$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -314,10 +417,10 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 			. ' case_type TEXT, assigned_group TEXT, status TEXT, confidentiality TEXT, assignee TEXT)'
 		);
 		$insert = $pdo->prepare(
-			"INSERT INTO t (_uuid, _owner, _organisation, case_type, assigned_group, status, confidentiality, assignee) VALUES (?, 'intake', 'org-home', ?, ?, ?, ?, ?)"
+			"INSERT INTO t (_uuid, _owner, case_type, assigned_group, status, confidentiality, assignee, _organisation) VALUES (?, 'intake', ?, ?, ?, ?, ?, ?)"
 		);
 		foreach (self::CASES as $uuid => $row) {
-			$insert->execute(array_merge([$uuid], $row));
+			$insert->execute(array_merge([$uuid], array_slice($row, 0, 5), [($row[5] ?? 'org-home')]));
 		}
 
 		$where = '';
@@ -329,13 +432,30 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	}//end listed()
 
 	/**
+	 * The cases a single read returns: the find query selects, then the verdict admits.
+	 *
+	 * The organisation boundary is the query's; the single-object verdict has none.
+	 *
+	 * @param string $uid The user.
+	 *
+	 * @return array<int, string>
+	 */
+	private function readable(string $uid): array {
+		return array_values(array_intersect($this->admitted(uid: $uid, action: 'read'), $this->listed(uid: $uid)));
+	}//end readable()
+
+	/**
 	 * An intaker reads their own team's cases up to intern, on both paths.
 	 *
 	 * @return void
 	 */
 	public function testAnIntakerReadsTheirOwnTeamOnBothPaths(): void {
-		self::assertSame(['c-1', 'c-2'], $this->admitted(uid: 'anna', action: 'read'));
-		self::assertSame(['c-1', 'c-2'], $this->listed(uid: 'anna'));
+		self::assertSame(
+			expected: ['c-1', 'c-2', 'c-5'],
+			actual: $this->admitted(uid: 'anna', action: 'read'),
+			message: 'c-5 through her team; c-4 is geheim, above what a team reads',
+		);
+		self::assertSame(expected: ['c-1', 'c-2', 'c-5'], actual: $this->listed(uid: 'anna'));
 	}//end testAnIntakerReadsTheirOwnTeamOnBothPaths()
 
 	/**
@@ -381,9 +501,94 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheAssigneeKeepsTheirOwnRights(): void {
-		self::assertSame(['c-5'], $this->admitted(uid: 'dirk', action: 'read'));
-		self::assertSame(['c-5'], $this->listed(uid: 'dirk'));
+		self::assertSame(
+			expected: ['c-3', 'c-5', 'c-7'],
+			actual: $this->readable(uid: 'dirk'),
+			message: 'c-3 and c-7 through his team; c-6 is in another organisation',
+		);
+		self::assertSame(expected: ['c-3', 'c-5', 'c-7'], actual: $this->listed(uid: 'dirk'));
 		self::assertSame(['c-5'], $this->admitted(uid: 'dirk', action: 'update'));
 		self::assertSame(['c-5'], $this->admitted(uid: 'dirk', action: 'addFiles'));
 	}//end testTheAssigneeKeepsTheirOwnRights()
+
+	/**
+	 * A rights row that names delete does not grant it: deleting a case stays with administrators.
+	 *
+	 * @return void
+	 */
+	public function testARightsRowNeverGrantsDelete(): void {
+		self::assertSame(expected: [], actual: $this->admitted(uid: 'bram', action: 'delete'));
+		self::assertSame(expected: ['c-1', 'c-2', 'c-3', 'c-4'], actual: $this->admitted(uid: 'bram', action: 'update'));
+	}//end testARightsRowNeverGrantsDelete()
+
+	/**
+	 * A member of a case's assigned group reads it, on both paths.
+	 *
+	 * @return void
+	 */
+	public function testAMemberOfTheAssignedGroupReadsTheCase(): void {
+		self::assertSame(expected: ['c-3', 'c-7'], actual: $this->readable(uid: 'femke'), message: 'c-6 belongs to another organisation');
+		self::assertSame(expected: ['c-3', 'c-7'], actual: $this->listed(uid: 'femke'), message: 'c-6 belongs to another organisation');
+	}//end testAMemberOfTheAssignedGroupReadsTheCase()
+
+	/**
+	 * The group reads up to and including vertrouwelijk; above it, or without a known level, it reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheGroupReadStopsAboveVertrouwelijk(): void {
+		$admitted = $this->admitted(uid: 'femke', action: 'read');
+		$listed = $this->listed(uid: 'femke');
+
+		self::assertContains(needle: 'c-7', haystack: $admitted, message: 'vertrouwelijk');
+		self::assertContains(needle: 'c-7', haystack: $listed, message: 'vertrouwelijk');
+		foreach (['c-8' => 'confidentieel', 'c-9' => 'no level', 'c-10' => 'an unknown level'] as $case => $why) {
+			self::assertNotContains(needle: $case, haystack: $admitted, message: $why);
+			self::assertNotContains(needle: $case, haystack: $listed, message: $why);
+		}
+	}//end testTheGroupReadStopsAboveVertrouwelijk()
+
+	/**
+	 * Reading is all the assigned group gives: no change, no move, no files.
+	 *
+	 * @return void
+	 */
+	public function testTheAssignedGroupChangesNothing(): void {
+		foreach (['update', 'delete', 'create', 'readFiles', 'addFiles', 'deleteFiles'] as $action) {
+			self::assertSame(expected: [], actual: $this->admitted(uid: 'femke', action: $action), message: $action);
+		}
+	}//end testTheAssignedGroupChangesNothing()
+
+	/**
+	 * A member of the same group in another organisation does not list that organisation's case.
+	 *
+	 * @return void
+	 */
+	public function testTheSameGroupInAnotherOrganisationDoesNotList(): void {
+		self::assertNotContains(needle: 'c-6', haystack: $this->listed(uid: 'femke'));
+		self::assertNotContains(needle: 'c-6', haystack: $this->listed(uid: 'dirk'));
+		self::assertNotContains(needle: 'c-6', haystack: $this->readable(uid: 'femke'), message: 'single read');
+	}//end testTheSameGroupInAnotherOrganisationDoesNotList()
+
+	/**
+	 * Taken out of the group, a reader loses the case.
+	 *
+	 * @return void
+	 */
+	public function testLeavingTheGroupLosesTheCase(): void {
+		$this->groupsOf['femke'] = [];
+
+		self::assertSame(expected: [], actual: $this->admitted(uid: 'femke', action: 'read'));
+		self::assertSame(expected: [], actual: $this->listed(uid: 'femke'));
+	}//end testLeavingTheGroupLosesTheCase()
+
+	/**
+	 * A user in no case's group reads none of them.
+	 *
+	 * @return void
+	 */
+	public function testANonMemberReadsNothing(): void {
+		self::assertSame(expected: [], actual: $this->admitted(uid: 'gijs', action: 'read'));
+		self::assertSame(expected: [], actual: $this->listed(uid: 'gijs'));
+	}//end testANonMemberReadsNothing()
 }//end class

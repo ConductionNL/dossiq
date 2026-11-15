@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 
 namespace OCA\Dossiq\Service\Support;
@@ -46,7 +46,7 @@ use RuntimeException;
 /**
  * Trait providing the canonical OpenRegister object-search bridge.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 trait SearchesObjects {
 	/**
@@ -66,7 +66,7 @@ trait SearchesObjects {
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved
 	 *                                                    in the caller's organisation.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function searchObjectsAsArrays(
 		object $objectService,
@@ -75,11 +75,7 @@ trait SearchesObjects {
 		array $filters = [],
 	): array {
 		return $this->searchObjectsWithin(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: $filters,
-			scope: []
+			search: new ObjectSearch(objectService: $objectService, register: $register, schema: $schema, filters: $filters, scope: [])
 		);
 	}//end searchObjectsAsArrays()
 
@@ -100,7 +96,7 @@ trait SearchesObjects {
 	 *
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function searchObjectsAsArraysUnscoped(
 		object $objectService,
@@ -109,11 +105,13 @@ trait SearchesObjects {
 		array $filters = [],
 	): array {
 		return $this->searchObjectsWithin(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: $filters,
-			scope: ['_rbac' => false, '_multitenancy' => false]
+			search: new ObjectSearch(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: $filters,
+				scope: ['_rbac' => false, '_multitenancy' => false]
+			)
 		);
 	}//end searchObjectsAsArraysUnscoped()
 
@@ -123,53 +121,39 @@ trait SearchesObjects {
 	 * Chooses the numeric-ID search path when both register and schema are
 	 * numeric identifiers, otherwise delegates to the slug-aware bridge.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService instance.
-	 * @param int|string $register Register numeric ID or slug.
-	 * @param int|string $schema Schema numeric ID or slug.
-	 * @param array<string, mixed> $filters Object-field filters plus OpenRegister
-	 *                                      pagination keys.
-	 * @param array<string, bool> $scope The scope-lifting parameters, or none.
+	 * @param ObjectSearch $search Where to look, what to match and in which scope.
 	 *
 	 * @return array<int, array<string, mixed>> Matching objects as associative arrays.
 	 *
 	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
-	private function searchObjectsWithin(
-		object $objectService,
-		int|string $register,
-		int|string $schema,
-		array $filters,
-		array $scope,
-	): array {
-		$registerIsNumeric = (is_int($register) === true || ctype_digit((string)$register) === true);
-		$schemaIsNumeric = (is_int($schema) === true || ctype_digit((string)$schema) === true);
-
+	private function searchObjectsWithin(ObjectSearch $search): array {
 		// Slug path: when either identifier is a slug, delegate to the
 		// slug-aware bridge which resolves the slugs and merges `@self` itself.
-		if ($registerIsNumeric === false || $schemaIsNumeric === false) {
+		if ($search->byNumericIds() === false) {
 			return $this->normaliseObjectRows(
-				rows: $objectService->searchObjectsBySlug(
-					(string)$register,
-					(string)$schema,
-					$filters,
+				rows: $search->objectService->searchObjectsBySlug(
+					(string)$search->register,
+					(string)$search->schema,
+					$search->filters,
 					// Passed only when asked, so a service without these
 					// parameters still accepts the call.
-					...$scope
+					...$search->scope
 				)
 			);
 		}
 
 		// Numeric path: register/schema go into the `@self` metadata block,
 		// object-field filters stay at the top level.
-		$query = $filters;
+		$query = $search->filters;
 		$self = ($query['@self'] ?? []);
-		$self['register'] = (int)$register;
-		$self['schema'] = (int)$schema;
+		$self['register'] = (int)$search->register;
+		$self['schema'] = (int)$search->schema;
 		$query['@self'] = $self;
 
-		return $this->normaliseObjectRows(rows: $objectService->searchObjects($query, ...$scope));
+		return $this->normaliseObjectRows(rows: $search->objectService->searchObjects($query, ...$search->scope));
 	}//end searchObjectsWithin()
 
 	/**
@@ -189,7 +173,7 @@ trait SearchesObjects {
 	 * @return array<string, mixed>|null The object as an associative array, or
 	 *                                   null when it does not exist.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function findObjectAsArray(
 		object $objectService,
@@ -198,27 +182,12 @@ trait SearchesObjects {
 		string $id,
 	): ?array {
 		try {
-			$object = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema
-			);
+			$object = $objectService->find(id: $id, register: $register, schema: $schema);
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
 			return null;
 		}
 
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return $this->objectToArrayOrNull(value: $object);
 	}//end findObjectAsArray()
 
 	/**
@@ -239,7 +208,7 @@ trait SearchesObjects {
 	 *
 	 * @return array<string,mixed>|null The stored object, or null if it cannot be represented as one.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function saveObjectAsArray(
 		object $objectService,
@@ -248,25 +217,14 @@ trait SearchesObjects {
 		array $object,
 		?string $uuid = null,
 	): ?array {
-		$saved = $objectService->saveObject(
-			object: $object,
-			register: $register,
-			schema: $schema,
-			uuid: $uuid
+		return $this->objectToArrayOrNull(
+			value: $objectService->saveObject(
+				object: $object,
+				register: $register,
+				schema: $schema,
+				uuid: $uuid
+			)
 		);
-
-		if (is_array($saved) === true) {
-			return $saved;
-		}
-
-		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
-			$serialized = $saved->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
 	}//end saveObjectAsArray()
 
 	/**
@@ -298,7 +256,7 @@ trait SearchesObjects {
 	 * @throws RuntimeException When the object cannot be read on the fallback path,
 	 *                           or the service offers no seam that writes partially.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function patchObjectAsArray(
 		object $objectService,
@@ -393,7 +351,7 @@ trait SearchesObjects {
 	 *      Without the tag PHPStan carries the pre-call state across, and
 	 *      reported a counter incremented inside the closure as "always 0".
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function runAsSystemIfAvailable(object $objectService, callable $operation): mixed {
 		if (method_exists($objectService, 'runAsSystem') === true) {
@@ -439,7 +397,7 @@ trait SearchesObjects {
 	 *
 	 * @return array<int, array<string, mixed>> Normalised list of object arrays.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	private function normaliseObjectRows(mixed $rows): array {
 		if (is_array($rows) === false) {

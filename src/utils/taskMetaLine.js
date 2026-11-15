@@ -13,6 +13,17 @@ import { translate as t } from '@nextcloud/l10n'
 import { daysUntilDeadline } from './deadlineCountdown.js'
 
 /**
+ * The deadline words for the days that have a name of their own.
+ *
+ * @type {Map<number, function(): string>}
+ */
+const NAMED_DEADLINE_DAYS = new Map([
+	[0, () => t('dossiq', 'deadline today')],
+	[1, () => t('dossiq', 'deadline tomorrow')],
+	[-1, () => t('dossiq', 'deadline yesterday')],
+])
+
+/**
  * A task's deadline in words, relative to today.
  *
  * Today, tomorrow and yesterday are named; further away it counts the days.
@@ -29,15 +40,20 @@ export function taskDeadlineWords(dueAt, now = new Date()) {
 		return ''
 	}
 
-	if (days === 0) {
-		return t('dossiq', 'deadline today')
+	const namedDay = NAMED_DEADLINE_DAYS.get(days)
+	if (namedDay !== undefined) {
+		return namedDay()
 	}
-	if (days === 1) {
-		return t('dossiq', 'deadline tomorrow')
-	}
-	if (days === -1) {
-		return t('dossiq', 'deadline yesterday')
-	}
+	return countedDeadlineWords(days)
+}
+
+/**
+ * The deadline words for a day without a name: counted forward or back.
+ *
+ * @param {number} days The signed number of days until the deadline.
+ * @return {string} The words.
+ */
+function countedDeadlineWords(days) {
 	if (days > 1) {
 		return t('dossiq', 'deadline in {days} days', { days })
 	}
@@ -59,22 +75,24 @@ export function taskDeadlineWords(dueAt, now = new Date()) {
  * @return {string} The line, or '' when no part is known.
  * @spec openspec/specs/task-management/spec.md
  */
-export function taskMetaLine({
-	caseNumber = '',
-	dueAt = null,
-	finished = false,
-	now = new Date(),
-} = {}) {
-	const parts = []
+export function taskMetaLine(options = {}) {
+	const parts = [caseNumberPart(options.caseNumber)]
+	if (options.finished !== true) {
+		parts.push(taskDeadlineWords(options.dueAt, options.now))
+	}
+	return parts.filter((part) => part !== '').join(', ')
+}
+
+/**
+ * The case part of the line, or '' when the case number is not known.
+ *
+ * @param {string|number|null|undefined} caseNumber The case's number (its `identifier`).
+ * @return {string} The part.
+ */
+function caseNumberPart(caseNumber) {
 	const number = String(caseNumber ?? '').trim()
-	if (number !== '') {
-		parts.push(t('dossiq', 'on case {number}', { number }))
+	if (number === '') {
+		return ''
 	}
-	if (finished !== true) {
-		const deadline = taskDeadlineWords(dueAt, now)
-		if (deadline !== '') {
-			parts.push(deadline)
-		}
-	}
-	return parts.join(', ')
+	return t('dossiq', 'on case {number}', { number })
 }

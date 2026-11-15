@@ -10,6 +10,8 @@
         "version": "1.23.0",
         "properties": {
           "x-index": {
+            "title": "Columns for this case type",
+            "description": "What the case list shows while this case type is picked in the sidebar. Leave it empty and the list shows the page's own columns, which is what every case type does today. A column names one of the columns the Cases page declares: the page decides which columns exist, this decides which of them this case type shows and in what order, so a column named here that the page does not carry is dropped rather than rendered empty.",
             "properties": {
               "title": {
                 "type": "string",

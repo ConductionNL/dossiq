@@ -32,6 +32,18 @@
       ],
       "tags": [
         "voorbeeld"
+      ],
+      "properties": [
+        {
+          "propertyDefinition": "cbc480ae-b7d9-5bc2-8ffd-97fdacf623ff",
+          "name": "vragenTermijnEinde",
+          "value": "{{date:-25}}"
+        },
+        {
+          "propertyDefinition": "a4936ffd-1ac0-53b7-81b1-c361e68b13a3",
+          "name": "sluiting",
+          "value": "{{date:-12}}"
+        }
       ]
     }
   ]

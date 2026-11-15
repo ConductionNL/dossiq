@@ -76,7 +76,7 @@ class DisclosureAssessmentValidator {
 	 *
 	 * @throws RefusedException With 503 when the list of refusal grounds cannot be read.
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	public function validate(array $assessment): array {
@@ -86,28 +86,64 @@ class DisclosureAssessmentValidator {
 			$errors['documentRef'] = 'documentRef is required';
 		}
 
+		return $errors + $this->classificationErrors(assessment: $assessment);
+	}//end validate()
+
+	/**
+	 * Validation errors on the classification and the grounds it requires.
+	 *
+	 * @param array<string, mixed> $assessment The assessment to validate
+	 *
+	 * @return array<string, string> Validation errors keyed by field name; empty if valid
+	 *
+	 * @throws RefusedException With 503 when the list of refusal grounds cannot be read.
+	 *
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
+	 */
+	private function classificationErrors(array $assessment): array {
 		$classification = $assessment['classification'] ?? null;
 		if (empty($classification) === true) {
-			$errors['classification'] = 'classification is required';
-		} elseif (in_array($classification, self::VALID_CLASSIFICATIONS, true) === false) {
-			$errors['classification'] = 'Invalid classification. Must be one of: '
-				. implode(', ', self::VALID_CLASSIFICATIONS);
-		} elseif (in_array($classification, self::REQUIRES_WEIGERINGSGROND, true) === true) {
-			$grounds = $assessment['weigeringsgronden'] ?? [];
-			if (empty($grounds) === true) {
-				$errors['weigeringsgronden'] = 'At least one weigeringsgrond is required for '
-					. $classification . ' (WOO Art. 5.1/5.2)';
-				return $errors;
-			}
-
-			$refusal = $this->refusalOfGrounds(grounds: (array)$grounds);
-			if ($refusal !== null) {
-				$errors['weigeringsgronden'] = $refusal;
-			}
+			return ['classification' => 'classification is required'];
 		}
 
-		return $errors;
-	}//end validate()
+		if (in_array($classification, self::VALID_CLASSIFICATIONS, true) === false) {
+			return ['classification' => 'Invalid classification. Must be one of: '
+				. implode(', ', self::VALID_CLASSIFICATIONS)];
+		}
+
+		if (in_array($classification, self::REQUIRES_WEIGERINGSGROND, true) === true) {
+			return $this->groundsErrors(assessment: $assessment, classification: (string)$classification);
+		}
+
+		return [];
+	}//end classificationErrors()
+
+	/**
+	 * Validation errors on the weigeringsgronden a classification requires.
+	 *
+	 * @param array<string, mixed> $assessment     The assessment to validate
+	 * @param string               $classification The classification, one that requires grounds
+	 *
+	 * @return array<string, string> Validation errors keyed by field name; empty if valid
+	 *
+	 * @throws RefusedException With 503 when the list of refusal grounds cannot be read.
+	 *
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
+	 */
+	private function groundsErrors(array $assessment, string $classification): array {
+		$grounds = $assessment['weigeringsgronden'] ?? [];
+		if (empty($grounds) === true) {
+			return ['weigeringsgronden' => 'At least one weigeringsgrond is required for '
+				. $classification . ' (WOO Art. 5.1/5.2)'];
+		}
+
+		$refusal = $this->refusalOfGrounds(grounds: (array)$grounds);
+		if ($refusal !== null) {
+			return ['weigeringsgronden' => $refusal];
+		}
+
+		return [];
+	}//end groundsErrors()
 
 	/**
 	 * Why the cited grounds cannot stand, or null when every one can.
@@ -128,29 +164,59 @@ class DisclosureAssessmentValidator {
 	private function refusalOfGrounds(array $grounds): ?string {
 		foreach ($grounds as $code) {
 			$code = trim((string)$code);
-			try {
-				$ground = $this->refusalGrounds->byCode(code: $code);
-			} catch (WooRefusalGroundsUnavailable $e) {
-				throw new RefusedException(
-					rule: 'woo-refusal-grounds-unavailable',
-					sentence: 'The list of Woo refusal grounds cannot be read, so the assessment is not stored. Try again later.',
-					status: RefusedException::STATUS_INDETERMINATE,
-				);
+			$refusal = $this->refusalOfGround(code: $code, ground: $this->groundOf(code: $code));
+			if ($refusal !== null) {
+				return $refusal;
 			}
-
-			if ($ground === null) {
-				return 'Unknown weigeringsgrond: ' . $code;
-			}
-
-			if ($ground['citable'] !== true) {
-				return 'Weigeringsgrond ' . $code . ' groups other grounds and cannot be cited. Pick one of the grounds under it.';
-			}
-
-			if ($ground['status'] !== 'active') {
-				return 'Weigeringsgrond ' . $code . ' is retired and cannot be cited on a new assessment.';
-			}
-		}//end foreach
+		}
 
 		return null;
 	}//end refusalOfGrounds()
+
+	/**
+	 * The settled list's entry for a code.
+	 *
+	 * @param string $code The cited code.
+	 *
+	 * @return array<string, mixed>|null The entry, or null when the code is unknown.
+	 *
+	 * @throws RefusedException With 503 when the list cannot be read.
+	 */
+	private function groundOf(string $code): ?array {
+		try {
+			$ground = $this->refusalGrounds->byCode(code: $code);
+		} catch (WooRefusalGroundsUnavailable $e) {
+			throw new RefusedException(
+				rule: 'woo-refusal-grounds-unavailable',
+				sentence: 'The list of Woo refusal grounds cannot be read, so the assessment is not stored. Try again later.',
+				status: RefusedException::STATUS_INDETERMINATE,
+			);
+		}
+
+		return $ground;
+	}//end groundOf()
+
+	/**
+	 * Why one cited ground cannot stand, or null when it can.
+	 *
+	 * @param string                    $code   The cited code.
+	 * @param array<string, mixed>|null $ground The settled list's entry for it.
+	 *
+	 * @return string|null The refusal sentence, or null.
+	 */
+	private function refusalOfGround(string $code, array|null $ground): string|null {
+		if ($ground === null) {
+			return 'Unknown weigeringsgrond: ' . $code;
+		}
+
+		if ($ground['citable'] !== true) {
+			return 'Weigeringsgrond ' . $code . ' groups other grounds and cannot be cited. Pick one of the grounds under it.';
+		}
+
+		if ($ground['status'] !== 'active') {
+			return 'Weigeringsgrond ' . $code . ' is retired and cannot be cited on a new assessment.';
+		}
+
+		return null;
+	}//end refusalOfGround()
 }//end class

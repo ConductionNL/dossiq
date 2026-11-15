@@ -292,6 +292,7 @@
 				},
 				"displayName": "{{cast:sanne.displayName}}",
 				"description": "Verzoeker Woo, verlichting fietspad Lindelaan",
+				"accountOwner": "{{cast:pieter.uid}}",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000012"
 			}
 		},
@@ -372,6 +373,32 @@
 						"kind": "correspondence",
 						"type": "email",
 						"value": "{{cast:keesdewit.email}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "persoon-ans-bos",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"name": {
+					"givenNames": "Ans",
+					"surname": "Bos"
+				},
+				"residence": {
+					"street": "Oosthavenweg",
+					"houseNumber": 12,
+					"postcode": "2999 AJ",
+					"city": "Zuiddrecht"
+				},
+				"displayName": "Ans Bos",
+				"description": "Contactpersoon zonder BSN",
+				"contactAddresses": [
+					{
+						"kind": "correspondence",
+						"type": "email",
+						"value": "ans.bos@zuiddrecht.example"
 					}
 				]
 			}
@@ -2090,6 +2117,52 @@
 			}
 		},
 		{
+			"key": "mijlpaal-regulier-v4-aanvraag-ontvangen",
+			"register": "dossiq",
+			"schema": "milestoneDefinition",
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"triggerEvent": "case.created",
+				"identifier": "aanvraag_ontvangen",
+				"label": "Aanvraag ontvangen",
+				"order": 1
+			}
+		},
+		{
+			"key": "mijlpaal-regulier-v4-documenten-compleet",
+			"register": "dossiq",
+			"schema": "milestoneDefinition",
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"triggerEvent": "documents.complete",
+				"identifier": "documenten_compleet",
+				"label": "Documenten compleet",
+				"order": 2
+			}
+		},
+		{
+			"key": "mijlpaal-regulier-v4-inhoudelijke-beoordeling",
+			"register": "dossiq",
+			"schema": "milestoneDefinition",
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"identifier": "inhoudelijke_beoordeling",
+				"label": "Inhoudelijke beoordeling gestart",
+				"order": 3
+			}
+		},
+		{
+			"key": "mijlpaal-regulier-v4-advies-ontvangen",
+			"register": "dossiq",
+			"schema": "milestoneDefinition",
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"identifier": "advies_ontvangen",
+				"label": "Adviezen ontvangen",
+				"order": 4
+			}
+		},
+		{
 			"key": "mailsjabloon-regulier-v4-ontvangen",
 			"register": "dossiq",
 			"schema": "emailTemplate",
@@ -2449,6 +2522,11 @@
 				"isDraft": true,
 				"versionDate": "{{date:-2}}",
 				"previousVersion": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"iv3TaskField": "8.1",
+				"colour": "red",
+				"icon": "FileDocumentOutline",
+				"queueCriticalDays": 10,
+				"queueWarningDays": 5,
 				"processingDeadline": "P8W",
 				"extensionAllowed": true,
 				"extensionPeriod": "P6W",
@@ -3749,7 +3827,8 @@
 				},
 				"tags": [
 					"parkeren",
-					"binnenstad"
+					"binnenstad",
+					"wijk-noord"
 				]
 			}
 		},
@@ -3822,7 +3901,8 @@
 				},
 				"tags": [
 					"evenementen",
-					"markt"
+					"markt",
+					"wijk-noord"
 				]
 			}
 		},
@@ -5335,6 +5415,22 @@
 			}
 		},
 		{
+			"key": "outbox-dag-geladen",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "update",
+				"targetEntity": "fieldInspection",
+				"label": "Inspecties van vandaag",
+				"summary": "4 inspecties, checklists en kaart op het toestel",
+				"queuedAt": "{{datetime:0 07:41}}",
+				"attemptCount": 1,
+				"lastAttemptAt": "{{datetime:0 07:42}}",
+				"status": "synced"
+			}
+		},
+		{
 			"key": "outbox-molenweg-checklist",
 			"register": "dossiq",
 			"schema": "syncQueue",
@@ -5917,6 +6013,12 @@
 						"respondedAt": "{{datetime:0 11:06}}",
 						"syncState": "queued",
 						"comment": "Fietsen en kratten in de gang naar de achteruitgang"
+					},
+					{
+						"itemId": "brandveiligheid-8",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 11:08}}",
+						"syncState": "queued"
 					}
 				],
 				"photos": []
@@ -5992,7 +6094,7 @@
 			"data": {
 				"tenantRef": "{{organisation:waterland}}",
 				"userRef": "{{cast:marieke.uid}}",
-				"role": "admin",
+				"role": "tenant_admin",
 				"joinedAt": "{{datetime:-50 10:00}}",
 				"lastActiveAt": "{{datetime:-1 16:20}}",
 				"mfaEnabled": true,
@@ -7270,7 +7372,8 @@
 				},
 				"tags": [
 					"woo",
-					"verlichting"
+					"verlichting",
+					"wijk-noord"
 				]
 			}
 		},
@@ -7298,6 +7401,12 @@
 				"statusHistory"
 			],
 			"data": {
+				"routingNote": {
+					"kind": "handover-refused",
+					"level": "error",
+					"team": "Belastingen",
+					"reason": "het zaaktype Woo-verzoek laat alleen Woo en informatie en Juridische zaken toe."
+				},
 				"title": "Afvalinzameling Oosthaven 2025",
 				"description": "Mevrouw Verbeek vraagt de afspraken met de inzamelaar en de klachten over de afvalinzameling in Oosthaven in 2025.",
 				"caseType": "{{lookup:caseType}}",
@@ -7329,7 +7438,8 @@
 				},
 				"tags": [
 					"woo",
-					"afval"
+					"afval",
+					"wijk-noord"
 				]
 			}
 		},
@@ -7401,7 +7511,8 @@
 				},
 				"tags": [
 					"woo",
-					"beukenlaan"
+					"beukenlaan",
+					"wijk-noord"
 				]
 			}
 		},
@@ -7473,7 +7584,8 @@
 				},
 				"tags": [
 					"woo",
-					"parkeren"
+					"parkeren",
+					"wijk-noord"
 				]
 			}
 		},
@@ -9408,6 +9520,14 @@
 				"partyUuid": "{{object:persoon-kees-dewit.id}}",
 				"role": "secretary"
 			}
+		},
+		{
+			"key": "buurtoost-penningmeester-ans",
+			"data": {
+				"objectUuid": "{{object:bedrijf-buurtoost.id}}",
+				"partyUuid": "{{object:persoon-ans-bos.id}}",
+				"role": "treasurer"
+			}
 		}
 	],
 	"views": [
@@ -9596,6 +9716,44 @@
 					]
 				}
 			}
+		},
+		{
+			"key": "marleen-te-beoordelen-deze-week",
+			"data": {
+				"name": "Te beoordelen deze week",
+				"description": "Door Marleen Postma, team Vergunningen",
+				"sharedWith": [{"group": "{{cast:vergunningen.gid}}", "mode": "read"}],
+				"owner": "{{cast:marleen.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"assignedGroup": "{{cast:vergunningen.gid}}",
+						"isFinalStatus": false,
+						"statusHiddenInLists": false,
+						"isDraft": false,
+						"deadline[gte]": "@today",
+						"deadline[lt]": "@today+7d"
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						},
+						{
+							"key": "receivedAt",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
 		}
 	],
 	"notes": [
@@ -9703,7 +9861,12 @@
 						"label": "Stukken een week vooraf ter inzage leggen",
 						"checked": false
 					}
-				]
+				],
+				"runUuid": "{{flow:flow-bezwaar.runs.hoorzitting-havenstraat}}",
+				"nodeId": "hoorzitting",
+				"createdAt": "{{datetime:-2 16:20}}",
+				"claimedBy": "{{cast:pieter.uid}}",
+				"claimedAt": "{{datetime:-1 09:05}}"
 			}
 		},
 		{
@@ -10428,6 +10591,24 @@
 			}
 		},
 		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v4-begint-bij-ontvangen",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v4",
+			"set": {
+				"initialStatus": "{{object:statustype-regulier-v4-ontvangen.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v5-begint-bij-ontvangen",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier",
+			"set": {
+				"initialStatus": "{{object:statustype-regulier-v5-ontvangen.id}}"
+			}
+		},
+		{
 			"key": "checklist-oplevering-versie-2",
 			"register": "dossiq",
 			"schema": "inspectionChecklistTemplate",
@@ -10626,6 +10807,88 @@
 					{
 						"from": "vraag",
 						"to": "end"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-bezwaar",
+			"data": {
+				"name": "Bezwaar",
+				"description": "De werkwijze van een bezwaar: de indiener horen, daarna de beslissing op bezwaar voorbereiden.",
+				"trigger": "manual",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-manual",
+						"name": "Gestart vanaf de zaak",
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "hoorzitting",
+						"type": "openregister.user-task",
+						"name": "Hoorzitting",
+						"config": {
+							"title": "Hoorzitting inplannen",
+							"description": "Plan de hoorzitting met de bezwaarcommissie en nodig de indiener uit.",
+							"candidateGroups": [
+								"{{cast:woo-en-informatie.gid}}"
+							],
+							"priority": "high"
+						},
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "beslissing",
+						"type": "dossiq.setStatus",
+						"name": "Status: beslissing op bezwaar",
+						"config": {
+							"status": "Beslissing op bezwaar"
+						},
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 400
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "hoorzitting"
+					},
+					{
+						"from": "hoorzitting",
+						"to": "beslissing"
+					},
+					{
+						"from": "beslissing",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"key": "hoorzitting-havenstraat",
+						"status": "suspended",
+						"node": "hoorzitting",
+						"subject": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"triggeredBy": "{{cast:anouk.uid}}",
+						"created": "{{datetime:-2 16:20}}"
 					}
 				]
 			}

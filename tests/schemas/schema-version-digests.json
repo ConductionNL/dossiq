@@ -212,8 +212,8 @@
         "digest": "19c4aefae8b73c710df4be1b07850a503dd462550ec7c48479b9bbdcc4d18144"
     },
     "lib/Settings/dossiq_mock_register.json::dwangsomUitbetaling": {
-        "version": "1.1.0",
-        "digest": "d5a67ebb01e2387720984895afa8084f75e4c312152ef5458d298164c2fb7807"
+        "version": "1.2.0",
+        "digest": "ff811eed285e8ba39a023c5c61a6954fd7080c27cd5ba5eb0728ce49770ac1ff"
     },
     "lib/Settings/dossiq_mock_register.json::emailTemplate": {
         "version": "1.0.0",
@@ -352,8 +352,8 @@
         "digest": "76f3c06318d477deaa916d4d5e235b3f4ad3fd3f10c9f07977d4e329697fe34d"
     },
     "lib/Settings/dossiq_mock_register.json::noticeOfDefault": {
-        "version": "1.1.0",
-        "digest": "01ef037db6330ca2fc624c6d0e6b4719511c1f1ec72f1320c48a4204b5eb1998"
+        "version": "1.2.0",
+        "digest": "96e4d2ebb9dc61c5ae2fdf2694c2df2c595a896eec2f0ba7984594fb5d25abc1"
     },
     "lib/Settings/dossiq_mock_register.json::notificationChannel": {
         "version": "1.0.0",
@@ -380,8 +380,8 @@
         "digest": "534086a61ec06bd26b058b529829a422fd14face6bc64a70d084c27bac137498"
     },
     "lib/Settings/dossiq_mock_register.json::penaltyPaymentCalculation": {
-        "version": "1.1.0",
-        "digest": "0cc249c6a7984584e891c79af604b9a18114668eae59c22ab27e692fd58d88bc"
+        "version": "1.2.0",
+        "digest": "c31a43fd4a12768785e0be5a76e180b7a0edefa1b92acfb2355628b839ec6950"
     },
     "lib/Settings/dossiq_mock_register.json::portaalBericht": {
         "version": "1.0.0",
@@ -596,8 +596,8 @@
         "digest": "f4a93f76ff3c94c12182673a2d2c25df33790289e2022f899e21181f24056203"
     },
     "lib/Settings/dossiq_register.json::bacAdviceRequest": {
-        "version": "1.0.0",
-        "digest": "bd97b84e4e59f5ed2063ac3999ab1f7e0ec65881be35022acb420b88149b757f"
+        "version": "1.0.1",
+        "digest": "84df72b37f1ce5bfc66db77981e756c338f266cf245fd16bd4a62bde32f09b2c"
     },
     "lib/Settings/dossiq_register.json::beroep": {
         "version": "1.0.0",
@@ -612,7 +612,7 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.53.0",
+        "version": "1.54.0",
         "digest": "8ad81e9f232daafac4dde683aadb37d648e57fceb45b0dc361735d4fd286928c"
     },
     "lib/Settings/dossiq_register.json::case-location": {
@@ -664,7 +664,7 @@
         "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
-        "version": "1.44.0",
+        "version": "1.45.0",
         "digest": "dbbfd52696a00662451f8e487669d62c5b96851e3e68cff4350fa5cdf5983038"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
@@ -712,8 +712,8 @@
         "digest": "972486cb47511ec19d9c2a2bca84d2d484349feb2af0d140042c26d5756a5a73"
     },
     "lib/Settings/dossiq_register.json::document": {
-        "version": "1.1.2",
-        "digest": "fb2c41864a5e6b70f15ff4f581bc8964495cf0be4bfab101fdd20092119af210"
+        "version": "1.2.0",
+        "digest": "10ff7dd3d97131219f194541ebc24b500dc7ba57110b18141b7206efbfe6f4c9"
     },
     "lib/Settings/dossiq_register.json::documentLink": {
         "version": "1.0.1",
@@ -756,7 +756,7 @@
         "digest": "778cc3d3f89efa57a13de006ce464b3546f1deec4464395fe700b54b4c35aa3f"
     },
     "lib/Settings/dossiq_register.json::inspectionChecklistRun": {
-        "version": "1.2.0",
+        "version": "1.3.0",
         "digest": "e59229d368c3f0b7f26ea2b8231ceffdca394b7ee0a9fd14012ad35db72628a2"
     },
     "lib/Settings/dossiq_register.json::inspectionChecklistTemplate": {
@@ -904,7 +904,7 @@
         "digest": "bb48c2734868033e2a338744b07d51b474182d7f6e3df9ee62829d49ed02ec2b"
     },
     "lib/Settings/register.d/25-brp-kvk.json::brpPerson": {
-        "version": "1.7.0",
+        "version": "1.8.0",
         "digest": "ea0271480e01c47e60831c6b03cebcd84393c5d6b1d8463ee2127600260c74dc"
     },
     "lib/Settings/register.d/25-brp-kvk.json::kvkCompany": {
@@ -912,7 +912,7 @@
         "digest": "37037a79164866402611a7fde656e53659f9c7ef950599be682aaada89cfa8be"
     },
     "lib/Settings/register.d/30-beschikking.json::beschikking": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "329e9dff1c44db3345bc05096cc589c1bd935176dadc5cc6e82e174b0949100e"
     },
     "lib/Settings/register.d/30-beschikking.json::bezwaarTrigger": {
@@ -1056,7 +1056,7 @@
         "digest": "ff3be2dd7a8840aba06cbf57225d0bca40eb4a2f16bddefa7ee745f1d96aa667"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::conflictRecord": {
-        "version": "1.0.1",
+        "version": "1.1.0",
         "digest": "bf0f2bc9dec97a02f23dd130a21cd8a28b4e90d295aa46193e0491b8671e280a"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::fieldEvidence": {
@@ -1156,8 +1156,8 @@
         "digest": "263e846261b0ad0aa8666a43d43b74c32c95eb7b55521eb26800e13c76f29b74"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::reIntegratieTraject": {
-        "version": "1.2.0",
-        "digest": "de8cb58bdbd44cd9a6aeb6a3ce4947b1cbae9c5e6bfe8479c66e4c1da927de62"
+        "version": "1.2.1",
+        "digest": "93a9357b4fd41a755be980b7b6f23a6fd508be20cb196f6bd3a4591300ee2080"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::sociaalDomeinAuditLog": {
         "version": "1.2.1",
@@ -1232,16 +1232,16 @@
         "digest": "425910e0859b4adc65eab5ad4c8975e09c15a806b9992831b8d4d5671e2ae24a"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::dwangsomUitbetaling": {
-        "version": "1.1.0",
-        "digest": "07eefb766e6f75a558f5d26fca5c4d2c344de6f6de84e8a71aebb3f8d6028068"
+        "version": "1.2.0",
+        "digest": "b4eca65ce45e2c5b330c62f962b1bd17aac727d1f89eda65ea7139a7767c7729"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::noticeOfDefault": {
-        "version": "1.1.2",
-        "digest": "59e7a80ed4c1e91ce6b9691df689397d59f6751cad2a09b9dc64abb787656d8d"
+        "version": "1.3.0",
+        "digest": "fbc145b8f5ef5f0454d79ce5be79e9941f0b5d2189be2821bd77995660654dd9"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::penaltyPaymentCalculation": {
-        "version": "1.1.0",
-        "digest": "6c0fd83571a1c52b55bb1f7a0d4fd079c9215d85d08be801c47b97d583574476"
+        "version": "1.2.0",
+        "digest": "78185a62cb4923b125468417acd03408527faea2ed31fa0c1949a21521e8e15b"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::termijnGebeurtenis": {
         "version": "1.2.1",
@@ -1512,11 +1512,11 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/85-woo-gather-provenance.json::informatieobject": {
-        "version": "1.4.2",
+        "version": "1.4.3",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/85-woo-gather-provenance.json::zaakinformatieobject": {
-        "version": "1.2.1",
+        "version": "1.2.2",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/86-case-type-relation-roles.json::caseType": {
@@ -1544,7 +1544,7 @@
         "digest": "741410186bc4660b177865856a3a90313d8164e1f6c0125e503cad9b519b53ae"
     },
     "lib/Settings/register.d/86-woo-delivered-set.json::wooDeliveredSet": {
-        "version": "1.1.0",
+        "version": "1.1.1",
         "digest": "0c37e60f4dd4e501ad65d1de0313f3cfa5decfbefce590c3dc43001beb863de3"
     },
     "lib/Settings/register.d/87-case-type-sessions.json::caseType": {
@@ -1576,8 +1576,24 @@
         "digest": "7a4e5f81f4b008d8940851c2e3aa6258f0a7871361ed690d46206126d9289148"
     },
     "lib/Settings/register.d/88-review-recall.json::stoppingRule": {
-        "version": "1.0.1",
+        "version": "1.0.2",
         "digest": "c125afbf43c582848d7e4d4f1866ad2025851b6825a8825a44da54bd6976e7d8"
+    },
+    "lib/Settings/register.d/88-tender-records.json::bid": {
+        "version": "1.0.0",
+        "digest": "682b5985d0204f55cd722c2fe7b5bacf7b633253fd54c9f78a794fbbc127c97f"
+    },
+    "lib/Settings/register.d/88-tender-records.json::evaluation": {
+        "version": "1.0.0",
+        "digest": "13e3e8900a48e4de2a9e133f1c0f39fa8b7a428ab291d85db790674ccad79f71"
+    },
+    "lib/Settings/register.d/88-tender-records.json::scoringFormula": {
+        "version": "1.0.0",
+        "digest": "1e57cfd2efcf8120fa0c9e55ee1eeaef817c41bad687278ff55ba2b4442e0448"
+    },
+    "lib/Settings/register.d/88-tender-records.json::tenderQuestion": {
+        "version": "1.0.0",
+        "digest": "e8f2a72c2a419f2607dace1b48d50569b5b8a197a8ba53c95b7a40a38c99e885"
     },
     "lib/Settings/register.d/89-case-document-drafts.json::caseType": {
         "version": "",
@@ -1735,6 +1751,10 @@
         "version": "1.1.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-advice-request-kind-and-outcome.json::adviesAanvraag": {
+        "version": "1.3.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-deadline-is-a-fallback.json::case": {
         "version": "1.56.0",
         "digest": "bccdde205e895600b8476004174994acce1a763354399f45ccd957709e43bd4c"
@@ -1745,6 +1765,10 @@
     },
     "lib/Settings/register.d/99-case-dedup-threshold.json::case": {
         "version": "1.57.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-grants-read.json::case": {
+        "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-handoff-case-type.json::case": {
@@ -1764,7 +1788,7 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-payment-state-labels.json::case": {
-        "version": "1.54.0",
+        "version": "1.55.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-statutory-extension.json::case": {
@@ -1777,6 +1801,18 @@
     },
     "lib/Settings/register.d/99-case-subject-and-sensitive-answers.json::propertyDefinition": {
         "version": "1.7.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-term-signal-from.json::case": {
+        "version": "1.62.0",
+        "digest": "b882f4ab6453b1660546da19507b194c7d5626a26774632f6ca9d95f21ae2ba7"
+    },
+    "lib/Settings/register.d/99-case-type-advice-decision-table.json::caseType": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-completeness-items.json::caseType": {
+        "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-type-field-rule-statuses.json::caseType": {
@@ -1795,12 +1831,20 @@
         "version": "1.42.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-type-inspection-checklist.json::caseType": {
+        "version": "1.49.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-type-next-step.json::caseType": {
         "version": "1.31.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-type-overview-cards.json::caseType": {
         "version": "1.25.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-overview-sections.json::caseType": {
+        "version": "1.47.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-type-palette.json::caseType": {
@@ -1827,6 +1871,10 @@
         "version": "1.37.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-type-remedy-menu-entry.json::caseType": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-type-request-fields.json::caseType": {
         "version": "1.43.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1851,6 +1899,14 @@
         "version": "1.46.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-type-social-safeguards.json::case": {
+        "version": "1.63.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-social-safeguards.json::caseType": {
+        "version": "1.48.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-type-special-data.json::caseType": {
         "version": "1.27.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1863,6 +1919,10 @@
         "version": "1.34.0",
         "digest": "28eec69afa9b55bf5cc426042868782ef4120c9615a46848fb65fd411cf2c6aa"
     },
+    "lib/Settings/register.d/99-decision-advice.json::decisionAdvice": {
+        "version": "1.0.0",
+        "digest": "ee792bb771d3a4b6f60560e195b1a966f4ab6def4249417f919c31e6f62da6ba"
+    },
     "lib/Settings/register.d/99-document-access-exception.json::informatieobject": {
         "version": "1.7.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1871,9 +1931,21 @@
         "version": "1.3.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-enforcement-estimated-cost.json::handhavingsactie": {
+        "version": "1.2.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-status-type-off-path.json::statusType": {
         "version": "1.9.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-template-category.json::workflowTemplate": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-term-resumed-after-pause.json::termijnGebeurtenis": {
+        "version": "1.3.0",
+        "digest": "4e455adcd7bd5d8ab444b050b45000a69b1ca6bc378ea1dfa289c865db9e6050"
     },
     "lib/Settings/register.d/dso-omgevingsloket.json::case": {
         "version": "",

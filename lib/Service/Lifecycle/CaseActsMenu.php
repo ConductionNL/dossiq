@@ -36,7 +36,7 @@ use OCP\IUserSession;
 /**
  * The permission half of the act menu.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseActsMenu {
 
@@ -81,7 +81,7 @@ class CaseActsMenu {
 	 *
 	 * @return array<string, mixed> The three menu keys.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function forCase(string $caseId, array $case): array {
 		return [
@@ -116,7 +116,7 @@ class CaseActsMenu {
 	 *
 	 * @return array<int, array<string, mixed>> One entry per act.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function verdicts(array $case): array {
 		$acts = [];
@@ -153,7 +153,7 @@ class CaseActsMenu {
 	 *
 	 * @return bool True when it has.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function isEnded(array $case): bool {
 		return (trim((string)($case[CaseEndingActs::ENDING_FIELD] ?? '')) !== '');
@@ -187,7 +187,7 @@ class CaseActsMenu {
 	 *
 	 * @return array<int, array<string, mixed>> The acts, each carrying its verdict.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function alwaysAvailableOn(string $caseId): array {
 		if ($this->alwaysAvailable === null) {
@@ -210,7 +210,7 @@ class CaseActsMenu {
 	 *
 	 * @return array<int, array<string, mixed>> The outstanding approvals.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	private function awaitingApprovalOn(array $case): array {
 		if ($this->approvals === null) {

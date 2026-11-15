@@ -34,7 +34,7 @@ namespace OCA\Dossiq\Service\Subsidie;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class CofinancieringValidator {
 	/**
@@ -51,7 +51,7 @@ class CofinancieringValidator {
 	 *
 	 * @return float The total in EUR.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function sumBedragen(array $rows): float {
 		$sum = 0.0;
@@ -82,7 +82,7 @@ class CofinancieringValidator {
 	 *
 	 * @return bool True when the funding sources reconcile to the total.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function reconciles(float $subsidyAmount, array $cofinanciering, float $projectTotal): bool {
 		$total = ($subsidyAmount + $this->sumBedragen(rows: $cofinanciering));
@@ -96,7 +96,7 @@ class CofinancieringValidator {
 	 *
 	 * @return bool True when EU co-financing is present.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function hasEuCofinanciering(array $cofinanciering): bool {
 		foreach ($cofinanciering as $row) {
@@ -121,7 +121,7 @@ class CofinancieringValidator {
 	 *
 	 * @return array{valid: bool, error: string|null, euCofinanciering: bool}
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function validate(float $subsidyAmount, array $cofinanciering, float $projectTotal): array {
 		if ($projectTotal <= 0.0) {

@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\People\PersonNumberLookup;
+use OCA\Dossiq\Kernel\Contracts\PersonNumberLookupInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,13 +49,13 @@ class PersonLookupController extends Controller {
 	 *
 	 * @param string             $appName     The app name.
 	 * @param IRequest           $request     The request.
-	 * @param PersonNumberLookup $lookup      The guarded lookup.
+	 * @param PersonNumberLookupInterface $lookup      The guarded lookup.
 	 * @param IUserSession       $userSession The caller.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PersonNumberLookup $lookup,
+		private readonly PersonNumberLookupInterface $lookup,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

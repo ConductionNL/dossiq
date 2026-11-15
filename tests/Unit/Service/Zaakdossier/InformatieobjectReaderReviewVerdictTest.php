@@ -28,7 +28,7 @@ use OCA\Dossiq\Service\ZgwDocumentService;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The listing's rows carry the case's review verdict for their document.
+ * The listing's rows carry the case's review verdict and its grounds for their document.
  *
  * @covers \OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader
  *
@@ -45,9 +45,9 @@ class InformatieobjectReaderReviewVerdictTest extends TestCase {
 	 */
 	private function reader(?DocumentVerdicts $verdicts): InformatieobjectReader {
 		return new InformatieobjectReader(
-			fileService: $this->createMock(ZaakdossierService::class),
-			accessGuard: $this->createMock(InformatieobjectAccessGuard::class),
-			documentService: $this->createMock(ZgwDocumentService::class),
+			fileService: $this->createMock(originalClassName: ZaakdossierService::class),
+			accessGuard: $this->createMock(originalClassName: InformatieobjectAccessGuard::class),
+			documentService: $this->createMock(originalClassName: ZgwDocumentService::class),
 			reviewVerdicts: $verdicts,
 		);
 	}//end reader()
@@ -59,13 +59,49 @@ class InformatieobjectReaderReviewVerdictTest extends TestCase {
 	 * @return void
 	 */
 	public function testEachDocumentCarriesItsVerdictReadOnceForTheCase(): void {
-		$verdicts = $this->createMock(DocumentVerdicts::class);
-		$verdicts->expects($this->once())->method('byDocument')->with('case-1')->willReturn(['doc-1' => 'deels_openbaar']);
+		$verdicts = $this->createMock(originalClassName: DocumentVerdicts::class);
+		$verdicts->expects($this->once())->method('byDocument')->with('case-1')->willReturn(['doc-1' => 'deels_openbaar', 'doc-3' => 'open']);
+		$verdicts->expects($this->once())->method('groundsByDocument')->with('case-1')->willReturn(['doc-1' => ['5.1.2.e'], 'doc-3' => []]);
 
-		$rows = $this->reader(verdicts: $verdicts)->withReviewVerdicts(caseId: 'case-1', documents: [['id' => 'doc-1'], ['id' => 'doc-2']]);
+		$rows = $this->reader(verdicts: $verdicts)->withReviewVerdicts(
+			caseId: 'case-1',
+			documents: [['id' => 'doc-1'], ['id' => 'doc-2'], ['id' => 'doc-3']]
+		);
 
-		self::assertSame([['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar'], ['id' => 'doc-2']], $rows);
+		self::assertSame(
+			expected: [
+				['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar', 'reviewGrounds' => ['5.1.2.e']],
+				['id' => 'doc-2'],
+				['id' => 'doc-3', 'reviewVerdict' => 'open', 'reviewGrounds' => []],
+			],
+			actual: $rows
+		);
 	}//end testEachDocumentCarriesItsVerdictReadOnceForTheCase()
+
+	/**
+	 * Grounds go only on a row that carries a verdict, so they are never shown where the verdict is not.
+	 *
+	 * @return void
+	 */
+	public function testGroundsGoOnlyOnRowsThatCarryAVerdict(): void {
+		$verdicts = $this->createMock(originalClassName: DocumentVerdicts::class);
+		$verdicts->method('byDocument')->willReturn(['doc-1' => 'openbaar', 'doc-3' => 'open']);
+		$verdicts->method('groundsByDocument')->willReturn(['doc-1' => [], 'doc-2' => ['5.1.2.e']]);
+
+		$rows = $this->reader(verdicts: $verdicts)->withReviewVerdicts(
+			caseId: 'case-1',
+			documents: [['id' => 'doc-1'], ['id' => 'doc-2'], ['id' => 'doc-3']]
+		);
+
+		self::assertSame(
+			expected: [
+				['id' => 'doc-1', 'reviewVerdict' => 'openbaar', 'reviewGrounds' => []],
+				['id' => 'doc-2'],
+				['id' => 'doc-3', 'reviewVerdict' => 'open', 'reviewGrounds' => []],
+			],
+			actual: $rows
+		);
+	}//end testGroundsGoOnlyOnRowsThatCarryAVerdict()
 
 	/**
 	 * Without the verdicts, or without rows, nothing is read and the rows pass through.
@@ -73,10 +109,14 @@ class InformatieobjectReaderReviewVerdictTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutVerdictsOrRowsTheRowsAreUnchanged(): void {
-		self::assertSame([['id' => 'a']], $this->reader(verdicts: null)->withReviewVerdicts(caseId: 'case-1', documents: [['id' => 'a']]));
+		self::assertSame(
+			expected: [['id' => 'a']],
+			actual: $this->reader(verdicts: null)->withReviewVerdicts(caseId: 'case-1', documents: [['id' => 'a']])
+		);
 
-		$verdicts = $this->createMock(DocumentVerdicts::class);
+		$verdicts = $this->createMock(originalClassName: DocumentVerdicts::class);
 		$verdicts->expects($this->never())->method('byDocument');
-		self::assertSame([], $this->reader(verdicts: $verdicts)->withReviewVerdicts(caseId: 'case-1', documents: []));
+		$verdicts->expects($this->never())->method('groundsByDocument');
+		self::assertSame(expected: [], actual: $this->reader(verdicts: $verdicts)->withReviewVerdicts(caseId: 'case-1', documents: []));
 	}//end testWithoutVerdictsOrRowsTheRowsAreUnchanged()
 }//end class

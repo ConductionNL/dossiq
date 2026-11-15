@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+ * @spec openspec/specs/add-work-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use JsonSerializable;
 /**
  * A single entry on a person's queue.
  *
- * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+ * @spec openspec/specs/add-work-queue/spec.md
  */
 final class QueueItem implements JsonSerializable {
 	/**
@@ -76,7 +76,7 @@ final class QueueItem implements JsonSerializable {
 	 *  array would drop the types and the defaults that stop a source passing the
 	 *  subject where the route goes.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function __construct(
 		public readonly string $source,
@@ -102,7 +102,7 @@ final class QueueItem implements JsonSerializable {
 	 *
 	 * @return string The stable id.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function identity(): string {
 		return $this->source . ':' . $this->subjectType . ':' . $this->subjectId;
@@ -113,7 +113,7 @@ final class QueueItem implements JsonSerializable {
 	 *
 	 * @return bool TRUE when the item arrived through a substitution.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function isCovered(): bool {
 		return ($this->coveredFor !== null && trim($this->coveredFor) !== '');
@@ -124,7 +124,7 @@ final class QueueItem implements JsonSerializable {
 	 *
 	 * @return array<string, mixed> The wire shape.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function jsonSerialize(): array {
 		return [

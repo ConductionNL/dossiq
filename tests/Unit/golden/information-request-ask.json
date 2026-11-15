@@ -1,0 +1,1558 @@
+{
+    "documents, the minimum": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Bankafschrift and 1 more",
+                "party": "",
+                "recipient": "aanvrager@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [
+                    {
+                        "item": "Bankafschrift",
+                        "received": false
+                    },
+                    {
+                        "item": "Huurcontract",
+                        "received": false
+                    }
+                ],
+                "kind": "aanvulling",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 14,
+                "id": "avr-1"
+            }
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 14
+                    },
+                    ""
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 2
+                }
+            ]
+        ]
+    },
+    "documents, every argument": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Bankafschrift and 1 more",
+                "party": "initiator",
+                "recipient": "aanvrager@example.org",
+                "pauseReason": "reason-awb-45",
+                "rationale": "Zonder bankafschrift niet te beoordelen",
+                "missingItems": [
+                    {
+                        "item": "Bankafschrift",
+                        "received": false
+                    },
+                    {
+                        "item": "Huurcontract",
+                        "received": false
+                    }
+                ],
+                "kind": "aanvulling",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 14,
+                "portalSubject": "person:hash-1",
+                "id": "avr-1",
+                "portalTask": "task-1"
+            }
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": " Zonder bankafschrift niet te beoordelen ",
+                    "pauseReason": " reason-awb-45 "
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "initiator",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "reason-awb-45",
+                        "rationale": "Zonder bankafschrift niet te beoordelen",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 14,
+                        "portalSubject": "person:hash-1"
+                    },
+                    ""
+                ]
+            ],
+            [
+                "task::raise",
+                {
+                    "question": {
+                        "id": "avr-1",
+                        "case": "case-1",
+                        "portalSubject": "person:hash-1",
+                        "title": "Vul uw aanvraag aan",
+                        "items": [
+                            "Bankafschrift",
+                            "Huurcontract"
+                        ],
+                        "due": "2026-12-01",
+                        "source": "dossiq.aanvullingsverzoek"
+                    },
+                    "actor": "handler1"
+                }
+            ],
+            [
+                "write",
+                [
+                    {
+                        "portalTask": "task-1"
+                    },
+                    "avr-1"
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 2
+                }
+            ]
+        ]
+    },
+    "zero days still pauses one": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Bankafschrift and 1 more",
+                "party": "",
+                "recipient": "aanvrager@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [
+                    {
+                        "item": "Bankafschrift",
+                        "received": false
+                    },
+                    {
+                        "item": "Huurcontract",
+                        "received": false
+                    }
+                ],
+                "kind": "aanvulling",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 1,
+                "id": "avr-1"
+            }
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 0,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 1
+                    },
+                    ""
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 2
+                }
+            ]
+        ]
+    },
+    "negative days still pause one": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Bankafschrift and 1 more",
+                "party": "",
+                "recipient": "aanvrager@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [
+                    {
+                        "item": "Bankafschrift",
+                        "received": false
+                    },
+                    {
+                        "item": "Huurcontract",
+                        "received": false
+                    }
+                ],
+                "kind": "aanvulling",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 1,
+                "id": "avr-1"
+            }
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": -3,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 1
+                    },
+                    ""
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 2
+                }
+            ]
+        ]
+    },
+    "instance id under @self, no deadline": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Bankafschrift and 1 more",
+                "party": "",
+                "recipient": "aanvrager@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [
+                    {
+                        "item": "Bankafschrift",
+                        "received": false
+                    },
+                    {
+                        "item": "Huurcontract",
+                        "received": false
+                    }
+                ],
+                "kind": "aanvulling",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "",
+                "state": "open",
+                "deadlineInstance": "term-9",
+                "pauseDays": 14,
+                "id": "avr-1"
+            }
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "",
+                        "state": "open",
+                        "deadlineInstance": "term-9",
+                        "pauseDays": 14
+                    },
+                    ""
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 2
+                }
+            ]
+        ]
+    },
+    "no instance": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Bankafschrift and 1 more",
+                "party": "",
+                "recipient": "aanvrager@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [
+                    {
+                        "item": "Bankafschrift",
+                        "received": false
+                    },
+                    {
+                        "item": "Huurcontract",
+                        "received": false
+                    }
+                ],
+                "kind": "aanvulling",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "",
+                "state": "open",
+                "deadlineInstance": "",
+                "pauseDays": 14,
+                "id": "avr-1"
+            }
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "",
+                        "state": "open",
+                        "deadlineInstance": "",
+                        "pauseDays": 14
+                    },
+                    ""
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 2
+                }
+            ]
+        ]
+    },
+    "already open": {
+        "answer": {
+            "throws": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "aanvullingsverzoek_already_open",
+            "rule": "aanvullingsverzoek-already-open",
+            "status": 409
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ]
+        ],
+        "logs": []
+    },
+    "not sent": {
+        "answer": {
+            "throws": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "aanvullingsverzoek_not_sent",
+            "rule": "aanvullingsverzoek-not-sent",
+            "status": 503
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "sent as a string": {
+        "answer": {
+            "throws": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "aanvullingsverzoek_not_sent",
+            "rule": "aanvullingsverzoek-not-sent",
+            "status": 503
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "the act throws": {
+        "answer": {
+            "throws": "RuntimeException",
+            "message": "term unreadable"
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "the write fails": {
+        "answer": {
+            "throws": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "store_down",
+            "rule": "store-down",
+            "status": 503
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 14
+                    },
+                    ""
+                ]
+            ]
+        ],
+        "logs": []
+    },
+    "a clarification on a Woo case": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Welke periode bedoelt u?",
+                "party": "",
+                "recipient": "a@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [],
+                "kind": "verduidelijking",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 7,
+                "portalSubject": "person:hash-2",
+                "id": "avr-1",
+                "portalTask": "task-2"
+            }
+        },
+        "calls": [
+            [
+                "caseTypeOf",
+                "case-1"
+            ],
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Welke periode bedoelt u?"
+                    ],
+                    "recipient": "a@example.org",
+                    "durationDays": 7,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Welke periode bedoelt u?",
+                        "party": "",
+                        "recipient": "a@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [],
+                        "kind": "verduidelijking",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 7,
+                        "portalSubject": "person:hash-2"
+                    },
+                    ""
+                ]
+            ],
+            [
+                "task::raise",
+                {
+                    "question": {
+                        "id": "avr-1",
+                        "case": "case-1",
+                        "portalSubject": "person:hash-2",
+                        "title": "Vul uw aanvraag aan",
+                        "items": [],
+                        "due": "2026-12-01",
+                        "source": "dossiq.aanvullingsverzoek"
+                    },
+                    "actor": "handler1"
+                }
+            ],
+            [
+                "write",
+                [
+                    {
+                        "portalTask": "task-2"
+                    },
+                    "avr-1"
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 0
+                }
+            ]
+        ]
+    },
+    "a clarification on a later Woo version": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Welke periode bedoelt u?",
+                "party": "",
+                "recipient": "a@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [],
+                "kind": "verduidelijking",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 7,
+                "id": "avr-1"
+            }
+        },
+        "calls": [
+            [
+                "caseTypeOf",
+                "case-1"
+            ],
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Welke periode bedoelt u?"
+                    ],
+                    "recipient": "a@example.org",
+                    "durationDays": 7,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Welke periode bedoelt u?",
+                        "party": "",
+                        "recipient": "a@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [],
+                        "kind": "verduidelijking",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 7
+                    },
+                    ""
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 0
+                }
+            ]
+        ]
+    },
+    "a clarification on another case type": {
+        "answer": {
+            "throws": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "aanvullingsverzoek_clarification_woo_only",
+            "rule": "aanvullingsverzoek-clarification-woo-only",
+            "status": 422
+        },
+        "calls": [
+            [
+                "caseTypeOf",
+                "case-1"
+            ]
+        ],
+        "logs": []
+    },
+    "a clarification listing documents": {
+        "answer": {
+            "throws": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "aanvullingsverzoek_clarification_one_question",
+            "rule": "aanvullingsverzoek-clarification-one-question",
+            "status": 422
+        },
+        "calls": [
+            [
+                "caseTypeOf",
+                "case-1"
+            ]
+        ],
+        "logs": []
+    },
+    "a clarification with only blank items": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Welke periode bedoelt u?",
+                "party": "",
+                "recipient": "a@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [],
+                "kind": "verduidelijking",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 7,
+                "id": "avr-1"
+            }
+        },
+        "calls": [
+            [
+                "caseTypeOf",
+                "case-1"
+            ],
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Welke periode bedoelt u?"
+                    ],
+                    "recipient": "a@example.org",
+                    "durationDays": 7,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Welke periode bedoelt u?",
+                        "party": "",
+                        "recipient": "a@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [],
+                        "kind": "verduidelijking",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 7
+                    },
+                    ""
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 0
+                }
+            ]
+        ]
+    },
+    "a blank clarification": {
+        "answer": {
+            "throws": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "aanvullingsverzoek_clarification_one_question",
+            "rule": "aanvullingsverzoek-clarification-one-question",
+            "status": 422
+        },
+        "calls": [
+            [
+                "caseTypeOf",
+                "case-1"
+            ]
+        ],
+        "logs": []
+    },
+    "a clarification is checked before the open request": {
+        "answer": {
+            "throws": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "aanvullingsverzoek_clarification_one_question",
+            "rule": "aanvullingsverzoek-clarification-one-question",
+            "status": 422
+        },
+        "calls": [
+            [
+                "caseTypeOf",
+                "case-1"
+            ]
+        ],
+        "logs": []
+    },
+    "the open request is checked before the act": {
+        "answer": {
+            "throws": "OCA\\Dossiq\\Exception\\RefusedException",
+            "message": "aanvullingsverzoek_already_open",
+            "rule": "aanvullingsverzoek-already-open",
+            "status": 409
+        },
+        "calls": [
+            [
+                "caseTypeOf",
+                "case-1"
+            ],
+            [
+                "openFor",
+                "case-1"
+            ]
+        ],
+        "logs": []
+    },
+    "task without a subject": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Bankafschrift and 1 more",
+                "party": "",
+                "recipient": "aanvrager@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [
+                    {
+                        "item": "Bankafschrift",
+                        "received": false
+                    },
+                    {
+                        "item": "Huurcontract",
+                        "received": false
+                    }
+                ],
+                "kind": "aanvulling",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 14,
+                "id": "avr-1"
+            }
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 14
+                    },
+                    ""
+                ]
+            ],
+            [
+                "task::raise",
+                {
+                    "question": {
+                        "id": "avr-1",
+                        "case": "case-1",
+                        "portalSubject": "",
+                        "title": "Vul uw aanvraag aan",
+                        "items": [
+                            "Bankafschrift",
+                            "Huurcontract"
+                        ],
+                        "due": "2026-12-01",
+                        "source": "dossiq.aanvullingsverzoek"
+                    },
+                    "actor": "handler1"
+                }
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 2
+                }
+            ]
+        ]
+    },
+    "task raised, remembering it fails": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Bankafschrift and 1 more",
+                "party": "",
+                "recipient": "aanvrager@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [
+                    {
+                        "item": "Bankafschrift",
+                        "received": false
+                    },
+                    {
+                        "item": "Huurcontract",
+                        "received": false
+                    }
+                ],
+                "kind": "aanvulling",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 14,
+                "portalSubject": "person:hash-1",
+                "id": "avr-1"
+            }
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 14,
+                        "portalSubject": "person:hash-1"
+                    },
+                    ""
+                ]
+            ],
+            [
+                "task::raise",
+                {
+                    "question": {
+                        "id": "avr-1",
+                        "case": "case-1",
+                        "portalSubject": "person:hash-1",
+                        "title": "Vul uw aanvraag aan",
+                        "items": [
+                            "Bankafschrift",
+                            "Huurcontract"
+                        ],
+                        "due": "2026-12-01",
+                        "source": "dossiq.aanvullingsverzoek"
+                    },
+                    "actor": "handler1"
+                }
+            ],
+            [
+                "write",
+                [
+                    {
+                        "portalTask": "task-3"
+                    },
+                    "avr-1"
+                ]
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the portal task was raised, but the request could not remember it",
+                {
+                    "app": "dossiq",
+                    "request": "avr-1",
+                    "task": "task-3"
+                }
+            ],
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 2
+                }
+            ]
+        ]
+    },
+    "task raised for a write without id": {
+        "answer": {
+            "written": {
+                "case": "case-1",
+                "summary": "Bankafschrift and 1 more",
+                "party": "",
+                "recipient": "aanvrager@example.org",
+                "pauseReason": "",
+                "rationale": "",
+                "missingItems": [
+                    {
+                        "item": "Bankafschrift",
+                        "received": false
+                    },
+                    {
+                        "item": "Huurcontract",
+                        "received": false
+                    }
+                ],
+                "kind": "aanvulling",
+                "requestedBy": "handler1",
+                "requestedAt": "<now>",
+                "hersteltermijn": "2026-12-01",
+                "state": "open",
+                "deadlineInstance": "term-1",
+                "pauseDays": 14,
+                "portalSubject": "person:hash-1",
+                "id": ""
+            }
+        },
+        "calls": [
+            [
+                "openFor",
+                "case-1"
+            ],
+            [
+                "act::ask",
+                {
+                    "caseId": "case-1",
+                    "items": [
+                        "Bankafschrift",
+                        "  ",
+                        "Huurcontract "
+                    ],
+                    "recipient": " aanvrager@example.org ",
+                    "durationDays": 14,
+                    "rationale": "",
+                    "pauseReason": ""
+                }
+            ],
+            [
+                "portalSubjectOf",
+                "case-1"
+            ],
+            [
+                "write",
+                [
+                    {
+                        "case": "case-1",
+                        "summary": "Bankafschrift and 1 more",
+                        "party": "",
+                        "recipient": "aanvrager@example.org",
+                        "pauseReason": "",
+                        "rationale": "",
+                        "missingItems": [
+                            {
+                                "item": "Bankafschrift",
+                                "received": false
+                            },
+                            {
+                                "item": "Huurcontract",
+                                "received": false
+                            }
+                        ],
+                        "kind": "aanvulling",
+                        "requestedBy": "handler1",
+                        "requestedAt": "<now>",
+                        "hersteltermijn": "2026-12-01",
+                        "state": "open",
+                        "deadlineInstance": "term-1",
+                        "pauseDays": 14,
+                        "portalSubject": "person:hash-1"
+                    },
+                    ""
+                ]
+            ],
+            [
+                "task::raise",
+                {
+                    "question": {
+                        "id": "",
+                        "case": "case-1",
+                        "portalSubject": "person:hash-1",
+                        "title": "Vul uw aanvraag aan",
+                        "items": [
+                            "Bankafschrift",
+                            "Huurcontract"
+                        ],
+                        "due": "2026-12-01",
+                        "source": "dossiq.aanvullingsverzoek"
+                    },
+                    "actor": "handler1"
+                }
+            ],
+            [
+                "markCaseWaiting",
+                "case-1",
+                "<now>"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: an aanvullingsverzoek was sent and written down",
+                {
+                    "app": "dossiq",
+                    "case": "case-1",
+                    "items": 2
+                }
+            ]
+        ]
+    }
+}

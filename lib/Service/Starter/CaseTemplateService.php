@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTemplateServiceInterface;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -45,7 +47,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
-class CaseTemplateService {
+class CaseTemplateService implements CaseTemplateServiceInterface {
 
 	/**
 	 * The app config key naming the case schema.
@@ -148,6 +150,7 @@ class CaseTemplateService {
 	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function startFrom(string $templateId, array $overrides = []): array {
+		$overrides = array_diff_key($overrides, CallerIdentity::KEYS);
 		$template = $this->store->row(configKey: self::CASES, id: $templateId);
 		if ($template === null) {
 			return ['ok' => false, 'reason' => 'not_found', 'case' => []];
@@ -160,13 +163,22 @@ class CaseTemplateService {
 			return ['ok' => false, 'reason' => 'not_a_template', 'case' => []];
 		}
 
-		$payload = $this->preset(template: $template);
-		foreach ($overrides as $key => $value) {
-			$payload[$key] = $value;
-		}
+		return $this->createFrom(start: ['template' => $template, 'overrides' => $overrides, 'templateId' => $templateId]);
+	}//end startFrom()
 
-		$payload[self::PROPERTY] = false;
-		$payload['startedFromTemplate'] = $templateId;
+	/**
+	 * Write the new case from the template and the handler's fields.
+	 *
+	 * @param array{template: array<string, mixed>, overrides: array<string, mixed>, templateId: string} $start The
+	 *        template row, the fields the handler set themselves and the template's id.
+	 *
+	 * @return array{ok: bool, reason: string, case: array<string, mixed>} What happened.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
+	 */
+	private function createFrom(array $start): array {
+		$templateId = $start['templateId'];
+		$payload = $this->startPayload(start: $start);
 
 		$created = $this->store->save(configKey: self::CASES, payload: $payload);
 		if ($created === null) {
@@ -179,7 +191,27 @@ class CaseTemplateService {
 		);
 
 		return ['ok' => true, 'reason' => '', 'case' => $created];
-	}//end startFrom()
+	}//end createFrom()
+
+	/**
+	 * The template's preset fields, the handler's fields over them, marked as started from it.
+	 *
+	 * @param array{template: array<string, mixed>, overrides: array<string, mixed>, templateId: string} $start The
+	 *        template row, the fields the handler set themselves and the template's id.
+	 *
+	 * @return array<string, mixed> The payload to write.
+	 */
+	private function startPayload(array $start): array {
+		$payload = $this->preset(template: $start['template']);
+		foreach ($start['overrides'] as $key => $value) {
+			$payload[$key] = $value;
+		}
+
+		$payload[self::PROPERTY] = false;
+		$payload['startedFromTemplate'] = $start['templateId'];
+
+		return $payload;
+	}//end startPayload()
 
 	/**
 	 * The fields a template presets, with the template's own identity dropped.
@@ -188,6 +220,8 @@ class CaseTemplateService {
 	 * carrying the same one is an archive problem, not a cosmetic one. The
 	 * dates go because a case starts when it is started, not when its template
 	 * was written. `templateName` goes because the new row is not a template.
+	 * `status` goes because the template's own status is not where a new case
+	 * starts: OpenRegister opens it in its case type's initial status.
 	 *
 	 * @param array<string, mixed> $template The template row.
 	 *
@@ -203,6 +237,7 @@ class CaseTemplateService {
 			$template['endDate'],
 			$template['deadline'],
 			$template['plannedEndDate'],
+			$template['status'],
 			$template['statusHistory'],
 			$template['startedFromTemplate'],
 		);

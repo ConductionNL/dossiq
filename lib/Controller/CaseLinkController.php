@@ -31,9 +31,9 @@ namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Relation\OutcomeCascade;
-use OCA\Dossiq\Service\Relation\RoleLinkService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\OutcomeCascadeInterface;
+use OCA\Dossiq\Kernel\Contracts\RoleLinkServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,9 +55,9 @@ class CaseLinkController extends Controller {
 	 *
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
-	 * @param RoleLinkService $links       Links a case with a role.
-	 * @param OutcomeCascade  $cascades    Runs a configured cascade.
-	 * @param CaseAccessGuard $accessGuard Per-case authorization, failing closed.
+	 * @param RoleLinkServiceInterface $links       Links a case with a role.
+	 * @param OutcomeCascadeInterface  $cascades    Runs a configured cascade.
+	 * @param CaseAccessGuardInterface $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession    $userSession The session.
 	 *
 	 * @return void
@@ -65,9 +65,9 @@ class CaseLinkController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly RoleLinkService $links,
-		private readonly OutcomeCascade $cascades,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly RoleLinkServiceInterface $links,
+		private readonly OutcomeCascadeInterface $cascades,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -156,7 +156,7 @@ class CaseLinkController extends Controller {
 
 		return $this->answer(
 			act: function () use ($name, $targetId, $inputs, $user): array {
-				$this->guardCascadeAccess(name: $name, targetId: $targetId, user: $user);
+				$this->guardCascadeAccess(caseId: $this->cascades->caseOf(name: $name, targetId: $targetId), user: $user);
 				return $this->cascades->run(name: $name, targetId: $targetId, inputs: $inputs);
 			}
 		);
@@ -168,16 +168,14 @@ class CaseLinkController extends Controller {
 	 * A target that names no case is refused too: with no case there is no
 	 * one to ask, and an unchecked write is the thing this guard exists to stop.
 	 *
-	 * @param string $name     The cascade.
-	 * @param string $targetId The target uuid.
-	 * @param IUser  $user     The caller.
+	 * @param string $caseId The case the cascade's target belongs to, or '' when it names none.
+	 * @param IUser  $user   The caller.
 	 *
 	 * @return void
 	 *
 	 * @throws RefusedException When the caller may not.
 	 */
-	private function guardCascadeAccess(string $name, string $targetId, IUser $user): void {
-		$caseId = $this->cascades->caseOf(name: $name, targetId: $targetId);
+	private function guardCascadeAccess(string $caseId, IUser $user): void {
 		if ($caseId === '' || $this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
 			throw new RefusedException(
 				rule: 'cascade-target-not-yours',

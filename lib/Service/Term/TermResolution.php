@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
@@ -44,6 +44,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\TermResolutionInterface;
 use OCA\Dossiq\Service\TermDeclarationReader;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermKind;
@@ -51,9 +52,9 @@ use OCA\Dossiq\Service\TermKind;
 /**
  * Resolves a term definition for a case, and says which rule produced it.
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
  */
-class TermResolution {
+class TermResolution implements TermResolutionInterface {
 	/**
 	 * The order, most specific first. It is a constant rather than a setting
 	 * because the point of the change is that there is ONE order and everybody
@@ -99,7 +100,7 @@ class TermResolution {
 	 * `statutoryTermDefinition` (context `termDefinition`, or read off the case
 	 * type named by `caseTypeId`), else its general definition.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-resolves-from-the-organisation-the-service-and-the-priority-req-tcf-02
 	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md#requirement-a-case-type-can-pick-a-second-statutory-term-req-cmp-ct-03
 	 */
 	public function resolve(string $caseType, array $context, string $kind = TermKind::STATUTORY): ?array {
@@ -108,45 +109,18 @@ class TermResolution {
 			return null;
 		}
 
-		foreach (self::ORDER as $field) {
-			$wanted = trim((string)($context[$field] ?? ''));
-			if ($wanted === '') {
-				continue;
-			}
-
-			foreach ($candidates as $candidate) {
-				if (trim((string)($candidate[$field] ?? '')) === $wanted) {
-					return $this->answer(
-						definition: $candidate,
-						resolvedFrom: $field,
-						caseType: $caseType,
-						context: $context
-					);
-				}
-			}
+		// The case type's own term is the fallback: the one declaration that
+		// names no organisation, service or priority. A definition that names
+		// one and did not match is NOT a fallback, because falling back to
+		// somebody else's agreed norm is worse than having none.
+		$chosen = (self::byScope(candidates: $candidates, context: $context)
+			?? self::picked(candidates: $candidates, id: $this->pickOf(context: $context))
+			?? self::general(candidates: $candidates));
+		if ($chosen === null) {
+			return null;
 		}
 
-		$picked = $this->picked(candidates: $candidates, id: $this->pickOf(context: $context));
-		if ($picked !== null) {
-			return $this->answer(definition: $picked, resolvedFrom: self::PICKED, caseType: $caseType, context: $context);
-		}
-
-		// The case type's own term: the one declaration that names no
-		// organisation, service or priority. A definition that names one and
-		// did not match is NOT a fallback, because falling back to somebody
-		// else's agreed norm is worse than having none.
-		foreach ($candidates as $candidate) {
-			if ($this->isGeneral(definition: $candidate) === true) {
-				return $this->answer(
-					definition: $candidate,
-					resolvedFrom: self::FALLBACK,
-					caseType: $caseType,
-					context: $context
-				);
-			}
-		}
-
-		return null;
+		return $this->answer(chosen: $chosen, ask: new TermAsk(caseType: $caseType, context: $context));
 	}//end resolve()
 
 	/**
@@ -195,8 +169,32 @@ class TermResolution {
 	}//end ofKind()
 
 	/**
+	 * The first candidate naming the case's organisation, else its service, else its priority.
+	 *
+	 * @param array<int, array<string, mixed>> $candidates The definitions of the wanted kind.
+	 * @param array<string, mixed>             $context    The case's own values.
+	 *
+	 * @return array{definition: array<string, mixed>, resolvedFrom: string}|null The match and its rule.
+	 */
+	private static function byScope(array $candidates, array $context): ?array {
+		foreach (self::scopeOf(values: $context) as $field => $wanted) {
+			foreach ($candidates as $candidate) {
+				if (trim((string)($candidate[$field] ?? '')) === $wanted) {
+					return ['definition' => $candidate, 'resolvedFrom' => $field];
+				}
+			}
+		}
+
+		return null;
+	}//end byScope()
+
+	/**
 	 * The id of the second term the case type picks: `termDefinition` in the
 	 * context, else read off the case type named by `caseTypeId`.
+	 *
+	 * A case type that cannot be read picks nothing: the case still gets its
+	 * general term, as it did before a case type could pick one, rather than
+	 * no term at all.
 	 *
 	 * @param array<string, mixed> $context The case's values.
 	 *
@@ -211,25 +209,31 @@ class TermResolution {
 			return $named;
 		}
 
-		return $this->declarations->forCaseType(caseTypeId: $caseTypeId)['statutoryTermDefinition'];
+		try {
+			return $this->declarations->forCaseType(caseTypeId: $caseTypeId)['statutoryTermDefinition'];
+		} catch (\Throwable) {
+			return '';
+		}
 	}//end pickOf()
 
 	/**
-	 * The candidate the case type picked by id, or null.
+	 * The candidate the case type picked by id.
 	 *
 	 * @param array<int, array<string, mixed>> $candidates The definitions of the wanted kind.
 	 * @param string                           $id         The id the case type names; empty for none.
 	 *
-	 * @return array<string, mixed>|null The picked definition.
+	 * @return array{definition: array<string, mixed>, resolvedFrom: string}|null The pick and its rule.
+	 *
+	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md#requirement-a-case-type-can-pick-a-second-statutory-term-req-cmp-ct-03
 	 */
-	private function picked(array $candidates, string $id): ?array {
+	private static function picked(array $candidates, string $id): ?array {
 		if ($id === '') {
 			return null;
 		}
 
 		foreach ($candidates as $candidate) {
 			if ((string)($candidate['id'] ?? '') === $id) {
-				return $candidate;
+				return ['definition' => $candidate, 'resolvedFrom' => self::PICKED];
 			}
 		}
 
@@ -237,48 +241,61 @@ class TermResolution {
 	}//end picked()
 
 	/**
-	 * Whether a definition is the case type's own, naming no narrower scope.
+	 * The case type's own definition, naming no narrower scope.
 	 * A definition only a case type's pick applies is never its default.
 	 *
-	 * @param array<string, mixed> $definition The definition.
+	 * @param array<int, array<string, mixed>> $candidates The definitions of the wanted kind.
 	 *
-	 * @return bool True when it names no organisation, service or priority.
+	 * @return array{definition: array<string, mixed>, resolvedFrom: string}|null The fallback and its rule.
 	 */
-	private function isGeneral(array $definition): bool {
-		if (($definition['pickedByCaseType'] ?? false) === true) {
-			return false;
-		}
-
-		foreach (self::ORDER as $field) {
-			if (trim((string)($definition[$field] ?? '')) !== '') {
-				return false;
+	private static function general(array $candidates): ?array {
+		foreach ($candidates as $candidate) {
+			if (($candidate['pickedByCaseType'] ?? false) !== true && self::scopeOf(values: $candidate) === []) {
+				return ['definition' => $candidate, 'resolvedFrom' => self::FALLBACK];
 			}
 		}
 
-		return true;
-	}//end isGeneral()
+		return null;
+	}//end general()
+
+	/**
+	 * The organisation, service and priority a set of values names, in that order, trimmed.
+	 *
+	 * @param array<string, mixed> $values A case's values or a definition.
+	 *
+	 * @return array<string, string> The non-empty ones, by field.
+	 */
+	private static function scopeOf(array $values): array {
+		$scope = [];
+		foreach (self::ORDER as $field) {
+			$value = trim((string)($values[$field] ?? ''));
+			if ($value !== '') {
+				$scope[$field] = $value;
+			}
+		}
+
+		return $scope;
+	}//end scopeOf()
 
 	/**
 	 * One resolution, with the snapshot that explains it later.
 	 *
-	 * @param array<string, mixed> $definition   The chosen definition.
-	 * @param string               $resolvedFrom The rule that chose it.
-	 * @param string               $caseType     The zaaktype slug.
-	 * @param array<string, mixed> $context      The case's own values.
+	 * @param array{definition: array<string, mixed>, resolvedFrom: string} $chosen The definition and the rule that chose it.
+	 * @param TermAsk                                                         $ask    The zaaktype and the case's own values.
 	 *
 	 * @return array{definition: array<string, mixed>, resolvedFrom: string, snapshot: array<string, mixed>}
 	 */
-	private function answer(array $definition, string $resolvedFrom, string $caseType, array $context): array {
+	private function answer(array $chosen, TermAsk $ask): array {
 		return [
-			'definition' => $definition,
-			'resolvedFrom' => $resolvedFrom,
+			'definition' => $chosen['definition'],
+			'resolvedFrom' => $chosen['resolvedFrom'],
 			'snapshot' => [
-				'caseType' => $caseType,
-				'organisation' => trim((string)($context['organisation'] ?? '')),
-				'service' => trim((string)($context['service'] ?? '')),
-				'priority' => trim((string)($context['priority'] ?? '')),
-				'durationDays' => (int)($definition['standardDurationDays'] ?? 0),
-				'deadlineDefinition' => (string)($definition['id'] ?? ''),
+				'caseType' => $ask->caseType,
+				'organisation' => trim((string)($ask->context['organisation'] ?? '')),
+				'service' => trim((string)($ask->context['service'] ?? '')),
+				'priority' => trim((string)($ask->context['priority'] ?? '')),
+				'durationDays' => (int)($chosen['definition']['standardDurationDays'] ?? 0),
+				'deadlineDefinition' => (string)($chosen['definition']['id'] ?? ''),
 				'resolvedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 			],
 		];

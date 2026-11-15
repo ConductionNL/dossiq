@@ -9,7 +9,7 @@ The case page SHALL hold the card board DqZaakBesluiten draws on the Decisions t
 - **GIVEN** a case in status "in behandeling"
 - **WHEN** the handler asks "Welstand" for advice with deadline 20 November
 - **THEN** an advice request SHALL be linked to the case with state "requested"
-- **AND** the case's advice card SHALL show it with "20 nov." and "Waiting for answer"
+- **AND** the case's advice card SHALL show it with "antwoord uiterlijk 20 nov" and the state "Open", as the board DqZaakBesluiten draws "antwoord uiterlijk 10 okt" with Open
 - @e2e tests/e2e/advice-on-the-case.spec.ts
 
 #### Scenario: The answer shows on the case
