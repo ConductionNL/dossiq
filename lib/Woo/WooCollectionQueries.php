@@ -88,16 +88,33 @@ class WooCollectionQueries implements WooCollectionQueriesInterface {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
 	 */
 	public function store(string $caseId, array $search, string $userId): array {
+		$saved = $this->save(row: $this->searchRow(search: $search, run: ['case' => $caseId, 'runBy' => $userId]), uuid: '');
+		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
+
+		return $saved;
+	}//end store()
+
+	/**
+	 * The search row to store: its source checked, its terms, result keys, filters and period.
+	 *
+	 * @param array<string, mixed>               $search The search as run: source, terms, filters, periodFrom, periodTo, resultKeys.
+	 * @param array{case: string, runBy: string} $run    The case it belongs to and who ran it.
+	 *
+	 * @return array<string, mixed> The row.
+	 *
+	 * @throws WooCorpusRefused When the source is not one the corpus knows.
+	 */
+	private function searchRow(array $search, array $run): array {
 		$source = (string)($search['source'] ?? '');
 		if (in_array($source, [WooSources::SOURCE_FILES, WooSources::SOURCE_CASES, WooSources::SOURCE_MICROSOFT365], true) === false) {
 			throw new WooCorpusRefused(reason: 'unknown_source', status: 400);
 		}
 
 		$row = [
-			'case' => $caseId,
+			'case' => $run['case'],
 			'source' => $source,
 			'terms' => trim((string)($search['terms'] ?? '')),
-			'runBy' => $userId,
+			'runBy' => $run['runBy'],
 			'runAt' => gmdate('Y-m-d\TH:i:s\Z'),
 			'resultKeys' => $this->keys(values: (array)($search['resultKeys'] ?? [])),
 		];
@@ -114,11 +131,8 @@ class WooCollectionQueries implements WooCollectionQueriesInterface {
 			}
 		}
 
-		$saved = $this->save(row: $row, uuid: '');
-		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
-
-		return $saved;
-	}//end store()
+		return $row;
+	}//end searchRow()
 
 	/**
 	 * Every stored query of the case.
