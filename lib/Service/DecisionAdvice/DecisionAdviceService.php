@@ -77,18 +77,35 @@ class DecisionAdviceService {
 		$values = $this->declaredInputs(table: $table, inputs: $inputs);
 		$outputs = $this->evaluate(reference: $reference, values: $values);
 
+		return $this->saveRecommendation(
+			asked: ['caseId' => $caseId, 'reference' => $reference, 'table' => $table, 'userId' => $userId],
+			evaluated: ['inputs' => $values, 'outputs' => $outputs]
+		);
+	}//end recommend()
+
+	/**
+	 * Store the advice the decision table recommends.
+	 *
+	 * @param array<string, mixed> $asked     The case, the decision table's reference and the table, and who asks.
+	 * @param array<string, mixed> $evaluated The declared inputs and the table's outputs.
+	 *
+	 * @return array<string, mixed> The stored advice.
+	 */
+	private function saveRecommendation(array $asked, array $evaluated): array {
+		$outputs = $evaluated['outputs'];
+
 		return $this->store->save(
 			advice: [
-				'case' => $caseId,
-				'decisionTable' => $reference,
-				'inputs' => $values,
+				'case' => $asked['caseId'],
+				'decisionTable' => $asked['reference'],
+				'inputs' => $evaluated['inputs'],
 				'outputs' => $outputs,
-				'recommendation' => $this->recommendationOf(table: $table, outputs: $outputs),
-				'recommendedBy' => $userId,
+				'recommendation' => $this->recommendationOf(table: $asked['table'], outputs: $outputs),
+				'recommendedBy' => $asked['userId'],
 				'recommendedAt' => $this->now(),
 			]
 		);
-	}//end recommend()
+	}//end saveRecommendation()
 
 	/**
 	 * Read stored advice.

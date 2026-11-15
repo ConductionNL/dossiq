@@ -96,18 +96,29 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 		// Move all linked uitbetalingen to on-hold-bezwaar.
 		$run->basis = $basis;
 		$run->rationale = $rationale;
-		$uitbetalingen = $this->findUitbetalingen(run: $run);
-		foreach ($uitbetalingen as $u) {
-			$this->holdPayout(run: $run, payout: $u);
-		}
-
-		$this->withdrawFinanceOnlyPayouts(run: $run, stored: $uitbetalingen);
+		$this->holdPayouts(run: $run);
 
 		$this->recordTermEvent(run: $run, type: 'objection-submitted');
 
 		$this->logger->info('Objection registered against an accruing amount', ['berekening' => $calculationId]);
 		return $run->calculation;
 	}//end registerObjection()
+
+	/**
+	 * Put every payout of the calculation on hold, and withdraw the ones only finance holds.
+	 *
+	 * @param ObjectionRun $run The objection step, with its basis and rationale.
+	 *
+	 * @return void
+	 */
+	private function holdPayouts(ObjectionRun $run): void {
+		$uitbetalingen = $this->findUitbetalingen(run: $run);
+		foreach ($uitbetalingen as $u) {
+			$this->holdPayout(run: $run, payout: $u);
+		}
+
+		$this->withdrawFinanceOnlyPayouts(run: $run, stored: $uitbetalingen);
+	}//end holdPayouts()
 
 	/**
 	 * Resolve a bezwaar with a corrected amount.
