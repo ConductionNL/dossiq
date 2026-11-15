@@ -125,18 +125,34 @@ class ObjectReadGrants {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-may-update-it-req-cra-010
 	 */
 	public function reconcile(string $schema, string $uuid, array $readers, string $group): array {
-		$answer = ['granted' => 0, 'revoked' => 0, 'refused' => 0];
 		$sharing = $this->service(name: self::SHARING);
 		$object = $this->find(schema: $schema, uuid: $uuid);
 		if ($sharing === null || $object === null) {
-			$answer['refused'] = 1;
-			return $answer;
+			return ['granted' => 0, 'revoked' => 0, 'refused' => 1];
 		}
 
+		return $this->reconciled(
+			record: ['sharing' => $sharing, 'object' => $object],
+			request: ['schema' => $schema, 'uuid' => $uuid, 'readers' => $readers, 'group' => $group]
+		);
+	}//end reconcile()
+
+	/**
+	 * Own the record's group and bring its user grants to the wanted set, counting what changed.
+	 *
+	 * @param array{sharing: object, object: object} $record  The sharing service and the record entity.
+	 * @param array<string, mixed>                   $request The record's `schema` and `uuid`, its `readers` and owning `group`.
+	 *
+	 * @return array{granted: int, revoked: int, refused: int}
+	 */
+	private function reconciled(array $record, array $request): array {
+		$answer = ['granted' => 0, 'revoked' => 0, 'refused' => 0];
+		$sharing = $record['sharing'];
+		$object = $record['object'];
 		try {
-			$this->ownGroup(object: $object, owner: ['schema' => $schema, 'group' => $group]);
-			$wanted = $this->wanted(readers: $readers, owner: (string)$object->getOwner());
-			$held = $this->revokeOthers(record: ['sharing' => $sharing, 'object' => $object], wanted: $wanted);
+			$this->ownGroup(object: $object, owner: ['schema' => $request['schema'], 'group' => $request['group']]);
+			$wanted = $this->wanted(readers: $request['readers'], owner: (string)$object->getOwner());
+			$held = $this->revokeOthers(record: $record, wanted: $wanted);
 			$answer['revoked'] = $held['revoked'];
 			foreach ($this->missing(wanted: $wanted, kept: $held['kept']) as $user => $permissions) {
 				$sharing->grant($object, 'user', (string)$user, $permissions);
@@ -145,13 +161,13 @@ class ObjectReadGrants {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq read grants: OpenRegister refused to reconcile a record',
-				['schema' => $schema, 'uuid' => $uuid, 'exception' => $e->getMessage()]
+				['schema' => $request['schema'], 'uuid' => $request['uuid'], 'exception' => $e->getMessage()]
 			);
 			$answer['refused'] = 1;
 		}//end try
 
 		return $answer;
-	}//end reconcile()
+	}//end reconciled()
 
 	/**
 	 * The wanted grants the record does not already hold.
