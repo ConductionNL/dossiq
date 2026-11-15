@@ -54,6 +54,7 @@ class ActionHandlerRegistry {
 	 * @param CreateSubCaseHandler $createSubCase Built-in sub-case handler
 	 * @param BesluitvormingPublishHandler $decisionPublish DROP/LVBB publication handler
 	 * @param ResumeTermHandler $resumeTerm Lifts a paused term, as a task effect
+	 * @param RaiseDecisionHandler $raiseDecision Hands the case to the decision app as a decision of a configured type
 	 *
 	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
@@ -62,6 +63,7 @@ class ActionHandlerRegistry {
 		CreateSubCaseHandler $createSubCase,
 		BesluitvormingPublishHandler $decisionPublish,
 		ResumeTermHandler $resumeTerm,
+		RaiseDecisionHandler $raiseDecision,
 	) {
 		$this->handlers = [
 			'createTask' => $createTask,
@@ -71,6 +73,7 @@ class ActionHandlerRegistry {
 			// task that processed the aanvulling is what lifts the pause the
 			// aanvulling request put on the term.
 			'resumeTerm' => $resumeTerm,
+			'raiseDecision' => $raiseDecision,
 		];
 	}//end __construct()
 

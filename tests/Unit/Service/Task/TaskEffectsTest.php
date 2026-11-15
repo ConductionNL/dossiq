@@ -84,6 +84,18 @@ class TaskEffectsTest extends TestCase {
 	}
 
 	/**
+	 * A dossiq block or an effects list that is not an array declares nothing.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedDeclarationDeclaresNothing(): void {
+		$key = TaskEffects::METADATA_KEY;
+
+		$this->assertSame(expected: [], actual: $this->effects()->declaredOn(task: ['metadata' => [$key => 'nonsense']]));
+		$this->assertSame(expected: [], actual: $this->effects()->declaredOn(task: ['metadata' => [$key => ['effects' => 'nonsense']]]));
+	}
+
+	/**
 	 * Completing runs the declared effects in the order they were declared.
 	 *
 	 * @return void
