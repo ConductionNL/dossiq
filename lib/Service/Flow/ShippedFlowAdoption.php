@@ -326,7 +326,7 @@ class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function adoptOne(AdoptionRun $run, array $row): array {
-		$skip = $this->skipReason(row: $row, uid: $run->uid, enable: $run->enable);
+		$skip = $this->skipReason(row: $row, run: $run);
 		if ($skip !== '') {
 			return ['name' => $row['name'], 'uuid' => $row['uuid'], 'outcome' => 'skipped', 'detail' => $skip];
 		}
@@ -384,14 +384,14 @@ class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 	 * identity existing runs resolve as.
 	 *
 	 * @param array{uuid: string, name: string, enabled: bool, owner: string} $row The census row.
-	 * @param string $uid The adopting user.
-	 * @param bool $enable Whether enabling was asked for.
+	 * @param AdoptionRun $run The adopting user, and whether enabling was asked for.
 	 *
 	 * @return string The reason to skip, or an empty string.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function skipReason(array $row, string $uid, bool $enable): string {
+	private function skipReason(array $row, AdoptionRun $run): string {
+		$uid = $run->uid;
 		if ($row['owner'] !== '' && $row['owner'] !== $uid) {
 			return 'already owned by "' . $row['owner'] . '"; adoption is not a takeover';
 		}
@@ -400,7 +400,7 @@ class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 			return '';
 		}
 
-		if ($row['enabled'] === true || $enable === false) {
+		if ($row['enabled'] === true || $run->enable === false) {
 			return 'already adopted';
 		}
 
