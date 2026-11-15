@@ -180,10 +180,24 @@ class QuickActionService implements QuickActionServiceInterface {
 	public function executeKlachtRegistreren(string $caseId, string $summary, string $burgerId): array {
 		$summary = $this->requiredKlachtSummary(summary: $summary);
 
+		return $this->registerKlacht(caseId: $caseId, klacht: ['summary' => $summary, 'burgerId' => $burgerId]);
+	}//end executeKlachtRegistreren()
+
+	/**
+	 * Register the klacht as its own case, with its decision deadline, and note it on the case complained about.
+	 *
+	 * @param string                                  $caseId The case being complained about (may be empty).
+	 * @param array{summary: string, burgerId: string} $klacht The klacht text, and the identified burger reference.
+	 *
+	 * @return array{klachtCaseId: string, deadline: string} The klacht case and its deadline.
+	 *
+	 * @throws RuntimeException When the klacht cannot be written.
+	 */
+	private function registerKlacht(string $caseId, array $klacht): array {
 		[$objectService, $register, $caseSchema] = $this->resolveCase();
 
 		$deadline = $this->klachtDeadline();
-		$record = $this->klachtRecord(klacht: ['caseId' => $caseId, 'summary' => $summary, 'burgerId' => $burgerId, 'deadline' => $deadline]);
+		$record = $this->klachtRecord(klacht: ['caseId' => $caseId] + $klacht + ['deadline' => $deadline]);
 
 		try {
 			$created = $this->toArray(result: $objectService->saveObject(object: $record, register: $register, schema: $caseSchema));
@@ -195,7 +209,7 @@ class QuickActionService implements QuickActionServiceInterface {
 		$this->noteKlachtOnCase(caseId: $caseId, complaintId: $complaintId);
 
 		return ['klachtCaseId' => $complaintId, 'deadline' => $deadline];
-	}//end executeKlachtRegistreren()
+	}//end registerKlacht()
 
 	/**
 	 * The klacht text, trimmed, or an error when it is empty.
