@@ -30,7 +30,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use Closure;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
@@ -502,11 +501,11 @@ class AiController extends Controller {
 	/**
 	 * Answer a suggestion for the requested case, for a signed-in caller.
 	 *
-	 * @param Closure(string, string): array<string, mixed> $suggest The suggestion, given the case id and the caller's uid.
+	 * @param callable(string, string): array<string, mixed> $suggest The suggestion, given the case id and the caller's uid.
 	 *
 	 * @return JSONResponse
 	 */
-	private function caseSuggestion(Closure $suggest): JSONResponse {
+	private function caseSuggestion(callable $suggest): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);

@@ -116,7 +116,10 @@ class AdviceRepository {
 	 */
 	public function findForCase(string $caseId): array {
 		try {
-			return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(schemaKey: 'advies_aanvraag_schema', filters: ['case' => $caseId, '_limit' => 200]);
+			return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(
+				schemaKey: 'advies_aanvraag_schema',
+				filters: ['case' => $caseId, '_limit' => 200],
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to fetch advice for case: ' . $e->getMessage(),
@@ -135,7 +138,10 @@ class AdviceRepository {
 	 */
 	public function findOpen(): array {
 		try {
-			return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(schemaKey: 'advies_aanvraag_schema', filters: ['status' => 'requested', '_limit' => 500]);
+			return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(
+				schemaKey: 'advies_aanvraag_schema',
+				filters: ['status' => 'requested', '_limit' => 500],
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to load open advice: ' . $e->getMessage(),
