@@ -108,7 +108,7 @@ class RoutedCaseAcceptanceListener implements IEventListener {
 			}
 
 			$routing = $saved['routing'] ?? null;
-			if (is_array($routing) === false || $this->accepts(saved: $saved, routing: $routing, before: $this->previousObject(event: $event)) === false) {
+			if (is_array($routing) === false || $this->accepts(saved: $saved, before: $this->previousObject(event: $event)) === false) {
 				return;
 			}
 
@@ -121,13 +121,13 @@ class RoutedCaseAcceptanceListener implements IEventListener {
 	/**
 	 * Whether this save is the routed person's first status move or edit.
 	 *
-	 * @param array<string, mixed>      $saved   The saved case.
-	 * @param array<string, mixed>      $routing Its routing record.
-	 * @param array<string, mixed>|null $before  The case before the save.
+	 * @param array<string, mixed>      $saved  The saved case, with its routing record as `routing`.
+	 * @param array<string, mixed>|null $before The case before the save.
 	 *
 	 * @return bool
 	 */
-	private function accepts(array $saved, array $routing, ?array $before): bool {
+	private function accepts(array $saved, ?array $before): bool {
+		$routing = $saved['routing'];
 		$routedTo = (string) ($routing['routedTo'] ?? '');
 		if ($routedTo === '' || trim((string) ($routing['acceptedAt'] ?? '')) !== '' || $before === null) {
 			return false;
