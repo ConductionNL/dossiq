@@ -43,6 +43,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * ObjectService stub matching the named-arg saveObject() signature used by
@@ -59,7 +61,7 @@ interface AiServiceSaveObjectStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(string $register, string $schema, array $object): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -88,10 +90,12 @@ class StubbedAiService extends AiService {
  * @covers \OCA\Dossiq\Service\AiService
  *
  * @uses \OCA\Dossiq\Service\Ai\AiAuditLog
+ * @uses \OCA\Dossiq\Service\Ai\AiRequest
  * @uses \OCA\Dossiq\Service\Ai\AiEndpointGuard
  * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
  * @uses \OCA\Dossiq\Service\Ai\AiPromptFactory
  * @uses \OCA\Dossiq\Service\Ai\AiPiiRedactor
+ * @uses \OCA\Dossiq\Service\Outbound\OutboundUrlGuard
  */
 class AiServiceAuditLoggingCompletenessTest extends TestCase {
 
@@ -185,13 +189,13 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 	public function testClassifyDocumentLogsAuditEntry(): void {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->with(
-				'dossiq',
-				'aiAuditEntry',
-				$this->callback(fn (array $entry) => $entry['type'] === 'classification'
+			->with(...LegacyObjectArgs::with(method: 'saveObject', expected: [
+					'register' => 'dossiq',
+					'schema' => 'aiAuditEntry',
+					'object' => $this->callback(fn (array $entry) => $entry['type'] === 'classification'
 					&& $entry['action'] === 'suggestion'
-					&& $entry['userId'] === 'user-1')
-			);
+					&& $entry['userId'] === 'user-1'),
+				]));
 
 		$result = $this->service->classifyDocument('case-a', 'doc-1', 'user-1');
 		$this->assertTrue($result['success']);
@@ -207,12 +211,12 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->with(
-				'dossiq',
-				'aiAuditEntry',
-				$this->callback(fn (array $entry) => $entry['type'] === 'extraction'
-					&& $entry['action'] === 'suggestion')
-			);
+			->with(...LegacyObjectArgs::with(method: 'saveObject', expected: [
+					'register' => 'dossiq',
+					'schema' => 'aiAuditEntry',
+					'object' => $this->callback(fn (array $entry) => $entry['type'] === 'extraction'
+					&& $entry['action'] === 'suggestion'),
+				]));
 
 		$result = $this->service->extractData('case-a', 'doc-1', 'user-1');
 		$this->assertTrue($result['success']);
@@ -226,12 +230,12 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 	public function testAskQuestionLogsAuditEntry(): void {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->with(
-				'dossiq',
-				'aiAuditEntry',
-				$this->callback(fn (array $entry) => $entry['type'] === 'qa'
-					&& $entry['action'] === 'suggestion')
-			);
+			->with(...LegacyObjectArgs::with(method: 'saveObject', expected: [
+					'register' => 'dossiq',
+					'schema' => 'aiAuditEntry',
+					'object' => $this->callback(fn (array $entry) => $entry['type'] === 'qa'
+					&& $entry['action'] === 'suggestion'),
+				]));
 
 		$result = $this->service->askQuestion('case-a', 'Is dit compleet?', 'user-1');
 		$this->assertTrue($result['success']);
@@ -245,12 +249,12 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 	public function testSummarizeLogsAuditEntry(): void {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->with(
-				'dossiq',
-				'aiAuditEntry',
-				$this->callback(fn (array $entry) => $entry['type'] === 'summary'
-					&& $entry['action'] === 'suggestion')
-			);
+			->with(...LegacyObjectArgs::with(method: 'saveObject', expected: [
+					'register' => 'dossiq',
+					'schema' => 'aiAuditEntry',
+					'object' => $this->callback(fn (array $entry) => $entry['type'] === 'summary'
+					&& $entry['action'] === 'suggestion'),
+				]));
 
 		$result = $this->service->summarize('case-a', 'case', null, 'user-1');
 		$this->assertTrue($result['success']);
@@ -266,12 +270,12 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->with(
-				'dossiq',
-				'aiAuditEntry',
-				$this->callback(fn (array $entry) => $entry['type'] === 'routing'
-					&& $entry['action'] === 'suggestion')
-			);
+			->with(...LegacyObjectArgs::with(method: 'saveObject', expected: [
+					'register' => 'dossiq',
+					'schema' => 'aiAuditEntry',
+					'object' => $this->callback(fn (array $entry) => $entry['type'] === 'routing'
+					&& $entry['action'] === 'suggestion'),
+				]));
 
 		$result = $this->service->suggestRouting('case-a', 'user-1');
 		$this->assertTrue($result['success']);
@@ -287,12 +291,12 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->with(
-				'dossiq',
-				'aiAuditEntry',
-				$this->callback(fn (array $entry) => $entry['type'] === 'decision_support'
-					&& $entry['action'] === 'suggestion')
-			);
+			->with(...LegacyObjectArgs::with(method: 'saveObject', expected: [
+					'register' => 'dossiq',
+					'schema' => 'aiAuditEntry',
+					'object' => $this->callback(fn (array $entry) => $entry['type'] === 'decision_support'
+					&& $entry['action'] === 'suggestion'),
+				]));
 
 		$result = $this->service->suggestNextStep('case-a', 'user-1');
 		$this->assertTrue($result['success']);

@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob;
 use OCA\Dossiq\Service\OrganisationQuotaLimits;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\TenantQuotaService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\App\IAppManager;
@@ -36,6 +37,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The `findAll()` and `saveObject()` seam the job and the quota service call.
@@ -65,7 +67,7 @@ interface ResetMonthlyQuotasObjectServiceStub {
 	 *
 	 * @return array<string, mixed> The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }
 
 /**
@@ -119,7 +121,10 @@ class ResetMonthlyQuotasJobTest extends TestCase {
 		$objectService = $this->createMock(ResetMonthlyQuotasObjectServiceStub::class);
 		$objectService->method('findAll')->willReturn($rows);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['object' => $object, 'uuid' => $uuid];
 
 				return $object;
@@ -131,6 +136,8 @@ class ResetMonthlyQuotasJobTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($objectService);
 		$logger = $this->createMock(LoggerInterface::class);
+		$serviceAccount = $this->createMock(BackgroundServiceAccount::class);
+		$serviceAccount->method('runAs')->willReturnCallback(static fn (callable $operation): mixed => $operation());
 
 		$job = new ResetMonthlyQuotasJob(
 			time: $this->createMock(ITimeFactory::class),
@@ -143,6 +150,7 @@ class ResetMonthlyQuotasJobTest extends TestCase {
 			appManager: $appManager,
 			container: $container,
 			logger: $logger,
+			serviceAccount: $serviceAccount,
 		);
 
 		// The run() method is protected; the job framework is what calls it.

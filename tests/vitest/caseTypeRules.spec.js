@@ -13,7 +13,7 @@
  *    property of the pipeline and moves the day a kind is added, so a url built
  *    from a row index would silently try the wrong rule.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import {

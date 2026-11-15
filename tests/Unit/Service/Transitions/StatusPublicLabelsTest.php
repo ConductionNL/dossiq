@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\StatusPublicLabels
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class StatusPublicLabelsTest extends TestCase {
 	/**
@@ -165,6 +166,34 @@ class StatusPublicLabelsTest extends TestCase {
 	}//end testTheCaseCarriesTheLabel()
 
 	/**
+	 * A translatable field stored as a language map reads as its Dutch text,
+	 * else the first text in the map, and never as the literal "Array".
+	 *
+	 * @return void
+	 */
+	public function testALanguageMapReadsAsText(): void {
+		$this->assertSame(
+			expected: 'Ontvangen',
+			actual: StatusPublicLabels::publicLabelOf(statusType: ['publicLabel' => ['en' => 'Received', 'nl' => 'Ontvangen']])
+		);
+		$this->assertSame(
+			expected: 'Received',
+			actual: StatusPublicLabels::publicLabelOf(statusType: ['publicLabel' => ['nl' => ' ', 'en' => 'Received']])
+		);
+		$this->assertSame(
+			expected: 'Ontvangst',
+			actual: StatusPublicLabels::publicLabelOf(statusType: ['publicLabel' => [], 'name' => ['nl' => 'Ontvangst']]),
+			message: 'an empty map falls back to the name, like an empty string'
+		);
+		$this->assertSame(
+			expected: 'Uw verzoek is binnen.',
+			actual: StatusPublicLabels::publicDescriptionOf(statusType: ['publicDescription' => ['nl' => 'Uw verzoek is binnen.']])
+		);
+		$this->assertSame(expected: '', actual: StatusPublicLabels::textOf(value: ['nl' => ['nested']]));
+		$this->assertSame(expected: '', actual: StatusPublicLabels::textOf(value: 42));
+	}//end testALanguageMapReadsAsText()
+
+	/**
 	 * A case projected without the fields reads as nothing to show.
 	 *
 	 * The portal hands a subject a case narrowed to a whitelist. A whitelist
@@ -182,4 +211,19 @@ class StatusPublicLabelsTest extends TestCase {
 			actual: StatusPublicLabels::descriptionOnCase(case: ['identifier' => '2026-0001'])
 		);
 	}//end testACaseWithoutTheFieldsReadsAsNothing()
+
+	/**
+	 * The reader's language wins, its base language counts, Dutch is next.
+	 *
+	 * @return void
+	 */
+	public function testTheReadersLanguageWinsOverDutch(): void {
+		$map = ['de' => 'Eingang', 'nl' => 'Ontvangen', 'en' => 'Received'];
+
+		self::assertSame('Received', StatusPublicLabels::textOf(value: $map, language: 'en'));
+		self::assertSame('Received', StatusPublicLabels::textOf(value: $map, language: 'en_GB'));
+		self::assertSame('Ontvangen', StatusPublicLabels::textOf(value: $map, language: 'fr'));
+		self::assertSame('Ontvangen', StatusPublicLabels::textOf(value: $map));
+		self::assertSame('Eingang', StatusPublicLabels::textOf(value: ['de' => 'Eingang', 'en' => ' '], language: 'en'));
+	}//end testTheReadersLanguageWinsOverDutch()
 }//end class

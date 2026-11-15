@@ -41,6 +41,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 	seedStateMachine,
+	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
 
@@ -106,12 +107,17 @@ test.describe('A case type declares field rules per status', () => {
 		// asserted and not only the status, because a 422 from the schema
 		// validator and a 422 from the state rules are the same number and a
 		// very different bug.
+		// The body is the STORED case, not the create response: the create
+		// response carries `assignedGroupPublicName: ""` where the stored row
+		// holds null, and echoing it back is refused as a write to a readOnly
+		// property before any state rule is consulted.
+		const stored = await showObject(api, 'case', objectId(seeded))
 		const refused = await api.put(
 			`/index.php/apps/openregister/api/objects/dossiq/case/${objectId(seeded)}`,
 			{
 				headers: { requesttoken: token, 'Content-Type': 'application/json' },
 				data: {
-					...seeded,
+					...stored,
 					description: '',
 					status: machine.statusInProgress,
 				},
@@ -139,12 +145,13 @@ test.describe('A case type declares field rules per status', () => {
 			status: machine.statusReceived,
 		})
 
+		const stored = await showObject(api, 'case', objectId(seeded))
 		const accepted = await api.put(
 			`/index.php/apps/openregister/api/objects/dossiq/case/${objectId(seeded)}`,
 			{
 				headers: { requesttoken: token, 'Content-Type': 'application/json' },
 				data: {
-					...seeded,
+					...stored,
 					description: 'What this case is about.',
 					status: machine.statusInProgress,
 				},
@@ -208,11 +215,12 @@ test.describe('A case type declares field rules per status', () => {
 			status: machine.statusReceived,
 		})
 
+		const stored = await showObject(api, 'case', objectId(seeded))
 		const refused = await api.put(
 			`/index.php/apps/openregister/api/objects/dossiq/case/${objectId(seeded)}`,
 			{
 				headers: { requesttoken: token, 'Content-Type': 'application/json' },
-				data: { ...seeded, description: '', status: machine.statusDone },
+				data: { ...stored, description: '', status: machine.statusDone },
 			},
 		)
 
@@ -250,10 +258,15 @@ test.describe('A case type declares field rules per status', () => {
 		})
 		await publish(machine.caseTypeId)
 
+		// The rule sits on the status a new case starts in, so a case filed
+		// without the field is refused at create, which is the rule working.
+		// The case is filed WITH it: what is under test is the trial, which
+		// must read the rule's verdict and write nothing.
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} rule trial`,
 			caseType: machine.caseTypeId,
 			status: machine.statusReceived,
+			description: 'What this case is about.',
 		})
 		const caseId = objectId(seeded)
 

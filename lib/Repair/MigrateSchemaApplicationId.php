@@ -9,7 +9,7 @@
  *   - a REGISTER by slug alone      -> RegisterMapper::find(slug)
  *   - a SCHEMA by the PAIR          -> SchemaMapper::findByApplicationAndSlug(slug, application)
  *
- * `SettingsService` passes `appId: Application::APP_ID`, which is now
+ * `SettingsService` passes `appId: AppIdentity::APP_ID`, which is now
  * `dossiq`. Every schema this app already owns still carries
  * `application = 'procest'`, so the pair matches nothing — and
  * ImportHandler's not-found branch is not an error path, it is the "create a
@@ -130,6 +130,27 @@ class MigrateSchemaApplicationId implements IRepairStep {
 			return;
 		}
 
+		[$moved, $refused] = $this->repointAll(candidates: $candidates, taken: $taken);
+
+		$output->info(
+			sprintf(
+				'MigrateSchemaApplicationId: %d schema(s) moved to %s, %d refused as duplicates.',
+				$moved,
+				self::NEW_APP_ID,
+				$refused
+			)
+		);
+	}//end run()
+
+	/**
+	 * Re-point every candidate slug that has no twin under the new application id.
+	 *
+	 * @param array<int, string> $candidates Slugs under the old application id.
+	 * @param array<int, string> $taken      Lower-cased slugs under the new application id.
+	 *
+	 * @return array{0: int, 1: int} The number moved and the number refused.
+	 */
+	private function repointAll(array $candidates, array $taken): array {
 		$moved = 0;
 		$refused = 0;
 		foreach ($candidates as $slug) {
@@ -148,15 +169,8 @@ class MigrateSchemaApplicationId implements IRepairStep {
 			}
 		}
 
-		$output->info(
-			sprintf(
-				'MigrateSchemaApplicationId: %d schema(s) moved to %s, %d refused as duplicates.',
-				$moved,
-				self::NEW_APP_ID,
-				$refused
-			)
-		);
-	}//end run()
+		return [$moved, $refused];
+	}//end repointAll()
 
 	/**
 	 * Slugs already claimed under the NEW application id.

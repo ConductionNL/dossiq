@@ -33,7 +33,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -56,8 +56,12 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Custody\CustodyMove
+ * @uses \OCA\Dossiq\Service\Custody\CustodyRows
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\Custody\StoredInstant
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseCustodyQueryTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -110,7 +114,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testWhoHeldTheCaseInMarchIsOneAnswer(): void {
 		$holding = $this->query()->holderOn(caseId: 'case-1', asOf: '2026-03-15T12:00:00+01:00');
@@ -125,7 +129,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testTheTransferDateBelongsToTheUnitThatTookTheCase(): void {
 		$holding = $this->query()->holderOn(caseId: 'case-1', asOf: '2026-03-10T10:00:00+01:00');
@@ -143,7 +147,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testADateBeforeTheCaseHasNoHolder(): void {
 		self::assertNull($this->query()->holderOn(caseId: 'case-1', asOf: '2025-12-31T23:59:59+01:00'));
@@ -154,7 +158,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testTheOpenHoldingAnswersTheFuture(): void {
 		$holding = $this->query()->holderOn(caseId: 'case-1', asOf: '2027-01-01T00:00:00+01:00');
@@ -169,7 +173,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testWhatAUnitHeldLastQuarterIsAQuery(): void {
 		$query = $this->query();
@@ -184,6 +188,38 @@ class CaseCustodyQueryTest extends TestCase {
 		$open = $query->heldBy(organisationUnit: 'juridisch', from: '2026-10-01', to: '2026-12-31');
 		self::assertCount(1, $open, 'An open holding has no end, so it counts in every later window.');
 	}//end testWhatAUnitHeldLastQuarterIsAQuery()
+
+	/**
+	 * A unit's holdings come back oldest first, and an unreadable register answers nothing after a warning.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAUnitsHoldingsAreOldestFirstAndAnUnreadableRegisterIsEmpty(): void {
+		$this->chain()->move(
+			caseId: 'case-1',
+			organisationUnit: 'toezicht',
+			handler: '',
+			reason: 'Terug',
+			movedBy: 'sofie',
+			movedAt: '2026-08-03T10:00:00+02:00',
+		);
+		$year = $this->query()->heldBy(organisationUnit: ' toezicht ', from: '2026-01-01', to: '2026-12-31');
+		self::assertSame(['Handhaving', 'Terug'], array_column($year, 'reason'));
+		self::assertSame([], $this->query()->heldBy(organisationUnit: 'toezicht', from: 'not a date', to: '2026-12-31'));
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq custody: the holdings of a unit could not be read',
+			['organisationUnit' => 'toezicht', 'exception' => 'OpenRegister is not available'],
+		);
+		$query = new CaseCustodyQuery(chain: $this->chain(), settingsService: $settings, logger: $logger);
+
+		self::assertSame([], $query->heldBy(organisationUnit: 'toezicht', from: '2026-01-01', to: '2026-12-31'));
+	}//end testAUnitsHoldingsAreOldestFirstAndAnUnreadableRegisterIsEmpty()
 
 	/**
 	 * The query under test.
@@ -233,4 +269,35 @@ class CaseCustodyQueryTest extends TestCase {
 
 		return $settings;
 	}//end settings()
+	/**
+	 * An unreadable moment has no holder.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAnUnreadableMomentHasNoHolder(): void {
+		self::assertNull($this->query()->holderOn(caseId: 'case-1', asOf: 'last spring'));
+	}//end testAnUnreadableMomentHasNoHolder()
+
+	/**
+	 * A holding that starts after the window, or whose start cannot be read, is not in it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAHoldingStartingLaterOrUndatedIsOutsideTheWindow(): void {
+		$query = $this->query();
+
+		self::assertSame([], $query->heldBy(organisationUnit: 'toezicht', from: '2026-01-01', to: '2026-03-09'), 'Toezicht only took the case on 10 March.');
+
+		$this->store->seed(
+			schema: 'caseCustody',
+			uuid: 'undated',
+			row: ['caseId' => 'case-9', 'organisationUnit' => 'toezicht', 'from' => 'ooit', 'until' => '', 'open' => true, 'sequence' => 1],
+		);
+		$year = $query->heldBy(organisationUnit: 'toezicht', from: '2026-01-01', to: '2026-12-31');
+		self::assertSame(['case-1'], array_column($year, 'caseId'), 'A holding without a readable start is not counted.');
+	}//end testAHoldingStartingLaterOrUndatedIsOutsideTheWindow()
 }//end class

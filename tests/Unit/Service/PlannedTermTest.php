@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\TermDeclarationReader;
@@ -33,7 +34,11 @@ use Psr\Log\NullLogger;
  * REQ-TERM-062: a planned end and a planned start sit beside the statutory term.
  *
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\CaseTermBinding
  */
 class PlannedTermTest extends TestCase {
 	use BindsTermFixtures;
@@ -84,9 +89,11 @@ class PlannedTermTest extends TestCase {
 		);
 
 		$this->service = new CaseTermsService(
-			termService: $this->termService,
-			declarations: $this->declarations,
-			timers: $timers,
+			sources: new CaseTermSources(
+				termService: $this->termService,
+				declarations: $this->declarations,
+				timers: $timers,
+			),
 			logger: new NullLogger(),
 		);
 	}//end setUp()
@@ -172,6 +179,46 @@ class PlannedTermTest extends TestCase {
 		self::assertTrue($progress['plannedOverdue']);
 		self::assertFalse($progress['statutoryOverdue']);
 	}//end testThePlannedOverrunIsReportedApartFromTheStatutoryOne()
+
+	/**
+	 * The share of the statutory term that is gone, day for day.
+	 *
+	 * Without phases the progress IS the term consumed, so both read the same
+	 * number: 15 of 60 days is 25, the day before the start is 0, the end day
+	 * is 100 and a day past it stays 100.
+	 *
+	 * @return void
+	 */
+	public function testTheTermConsumedIsCountedInDays(): void {
+		$this->instances = [$this->instanceOf(kind: TermKind::STATUTORY, end: '2026-10-31')];
+		$this->declarations->method('phasesOf')->willReturn([]);
+
+		$consumed = [];
+		$daysLeft = [];
+		foreach (['2026-08-31', '2026-09-01', '2026-09-16', '2026-09-21', '2026-10-31', '2026-11-03'] as $day) {
+			$progress = $this->service->progressFor(caseId: 'c1', caseTypeId: 'ct1', now: new DateTimeImmutable($day));
+			$consumed[] = $progress['termConsumed'];
+			$daysLeft[] = $progress['daysLeft'];
+			self::assertSame($progress['termConsumed'], $progress['progress']);
+		}
+
+		self::assertSame([0, 0, 25, 33, 100, 100], $consumed);
+		self::assertSame([61, 60, 45, 40, 0, -3], $daysLeft);
+	}//end testTheTermConsumedIsCountedInDays()
+
+	/**
+	 * A term that ends on the day it starts is spent, not divided by zero.
+	 *
+	 * @return void
+	 */
+	public function testATermWithNoLengthReadsAsSpent(): void {
+		$this->instances = [$this->instanceOf(kind: TermKind::STATUTORY, end: '2026-09-01')];
+		$this->declarations->method('phasesOf')->willReturn([]);
+
+		$progress = $this->service->progressFor(caseId: 'c1', caseTypeId: 'ct1', now: new DateTimeImmutable('2026-09-01'));
+
+		self::assertSame(100, $progress['termConsumed']);
+	}//end testATermWithNoLengthReadsAsSpent()
 
 	/**
 	 * A case type that declares no plan gets no planned instance.

@@ -149,6 +149,7 @@ test.describe('A coordinator rebinds a running case to the right case type', () 
 
 		const response = await api.get(
 			`/index.php/apps/dossiq/api/case/${runningCase}/rebind?target=${omgevingsvergunning}`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(response.ok(), await response.text()).toBeTruthy()
 
@@ -187,6 +188,7 @@ test.describe('A coordinator rebinds a running case to the right case type', () 
 		const preview = await api.get(
 			`/index.php/apps/dossiq/api/case/${runningCase}/rebind`
 				+ `?target=${omgevingsvergunning}&status=${omgToetsing}`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(preview.ok(), await preview.text()).toBeTruthy()
 
@@ -309,6 +311,14 @@ test.describe('A coordinator rebinds a running case to the right case type', () 
 				'a rebind is not a refile, so the number stays',
 			).toBe(caseNumber)
 		}
+
+		// The answer lands in the register's LIST shape, not as a name-keyed
+		// map (case-type-rebind-property-impact).
+		expect(rebound.properties).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ name: 'bouwjaar', value: '1974' }),
+			]),
+		)
 
 		// The journal carries both bindings and the reason, so the next person
 		// reading this case does not have to dig through the store to find out

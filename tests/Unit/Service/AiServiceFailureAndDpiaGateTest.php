@@ -54,6 +54,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * ObjectService stub matching the audit writer's named-arg signature.
@@ -69,7 +70,7 @@ interface FailureAuditSaveObjectStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(string $register, string $schema, array $object): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -91,10 +92,12 @@ class FailingAiService extends AiService {
  * @covers \OCA\Dossiq\Service\AiService
  *
  * @uses \OCA\Dossiq\Service\Ai\AiAuditLog
+ * @uses \OCA\Dossiq\Service\Ai\AiRequest
  * @uses \OCA\Dossiq\Service\Ai\AiEndpointGuard
  * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
  * @uses \OCA\Dossiq\Service\Ai\AiPiiRedactor
  * @uses \OCA\Dossiq\Service\Ai\AiPromptFactory
+ * @uses \OCA\Dossiq\Service\Outbound\OutboundUrlGuard
  */
 class AiServiceFailureAndDpiaGateTest extends TestCase {
 
@@ -144,7 +147,9 @@ class AiServiceFailureAndDpiaGateTest extends TestCase {
 		$objectService = $this->createMock(FailureAuditSaveObjectStub::class);
 		$objectService->method('saveObject')
 			->willReturnCallback(
-				function (string $register, string $schema, array $object): mixed {
+				function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
 					$this->recorded[] = $object;
 					return null;
 				}

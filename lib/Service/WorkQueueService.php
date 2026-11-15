@@ -4,8 +4,13 @@
  * Dossiq Work Queue Service
  *
  * Computes a deterministic urgency score for a case handler's open cases
- * and tasks (deadline proximity, priority, case age), and a per-handler
- * open-case workload summary for coordinators.
+ * and tasks (the deadline tier, priority, and how long a case has been lying
+ * still), and a per-handler open-case workload summary for coordinators.
+ *
+ * The deadline tier ("termijnstatus") is deliberately not called urgency in
+ * code: a case also carries the ITIL `urgency` field, which CasePriorityService
+ * combines with impact into the priority. The user-facing word stays
+ * "urgentie", for the score this class computes.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -22,6 +27,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -29,6 +35,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\WorkQueueServiceInterface;
+use OCA\Dossiq\Service\Queue\CaseQueueSource;
+use OCA\Dossiq\Service\Queue\QueueCaseFacts;
+use OCA\Dossiq\Service\Queue\QueueScoringRun;
+use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
+use OCA\Dossiq\Service\Queue\UrgencyProfile;
+use OCA\Dossiq\Service\Queue\UrgencyScorer;
 use OCA\Dossiq\Service\Status\StatusDeclaration;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
@@ -40,64 +53,19 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — cohesive unit split into
- * many small, individually-simple, individually-unit-tested methods (case
- * queueing, task queueing, termijn deadline resolution, workload counting,
- * pure scoring); splitting into separate classes would fragment a single
- * well-tested responsibility rather than reduce actual complexity.
+ * Scoring is `Queue\UrgencyScorer`; what is read about a case before it is
+ * scored is `Queue\QueueCaseFacts`. This class reads the cases and tasks,
+ * ranks them, and counts the open work.
  */
-class WorkQueueService {
+class WorkQueueService implements WorkQueueServiceInterface {
 	use SearchesObjects;
 
 	/**
-	 * Urgency tier constants.
+	 * Maximum number of open cases one queue computation reads. Named, so the
+	 * search never falls back to OpenRegister's default page and silently
+	 * leaves every case past it out of the ranking.
 	 */
-	private const TIER_OVERDUE = 'overdue';
-	private const TIER_CRITICAL = 'critical';
-	private const TIER_WARNING = 'warning';
-	private const TIER_NORMAL = 'normal';
-
-	/**
-	 * Base score per tier — higher tiers score higher; the deadline
-	 * component further differentiates within a tier by exact day count.
-	 *
-	 * @var array<string, float>
-	 */
-	private const TIER_BASE_SCORE = [
-		self::TIER_OVERDUE => 1000.0,
-		self::TIER_CRITICAL => 750.0,
-		self::TIER_WARNING => 500.0,
-		self::TIER_NORMAL => 250.0,
-	];
-
-	/**
-	 * Score contribution per priority value.
-	 *
-	 * @var array<string, float>
-	 */
-	private const PRIORITY_WEIGHT = [
-		'urgent' => 30.0,
-		'high' => 20.0,
-		'normal' => 10.0,
-		'low' => 0.0,
-	];
-
-	/**
-	 * Fallback priority weight for an unknown/empty priority value.
-	 */
-	private const DEFAULT_PRIORITY_WEIGHT = 10.0;
-
-	/**
-	 * Age component: capped days and weight per day.
-	 */
-	private const MAX_AGE_DAYS = 60;
-	private const AGE_WEIGHT_PER_DAY = 0.5;
-
-	/**
-	 * Safety cap on the business-day walk in businessDaysBetween(), so a
-	 * corrupt/far-future deadline can never loop unbounded.
-	 */
-	private const MAX_BUSINESS_DAY_WALK = 3660;
+	private const QUEUE_CASE_LIMIT = 1000;
 
 	/**
 	 * Maximum number of cases fetched for the workload aggregation.
@@ -105,20 +73,75 @@ class WorkQueueService {
 	private const WORKLOAD_LIMIT = 1000;
 
 	/**
+	 * The waiting-on declarations counted apart from ours, by their count key.
+	 */
+	private const WAITING_ON_BUCKETS = [
+		StatusDeclaration::WAITING_ON_APPLICANT => 'applicant',
+		StatusDeclaration::WAITING_ON_THIRD_PARTY => 'thirdParty',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (register/schema config + ObjectService).
 	 * @param EngineTaskInbox $engineTasks     The engine's inbox reader.
 	 * @param LoggerInterface $logger Logger.
-	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param QueueUrgencySettings $urgencySettings The admin's thresholds and weights.
+	 * @param UrgencyScorer $scorer Scores one item.
+	 * @param QueueCaseFacts $caseFacts The deadline, last activity and urgency profile of a case.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly EngineTaskInbox $engineTasks,
 		private readonly LoggerInterface $logger,
-		private readonly CaseDateNormaliser $dates,
+		private readonly QueueUrgencySettings $urgencySettings,
+		private readonly UrgencyScorer $scorer,
+		private readonly QueueCaseFacts $caseFacts,
 	) {
 	}//end __construct()
+
+	/**
+	 * Score a single item deterministically. Pure function, no I/O.
+	 *
+	 * @param string|null $deadline Resolved deadline (Y-m-d or parseable date), or null.
+	 * @param string $priority Priority value (low/normal/high/urgent), any casing.
+	 * @param string|null $referenceDate The last activity on the item, or null for no idle part.
+	 * @param DateTimeImmutable $now The "now" instant the score is computed against.
+	 * @param UrgencyProfile|null $profile Thresholds and weights; null scores with the defaults.
+	 *
+	 * @return array{
+	 *     deadlineTier: string,
+	 *     daysUntilDeadline: int|null,
+	 *     idleDays: int|null,
+	 *     score: float,
+	 *     scoreBreakdown: array{deadline: float, priority: float, idle: float}
+	 * } Score result.
+	 *
+	 * @see UrgencyScorer::scoreItem()
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	public function scoreItem(
+		?string $deadline,
+		string $priority,
+		?string $referenceDate,
+		DateTimeImmutable $now,
+		?UrgencyProfile $profile = null,
+	): array {
+		return $this->scorer->scoreItem(deadline: $deadline, priority: $priority, referenceDate: $referenceDate, now: $now, profile: $profile);
+	}//end scoreItem()
+
+	/**
+	 * The instance's thresholds and weights, for a caller that scores items
+	 * without a case type (the personal queue).
+	 *
+	 * @return UrgencyProfile The admin profile.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	public function adminProfile(): UrgencyProfile {
+		return $this->urgencySettings->profile();
+	}//end adminProfile()
 
 	/**
 	 * Compute the urgency-scored work queue for one user.
@@ -127,38 +150,35 @@ class WorkQueueService {
 	 * open tasks (assignee match, non-terminal status), scores every item,
 	 * and returns them sorted by score descending (most urgent first).
 	 *
+	 * Open cases the user covers for an absent colleague ({@see Substitution\CoveredWork})
+	 * join the ranking when given, scored the same way and never twice; each case item carries
+	 * `coveredFor` (`null` for the user's own), on the item and on its row.
+	 *
 	 * @param string $userId The Nextcloud user id to scope to.
 	 * @param DateTimeImmutable|null $now Optional "now" override for testing.
+	 * @param array<int, array<string, mixed>> $covered Open covered cases, each with `coveredFor`; already read-checked.
 	 *
 	 * @return array<int, array<string, mixed>> Scored, sorted queue items.
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	public function computeQueue(string $userId, ?DateTimeImmutable $now = null): array {
+	public function computeQueue(string $userId, ?DateTimeImmutable $now = null, array $covered = []): array {
 		$now = ($now ?? new DateTimeImmutable());
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $caseSchema === '' || $userId === '') {
+		$source = $this->caseSource();
+		if ($source === null || $userId === '') {
 			return [];
 		}
 
-		$items = [];
-		$caseItems = $this->queueCaseItems(
-			objectService: $objectService,
-			register: $register,
-			caseSchema: $caseSchema,
-			userId: $userId,
-			now: $now
-		);
-		foreach ($caseItems as $item) {
-			$items[] = $item;
-		}
+		$run = new QueueScoringRun(source: $source, now: $now, profile: $this->urgencySettings->profile());
 
-		foreach ($this->queueTaskItems(userId: $userId, now: $now) as $item) {
-			$items[] = $item;
-		}
+		$caseItems = $this->queueCaseItems(run: $run, userId: $userId);
+		$items = array_merge(
+			$caseItems,
+			$this->scoreCases(run: $run, cases: $this->notYetQueued(covered: $covered, caseItems: $caseItems)),
+			$this->queueTaskItems(run: $run, userId: $userId)
+		);
 
 		usort(
 			$items,
@@ -182,28 +202,21 @@ class WorkQueueService {
 	 *
 	 * @return array{ours: int, applicant: int, thirdParty: int, total: int}
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function countByWaitingOn(?string $userId = null): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $caseSchema === '') {
+		$source = $this->caseSource();
+		if ($source === null) {
 			return $this->tallyWaitingOn(cases: []);
 		}
 
 		$filters = ['_limit' => self::WORKLOAD_LIMIT];
-		if ($userId !== null && $userId !== '') {
+		if ((string)$userId !== '') {
 			$filters['assignee'] = $userId;
 		}
 
 		try {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: $filters
-			);
+			$cases = $this->searchCases(source: $source, filters: $filters);
 		} catch (\Throwable $e) {
 			$this->logger->warning('WorkQueue: waiting-on count search failed', ['error' => $e->getMessage()]);
 			return $this->tallyWaitingOn(cases: []);
@@ -228,37 +241,55 @@ class WorkQueueService {
 	 *
 	 * @return array{ours: int, applicant: int, thirdParty: int, total: int}
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function tallyWaitingOn(array $cases): array {
 		$counts = ['ours' => 0, 'applicant' => 0, 'thirdParty' => 0, 'total' => 0];
 
 		foreach ($cases as $case) {
-			if (is_array($case) === false) {
-				continue;
-			}
-
-			if ((string)($case['endDate'] ?? '') !== '' || ($case['isFinalStatus'] ?? false) === true) {
+			if (is_array($case) === false || $this->isFinished(row: $case) === true) {
 				continue;
 			}
 
 			$counts['total']++;
-			$waitingOn = trim((string)($case['waitingOn'] ?? ''));
-			if ($waitingOn === StatusDeclaration::WAITING_ON_APPLICANT) {
-				$counts['applicant']++;
-				continue;
-			}
-
-			if ($waitingOn === StatusDeclaration::WAITING_ON_THIRD_PARTY) {
-				$counts['thirdParty']++;
-				continue;
-			}
-
-			$counts['ours']++;
+			$counts[$this->waitingBucket(row: $case)]++;
 		}
 
 		return $counts;
 	}//end tallyWaitingOn()
+
+	/**
+	 * Whether a case is closed or stands in a final status.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return bool True when nobody waits on it any more.
+	 */
+	private function isFinished(array $row): bool {
+		return $this->isClosed(row: $row) === true || ($row['isFinalStatus'] ?? false) === true;
+	}//end isFinished()
+
+	/**
+	 * Whether a case has an end date.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return bool True when the case is closed.
+	 */
+	private function isClosed(array $row): bool {
+		return (string)($row['endDate'] ?? '') !== '';
+	}//end isClosed()
+
+	/**
+	 * The count a case's waiting-on declaration falls in; an undeclared case is ours.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return string The bucket key.
+	 */
+	private function waitingBucket(array $row): string {
+		return (self::WAITING_ON_BUCKETS[trim((string)($row['waitingOn'] ?? ''))] ?? 'ours');
+	}//end waitingBucket()
 
 	/**
 	 * Compute per-handler open-case counts across all cases.
@@ -268,20 +299,13 @@ class WorkQueueService {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function computeWorkload(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $caseSchema === '') {
+		$source = $this->caseSource();
+		if ($source === null) {
 			return [];
 		}
 
 		try {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['_limit' => self::WORKLOAD_LIMIT]
-			);
+			$cases = $this->searchCases(source: $source, filters: ['_limit' => self::WORKLOAD_LIMIT]);
 		} catch (\Throwable $e) {
 			$this->logger->warning('WorkQueue: workload case search failed', ['error' => $e->getMessage()]);
 			return [];
@@ -309,8 +333,7 @@ class WorkQueueService {
 	private function countOpenCasesByHandler(array $cases): array {
 		$counts = [];
 		foreach ($cases as $case) {
-			$endDate = (string)($case['endDate'] ?? '');
-			if ($endDate !== '') {
+			if ($this->isClosed(row: $case) === true) {
 				// Closed case — not part of the open workload.
 				continue;
 			}
@@ -335,127 +358,229 @@ class WorkQueueService {
 	}//end countOpenCasesByHandler()
 
 	/**
-	 * Score a single item deterministically. Pure function — no I/O.
+	 * The configured case source, or null while the register or case schema is not set.
 	 *
-	 * @param string|null $deadline Resolved deadline (Y-m-d or parseable date), or null.
-	 * @param string $priority Priority value (low/normal/high/urgent), any casing.
-	 * @param string|null $referenceDate Reference date for the age component (e.g. case startDate), or null.
-	 * @param DateTimeImmutable $now The "now" instant the score is computed against.
-	 *
-	 * @return array{
-	 *     tier: string,
-	 *     daysUntilDeadline: int|null,
-	 *     score: float,
-	 *     scoreBreakdown: array{deadline: float, priority: float, age: float}
-	 * } Score result.
-	 *
-	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @return CaseQueueSource|null The source.
 	 */
-	public function scoreItem(?string $deadline, string $priority, ?string $referenceDate, DateTimeImmutable $now): array {
-		$today = new DateTimeImmutable($now->format('Y-m-d'));
-
-		$daysUntilDeadline = null;
-		$tier = self::TIER_NORMAL;
-		$deadlineComponent = 0.0;
-
-		$deadlineDate = $this->dates->tryParse($this->dates->toCalendarDateOrNull($deadline));
-		if ($deadlineDate !== null) {
-			$daysUntilDeadline = $this->businessDaysBetween(today: $today, target: $deadlineDate);
-			$tier = $this->tierFor(daysUntilDeadline: $daysUntilDeadline);
-			$deadlineComponent = (self::TIER_BASE_SCORE[$tier] - $daysUntilDeadline);
+	private function caseSource(): ?CaseQueueSource {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $caseSchema === '') {
+			return null;
 		}
 
-		$priorityKey = strtolower(trim($priority));
-		$priorityComponent = (self::PRIORITY_WEIGHT[$priorityKey] ?? self::DEFAULT_PRIORITY_WEIGHT);
+		return new CaseQueueSource(objectService: $objectService, register: $register, caseSchema: $caseSchema);
+	}//end caseSource()
 
-		$ageComponent = 0.0;
-		$referenceParsed = $this->dates->tryParse($this->dates->toCalendarDateOrNull($referenceDate));
-		if ($referenceParsed !== null && $referenceParsed <= $today) {
-			$ageDays = (int)$today->diff($referenceParsed)->days;
-			$ageComponent = (min($ageDays, self::MAX_AGE_DAYS) * self::AGE_WEIGHT_PER_DAY);
-		}
+	/**
+	 * Read cases from the source as plain arrays.
+	 *
+	 * @param CaseQueueSource      $source  Where the cases live.
+	 * @param array<string, mixed> $filters The search filters.
+	 *
+	 * @return array<int, array<string, mixed>> The case rows.
+	 */
+	private function searchCases(CaseQueueSource $source, array $filters): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $source->objectService,
+			register: $source->register,
+			schema: $source->caseSchema,
+			filters: $filters
+		);
+	}//end searchCases()
 
-		$score = ($deadlineComponent + $priorityComponent + $ageComponent);
+	/**
+	 * The covered cases that are not already in the queue as the user's own.
+	 *
+	 * @param array<int, array<string, mixed>> $covered   The covered cases.
+	 * @param array<int, array<string, mixed>> $caseItems The user's own case items.
+	 *
+	 * @return array<int, array<string, mixed>> The covered cases still to score.
+	 */
+	private function notYetQueued(array $covered, array $caseItems): array {
+		$queuedIds = array_column($caseItems, 'id');
 
-		return [
-			'tier' => $tier,
-			'daysUntilDeadline' => $daysUntilDeadline,
-			'score' => round($score, 2),
-			'scoreBreakdown' => [
-				'deadline' => round($deadlineComponent, 2),
-				'priority' => round($priorityComponent, 2),
-				'age' => round($ageComponent, 2),
-			],
-		];
-	}//end scoreItem()
+		return array_values(
+			array_filter(
+				$covered,
+				static fn (array $case): bool => in_array((string)($case['id'] ?? ''), $queuedIds, true) === false
+			)
+		);
+	}//end notYetQueued()
 
 	/**
 	 * Build scored case queue items for one user.
 	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register slug/id.
-	 * @param string $caseSchema Case schema slug/id.
-	 * @param string $userId User id to scope to.
-	 * @param DateTimeImmutable $now Now.
+	 * The cases are read with the filters the My Work list uses, so the
+	 * ranked set is the same set the list shows, and with a named limit so no
+	 * open case falls off a default page. Each item carries the case row, so
+	 * a list can render the card from the ranked answer.
+	 *
+	 * @param QueueScoringRun $run    The source, instant and profile of this computation.
+	 * @param string          $userId User id to scope to.
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
-	private function queueCaseItems(object $objectService, string $register, string $caseSchema, string $userId, DateTimeImmutable $now): array {
+	private function queueCaseItems(QueueScoringRun $run, string $userId): array {
 		try {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['assignee' => $userId]
+			$cases = $this->searchCases(
+				source: $run->source,
+				filters: [
+					'assignee' => $userId,
+					'statusHiddenInLists' => false,
+					'isDraft' => false,
+					'_limit' => self::QUEUE_CASE_LIMIT,
+				]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning('WorkQueue: case search failed', ['error' => $e->getMessage()]);
 			return [];
 		}
 
+		return $this->scoreCases(run: $run, cases: $cases);
+	}//end queueCaseItems()
+
+	/**
+	 * Score open cases into queue items, reading each case type's profile once.
+	 *
+	 * @param QueueScoringRun                  $run   The source, instant and instance profile.
+	 * @param array<int, array<string, mixed>> $cases The cases.
+	 *
+	 * @return array<int, array<string, mixed>> One item per open case, each with `coveredFor`.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function scoreCases(QueueScoringRun $run, array $cases): array {
+		$profilesByType = [];
 		$items = [];
 		foreach ($cases as $case) {
-			$endDate = (string)($case['endDate'] ?? '');
-			if ($endDate !== '') {
+			if ($this->isClosed(row: $case) === true) {
 				// Closed case — not part of the open queue.
 				continue;
 			}
 
-			$caseId = (string)($case['id'] ?? '');
-			$fallbackDate = (string)($case['deadline'] ?? '');
-			$deadline = $this->resolveCaseDeadline(objectService: $objectService, register: $register, caseId: $caseId, fallback: $fallbackDate);
-			$priority = (string)($case['priority'] ?? 'normal');
-			$startDate = (string)($case['startDate'] ?? '');
+			$caseTypeId = $this->caseFacts->caseTypeIdOf($case);
+			if (array_key_exists($caseTypeId, $profilesByType) === false) {
+				$profilesByType[$caseTypeId] = $this->caseTypeProfile(run: $run, caseTypeId: $caseTypeId);
+			}
 
-			$scoring = $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: $startDate, now: $now);
-
-			$items[] = array_merge(
-				[
-					'itemType' => 'case',
-					'id' => $caseId,
-					'title' => (string)($case['title'] ?? ($case['identifier'] ?? $caseId)),
-					'identifier' => (string)($case['identifier'] ?? ''),
-					'caseType' => ($case['caseType'] ?? null),
-					'status' => ($case['status'] ?? null),
-					'priority' => $priority,
-					'deadline' => $deadline,
-				],
-				$scoring
-			);
-		}//end foreach
+			$items[] = $this->caseItem(run: $run->withProfile(profile: $profilesByType[$caseTypeId]), row: $case);
+		}
 
 		return $items;
-	}//end queueCaseItems()
+	}//end scoreCases()
+
+	/**
+	 * The profile one case type scores with: its own thresholds over the instance profile.
+	 *
+	 * @param QueueScoringRun $run        The source and instance profile.
+	 * @param string          $caseTypeId The case type id.
+	 *
+	 * @return UrgencyProfile The profile.
+	 */
+	private function caseTypeProfile(QueueScoringRun $run, string $caseTypeId): UrgencyProfile {
+		return $this->caseFacts->profileForCaseType(
+			objectService: $run->source->objectService,
+			register: $run->source->register,
+			caseTypeId: $caseTypeId,
+			profile: $run->profile
+		);
+	}//end caseTypeProfile()
+
+	/**
+	 * Score one open case into a queue item.
+	 *
+	 * @param QueueScoringRun      $run  The source, instant and the case type's profile.
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return array<string, mixed> The queue item, carrying the row and `coveredFor`.
+	 */
+	private function caseItem(QueueScoringRun $run, array $row): array {
+		$deadline = $this->caseDeadline(run: $run, row: $row);
+
+		$row['coveredFor'] = ($row['coveredFor'] ?? null);
+		$fields = $this->caseItemFields(row: $row, deadline: $deadline);
+
+		return array_merge($fields, $this->caseScoring(run: $run, item: $fields));
+	}//end caseItem()
+
+	/**
+	 * The deadline of one open case, falling back to the row's own.
+	 *
+	 * @param QueueScoringRun      $run The source, instant and the case type's profile.
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return string|null The deadline, or null when there is none.
+	 */
+	private function caseDeadline(QueueScoringRun $run, array $row): ?string {
+		return $this->caseFacts->resolveCaseDeadline(
+			objectService: $run->source->objectService,
+			register: $run->source->register,
+			caseId: (string)($row['id'] ?? ''),
+			fallback: (string)($row['deadline'] ?? '')
+		);
+	}//end caseDeadline()
+
+	/**
+	 * The score of one open case, with the resident's wait taken into account.
+	 *
+	 * @param QueueScoringRun      $run  The source, instant and the case type's profile.
+	 * @param array<string, mixed> $item The item fields: the case row as `case`, its `deadline` and `priority`.
+	 *
+	 * @return array<string, mixed> The scoring fields.
+	 */
+	private function caseScoring(QueueScoringRun $run, array $item): array {
+		$row = $item['case'];
+		$referenceDate = $this->caseFacts->lastActivityOf($row);
+		return $this->scorer->withResidentWait(
+			scoring: $this->scoreItem(
+				deadline: $item['deadline'],
+				priority: $item['priority'],
+				referenceDate: $referenceDate,
+				now: $run->now,
+				profile: $run->profile
+			),
+			waiting: (($row['waitingOnApplicant'] ?? false) === true),
+			profile: $run->profile,
+		);
+	}//end caseScoring()
+
+	/**
+	 * The queue item fields of one open case, before its scoring.
+	 *
+	 * @param array<string, mixed> $row      The case row, carrying `coveredFor`.
+	 * @param string|null          $deadline The case's deadline.
+	 *
+	 * @return array<string, mixed> The item fields.
+	 */
+	private function caseItemFields(array $row, ?string $deadline): array {
+		$rowId = (string)($row['id'] ?? '');
+		return [
+			'itemType' => 'case',
+			'id' => $rowId,
+			'title' => (string)($row['title'] ?? ($row['identifier'] ?? $rowId)),
+			'identifier' => (string)($row['identifier'] ?? ''),
+			'caseType' => ($row['caseType'] ?? null),
+			'status' => ($row['status'] ?? null),
+			'priority' => (string)($row['priority'] ?? 'normal'),
+			'deadline' => $deadline,
+			'coveredFor' => $row['coveredFor'],
+			'case' => $row,
+		];
+	}//end caseItemFields()
 
 	/**
 	 * Build scored task queue items for one user.
 	 *
-	 * @param string $userId User id to scope to.
-	 * @param DateTimeImmutable $now Now.
+	 * @param QueueScoringRun $run    The instant and instance profile.
+	 * @param string          $userId User id to scope to.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function queueTaskItems(string $userId, DateTimeImmutable $now): array {
+	private function queueTaskItems(QueueScoringRun $run, string $userId): array {
 		// The ENGINE, and the open/closed split is made THERE. Filtering a
 		// paged window client-side silently drops every open task past the
 		// boundary, which is how a queue comes to look empty on the day
@@ -471,7 +596,7 @@ class WorkQueueService {
 				$deadline = $dueDate;
 			}
 
-			$scoring = $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: null, now: $now);
+			$scoring = $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: null, now: $run->now, profile: $run->profile);
 
 			$items[] = array_merge(
 				[
@@ -489,142 +614,5 @@ class WorkQueueService {
 
 		return $items;
 	}//end queueTaskItems()
-
-	/**
-	 * Resolve a case's nearest active termijn deadline, falling back to the
-	 * case's own computed `deadline` field when no active termijn instance
-	 * tracks it (or termijn tracking is not configured).
-	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register slug/id.
-	 * @param string $caseId Case id.
-	 * @param string $fallback The case's own `deadline` field value.
-	 *
-	 * @return string|null The resolved deadline, or null when none available.
-	 */
-	private function resolveCaseDeadline(object $objectService, string $register, string $caseId, string $fallback): ?string {
-		$nearest = $this->nearestActiveTermDeadline(objectService: $objectService, register: $register, caseId: $caseId);
-		if ($nearest !== null) {
-			return $nearest;
-		}
-
-		if ($fallback !== '') {
-			return $fallback;
-		}
-
-		return null;
-	}//end resolveCaseDeadline()
-
-	/**
-	 * Find the nearest `einddatumActueel` among a case's active (`lopend`)
-	 * termijn instances, or null when termijn tracking is not configured, the
-	 * case has none, or the lookup fails.
-	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register slug/id.
-	 * @param string $caseId Case id.
-	 *
-	 * @return string|null The nearest active deadline, or null.
-	 */
-	private function nearestActiveTermDeadline(object $objectService, string $register, string $caseId): ?string {
-		$termSchema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($termSchema === '' || $caseId === '') {
-			return null;
-		}
-
-		try {
-			$instances = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $termSchema,
-				filters: [
-					'case' => $caseId,
-					'status' => 'lopend',
-				]
-			);
-		} catch (\Throwable $e) {
-			return null;
-		}
-
-		$nearest = null;
-		foreach ($instances as $instance) {
-			$date = (string)($instance['endDateCurrent'] ?? '');
-			if ($date === '' || ($nearest !== null && $date >= $nearest)) {
-				continue;
-			}
-
-			$nearest = $date;
-		}
-
-		return $nearest;
-	}//end nearestActiveTermijnDeadline()
-
-	/**
-	 * Determine the urgency tier for a given business-day offset.
-	 *
-	 * @param int $daysUntilDeadline Signed business-day offset (negative = overdue).
-	 *
-	 * @return string One of the TIER_* constants.
-	 */
-	private function tierFor(int $daysUntilDeadline): string {
-		if ($daysUntilDeadline < 0) {
-			return self::TIER_OVERDUE;
-		}
-
-		if ($daysUntilDeadline <= 3) {
-			return self::TIER_CRITICAL;
-		}
-
-		if ($daysUntilDeadline <= 7) {
-			return self::TIER_WARNING;
-		}
-
-		return self::TIER_NORMAL;
-	}//end tierFor()
-
-	/**
-	 * Count signed business days (Mon–Fri) between two dates.
-	 *
-	 * Returns 0 when the dates are the same calendar day, a positive count
-	 * when `target` is in the future, negative when in the past. Weekend
-	 * days are never counted. Bounded by MAX_BUSINESS_DAY_WALK to guard
-	 * against pathological input.
-	 *
-	 * @param DateTimeImmutable $today The reference "today" (date-only).
-	 * @param DateTimeImmutable $target The target date (date-only).
-	 *
-	 * @return int Signed business-day offset.
-	 */
-	private function businessDaysBetween(DateTimeImmutable $today, DateTimeImmutable $target): int {
-		if ($today->format('Y-m-d') === $target->format('Y-m-d')) {
-			return 0;
-		}
-
-		$direction = 1;
-		if ($target < $today) {
-			$direction = -1;
-		}
-
-		$cursor = $today;
-		$count = 0;
-		$walked = 0;
-
-		while ($cursor->format('Y-m-d') !== $target->format('Y-m-d') && $walked < self::MAX_BUSINESS_DAY_WALK) {
-			$step = '+1 day';
-			if ($direction < 0) {
-				$step = '-1 day';
-			}
-
-			$cursor = $cursor->modify($step);
-			$dow = (int)$cursor->format('N');
-			if ($dow < 6) {
-				$count++;
-			}
-
-			$walked++;
-		}
-
-		return ($count * $direction);
-	}//end businessDaysBetween()
 
 }//end class

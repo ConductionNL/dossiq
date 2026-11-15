@@ -35,8 +35,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseTypePublishService;
-use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Kernel\Contracts\CaseStageDatesServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypePublishServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -60,15 +61,17 @@ class CaseTypeController extends Controller {
 	 *
 	 * @param string                 $appName        The app name.
 	 * @param IRequest               $request        The request.
-	 * @param CaseTypeResolver       $resolver       The effective blueprint of a case type.
-	 * @param CaseTypePublishService $publishService Validates and publishes a draft.
+	 * @param CaseTypeResolverInterface       $resolver       The effective blueprint of a case type.
+	 * @param CaseTypePublishServiceInterface $publishService Validates and publishes a draft.
+	 * @param CaseStageDatesServiceInterface  $stageDates     When one case reached each status.
 	 * @param LoggerInterface        $logger         The logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTypeResolver $resolver,
-		private readonly CaseTypePublishService $publishService,
+		private readonly CaseTypeResolverInterface $resolver,
+		private readonly CaseTypePublishServiceInterface $publishService,
+		private readonly CaseStageDatesServiceInterface $stageDates,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -100,6 +103,28 @@ class CaseTypeController extends Controller {
 
 		if (($blueprint['caseType'] ?? []) === []) {
 			return new JSONResponse(['error' => 'Case type not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		// The stage bar of ONE case asks with `?case=<id>`: each status then
+		// carries `reachedAt`, the first day that case got there. Without the
+		// parameter the answer is the type's, unchanged.
+		$caseId = (string)$this->request->getParam('case', '');
+		if ($caseId !== '') {
+			// A read that fails leaves the bar without dates, and says so in
+			// the log: the steps themselves are still the type's.
+			try {
+				$reached = $this->stageDates->reachedDatesFor(caseId: $caseId, statusTypes: $blueprint['statusTypes']);
+			} catch (Throwable $e) {
+				$this->logger->warning(
+					'[CaseTypeController] The status moves of a case could not be read for its stage bar',
+					['caseId' => $caseId, 'exception' => $e->getMessage()]
+				);
+				$reached = [];
+			}
+
+			foreach ($blueprint['statusTypes'] as $index => $statusType) {
+				$blueprint['statusTypes'][$index]['reachedAt'] = ($reached[(string)($statusType['id'] ?? '')] ?? '');
+			}
 		}
 
 		return new JSONResponse($blueprint);
@@ -168,7 +193,7 @@ class CaseTypeController extends Controller {
 	 *
 	 * @return JSONResponse `{findings: string[], warnings: string[]}`.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function validatePublish(string $id): JSONResponse {

@@ -162,7 +162,7 @@ test.describe('A pause names a reason, and the reason chases', () => {
 			await api.get(`/index.php/apps/${REGISTER}/api/cases/${caseId}/terms`)
 		).json()
 
-	// @e2e openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md#a-pause-is-registered-under-a-declared-reason
+	// @e2e openspec/specs/termijn-pause-extension/spec.md#a-pause-is-registered-under-a-declared-reason
 	test('a pause carries the declared reason and the party it waits on', async ({
 		playwright,
 		baseURL,
@@ -187,7 +187,7 @@ test.describe('A pause names a reason, and the reason chases', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md#resume-stops-the-chasing
+	// @e2e openspec/specs/termijn-pause-extension/spec.md#resume-stops-the-chasing
 	test('recording the aanvulling clears the reason and the reminders', async ({
 		playwright,
 		baseURL,
@@ -219,7 +219,7 @@ test.describe('A pause names a reason, and the reason chases', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md#a-reason-the-case-type-does-not-declare-is-refused
+	// @e2e openspec/specs/termijn-pause-extension/spec.md#a-reason-the-case-type-does-not-declare-is-refused
 	test('a reason this case type does not declare is refused, and nothing is suspended', async ({
 		playwright,
 		baseURL,

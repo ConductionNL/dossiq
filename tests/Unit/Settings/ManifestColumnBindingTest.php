@@ -49,6 +49,20 @@ class ManifestColumnBindingTest extends TestCase {
 	private const ROOT = __DIR__ . '/../../..';
 
 	/**
+	 * The register this app ships, and the one a computed column defaults to.
+	 *
+	 * @var string
+	 */
+	private const OWN_REGISTER = 'dossiq';
+
+	/**
+	 * Every computed column the last sweep met.
+	 *
+	 * @var array<int, array{where: string, op: string, field: string, register: string, schema: string}>
+	 */
+	private array $aggregates = [];
+
+	/**
 	 * Keys that are legitimately not schema properties.
 	 *
 	 * `@self.*` is OpenRegister's metadata envelope (created, updated, owner);
@@ -154,11 +168,22 @@ class ManifestColumnBindingTest extends TestCase {
 					continue;
 				}
 
+				// `readOnlyRows` (nextcloud-vue) adds rows read from an endpoint
+				// beside the schema's own; a key its `where` filters on is a value
+				// those rows carry (the blueprint's `origin`), and an own row shows
+				// the column's `emptyValue`. Such a column binds the endpoint's
+				// rows, not the schema.
+				$endpointKeys = array_keys((array)(((array)($content['readOnlyRows'] ?? []))['where'] ?? []));
 				$this->collect(
 					bindings: $bindings,
 					where: $widgetLabel . '.content.columns',
 					schema: $schema,
-					keys: (array)($content['columns'] ?? []),
+					keys: array_values(
+						array_filter(
+							(array)($content['columns'] ?? []),
+							static fn ($column): bool => in_array((is_array($column) === true ? ($column['key'] ?? null) : $column), $endpointKeys, true) === false
+						)
+					),
 				);
 				$this->collect(
 					bindings: $bindings,
@@ -199,8 +224,134 @@ class ManifestColumnBindingTest extends TestCase {
 				continue;
 			}
 
+			// A COMPUTED column. `aggregate` makes CnDataTable count the rows of
+			// ANOTHER schema per row (`loadAggregates`), and the cell reads that
+			// count instead of a property of the row, so the column key is only
+			// a cache slot and names nothing in the page's schema. What it does
+			// bind is the other schema: every `where` field is sent to
+			// OpenRegister as a filter on it, and every `@self.<path>` value is
+			// read off the row. Those are checked instead of the key, so a count
+			// over a field that does not exist fails here rather than reading 0
+			// in every row.
+			if (is_array($entry) === true && is_array($entry['aggregate'] ?? null) === true) {
+				$this->collectAggregate(
+					bindings: $bindings,
+					where: $where . '[' . $key . '].aggregate',
+					rowSchema: $schema,
+					aggregate: $entry['aggregate'],
+				);
+				continue;
+			}
+
 			$bindings[] = ['where' => $where, 'schema' => $schema, 'key' => $key];
 		}
+	}
+
+	/**
+	 * Turn one computed column into the bindings it really makes.
+	 *
+	 * @param array<int, array{where: string, schema: string, key: string}> $bindings  Accumulator, by reference.
+	 * @param string                                                       $where     Human-readable manifest path.
+	 * @param string                                                       $rowSchema Schema slug of the row the column sits on.
+	 * @param array<string, mixed>                                         $aggregate The column's `aggregate` block.
+	 *
+	 * @return void
+	 */
+	private function collectAggregate(array &$bindings, string $where, string $rowSchema, array $aggregate): void {
+		// `endpoint` (nextcloud-vue aggregate-from-endpoint): the app's own route answers a value per row key,
+		// so no schema is counted; the row field that names the key must resolve.
+		if (is_string($aggregate['endpoint'] ?? null) === true) {
+			$this->aggregates[] = ['where' => $where, 'endpoint' => $aggregate['endpoint']];
+			$bindings[]         = ['where' => $where . '.key', 'schema' => $rowSchema, 'key' => (string)($aggregate['key'] ?? '')];
+			return;
+		}
+
+		$counted = (string)($aggregate['schema'] ?? '');
+		$this->aggregates[] = [
+			'where'    => $where,
+			'op'       => (string)($aggregate['op'] ?? ''),
+			'field'    => (string)($aggregate['field'] ?? ''),
+			'register' => (string)($aggregate['register'] ?? self::OWN_REGISTER),
+			'schema'   => $counted,
+		];
+
+		// `op: "max"` reads one field of the counted schema: that field must resolve too.
+		if (($aggregate['op'] ?? '') === 'max' && (string)($aggregate['field'] ?? '') !== '') {
+			$bindings[] = ['where' => $where . '.field', 'schema' => $counted, 'key' => (string)$aggregate['field']];
+		}
+
+		foreach ((array)($aggregate['where'] ?? []) as $field => $value) {
+			$bindings[] = ['where' => $where . '.where', 'schema' => $counted, 'key' => (string)$field];
+
+			if (is_string($value) === true && str_starts_with($value, '@self.') === true) {
+				$bindings[] = [
+					'where'  => $where . '.where.' . (string)$field,
+					'schema' => $rowSchema,
+					'key'    => substr($value, strlen('@self.')),
+				];
+			}
+		}
+	}
+
+	/**
+	 * Every computed column asks for an aggregate the table runs, over a schema that ships.
+	 *
+	 * CnDataTable resolves `op: "count"` and, since nextcloud-vue 2.98.0,
+	 * `op: "max"` with a `field` (the newest value of that field among the
+	 * related rows). Any other `op`, or a `max` without its field, is
+	 * filtered out before a request is made and the cell stays a dash. A
+	 * count over a schema this register does not ship fails per row and
+	 * degrades to the same dash. Both are the silent blank column this file
+	 * exists to catch, reached through the computed door.
+	 *
+	 * @return void
+	 */
+	public function testEveryComputedColumnCountsASchemaThatShips(): void {
+		$schemas = $this->shippedSchemaProperties();
+		$this->aggregates = [];
+		$this->manifestBindings();
+
+		$this->assertGreaterThan(
+			0,
+			count($this->aggregates),
+			'The sweep found no computed column, while the Organisations list ships one'
+		);
+
+		$offenders = [];
+		$routes = file_get_contents(filename: self::ROOT . '/appinfo/routes.php');
+		foreach ($this->aggregates as $aggregate) {
+			if (isset($aggregate['endpoint']) === true) {
+				$url = (string)preg_replace(pattern: '#^/apps/dossiq#', replacement: '', subject: $aggregate['endpoint']);
+				if (str_contains(haystack: $routes, needle: "'url' => '" . $url . "'") === false) {
+					$offenders[] = sprintf('%s asks endpoint "%s", which no route in appinfo/routes.php answers', $aggregate['where'], $aggregate['endpoint']);
+				}
+
+				continue;
+			}
+
+			if (in_array($aggregate['op'], ['count', 'max'], true) === false) {
+				$offenders[] = sprintf('%s has op "%s"; the table runs only "count" and "max"', $aggregate['where'], $aggregate['op']);
+			}
+
+			if ($aggregate['op'] === 'max' && $aggregate['field'] === '') {
+				$offenders[] = sprintf('%s has op "max" without a field; the table needs the field to read', $aggregate['where']);
+			}
+
+			if ($aggregate['register'] === self::OWN_REGISTER && isset($schemas[$aggregate['schema']]) === false) {
+				$offenders[] = sprintf(
+					'%s counts schema "%s", which this register does not ship',
+					$aggregate['where'],
+					$aggregate['schema']
+				);
+			}
+		}
+
+		$this->assertSame(
+			[],
+			$offenders,
+			"A computed column that cannot be counted renders a dash in every row, silently:\n"
+			. implode("\n", $offenders)
+		);
 	}
 
 	/**

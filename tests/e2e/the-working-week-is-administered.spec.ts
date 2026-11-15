@@ -65,7 +65,7 @@ test.describe('The working week is the administered one', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#every-working-day-answer-reads-the-administered-calendar
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#every-working-day-answer-reads-the-administered-calendar
 	test('a complaint term counts 5 May, because the calendar does', async () => {
 		const response = await api.post(`${APP_API}/api/complaints`, {
 			headers: {
@@ -97,7 +97,7 @@ test.describe('The working week is the administered one', () => {
 		).toBe(ADMINISTERED_DEADLINE)
 	})
 
-	// @e2e openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#every-working-day-answer-reads-the-administered-calendar
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#every-working-day-answer-reads-the-administered-calendar
 	test('an ordinary user cannot change the calendar everyone is counted against', async ({
 		playwright,
 		baseURL,

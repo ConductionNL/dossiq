@@ -220,7 +220,7 @@ test.describe('the retired scheme surface', () => {
 		await expect(sidebarNav(page)).toBeVisible({ timeout: 15000 })
 
 		const toggle = sidebarNav(page)
-			.getByRole('button', { name: 'Settings', exact: true })
+			.getByRole('button', { name: 'Advanced', exact: true })
 			.first()
 		if (await toggle.isVisible().catch(() => false)) {
 			await toggle.click().catch(() => {})

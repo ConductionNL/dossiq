@@ -7,7 +7,9 @@ note: Implemented and archived 2026-06-13 (change dso-omgevingsloket). Schemas, 
 
 ## Purpose
 Integrates Dossiq with the DSO/Omgevingsloket: ingests vergunningaanvragen from OpenConnector into Dossiq zaken with statutory working-day deadlines, drives the omgevingsvergunning status lifecycle (dual-write + event dispatch), supports samenwerkverzoek and doorstuur flows, generates beschikkingen, and surfaces a VTH dashboard.
+
 ## Requirements
+
 ### Requirement: REQ-DSO-001 -- Register schemas for core DSO entities
 OpenRegister MUST provide register schemas for the core DSO entity types, enabling structured storage of omgevingsvergunning-related data. All schemas MUST be defined as OpenRegister schemas per ADR-001 (OpenRegister as Universal Data Layer) and MUST NOT use custom database tables. Schemas SHALL be registered during installation via repair steps or the `openregister:load-register` CLI command using the `dso_register.json` template.
 
@@ -487,3 +489,21 @@ OpenRegister MUST fire typed events when DSO-relevant state changes occur, enabl
 - **THEN** OpenRegister MUST dispatch a typed event (e.g., `ObjectUpdatedEvent` with DSO schema context)
 - **AND** OpenConnector MAY listen for this event to trigger DSO-LV status synchronization
 
+### Requirement: REQ-DSO-016 -- The deadline job acts on open DSO cases
+
+The DSO deadline job SHALL find open DSO cases by `dsoStatus` (`submitted` or `in_handling`), because the case stores `caseType` and `status` as uuids. It SHALL tell the case's `assignee` as the deadline approaches and passes, and it SHALL mark an overdue case once, with a patch of the declared `deadlineOverdue` field and a journal entry, written as the background service account.
+
+#### Scenario: a due DSO deadline is acted on
+@e2e exclude a cron job with no browser gesture; covered by DsoDeadlineJobServiceAccountTest and the live check in the PR
+
+- **GIVEN** a case with `dsoStatus = in_handling` whose `deadlineDate` has passed
+- **WHEN** the job runs
+- **THEN** its assignee SHALL be told the deadline is overdue
+- **AND** the case SHALL be marked `deadlineOverdue = true` by the background service account
+
+#### Scenario: a decided or non-DSO case is left alone
+@e2e exclude a cron job with no browser gesture; covered by DsoDeadlineJobServiceAccountTest::testTheRunWritesAsTheServiceAccount
+
+- **GIVEN** a case with `dsoStatus = granted`, and a case with no `dsoStatus`
+- **WHEN** the job runs
+- **THEN** neither SHALL be written or notified

@@ -30,12 +30,15 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Intake\ChannelIntake;
 use OCA\Dossiq\Service\Intake\MessageFacts;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Integriq\Event\IntakeMessageRoutedEvent;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The ObjectService surface these tests drive.
@@ -55,7 +58,7 @@ interface ChannelIntakeObjectServiceStub {
 	 *
 	 * @return mixed The object.
 	 */
-	public function find(string $id, string $register, string $schema): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Save or update an object.
@@ -67,7 +70,7 @@ interface ChannelIntakeObjectServiceStub {
 	 *
 	 * @return mixed The stored object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Search objects by register and schema slug.
@@ -101,6 +104,8 @@ interface ChannelIntakeObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Intake\MessageFacts
+ * @uses \OCA\Dossiq\Service\CommunicationChannel
+ * @uses \OCA\Dossiq\Listener\Support\EventGetters
  */
 class IntakeMessageRoutedListenerTest extends TestCase {
 
@@ -171,7 +176,10 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		);
 
 		$service->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($schema === 'case' && $this->elevated === false) {
 					throw new \RuntimeException('Anonymous callers may not create objects.');
 				}
@@ -187,7 +195,9 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		);
 
 		$service->method('find')->willReturnCallback(
-			function (string $id, string $register, string $schema): array {
+			function (string $id, ?ObjectFindOptions $options = null): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($schema === 'caseType' && $this->caseTypeExists === true) {
 					return ['id' => $id, 'initialStatus' => 'status-ontvangen'];
 				}
@@ -277,6 +287,16 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 			}
 		);
 		$dates->method('today')->willReturn(new \DateTimeImmutable('2026-09-18 00:00:00'));
+		$dates->method('tryParse')->willReturnCallback(
+			static function (mixed $value): ?\DateTimeImmutable {
+				$text = trim((string)(is_scalar($value) === true ? $value : ''));
+
+				return ($text === '') ? null : new \DateTimeImmutable($text);
+			}
+		);
+		$dates->method('formatMoment')->willReturnCallback(
+			static fn (\DateTimeInterface $moment): string => $moment->format(\DateTimeInterface::ATOM)
+		);
 
 		return new ChannelIntake(
 			settingsService: $settings,
@@ -327,6 +347,7 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		return new IntakeMessageRoutedListener(
 			intake: $intake,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			serviceAccount: $this->passThroughAccount(),
 		);
 	}//end listener()
 
@@ -344,6 +365,11 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		$this->assertSame('ct-mor', $case['caseType']);
 		$this->assertSame('teams', $case['intakeChannel']);
 		$this->assertSame('2026-09-18', $case['startDate']);
+		$this->assertSame(
+			'2026-09-18T08:30:00+00:00',
+			$case['receivedAt'],
+			'The term starts when the message arrived, not when the case row was written (REQ-TERM-043).'
+		);
 		$this->assertSame('Lantaarnpaal kapot', $case['title']);
 		$this->assertSame('case-1', $event->getCreatedRef());
 	}//end testARoutedMessageOpensACaseAndAnswersTheSlot()
@@ -525,4 +551,16 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 
 		$this->assertNull($event->getCreatedRef());
 	}//end testTheListenerNeverThrows()
+
+	/**
+	 * A service account that runs the operation as whoever is signed in.
+	 *
+	 * @return BackgroundServiceAccount The pass-through account.
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 }//end class

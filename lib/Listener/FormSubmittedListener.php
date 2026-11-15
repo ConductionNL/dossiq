@@ -36,14 +36,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+ * @spec openspec/specs/leaf-integrations/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\FormsIntakeService;
+use OCA\Dossiq\Kernel\Contracts\FormsIntakeServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -52,7 +52,7 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+ * @spec openspec/specs/leaf-integrations/spec.md
  */
 class FormSubmittedListener implements IEventListener {
 
@@ -68,10 +68,10 @@ class FormSubmittedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param FormsIntakeService $intake Decides whether a submission opens a case.
+	 * @param FormsIntakeServiceInterface $intake Decides whether a submission opens a case.
 	 */
 	public function __construct(
-		private readonly FormsIntakeService $intake,
+		private readonly FormsIntakeServiceInterface $intake,
 	) {
 	}//end __construct()
 
@@ -82,7 +82,7 @@ class FormSubmittedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+	 * @spec openspec/specs/leaf-integrations/spec.md
 	 */
 	public function handle(Event $event): void {
 		$form = $this->call(subject: $event, method: 'getForm');
@@ -96,7 +96,6 @@ class FormSubmittedListener implements IEventListener {
 		$this->intake->caseFor(
 			formHash: $hash,
 			answers: $this->answers(submission: $submission),
-			submitted: (string)$this->read(subject: $submission, key: 'timestamp'),
 		);
 	}//end handle()
 

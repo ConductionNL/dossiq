@@ -52,9 +52,17 @@ already serve it.
 
 ## D2. Listed on "My cases", open or closed
 
-`mijnZaken` declares `kind: 'cases'` and `closedField: 'endDate'`. `endDate`
-is already projected and is set when a case ends, so the closed marker needs
-no new field.
+`mijnZaken` declares `kind: 'cases'` and `closedField: 'isFinalStatus'`.
+`isFinalStatus` is OpenRegister's calculation over the status type's
+`isFinal`, so it is current after every status change, and it is added to
+the projected fields because portaliq drops a marker the row does not carry.
+
+The first version used `endDate`. That missed every case that reaches a final
+status without an end date: a withdrawal from the portal writes the status
+the case type names, `withdrawnAt` and the reason, and no end date. On
+2026-10-02 a resident read three withdrawn Woo requests under "Lopend (3)"
+with "Afgerond (0)". `withdrawnAt` would have fixed only withdrawals and lost
+cases staff ended, so the marker follows the status instead.
 
 ## D3. The branch a company filed under
 
@@ -84,6 +92,15 @@ the portal checks the address against the case." The portaliq gap is reported
 to the coordinator. When portaliq checks the address, dossiq declares
 `referenceAddressField` naming the case field that holds the applicant's
 address, which is a follow-up because the case holds none today.
+
+## D5. Where the case types live
+
+Added 2026-09-29 (build-all lane, dossiq#3152). portaliq#907
+(`operate-show-per-case-type`) lets a portal administrator hide a case type,
+and lists the case types a case app declares with `caseTypeSource` on a
+`kind: cases` collection. `mijnZaken` declares `caseTypeField: 'caseType'`
+and `caseTypeSource: {register: dossiq, schema: caseType, labelField: title}`.
+The collection must be `kind: cases` first, so this lands with D2.
 
 ## Declarative-vs-imperative decision (ADR-031)
 

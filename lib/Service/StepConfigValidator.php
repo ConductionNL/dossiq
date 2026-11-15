@@ -68,6 +68,23 @@ final class StepConfigValidator {
 	public const SLA_UNITS = ['hours', 'businessDays', 'calendarDays'];
 
 	/**
+	 * The message of each refusal code whose sentence is fixed.
+	 *
+	 * @var array<string, string>
+	 */
+	private const MESSAGES = [
+		'malformed_config' => 'config must be an object',
+		'malformed_sla' => 'sla must be an object',
+		'malformed_required_fields' => 'requiredFields must be an array',
+		'malformed_auto_actions' => 'autoActions must be an array',
+		'malformed_required_field' => 'requiredFields entries must be non-empty strings',
+		'unknown_field_reference' => 'requiredFields entry does not resolve to a caseType property',
+		'malformed_action_ref' => 'autoActions entries must be objects with `key` and `parameters`',
+		'malformed_action_key' => 'autoActions[i].key must be a non-empty string',
+		'unknown_action_key' => 'autoActions[i].key is not registered in the action catalog',
+	];
+
+	/**
 	 * Allowed enum values for the `escalationRule.offsetUnit` property.
 	 *
 	 * Re-exported from EscalationRuleValidator, which owns the escalation
@@ -135,7 +152,7 @@ final class StepConfigValidator {
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}>
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public static function validate(
 		array $step,
@@ -143,75 +160,71 @@ final class StepConfigValidator {
 		array $actionCatalog = self::DEFAULT_ACTION_CATALOG,
 		int $stepIndex = 0,
 	): array {
-		$errors = [];
 		$config = ($step['config'] ?? null);
 		if ($config === null) {
-			return $errors;
+			return [];
 		}
 
 		if (is_array($config) === false) {
-			$errors[] = self::error(
-				path: "steps[$stepIndex].config",
-				code: 'malformed_config',
-				message: 'config must be an object'
-			);
-			return $errors;
+			return [self::entryError(path: "steps[$stepIndex].config", code: 'malformed_config')];
 		}
 
-		$base = "steps[$stepIndex].config";
-
-		$errors = array_merge(
-			$errors,
-			self::validateSla(sla: ($config['sla'] ?? null), path: $base . '.sla')
+		return self::configErrors(
+			config: $config,
+			against: ['caseTypeSchema' => $caseTypeSchema, 'actionCatalog' => $actionCatalog, 'base' => "steps[$stepIndex].config"]
 		);
-
-		$errors = array_merge(
-			$errors,
-			self::validateRequiredFields(
-				fields: ($config['requiredFields'] ?? null),
-				caseTypeProperties: ($caseTypeSchema['properties'] ?? []),
-				path: $base . '.requiredFields'
-			)
-		);
-
-		$errors = array_merge(
-			$errors,
-			self::validateAutoActions(
-				actions: ($config['autoActions'] ?? null),
-				actionCatalog: $actionCatalog,
-				path: $base . '.autoActions'
-			)
-		);
-
-		$errors = array_merge(
-			$errors,
-			(new EscalationRuleValidator())->validate(
-				rule: ($config['escalationRule'] ?? null),
-				sla: ($config['sla'] ?? null),
-				roleTypes: ($caseTypeSchema['roleTypes'] ?? []),
-				path: $base . '.escalationRule'
-			)
-		);
-
-		return $errors;
 	}//end validate()
 
 	/**
-	 * Build a structured error record.
+	 * Every error a step's config carries: its sla, required fields, auto actions and escalation rules.
 	 *
-	 * @param string $path The JSON-pointer-like path to the bad value.
-	 * @param string $code The stable error code (snake_case).
-	 * @param string $message An internal description (never user-facing).
+	 * @param array<string, mixed> $config  The step's config.
+	 * @param array<string, mixed> $against The linked caseType, the recognised action keys and the path prefix.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function configErrors(array $config, array $against): array {
+		$scope = new StepConfigScope();
+		$scope->config = $config;
+		$scope->caseTypeSchema = $against['caseTypeSchema'];
+		$scope->actionCatalog = $against['actionCatalog'];
+		$scope->base = $against['base'];
+
+		return array_merge(
+			self::validateSla(sla: ($config['sla'] ?? null), path: $scope->base . '.sla'),
+			self::validateRequiredFields(scope: $scope),
+			self::validateAutoActions(scope: $scope),
+			self::escalationErrors(scope: $scope)
+		);
+	}//end configErrors()
+
+	/**
+	 * The escalation rule's errors, read against the step's SLA and the case type's roles.
+	 *
+	 * @param StepConfigScope $scope The config being validated.
+	 *
+	 * @return list<array{path: string, code: string, message: string}>
+	 */
+	private static function escalationErrors(StepConfigScope $scope): array {
+		return (new EscalationRuleValidator())->validate(
+			rule: ($scope->config['escalationRule'] ?? null),
+			sla: ($scope->config['sla'] ?? null),
+			roleTypes: ($scope->caseTypeSchema['roleTypes'] ?? []),
+			path: $scope->base . '.escalationRule'
+		);
+	}//end escalationErrors()
+
+	/**
+	 * One error whose sentence is fixed by its code.
+	 *
+	 * @param string $path Dotted path to the offending field.
+	 * @param string $code Stable machine-readable code.
 	 *
 	 * @return array{path: string, code: string, message: string}
 	 */
-	private static function error(string $path, string $code, string $message): array {
-		return [
-			'path' => $path,
-			'code' => $code,
-			'message' => $message,
-		];
-	}//end error()
+	private static function entryError(string $path, string $code): array {
+		return ['path' => $path, 'code' => $code, 'message' => self::MESSAGES[$code]];
+	}//end entryError()
 
 	/**
 	 * Validate `config.sla`.
@@ -229,55 +242,81 @@ final class StepConfigValidator {
 		}
 
 		if (is_array($sla) === false) {
-			return [self::error(path: $path, code: 'malformed_sla', message: 'sla must be an object')];
+			return [self::entryError(path: $path, code: 'malformed_sla')];
 		}
 
+		return array_merge(
+			self::slaValueErrors(sla: $sla, path: $path),
+			self::slaUnitErrors(sla: $sla, path: $path)
+		);
+	}//end validateSla()
+
+	/**
+	 * Validate `config.sla.value`.
+	 *
+	 * @param array<string, mixed> $sla The sla object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function slaValueErrors(array $sla, string $path): array {
 		$errors = [];
 
 		$value = ($sla['value'] ?? null);
 		if (is_int($value) === false || $value < 1 || $value > self::SLA_VALUE_MAX) {
-			$errors[] = self::error(
-				path: $path . '.value',
-				code: 'out_of_range',
-				message: 'sla.value must be a positive integer not greater than '
-				. self::SLA_VALUE_MAX
-			);
-		}
-
-		$unit = ($sla['unit'] ?? null);
-		if (is_string($unit) === false || in_array($unit, self::SLA_UNITS, true) === false) {
-			$errors[] = self::error(
-				path: $path . '.unit',
-				code: 'unknown_sla_unit',
-				message: 'sla.unit must be one of: ' . implode(', ', self::SLA_UNITS)
-			);
+			$errors[] = [
+				'path' => $path . '.value',
+				'code' => 'out_of_range',
+				'message' => 'sla.value must be a positive integer not greater than '
+				. self::SLA_VALUE_MAX,
+			];
 		}
 
 		return $errors;
-	}//end validateSla()
+	}//end slaValueErrors()
+
+	/**
+	 * Validate `config.sla.unit`.
+	 *
+	 * @param array<string, mixed> $sla The sla object.
+	 * @param string $path The path prefix for any error.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function slaUnitErrors(array $sla, string $path): array {
+		$errors = [];
+
+		$unit = ($sla['unit'] ?? null);
+		if (is_string($unit) === false || in_array($unit, self::SLA_UNITS, true) === false) {
+			$errors[] = [
+				'path' => $path . '.unit',
+				'code' => 'unknown_sla_unit',
+				'message' => 'sla.unit must be one of: ' . implode(', ', self::SLA_UNITS),
+			];
+		}
+
+		return $errors;
+	}//end slaUnitErrors()
 
 	/**
 	 * Validate `config.requiredFields`.
 	 *
 	 * Rule 3 from design.md.
 	 *
-	 * @param mixed $fields The raw requiredFields value.
-	 * @param array<string, mixed> $caseTypeProperties Map of property name to definition.
-	 * @param string $path The path prefix for any error.
+	 * @param StepConfigScope $scope The config being validated: its requiredFields, the case type properties and the path.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}>
 	 */
-	private static function validateRequiredFields(
-		mixed $fields,
-		array $caseTypeProperties,
-		string $path,
-	): array {
+	private static function validateRequiredFields(StepConfigScope $scope): array {
+		$fields = ($scope->config['requiredFields'] ?? null);
+		$caseTypeProperties = ($scope->caseTypeSchema['properties'] ?? []);
+		$path = $scope->base . '.requiredFields';
 		if ($fields === null) {
 			return [];
 		}
 
 		if (is_array($fields) === false) {
-			return [self::error(path: $path, code: 'malformed_required_fields', message: 'requiredFields must be an array')];
+			return [self::entryError(path: $path, code: 'malformed_required_fields')];
 		}
 
 		$errors = [];
@@ -286,20 +325,12 @@ final class StepConfigValidator {
 
 		foreach ($fields as $index => $field) {
 			if (is_string($field) === false || $field === '') {
-				$errors[] = self::error(
-					path: $path . "[$index]",
-					code: 'malformed_required_field',
-					message: 'requiredFields entries must be non-empty strings'
-				);
+				$errors[] = self::entryError(path: $path . "[$index]", code: 'malformed_required_field');
 				continue;
 			}
 
 			if ($checkRefs === true && array_key_exists($field, $caseTypeProperties) === false) {
-				$errors[] = self::error(
-					path: $path . "[$index]",
-					code: 'unknown_field_reference',
-					message: 'requiredFields entry does not resolve to a caseType property'
-				);
+				$errors[] = self::entryError(path: $path . "[$index]", code: 'unknown_field_reference');
 			}
 		}
 
@@ -311,55 +342,79 @@ final class StepConfigValidator {
 	 *
 	 * Rule 4 from design.md.
 	 *
-	 * @param mixed $actions The raw autoActions value.
-	 * @param array<int, string> $actionCatalog Allowed action keys.
-	 * @param string $path The path prefix for any error.
+	 * @param StepConfigScope $scope The config being validated: its autoActions, the action catalog and the path.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}>
 	 */
-	private static function validateAutoActions(
-		mixed $actions,
-		array $actionCatalog,
-		string $path,
-	): array {
+	private static function validateAutoActions(StepConfigScope $scope): array {
+		$actions = ($scope->config['autoActions'] ?? null);
+		$actionCatalog = $scope->actionCatalog;
+		$path = $scope->base . '.autoActions';
 		if ($actions === null) {
 			return [];
 		}
 
 		if (is_array($actions) === false) {
-			return [self::error(path: $path, code: 'malformed_auto_actions', message: 'autoActions must be an array')];
+			return [self::entryError(path: $path, code: 'malformed_auto_actions')];
 		}
 
+		return self::actionErrors(actions: $actions, where: ['path' => $path, 'actionCatalog' => $actionCatalog]);
+	}//end validateAutoActions()
+
+	/**
+	 * Validate each entry of `config.autoActions`.
+	 *
+	 * @param array<mixed> $actions The autoActions list.
+	 * @param array{path: string, actionCatalog: array<int, string>} $where The path prefix for any error and the
+	 *                                                                      known action keys.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function actionErrors(array $actions, array $where): array {
 		$errors = [];
 		foreach ($actions as $index => $action) {
-			if (is_array($action) === false) {
-				$errors[] = self::error(
-					path: $path . "[$index]",
-					code: 'malformed_action_ref',
-					message: 'autoActions entries must be objects with `key` and `parameters`'
-				);
-				continue;
+			$error = self::actionRefError(action: $action, where: ['path' => $where['path'] . "[$index]"] + $where);
+			if ($error !== null) {
+				$errors[] = $error;
 			}
-
-			$key = ($action['key'] ?? null);
-			if (is_string($key) === false || $key === '') {
-				$errors[] = self::error(
-					path: $path . "[$index].key",
-					code: 'malformed_action_key',
-					message: 'autoActions[i].key must be a non-empty string'
-				);
-				continue;
-			}
-
-			if (in_array($key, $actionCatalog, true) === false) {
-				$errors[] = self::error(
-					path: $path . "[$index].key",
-					code: 'unknown_action_key',
-					message: 'autoActions[i].key is not registered in the action catalog'
-				);
-			}
-		}//end foreach
+		}
 
 		return $errors;
-	}//end validateAutoActions()
+	}//end actionErrors()
+
+	/**
+	 * Validate one entry of `config.autoActions`.
+	 *
+	 * @param mixed $action The action reference.
+	 * @param array{path: string, actionCatalog: array<int, string>} $where The entry's path and the known action keys.
+	 *
+	 * @return array{path: string, code: string, message: string}|null The error, or null.
+	 */
+	private static function actionRefError(mixed $action, array $where): ?array {
+		if (is_array($action) === false) {
+			return self::entryError(path: $where['path'], code: 'malformed_action_ref');
+		}
+
+		return self::actionKeyError(key: ($action['key'] ?? null), where: ['path' => $where['path'] . '.key'] + $where);
+	}//end actionRefError()
+
+	/**
+	 * Validate the key of one `config.autoActions` entry.
+	 *
+	 * @param mixed $key The action key.
+	 * @param array{path: string, actionCatalog: array<int, string>} $where The key's path and the known action keys.
+	 *
+	 * @return array{path: string, code: string, message: string}|null The error, or null.
+	 */
+	private static function actionKeyError(mixed $key, array $where): ?array {
+		if (is_string($key) === false || $key === '') {
+			return self::entryError(path: $where['path'], code: 'malformed_action_key');
+		}
+
+		if (in_array($key, $where['actionCatalog'], true) === false) {
+			return self::entryError(path: $where['path'], code: 'unknown_action_key');
+		}
+
+		return null;
+	}//end actionKeyError()
 }//end class

@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 
 declare(strict_types=1);
@@ -25,9 +25,40 @@ namespace OCA\Dossiq\Middleware;
 use Exception;
 
 /**
- * Mandate matrix denied this request.
+ * Mandate matrix denied this request, or its organisation is not active.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 class MandateDeniedException extends Exception {
+	/**
+	 * The organisation's lifecycle status, when that is why the request is refused.
+	 *
+	 * @var string
+	 */
+	private string $lifecycleStatus = '';
+
+	/**
+	 * Mark this refusal as one for an organisation that is not active.
+	 *
+	 * @param string $status The organisation's lifecycle status.
+	 *
+	 * @return self The same exception.
+	 *
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
+	 */
+	public function withLifecycleStatus(string $status): self {
+		$this->lifecycleStatus = $status;
+		return $this;
+	}//end withLifecycleStatus()
+
+	/**
+	 * The organisation's lifecycle status, or '' when the mandate matrix refused.
+	 *
+	 * @return string The status.
+	 *
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
+	 */
+	public function getLifecycleStatus(): string {
+		return $this->lifecycleStatus;
+	}//end getLifecycleStatus()
 }//end class

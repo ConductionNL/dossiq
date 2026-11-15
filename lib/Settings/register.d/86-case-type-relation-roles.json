@@ -1,0 +1,41 @@
+{
+  "_note": "linked-case-with-a-role (C11, ADR-118). A case type declares the roles a case of it can be linked with, so a procedure that needs a linked case (an objection against a decision, an appeal after an objection) declares a role instead of shipping a class. RoleLinkDefinition is the single authority on the entry shape; this property only has to exist, because OpenRegister stores no undeclared key.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "relations": {
+            "type": "array",
+            "title": "Relation roles",
+            "description": "The roles a case of this type can be linked with. Each role says what it points at (another case, or an object that belongs to a case), the relation type it writes, whether intake needs it, and the record it opens.",
+            "default": [],
+            "items": {
+              "type": "object",
+              "required": ["role"],
+              "properties": {
+                "role": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9-]*$", "title": "Role key", "description": "The role key."},
+                "label": {"type": "string", "title": "Label", "description": "What the role is called on screen."},
+                "target": {"type": "string", "enum": ["case", "object"], "default": "case", "title": "Points at", "description": "Whether the role points at a case or at an object that belongs to a case."},
+                "targetSchema": {"type": "string", "title": "Target schema", "description": "Config key of the target schema, for a role that points at an object."},
+                "targetCaseField": {"type": "string", "default": "case", "title": "Case field on the target", "description": "The field on the target object that holds its case."},
+                "natureRelationship": {"type": "string", "enum": ["vervolg", "subject", "bijdrage", "samenhang", "waitsOn"], "default": "vervolg", "title": "Relation type", "description": "The relation type written between the two cases."},
+                "requiredAtIntake": {"type": "boolean", "default": false, "title": "Needed at intake", "description": "Whether intake needs this link before the case can proceed."},
+                "record": {
+                  "type": "object",
+                  "title": "Record the link opens",
+                  "description": "The record a link opens, when it opens one.",
+                  "properties": {
+                    "schema": {"type": "string", "title": "Record schema", "description": "Config key of the record schema."},
+                    "caseField": {"type": "string", "default": "case", "title": "Case field", "description": "The field on the record that holds the case."},
+                    "targetField": {"type": "string", "default": "target", "title": "Target field", "description": "The field on the record that holds the case or object the link points at."},
+                    "actorField": {"type": "string", "title": "Actor field", "description": "Field that receives the acting user, when the record schema has one."}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

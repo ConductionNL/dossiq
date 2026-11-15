@@ -25,7 +25,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -52,10 +52,15 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Task\EngineTaskGateway
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskPayload
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskRow
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Custody\TakeoverStore
+ * @uses \OCA\Dossiq\Service\Custody\CustodyRows
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\Custody\CustodyMove
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseTakeoverRequestTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -102,7 +107,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testARequestReachesTheHolderAndLeavesTheCaseAlone(): void {
 		$record = $this->takeovers()->request(
@@ -128,7 +133,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testTheOpenHoldingWinsOverTheCaseSeat(): void {
 		$this->chain()->begin(
@@ -151,7 +156,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testARequestWithoutAReasonIsRefused(): void {
 		$this->expectException(RefusedException::class);
@@ -164,7 +169,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testYouCannotAskYourselfForTheCaseYouHold(): void {
 		$this->expectException(RefusedException::class);
@@ -177,7 +182,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testAnUnknownCaseIsRefused(): void {
 		$this->expectException(RefusedException::class);
@@ -193,7 +198,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testARequestSurvivesAnEngineThatWillNotTakeTheTask(): void {
 		$engine = $this->createMock(originalClassName: EngineTaskGateway::class);
@@ -215,7 +220,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testTheRequestsOnACaseReadBack(): void {
 		$takeovers = $this->takeovers();
@@ -236,14 +241,15 @@ class CaseTakeoverRequestTest extends TestCase {
 	 * The takeover service under test.
 	 *
 	 * @param EngineTaskGateway|null $engine The engine, or the default one.
+	 * @param LoggerInterface|null   $logger The logger, or a silent one.
 	 *
 	 * @return CaseTakeoverRequest The service.
 	 */
-	private function takeovers(?EngineTaskGateway $engine = null): CaseTakeoverRequest {
+	private function takeovers(?EngineTaskGateway $engine = null, ?LoggerInterface $logger = null): CaseTakeoverRequest {
 		return new CaseTakeoverRequest(
 			custody: $this->chain(),
 			tasks: ($engine ?? $this->engine),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			logger: ($logger ?? $this->createMock(originalClassName: LoggerInterface::class)),
 			// A REAL store over the SAME settings double the assertions read
 			// through. Only the wiring line moved when it was split out.
 			store: new TakeoverStore($this->settings(), $this->createMock(originalClassName: LoggerInterface::class)),
@@ -287,4 +293,41 @@ class CaseTakeoverRequestTest extends TestCase {
 
 		return $settings;
 	}//end settings()
+	/**
+	 * An engine that throws is logged, and the request stays on the record without a task.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	public function testAnEngineThatThrowsIsLoggedAndTheRequestKept(): void {
+		$engine = $this->createMock(originalClassName: EngineTaskGateway::class);
+		$engine->method('mirrorImport')->willThrowException(new \RuntimeException('engine down'));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects(self::once())->method('warning')->with(
+			'Dossiq takeover: the request was recorded but the engine did not take the task',
+			['caseId' => 'case-1', 'exception' => 'engine down'],
+		);
+
+		$record = $this->takeovers(engine: $engine, logger: $logger)->request(
+			caseId: 'case-1',
+			requestedBy: 'sofie',
+			reason: 'Mijn wijk',
+		);
+
+		self::assertSame(['pending', ''], [$record['status'], $record['taskId']]);
+		self::assertCount(1, $this->store->all(schema: 'caseTakeover'));
+	}//end testAnEngineThatThrowsIsLoggedAndTheRequestKept()
+
+	/**
+	 * A blank case id has no requests and reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testABlankCaseHasNoRequests(): void {
+		$takeovers = $this->takeovers();
+		$takeovers->request(caseId: 'case-1', requestedBy: 'sofie', reason: 'Mijn wijk');
+
+		self::assertSame([], $takeovers->onCase(caseId: '  '));
+	}//end testABlankCaseHasNoRequests()
 }//end class

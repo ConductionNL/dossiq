@@ -29,15 +29,22 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseRebindService;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
+use OCA\Dossiq\Service\Cases\CaseAnswerReader;
+use OCA\Dossiq\Service\Cases\CaseRebindImpact;
+use OCA\Dossiq\Service\Cases\CaseRebindTerms;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Termijn\TermRearm;
+use OCA\Dossiq\Tests\Unit\Service\Cases\BuildsRebindConverter;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for CaseRebindService.
@@ -45,6 +52,11 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\CaseRebindService
  *
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindGate
+ * @uses \OCA\Dossiq\Service\Cases\CaseRebindImpact
+ * @uses \OCA\Dossiq\Service\Cases\RebindMove
+ * @uses \OCA\Dossiq\Service\Cases\RebindValueConverter
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -52,8 +64,22 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseType\EngineRunMigration
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Termijn\TermRearm
+ * @uses \OCA\Dossiq\Service\Cases\CaseRebindTerms
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Transitions\StatusPublicLabels
+ * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
+ * @uses \OCA\Dossiq\Service\Cases\RebindAnswer
+ * @uses \OCA\Dossiq\Service\Cases\RebindChoice
+ * @uses \OCA\Dossiq\Service\Cases\RebindImpactRows
+ * @uses \OCA\Dossiq\Service\Cases\RebindImpactRun
+ * @uses \OCA\Dossiq\Service\Cases\RebindLanding
+ * @uses \OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseRebindServiceTest extends TestCase {
+
+	use BuildsRebindConverter;
 
 	/**
 	 * The store every test reads and writes, keyed by id.
@@ -68,6 +94,13 @@ class CaseRebindServiceTest extends TestCase {
 	 * @var array<int, array{schema: string, id: string, object: array<string, mixed>}>
 	 */
 	private array $writes = [];
+
+	/**
+	 * The reader's language, as the app's translator reports it.
+	 *
+	 * @var string
+	 */
+	private string $language = 'en';
 
 	/**
 	 * Two unrelated published case types, and a case running on the first.
@@ -123,7 +156,11 @@ class CaseRebindServiceTest extends TestCase {
 				'id' => 'pd-opp',
 				'caseType' => 'ct-omg',
 				'name' => 'oppervlakte',
+				'propertyType' => 'number',
 				'requiredAtStatus' => 'omg-toetsing',
+			]],
+			'pd-soort' => ['__schema' => 'propertyDefinition', 'data' => [
+				'id' => 'pd-soort', 'caseType' => 'ct-omg', 'name' => 'soort',
 			]],
 			'wf-omg' => ['__schema' => 'workflowTemplate', 'data' => [
 				'id' => 'wf-omg', 'caseType' => 'ct-omg', 'isActive' => true, 'version' => 3,
@@ -133,7 +170,12 @@ class CaseRebindServiceTest extends TestCase {
 				'caseNumber' => 'ZAAK-2026-0001',
 				'caseType' => 'ct-kap',
 				'status' => 'kap-behandeling',
-				'properties' => ['boomsoort' => 'eik'],
+				// THE REGISTER'S SHAPE: a list of {propertyDefinition, name,
+				// value}. This fixture used to be a name-keyed map, which is
+				// the shape the code read and no live case has.
+				'properties' => [
+					['propertyDefinition' => 'pd-boom', 'name' => 'boomsoort', 'value' => 'eik'],
+				],
 			]],
 		];
 		$this->writes = [];
@@ -159,18 +201,27 @@ class CaseRebindServiceTest extends TestCase {
 
 		$resolver = new CaseTypeResolver(store: $store);
 
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn($this->language);
+
 		return new CaseRebindService(
 			settingsService: $settings,
 			store: $store,
 			resolver: $resolver,
 			engine: $this->engine(refusal: $engineRefusal),
-			terms: $this->terms(),
-			slugs: $this->createMock(CaseTypeSlugResolver::class),
+			terms: new CaseRebindTerms(terms: $this->terms(), slugs: $this->createMock(CaseTypeSlugResolver::class)),
 			// A REAL gate over the SAME store, resolver and group double the
 			// assertions read through. Only the wiring line moved when the
 			// refusals were split out.
 			gate: new CaseRebindGate(store: $store, resolver: $resolver, groupManager: $groups),
+			impact: new CaseRebindImpact(
+				store: $store,
+				resolver: $resolver,
+				converter: $this->rebindConverter(),
+				answers: new CaseAnswerReader(store: $store, converter: $this->rebindConverter()),
+			),
 			logger: new NullLogger(),
+			text: new TranslatedText(l10n: $l10n),
 		);
 	}//end service()
 
@@ -278,7 +329,9 @@ class CaseRebindServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null || ($schema !== null && $entry['__schema'] !== $schema)) {
 					return null;
@@ -327,18 +380,19 @@ class CaseRebindServiceTest extends TestCase {
 			/**
 			 * Record a write and apply it to the store.
 			 *
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 * @param string               $id       The object id.
-			 * @param array<string, mixed> $object   The object.
+			 * @param string               $objectId      The object id.
+			 * @param array<string, mixed> $data          The object's complete new data.
+			 * @param bool                 $_rbac         Apply register RBAC.
+			 * @param bool                 $_multitenancy Apply organisation scoping.
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function updateObject(string $register, string $schema, string $id, array $object): array {
-				$this->writes[] = ['schema' => $schema, 'id' => $id, 'object' => $object];
-				$this->store[$id] = ['__schema' => $schema, 'data' => $object];
+			public function updateObject(string $objectId, array $data, bool $_rbac = true, bool $_multitenancy = true): array {
+				$schema = (string)($this->store[$objectId]['__schema'] ?? '');
+				$this->writes[] = ['schema' => $schema, 'id' => $objectId, 'object' => $data];
+				$this->store[$objectId] = ['__schema' => $schema, 'data' => $data];
 
-				return $object;
+				return $data;
 			}//end updateObject()
 		};
 	}//end objectService()
@@ -355,6 +409,39 @@ class CaseRebindServiceTest extends TestCase {
 		self::assertSame('In behandeling', $options['current']['status']);
 		self::assertSame(['ct-omg'], array_column($options['targets'], 'id'));
 	}//end testTheTargetsAreThePublishedTypesOtherThanItsOwn()
+
+	/**
+	 * 🔴 Translatable titles and names arrive as language maps and read as text.
+	 *
+	 * `caseType.title` and `statusType.name` are declared `translatable`, so a
+	 * row from `searchObjects()` carries `{"nl": "..."}`. A string cast made
+	 * every option in the dialog read "Array". The reader's language wins,
+	 * Dutch is the fallback, then whatever text the map holds.
+	 *
+	 * @return void
+	 */
+	public function testLanguageMapsReadAsTextInTheReadersLanguage(): void {
+		$this->store['ct-kap']['data']['title'] = ['nl' => 'Kapvergunning'];
+		$this->store['ct-omg']['data']['title'] = ['nl' => 'Omgevingsvergunning', 'en' => 'Environmental permit'];
+		$this->store['kap-behandeling']['data']['name'] = ['nl' => 'In behandeling'];
+		$this->store['omg-behandeling']['data']['name'] = ['de' => 'In Bearbeitung'];
+		$this->store['omg-toetsing']['data']['name'] = ['nl' => 'Toetsing', 'en' => 'Review'];
+
+		$options = $this->service()->options(caseId: 'case-1');
+		self::assertSame('Kapvergunning', $options['current']['title']);
+		self::assertSame('In behandeling', $options['current']['status']);
+		self::assertSame(['Environmental permit'], array_column($options['targets'], 'title'));
+
+		$preview = $this->service()->preview(caseId: 'case-1', targetCaseTypeId: 'ct-omg', targetStatusId: '');
+		self::assertSame(['In Bearbeitung', 'Review'], array_column($preview['statuses'], 'name'));
+		self::assertSame('Environmental permit', $preview['to']['title']);
+		self::assertSame('In behandeling', $preview['from']['status']);
+
+		$this->language = 'nl';
+		$preview = $this->service()->preview(caseId: 'case-1', targetCaseTypeId: 'ct-omg', targetStatusId: '');
+		self::assertSame(['In Bearbeitung', 'Toetsing'], array_column($preview['statuses'], 'name'));
+		self::assertSame('Omgevingsvergunning', $preview['to']['title']);
+	}//end testLanguageMapsReadAsTextInTheReadersLanguage()
 
 	/**
 	 * 🔴 The landing status is ASKED for, never matched by name.
@@ -414,6 +501,7 @@ class CaseRebindServiceTest extends TestCase {
 				reason: 'Verkeerd ingeboekt',
 				properties: ['bouwjaar' => '1974'],
 				actorUid: 'coordinator',
+				confirmDropped: ['boomsoort'],
 			);
 			self::fail('A rebind missing a required property must be refused.');
 		} catch (RefusedException $e) {
@@ -446,6 +534,7 @@ class CaseRebindServiceTest extends TestCase {
 				reason: 'Verkeerd ingeboekt',
 				properties: [],
 				actorUid: 'coordinator',
+				confirmDropped: ['boomsoort'],
 			);
 			self::fail('An engine refusal must stop the rebind.');
 		} catch (RefusedException $e) {
@@ -577,6 +666,7 @@ class CaseRebindServiceTest extends TestCase {
 			reason: 'Verkeerd ingeboekt bij intake',
 			properties: ['bouwjaar' => '1974', 'oppervlakte' => 120],
 			actorUid: 'coordinator',
+			confirmDropped: ['boomsoort'],
 		);
 
 		self::assertTrue($result['rebound']);
@@ -592,8 +682,13 @@ class CaseRebindServiceTest extends TestCase {
 		self::assertSame('wf-omg', $written['workflowTemplate']);
 		self::assertSame(3, $written['workflowVersion']);
 		self::assertSame('ZAAK-2026-0001', $written['caseNumber']);
-		self::assertSame('eik', $written['properties']['boomsoort']);
-		self::assertSame('1974', $written['properties']['bouwjaar']);
+		self::assertSame(
+			[
+				['propertyDefinition' => 'pd-bouwjaar', 'name' => 'bouwjaar', 'value' => '1974'],
+				['propertyDefinition' => 'pd-opp', 'name' => 'oppervlakte', 'value' => '120'],
+			],
+			$written['properties']
+		);
 
 		$journal = json_decode((string)$written['activity'], true);
 		self::assertSame('case-type-rebind', $journal[0]['type']);
@@ -601,5 +696,97 @@ class CaseRebindServiceTest extends TestCase {
 		self::assertSame('Omgevingsvergunning', $journal[0]['toCaseTypeTitle']);
 		self::assertSame('Verkeerd ingeboekt bij intake', $journal[0]['reason']);
 		self::assertSame('coordinator', $journal[0]['actor']);
+		// The dropped answer leaves the case and is kept HERE, value and all.
+		self::assertSame([['name' => 'boomsoort', 'value' => 'eik']], $journal[0]['droppedProperties']);
+		self::assertSame(['bouwjaar', 'oppervlakte'], $journal[0]['answeredProperties']);
+		self::assertSame(['boomsoort'], $result['properties']['dropped']);
 	}//end testTheHappyPathMovesTheBlueprintAndKeepsTheNumber()
+
+	/**
+	 * 🔴 The preview reads the register's LIST shape and says what happens to each answer.
+	 *
+	 * The case answers `oppervlakte` as a list entry. Read as a map, as the
+	 * gate used to, it answered nothing and `oppervlakte` was reported missing.
+	 *
+	 * @return void
+	 */
+	public function testThePreviewReadsTheListShapeAndGroupsTheImpact(): void {
+		$this->store['case-1']['data']['properties'][] = [
+			'propertyDefinition' => 'pd-opp-kap',
+			'name' => 'oppervlakte',
+			'value' => '120',
+		];
+
+		$preview = $this->service()->preview(
+			caseId: 'case-1',
+			targetCaseTypeId: 'ct-omg',
+			targetStatusId: 'omg-toetsing'
+		);
+
+		self::assertSame(['bouwjaar'], $preview['missingProperties']);
+		self::assertSame(['boomsoort'], array_column($preview['impact']['dropped'], 'name'));
+		self::assertSame('eik', $preview['impact']['dropped'][0]['value']);
+		// Every free target field whose type takes the value, required ones too.
+		self::assertSame(['bouwjaar', 'soort'], $preview['impact']['dropped'][0]['candidates']);
+		self::assertSame('oppervlakte', $preview['impact']['ported'][0]['target']);
+		self::assertSame('120', $preview['impact']['ported'][0]['newValue']);
+		self::assertSame(['bouwjaar'], array_column($preview['impact']['required'], 'name'));
+		self::assertFalse($preview['canRebind']);
+
+		$answered = $this->service()->preview(
+			caseId: 'case-1',
+			targetCaseTypeId: 'ct-omg',
+			targetStatusId: 'omg-toetsing',
+			properties: ['bouwjaar' => '1974']
+		);
+		self::assertTrue($answered['canRebind']);
+	}//end testThePreviewReadsTheListShapeAndGroupsTheImpact()
+
+	/**
+	 * 🔴 A drop the request does not confirm is refused, and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfirmedDropIsRefusedWithNothingWritten(): void {
+		try {
+			$this->service()->rebind(
+				caseId: 'case-1',
+				targetCaseTypeId: 'ct-omg',
+				targetStatusId: 'omg-behandeling',
+				reason: 'Verkeerd ingeboekt',
+				properties: [],
+				actorUid: 'coordinator',
+			);
+			self::fail('A rebind that drops an unconfirmed answer must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('rebind-drop-not-confirmed', $e->getRule());
+			self::assertStringContainsString('boomsoort', $e->getSentence());
+		}
+
+		self::assertSame([], $this->writes);
+	}//end testAnUnconfirmedDropIsRefusedWithNothingWritten()
+
+	/**
+	 * A dropped answer moved onto another field is written there, and nothing is dropped.
+	 *
+	 * @return void
+	 */
+	public function testARemappedAnswerIsWrittenOntoTheChosenField(): void {
+		$result = $this->service()->rebind(
+			caseId: 'case-1',
+			targetCaseTypeId: 'ct-omg',
+			targetStatusId: 'omg-behandeling',
+			reason: 'Verkeerd ingeboekt',
+			properties: [],
+			actorUid: 'coordinator',
+			remap: ['boomsoort' => 'soort'],
+		);
+
+		self::assertSame([], $result['properties']['dropped']);
+		self::assertSame([['from' => 'boomsoort', 'to' => 'soort']], $result['properties']['ported']);
+		self::assertSame(
+			[['propertyDefinition' => 'pd-soort', 'name' => 'soort', 'value' => 'eik']],
+			$this->store['case-1']['data']['properties']
+		);
+	}//end testARemappedAnswerIsWrittenOntoTheChosenField()
 }//end class

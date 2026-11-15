@@ -38,6 +38,7 @@ import {
 	seedStateMachine,
 	showObject,
 } from './helpers/fixtures.ts'
+import { chooseLens, expectLensActive } from './helpers/lens.ts'
 import {
 	dismissSupportDialog,
 	openHeaderActionsMenu,
@@ -71,20 +72,6 @@ const ARCHIVED_KEYS = ['Gearchiveerd A', 'Gearchiveerd B', 'Gearchiveerd C']
 
 /** The keys this spec leaves open. */
 const OPEN_KEYS = ['Open A', 'Open B', 'Open C', 'Open D']
-
-/**
- * One quick-filter chip, by its English or Dutch label.
- *
- * The instance may be Dutch, so every chip is matched in both languages: a
- * spec that asserted English labels fails on a Dutch instance for a reason
- * that has nothing to do with the archive.
- *
- * @param page The page.
- * @param label A pattern matching the chip's label in either language.
- */
-function chip(page: Page, label: RegExp) {
-	return page.getByRole('tab', { name: label })
-}
 
 const CHIPS = {
 	all: /^(All|Alle)$/,
@@ -244,7 +231,7 @@ test.afterAll(async () => {
 })
 
 test.describe('A closed case is archived and comes back', () => {
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-archive-a-closed-case
+	// @e2e openspec/specs/case-management/spec.md#archive-a-closed-case
 	test('archiving a closed case marks it and moves the ZGW field', async () => {
 		const id = cases['Gearchiveerd A']
 
@@ -261,7 +248,7 @@ test.describe('A closed case is archived and comes back', () => {
 		expect(await archiveStatusOf(id)).toMatch(/^archived/)
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-archive-is-not-offered-on-a-running-case
+	// @e2e openspec/specs/case-management/spec.md#archive-is-not-offered-on-a-running-case
 	test('archive is refused on a case that is still running', async () => {
 		const id = cases['Open A']
 
@@ -276,7 +263,7 @@ test.describe('A closed case is archived and comes back', () => {
 		expect(await markerOn(id)).toBeNull()
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-restore-in-one-action
+	// @e2e openspec/specs/case-management/spec.md#restore-in-one-action
 	test('restore clears the marker and puts the case back in the lists', async () => {
 		const id = cases['Gearchiveerd C']
 
@@ -319,11 +306,11 @@ test.describe('Archived cases leave the working lenses', () => {
 		await narrowToThisRun(page)
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-the-archived-case-is-gone-from-cases
+	// @e2e openspec/specs/case-management/spec.md#the-archived-case-is-gone-from-cases
 	test('the default lens shows the open cases and none of the archived ones', async ({
 		page,
 	}) => {
-		await expect(chip(page, CHIPS.all)).toHaveAttribute('aria-selected', 'true')
+		await expectLensActive(page, CHIPS.all)
 
 		// An absence asserted first would pass against a list that has not
 		// fetched yet, so a row that MUST be there is waited for.
@@ -342,9 +329,9 @@ test.describe('Archived cases leave the working lenses', () => {
 		}
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-the-archived-lens-finds-them
+	// @e2e openspec/specs/case-management/spec.md#the-archived-lens-finds-them
 	test('the Archived lens shows them and nothing else', async ({ page }) => {
-		await chip(page, CHIPS.archived).click()
+		await chooseLens(page, CHIPS.archived)
 
 		await expect(row(page, 'Gearchiveerd A').first()).toBeVisible({
 			timeout: 30_000,
@@ -362,7 +349,7 @@ test.describe('Archived cases leave the working lenses', () => {
 		}
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-search-does-not-return-an-archived-case
+	// @e2e openspec/specs/case-management/spec.md#search-does-not-return-an-archived-case
 	test('the archived cases are not in the default result of a shared query', async ({
 		page,
 	}) => {
@@ -383,7 +370,7 @@ test.describe('Archived cases leave the working lenses', () => {
 		expect(joined).toContain(`${RUN_PREFIX} Open A`)
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-a-tile-and-its-list-agree
+	// @e2e openspec/specs/case-management/spec.md#a-tile-and-its-list-agree
 	test('the list and the total under it count the same set', async ({ page }) => {
 		// A tile and a list disagreeing is the failure, and both read the same
 		// query. The count the page itself prints is therefore the thing to
@@ -391,7 +378,7 @@ test.describe('Archived cases leave the working lenses', () => {
 		await expect(ownRows(page).first()).toBeVisible({ timeout: 30_000 })
 		const shown = await ownRows(page).count()
 
-		await chip(page, CHIPS.archived).click()
+		await chooseLens(page, CHIPS.archived)
 		await expect(row(page, 'Gearchiveerd A').first()).toBeVisible({
 			timeout: 30_000,
 		})
@@ -408,7 +395,7 @@ test.describe('Archived cases leave the working lenses', () => {
 })
 
 test.describe('An archived case is read-only and says so', () => {
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-the-fields-cannot-be-edited
+	// @e2e openspec/specs/case-management/spec.md#the-fields-cannot-be-edited
 	test('the case page names the archive and offers no write action', async ({
 		page,
 	}) => {
@@ -416,11 +403,11 @@ test.describe('An archived case is read-only and says so', () => {
 		await page.goto(`${APP_URL}cases/${cases['Gearchiveerd B']}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const strip = page.getByTestId('case-archived')
+		const strip = page.getByTestId('cn-section-case-archived')
 		await expect(strip, 'the strip names the archive').toBeVisible({
 			timeout: 30_000,
 		})
-		await expect(page.getByTestId('case-archived-headline')).toContainText(
+		await expect(strip.getByTestId('cn-banner-widget-lead')).toContainText(
 			/archi|gearchiveerd/i,
 		)
 
@@ -463,10 +450,10 @@ test.describe('An archived case is read-only and says so', () => {
 		// there.
 		await openHeaderActionsMenu(page)
 		await expect(page.getByTestId('cn-action-add-party')).toBeVisible()
-		await expect(page.getByTestId('case-archived')).toHaveCount(0)
+		await expect(page.getByTestId('cn-section-case-archived').getByTestId('cn-banner-widget-lead')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-a-write-shows-the-reason
+	// @e2e openspec/specs/case-management/spec.md#a-write-shows-the-reason
 	test('a write reaching the server anyway is refused, naming the archive', async () => {
 		const id = cases['Gearchiveerd B']
 

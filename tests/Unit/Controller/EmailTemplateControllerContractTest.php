@@ -174,6 +174,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 				return ($overrides[$key] ?? $default);
 			}
 		);
+		$this->request->method('getParams')->willReturn($overrides);
 	}//end withRequestParams()
 
 	/**
@@ -244,7 +245,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 
 	/**
 	 * An admin's create reaches the backend with the caseType from the ROUTE and
-	 * the name/subject/body from the request body, and answers 200 with the
+	 * the name/subject/body, moment and channel from the request body, and answers 200 with the
 	 * created template.
 	 *
 	 * @return void
@@ -257,6 +258,8 @@ class EmailTemplateControllerContractTest extends TestCase {
 				'name' => 'Ontvangstbevestiging',
 				'subject' => 'Uw aanvraag',
 				'body' => 'Beste {{contactNaam}}',
+				'moment' => 'case-received',
+				'channel' => 'mailbox-then-email',
 			]
 		);
 
@@ -268,6 +271,8 @@ class EmailTemplateControllerContractTest extends TestCase {
 					'name' => 'Ontvangstbevestiging',
 					'subject' => 'Uw aanvraag',
 					'body' => 'Beste {{contactNaam}}',
+					'moment' => 'case-received',
+					'channel' => 'mailbox-then-email',
 				]
 			)
 			->willReturn(['id' => 'tpl-9', 'version' => 1]);
@@ -488,4 +493,71 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame($catalogue, $response->getData());
 	}//end testVariablesReturnsTheCatalogueUnwrappedForTheRouteCaseType()
+
+	/**
+	 * GET /api/casetypes/{caseTypeId}/email-templates refuses an anonymous
+	 * caller with 401 and never reads the templating backend.
+	 *
+	 * @return void
+	 */
+	public function testListTemplatesRefusesAnAnonymousCallerWith401(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->templateService->expects($this->never())->method('listTemplates');
+
+		$response = $this->controller->listTemplates(caseTypeId: 'ct-1');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(['message' => 'unauthenticated'], $response->getData());
+	}//end testListTemplatesRefusesAnAnonymousCallerWith401()
+
+	/**
+	 * GET /api/casetypes/{caseTypeId}/email-templates answers 200 with the
+	 * templates of the ROUTE's case type wrapped under `results`.
+	 *
+	 * @return void
+	 */
+	public function testListTemplatesReturnsTheResultsOfTheRouteCaseType(): void {
+		$this->signIn(uid: 'handler');
+		$templates = [['id' => 'tpl-1', 'name' => 'Ontvangstbevestiging']];
+
+		$this->templateService->expects($this->once())
+			->method('listTemplates')
+			->with(caseTypeId: 'ct-42')
+			->willReturn($templates);
+
+		$response = $this->controller->listTemplates(caseTypeId: 'ct-42');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['results' => $templates], $response->getData());
+	}//end testListTemplatesReturnsTheResultsOfTheRouteCaseType()
+
+	/**
+	 * An update forwards a moment or channel the request names, null included
+	 * (it clears the field), and leaves out one the request does not name.
+	 *
+	 * @return void
+	 */
+	public function testUpdateTemplateForwardsOnlyTheDeliveryFieldsTheRequestNames(): void {
+		$this->signIn(uid: 'admin');
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->withRequestParams(overrides: ['body' => 'Nieuw', 'moment' => null]);
+
+		$this->templateService->expects($this->once())
+			->method('updateTemplate')
+			->with(
+				't-1',
+				$this->callback(
+					callback: static function (array $data): bool {
+						return array_key_exists('moment', $data) === true
+							&& $data['moment'] === null
+							&& array_key_exists('channel', $data) === false;
+					}
+				)
+			)
+			->willReturn(['id' => 't-2', 'version' => 2]);
+
+		$response = $this->controller->updateTemplate(templateId: 't-1');
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+	}//end testUpdateTemplateForwardsOnlyTheDeliveryFieldsTheRequestNames()
 }//end class

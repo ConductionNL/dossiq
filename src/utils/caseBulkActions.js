@@ -5,16 +5,18 @@
 // `config.bulkActions[].handler` and registered in registry.js as
 // `kind: 'handler'` entries.
 //
-// Their own module, like caseClaim.js / caseFavourite.js / caseUnread.js
+// Their own module, like caseClaim.js / caseFollow.js / caseUnread.js
 // beside them, so a unit test can reach a handler without importing every page
 // the registry mounts.
 //
-// @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+// @spec openspec/specs/case-bulk-status-transition/spec.md
 
+import { emit } from '@nextcloud/event-bus'
 import { createApp } from 'vue'
 import BulkTransitionDialog from '../dialogs/BulkTransitionDialog.vue'
 import ReassignSelectionDialog from '../dialogs/ReassignSelectionDialog.vue'
 import { countMatchingCases } from '../services/bulkJobApi.js'
+import { announceCasesChanged } from './casesChanged.js'
 import { readLocationFilters } from './selectionScope.js'
 
 /**
@@ -33,7 +35,7 @@ import { readLocationFilters } from './selectionScope.js'
  *
  * @return {Promise<{filters: object, total: number}>} What the list holds.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 async function listScope(ids) {
 	const filters = readLocationFilters()
@@ -56,7 +58,7 @@ async function listScope(ids) {
  * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
  * @return {void}
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function reassignSelection({ selectedIds }) {
 	const ids = Array.isArray(selectedIds) ? selectedIds : []
@@ -84,10 +86,40 @@ export async function reassignSelection({ selectedIds }) {
 			// The index has to re-read: the rows the user just moved are no
 			// longer theirs, and leaving them on screen invites a second
 			// reassignment of cases that already moved.
-			window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+			announceCasesChanged()
 		},
 	})
 	app.mount(host)
+}
+
+/**
+ * The notice a finished bulk job answered, in the nextcloud-vue A1 shape
+ * (`{ variant, title, text, actions? }`): a partial result such as "2 zaken
+ * verplaatst, 1 zonder al zijn automatische acties". Read from `job.notice`,
+ * else `job.outcome.notice`.
+ *
+ * @param {object|null|undefined} job The job the dialog reported.
+ * @return {object|null} The notice, or null when the job answered none.
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
+ */
+export function noticeOfJob(job) {
+	const notice = job?.notice ?? job?.outcome?.notice
+	return notice && typeof notice === 'object' && !Array.isArray(notice) ? notice : null
+}
+
+/**
+ * Draw the job's notice above the case list (the index page listens on
+ * `cn:page:notice`), so the result stays on the page after the dialog closed.
+ *
+ * @param {object|null|undefined} job The job the dialog reported.
+ * @return {void}
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
+ */
+export function raiseJobNotice(job) {
+	const notice = noticeOfJob(job)
+	if (notice !== null) {
+		emit('cn:page:notice', { notice })
+	}
 }
 
 /**
@@ -102,7 +134,7 @@ export async function reassignSelection({ selectedIds }) {
  * @param {Array<string>} selectedIds The selected case ids.
  * @return {void}
  *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
 async function openBulkDialog(mode, selectedIds) {
 	const ids = Array.isArray(selectedIds) ? selectedIds : []
@@ -133,14 +165,13 @@ async function openBulkDialog(mode, selectedIds) {
 		filters,
 		matchingTotal: total,
 		onClose: close,
-		onCompleted: () => {
+		onCompleted: (job) => {
 			close()
 			// Same signal `reassignSelection` sends: the rows the user just
 			// moved may no longer belong on the active lens, and leaving them
 			// on screen invites a second gesture on cases that already moved.
-			// The list's own refresh comes from its live-collection
-			// subscription; this event is the app-level notice beside it.
-			window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+			announceCasesChanged()
+			raiseJobNotice(job)
 		},
 	})
 	app.mount(host)
@@ -152,7 +183,7 @@ async function openBulkDialog(mode, selectedIds) {
  * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
  * @return {void}
  *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
 export function transitionSelection({ selectedIds }) {
 	openBulkDialog('transition', selectedIds)
@@ -164,7 +195,7 @@ export function transitionSelection({ selectedIds }) {
  * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
  * @return {void}
  *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
 export function suspendSelection({ selectedIds }) {
 	openBulkDialog('suspend', selectedIds)
@@ -176,7 +207,7 @@ export function suspendSelection({ selectedIds }) {
  * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
  * @return {void}
  *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
 export function resumeSelection({ selectedIds }) {
 	openBulkDialog('resume', selectedIds)
@@ -189,8 +220,23 @@ export function resumeSelection({ selectedIds }) {
  * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
  * @return {void}
  *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
 export function extendTermSelection({ selectedIds }) {
 	openBulkDialog('extend', selectedIds)
+}
+
+/**
+ * Export the selected cases anonymised (social-domain-consent-and-safeguards 4.1).
+ *
+ * @param {object} args The bulk action arguments.
+ * @param {Array<string>} args.selectedIds The selected case ids.
+ * @return {Promise<boolean>} Whether a file was saved.
+ * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ */
+export async function exportAnonymisedSelection({ selectedIds } = {}) {
+	// Loaded on the click, so the dialogs and the CSV writer do not ride every
+	// import of the bulk actions.
+	const { exportCasesAnonymised } = await import('./anonymisedExport.js')
+	return exportCasesAnonymised(selectedIds)
 }

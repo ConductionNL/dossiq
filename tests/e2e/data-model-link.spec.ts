@@ -78,7 +78,7 @@ async function openIntegrations(page: Page) {
 }
 
 test.describe('the data model is one link away', () => {
-	// @e2e openspec/changes/data-model-link/specs/admin-settings/spec.md#scenario-an-admin-reaches-the-data-model
+	// @e2e openspec/specs/admin-settings/spec.md#an-admin-reaches-the-data-model
 	test('an admin finds Data model in Integrations, pointing at the dossiq register', async ({
 		page,
 	}) => {
@@ -111,7 +111,7 @@ test.describe('the data model is one link away', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/data-model-link/specs/admin-settings/spec.md#scenario-an-admin-reaches-the-data-model
+	// @e2e openspec/specs/admin-settings/spec.md#an-admin-reaches-the-data-model
 	test('the target names a register this instance actually has', async () => {
 		// The declaration can only carry the slug, so the thing worth proving
 		// is that the slug resolves. A link to a register nobody answers to
@@ -134,7 +134,7 @@ test.describe('the data model is one link away', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/data-model-link/specs/admin-settings/spec.md#scenario-from-the-objects-index
+	// @e2e openspec/specs/admin-settings/spec.md#from-the-objects-index
 	test('an admin reaches Manage object types from the Objects index', async ({
 		page,
 	}) => {
@@ -151,7 +151,7 @@ test.describe('the data model is one link away', () => {
 		).toHaveAttribute('href', TARGET)
 	})
 
-	// @e2e openspec/changes/data-model-link/specs/admin-settings/spec.md#scenario-a-handler-does-not-see-it
+	// @e2e openspec/specs/admin-settings/spec.md#a-handler-does-not-see-it
 	test('a handler is offered neither door', async ({ browser, baseURL }) => {
 		// LOG IN, do not send credentials. Basic auth does not authenticate
 		// Nextcloud's HTML route: with the admin jar cleared and

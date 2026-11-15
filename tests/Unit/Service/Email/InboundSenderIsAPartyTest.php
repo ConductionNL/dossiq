@@ -19,14 +19,18 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\EmailArchivalService
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class InboundSenderIsAPartyTest extends TestCase {
 	private const PARTIES = [
@@ -55,7 +59,10 @@ class InboundSenderIsAPartyTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = $object;
 				return ['id' => 'archival-' . count($this->saves)] + $object;
 			}
@@ -100,6 +107,7 @@ class InboundSenderIsAPartyTest extends TestCase {
 				people: $people,
 				settingsService: $settings,
 				store: new DocumentRecordStore(settingsService: $settings),
+				labels: new DocumentListingLabels(settingsService: $settings),
 			),
 		);
 	}//end setUp()

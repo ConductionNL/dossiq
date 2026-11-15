@@ -28,6 +28,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import manifest from '../../src/manifest.json'
+import { pageWidgets } from './helpers/pageViews.js'
 
 /**
  * Flatten an object-table `source.filter` to `key[op]=value` pairs.
@@ -52,7 +53,7 @@ function flattenFilter(filter) {
 const dashboardPageIds = ['Dashboard', 'MyWorkHome']
 const dashboardWidgets = manifest.pages
 	.filter((p) => dashboardPageIds.includes(p.id))
-	.flatMap((p) => p.config.widgets)
+	.flatMap((p) => pageWidgets(p))
 const tables = dashboardWidgets.filter(
 	(w) => w.type === 'object-table' && w.content && w.content.viewAllRoute,
 )

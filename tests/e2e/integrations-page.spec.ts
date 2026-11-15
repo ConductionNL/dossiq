@@ -58,32 +58,33 @@ const SEEDED_KEYS = [
 	'pdok',
 	'berichtenbox',
 	'templates',
+	'smartdocuments',
+	'xential',
 ]
 
 /**
  * The one connection nothing calls.
  *
- * BRP and KvK were both listed here with the message "Specified, not built
- * yet", and that sentence was false for both. Each ships a dormant Log adapter,
- * a real HTTP adapter and a DI registrar bound from ExternalRegisterRegistrar.
- * The difference is the caller: ConflictOfInterestService injects the BRP
- * adapter for the belangenconflict check, and nothing injects the KvK one, so
- * configuring KvK changes nothing an admin can see. That, and not "not built",
- * is what Not available means on this row.
+ * Dossiq ships no KvK client and nothing in dossiq looks a company up
+ * (ADR-118): integriq holds the KvK source. So configuring KvK in dossiq
+ * changes nothing an admin can see, and that is what Not available means on
+ * this row.
  */
 const UNAVAILABLE_KEYS = ['kvk']
 
 /**
- * Built, called, and dormant until its tier key is set.
+ * Called, and off until integriq's BRP source allows it.
  *
- * connections.json gives it an `unconfiguredMessage` naming
- * `integration.brp.mode`, which integriq shows while the row is unconfigured
- * (contract D4 rule 6), because no admin section writes that key.
+ * Dossiq ships no BRP client (ADR-118): the conflict-of-interest check reads
+ * family relations through integriq's BRP source. connections.json gives the
+ * row an `unconfiguredMessage` naming `relationFields`, the setting on that
+ * source, which integriq shows while the row is unconfigured (contract D4
+ * rule 6), because no admin section in dossiq writes it.
  */
 const DORMANT_KEYS = ['brp']
 
 /** Declared without a settings section. */
-const UNLINKED_KEYS = ['brp', 'kvk', 'pdok', 'berichtenbox', 'templates']
+const UNLINKED_KEYS = ['brp', 'kvk', 'pdok', 'berichtenbox', 'templates', 'smartdocuments', 'xential']
 
 /** Integriq's objects endpoint for dossiq's connection rows. */
 const CONNECTIONS_API =
@@ -116,7 +117,9 @@ let token: string
  * @param request The authenticated request context.
  */
 async function listConnections(request: APIRequestContext): Promise<any[]> {
-	const res = await request.get(`${CONNECTIONS_API}?app=dossiq&_limit=200`)
+	const res = await request.get(`${CONNECTIONS_API}?app=dossiq&_limit=200`, {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
 	expect(res.ok(), `list integriq/app_connection -> ${res.status()}`).toBeTruthy()
 	const body = await res.json()
 	return body.results ?? []
@@ -206,10 +209,14 @@ test.describe('Integrations', () => {
 
 	test('offers a settings link that lands on the section', async ({ page }) => {
 		const byKey = await integrationsByKey(api)
-		expect(byKey.stuf.settingsUrl).toBe('/settings/admin/dossiq#section-stuf')
+		expect(byKey.stuf.settingsUrl).toBe(
+			'/settings/admin/dossiq?tab=advanced#section-stuf',
+		)
 
 		await openIntegrations(page)
-		const link = page.locator('a[href="/settings/admin/dossiq#section-stuf"]')
+		const link = page.locator(
+			'a[href="/settings/admin/dossiq?tab=advanced#section-stuf"]',
+		)
 		await expect(link).toBeVisible({ timeout: 30_000 })
 
 		// The cell renderer sets `target="_blank"`, so the settings page opens
@@ -221,7 +228,9 @@ test.describe('Integrations', () => {
 			page.waitForEvent('popup'),
 			link.click(),
 		])
-		await expect(settings).toHaveURL(/\/settings\/admin\/dossiq#section-stuf$/)
+		await expect(settings).toHaveURL(
+			/\/settings\/admin\/dossiq\?tab=advanced#section-stuf$/,
+		)
 		await expect(settings.locator('#section-stuf')).toBeVisible({
 			timeout: 30_000,
 		})
@@ -249,7 +258,7 @@ test.describe('Integrations', () => {
 			await expect(row).toBeVisible({ timeout: 30_000 })
 			// The whole point: the affordance is ABSENT, not disabled.
 			await expect(
-				row.locator('a[href^="/settings/admin/dossiq#"]'),
+				row.locator('a[href^="/settings/admin/dossiq?tab="]'),
 			).toHaveCount(0)
 		}
 	})
@@ -271,7 +280,7 @@ test.describe('Integrations', () => {
 			}
 			if (DORMANT_KEYS.includes(key)) {
 				expect(row.status).toBe('unconfigured')
-				expect(row.statusMessage).toMatch(/integration\.brp\.mode/)
+				expect(row.statusMessage).toMatch(/relationFields/)
 				continue
 			}
 			if (SIMULATED_KEYS.includes(key)) {
@@ -325,7 +334,9 @@ test.describe('Integrations', () => {
 		// Snapshot the one key this test writes. The row is integriq's now and
 		// follows the saved value, so putting the VALUE back is what leaves the
 		// next run a page that claims nothing it has not checked.
-		const before = await api.get(settingsApi)
+		const before = await api.get(settingsApi, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(before.ok(), `settings read -> ${before.status()}`).toBeTruthy()
 		const previous = String(
 			(await before.json())?.config?.identification_method ?? '',
@@ -506,9 +517,9 @@ test.describe('Integrations', () => {
 		// either, so the count alone cannot tell a working guard from a broken
 		// bundle. See the docblock.
 		await expect(page).not.toHaveURL(/\/settings\/integrations$/)
-		await expect(page.locator('a[href^="/settings/admin/dossiq#"]')).toHaveCount(
-			0,
-		)
+		await expect(
+			page.locator('a[href^="/settings/admin/dossiq?tab="]'),
+		).toHaveCount(0)
 		await expect(
 			page.getByRole('row', { name: /ZGW APIs/i }),
 			'no integration row survives the redirect',

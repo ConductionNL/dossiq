@@ -14,7 +14,7 @@ The system SHALL treat complaints as first-class entities with their own OpenReg
 - **GIVEN** the Dossiq complaints module is enabled
 - **WHEN** a case worker registers a complaint received from a citizen
 - **THEN** a complaint object MUST be created in OpenRegister with:
-  - `klachtnummer`: auto-generated (format: `KL-{year}-{sequence}`, e.g., `KL-2026-0042`)
+  - `klachtnummer`: auto-generated (format: `KL-{year}-{sequence}`, e.g., `KL-2026-0041`)
   - `klager`: reference to the person filing the complaint (name, email, phone, BSN if known)
   - `onderwerp`: subject of the complaint (short title)
   - `omschrijving`: detailed description of the complaint
@@ -28,9 +28,9 @@ The system SHALL treat complaints as first-class entities with their own OpenReg
   - `prioriteit`: priority level (`laag`, `normaal`, `hoog`, `urgent`)
 
 #### Scenario: Complaint numbering is sequential per year
-- **GIVEN** 41 complaints have been registered in 2026
+- **GIVEN** 40 complaints have been registered in 2026
 - **WHEN** a new complaint is created on 2026-03-20
-- **THEN** the complaint number MUST be `KL-2026-0042`
+- **THEN** the complaint number MUST be `KL-2026-0041`
 - **AND** the sequence MUST reset to 0001 on January 1, 2027
 
 #### Scenario: Complaint intake from multiple channels
@@ -51,7 +51,7 @@ The system SHALL treat complaints as first-class entities with their own OpenReg
 The Awb prescribes specific complaint handling timelines that the system MUST calculate and enforce.
 
 #### Scenario: Awb deadline calculation on complaint creation
-- **GIVEN** complaint `KL-2026-0042` is received on 2026-03-01 (Monday)
+- **GIVEN** complaint `KL-2026-0041` is received on 2026-03-01 (Monday)
 - **WHEN** the complaint is created
 - **THEN** the system MUST automatically calculate:
   - `ontvangstbevestigingDeadline`: 5 working days = 2026-03-08 (following Monday, skipping weekend)
@@ -60,7 +60,7 @@ The Awb prescribes specific complaint handling timelines that the system MUST ca
 - **AND** these deadlines MUST be stored on the complaint object
 
 #### Scenario: Complaint lifecycle status transitions
-- **GIVEN** complaint `KL-2026-0042` with status `ontvangen`
+- **GIVEN** complaint `KL-2026-0041` with status `ontvangen`
 - **THEN** the following status transitions MUST be enforced:
   - `ontvangen` -> `ontvangst_bevestigd` (acknowledgment sent)
   - `ontvangst_bevestigd` -> `in_behandeling` (investigation started)
@@ -71,14 +71,14 @@ The Awb prescribes specific complaint handling timelines that the system MUST ca
 - **AND** skipping the hearing stages MUST be allowed when the complainant waives the right to be heard
 
 #### Scenario: Acknowledgment deadline warning at 3 days
-- **GIVEN** complaint `KL-2026-0042` received on 2026-03-01 with `ontvangstbevestigingDeadline` 2026-03-08
+- **GIVEN** complaint `KL-2026-0041` received on 2026-03-01 with `ontvangstbevestigingDeadline` 2026-03-08
 - **AND** the current date is 2026-03-05 (3 working days elapsed)
 - **AND** status is still `ontvangen` (no acknowledgment sent)
 - **THEN** the system MUST send a warning notification to the complaint handler
 - **AND** the complaint MUST appear in the "Dreigend verlopen" section of the complaints dashboard
 
 #### Scenario: Resolution deadline warning and escalation
-- **GIVEN** complaint `KL-2026-0042` has `afhandelDeadline` 2026-04-12
+- **GIVEN** complaint `KL-2026-0041` has `afhandelDeadline` 2026-04-12
 - **AND** the current date is 2026-04-05 (1 week before deadline)
 - **AND** status is `in_behandeling`
 - **THEN** the system MUST send a warning to the handler and their coordinator
@@ -86,7 +86,7 @@ The Awb prescribes specific complaint handling timelines that the system MUST ca
 - **AND** the coordinator MUST receive an escalation notification
 
 #### Scenario: Request deadline extension (verdaging)
-- **GIVEN** complaint `KL-2026-0042` has `afhandelDeadline` 2026-04-12 and `verdagingMogelijk` is true
+- **GIVEN** complaint `KL-2026-0041` has `afhandelDeadline` 2026-04-12 and `verdagingMogelijk` is true
 - **WHEN** the handler requests a 4-week extension with written justification
 - **THEN** `afhandelDeadline` MUST be updated to 2026-05-10
 - **AND** `verdagingMogelijk` MUST be set to false (only one extension allowed per Awb)
@@ -97,7 +97,7 @@ The Awb prescribes specific complaint handling timelines that the system MUST ca
 The system SHALL support a hearing (hoorgesprek) process, as the Awb gives the complainant the right to be heard before a decision is made on the complaint.
 
 #### Scenario: Schedule a hearing
-- **GIVEN** complaint `KL-2026-0042` is `in_behandeling`
+- **GIVEN** complaint `KL-2026-0041` is `in_behandeling`
 - **WHEN** the handler schedules a hearing
 - **THEN** a hearing record MUST be created as a linked object with:
   - `datum`: scheduled date and time
@@ -108,7 +108,7 @@ The system SHALL support a hearing (hoorgesprek) process, as the Awb gives the c
 - **AND** calendar invitations MUST be sent to all participants via Nextcloud Calendar (`OCP\Calendar\IManager`)
 
 #### Scenario: Record hearing outcome
-- **GIVEN** the hearing for `KL-2026-0042` has taken place
+- **GIVEN** the hearing for `KL-2026-0041` has taken place
 - **WHEN** the handler records the outcome
 - **THEN** the hearing record MUST be updated with:
   - `verslag`: summary of the hearing (mandatory)
@@ -118,7 +118,7 @@ The system SHALL support a hearing (hoorgesprek) process, as the Awb gives the c
 - **AND** the complaint status MUST change to `hoorgesprek_afgerond`
 
 #### Scenario: Complainant waives right to hearing
-- **GIVEN** complaint `KL-2026-0042` is `in_behandeling`
+- **GIVEN** complaint `KL-2026-0041` is `in_behandeling`
 - **WHEN** the complainant explicitly waives their right to be heard
 - **THEN** the handler MUST record the waiver with: waiver date, method (email/brief/telefoon), and confirmation text
 - **AND** the complaint MUST skip the hearing stages and proceed directly to disposition
@@ -134,7 +134,7 @@ The system SHALL support a hearing (hoorgesprek) process, as the Awb gives the c
 The system SHALL support escalation of a complaint to a formal case (zaak) when a complaint reveals a larger issue, while maintaining the bidirectional link.
 
 #### Scenario: Escalate complaint to formal case
-- **GIVEN** complaint `KL-2026-0042` reveals a systemic service failure in the building permits department
+- **GIVEN** complaint `KL-2026-0041` reveals a systemic service failure in the building permits department
 - **WHEN** the handler clicks "Escaleren naar zaak" and selects zaaktype "Intern onderzoek"
 - **THEN** a new zaak MUST be created in Dossiq with the selected zaaktype
 - **AND** the zaak MUST reference the originating complaint (`bronKlacht`: complaint ID)
@@ -143,7 +143,7 @@ The system SHALL support escalation of a complaint to a formal case (zaak) when 
 - **AND** the complaint status MUST remain independently trackable (not closed by escalation)
 
 #### Scenario: View escalated case from complaint
-- **GIVEN** complaint `KL-2026-0042` has been escalated to case "ZAAK-2026-000567"
+- **GIVEN** complaint `KL-2026-0041` has been escalated to case "ZAAK-2026-000567"
 - **WHEN** viewing the complaint detail
 - **THEN** a "Gerelateerde zaak" section MUST show the linked case with: case number, status, and a link to the case detail
 - **AND** updates to the case MUST be visible in the complaint's activity timeline
@@ -159,7 +159,7 @@ The system SHALL support escalation of a complaint to a formal case (zaak) when 
 The system SHALL record how complaints are resolved through a formal disposition (oordeel) that classifies the outcome.
 
 #### Scenario: Close complaint with disposition
-- **GIVEN** complaint `KL-2026-0042` has been investigated and the hearing is completed
+- **GIVEN** complaint `KL-2026-0041` has been investigated and the hearing is completed
 - **WHEN** the handler closes the complaint
 - **THEN** a disposition MUST be recorded with:
   - `oordeel`: enum (`gegrond`, `deels_gegrond`, `ongegrond`, `ingetrokken`, `niet_ontvankelijk`)
@@ -177,7 +177,7 @@ The system SHALL record how complaints are resolved through a formal disposition
 - **AND** the complaint deadline timer MUST continue running during approval
 
 #### Scenario: Generate formal response letter
-- **GIVEN** complaint `KL-2026-0042` has disposition `deels_gegrond` with maatregelen
+- **GIVEN** complaint `KL-2026-0041` has disposition `deels_gegrond` with maatregelen
 - **WHEN** the handler clicks "Afsluitbrief genereren"
 - **THEN** the system MUST generate a response letter using the complaint template (via Docudesk integration)
 - **AND** the letter MUST include: complaint number, subject, disposition, explanation, and proposed measures
@@ -255,7 +255,7 @@ Complaints MUST be accessible through dedicated views and dashboard widgets.
 - **AND** the list MUST support filtering by: status, category, handler, date range, and priority
 
 #### Scenario: Complaint detail view
-- **GIVEN** complaint `KL-2026-0042` exists
+- **GIVEN** complaint `KL-2026-0041` exists
 - **WHEN** the handler clicks on it in the complaint list
 - **THEN** a detail view MUST show: all complaint fields, status timeline, deadline panel (reusing DeadlinePanel.vue), hearing records, linked documents, activity timeline, and linked case (if escalated)
 - **AND** the handler MUST be able to change status, schedule hearing, record disposition, and escalate to case from this view
@@ -274,7 +274,7 @@ Complaints MUST be accessible through dedicated views and dashboard widgets.
 All communication with the complainant MUST be recorded as part of the complaint record.
 
 #### Scenario: Send acknowledgment letter
-- **GIVEN** complaint `KL-2026-0042` is in status `ontvangen`
+- **GIVEN** complaint `KL-2026-0041` is in status `ontvangen`
 - **WHEN** the handler clicks "Ontvangstbevestiging verzenden"
 - **THEN** a template letter MUST be generated (via Docudesk) with: complaint number, received date, handler name, and expected resolution date
 - **AND** the letter MUST be sent via the configured channel (email or print queue)
@@ -288,7 +288,7 @@ All communication with the complainant MUST be recorded as part of the complaint
 - **AND** the communication MUST appear in the complaint's activity timeline
 
 #### Scenario: Complainant submits additional information
-- **GIVEN** complaint `KL-2026-0042` is `in_behandeling`
+- **GIVEN** complaint `KL-2026-0041` is `in_behandeling`
 - **WHEN** the complainant sends additional documents via email
 - **THEN** the n8n email handler MUST link the attachments to the existing complaint (matching on complaint number in subject line)
 - **AND** the handler MUST receive a notification about the new attachments

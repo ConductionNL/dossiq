@@ -25,10 +25,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\DeliveryConcludedListener;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Integriq\Event\DeliveryConcludedEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * ObjectService stub matching the named-argument signatures used by the listener.
@@ -43,7 +46,7 @@ interface DeliveryObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, string $register, string $schema): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Save or update an object.
@@ -54,13 +57,14 @@ interface DeliveryObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function saveObject(array $object, string $register, string $schema): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
  * Unit tests for DeliveryConcludedListener.
  *
  * @covers \OCA\Dossiq\Listener\DeliveryConcludedListener
+ * @covers \OCA\Dossiq\Listener\Support\ConcludedDelivery
  */
 class DeliveryConcludedListenerTest extends TestCase {
 
@@ -88,7 +92,8 @@ class DeliveryConcludedListenerTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('reg');
 		$this->listener = new DeliveryConcludedListener(
 			settingsService: $this->settingsService,
-			logger: $this->createMock(originalClassName: LoggerInterface::class)
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			serviceAccount: $this->passThroughAccount()
 		);
 	}//end setUp()
 
@@ -262,4 +267,16 @@ class DeliveryConcludedListenerTest extends TestCase {
 
 		$this->listener->handle($this->concludedEvent(sourceApp: 'dossiq', status: 'delivered', correlationId: 'corr-9'));
 	}//end testNoSaveWhenNoPublicationMatches()
+
+	/**
+	 * A service account that runs the operation as whoever is signed in.
+	 *
+	 * @return BackgroundServiceAccount The pass-through account.
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 }//end class

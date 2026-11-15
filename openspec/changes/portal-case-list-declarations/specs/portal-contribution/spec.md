@@ -17,12 +17,20 @@ stay scoped by `portalSubject` for every audience.
 - **THEN** only the cases filed under its own subject MUST be returned
 
 ### Requirement: The case list says what is a case and when it is closed (REQ-PORTAL-010)
-`mijnZaken` MUST declare `kind: 'cases'` and `closedField: 'endDate'`.
+`mijnZaken` MUST declare `kind: 'cases'` and `closedField: 'isFinalStatus'`,
+and MUST project `isFinalStatus`. A case is closed once its status is final,
+whether staff ended it or the resident withdrew it; a withdrawal sets no end
+date, so `endDate` cannot be the marker.
 
 #### Scenario: An ended case is listed as closed
-- **GIVEN** a resident with one running case and one case with an end date
+- **GIVEN** a resident with one running case and one case on a final status
 - **WHEN** they open "My cases" in the portal
 - **THEN** the running case MUST be under Open and the ended case under Closed
+
+#### Scenario: A withdrawn case is listed as closed
+- **GIVEN** a resident who withdrew a Woo request in the portal, so it sits on the case type's withdrawal status without an end date
+- **WHEN** they open "My cases" in the portal
+- **THEN** the withdrawn request MUST be under Closed
 
 ### Requirement: A company's case carries the branch it was filed for (REQ-PORTAL-011)
 A case opened from a portal write MUST carry the branch number the portal
@@ -44,3 +52,14 @@ against the case.
 - **GIVEN** a functional administrator editing a case type
 - **WHEN** they look at who may reach its cases from the portal
 - **THEN** "With a case number and an e-mail address" MUST be shown disabled with the sentence "Available once the portal checks the address against the case."
+
+### Requirement: The case list says where its case types live (REQ-PORTAL-017)
+`mijnZaken` MUST declare `caseTypeField: 'caseType'` and
+`caseTypeSource: {register: 'dossiq', schema: 'caseType', labelField: 'title'}`,
+so a portal administrator can hide a dossiq case type the portal has no
+request form for (portaliq `operate-show-per-case-type`, portaliq#907).
+
+#### Scenario: An administrator hides a case type without a form
+- **GIVEN** a dossiq case type "Melding openbare ruimte" that no portal request form names
+- **WHEN** a portal administrator opens the case types of their portal
+- **THEN** "Melding openbare ruimte" MUST be listed under its title, and hiding it MUST keep its cases off "My cases" in that portal

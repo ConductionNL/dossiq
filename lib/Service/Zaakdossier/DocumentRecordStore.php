@@ -13,8 +13,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\KeepsLookupsInSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use RuntimeException;
 use Throwable;
 
@@ -29,8 +35,17 @@ use Throwable;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class DocumentRecordStore {
+class DocumentRecordStore implements DocumentRecordStoreInterface {
+	use ReadsDossierRegister;
+	use KeepsLookupsInSchema;
 	use SearchesObjects;
+
+	/**
+	 * The register, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
 
 	/**
 	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
@@ -38,6 +53,7 @@ class DocumentRecordStore {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -99,10 +115,18 @@ class DocumentRecordStore {
 		$schema = $this->schema(key: 'dossier_informatieobject_schema');
 		$object = $this->withoutSelf(row: $record);
 		if ($uuid === '') {
-			return $this->resolveSavedUuid(saved: $objectService->saveObject(object: $object, register: $register, schema: $schema));
+			return $this->resolveSavedUuid(
+				saved: $objectService->saveObject(
+					object: $object,
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+				)
+			);
 		}
 
-		$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		$saved = $objectService->saveObject(
+			object: $object,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid)
+		);
 
 		return $this->resolveSavedUuid(saved: $saved);
 	}//end saveRecord()
@@ -118,7 +142,12 @@ class DocumentRecordStore {
 	 */
 	public function deleteRecord(string $recordId): void {
 		[$objectService, $register] = $this->requireRegister();
-		$objectService->deleteObject(uuid: $recordId, register: $register, schema: $this->schema(key: 'dossier_informatieobject_schema'));
+		$objectService->deleteObject(
+			new ObjectDeletion(
+				uuid: $recordId,
+				target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'dossier_informatieobject_schema'))
+			)
+		);
 	}//end deleteRecord()
 
 	/**
@@ -153,27 +182,35 @@ class DocumentRecordStore {
 	 *
 	 * @param string $caseId The case uuid.
 	 * @param string $recordId The record uuid.
+	 * @param array<string, mixed> $extra More fields for a NEW join, such as the `provenance` a
+	 *        document linked through Gather documents carries; an existing join is left as it is.
 	 *
 	 * @return bool True when a join was created.
 	 *
 	 * @spec openspec/specs/document-projection/spec.md
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-every-gathered-document-records-where-it-was-found-req-woo-014
 	 */
-	public function ensureJoin(string $caseId, string $recordId): bool {
+	public function ensureJoin(string $caseId, string $recordId, array $extra = []): bool {
 		if ($this->joinsFor(recordId: $recordId, caseId: $caseId) !== []) {
 			return false;
 		}
 
 		[$objectService, $register] = $this->requireRegister();
 		$objectService->saveObject(
-			object: [
-				'case' => $caseId,
-				'informatieobject' => $recordId,
-				// The schema's enum spells it this way, and createJoin() writes the same.
-				'natureRelationshipDisplay' => 'Hoort at omgekeerd',
-				'registrationDate' => date('Y-m-d\TH:i:s\Z'),
-			],
-			register: $register,
-			schema: $this->schema(key: 'dossier_zaakinformatieobject_schema'),
+			object: array_merge(
+				$extra,
+				[
+					'case' => $caseId,
+					'informatieobject' => $recordId,
+					// The schema's enum spells it this way, and createJoin() writes the same.
+					'natureRelationshipDisplay' => 'Hoort at omgekeerd',
+					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
+				]
+			),
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $register,
+					schema: $this->schema(key: 'dossier_zaakinformatieobject_schema')
+				))
 		);
 
 		return true;
@@ -199,7 +236,7 @@ class DocumentRecordStore {
 				continue;
 			}
 
-			$objectService->deleteObject(uuid: $joinId, register: $register, schema: $joinSchema);
+			$objectService->deleteObject(new ObjectDeletion(uuid: $joinId, target: new ObjectFindTarget(register: $register, schema: $joinSchema)));
 			$deleted++;
 		}
 
@@ -300,6 +337,10 @@ class DocumentRecordStore {
 			return null;
 		}
 
+		if ($this->rowInSchema(row: $row, schema: $this->schema(key: $schemaKey)) === false) {
+			return null;
+		}
+
 		return $this->rowOf(value: $row);
 	}//end findRow()
 
@@ -314,45 +355,6 @@ class DocumentRecordStore {
 		$self = (array)($row['@self'] ?? []);
 		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
 	}//end idOf()
-
-	/**
-	 * The object service and register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The object service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister or the register is not configured.
-	 */
-	private function requireRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end requireRegister()
-
-	/**
-	 * A configured schema slug or id, or an exception when unset.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema.
-	 *
-	 * @throws RuntimeException When the key is not configured.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossier schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
 
 	/**
 	 * A saved object's uuid.

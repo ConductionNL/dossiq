@@ -35,7 +35,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Milestone;
 
+use OCA\Dossiq\Kernel\Contracts\MilestoneRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -46,9 +48,16 @@ use RuntimeException;
  *
  * @spec openspec/specs/milestone-tracking/spec.md
  */
-class MilestoneRepository {
+class MilestoneRepository implements MilestoneRepositoryInterface {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -58,6 +67,7 @@ class MilestoneRepository {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -114,9 +124,34 @@ class MilestoneRepository {
 	 *
 	 * @return string|null The case type UUID, or null when it cannot be read.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function findCaseTypeId(string $caseId): ?string {
+		$source = $this->caseSource();
+		if ($source === null) {
+			return null;
+		}
+
+		[$objectService, $register, $schema] = $source;
+
+		try {
+			$objectService->setRegister($register);
+			$objectService->setSchema($schema);
+			$objectService->setObject($caseId);
+			$case = $objectService->getObject();
+		} catch (\Throwable $e) {
+			return null;
+		}
+
+		return $this->caseTypeOf(case: $case);
+	}//end findCaseTypeId()
+
+	/**
+	 * The object service with the configured register and case schema.
+	 *
+	 * @return array{0: object, 1: mixed, 2: mixed}|null The service, register and schema, or null when one is missing.
+	 */
+	private function caseSource(): array|null {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -129,15 +164,17 @@ class MilestoneRepository {
 			return null;
 		}
 
-		try {
-			$objectService->setRegister($register);
-			$objectService->setSchema($schema);
-			$objectService->setObject($caseId);
-			$case = $objectService->getObject();
-		} catch (\Throwable $e) {
-			return null;
-		}
+		return [$objectService, $register, $schema];
+	}//end caseSource()
 
+	/**
+	 * The case type uuid a read case carries.
+	 *
+	 * @param mixed $case The case entity, or null when it was not found.
+	 *
+	 * @return string|null The case type UUID, or null when the case or its type is missing.
+	 */
+	private function caseTypeOf(mixed $case): string|null {
 		if ($case === null) {
 			return null;
 		}
@@ -150,7 +187,7 @@ class MilestoneRepository {
 		}
 
 		return $caseTypeId;
-	}//end findCaseTypeId()
+	}//end caseTypeOf()
 
 	/**
 	 * Get the milestone records recorded against a case.
@@ -162,23 +199,9 @@ class MilestoneRepository {
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
 	public function findRecords(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('milestone_record_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['case' => $caseId, '_limit' => 100],
+		return $this->rows->search(
+			schemaKey: 'milestone_record_schema',
+			filters: ['case' => $caseId, '_limit' => 100]
 		);
 	}//end findRecords()
 }//end class
