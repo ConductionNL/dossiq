@@ -145,7 +145,7 @@ class ApprovalGate {
 			return $this->ungated();
 		}
 
-		return $this->gatedVerdict(caseRow: $case, gate: $gate, act: $act, userId: $userId);
+		return $this->gatedVerdict(gate: $gate, asker: ['case' => $case, 'act' => $act, 'userId' => $userId]);
 	}//end verdictFor()
 
 	/**
@@ -169,15 +169,13 @@ class ApprovalGate {
 	/**
 	 * The verdict on a gated act: outstanding until decidiq was asked, else decidiq's answer.
 	 *
-	 * @param array<string, mixed> $caseRow The case.
-	 * @param array<string, mixed> $gate    The gate the act is behind.
-	 * @param string               $act     The act.
-	 * @param string               $userId  The acting user.
+	 * @param array<string, mixed>                                   $gate  The gate the act is behind.
+	 * @param array{case: array<string, mixed>, act: string, userId: string} $asker The case, the act and the acting user.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function gatedVerdict(array $caseRow, array $gate, string $act, string $userId): array {
-		$reference = ApprovalGateDeclaration::referenceFor(case: $caseRow, act: $act);
+	private function gatedVerdict(array $gate, array $asker): array {
+		$reference = ApprovalGateDeclaration::referenceFor(case: $asker['case'], act: $asker['act']);
 		if ($reference === '') {
 			return $this->refused(
 				refusal: [
@@ -191,7 +189,7 @@ class ApprovalGate {
 
 		return $this->verdictFromDecidiq(
 			asked: new DecidiqAnswer(gate: $gate, reference: $reference, approvers: []),
-			userId: $userId
+			userId: $asker['userId']
 		);
 	}//end gatedVerdict()
 

@@ -432,16 +432,15 @@ class CaseTermsService implements CaseTermsServiceInterface {
 		$terms = $this->termsForCase(caseId: $caseId, now: $today);
 		$phases = $this->sources->declarations->phasesOf(caseTypeId: $caseTypeId);
 
-		return $this->progressOf(terms: $terms, phases: $phases, statusTypeId: $statusTypeId, today: $today);
+		return $this->progressOf(terms: $terms, reading: ['phases' => $phases, 'statusTypeId' => $statusTypeId, 'today' => $today]);
 	}//end progressFor()
 
 	/**
 	 * The progress figures of a case's terms and phases.
 	 *
 	 * @param array<int, array<string, mixed>> $terms The case's terms.
-	 * @param array<int, mixed> $phases The case type's phases.
-	 * @param string $statusTypeId The phase the case is in now.
-	 * @param DateTimeImmutable $today The day to judge against.
+	 * @param array{phases: array<int, mixed>, statusTypeId: string, today: DateTimeImmutable} $reading The case type's
+	 *        phases, the phase the case is in now and the day to judge against.
 	 *
 	 * @return array{progress: int, daysLeft: int, phasesDone: int, phasesTotal: int,
 	 *               termConsumed: int, phaseOverdue: bool, plannedOverdue: bool,
@@ -449,13 +448,14 @@ class CaseTermsService implements CaseTermsServiceInterface {
 	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
-	private function progressOf(array $terms, array $phases, string $statusTypeId, DateTimeImmutable $today): array {
+	private function progressOf(array $terms, array $reading): array {
+		['phases' => $phases, 'statusTypeId' => $statusTypeId, 'today' => $today] = $reading;
 		$statutory = $this->firstOfKind(terms: $terms, kind: TermKind::STATUTORY);
 		$consumed = $this->consumedPercent(term: $statutory, today: $today);
 		$done = $this->phasesDone(phases: $phases, statusTypeId: $statusTypeId);
 		$total = count($phases);
 
-		$byPhases = $this->progressByPhases(done: $done, total: $total, consumed: $consumed);
+		$byPhases = $this->progressByPhases(phases: ['done' => $done, 'total' => $total], consumed: $consumed);
 
 		return [
 			'progress' => max(0, min(100, (int)round(((($byPhases + $consumed) / 2))))),
@@ -469,18 +469,17 @@ class CaseTermsService implements CaseTermsServiceInterface {
 	/**
 	 * The share of phases done, as a percentage, or the term consumed without phases.
 	 *
-	 * @param int $done The phases done.
-	 * @param int $total The phases declared.
+	 * @param array{done: int, total: int} $phases The phases done and the phases declared.
 	 * @param int $consumed The share of the statutory term consumed.
 	 *
 	 * @return int The percentage.
 	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
-	private function progressByPhases(int $done, int $total, int $consumed): int {
+	private function progressByPhases(array $phases, int $consumed): int {
 		$byPhases = $consumed;
-		if ($total > 0) {
-			$byPhases = (int)round((($done / $total) * 100));
+		if ($phases['total'] > 0) {
+			$byPhases = (int)round((($phases['done'] / $phases['total']) * 100));
 		}
 
 		return $byPhases;
