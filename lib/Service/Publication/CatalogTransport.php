@@ -92,13 +92,25 @@ class CatalogTransport {
 			);
 		}
 
+		return $this->announced(delivered: $delivered, caseId: $caseId);
+	}//end deliver()
+
+	/**
+	 * Log a delivered publication, and answer it.
+	 *
+	 * @param array<string, mixed> $delivered What the ledger answered, with its `publicationId`.
+	 * @param string               $caseId    The case UUID.
+	 *
+	 * @return array<string, mixed> The delivered publication.
+	 */
+	private function announced(array $delivered, string $caseId): array {
 		$this->logger->info(
 			'WOO decision published to OpenCatalogi: ' . $delivered['publicationId'] . ' for case ' . $caseId,
 			['app' => AppIdentity::APP_ID],
 		);
 
 		return $delivered;
-	}//end deliver()
+	}//end announced()
 
 	/**
 	 * Log a failed delivery and say why it failed.

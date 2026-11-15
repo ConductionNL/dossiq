@@ -92,12 +92,24 @@ class WooReportReadLog implements WooReportReadLogInterface {
 			return 0;
 		}
 
+		return $this->recordEach(caseIds: $caseIds, context: ['reader' => $readerId, 'scope' => $scope]);
+	}//end recordThroughputRead()
+
+	/**
+	 * Record one read per case, all stamped with the same moment.
+	 *
+	 * @param list<string>                                  $caseIds The cases read.
+	 * @param array{reader: string, scope: array<mixed>} $context Who read them, and the report's scope.
+	 *
+	 * @return int How many reads were recorded.
+	 */
+	private function recordEach(array $caseIds, array $context): int {
 		$target = $this->auditTarget();
 
 		$context = [
-			'reader' => $readerId,
+			'reader' => $context['reader'],
 			'at' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-			'scope' => $scope,
+			'scope' => $context['scope'],
 		];
 		$written = 0;
 		foreach ($caseIds as $caseId) {
@@ -107,7 +119,7 @@ class WooReportReadLog implements WooReportReadLogInterface {
 		}
 
 		return $written;
-	}//end recordThroughputRead()
+	}//end recordEach()
 
 	/**
 	 * The object service, audit mapper, register and case schema a read is recorded with.

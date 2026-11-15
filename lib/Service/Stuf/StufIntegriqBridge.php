@@ -91,6 +91,23 @@ class StufIntegriqBridge implements StufIntegriqBridgeInterface {
 	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
 	 */
 	public function vrijBericht(array $endpoint, string $name, array $payload): array {
+		$event = $this->vrijBerichtEvent(endpoint: $endpoint, request: ['name' => $name, 'payload' => $payload]);
+		$this->dispatcher->dispatchTyped($event);
+
+		return $this->vrijBerichtAnswer(event: $event);
+	}//end vrijBericht()
+
+	/**
+	 * The integriq request event that sends a vrijBericht through the endpoint's source.
+	 *
+	 * @param array<string, mixed>                               $endpoint The endpoint, with its integriq source.
+	 * @param array{name: string, payload: array<string, mixed>} $request  The message name and its payload.
+	 *
+	 * @return object The event, not yet dispatched.
+	 *
+	 * @throws StufException When the endpoint names no source, or integriq is not installed.
+	 */
+	private function vrijBerichtEvent(array $endpoint, array $request): object {
 		$sourceId = trim((string)($endpoint['integriqSource'] ?? ''));
 		if ($sourceId === '') {
 			throw new StufException(message: 'The endpoint names no integriq source (integriqSource); nothing was sent.', code: Http::STATUS_BAD_REQUEST);
@@ -101,17 +118,14 @@ class StufIntegriqBridge implements StufIntegriqBridgeInterface {
 			throw new StufException(message: 'Integriq is not installed; nothing was sent.', code: Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
-		$event = new $eventClass(
+		return new $eventClass(
 			sourceApp: AppIdentity::APP_ID,
 			sourceId: $sourceId,
 			operation: 'vrijBericht',
-			arguments: ['name' => $name, 'payload' => $payload],
+			arguments: ['name' => $request['name'], 'payload' => $request['payload']],
 			correlationId: (string)($endpoint['id'] ?? '') . ':' . bin2hex(random_bytes(8))
 		);
-		$this->dispatcher->dispatchTyped($event);
-
-		return $this->vrijBerichtAnswer(event: $event);
-	}//end vrijBericht()
+	}//end vrijBerichtEvent()
 
 	/**
 	 * What integriq answered to a dispatched vrijBericht request.
