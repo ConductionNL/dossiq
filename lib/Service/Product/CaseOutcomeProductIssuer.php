@@ -124,8 +124,9 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 			return null;
 		}
 
-		$case = $this->read(objectService: $objectService, register: $register, schema: 'case', id: $caseId);
-		$declared = $this->declarationFor(objectService: $objectService, register: $register, caseObject: $case);
+		$store = ['objectService' => $objectService, 'register' => $register];
+		$case = $this->read(store: $store, object: ['schema' => 'case', 'id' => $caseId]);
+		$declared = $this->declarationFor(store: $store, caseObject: $case);
 		if ($case === null || $declared === null) {
 			return null;
 		}
@@ -146,18 +147,17 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	/**
 	 * The product declaration of the case's type, or null when it declares none.
 	 *
-	 * @param object                    $objectService OpenRegister's object service.
-	 * @param string                    $register      The register.
-	 * @param array<string, mixed>|null $caseObject    The case.
+	 * @param array{objectService: object, register: string} $store      OpenRegister's object service and the register.
+	 * @param array<string, mixed>|null                      $caseObject The case.
 	 *
 	 * @return array<string, mixed>|null The declaration.
 	 */
-	private function declarationFor(object $objectService, string $register, ?array $caseObject): ?array {
+	private function declarationFor(array $store, ?array $caseObject): ?array {
 		if ($caseObject === null) {
 			return null;
 		}
 
-		$type = $this->read(objectService: $objectService, register: $register, schema: 'caseType', id: (string)($caseObject['caseType'] ?? ''));
+		$type = $this->read(store: $store, object: ['schema' => 'caseType', 'id' => (string)($caseObject['caseType'] ?? '')]);
 		$declared = (($type ?? [])['issuesPermit'] ?? null);
 		if (is_array($declared) === false || $declared === []) {
 			return null;
@@ -271,7 +271,7 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 			return null;
 		}
 
-		return $this->patchProduct(outcome: $outcome, productId: $productId, set: $set);
+		return $this->patchProduct(outcome: $outcome, patch: ['id' => $productId, 'set' => $set]);
 	}//end change()
 
 	/**
@@ -284,10 +284,8 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	 */
 	private function changeableProduct(ProductOutcome $outcome, string $productId): bool {
 		$product = $this->read(
-			objectService: $outcome->objectService,
-			register: $outcome->register,
-			schema: $this->schemaOf(declared: $outcome->declared),
-			id: $productId
+			store: ['objectService' => $outcome->objectService, 'register' => $outcome->register],
+			object: ['schema' => $this->schemaOf(declared: $outcome->declared), 'id' => $productId]
 		);
 		if ($product === null) {
 			return false;
@@ -307,13 +305,12 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	/**
 	 * Write the change set onto the product, as the system when the object service offers it.
 	 *
-	 * @param ProductOutcome       $outcome   The change case and its declaration, which names the product schema.
-	 * @param string               $productId The product.
-	 * @param array<string, mixed> $set       The fields to set.
+	 * @param ProductOutcome                              $outcome The change case and its declaration, which names the product schema.
+	 * @param array{id: string, set: array<string, mixed>} $patch   The product and the fields to set.
 	 *
 	 * @return array<string, mixed>|null The product, changed.
 	 */
-	private function patchProduct(ProductOutcome $outcome, string $productId, array $set): ?array {
+	private function patchProduct(ProductOutcome $outcome, array $patch): ?array {
 		$schema = $this->schemaOf(declared: $outcome->declared);
 		return $this->runAsSystemIfAvailable(
 			objectService: $outcome->objectService,
@@ -321,8 +318,8 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 				objectService: $outcome->objectService,
 				register: $outcome->register,
 				schema: $schema,
-				id: $productId,
-				changes: $set
+				id: $patch['id'],
+				changes: $patch['set']
 			)
 		);
 	}//end patchProduct()
@@ -425,18 +422,19 @@ class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	/**
 	 * Read one object as the system, or null.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $schema        The schema slug.
-	 * @param string $id            The object id.
+	 * @param array{objectService: object, register: string} $store  OpenRegister's object service and the register.
+	 * @param array{schema: string, id: string}             $object The schema slug and the object id.
 	 *
 	 * @return array<string, mixed>|null The object.
 	 */
-	private function read(object $objectService, string $register, string $schema, string $id): ?array {
+	private function read(array $store, array $object): ?array {
+		['schema' => $schema, 'id' => $id] = $object;
 		if (trim($id) === '') {
 			return null;
 		}
 
+		$objectService = $store['objectService'];
+		$register = $store['register'];
 		$found = $this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): ?array => $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id)
