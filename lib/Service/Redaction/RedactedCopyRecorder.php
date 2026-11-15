@@ -118,13 +118,7 @@ class RedactedCopyRecorder {
 	 * @spec openspec/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
 	 */
 	public function storeUpload(string $caseId, array $original, string $fileName, string $content): array {
-		$base = pathinfo((string)($original['fileName'] ?? ($original['title'] ?? 'document')), PATHINFO_FILENAME);
-		$extension = pathinfo($fileName, PATHINFO_EXTENSION);
-		$name = $base . '_gelakt_' . gmdate('Ymd\THis');
-		if ($extension !== '') {
-			$name .= '.' . $extension;
-		}
-
+		$name = $this->redactedName(original: $original, fileName: $fileName);
 		$fileId = $this->store->storeFileOnObject(objectId: $caseId, fileName: $name, content: $content);
 		if ($fileId <= 0) {
 			throw new RuntimeException('upload_not_stored: the uploaded version could not be read back');
@@ -132,6 +126,25 @@ class RedactedCopyRecorder {
 
 		return ['fileId' => $fileId, 'recordId' => $this->recordFile(caseId: $caseId, original: $original, fileId: $fileId)];
 	}//end storeUpload()
+
+	/**
+	 * The redacted copy's file name: the original's name, marked redacted and stamped, with the upload's extension.
+	 *
+	 * @param array<string, mixed> $original The original document.
+	 * @param string               $fileName The uploaded file's name.
+	 *
+	 * @return string The file name.
+	 */
+	private function redactedName(array $original, string $fileName): string {
+		$base = pathinfo((string)($original['fileName'] ?? ($original['title'] ?? 'document')), PATHINFO_FILENAME);
+		$extension = pathinfo($fileName, PATHINFO_EXTENSION);
+		$name = $base . '_gelakt_' . gmdate('Ymd\THis');
+		if ($extension !== '') {
+			$name .= '.' . $extension;
+		}
+
+		return $name;
+	}//end redactedName()
 
 	/**
 	 * The record a copy gets when nothing recorded it yet.
