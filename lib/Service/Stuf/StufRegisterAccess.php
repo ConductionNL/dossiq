@@ -30,6 +30,9 @@ namespace OCA\Dossiq\Service\Stuf;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\AppFramework\IAppContainer;
 use OCP\IAppConfig;
@@ -83,7 +86,7 @@ class StufRegisterAccess implements StufRegisterAccessInterface {
 		}
 
 		$registerId = $this->getRegisterId();
-		$saved = $service->saveObject($data, [], $registerId, $schema, null);
+		$saved = $service->saveObject($data, new ObjectSaveOptions(target: new ObjectFindTarget(register: $registerId, schema: $schema)));
 		return $this->normalise(value: $saved);
 	}//end saveObject()
 
@@ -110,7 +113,7 @@ class StufRegisterAccess implements StufRegisterAccessInterface {
 				return null;
 			}
 
-			$object = $service->find(id: $id, register: $this->getRegisterId(), schema: $schema);
+			$object = $service->find(id: $id, options: new ObjectFindOptions(register: $this->getRegisterId(), schema: $schema));
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				message: 'StUF register findById failed: {err}',

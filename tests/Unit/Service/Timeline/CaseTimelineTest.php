@@ -49,6 +49,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * A stand-in for the entry OpenRegister answers with.
@@ -305,11 +306,12 @@ class FakeTimelineObjectService {
 	 */
 	public function find(
 		string $id,
-		mixed $register = null,
-		mixed $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): ?object {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->scopes[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 		$this->findsAsSystem[] = $this->inSystem;
 		if (in_array($id, $this->throwing, true) === true) {

@@ -78,7 +78,24 @@ class ExtensionNotice implements ExtensionNoticeInterface {
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	public function tell(string $caseId, string $instanceId, string $reason, string $newEnd): array {
-		$case = $this->caseRow(caseId: $caseId);
+		return $this->tellOn(
+			case: $this->caseRow(caseId: $caseId),
+			extension: ['caseId' => $caseId, 'instanceId' => $instanceId, 'reason' => $reason, 'newEnd' => $newEnd]
+		);
+	}//end tell()
+
+	/**
+	 * Send the extension notice on the case row and answer what became of it.
+	 *
+	 * @param array<string, mixed>  $case      The case row.
+	 * @param array<string, string> $extension The `caseId`, the extended `instanceId`, the `reason` and the `newEnd` date.
+	 *
+	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
+	 */
+	private function tellOn(array $case, array $extension): array {
+		$caseId = $extension['caseId'];
+		$instanceId = $extension['instanceId'];
+		$newEnd = $extension['newEnd'];
 
 		try {
 			$payload = $this->notifications->sendTermijnNotification(
@@ -87,7 +104,7 @@ class ExtensionNotice implements ExtensionNoticeInterface {
 				'',
 				[
 					'case' => (string)($case['identifier'] ?? $caseId),
-					'reason' => $reason,
+					'reason' => $extension['reason'],
 					'newEinddatum' => $newEnd,
 					'dedupeKey' => 'extension|' . $instanceId . '|' . $newEnd,
 				],
@@ -101,7 +118,7 @@ class ExtensionNotice implements ExtensionNoticeInterface {
 		}
 
 		return $this->sent(channel: (string)($payload['dispatch']['channel'] ?? ''));
-	}//end tell()
+	}//end tellOn()
 
 	/**
 	 * The case row, read as the system; just its id when it cannot be read.

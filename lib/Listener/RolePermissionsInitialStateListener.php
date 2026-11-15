@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\RolePermissionsInterface;
-use OCA\Dossiq\Listener\Support\OwnPageRender;
+use OCA\Dossiq\Listener\Support\ProvidesOnOwnPage;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -40,6 +40,8 @@ use OCP\EventDispatcher\IEventListener;
  * @spec openspec/specs/admin-data-access/spec.md
  */
 class RolePermissionsInitialStateListener implements IEventListener {
+
+	use ProvidesOnOwnPage;
 
 	/**
 	 * The initial state key.
@@ -70,10 +72,9 @@ class RolePermissionsInitialStateListener implements IEventListener {
 	 * @spec openspec/specs/admin-data-access/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ((new OwnPageRender())->matches(event: $event) === false) {
-			return;
-		}
-
-		$this->initialState->provideInitialState(self::STATE_KEY, $this->roles->forCurrentUser());
+		$this->provideOnOwnPage(
+			event: $event,
+			provide: fn () => $this->initialState->provideInitialState(self::STATE_KEY, $this->roles->forCurrentUser())
+		);
 	}//end handle()
 }//end class

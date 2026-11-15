@@ -180,6 +180,21 @@ final class FleetAppId
             return null;
         }
 
+        return self::pathUnder(id: $id, suffix: $suffix);
+
+    }//end appPath()
+
+
+    /**
+     * The path of a suffix under an installed app id.
+     *
+     * @param string $id     The installed app id.
+     * @param string $suffix Path after the app segment, no leading slash.
+     *
+     * @return string The path.
+     */
+    private static function pathUnder(string $id, string $suffix): string
+    {
         $path = '/apps/'.$id;
         if ($suffix !== '') {
             $path .= '/'.ltrim($suffix, '/');
@@ -187,7 +202,7 @@ final class FleetAppId
 
         return $path;
 
-    }//end appPath()
+    }//end pathUnder()
 
 
     /**
@@ -301,7 +316,22 @@ final class FleetAppId
      */
     public static function getService(ContainerInterface $container, string $canonical, string $relative): ?object
     {
-        foreach (self::classCandidates(canonical: $canonical, relative: $relative) as $fqcn) {
+        return self::firstService(container: $container, candidates: self::classCandidates(canonical: $canonical, relative: $relative));
+
+    }//end getService()
+
+
+    /**
+     * The first candidate class the container answers with an object.
+     *
+     * @param ContainerInterface $container  The service container.
+     * @param array<int, string> $candidates Candidate class names, newest first.
+     *
+     * @return object|null The service, or null when no candidate resolves.
+     */
+    private static function firstService(ContainerInterface $container, array $candidates): ?object
+    {
+        foreach ($candidates as $fqcn) {
             try {
                 $service = $container->get($fqcn);
                 if (is_object($service) === true) {
@@ -316,7 +346,7 @@ final class FleetAppId
 
         return null;
 
-    }//end getService()
+    }//end firstService()
 
 
     /**

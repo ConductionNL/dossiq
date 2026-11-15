@@ -18,6 +18,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The guard trait, through a minimal host class.
@@ -154,7 +155,9 @@ final class GuardsZgwRequestsTest extends TestCase {
 			 *
 			 * @return never
 			 */
-			public function find(string $uuid, mixed $register = null, mixed $schema = null): never {
+			public function find(string $uuid, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): never {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new \RuntimeException('gone');
 			}//end find()
 		};

@@ -46,6 +46,8 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\OpenRegister\Service\HoldOrder;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -468,7 +470,10 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	 */
 	private function saveProofDocument(ProofDocumentTarget $target, array $payload): int {
 		try {
-			$target->objectService->saveObject(object: $payload, register: $target->register, schema: $target->docSchema);
+			$target->objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $target->docSchema))
+			);
 			return 1;
 		} catch (\Throwable $e) {
 			$this->logger->error(

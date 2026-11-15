@@ -15,6 +15,8 @@ namespace OCA\Dossiq\Tests\Unit\Repair\Support;
 
 use OCA\Dossiq\Repair\Support\RepairSchema;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Repair\Support\RepairSchema
@@ -47,12 +49,17 @@ class RepairSchemaTest extends TestCase {
 				return array_shift($this->pages) ?? [];
 			}
 
-			public function find(string $id, int|string $register, int|string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				return $this->stored;
 			}
 
-			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->calls[] = ['saveObject', $object, $register, $schema, $uuid];
 				return $object;
 			}

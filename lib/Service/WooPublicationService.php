@@ -45,8 +45,10 @@ use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Woo\WooDossierReturn;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -97,9 +99,9 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	/**
 	 * Finds the case's Woo decision and mirrors the publication state onto the case.
 	 *
-	 * @var WooCaseLedger
+	 * @var CasePublicationState
 	 */
-	private readonly WooCaseLedger $caseLedger;
+	private readonly CasePublicationState $caseLedger;
 
 	/**
 	 * Loads the case, the decision and the disclosable documents.
@@ -124,7 +126,7 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection.
 	 * @param LoggerInterface $logger Logger.
 	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
-	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
+	 * @param CasePublicationState|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocumentsInterface|null $caseDocuments Loads a case document with its file content.
 	 * @param PagesSeenInterface|null $pagesSeen The pages seen per document; publishing waits for the required ones.
 	 * @param NothingToDisclose|null $nothingToDisclose Whether the case records that nothing can be made public,
@@ -137,12 +139,12 @@ class WooPublicationService implements WooPublicationServiceInterface {
 		private readonly IAppManager $appManager,
 		LoggerInterface $logger,
 		private readonly ?WooDossierReturn $dossierReturn = null,
-		?WooCaseLedger $caseLedger = null,
+		?CasePublicationState $caseLedger = null,
 		?WooCaseDocumentsInterface $caseDocuments = null,
 		private readonly ?PagesSeenInterface $pagesSeen = null,
 		private readonly ?NothingToDisclose $nothingToDisclose = null,
 	) {
-		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
+		$this->caseLedger = ($caseLedger ?? new CasePublicationState(settingsService: $settingsService, logger: $logger));
 		$this->sources    = new PublicationSources(settingsService: $settingsService, caseDocuments: $caseDocuments);
 		$this->transport  = new CatalogTransport(settingsService: $settingsService, apiClient: $apiClient, logger: $logger, caseLedger: $this->caseLedger);
 	}//end __construct()
@@ -323,7 +325,7 @@ class WooPublicationService implements WooPublicationServiceInterface {
 		}
 
 		if ($decisionId === '') {
-			$resolved = $this->caseLedger->resolveWooDecision(caseId: $caseId);
+			$resolved = $this->caseLedger->resolveDecision(caseId: $caseId);
 			if ($resolved['decisionId'] === '') {
 				return $resolved['refusal'];
 			}
@@ -432,9 +434,10 @@ class WooPublicationService implements WooPublicationServiceInterface {
 
 		$source['objectService']->saveObject(
 			object: $decision,
-			register: $source['register'],
-			schema: $source['decisionSchema'],
-			uuid: $source['decisionId']
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $source['register'], schema: $source['decisionSchema']),
+				uuid: $source['decisionId']
+			)
 		);
 	}//end saveDecisionPublication()
 
@@ -628,7 +631,10 @@ class WooPublicationService implements WooPublicationServiceInterface {
 		// The set stays frozen and records the withdraw (REQ-WDS-002).
 		$this->caseLedger->markWithdrawn(caseId: (string)($decision['case'] ?? $caseId), publicationId: $publicationId);
 
-		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
+		$objectService->saveObject(
+			object: $decision,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $decisionSchema), uuid: $decisionId)
+		);
 
 		return $this->clearWithheld(publicationId: $publicationId, caseId: (string)($decision['case'] ?? $caseId));
 	}//end withdrawDecision()
@@ -681,7 +687,7 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	 */
 	private function decisionToWithdraw(string $decisionId, string $caseId): array {
 		if ($decisionId === '') {
-			return $this->caseLedger->resolveWooDecision(caseId: $caseId);
+			return $this->caseLedger->resolveDecision(caseId: $caseId);
 		}
 
 		return ['decisionId' => $decisionId];

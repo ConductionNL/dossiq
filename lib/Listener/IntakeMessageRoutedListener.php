@@ -50,9 +50,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\ChannelIntakeInterface;
+use OCA\Dossiq\Listener\Support\AnswersAsServiceAccount;
 use OCA\Dossiq\Listener\Support\EventGetters;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -66,6 +66,7 @@ use Throwable;
  * @spec openspec/specs/intake-from-a-channel/spec.md
  */
 class IntakeMessageRoutedListener implements IEventListener {
+	use AnswersAsServiceAccount;
 
 	/**
 	 * The integriq event this listener is registered for.
@@ -100,17 +101,13 @@ class IntakeMessageRoutedListener implements IEventListener {
 	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function handle(Event $event): void {
-		try {
-			// Integriq raises this from its own background work, with nobody
-			// signed in, and OpenRegister refuses a write from nobody. A
-			// signed-in caller keeps writing as themselves.
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(operation: fn () => $this->answer(event: $event));
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// written; the slot stays empty, so integriq holds the message as
-			// unanswered.
-			return;
-		}
+		// Integriq raises this from its own background work, with nobody
+		// signed in, and OpenRegister refuses a write from nobody. A
+		// signed-in caller keeps writing as themselves.
+		// Without the service account nothing is
+		// written; the slot stays empty, so integriq holds the message as
+		// unanswered.
+		$this->answerAsServiceAccount(answer: fn () => $this->answer(event: $event));
 	}//end handle()
 
 	/**

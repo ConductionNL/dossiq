@@ -31,6 +31,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * A recorded decision is listed on its case once, and a case that cannot be
@@ -172,7 +175,12 @@ class CaseDecisionLinkTest extends TestCase {
 		$service->method('find')->willReturn(['title' => 'Woo-verzoek', 'decisions' => ['dec-1']]);
 		$service->expects($this->once())
 			->method('patchObject')
-			->with('case-1', ['decisions' => ['dec-1', 'dec-2']], 'dossiq', 'case')
+			->with(...LegacyObjectArgs::with(method: 'patchObject', expected: [
+					'objectId' => 'case-1',
+					'data' => ['decisions' => ['dec-1', 'dec-2']],
+					'register' => 'dossiq',
+					'schema' => 'case',
+				]))
 			->willReturn(['decisions' => ['dec-1', 'dec-2']]);
 
 		$this->link->link(objectService: $service, register: 'dossiq', caseId: 'case-1', decisionId: 'dec-2');
@@ -214,7 +222,9 @@ class CaseDecisionLinkObjectService {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, int|string $register, int|string $schema): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		return null;
 	}//end find()
 
@@ -228,7 +238,11 @@ class CaseDecisionLinkObjectService {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): ?array {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		return null;
 	}//end patchObject()
 }//end class

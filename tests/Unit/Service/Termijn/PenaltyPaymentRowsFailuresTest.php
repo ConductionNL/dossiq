@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Tests for PenaltyPaymentRows when a read fails.
@@ -111,7 +112,11 @@ class PenaltyPaymentRowsFailuresTest extends TestCase {
 			 *
 			 * @return never
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): never {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): never {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new RuntimeException('store offline');
 			}
 		};

@@ -91,14 +91,6 @@ class MentionQueueRecords {
 	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function record(string $person, string $actor, string $subjectType, string $subjectId, string $noteId): bool {
-		if (trim($person) === '' || trim($subjectId) === '') {
-			return false;
-		}
-
-		if (trim($subjectType) === '') {
-			$subjectType = 'case';
-		}
-
 		return $this->store(
 			mention: [
 				'person' => $person,
@@ -113,11 +105,21 @@ class MentionQueueRecords {
 	/**
 	 * Write the mention, stamped with the moment it is written; a failure is logged.
 	 *
+	 * Nothing is written without a person or a subject id; a subject without a type is a case.
+	 *
 	 * @param array<string, string> $mention Who was mentioned, by whom, in what, and the note.
 	 *
 	 * @return bool TRUE when the record was written.
 	 */
 	private function store(array $mention): bool {
+		if (trim($mention['person']) === '' || trim($mention['subjectId']) === '') {
+			return false;
+		}
+
+		if (trim($mention['subjectType']) === '') {
+			$mention['subjectType'] = 'case';
+		}
+
 		try {
 			$saved = $this->saveObjectAsArray(
 				objectService: $this->objects(),

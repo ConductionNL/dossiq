@@ -37,6 +37,9 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use RuntimeException;
 
 /**
@@ -301,8 +304,7 @@ class CaseResultWriter implements CaseResultWriterInterface {
 		return $this->toArray(
 			value: $context['objectService']->saveObject(
 				object: $payload,
-				register: $context['register'],
-				schema: $context['schema'],
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $context['register'], schema: $context['schema']))
 			),
 		);
 	}//end writeResult()
@@ -344,7 +346,7 @@ class CaseResultWriter implements CaseResultWriterInterface {
 
 		try {
 			return $this->toArray(
-				value: $context['objectService']->find($id, register: $context['register'], schema: $context['schema']),
+				value: $context['objectService']->find($id, new ObjectFindOptions(register: $context['register'], schema: $context['schema'])),
 			);
 		} catch (\Throwable $e) {
 			return [];

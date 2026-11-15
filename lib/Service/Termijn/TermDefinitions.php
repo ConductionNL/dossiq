@@ -320,7 +320,20 @@ class TermDefinitions {
 			return self::plusDays(start: $start, days: $days);
 		}
 
-		$computed = $this->roll->endAfter(start: $start, days: $days, mode: $mode);
+		return $this->workingDaysEnd(start: $start, count: ['days' => $days, 'mode' => $mode, 'caseType' => (string)($definitie['caseType'] ?? '')]);
+	}//end countedEndDateFor()
+
+	/**
+	 * The end a count of working days lands on, or the calendar-day end (logged) when the calendar does not answer.
+	 *
+	 * @param DateTimeImmutable                                $start The day the term starts.
+	 * @param array{days: int, mode: string, caseType: string} $count The declared duration, its counting mode and the case type.
+	 *
+	 * @return DateTimeImmutable The counted end date.
+	 */
+	private function workingDaysEnd(DateTimeImmutable $start, array $count): DateTimeImmutable {
+		$days = $count['days'];
+		$computed = $this->roll?->endAfter(start: $start, days: $days, mode: $count['mode']);
 		if ($computed !== null) {
 			return $computed;
 		}
@@ -328,11 +341,11 @@ class TermDefinitions {
 		$this->logger->warning(
 			'Dossiq termijn: a term declares working days and the organisation calendar did not answer, '
 			. 'so its end date was counted in calendar days and the term is SHORTER than it is owed',
-			['caseType' => (string)($definitie['caseType'] ?? ''), 'days' => $days]
+			['caseType' => $count['caseType'], 'days' => $days]
 		);
 
 		return self::plusDays(start: $start, days: $days);
-	}//end countedEndDateFor()
+	}//end workingDaysEnd()
 
 	/**
 	 * A number of calendar days after a date.

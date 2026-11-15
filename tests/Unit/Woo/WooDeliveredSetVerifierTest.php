@@ -30,6 +30,8 @@ use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCP\Files\IRootFolder;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 
 /**
  * REQ-WDS-003 on the verifier, over a set the real writer wrote.
@@ -127,7 +129,7 @@ class WooDeliveredSetVerifierTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnreadableFileIsMissingNotMatch(): void {
-		$this->store->deleteObject(register: 'dossiq', schema: 'document', uuid: 'doc-1');
+		$this->store->deleteObject(new ObjectDeletion(uuid: 'doc-1', target: new ObjectFindTarget(register: 'dossiq', schema: 'document')));
 
 		$result = $this->verifier->verify(set: $this->set);
 

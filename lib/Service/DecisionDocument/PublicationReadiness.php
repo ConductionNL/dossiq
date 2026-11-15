@@ -82,6 +82,19 @@ class PublicationReadiness {
 	public function markCaseReady(object $objectService, string $register, string $caseId, string $decisionId = ''): void {
 		$this->decisionLink->link(objectService: $objectService, register: $register, caseId: $caseId, decisionId: $decisionId);
 
+		$this->markReady(store: [$objectService, $register], caseId: $caseId);
+	}//end markCaseReady()
+
+	/**
+	 * Set the case to `wooPublicationStatus: ready` unless it is missing or already published; a failure is logged.
+	 *
+	 * @param array{0: object, 1: string} $store  The OpenRegister ObjectService and the dossiq register.
+	 * @param string                      $caseId The case UUID.
+	 *
+	 * @return void
+	 */
+	private function markReady(array $store, string $caseId): void {
+		[$objectService, $register] = $store;
 		try {
 			$case = $this->findObjectAsArray(
 				objectService: $objectService,
@@ -106,5 +119,5 @@ class PublicationReadiness {
 				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}
-	}//end markCaseReady()
+	}//end markReady()
 }//end class

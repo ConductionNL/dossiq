@@ -40,6 +40,7 @@ use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseReassignmentServiceInterface;
 use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
+use OCA\Dossiq\Service\Support\ReadsFinalStatusIds;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\WritesReassignments;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
@@ -60,6 +61,7 @@ class CaseReassignmentService implements CaseReassignmentServiceInterface {
 
 	use WritesReassignments;
 	use SearchesObjects;
+	use ReadsFinalStatusIds;
 
 	/**
 	 * Constructor.
@@ -520,36 +522,5 @@ class CaseReassignmentService implements CaseReassignmentServiceInterface {
 			);
 		$this->notificationManager->notify($notification);
 	}//end sendDigest()
-
-	/**
-	 * Resolve the set of final statusType ids (closed/archived cases).
-	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register Register id.
-	 *
-	 * @return array<int, string>
-	 */
-	private function finalStatusIds(object $objectService, string $register): array {
-		$statusTypeSchema = (string)$this->settingsService->getConfigValue('status_type_schema');
-		if ($statusTypeSchema === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $statusTypeSchema);
-		} catch (\Throwable $e) {
-			return [];
-		}
-
-		$ids = [];
-		foreach ($rows as $row) {
-			$isFinal = ($row['isFinal'] ?? false);
-			if (in_array($isFinal, [true, 'true', 1], true) === true) {
-				$ids[] = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			}
-		}
-
-		return array_values(array_filter($ids));
-	}//end finalStatusIds()
 
 }//end class

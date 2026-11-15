@@ -36,6 +36,8 @@ namespace OCA\Dossiq\Service\Intake;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -292,10 +294,12 @@ class SystemCaseStore {
 				objectService: $objectService,
 				operation: fn (): mixed => $objectService->saveObject(
 					object: $case,
-					register: $register,
-					schema: $this->settingsService->getConfigValue('case_schema'),
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(
+							register: $register,
+							schema: $this->settingsService->getConfigValue('case_schema')
+						)),
 					_rbac: false,
-					_multitenancy: false,
+					_multitenancy: false
 				)
 			);
 		} catch (Throwable $e) {

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\RequiresSignedInUid;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SubsidieServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TussenrapportageServiceInterface;
@@ -49,6 +50,8 @@ use OCP\IUserSession;
  * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
  */
 class SubsidieController extends Controller {
+	use RequiresSignedInUid;
+
 	/**
 	 * Constructor.
 	 *
@@ -345,20 +348,6 @@ class SubsidieController extends Controller {
 
 		return new JSONResponse($result);
 	}//end finalizeVaststelling()
-
-	/**
-	 * Resolve the authenticated user id, or null when unauthenticated.
-	 *
-	 * @return string|null The user id.
-	 */
-	private function requireUser(): ?string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		return $user->getUID();
-	}//end requireUser()
 
 	/**
 	 * Read the JSON / form body parameters, excluding routing params.

@@ -17,6 +17,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\CaseStageDatesService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * reachedDatesFor() over a settings double: the search, the fold, the case's
@@ -56,7 +57,9 @@ class CaseStageDatesServiceReachedTest extends TestCase {
 				return $this->records;
 			}
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 
 				return $this->case;

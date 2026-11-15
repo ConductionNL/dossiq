@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
 use OCA\OpenRegister\Exception\NotAuthorizedException;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The store lookups of the ZGW business rules, in the request context.
@@ -70,7 +71,9 @@ final class ZgwRuleLookupsTest extends TestCase {
 				return ($this->search)($query);
 			}//end searchObjectsPaginated()
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				return ($this->find)($id);
 			}//end find()

@@ -361,25 +361,38 @@ class InboundMailIntake implements InboundMailIntakeInterface {
 		array $results,
 		string $caseId,
 	): string {
+		return $this->fileScreened(screened: new ScreenedMessage(message: $message, verdict: $verdict, results: $results), caseId: $caseId);
+	}//end fileOnCase()
+
+	/**
+	 * File a screened message on the case it names, or in the intake inbox.
+	 *
+	 * @param ScreenedMessage $screened The message, the pipeline's verdict and the four authentication results.
+	 * @param string          $caseId   The case the subject named, or ''.
+	 *
+	 * @return string One of the {@see IntakeLog} outcome values.
+	 */
+	private function fileScreened(ScreenedMessage $screened, string $caseId): string {
+		$message = $screened->message;
 		[$onCase, $reason] = $this->caseAndReason(message: $message, caseId: $caseId);
 
 		if ($onCase === '') {
-			return $this->parkInInbox(screened: new ScreenedMessage(message: $message, verdict: $verdict, results: $results));
+			return $this->parkInInbox(screened: $screened);
 		}
 
 		$this->archiveOnCase(message: $message, onCase: $onCase);
 
 		$this->log->record(
 			message: $message,
-			verdict: $verdict,
-			results: $results,
+			verdict: $screened->verdict,
+			results: $screened->results,
 			outcome: IntakeLog::OUTCOME_CASE,
 			reason: $reason,
 			caseId: $onCase
 		);
 
 		return IntakeLog::OUTCOME_CASE;
-	}//end fileOnCase()
+	}//end fileScreened()
 
 	/**
 	 * The case to file on and the reason, falling back to the fallback case type.

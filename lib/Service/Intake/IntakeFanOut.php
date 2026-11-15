@@ -172,6 +172,21 @@ class IntakeFanOut implements IntakeFanOutInterface {
 	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function submit(string $formCaseTypeId, array $submission, string $submissionId): array {
+		$destinations = $this->declaredDestinations(formCaseTypeId: $formCaseTypeId);
+
+		return $this->fanOut(run: new FanOutRun(submission: $submission, submissionId: $submissionId), destinations: $destinations);
+	}//end submit()
+
+	/**
+	 * The destinations the form's case type declares; there must be at least one.
+	 *
+	 * @param string $formCaseTypeId The intake case type the form maps to.
+	 *
+	 * @return array<int, array{title: string, caseType: string, department: string}> The destinations.
+	 *
+	 * @throws RefusedException When nothing is declared.
+	 */
+	private function declaredDestinations(string $formCaseTypeId): array {
 		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $formCaseTypeId);
 		$destinations = $this->destinationsFor(caseType: $caseType);
 		if ($destinations === []) {
@@ -183,19 +198,32 @@ class IntakeFanOut implements IntakeFanOutInterface {
 			);
 		}
 
-		$run = new FanOutRun(submission: $submission, submissionId: $submissionId);
+		return $destinations;
+	}//end declaredDestinations()
+
+	/**
+	 * Open one case per destination, tie them together and note the routing.
+	 *
+	 * @param FanOutRun                                                              $run          The submission and what it opened so far.
+	 * @param array<int, array{title: string, caseType: string, department: string}> $destinations The declared destinations.
+	 *
+	 * @return array{created: array<int, array<string, mixed>>, failed: array<int, array<string, string>>}
+	 *
+	 * @throws RefusedException When the register is absent.
+	 */
+	private function fanOut(FanOutRun $run, array $destinations): array {
 		foreach ($destinations as $destination) {
 			$this->openFor(run: $run, destination: $destination);
 		}
 
 		$this->tieTogether(created: $run->created);
-		$this->noteRouting(created: $run->created, failed: $run->failed, submissionId: $submissionId);
+		$this->noteRouting(run: $run);
 
 		return [
 			'created' => $run->created,
 			'failed' => $run->failed,
 		];
-	}//end submit()
+	}//end fanOut()
 
 	/**
 	 * Open the case of one destination, or report the destination as failed.
@@ -336,15 +364,15 @@ class IntakeFanOut implements IntakeFanOutInterface {
 	 *
 	 * A note that cannot be written costs no case: the fan-out stands.
 	 *
-	 * @param array<int, array<string, mixed>> $created      The cases that were opened.
-	 * @param array<int, array<string, mixed>> $failed       The destinations that opened no case.
-	 * @param string                           $submissionId The submission.
+	 * @param FanOutRun $run The submission, the cases it opened and the destinations that opened none.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
 	 */
-	private function noteRouting(array $created, array $failed, string $submissionId): void {
+	private function noteRouting(FanOutRun $run): void {
+		$created = $run->created;
+		$failed = $run->failed;
 		if (count($created) < 2 && $failed === []) {
 			return;
 		}
@@ -354,7 +382,7 @@ class IntakeFanOut implements IntakeFanOutInterface {
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 		foreach ($created as $case) {
 			$siblings = array_values(array_diff(array_column($created, 'title'), [$case['title']]));
-			$note = RoutingNote::intakeSplit(submission: $submissionId, siblings: $siblings, failed: $failed);
+			$note = RoutingNote::intakeSplit(submission: $run->submissionId, siblings: $siblings, failed: $failed);
 			try {
 				$this->patchObjectAsArray(
 					objectService: $objectService,

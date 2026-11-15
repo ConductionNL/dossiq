@@ -44,6 +44,7 @@ use Psr\Log\AbstractLogger;
 use ReflectionMethod;
 use RuntimeException;
 use Throwable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * An object service answering find() and updateObject() from a behaviour.
@@ -70,7 +71,9 @@ final class GoldenRebindObjects {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, int|string $register = '', int|string $schema = ''): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		$this->log[] = ['objects.find' => compact('id', 'register', 'schema')];
 		if (($this->behaviour['findThrows'] ?? false) === true) {
 			throw new RuntimeException('find failed');

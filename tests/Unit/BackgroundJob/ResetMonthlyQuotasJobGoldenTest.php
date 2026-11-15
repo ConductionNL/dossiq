@@ -37,6 +37,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Loosely typed ObjectService stub, so a non-array answer can be recorded.
@@ -61,7 +62,7 @@ interface ResetMonthlyQuotasLooseObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -158,7 +159,10 @@ class ResetMonthlyQuotasJobGoldenTest extends TestCase {
 			}
 		);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->events[] = 'save ' . $uuid . ' usage ' . $object['currentUsage'];
 				return $object;
 			}

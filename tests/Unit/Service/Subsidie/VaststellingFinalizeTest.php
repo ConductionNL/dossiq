@@ -35,6 +35,8 @@ use OCP\AppFramework\OCS\OCSBadRequestException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An in-memory ObjectService that can be told to fail its saves.
@@ -63,7 +65,11 @@ class FinalizeFakeObjectService {
 	 *
 	 * @return FakeStoredObject The row.
 	 */
-	public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+		$_extend = $options?->extend ?? [];
+		$files = $options?->files ?? false;
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$row = ($this->store[(string)$schema][(string)$id] ?? null);
 		if ($row === null) {
 			throw new DoesNotExistException('Object ' . $id . ' does not exist');
@@ -81,7 +87,11 @@ class FinalizeFakeObjectService {
 	 *
 	 * @return FakeStoredObject The saved row.
 	 */
-	public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+		$extend = $options->extend ?? [];
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		if ($this->failSaves === true) {
 			throw new RuntimeException('disk full');
 		}

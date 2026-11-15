@@ -165,28 +165,30 @@ class CaseRelationLabels {
 	 */
 	private function noteFor(RelationLabelRun $run, array $row): ?string {
 		$link = (array)self::typedLinkOf(row: $row);
-		$near = $this->noteIn(entries: $run->stored, caseId: $link['targetId'], natureRelationship: $link['type']);
+		$near = $this->noteIn(entries: $run->stored, link: ['caseId' => $link['targetId'], 'natureRelationship' => $link['type']]);
 		if ($near !== null) {
 			return $near;
 		}
 
 		return $this->noteIn(
 			entries: $this->codec->decode(case: $row),
-			caseId: $run->caseId,
-			natureRelationship: $link['type']
+			link: [
+				'caseId' => $run->caseId,
+				'natureRelationship' => $link['type'],
+			]
 		);
 	}//end noteFor()
 
 	/**
 	 * The note one relation list carries for a case and type.
 	 *
-	 * @param array<int, array<string, mixed>> $entries The relation entries.
-	 * @param string $caseId The case the entry names.
-	 * @param string $natureRelationship Relation type.
+	 * @param array<int, array<string, mixed>>                  $entries The relation entries.
+	 * @param array{caseId: string, natureRelationship: string} $link    `caseId` the case the entry names; `natureRelationship` relation type.
 	 *
 	 * @return string|null The note.
 	 */
-	private function noteIn(array $entries, string $caseId, string $natureRelationship): ?string {
+	private function noteIn(array $entries, array $link): ?string {
+		[$caseId, $natureRelationship] = [$link['caseId'], $link['natureRelationship']];
 		foreach ($entries as $entry) {
 			if ((string)($entry['caseId'] ?? '') === $caseId
 				&& (string)($entry['aardRelatie'] ?? '') === $natureRelationship

@@ -23,6 +23,7 @@ use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 class CaseTeamMigrationGoldenTest extends TestCase {
 
@@ -212,7 +213,11 @@ class CaseTeamMigrationGoldenTest extends TestCase {
 			 *
 			 * @throws RuntimeException When the id is on the fail list.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if (in_array($objectId, $this->failOn, true) === true) {
 					throw new RuntimeException('refused');
 				}

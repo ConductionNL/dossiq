@@ -143,10 +143,30 @@ class InformationRequestService {
 		$run = new InformationRequestRun(caseId: $caseId, instance: $this->runningTermFor(caseId: $caseId));
 		$run->items = $this->cleanItems(items: $items);
 		$this->refuseEmptyRequest(run: $run);
-		$run->recipient = $recipient;
-		$run->days = max(1, $durationDays);
-		$run->rationale = $rationale;
-		$run->pauseReason = $pauseReason;
+
+		return $this->sendAndSuspend(
+			run: $run,
+			request: ['recipient' => $recipient, 'days' => max(1, $durationDays), 'rationale' => $rationale, 'pauseReason' => $pauseReason]
+		);
+	}//end ask()
+
+	/**
+	 * Send the request letter and, when it went out, suspend the term.
+	 *
+	 * @param InformationRequestRun                                                     $run     The case, its running term and the items.
+	 * @param array{recipient: string, days: int, rationale: string, pauseReason: string} $request Who it goes to, the days given,
+	 *                                                                                           why, and the declared pause reason.
+	 *
+	 * @return array{sent: bool, suspended: bool, instance: array<string, mixed>,
+	 *               record: array<string, mixed>|null, error: string}
+	 *
+	 * @throws RefusedException When the case type refuses a suspension this long, or does not declare the reason named.
+	 */
+	private function sendAndSuspend(InformationRequestRun $run, array $request): array {
+		$run->recipient = $request['recipient'];
+		$run->days = $request['days'];
+		$run->rationale = $request['rationale'];
+		$run->pauseReason = $request['pauseReason'];
 
 		$failure = $this->sendRequestLetter(run: $run);
 		if ($failure !== null) {
@@ -154,7 +174,7 @@ class InformationRequestService {
 		}
 
 		return $this->suspendTerm(run: $run);
-	}//end ask()
+	}//end sendAndSuspend()
 
 	/**
 	 * Refuse a request that, once cleaned, names nothing.
@@ -297,8 +317,20 @@ class InformationRequestService {
 	public function receive(string $caseId, array $items, ?DateTimeImmutable $when = null): array {
 		$moment = ($when ?? new DateTimeImmutable());
 		$instance = $this->suspendedTermFor(caseId: $caseId);
-		$instanceId = (string)($instance['id'] ?? '');
 
+		return $this->resumeOn(instanceId: (string)($instance['id'] ?? ''), arrival: ['moment' => $moment, 'items' => $items]);
+	}//end receive()
+
+	/**
+	 * Resume the suspended term on the arrival and record what came in.
+	 *
+	 * @param string                                                         $instanceId The suspended term instance.
+	 * @param array{moment: DateTimeImmutable, items: array<int, string>} $arrival    When it arrived and what came in.
+	 *
+	 * @return array{resumed: bool, instance: array<string, mixed>, record: array<string, mixed>|null}
+	 */
+	private function resumeOn(string $instanceId, array $arrival): array {
+		$moment = $arrival['moment'];
 		$resumed = $this->pause->resumeAfterPauze(termInstanceId: $instanceId, aanvullingDatum: $moment);
 
 		$record = $this->termService->recordEvent(
@@ -308,11 +340,11 @@ class InformationRequestService {
 			rationale: 'Aanvulling ontvangen',
 			daysImpact: 0,
 			moment: $moment,
-			items: $this->cleanItems(items: $items),
+			items: $this->cleanItems(items: $arrival['items']),
 		);
 
 		return ['resumed' => true, 'instance' => $resumed, 'record' => $record];
-	}//end receive()
+	}//end resumeOn()
 
 	/**
 	 * Record a send that failed, leaving the clock running.

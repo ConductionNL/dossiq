@@ -1,8 +1,9 @@
 {
-  "ceiling": 239,
+  "ceiling": 236,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-15, method decomposition: catches moved with their code into private steps (intakeMessages, mandateRows, switched, stamp, createShare) and shared Support traits (ReadsFinalStatusIds::finalStatusIds, ResolvesInstalledObjectService::getObjectService, SearchesConfiguredSchema::configuredRows). Eleven sites became eight. The ceiling went 239 to 236.",
     "2026-11-10, shared organisation lookup: the tenant and partner migrations, the satellite orphan scan, the tenant resolver and the quota limits now resolve OpenRegister's OrganisationMapper and read an Organisation by uuid through `OrganisationLookup::mapper` and `OrganisationLookup::byUuid`. Nine sites became two. The ceiling went 246 to 239.",
     "2026-11-11, the ApprovalService accessors left with the class in OpenRegister (723174caa), taking `OpenRegisterBridge::approvalService` with them. The ceiling went 247 to 246.",
     "2026-11-11, the custody chain and the custody query share one reader for the custody schema: `CaseCustodyChain::holdings` and `CaseCustodyQuery::heldBy` read through `Custody/CustodyRows::find`, one site for the same degradation. The ceiling went 248 to 247.",
@@ -312,13 +313,6 @@
       "reason": "`findPublishedModel()` answers `return null` when the read fails; the catch logs at error (\"CasePlanProjectionService: caseModel lookup failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/CaseReassignmentService.php",
-      "method": "finalStatusIds",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`finalStatusIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/CaseSharingService.php",
       "method": "getCaseIdForShare",
       "occurrence": 1,
@@ -621,13 +615,6 @@
     },
     {
       "file": "lib/Service/Email/MailMessageSource.php",
-      "method": "listMailboxMessagesSince",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`listMailboxMessagesSince()` answers `return []` when the Nextcloud Mail tables are absent or the folder is gone; the catch logs at warning (\"Dossiq: listing the intake folder failed\") and intake reads nothing that run rather than failing the cron."
-    },
-    {
-      "file": "lib/Service/Email/MailMessageSource.php",
       "method": "listMessagesSince",
       "occurrence": 1,
       "class": "read-miss",
@@ -768,20 +755,6 @@
     },
     {
       "file": "lib/Service/Mandaat/MandaatRepository.php",
-      "method": "findMandatenForBesluit",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findMandatenForBesluit()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Mandaat/MandaatRepository.php",
-      "method": "findPriorDecision",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findPriorDecision()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Mandaat/MandaatRepository.php",
       "method": "loadRoleIndex",
       "occurrence": 1,
       "class": "read-miss",
@@ -800,13 +773,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`getDecisionAuditTrail()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/MandaatGebruikService.php",
-      "method": "getDecisionByMandaat",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`getDecisionByMandaat()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Milestone/MilestoneRepository.php",
@@ -984,13 +950,6 @@
       "reason": "`holderPreview()` answers `return null` when OpenRegister's reader is absent or throws while assembling what a link holder sees; the catch logs at error. The preview is a convenience beside the link, never the grant, so a failed read costs the handler the preview and nothing else. The controller says \"could not show what this link publishes\" rather than claiming the link is dead, which is the conflation this class of entry exists to name."
     },
     {
-      "file": "lib/Service/Sharing/CaseAccessLinkService.php",
-      "method": "setPaused",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`setPaused()` answers `return null` when OpenRegister throws on switching a link off; the catch logs at error naming the link. Null is NOT read as \"done\": CaseAccessLinkController::pause answers 502 and tells the handler the link was not changed, so a pause that did not happen never reads as one that did."
-    },
-    {
       "file": "lib/Service/Sharing/CaseLinkShares.php",
       "method": "readRecords",
       "occurrence": 1,
@@ -1117,27 +1076,6 @@
       "reason": "`readLeave()` answers `return null` when the humaniq HR app answers badly or is absent; the catch logs at warning (\"Dossiq: could not read humaniq leave for a substitution\") naming the user and the error, and the caller falls back to the typed substitution dates."
     },
     {
-      "file": "lib/Service/Substitution/SubstitutedWorkResolver.php",
-      "method": "finalStatusIds",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`finalStatusIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Substitution/SubstitutionAccessGuard.php",
-      "method": "allSubstitutions",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`allSubstitutions()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/SubstitutionAuditService.php",
-      "method": "stampIfSubstituted",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`stampIfSubstituted()` answers `return null` when the read fails; the catch logs at error (\"Substitution capacity stamp failed\"), so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/Support/ConfiguredRegistryService.php",
       "method": "list",
       "occurrence": 1,
@@ -1199,13 +1137,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`resolveTenantEntity()` answers `return null` when the read fails; the catch logs at error (\"Dossiq AUDIT: could not resolve tenant ObjectEntity\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/TenantAuthenticationService.php",
-      "method": "getObjectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
     },
     {
       "file": "lib/Service/TenantBillingService.php",
@@ -1416,13 +1347,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`federationShareService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not get OR FederationShareService\") and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/Transfer/TransferShareBroker.php",
-      "method": "mintTransferShare",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`mintTransferShare()` answers `return null` when the read fails; the catch logs at error (\"CaseTransferService: OR createOutgoingShare failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Transfer/TransferShareBroker.php",
@@ -1724,6 +1648,62 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`holds()` answers `return null` when OpenRegister's rule evaluator is absent or cannot evaluate the condition. Null is the documented third value of its `?bool` return: the caller reads it as 'unevaluable' and reports the rule as unchecked rather than as passed or failed. A refusal is never converted into null here."
+    },
+    {
+      "file": "lib/Service/Support/ReadsFinalStatusIds.php",
+      "method": "finalStatusIds",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`finalStatusIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+    },
+    {
+      "file": "lib/Service/Support/ResolvesInstalledObjectService.php",
+      "method": "getObjectService",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+    },
+    {
+      "file": "lib/Service/Support/SearchesConfiguredSchema.php",
+      "method": "configuredRows",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`configuredRows()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+    },
+    {
+      "file": "lib/Service/Email/MailMessageSource.php",
+      "method": "intakeMessages",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`intakeMessages()` answers `return []` when the Nextcloud Mail tables are absent or the folder is gone; the catch logs at warning (\"Dossiq: listing the intake folder failed\") and intake reads nothing that run rather than failing the cron."
+    },
+    {
+      "file": "lib/Service/MandaatGebruikService.php",
+      "method": "mandateRows",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`mandateRows()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+    },
+    {
+      "file": "lib/Service/Sharing/CaseAccessLinkService.php",
+      "method": "switched",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`switched()`, behind `setPaused()`, answers `return null` when OpenRegister throws on switching a link off; the catch logs at error naming the link. Null is NOT read as \"done\": CaseAccessLinkController::pause answers 502 and tells the handler the link was not changed, so a pause that did not happen never reads as one that did."
+    },
+    {
+      "file": "lib/Service/SubstitutionAuditService.php",
+      "method": "stamp",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`stamp()` answers `return null` when the read fails; the catch logs at error (\"Substitution capacity stamp failed\"), so a failed read and an absent record are the same answer."
+    },
+    {
+      "file": "lib/Service/Transfer/TransferShareBroker.php",
+      "method": "createShare",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`createShare()` answers `return null` when the read fails; the catch logs at error (\"CaseTransferService: OR createOutgoingShare failed\"), so a failed read and an absent record are the same answer."
     }
   ]
 }

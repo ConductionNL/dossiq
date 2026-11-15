@@ -16,6 +16,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair\Support;
 use OCA\Dossiq\Repair\Support\StoredValueRewriter;
 use OCA\Dossiq\Repair\Support\ValueRewrite;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Repair\Support\StoredValueRewriter
@@ -56,7 +57,10 @@ class StoredValueRewriterTest extends TestCase {
 				return $this->rows;
 			}
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): ?array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = $object;
 				return $this->saveTakes === true ? $object : null;
 			}

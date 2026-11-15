@@ -26,6 +26,8 @@ use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Stuf\StufRegisterAccess
@@ -68,11 +70,17 @@ class StufRegisterAccessTest extends TestCase {
 				return $this->answer;
 			}
 
-			public function saveObject(array $data, array $extend, string $register, string $schema, ?string $uuid): mixed {
+			public function saveObject(array $data, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$extend = $options->extend;
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				return $this->answer('saveObject', [$data, $extend, $register, $schema, $uuid]);
 			}
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->answer('find', [$id, $register, $schema]);
 			}
 

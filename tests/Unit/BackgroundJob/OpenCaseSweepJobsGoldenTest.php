@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Both sweeps match their recording.
@@ -278,6 +279,7 @@ class OpenCaseSweepJobsGoldenTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function patchObject(mixed ...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$patch = ($args['patch'] ?? null);
 				if (is_object($patch) === true) {
 					$args = ['objectId' => $patch->objectId, 'data' => $patch->data, 'register' => $patch->target->register, 'schema' => $patch->target->schema];

@@ -118,19 +118,28 @@ class TermijnNotificationService implements TermijnNotificationServiceInterface 
 
 		$this->refuseUnknownTemplate(type: $type);
 
-		$job = [
-			'type' => $type,
-			'termijnInstanceId' => $termInstanceId,
-			'recipientUserId' => $recipientUserId,
-			'context' => $context,
-		];
+		return $this->queueJob(
+			job: ['type' => $type, 'termijnInstanceId' => $termInstanceId, 'recipientUserId' => $recipientUserId, 'context' => $context],
+			caseType: $caseType
+		);
+	}//end queueTermijnNotification()
+
+	/**
+	 * Queue the dispatch job unless the case type withholds its message.
+	 *
+	 * @param array{type: string, termijnInstanceId: string, recipientUserId: string, context: array} $job      The dispatch job's arguments.
+	 * @param array<string, mixed>                                                                    $caseType The case type, or [].
+	 *
+	 * @return bool True when queued.
+	 */
+	private function queueJob(array $job, array $caseType): bool {
 		if ($this->caseTypeWithholds(job: $job, caseType: $caseType) === true) {
 			return false;
 		}
 
 		$this->enqueue(job: $job);
 		return true;
-	}//end queueTermijnNotification()
+	}//end queueJob()
 
 	/**
 	 * Whether the case type does not send this job's message, logged when so.
@@ -207,7 +216,22 @@ class TermijnNotificationService implements TermijnNotificationServiceInterface 
 		$notice->termInstanceId = $termInstanceId;
 		$notice->recipientUserId = $recipientUserId;
 		$notice->context = $context;
-		$notice->instance = ($this->notices->termService->getTermijnInstance($termInstanceId) ?? []);
+
+		return $this->sendNotice(notice: $notice, requester: $requester);
+	}//end sendTermijnNotification()
+
+	/**
+	 * Render the notice, send it on its case and log it; throws when nothing was sent.
+	 *
+	 * @param TermNotice           $notice    The notice, with its type, instance id, recipient and context.
+	 * @param array<string, mixed> $requester The case row, when the caller has it, or [].
+	 *
+	 * @return array<string, mixed> Dispatched payload with the `dispatch` delivery result.
+	 *
+	 * @throws NoticeNotSentException When nothing was sent.
+	 */
+	private function sendNotice(TermNotice $notice, array $requester): array {
+		$notice->instance = ($this->notices->termService->getTermijnInstance($notice->termInstanceId) ?? []);
 
 		$payload = $this->noticePayload(notice: $notice);
 		$notice->case = $this->noticeCase(notice: $notice, requester: $requester);
@@ -225,7 +249,7 @@ class TermijnNotificationService implements TermijnNotificationServiceInterface 
 		$this->logDispatched(notice: $notice, dispatch: $dispatch);
 
 		return $payload;
-	}//end sendTermijnNotification()
+	}//end sendNotice()
 
 	/**
 	 * Refuse a template this service does not know.

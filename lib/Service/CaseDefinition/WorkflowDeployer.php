@@ -32,6 +32,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use ZipArchive;
 
@@ -277,9 +279,10 @@ class WorkflowDeployer {
 			$templateUuid = self::templateUuid(packageId: $toStore->packageId);
 			$stored = $target->objectService->saveObject(
 				$this->withoutMetadata(row: $toStore->template),
-				register: $target->register,
-				schema: $target->schema,
-				uuid: $templateUuid
+				new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $target->register, schema: $target->schema),
+					uuid: $templateUuid
+				)
 			);
 		} catch (\Throwable $e) {
 			return ['kind' => 'error', 'id' => '', 'message' => "Workflow '{$toStore->name}' could not be deployed: " . $e->getMessage()];

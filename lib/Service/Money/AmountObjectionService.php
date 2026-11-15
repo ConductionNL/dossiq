@@ -83,8 +83,21 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function registerObjection(string $calculationId, string $basis, string $rationale): array {
-		$run = $this->openCalculation(calculationId: $calculationId);
+		return $this->frozen(
+			run: $this->openCalculation(calculationId: $calculationId),
+			objection: ['calculationId' => $calculationId, 'basis' => $basis, 'rationale' => $rationale]
+		);
+	}//end registerObjection()
 
+	/**
+	 * Freeze the calculation, put its payouts on hold and record the objection.
+	 *
+	 * @param ObjectionRun          $run       The open calculation.
+	 * @param array<string, string> $objection The `calculationId`, the `basis` and the `rationale`.
+	 *
+	 * @return array<string, mixed> The calculation.
+	 */
+	private function frozen(ObjectionRun $run, array $objection): array {
 		$run->calculation['status'] = 'objection-bevroren';
 		// The stored accrual reads stoppedOn: an objection freezes the amount.
 		if ((string)($run->calculation['stoppedOn'] ?? '') === '') {
@@ -94,15 +107,15 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 		$this->saveCalculation(run: $run);
 
 		// Move all linked uitbetalingen to on-hold-bezwaar.
-		$run->basis = $basis;
-		$run->rationale = $rationale;
+		$run->basis = $objection['basis'];
+		$run->rationale = $objection['rationale'];
 		$this->holdPayouts(run: $run);
 
 		$this->recordTermEvent(run: $run, type: 'objection-submitted');
 
-		$this->logger->info('Objection registered against an accruing amount', ['berekening' => $calculationId]);
+		$this->logger->info('Objection registered against an accruing amount', ['berekening' => $objection['calculationId']]);
 		return $run->calculation;
-	}//end registerObjection()
+	}//end frozen()
 
 	/**
 	 * Put every payout of the calculation on hold, and withdraw the ones only finance holds.
@@ -138,21 +151,38 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 			throw new RuntimeException('newBedragCents must be >= 0');
 		}
 
-		$run = $this->openCalculation(calculationId: $calculationId);
+		return $this->resolved(
+			run: $this->openCalculation(calculationId: $calculationId),
+			resolution: ['calculationId' => $calculationId, 'newAmountCents' => $newAmountCents, 'basis' => $basis]
+		);
+	}//end resolveObjection()
 
+	/**
+	 * Complete the calculation at the revised amount, raise its payouts again and record the resolution.
+	 *
+	 * @param ObjectionRun         $run        The open calculation.
+	 * @param array<string, mixed> $resolution The `calculationId`, the `newAmountCents` and the `basis`.
+	 *
+	 * @return array<string, mixed> The calculation.
+	 */
+	private function resolved(ObjectionRun $run, array $resolution): array {
+		$newAmountCents = $resolution['newAmountCents'];
 		$run->calculation['definitiveAmount'] = $newAmountCents;
 		$run->calculation['status'] = 'completed';
 		$this->saveCalculation(run: $run);
 
 		$this->raisePayoutsAgain(run: $run, newAmountCents: $newAmountCents);
 
-		$run->basis = $basis;
+		$run->basis = $resolution['basis'];
 		$run->rationale = 'Bezwaar opgelost; bedrag herzien';
 		$this->recordTermEvent(run: $run, type: 'objection-resolved');
 
-		$this->logger->info('Objection against an accruing amount resolved', ['berekening' => $calculationId, 'newBedrag' => $newAmountCents]);
+		$this->logger->info(
+			'Objection against an accruing amount resolved',
+			['berekening' => $resolution['calculationId'], 'newBedrag' => $newAmountCents]
+		);
 		return $run->calculation;
-	}//end resolveObjection()
+	}//end resolved()
 
 	/**
 	 * Raise every payout of the calculation again with the decided amount, the ones finance holds included.

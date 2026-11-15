@@ -209,7 +209,7 @@ class BounceAction implements BounceActionInterface {
 
 		$sender = new BounceSender(fromAddress: $fromAddress, fromName: $fromName);
 		try {
-			$outbound = $this->outboundCopy(message: $message, recipient: $recipient, sender: $sender);
+			$outbound = $this->outboundCopy(message: $message, forward: ['recipient' => $recipient, 'sender' => $sender]);
 			$this->mailer->send($outbound);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -225,15 +225,16 @@ class BounceAction implements BounceActionInterface {
 	/**
 	 * The outbound copy: the covering note, with the original attached when its source was read.
 	 *
-	 * @param InboundMessage $message   The message.
-	 * @param string         $recipient The address it goes to.
-	 * @param BounceSender   $sender    The configured from-address and from-name.
+	 * @param InboundMessage                                 $message The message.
+	 * @param array{recipient: string, sender: BounceSender} $forward `recipient` the address it goes to; `sender` the configured from-address and
+	 *                                                                from-name.
 	 *
 	 * @return IMessage The message to send.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function outboundCopy(InboundMessage $message, string $recipient, BounceSender $sender): IMessage {
+	private function outboundCopy(InboundMessage $message, array $forward): IMessage {
+		[$recipient, $sender] = [$forward['recipient'], $forward['sender']];
 		$outbound = $this->mailer->createMessage();
 		$outbound->setFrom([$sender->fromAddress => $sender->fromName]);
 		$outbound->setTo([$recipient]);

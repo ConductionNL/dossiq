@@ -21,6 +21,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Dso\DsoObjectRepository
@@ -54,7 +55,9 @@ class DsoObjectRepositoryTest extends TestCase {
 			public function __construct(private array $objects, private array $cases) {
 			}
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				$found = $this->objects[$id . '@' . $schema] ?? null;
 				if ($found instanceof \Throwable) {

@@ -48,6 +48,20 @@ use Throwable;
 class FormDependentsCheck {
 
 	/**
+	 * Asks the owning apps for their forms.
+	 *
+	 * @var IEventDispatcher
+	 */
+	private readonly IEventDispatcher $dispatcher;
+
+	/**
+	 * Tells an author their form was unpublished.
+	 *
+	 * @var IManager
+	 */
+	private readonly IManager $notifications;
+
+	/**
 	 * The owning app's setting: `unpublish` (default) or `refuse`.
 	 *
 	 * @var string
@@ -64,20 +78,19 @@ class FormDependentsCheck {
 	/**
 	 * Constructor.
 	 *
-	 * @param IEventDispatcher         $dispatcher    Asks the owning apps for their forms.
+	 * @param FormDependentsSignals    $signals       The dispatcher and the notification manager.
 	 * @param FormDestinationValidator $validator     Judges each form.
 	 * @param IAppConfig               $appConfig     Reads each owning app's break setting.
-	 * @param IManager                 $notifications Tells an author their form was unpublished.
 	 * @param LoggerInterface          $logger        Records an unpublish that failed.
 	 */
 	public function __construct(
-		private readonly IEventDispatcher $dispatcher,
+		FormDependentsSignals $signals,
 		private readonly FormDestinationValidator $validator,
 		private readonly IAppConfig $appConfig,
-		private readonly IManager $notifications,
 		private readonly LoggerInterface $logger,
 	) {
-
+		$this->dispatcher = $signals->dispatcher;
+		$this->notifications = $signals->notifications;
 	}//end __construct()
 
 	/**

@@ -29,6 +29,8 @@ use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Term\TermResolution;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -167,7 +169,10 @@ class ComplaintService implements ComplaintServiceInterface {
 
 		$data = $this->received(data: $data);
 
-		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		$complaint = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 
 		$saved = $this->savedComplaint(data: $data, complaint: $complaint);
 
@@ -340,7 +345,10 @@ class ComplaintService implements ComplaintServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('complaint_schema');
 
-		$result = $objectService->saveObject(object: $data, register: $register, schema: $schema, uuid: (string)$id);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+		);
 
 		if (is_array($result) === true) {
 			return $result;

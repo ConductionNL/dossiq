@@ -145,7 +145,7 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 		$requestedBy = trim($requestedBy);
 		$reason = trim($reason);
 
-		$this->assertReasonGiven(reason: $reason);
+		$this->assertReasonGiven(reason: $reason, sentence: 'Say why you should have the case, so the holder can answer.');
 
 		$case = $this->store->requireCase(caseId: $caseId);
 		$holding = $this->holdingOf(caseId: $caseId, case: $case);
@@ -180,9 +180,10 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 	}//end storeAndLog()
 
 	/**
-	 * Refuse a request without a reason.
+	 * Refuse a request or a refusal without a reason.
 	 *
-	 * @param string $reason Why they should have it, trimmed.
+	 * @param string $reason   The reason given, trimmed.
+	 * @param string $sentence What the refusal tells the caller.
 	 *
 	 * @return void
 	 *
@@ -190,11 +191,11 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
-	private function assertReasonGiven(string $reason): void {
+	private function assertReasonGiven(string $reason, string $sentence): void {
 		if ($reason === '') {
 			throw new RefusedException(
 				rule: self::REASON_MISSING,
-				sentence: 'Say why you should have the case, so the holder can answer.',
+				sentence: $sentence,
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
@@ -344,13 +345,7 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 	 */
 	public function refuse(string $takeoverId, string $reason, string $refusedBy, string $caseId): array {
 		$reason = trim($reason);
-		if ($reason === '') {
-			throw new RefusedException(
-				rule: self::REASON_MISSING,
-				sentence: 'A refusal without a reason is not an answer, so nothing was recorded.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->assertReasonGiven(reason: $reason, sentence: 'A refusal without a reason is not an answer, so nothing was recorded.');
 
 		return $this->refuseOpen(
 			record: $this->requireOpenRequest(takeoverId: $takeoverId, caseId: $caseId),

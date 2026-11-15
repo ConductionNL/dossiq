@@ -29,6 +29,8 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\StoppingRulesInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -253,9 +255,13 @@ class StoppingRules implements StoppingRulesInterface {
 		try {
 			$saved = $objectService->saveObject(
 				object: $rule,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $schema,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+							register: $this->settingsService->getConfigValue('register'),
+							schema: $schema
+						),
+					uuid: $uuid
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: a Stopping rule could not be stored', ['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]);

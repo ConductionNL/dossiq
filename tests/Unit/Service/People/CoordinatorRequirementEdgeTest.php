@@ -31,6 +31,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Tests for CoordinatorRequirement at its edges.
@@ -163,6 +164,7 @@ class CoordinatorRequirementEdgeTest extends TestCase {
 			 * @return never
 			 */
 			public function find(mixed ...$arguments): never {
+				$arguments = LegacyObjectArgs::flatten(args: $arguments);
 				throw new RuntimeException('register down');
 			}
 		};

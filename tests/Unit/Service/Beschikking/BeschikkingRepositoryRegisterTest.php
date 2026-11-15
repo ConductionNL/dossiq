@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * @covers \OCA\Dossiq\Service\Beschikking\BeschikkingRepository
@@ -99,6 +100,7 @@ class BeschikkingRepositoryRegisterTest extends TestCase {
 			 * @return never
 			 */
 			public function find(mixed $id, mixed ...$named): never {
+				$named = LegacyObjectArgs::flatten(args: $named);
 				throw new DoesNotExistException('gone');
 			}
 		};

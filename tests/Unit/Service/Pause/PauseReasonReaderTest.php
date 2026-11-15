@@ -27,6 +27,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Which pause reasons a case type declares, and which one a case or pause names.
@@ -107,7 +108,9 @@ class PauseReasonReaderTest extends TestCase {
 			 *
 			 * @return mixed The case type.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->test->finds[] = [$id, $register, $schema];
 				return $this->test->caseType($id);
 			}

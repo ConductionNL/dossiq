@@ -30,6 +30,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -207,7 +208,7 @@ class StoppingRuleMet {
 		}
 
 		try {
-			$case = $objectService->find($caseId, register: $register, schema: $schema);
+			$case = $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $schema));
 			$mapper->recordObjectEvent(
 				event: ObjectAuditEvents::of(object: $case, action: self::ACTION, context: $context, actorId: $userId, actorName: $userId)
 			);

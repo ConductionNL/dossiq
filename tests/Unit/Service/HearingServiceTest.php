@@ -27,6 +27,9 @@ use OCA\Dossiq\Service\HearingService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Typed stub for the OpenRegister ObjectService.
@@ -69,7 +72,7 @@ interface HearingObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 
 	/**
 	 * Merge fields onto a stored object (OpenRegister's PATCH seam).
@@ -81,7 +84,7 @@ interface HearingObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null);
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true);
 }//end interface
 
 /**
@@ -250,9 +253,12 @@ class HearingServiceTest extends TestCase {
 		$objectServiceMock
 			->expects($this->once())
 			->method('patchObject')
-			->with('hearing-uuid', $this->anything())
+			->with(...LegacyObjectArgs::with(method: 'patchObject', expected: [
+					'objectId' => 'hearing-uuid',
+					'data' => $this->anything(),
+				]))
 			->willReturnCallback(
-				static fn (string $objectId, array $data): array => array_merge(['complaint' => 'c-1', 'type' => 'oral'], $data)
+				static fn (ObjectPatch $patch): array => array_merge(['complaint' => 'c-1', 'type' => 'oral'], ($patch->data))
 			);
 
 		$result = $this->service->recordOutcome('hearing-uuid', $outcome);

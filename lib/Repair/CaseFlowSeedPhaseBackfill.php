@@ -57,7 +57,20 @@ class CaseFlowSeedPhaseBackfill {
 	 * @spec openspec/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
 	 */
 	public function pending(array $statusTypes, iterable $rows, string $caseTypeId): array {
-		$phases = $this->phasesByName(statusTypes: $statusTypes);
+		return $this->pendingIn(rows: $rows, own: ['phases' => $this->phasesByName(statusTypes: $statusTypes), 'caseTypeId' => $caseTypeId]);
+	}//end pending()
+
+	/**
+	 * The case type's own rows that name a phase and carry none yet, by id, with the phase they get.
+	 *
+	 * @param iterable<array<string, mixed>>                          $rows The status type rows.
+	 * @param array{phases: array<string, mixed>, caseTypeId: string} $own  The phases by name, and the case type.
+	 *
+	 * @return array<string, mixed> The phase to set, by row id.
+	 */
+	private function pendingIn(iterable $rows, array $own): array {
+		$phases = $own['phases'];
+		$caseTypeId = $own['caseTypeId'];
 		$pending = [];
 		foreach ($rows as $row) {
 			$name = $this->text->textOf(value: ($row['name'] ?? null));
@@ -71,7 +84,7 @@ class CaseFlowSeedPhaseBackfill {
 		}
 
 		return $pending;
-	}//end pending()
+	}//end pendingIn()
 
 	/**
 	 * The seed's phase per status name, for the statuses that name one.

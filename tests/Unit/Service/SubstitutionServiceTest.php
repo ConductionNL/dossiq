@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\SubstitutionService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
 	/**
@@ -779,6 +780,7 @@ class SubstitutionServiceTest extends TestCase {
 		$os    = $this->objectServiceMock();
 		$os->method('saveObject')->willReturnCallback(
 			static function (...$args) use (&$saved): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$saved[] = $args;
 				return ['id' => 'sub-9'];
 			}

@@ -142,8 +142,21 @@ class FourEyesRule {
 			return null;
 		}
 
-		$performer = $this->performerOf(records: $records, act: $rule['act']);
-		if ($performer === null || $performer['actor'] !== $userId) {
+		return $this->sameHandsRefusal(rule: $rule, taker: ['records' => $records, 'userId' => $userId]);
+	}//end refusalFor()
+
+	/**
+	 * The refusal when the user taking the move performed the act the rule names; null otherwise.
+	 *
+	 * @param array{act: string, askInstead: string}                    $rule  The declared rule.
+	 * @param array{records: array<int, array<string, mixed>>, userId: string} $taker The case's status records, and the user
+	 *                                                                         taking the move.
+	 *
+	 * @return array<string, mixed>|null The refusal, or null.
+	 */
+	private function sameHandsRefusal(array $rule, array $taker): ?array {
+		$performer = $this->performerOf(records: $taker['records'], act: $rule['act']);
+		if ($performer === null || $performer['actor'] !== $taker['userId']) {
 			return null;
 		}
 
@@ -153,7 +166,7 @@ class FourEyesRule {
 			'at' => $performer['at'],
 			'askInstead' => $rule['askInstead'],
 		];
-	}//end refusalFor()
+	}//end sameHandsRefusal()
 
 	/**
 	 * Who a status record says performed the move.

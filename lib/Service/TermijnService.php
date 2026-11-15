@@ -150,7 +150,7 @@ class TermijnService implements TermijnServiceInterface {
 		?DateTimeImmutable $startDate = null,
 		?array $resolution = null,
 	): array {
-		$start = $this->termStart(caseId: $caseId, caseType: $caseType, startDate: $startDate, resolution: $resolution);
+		$start = $this->termStart(caseId: $caseId, start: ['caseType' => $caseType, 'startDate' => $startDate, 'resolution' => $resolution]);
 
 		$saved = $this->storeStartedInstance(start: $start);
 
@@ -162,16 +162,20 @@ class TermijnService implements TermijnServiceInterface {
 	/**
 	 * The start of a term, with the definition it starts under.
 	 *
-	 * @param string                    $caseId     The case uuid.
-	 * @param string                    $caseType   The zaaktype identifier.
-	 * @param DateTimeImmutable|null    $startDate  Optional start (defaults to now).
-	 * @param array<string, mixed>|null $resolution The resolution a caller already made.
+	 * @param string                                                                                            $caseId The case uuid.
+	 * @param array{caseType: string, startDate: DateTimeImmutable|null, resolution: array<string, mixed>|null} $start  `caseType` the zaaktype
+	 *                                                                                                                  identifier; `startDate`
+	 *                                                                                                                  optional start (defaults to
+	 *                                                                                                                  now); `resolution` the
+	 *                                                                                                                  resolution a caller already
+	 *                                                                                                                  made.
 	 *
 	 * @return TermStart
 	 *
 	 * @throws NoTermijnDefinitieException When no TermijnDefinitie matches the zaaktype.
 	 */
-	private function termStart(string $caseId, string $caseType, ?DateTimeImmutable $startDate, ?array $resolution): TermStart {
+	private function termStart(string $caseId, array $start): TermStart {
+		[$caseType, $startDate, $resolution] = [$start['caseType'], $start['startDate'], $start['resolution']];
 		$start = new TermStart();
 		$start->caseId = $caseId;
 		$start->caseType = $caseType;
@@ -519,30 +523,43 @@ class TermijnService implements TermijnServiceInterface {
 		string $documentLink = '',
 		string $rationale = '',
 	): ?array {
-		$voltooiDatum = ($voltooiDatum ?? new DateTimeImmutable());
+		return $this->complete(
+			termInstanceId: $termInstanceId,
+			completion: ['voltooiDatum' => ($voltooiDatum ?? new DateTimeImmutable()), 'documentLink' => $documentLink, 'rationale' => $rationale]
+		);
+	}//end markTermijnCompleted()
 
-		$patch = ['status' => 'completed', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')];
+	/**
+	 * Set the instance completed and, once written, record the completion.
+	 *
+	 * @param string               $termInstanceId Instance id.
+	 * @param array<string, mixed> $completion     When completed (`voltooiDatum`, a DateTimeImmutable), the optional
+	 *                                             document ref (`documentLink`) and why the term ended (`rationale`).
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function complete(string $termInstanceId, array $completion): ?array {
+		$patch = ['status' => 'completed', 'voltooiDatum' => $completion['voltooiDatum']->format('Y-m-d')];
 		$updated = $this->updateTermijnInstance(termInstanceId: $termInstanceId, patch: $patch);
 
 		if ($updated !== null) {
-			$this->recordCompletion(termInstanceId: $termInstanceId, voltooiDatum: $voltooiDatum, documentLink: $documentLink, rationale: $rationale);
+			$this->recordCompletion(termInstanceId: $termInstanceId, completion: $completion);
 		}
 
 		return $updated;
-	}//end markTermijnCompleted()
+	}//end complete()
 
 	/**
 	 * Record the completion event and cancel every open timer of the instance.
 	 *
-	 * @param string            $termInstanceId Instance id.
-	 * @param DateTimeImmutable $voltooiDatum   When completed.
-	 * @param string            $documentLink   Optional document ref.
-	 * @param string            $rationale      Why the term ended.
+	 * @param string               $termInstanceId Instance id.
+	 * @param array<string, mixed> $completion     When completed (`voltooiDatum`, a DateTimeImmutable), the optional
+	 *                                             document ref (`documentLink`) and why the term ended (`rationale`).
 	 *
 	 * @return void
 	 */
-	private function recordCompletion(string $termInstanceId, DateTimeImmutable $voltooiDatum, string $documentLink, string $rationale): void {
-		$why = $this->completionReason(rationale: $rationale);
+	private function recordCompletion(string $termInstanceId, array $completion): void {
+		$why = $this->completionReason(rationale: $completion['rationale']);
 
 		$this->recordEvent(
 			termInstanceId: $termInstanceId,
@@ -556,8 +573,8 @@ class TermijnService implements TermijnServiceInterface {
 			// caller reads exactly as it did.
 			rationale: $why,
 			daysImpact: 0,
-			moment: $voltooiDatum,
-			documentLink: $documentLink,
+			moment: $completion['voltooiDatum'],
+			documentLink: $completion['documentLink'],
 		);
 
 		// Completion cancels every open timer of the instance, in the
@@ -627,20 +644,34 @@ class TermijnService implements TermijnServiceInterface {
 			'basis' => $basis,
 			'rationale' => $rationale,
 			'daysImpact' => $daysImpact,
+			'documentLink' => $documentLink,
 		];
-		if ($documentLink !== '') {
-			$event['documentLink'] = $documentLink;
+
+		return $this->storeEvent(event: $event, extras: ['moment' => $moment, 'items' => $items, 'notice' => $notice]);
+	}//end recordEvent()
+
+	/**
+	 * Store the event row with its items and notice, and mirror it on the case.
+	 *
+	 * @param array<string, mixed> $event  The base row; `documentLink` is kept only when not empty.
+	 * @param array<string, mixed> $extras When it happened (`moment`), the `items` and the `notice`.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function storeEvent(array $event, array $extras): ?array {
+		if ($event['documentLink'] === '') {
+			unset($event['documentLink']);
 		}
 
-		$event = $this->withItems(event: $event, items: $items);
-		$event = $this->withNotice(event: $event, notice: $notice);
+		$event = $this->withItems(event: $event, items: $extras['items']);
+		$event = $this->withNotice(event: $event, notice: $extras['notice']);
 
 		$saved = $this->store->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
 
-		$this->mirrorEvent(event: $event, moment: $moment);
+		$this->mirrorEvent(event: $event, moment: $extras['moment']);
 
 		return $saved;
-	}//end recordEvent()
+	}//end storeEvent()
 
 	/**
 	 * The event with the notice it carries, when there is one.

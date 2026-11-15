@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\JsonRequestBody;
+use OCA\Dossiq\Controller\Support\RequiresSignedInUid;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\BeschikkingServiceInterface;
@@ -61,6 +62,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class BeschikkingController extends Controller {
+	use RequiresSignedInUid;
 	use TranslatesRefusals;
 
 	/**
@@ -475,20 +477,6 @@ class BeschikkingController extends Controller {
 
 		return new JSONResponse($successor, Http::STATUS_CREATED);
 	}//end issueSuccessorOf()
-
-	/**
-	 * Resolve the current user UID or null.
-	 *
-	 * @return string|null
-	 */
-	private function requireUser(): ?string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		return $user->getUID();
-	}//end requireUser()
 
 	/**
 	 * Map a domain RuntimeException to a JSONResponse with an appropriate status.
