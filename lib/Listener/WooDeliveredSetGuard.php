@@ -55,6 +55,16 @@ class WooDeliveredSetGuard implements IEventListener {
 	private const ASSESSMENT_SLUG = 'wooDocumentAssessment';
 
 	/**
+	 * The delivered set schema: its config key and its slug.
+	 */
+	private const SET_SCHEMA = [WooDeliveredSetWriterInterface::CONFIG_KEY, WooDeliveredSetWriterInterface::SCHEMA_SLUG];
+
+	/**
+	 * The assessment schema: its config key and its slug.
+	 */
+	private const ASSESSMENT_SCHEMA = ['woo_assessment_schema', self::ASSESSMENT_SLUG];
+
+	/**
 	 * The data keys of a set; anything else (`@self`, `id`) is metadata.
 	 */
 	private const SET_KEYS = ['case', 'decision', 'status', 'deliveredAt', 'deliveredBy', 'supersedes', 'publication', 'items', 'setHash'];
@@ -118,12 +128,7 @@ class WooDeliveredSetGuard implements IEventListener {
 			return null;
 		}
 
-		if ($this->isSchema(
-			object: $current,
-			configKey: WooDeliveredSetWriterInterface::CONFIG_KEY,
-			slug: WooDeliveredSetWriterInterface::SCHEMA_SLUG
-		) === true
-		) {
+		if ($this->isSchema(object: $current, schema: self::SET_SCHEMA) === true) {
 			return $this->frozenSetRefusal(old: ($old ?? []), new: $new);
 		}
 
@@ -140,7 +145,7 @@ class WooDeliveredSetGuard implements IEventListener {
 	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
 	 */
 	private function assessmentDeliveredAt(array $object): ?string {
-		if ($this->isSchema(object: $object, configKey: 'woo_assessment_schema', slug: self::ASSESSMENT_SLUG) === false) {
+		if ($this->isSchema(object: $object, schema: self::ASSESSMENT_SCHEMA) === false) {
 			return null;
 		}
 
@@ -286,13 +291,13 @@ class WooDeliveredSetGuard implements IEventListener {
 	/**
 	 * Whether an object's `@self.schema` is the slug or the configured schema.
 	 *
-	 * @param array<string, mixed> $object    The serialised object.
-	 * @param string               $configKey The config key.
-	 * @param string               $slug      The slug.
+	 * @param array<string, mixed>        $object The serialised object.
+	 * @param array{0: string, 1: string} $schema The schema's config key and its slug.
 	 *
 	 * @return bool
 	 */
-	private function isSchema(array $object, string $configKey, string $slug): bool {
+	private function isSchema(array $object, array $schema): bool {
+		[$configKey, $slug] = $schema;
 		$self = ($object['@self'] ?? []);
 		$candidate = '';
 		if (is_array($self) === true && is_scalar(($self['schema'] ?? null)) === true) {
