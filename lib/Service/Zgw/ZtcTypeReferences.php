@@ -64,24 +64,37 @@ class ZtcTypeReferences {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function withDirectFields(array $body, array $map, array $jsonFields=[]): array {
-		$directFields = [];
-		foreach ($map as $field => $directField) {
-			if (isset($body[$field]) === false || is_array($body[$field]) === false) {
-				continue;
-			}
-
-			$directFields[$directField] = $body[$field];
-			if (in_array($directField, $jsonFields, true) === true) {
-				$directFields[$directField] = json_encode($body[$field]);
-			}
-		}
-
+		$directFields = $this->directFieldsOf(body: $body, fields: ['map' => $map, 'jsonFields' => $jsonFields]);
 		if (empty($directFields) === false) {
 			$body['_directFields'] = $directFields;
 		}
 
 		return $body;
 	}//end withDirectFields()
+
+	/**
+	 * The mapped fields the body carries as arrays, JSON-encoded where the schema stores them as strings.
+	 *
+	 * @param array $body   The request body
+	 * @param array $fields The ZGW field to direct field map (`map`) and the direct fields stored as JSON (`jsonFields`)
+	 *
+	 * @return array<string, mixed> The direct fields
+	 */
+	private function directFieldsOf(array $body, array $fields): array {
+		$directFields = [];
+		foreach ($fields['map'] as $field => $directField) {
+			if (isset($body[$field]) === false || is_array($body[$field]) === false) {
+				continue;
+			}
+
+			$directFields[$directField] = $body[$field];
+			if (in_array($directField, $fields['jsonFields'], true) === true) {
+				$directFields[$directField] = json_encode($body[$field]);
+			}
+		}
+
+		return $directFields;
+	}//end directFieldsOf()
 
 	/**
 	 * Resolve non-URL references in a type array field to actual object UUIDs.
