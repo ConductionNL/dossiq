@@ -202,15 +202,7 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function move(string $caseId, string $targetCaseTypeId, string $reason, string $actorUid): array {
-		$reason = trim($reason);
-		if ($reason === '') {
-			throw new RefusedException(
-				rule: 'version-move-needs-a-reason',
-				sentence: 'Say why this case is moving to another version of its case type.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
+		$reason = $this->requiredReason(reason: $reason);
 		$preview = $this->movablePreview(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId);
 
 		$this->applyMove(
@@ -227,6 +219,28 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 
 		return $preview;
 	}//end move()
+
+	/**
+	 * The trimmed reason for a move, refused when it is empty.
+	 *
+	 * @param string $reason Why the case is being moved.
+	 *
+	 * @return string The trimmed reason.
+	 *
+	 * @throws RefusedException When no reason is given.
+	 */
+	private function requiredReason(string $reason): string {
+		$reason = trim($reason);
+		if ($reason === '') {
+			throw new RefusedException(
+				rule: 'version-move-needs-a-reason',
+				sentence: 'Say why this case is moving to another version of its case type.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $reason;
+	}//end requiredReason()
 
 	/**
 	 * The move's preview, re-computed, refused when the case has nowhere to land.
