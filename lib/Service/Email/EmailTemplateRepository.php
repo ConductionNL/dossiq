@@ -39,6 +39,7 @@ use OCA\Dossiq\Kernel\Contracts\EmailTemplateRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use RuntimeException;
 
 /**
@@ -198,14 +199,6 @@ class EmailTemplateRepository implements EmailTemplateRepositoryInterface {
 	 *                                   nor a JSON-serialisable entity.
 	 */
 	private function toArrayOrNull(mixed $value): ?array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$value = $value->jsonSerialize();
-		}
-
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return null;
+		return SerialisedResult::rowOf(value: $value);
 	}//end toArrayOrNull()
 }//end class

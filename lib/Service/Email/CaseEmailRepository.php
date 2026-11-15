@@ -45,6 +45,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseEmailRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 
 /**
  * OpenRegister persistence and lookup for case-integrated email.
@@ -137,15 +138,7 @@ class CaseEmailRepository implements CaseEmailRepositoryInterface {
 			return [];
 		}
 
-		if (is_object($caseObj) === true && method_exists($caseObj, 'jsonSerialize') === true) {
-			$caseObj = $caseObj->jsonSerialize();
-		}
-
-		if (is_array($caseObj) === false) {
-			return [];
-		}
-
-		return $caseObj;
+		return SerialisedResult::arrayOf(value: $caseObj);
 	}//end loadCaseRecord()
 
 	/**
