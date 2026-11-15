@@ -313,13 +313,9 @@ class ZgwAuthMiddleware extends Middleware {
 		}
 
 		// Check if any scope grants cover this request.
+		$required = ['component' => $component, 'suffix' => $requiredSuffix];
 		foreach ($scopes as $scopeGrant) {
-			if ($this->scopeGrantCovers(
-				scopeGrant: $scopeGrant,
-				component: $component,
-				requiredSuffix: $requiredSuffix
-			) === true
-			) {
+			if ($this->scopeGrantCovers(scopeGrant: $scopeGrant, required: $required) === true) {
 				return;
 			}
 		}
@@ -331,16 +327,13 @@ class ZgwAuthMiddleware extends Middleware {
 	 * Check if a scope grant covers the required component and action.
 	 *
 	 * @param array $scopeGrant The scope grant configuration
-	 * @param string $component The ZGW component code (zrc, ztc, etc.)
-	 * @param string $requiredSuffix The required scope suffix (lezen, aanmaken, etc.)
+	 * @param array{component: string, suffix: string} $required The ZGW component code (zrc, ztc, etc.) and the
+	 *                                                           required scope suffix (lezen, aanmaken, etc.)
 	 *
 	 * @return bool True if the scope grant covers the request
 	 */
-	private function scopeGrantCovers(
-		array $scopeGrant,
-		string $component,
-		string $requiredSuffix,
-	): bool {
+	private function scopeGrantCovers(array $scopeGrant, array $required): bool {
+		['component' => $component, 'suffix' => $requiredSuffix] = $required;
 		// Check component match.
 		if (($scopeGrant['component'] ?? '') !== $component) {
 			return false;
