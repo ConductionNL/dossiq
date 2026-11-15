@@ -160,15 +160,7 @@ class PersonalStageService implements PersonalStageServiceInterface {
 			$stage = mb_substr($stage, 0, self::MAX_LENGTH);
 		}
 
-		$stages = $this->all(userId: $userId);
-		unset($stages[$caseId]);
-		if ($stage !== '') {
-			$stages[$caseId] = $stage;
-		}
-
-		if (count($stages) > self::MAX_STAGES) {
-			$stages = array_slice($stages, (count($stages) - self::MAX_STAGES), null, true);
-		}
+		$stages = self::withStage(stages: $this->all(userId: $userId), entry: ['caseId' => $caseId, 'stage' => $stage]);
 
 		$this->userConfig->setValueString(
 			$userId,
@@ -179,4 +171,25 @@ class PersonalStageService implements PersonalStageServiceInterface {
 
 		return $stage;
 	}//end set()
+
+	/**
+	 * The stages with this case's stage moved to the end, or dropped when cleared, keeping the newest ones.
+	 *
+	 * @param array<string, string>                $stages The reader's stages, by case.
+	 * @param array{caseId: string, stage: string} $entry  The case and its stage, '' to clear it.
+	 *
+	 * @return array<string, string> The stages to store.
+	 */
+	private static function withStage(array $stages, array $entry): array {
+		unset($stages[$entry['caseId']]);
+		if ($entry['stage'] !== '') {
+			$stages[$entry['caseId']] = $entry['stage'];
+		}
+
+		if (count($stages) > self::MAX_STAGES) {
+			$stages = array_slice($stages, (count($stages) - self::MAX_STAGES), null, true);
+		}
+
+		return $stages;
+	}//end withStage()
 }//end class
