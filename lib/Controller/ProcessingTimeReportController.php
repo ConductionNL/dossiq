@@ -17,7 +17,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\RefusesOutsideReportAudience;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ProcessingTimeReportServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
@@ -37,7 +36,6 @@ use Throwable;
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 class ProcessingTimeReportController extends Controller {
-	use RefusesOutsideReportAudience;
 
 	/**
 	 * Constructor.
@@ -115,6 +113,29 @@ class ProcessingTimeReportController extends Controller {
 			return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end report()
+
+	/**
+	 * The 401/403 refusal for a caller who is not signed in or not in the reporting audience, else null.
+	 *
+	 * An aggregate over every record: OpenRegister's per-object refusal
+	 * never sees it, so the audience is checked here.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function audienceRefusal(): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->audience->isInAudience(user: $user) === false) {
+			return new JSONResponse(['message' => ReportingAudienceInterface::REFUSAL], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end audienceRefusal()
 
 	/**
 	 * The refusal a malformed query earns, or null when it reads.

@@ -26,14 +26,14 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Migration\IOutput;
 
 /**
- * The opening of a repair step that runs once: skip when its `DONE_KEY`
- * already holds `DONE_VERSION`, say so and stop when OpenRegister (or the
- * schema it walks) is unavailable, else run the work under the system identity.
+ * The opening of a repair step that runs once over one schema: skip when its
+ * `DONE_KEY` already holds `DONE_VERSION`, say so and stop when OpenRegister
+ * or the schema is unavailable, else run the work under the system identity.
  *
  * The using class has `$appConfig` (IAppConfig), `$settingsService`
- * (SettingsServiceInterface), the `DONE_KEY`, `DONE_VERSION` and
- * `UNAVAILABLE_NOTE` constants, and composes {@see RunsUnderSystemIdentity}.
- * A step that walks one schema also has `TARGET_SCHEMA_KEY`.
+ * (SettingsServiceInterface), the `DONE_KEY`, `DONE_VERSION`,
+ * `TARGET_SCHEMA_KEY` and `UNAVAILABLE_NOTE` constants, and composes
+ * {@see RunsUnderSystemIdentity}.
  *
  * @spec exclude shared opening of the repair steps, covered by their own specs
  */
@@ -65,33 +65,6 @@ trait RunsOnce {
 			}
 		);
 	}//end onceOnSchema()
-
-	/**
-	 * Run `$work` once with OpenRegister's object service.
-	 *
-	 * @param IOutput                 $output The upgrade output.
-	 * @param callable(object): mixed $work   The step's work with the object service.
-	 *
-	 * @return void
-	 */
-	private function onceWithObjectService(IOutput $output, callable $work): void {
-		if ($this->alreadyDone() === true) {
-			return;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$output->info(self::UNAVAILABLE_NOTE);
-			return;
-		}
-
-		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($work, $objectService): void {
-				$work($objectService);
-			}
-		);
-	}//end onceWithObjectService()
 
 	/**
 	 * Whether this step already ran at its current version.

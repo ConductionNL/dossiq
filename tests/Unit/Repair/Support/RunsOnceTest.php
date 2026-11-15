@@ -62,10 +62,6 @@ class RunsOnceTest extends TestCase {
 			public function schema(IOutput $output, callable $work): void {
 				$this->onceOnSchema(output: $output, work: $work);
 			}
-
-			public function service(IOutput $output, callable $work): void {
-				$this->onceWithObjectService(output: $output, work: $work);
-			}
 		};
 	}
 
@@ -75,18 +71,16 @@ class RunsOnceTest extends TestCase {
 		$step = $this->step(marker: '2', settings: $settings);
 
 		$step->schema($this->createMock(IOutput::class), fn () => $this->fail('ran'));
-		$step->service($this->createMock(IOutput::class), fn () => $this->fail('ran'));
 	}
 
 	public function testMissingOpenRegisterIsReported(): void {
 		$settings = $this->createMock(SettingsServiceInterface::class);
 		$settings->method('getObjectService')->willReturn(null);
 		$output = $this->createMock(IOutput::class);
-		$output->expects($this->exactly(2))->method('info')->with('unavailable');
+		$output->expects($this->once())->method('info')->with('unavailable');
 		$step = $this->step(marker: '1', settings: $settings);
 
 		$step->schema($output, fn () => $this->fail('ran'));
-		$step->service($output, fn () => $this->fail('ran'));
 	}
 
 	public function testWorkRunsOnTheTarget(): void {
@@ -100,10 +94,7 @@ class RunsOnceTest extends TestCase {
 		$step->schema($this->createMock(IOutput::class), function (RepairSchema $target) use (&$seen): void {
 			$seen[] = $target->register . '/' . $target->schema;
 		});
-		$step->service($this->createMock(IOutput::class), function (object $service) use (&$seen, $objectService): void {
-			$seen[] = ($service === $objectService);
-		});
 
-		$this->assertSame(['reg/case', true], $seen);
+		$this->assertSame(['reg/case'], $seen);
 	}
 }

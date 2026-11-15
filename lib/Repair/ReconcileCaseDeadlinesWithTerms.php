@@ -218,7 +218,12 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 			// A page as large as the step will meet, not the default page: a repair
 			// that silently stopped after the first twenty cases would report
 			// green over every case after them.
-			$rows = $this->searchObjectsAsArrays(objectService: $target->objectService, register: $target->register, schema: $target->schema, filters: ['_limit' => self::PAGE]);
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $target->objectService,
+				register: $target->register,
+				schema: $target->schema,
+				filters: ['_limit' => self::PAGE]
+			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq case deadline repair: listing the terms failed', ['error' => $e->getMessage()]);
 			return null;
