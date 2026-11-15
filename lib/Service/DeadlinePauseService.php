@@ -137,16 +137,32 @@ class DeadlinePauseService implements DeadlinePauseServiceInterface {
 		$run->durationDays = $durationDays;
 		$run->rationale = $rationale;
 		$run->documentLink = $documentLink;
-		$this->assertSuspensionAllowed(instance: $run->instance, durationDays: $durationDays);
+
+		return $this->pause(run: $run, pauseReason: $pauseReason);
+	}//end registerPauze()
+
+	/**
+	 * Pause the instance the run names, when its case type allows it, and record the event.
+	 *
+	 * @param PauseRegistrationRun $run         The instance, the duration, the rationale and the document link.
+	 * @param string               $pauseReason The declared suspension reason key, or ''.
+	 *
+	 * @return array<string, mixed> The updated instance.
+	 *
+	 * @throws RefusedException When the case type forbids the suspension, forbids it this
+	 *         long, or does not declare the reason named.
+	 */
+	private function pause(PauseRegistrationRun $run, string $pauseReason): array {
+		$this->assertSuspensionAllowed(instance: $run->instance, durationDays: $run->durationDays);
 		$run->reason = $this->resolveReason(instance: $run->instance, key: $pauseReason);
 		$run->now = new DateTimeImmutable();
 
 		$patch = $this->suspendOnTheEngine(run: $run, patch: $this->pausePatch(run: $run));
-		$updated = $this->termService->updateTermijnInstance($termInstanceId, $patch);
+		$updated = $this->termService->updateTermijnInstance($run->termInstanceId, $patch);
 		$this->recordPauseEvent(run: $run);
 
 		return $updated ?? $run->instance;
-	}//end registerPauze()
+	}//end pause()
 
 	/**
 	 * The instance a pause can be registered on.
