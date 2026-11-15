@@ -114,6 +114,49 @@ class FilinqRedactionClientTest extends TestCase {
 	}//end testAMarkOnTheSameListLetsFilinqWriteTheCopy()
 
 	/**
+	 * The client passes the acting user and the Woo flag through filinq's
+	 * options, and filinq's four-eyes refusal is the outcome `same_person`
+	 * (redaction-four-eyes-setting REQ-RWB-09).
+	 *
+	 * @return void
+	 */
+	public function testTheOfficerWhoCheckedIsRefusedOnAWooRunAndAColleagueIsNot(): void {
+		$this->filinq->fourEyes  = true;
+		$this->filinq->checkedBy = 'pjansen';
+		$client = $this->client();
+		$client->markChecked(fileId: 42, entities: self::ENTITIES, checkedBy: 'pjansen');
+
+		$refused = $client->anonymize(fileId: 42, entities: self::ENTITIES, userId: 'pjansen', wooCase: true);
+
+		self::assertSame('same_person', $refused['status']);
+		self::assertSame('same_person', $refused['notChecked']);
+		self::assertNull($refused['anonymizedFileId']);
+		self::assertSame([], $this->filinq->anonymised);
+
+		$written = $client->anonymize(fileId: 42, entities: self::ENTITIES, userId: 'dbakker', wooCase: true);
+
+		self::assertSame('redacted', $written['status']);
+		self::assertSame([['fileId' => 42, 'entities' => self::ENTITIES, 'userId' => 'dbakker', 'wooCase' => true]], $this->filinq->anonymised);
+	}//end testTheOfficerWhoCheckedIsRefusedOnAWooRunAndAColleagueIsNot()
+
+	/**
+	 * Outside a Woo run the same officer may make the copy.
+	 *
+	 * @return void
+	 */
+	public function testOutsideAWooRunTheSameOfficerMayMakeTheCopy(): void {
+		$this->filinq->fourEyes  = true;
+		$this->filinq->checkedBy = 'pjansen';
+		$client = $this->client();
+		$client->markChecked(fileId: 42, entities: self::ENTITIES, checkedBy: 'pjansen');
+
+		$outcome = $client->anonymize(fileId: 42, entities: self::ENTITIES, userId: 'pjansen');
+
+		self::assertSame('redacted', $outcome['status']);
+		self::assertFalse($this->filinq->anonymised[0]['wooCase']);
+	}//end testOutsideAWooRunTheSameOfficerMayMakeTheCopy()
+
+	/**
 	 * A mark on a different list does not cover this one.
 	 *
 	 * @return void

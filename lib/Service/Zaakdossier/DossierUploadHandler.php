@@ -27,14 +27,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\OrganisationQuotaLimits;
+use OCA\Dossiq\Service\QuotaGate;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IUser;
 use RuntimeException;
@@ -42,9 +45,9 @@ use RuntimeException;
 /**
  * Decodes, screens and stores dossier document uploads.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
-class DossierUploadHandler {
+class DossierUploadHandler implements DossierUploadHandlerInterface {
 	/**
 	 * File extensions rejected outright as executable content.
 	 *
@@ -53,16 +56,23 @@ class DossierUploadHandler {
 	private const BLOCKED_EXTENSIONS = ['exe', 'bat', 'cmd', 'com', 'msi', 'scr', 'sh', 'php', 'phar', 'dll'];
 
 	/**
+	 * The tenant quota an upload consumes.
+	 */
+	private const STORAGE_QUOTA = 'storage_mb';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ZaakdossierService $fileService The dossier orchestrator.
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param QuotaGate $quotaGate Refuses an upload past the tenant's storage quota and counts the stored ones.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly ZaakdossierService $fileService,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly QuotaGate $quotaGate,
 	) {
 	}//end __construct()
 
@@ -92,44 +102,109 @@ class DossierUploadHandler {
 	/**
 	 * Upload a single multipart file into a case dossier.
 	 *
+	 * A file that would take the tenant past a blocking storage limit is
+	 * refused before it is stored; a stored file adds its size, rounded up to
+	 * whole megabytes, to the tenant's storage count.
+	 *
 	 * @param string $caseId The case (zaak) UUID.
 	 * @param array<string, mixed> $file One normalised uploaded-file entry.
 	 * @param array<string, mixed> $metadata The shared document metadata.
 	 *
 	 * @return array<string, mixed> The per-file result entry.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-the-quota-card-and-the-refusal-read-the-same-limits-req-tq-enf-02
 	 */
 	public function uploadOne(string $caseId, array $file, array $metadata): array {
 		$name = (string)($file['name'] ?? '');
-		$tmpName = (string)($file['tmp_name'] ?? '');
 		try {
-			if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
-				throw new RuntimeException('Executable files are not permitted: ' . $name);
-			}
-
-			$content = '';
-			if ($tmpName !== '') {
-				$content = (string)file_get_contents($tmpName);
-			}
-
-			$meta = $metadata;
-			if (isset($file['type']) === true && $file['type'] !== '') {
-				$meta['format'] = $file['type'];
-			}
-
-			$created = $this->fileService->uploadDocument(
-				caseId: $caseId,
-				fileName: $name,
-				content: $content,
-				metadata: $meta,
-			);
-
-			return ['name' => $name, 'success' => true, 'informatieobject' => $created];
+			return $this->uploadFile(caseId: $caseId, file: $file, metadata: $metadata);
 		} catch (\Throwable $e) {
 			return ['name' => $name, 'success' => false, 'error' => $e->getMessage()];
 		}//end try
 	}//end uploadOne()
+
+	/**
+	 * Refuse an executable, then store the file's bytes as a document of the case.
+	 *
+	 * @param string               $caseId   The case (zaak) UUID.
+	 * @param array<string, mixed> $file     One normalised uploaded-file entry.
+	 * @param array<string, mixed> $metadata The shared document metadata.
+	 *
+	 * @return array<string, mixed> The per-file result entry.
+	 *
+	 * @throws \Throwable When the file is executable or cannot be stored.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
+	 */
+	private function uploadFile(string $caseId, array $file, array $metadata): array {
+		$name = (string)($file['name'] ?? '');
+		$tmpName = (string)($file['tmp_name'] ?? '');
+		if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
+			throw new RuntimeException('Executable files are not permitted: ' . $name);
+		}
+
+		$content = $this->uploadedContent(tmpName: $tmpName);
+		$megabytes = $this->megabytesOf(content: $content);
+		$refusal = $this->quotaGate->refusal(quotaType: self::STORAGE_QUOTA, amount: $megabytes);
+		if ($refusal !== null) {
+			throw new RuntimeException($refusal['message']);
+		}
+
+		$meta = $this->uploadMetadata(file: $file, metadata: $metadata);
+
+		$created = $this->fileService->uploadDocument(caseId: $caseId, fileName: $name, content: $content, metadata: $meta);
+
+		$this->quotaGate->record(quotaType: self::STORAGE_QUOTA, amount: $megabytes);
+
+		return ['name' => $name, 'success' => true, 'informatieobject' => $created];
+	}//end uploadFile()
+
+	/**
+	 * The size of an upload in whole megabytes, rounded up.
+	 *
+	 * @param string $content The file content.
+	 *
+	 * @return int Megabytes; 0 for an empty file.
+	 *
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-the-quota-card-and-the-refusal-read-the-same-limits-req-tq-enf-02
+	 */
+	private function megabytesOf(string $content): int {
+		return (int)ceil(strlen($content) / OrganisationQuotaLimits::BYTES_PER_MB);
+	}//end megabytesOf()
+
+	/**
+	 * The uploaded bytes, '' when there is no temporary file.
+	 *
+	 * @param string $tmpName The temporary file path.
+	 *
+	 * @return string
+	 */
+	private function uploadedContent(string $tmpName): string {
+		$content = '';
+		if ($tmpName !== '') {
+			$content = (string)file_get_contents($tmpName);
+		}
+
+		return $content;
+	}//end uploadedContent()
+
+	/**
+	 * The shared metadata, with the file's MIME type as its format when the upload gave one.
+	 *
+	 * @param array<string, mixed> $file     One normalised uploaded-file entry.
+	 * @param array<string, mixed> $metadata The shared document metadata.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function uploadMetadata(array $file, array $metadata): array {
+		$meta = $metadata;
+		if (isset($file['type']) === true && $file['type'] !== '') {
+			$meta['format'] = $file['type'];
+		}
+
+		return $meta;
+	}//end uploadMetadata()
 
 	/**
 	 * Decode the shared metadata JSON body into an array.
@@ -138,7 +213,7 @@ class DossierUploadHandler {
 	 *
 	 * @return array<string, mixed> The decoded metadata.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function decodeMetadata(mixed $raw): array {
 		if (is_array($raw) === true) {
@@ -162,7 +237,7 @@ class DossierUploadHandler {
 	 *
 	 * @return array<int, array<string, mixed>> A list of single-file arrays.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function normaliseUploadedFiles(mixed $uploaded): array {
 		if (is_array($uploaded) === false || isset($uploaded['name']) === false) {
@@ -196,7 +271,7 @@ class DossierUploadHandler {
 	 *
 	 * @return bool True when the file appears to be an executable.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 * @spec openspec/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
 	 */
 	public function isExecutable(string $name, string $tmpName): bool {
@@ -228,7 +303,7 @@ class DossierUploadHandler {
 	 *
 	 * @return bool True for a PE/DOS, ELF or shebang header.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	private function hasExecutableMagic(string $magic): bool {
 		if (str_starts_with($magic, 'MZ') === true) {

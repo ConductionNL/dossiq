@@ -33,6 +33,9 @@ use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Pins every store call, rule check, mapping, notification, log line and answer of a ZGW write.
@@ -43,6 +46,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Zgw\ResourceRoute
  * @covers \OCA\Dossiq\Service\Zgw\ResourceWrite
  * @covers \OCA\Dossiq\Service\Zgw\RuleFlags
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwInboundMapping
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwOutboundMapping
  */
 class ZgwServiceWriteGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -93,7 +98,9 @@ class ZgwServiceWriteGoldenTest extends TestCase {
 			 *
 			 * @return mixed The object.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->trace->append(['find', $id, $register, $schema]);
 				$existing = (array_key_exists('existing', $this->world) === true ? $this->world['existing'] : ['id' => $id, 'name' => 'Oud', 'kept' => 'ja']);
 				if ($existing === 'missing') {
@@ -126,7 +133,10 @@ class ZgwServiceWriteGoldenTest extends TestCase {
 			 *
 			 * @return mixed The stored object.
 			 */
-			public function saveObject(mixed $register = null, mixed $schema = null, array $object = [], ?string $uuid = null): mixed {
+			public function saveObject(array $object = [], ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->trace->append(['save', $register, $schema, $object, $uuid]);
 				$answer = ($this->world['save'] ?? 'array');
 				if ($answer === 'throw') {
@@ -153,7 +163,8 @@ class ZgwServiceWriteGoldenTest extends TestCase {
 			 *
 			 * @return bool Whether it was deleted.
 			 */
-			public function deleteObject(string $uuid): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
 				$this->trace->append(['delete', $uuid]);
 				if (($this->world['delete'] ?? '') === 'throw') {
 					throw new RuntimeException('delete refused');

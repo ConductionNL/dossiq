@@ -51,19 +51,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Service\Support\OrdersRuleBlocks;
+
 /**
  * Reads a case type's per-role field rules and writes them in OpenRegister's shapes.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 class FieldRoleRuleDeclaration {
+	use OrdersRuleBlocks;
 
 	/**
 	 * The property the rules are declared under, on the case type.
@@ -132,7 +135,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The `fields` block, possibly empty.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function lifecycleFields(array $caseType, string $statusId = ''): array {
@@ -184,7 +187,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<string, array<string, array<int, array<string, string>>>> Blocks by property name.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function propertyAuthorization(array $caseType): array {
@@ -242,7 +245,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The block.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function foldInto(array $fields, array $roles): array {
 		foreach ($roles as $kind => $entries) {
@@ -268,7 +271,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, string> The field names.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function fieldsNamedUnder(array $entries): array {
 		$named = [];
@@ -298,7 +301,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, array<string, string>> The union.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function union(array $current, array $added): array {
 		$union = $current;
@@ -326,7 +329,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed, statuses: array<int, string>}> The rules.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function rulesOf(array $caseType): array {
 		$declared = ($caseType[self::DECLARATION_KEY] ?? null);
@@ -336,28 +339,59 @@ class FieldRoleRuleDeclaration {
 
 		$rules = [];
 		foreach ($declared as $rule) {
-			if (is_array($rule) === false) {
-				continue;
+			$normalised = $this->normalisedRule(rule: $rule);
+			if ($normalised !== null) {
+				$rules[] = $normalised;
 			}
-
-			$kind = (string)($rule['rule'] ?? '');
-			$field = trim((string)($rule['field'] ?? ''));
-			if (in_array($kind, self::RULES, true) === false || $field === '') {
-				continue;
-			}
-
-			$rules[] = [
-				'field' => $field,
-				'rule' => $kind,
-				'reason' => trim((string)($rule['reason'] ?? '')),
-				'groups' => ($rule['groups'] ?? null),
-				'heldBy' => ($rule['heldBy'] ?? null),
-				'statuses' => $this->names(value: ($rule['statuses'] ?? null)),
-			];
 		}
 
 		return $rules;
 	}//end rulesOf()
+
+	/**
+	 * One declared rule normalised, or null when it is dropped.
+	 *
+	 * @param mixed $rule One declared rule.
+	 *
+	 * @return array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed, statuses: array<int, string>}|null The rule, or null.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function normalisedRule(mixed $rule): ?array {
+		if (is_array($rule) === false) {
+			return null;
+		}
+
+		$kind = (string)($rule['rule'] ?? '');
+		$field = trim((string)($rule['field'] ?? ''));
+		if (in_array($kind, self::RULES, true) === false || $field === '') {
+			return null;
+		}
+
+		return $this->ruleEntry(rule: $rule, kind: $kind, field: $field);
+	}//end normalisedRule()
+
+	/**
+	 * The normalised form of a known rule naming a field.
+	 *
+	 * @param array<string, mixed> $rule  One declared rule.
+	 * @param string               $kind  The rule's kind.
+	 * @param string               $field The field it names.
+	 *
+	 * @return array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed, statuses: array<int, string>} The rule.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function ruleEntry(array $rule, string $kind, string $field): array {
+		return [
+			'field' => $field,
+			'rule' => $kind,
+			'reason' => trim((string)($rule['reason'] ?? '')),
+			'groups' => ($rule['groups'] ?? null),
+			'heldBy' => ($rule['heldBy'] ?? null),
+			'statuses' => $this->names(value: ($rule['statuses'] ?? null)),
+		];
+	}//end ruleEntry()
 
 	/**
 	 * The groups one rule takes the field away from.
@@ -366,7 +400,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, string> The group names.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function restrictedGroups(array $rule): array {
 		return $this->names(value: ($rule['groups'] ?? null));
@@ -382,7 +416,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, string> The group names.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function holdingGroups(array $rule): array {
 		$restricted = $this->restrictedGroups(rule: $rule);
@@ -402,7 +436,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, string> The names.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function names(mixed $value): array {
 		if (is_array($value) === false) {
@@ -423,28 +457,4 @@ class FieldRoleRuleDeclaration {
 
 		return $names;
 	}//end names()
-
-	/**
-	 * The block with its kinds in the order OpenRegister lists them.
-	 *
-	 * Order changes nothing about what is enforced. It makes the block
-	 * DIFFABLE, which is what keeps the projector from rewriting the schema on
-	 * every publish over a difference that is not one.
-	 *
-	 * @param array<string, array<int, array<string, mixed>>> $block The gathered block.
-	 *
-	 * @return array<string, array<int, array<string, mixed>>> The block, ordered.
-	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
-	 */
-	private function inPublishedOrder(array $block): array {
-		$ordered = [];
-		foreach (self::RULES as $kind) {
-			if (($block[$kind] ?? []) !== []) {
-				$ordered[$kind] = $block[$kind];
-			}
-		}
-
-		return $ordered;
-	}//end inPublishedOrder()
 }//end class

@@ -38,7 +38,7 @@ use OCA\OpenRegister\Lifecycle\LifecycleGuardInterface;
  * Allows the bezwaar `beslissen` transition only while the statutory
  * decision deadline (AWB art. 7:10) has not been exceeded.
  *
- * @spec openspec/changes/migrate-status-engine-to-or-lifecycle/tasks.md#P-3.3
+ * @spec openspec/changes/archive/2026-06-15-migrate-status-engine-to-or-lifecycle/tasks.md#P-3.3
  */
 class BezwaarDeadlineGuard implements LifecycleGuardInterface {
 	/**
@@ -59,7 +59,7 @@ class BezwaarDeadlineGuard implements LifecycleGuardInterface {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $action/$userId are mandated by the interface; this guard reads only the payload.
 	 * @SuppressWarnings(PHPMD.StaticAccess)          GuardResult has a private constructor upstream; see the note above.
 	 *
-	 * @spec openspec/changes/migrate-status-engine-to-or-lifecycle/tasks.md#P-3.3
+	 * @spec openspec/changes/archive/2026-06-15-migrate-status-engine-to-or-lifecycle/tasks.md#P-3.3
 	 */
 	public function check(array $object, string $action, string $userId): GuardResult {
 		$deadlineRaw = trim((string)($object['decisionDeadline'] ?? ''));
@@ -69,6 +69,19 @@ class BezwaarDeadlineGuard implements LifecycleGuardInterface {
 			return GuardResult::allow();
 		}
 
+		return $this->beforeDeadline(deadlineRaw: $deadlineRaw);
+	}//end check()
+
+	/**
+	 * Deny once the recorded deadline has passed; a deadline that does not parse blocks nothing.
+	 *
+	 * @param string $deadlineRaw The recorded decision deadline.
+	 *
+	 * @return GuardResult The verdict.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) GuardResult has a private constructor upstream; see the class note.
+	 */
+	private function beforeDeadline(string $deadlineRaw): GuardResult {
 		try {
 			$deadline = new DateTimeImmutable($deadlineRaw);
 		} catch (\Exception $e) {
@@ -85,7 +98,7 @@ class BezwaarDeadlineGuard implements LifecycleGuardInterface {
 		}
 
 		return GuardResult::allow();
-	}//end check()
+	}//end beforeDeadline()
 
 	/**
 	 * Current moment, normalised to the start of the day so a decision taken

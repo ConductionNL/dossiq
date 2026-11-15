@@ -27,24 +27,25 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue;
 
-use OCA\Dossiq\AppInfo\Application;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\QueueViewPreferencesInterface;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 
 /**
  * The reader's own view settings for their queue.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
-class QueueViewPreferences {
+class QueueViewPreferences implements QueueViewPreferencesInterface {
 	/**
 	 * The preference holding the groups hidden for a day, as JSON.
 	 *
@@ -75,7 +76,7 @@ class QueueViewPreferences {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly IUserConfig $userConfig,
@@ -90,11 +91,11 @@ class QueueViewPreferences {
 	 *
 	 * @return string One of GROUPINGS.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function groupBy(string $userId): string {
 		try {
-			$stored = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_GROUP_BY, 'source');
+			$stored = $this->userConfig->getValueString($userId, AppIdentity::APP_ID, self::PREF_GROUP_BY, 'source');
 		} catch (InvalidArgumentException $e) {
 			$this->logger->warning('Dossiq: the queue grouping could not be read: ' . $e->getMessage());
 
@@ -116,14 +117,14 @@ class QueueViewPreferences {
 	 *
 	 * @return string The grouping now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function setGroupBy(string $userId, string $groupBy): string {
 		if (in_array($groupBy, self::GROUPINGS, true) === false) {
 			$groupBy = 'source';
 		}
 
-		$this->userConfig->setValueString($userId, Application::APP_ID, self::PREF_GROUP_BY, $groupBy);
+		$this->userConfig->setValueString($userId, AppIdentity::APP_ID, self::PREF_GROUP_BY, $groupBy);
 
 		return $groupBy;
 	}//end setGroupBy()
@@ -136,7 +137,7 @@ class QueueViewPreferences {
 	 *
 	 * @return array<int, string> The hidden group keys.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function hiddenGroups(string $userId, string $today): array {
 		$hidden = [];
@@ -158,7 +159,7 @@ class QueueViewPreferences {
 	 *
 	 * @return array<int, string> The groups hidden after this call.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function hideForToday(string $userId, string $group, string $today): array {
 		$stored = $this->storedHidden(userId: $userId);
@@ -168,14 +169,7 @@ class QueueViewPreferences {
 		// preference cannot grow one key per group per day for ever.
 		$stored = array_filter($stored, static fn (string $day): bool => ($day === $today));
 
-		$this->userConfig->setValueString(
-			$userId,
-			Application::APP_ID,
-			self::PREF_HIDDEN_GROUPS,
-			json_encode($stored, JSON_THROW_ON_ERROR)
-		);
-
-		return array_keys($stored);
+		return $this->saveHidden(userId: $userId, stored: $stored);
 	}//end hideForToday()
 
 	/**
@@ -187,22 +181,34 @@ class QueueViewPreferences {
 	 *
 	 * @return array<int, string> The groups hidden after this call.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function showAgain(string $userId, string $group, string $today): array {
 		$stored = $this->storedHidden(userId: $userId);
 		unset($stored[$group]);
 		$stored = array_filter($stored, static fn (string $day): bool => ($day === $today));
 
+		return $this->saveHidden(userId: $userId, stored: $stored);
+	}//end showAgain()
+
+	/**
+	 * Store the hide-for-today map and answer the groups it hides.
+	 *
+	 * @param string                $userId The reader.
+	 * @param array<string, string> $stored Group key to the day it was hidden on.
+	 *
+	 * @return array<int, string> The hidden group keys.
+	 */
+	private function saveHidden(string $userId, array $stored): array {
 		$this->userConfig->setValueString(
 			$userId,
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::PREF_HIDDEN_GROUPS,
 			json_encode($stored, JSON_THROW_ON_ERROR)
 		);
 
 		return array_keys($stored);
-	}//end showAgain()
+	}//end saveHidden()
 
 	/**
 	 * The stored hide-for-today map, group key to the date it was hidden on.
@@ -211,11 +217,13 @@ class QueueViewPreferences {
 	 *
 	 * @return array<string, string> The map.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) JsonPreference is a stateless reader shared by the queue preference stores.
 	 */
 	private function storedHidden(string $userId): array {
 		try {
-			$raw = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_HIDDEN_GROUPS, '');
+			$raw = $this->userConfig->getValueString($userId, AppIdentity::APP_ID, self::PREF_HIDDEN_GROUPS, '');
 		} catch (InvalidArgumentException $e) {
 			// Narrow on purpose: see the note in PersonalStageService. A
 			// reader whose preference cannot be read sees every group, which
@@ -224,14 +232,7 @@ class QueueViewPreferences {
 			$raw = '';
 		}
 
-		if (trim($raw) === '') {
-			return [];
-		}
-
-		$decoded = json_decode($raw, true);
-		if (is_array($decoded) === false) {
-			return [];
-		}
+		$decoded = JsonPreference::decode(raw: $raw);
 
 		$map = [];
 		foreach ($decoded as $group => $day) {

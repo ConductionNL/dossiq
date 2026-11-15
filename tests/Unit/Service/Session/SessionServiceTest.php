@@ -46,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinitionReader
  * @uses   \OCA\Dossiq\Service\Session\SessionRules
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Support\CaseRegisterReads
  */
 class SessionServiceTest extends TestCase {
 
@@ -399,4 +400,23 @@ class SessionServiceTest extends TestCase {
 		self::assertArrayHasKey('title', self::$schemas->schemas['hearingSession']['properties']);
 		self::assertArrayHasKey('sessionKey', self::$schemas->schemas['hearingSession']['properties']);
 	}//end testTheSessionSchemaIsACalendar()
+	/**
+	 * The case reads refuse with their sentences: no case id, no case, no case type, and a case without one.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseReadsRefuseWithTheirSentences(): void {
+		$this->store->seed(schema: 'case', uuid: 'case-untyped', row: ['title' => 'No type']);
+		$this->store->seed(schema: 'case', uuid: 'case-lost', row: ['title' => 'Lost type', 'caseType' => 'ct-gone']);
+		$this->assertSame([], $this->service->sessionsFor('case-untyped')['definitions']);
+
+		foreach (['' => 'Case not found', 'case-none' => 'Case not found', 'case-lost' => 'Case type not found'] as $caseId => $sentence) {
+			try {
+				$this->service->sessionsFor((string)$caseId);
+				$this->fail('refused');
+			} catch (\RuntimeException $e) {
+				$this->assertSame($sentence, $e->getMessage());
+			}
+		}
+	}//end testTheCaseReadsRefuseWithTheirSentences()
 }//end class

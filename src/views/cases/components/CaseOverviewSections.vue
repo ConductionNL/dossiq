@@ -8,7 +8,7 @@
 	rows, and a row reads a field of the case. Text on the rows comes from the
 	case type as an organisation wrote it.
 
-	@spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md
+	@spec openspec/specs/case-page/spec.md
 -->
 <template>
 	<div v-if="sections.length > 0" class="case-overview-sections" data-testid="case-overview-sections">
@@ -65,7 +65,7 @@ export default {
 		/**
 		 * @return {Array<object>} The sections with their rows filled from the case.
 		 *
-		 * @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
+		 * @spec openspec/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
 		 */
 		sections() {
 			return resolveOverviewSections(this.declared, this.objectData)
@@ -78,7 +78,7 @@ export default {
 			/**
 			 * Reload the sections when the case's type changes.
 			 *
-			 * @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md
+			 * @spec openspec/specs/case-page/spec.md
 			 * @return {void}
 			 */
 			handler() {
@@ -94,7 +94,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the sections are known.
 		 *
-		 * @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
+		 * @spec openspec/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
 		 */
 		async load() {
 			const caseType = this.objectData?.caseType

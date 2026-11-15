@@ -32,6 +32,8 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\ComplaintAnalyticsService
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ComplaintAnalyticsServiceTest extends TestCase {
 

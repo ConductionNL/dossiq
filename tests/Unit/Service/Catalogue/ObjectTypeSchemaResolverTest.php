@@ -299,4 +299,28 @@ class ObjectTypeSchemaResolverTest extends TestCase {
 
 		$this->assertNull($resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a'));
 	}//end testDescribesNothingWithoutOpenRegister()
+	/**
+	 * Without OpenRegister's object service the schema is still described, with no count.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheObjectServiceTheCountIsUnknown(): void {
+		$openRegister = $this->openRegister();
+		$container    = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('has')->willReturnCallback(
+			static fn (string $id): bool => $id !== 'OCA\\OpenRegister\\Service\\ObjectService'
+		);
+		$container->method('get')->willReturnCallback(
+			function (string $id) use ($openRegister): object {
+				$this->assertNotSame(expected: 'OCA\\OpenRegister\\Service\\ObjectService', actual: $id);
+				return $openRegister;
+			}
+		);
+		$resolver = new ObjectTypeSchemaResolver(container: $container, logger: $this->createMock(originalClassName: LoggerInterface::class));
+
+		$described = $resolver->describe(objectUrl: '/apps/openregister/api/objects/7/trees/a');
+
+		$this->assertSame(expected: 'Bomenregister', actual: $described['title']);
+		$this->assertNull(actual: $described['objects']);
+	}//end testWithoutTheObjectServiceTheCountIsUnknown()
 }//end class

@@ -444,4 +444,59 @@ class CaseTermsControllerContractTest extends TestCase {
 		self::assertSame(Http::STATUS_UNAUTHORIZED, $controller->index(caseId: 'c1')->getStatus());
 		self::assertSame(Http::STATUS_UNAUTHORIZED, $controller->workloadAge()->getStatus());
 	}//end testAnAnonymousRequestIsRefused()
+
+	/**
+	 * The requests on a case are answered with how long each open one has waited, and whether the case waits.
+	 *
+	 * @return void
+	 */
+	public function testTheRequestsOnACaseSayWhichOnesWait(): void {
+		$this->aanvullingen->method('forCase')->with('case-1')->willReturn(
+			[
+				['id' => 'r-1', 'state' => 'open'],
+				['id' => 'r-2', 'state' => 'answered'],
+				['id' => 'r-3', 'state' => 'open'],
+			]
+		);
+		$this->aanvullingen->method('daysOpen')->willReturnCallback(
+			static fn (array $request): int => ['r-1' => 3, 'r-3' => 11][$request['id']]
+		);
+
+		$response = $this->controller->aanvullingsverzoeken(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			[
+				'caseId' => 'case-1',
+				'waiting' => true,
+				'open' => 2,
+				'requests' => [
+					['id' => 'r-1', 'state' => 'open', 'daysOpen' => 3],
+					['id' => 'r-2', 'state' => 'answered', 'daysOpen' => 0],
+					['id' => 'r-3', 'state' => 'open', 'daysOpen' => 11],
+				],
+			],
+			$response->getData()
+		);
+	}//end testTheRequestsOnACaseSayWhichOnesWait()
+
+	/**
+	 * A case without open requests does not wait, and an unreadable list is a 400.
+	 *
+	 * @return void
+	 */
+	public function testNoOpenRequestAndAnUnreadableList(): void {
+		$this->aanvullingen->method('forCase')->willReturnOnConsecutiveCalls(
+			[['id' => 'r-2', 'state' => 'answered']],
+			$this->throwException(new \RuntimeException('register down'))
+		);
+		$this->aanvullingen->expects($this->never())->method('daysOpen');
+
+		$quiet = $this->controller->aanvullingsverzoeken(caseId: 'case-1');
+		$failed = $this->controller->aanvullingsverzoeken(caseId: 'case-1');
+
+		$this->assertSame([false, 0], [$quiet->getData()['waiting'], $quiet->getData()['open']]);
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $failed->getStatus());
+		$this->assertSame(['message' => 'The requests could not be read.', 'error' => 'aanvullingsverzoeken-unreadable'], $failed->getData());
+	}//end testNoOpenRequestAndAnUnreadableList()
 }//end class

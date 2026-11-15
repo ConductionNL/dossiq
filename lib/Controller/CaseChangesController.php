@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\Service\Board\CaseChangesFeed;
+use OCA\Dossiq\Kernel\Contracts\CaseChangesFeedInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -57,14 +57,14 @@ class CaseChangesController extends Controller {
 	 * @param IRequest        $request     Request.
 	 * @param IUserSession    $userSession User session.
 	 * @param LoggerInterface $logger      Logger.
-	 * @param CaseChangesFeed $feed        The changes.
+	 * @param CaseChangesFeedInterface $feed        The changes.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseChangesFeed $feed,
+		private readonly CaseChangesFeedInterface $feed,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -91,6 +91,23 @@ class CaseChangesController extends Controller {
 			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		return $this->changesSince(
+			readerId: $user->getUID(),
+			ask: ['since' => $since, 'scope' => ['caseType' => $caseType, 'assignedGroup' => $assignedGroup]]
+		);
+	}//end index()
+
+	/**
+	 * The changes since the moment the board last asked, for one reader.
+	 *
+	 * @param string               $readerId The signed-in reader.
+	 * @param array<string, mixed> $ask      The moment the board last asked (`since`, ISO 8601) and the case type and
+	 *                                       group to keep to (`scope`).
+	 *
+	 * @return JSONResponse
+	 */
+	private function changesSince(string $readerId, array $ask): JSONResponse {
+		$since = $ask['since'];
 		if (trim($since) === '') {
 			return new JSONResponse(['changes' => [], 'now' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM)]);
 		}
@@ -104,12 +121,12 @@ class CaseChangesController extends Controller {
 
 		try {
 			return new JSONResponse(
-				$this->feed->since(readerId: $user->getUID(), since: $moment, scope: ['caseType' => $caseType, 'assignedGroup' => $assignedGroup])
+				$this->feed->since(readerId: $readerId, since: $moment, scope: $ask['scope'])
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Case changes could not be read', ['error' => $e->getMessage()]);
 
 			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
-	}//end index()
+	}//end changesSince()
 }//end class

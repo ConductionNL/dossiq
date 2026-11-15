@@ -30,10 +30,12 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessPurposeServiceInterface;
 use OCA\Dossiq\Service\People\CaseRoleHolder;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -42,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-access-purpose/spec.md
  */
-class CaseAccessPurposeService {
+class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 
 	/**
 	 * The audit trail action of a recorded purpose.
@@ -111,40 +113,32 @@ class CaseAccessPurposeService {
 		$note = trim($note);
 		$this->assertPurpose(purpose: $purpose, note: $note);
 
-		$objectService = $this->settingsService->getObjectService();
-		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $mapper === null || $register === '' || $caseSchema === '' || $caseTypeSchema === '') {
-			throw $this->notRecorded(previous: null);
-		}
-
-		$case = $this->find(
-			objectService: $objectService,
-			id: $caseId,
-			register: $register,
-			schema: $caseSchema,
-			refusal: new RefusedException(rule: 'case-not-readable', sentence: 'This case cannot be opened.', status: 404)
-		);
-
-		$categories = $this->categoriesOf(objectService: $objectService, case: $case, register: $register, schema: $caseTypeSchema);
+		['mapper' => $mapper, 'case' => $case, 'categories' => $categories] = $this->purposeRead(caseId: $caseId);
 		if ($categories === []) {
 			return ['recorded' => false, 'required' => false];
 		}
 
-		$this->write(
-			mapper: $mapper,
-			case: $case,
-			readerId: $readerId,
-			action: self::ACTION,
-			context: ['purpose' => $purpose, 'note' => $note, 'categories' => $categories],
+		return $this->recordVisit(
+			visit: new CaseVisit(mapper: $mapper, case: $case, readerId: $readerId),
+			context: ['purpose' => $purpose, 'note' => $note, 'categories' => $categories]
 		);
+	}//end record()
 
-		$roleAdded = $this->bindFor(mapper: $mapper, case: $case, readerId: $readerId, purpose: $purpose);
+	/**
+	 * Write the purpose to the case's trail and bind the reader to the role it names.
+	 *
+	 * @param CaseVisit            $visit   The reader on the case, and the trail it is written to.
+	 * @param array<string, mixed> $context The purpose, the note and the case's special categories.
+	 *
+	 * @return array{recorded: bool, required: bool, roleAdded: bool}
+	 */
+	private function recordVisit(CaseVisit $visit, array $context): array {
+		$this->write(visit: $visit, entry: ['action' => self::ACTION, 'context' => $context]);
+
+		$roleAdded = $this->bindFor(visit: $visit, purpose: $context['purpose']);
 
 		return ['recorded' => true, 'required' => true, 'roleAdded' => $roleAdded];
-	}//end record()
+	}//end recordVisit()
 
 	/**
 	 * Whether the reader must state a purpose to open this case.
@@ -164,40 +158,23 @@ class CaseAccessPurposeService {
 	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
 	public function check(string $caseId, string $readerId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $mapper === null || $register === '' || $caseSchema === '' || $caseTypeSchema === '') {
-			throw $this->notRecorded(previous: null);
-		}
-
-		$case = $this->find(
-			objectService: $objectService,
-			id: $caseId,
-			register: $register,
-			schema: $caseSchema,
-			refusal: new RefusedException(rule: 'case-not-readable', sentence: 'This case cannot be opened.', status: 404)
-		);
-
-		$categories = $this->categoriesOf(objectService: $objectService, case: $case, register: $register, schema: $caseTypeSchema);
+		['mapper' => $mapper, 'case' => $case, 'categories' => $categories] = $this->purposeRead(caseId: $caseId);
 		if ($categories === []) {
 			return ['required' => false, 'recorded' => false];
 		}
 
 		$rules = $this->rules();
-		$caseData = $this->dataOf(entity: $case);
-		if ($this->holdsSkipRole(case: $caseData, readerId: $readerId, genericRoles: $rules['skipFor']) === false) {
+		$visit = new CaseVisit(mapper: $mapper, case: $case, readerId: $readerId);
+		if ($this->holdsSkipRole(visit: $visit, genericRoles: $rules['skipFor']) === false) {
 			return ['required' => true, 'recorded' => false];
 		}
 
 		$this->write(
-			mapper: $mapper,
-			case: $case,
-			readerId: $readerId,
-			action: self::ACTION,
-			context: ['purpose' => $rules['skipPurpose'], 'note' => '', 'categories' => $categories, 'automatic' => true],
+			visit: $visit,
+			entry: [
+				'action' => self::ACTION,
+				'context' => ['purpose' => $rules['skipPurpose'], 'note' => '', 'categories' => $categories, 'automatic' => true],
+			],
 		);
 
 		return ['required' => false, 'recorded' => true];
@@ -206,77 +183,105 @@ class CaseAccessPurposeService {
 	/**
 	 * Bind the reader to the role their purpose names, and say so in the trail.
 	 *
-	 * @param object $mapper   OpenRegister's audit trail mapper.
-	 * @param object $case     The case entity.
-	 * @param string $readerId The reader's user id.
-	 * @param string $purpose  The recorded purpose.
+	 * @param CaseVisit $visit   The reader on the case, and the trail it is written to.
+	 * @param string    $purpose The recorded purpose.
 	 *
 	 * @return bool True when the reader was bound.
 	 *
 	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
 	 */
-	private function bindFor(object $mapper, object $case, string $readerId, string $purpose): bool {
+	private function bindFor(CaseVisit $visit, string $purpose): bool {
 		$role = ($this->rules()['assign'][$purpose] ?? '');
 		if (is_string($role) === false || $role === '') {
 			return false;
 		}
 
-		$caseData = $this->dataOf(entity: $case);
-		if ($caseData === [] || isset($caseData['id']) === false) {
-			$caseData['id'] = $this->idOfEntity(entity: $case);
-		}
-
-		try {
-			$bound = $this->roles->bind(case: $caseData, uid: $readerId, genericRole: $role, displayName: '');
-		} catch (Throwable $e) {
-			// The purpose is recorded and the case opens; only the binding is missing.
-			$this->logger->warning(
-				'Dossiq: the roles on the case could not be read, so the reader is not bound to the role their purpose names',
-				['app' => Application::APP_ID, 'role' => $role, 'exception' => $e->getMessage()]
-			);
-			$bound = false;
-		}
+		$bound = $this->bindRole(visit: $visit, role: $role);
 
 		if ($bound === false) {
 			return false;
 		}
 
-		try {
-			$this->write(
-				mapper: $mapper,
-				case: $case,
-				readerId: $readerId,
-				action: self::ACTION_ROLE,
-				context: ['purpose' => $purpose, 'role' => $role, 'participant' => 'user:'.$readerId],
-			);
-		} catch (RefusedException $e) {
-			// The binding stands; the trail misses only the line that says why.
-			$this->logger->warning('Dossiq: the role an access purpose added could not be written to the trail', ['app' => Application::APP_ID]);
-		}
+		$this->recordBinding(visit: $visit, binding: ['purpose' => $purpose, 'role' => $role]);
 
 		return true;
 	}//end bindFor()
+
+	/**
+	 * Bind the reader to the role on the case; a failed read of the roles binds nobody.
+	 *
+	 * @param CaseVisit $visit The reader on the case.
+	 * @param string    $role  The generic role the purpose names.
+	 *
+	 * @return bool True when the reader was bound.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function bindRole(CaseVisit $visit, string $role): bool {
+		$caseData = $this->dataOf(entity: $visit->case);
+		if ($caseData === [] || isset($caseData['id']) === false) {
+			$caseData['id'] = $this->idOfEntity(entity: $visit->case);
+		}
+
+		try {
+			$bound = $this->roles->bind(case: $caseData, uid: $visit->readerId, genericRole: $role, displayName: '');
+		} catch (Throwable $e) {
+			// The purpose is recorded and the case opens; only the binding is missing.
+			$this->logger->warning(
+				'Dossiq: the roles on the case could not be read, so the reader is not bound to the role their purpose names',
+				['app' => AppIdentity::APP_ID, 'role' => $role, 'exception' => $e->getMessage()]
+			);
+			$bound = false;
+		}
+
+		return $bound;
+	}//end bindRole()
+
+	/**
+	 * Write the binding to the trail; a refused write leaves the binding standing.
+	 *
+	 * @param CaseVisit                            $visit   The reader on the case, and the trail it is written to.
+	 * @param array{purpose: string, role: string} $binding The recorded purpose and the role the reader was bound to.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function recordBinding(CaseVisit $visit, array $binding): void {
+		try {
+			$this->write(
+				visit: $visit,
+				entry: [
+					'action' => self::ACTION_ROLE,
+					'context' => $binding + ['participant' => 'user:'.$visit->readerId],
+				],
+			);
+		} catch (RefusedException $e) {
+			// The binding stands; the trail misses only the line that says why.
+			$this->logger->warning('Dossiq: the role an access purpose added could not be written to the trail', ['app' => AppIdentity::APP_ID]);
+		}
+	}//end recordBinding()
 
 	/**
 	 * Whether the reader holds a role that opens the case without the dialog.
 	 * Roles that cannot be read count as not held, so the reader is asked:
 	 * the dialog is the safe side of a failed read.
 	 *
-	 * @param array<string, mixed> $case         The case's fields.
-	 * @param string               $readerId     The reader's user id.
-	 * @param array<int, string>   $genericRoles The generic roles that skip the dialog.
+	 * @param CaseVisit          $visit        The reader on the case.
+	 * @param array<int, string> $genericRoles The generic roles that skip the dialog.
 	 *
 	 * @return bool True when the reader holds one.
 	 *
 	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
 	 */
-	private function holdsSkipRole(array $case, string $readerId, array $genericRoles): bool {
+	private function holdsSkipRole(CaseVisit $visit, array $genericRoles): bool {
+		$case = $this->dataOf(entity: $visit->case);
 		try {
-			return $this->roles->holdsAny(case: $case, uid: $readerId, genericRoles: $genericRoles);
+			return $this->roles->holdsAny(case: $case, uid: $visit->readerId, genericRoles: $genericRoles);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the roles on the case could not be read, so the reader is asked for a purpose',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return false;
 		}
@@ -296,29 +301,27 @@ class CaseAccessPurposeService {
 	/**
 	 * Write one audit entry on the case, with the reader and the time.
 	 *
-	 * @param object               $mapper   OpenRegister's audit trail mapper.
-	 * @param object               $case     The case entity.
-	 * @param string               $readerId The reader's user id.
-	 * @param string               $action   The audit action.
-	 * @param array<string, mixed> $context  What the entry records.
+	 * @param CaseVisit                                            $visit The reader on the case, and the trail it is written to.
+	 * @param array{action: string, context: array<string, mixed>} $entry The audit action and what the entry records.
 	 *
 	 * @return void
 	 *
 	 * @throws RefusedException When the entry cannot be written.
 	 */
-	private function write(object $mapper, object $case, string $readerId, string $action, array $context): void {
+	private function write(CaseVisit $visit, array $entry): void {
+		['action' => $action, 'context' => $context] = $entry;
 		try {
-			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
-				object: $case,
+			$visit->mapper->recordObjectEvent(event: ObjectAuditEvents::of(
+				object: $visit->case,
 				action: $action,
-				context: array_merge(['reader' => $readerId, 'at' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM)], $context),
-				actorId: $readerId,
-				actorName: $readerId,
+				context: array_merge(['reader' => $visit->readerId, 'at' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM)], $context),
+				actorId: $visit->readerId,
+				actorName: $visit->readerId,
 			));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: an access purpose could not be recorded, so the case stays closed',
-				['app' => Application::APP_ID, 'action' => $action, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'action' => $action, 'exception' => $e->getMessage()]
 			);
 			throw $this->notRecorded(previous: $e);
 		}
@@ -370,19 +373,18 @@ class CaseAccessPurposeService {
 	/**
 	 * An object as the reader may read it.
 	 *
-	 * @param object           $objectService OpenRegister's ObjectService.
-	 * @param string           $id            The object uuid.
-	 * @param string           $register      The register.
-	 * @param string           $schema        The schema.
-	 * @param RefusedException $refusal       What a miss is answered with.
+	 * @param array{objectService: object, register: string}                   $target Where the object is read.
+	 * @param array{id: string, schema: string, refusal: RefusedException} $lookup The object uuid, the schema and
+	 *                                                                             what a miss is answered with.
 	 *
 	 * @return object The entity.
 	 *
 	 * @throws RefusedException When the reader cannot read it.
 	 */
-	private function find(object $objectService, string $id, string $register, string $schema, RefusedException $refusal): object {
+	private function find(array $target, array $lookup): object {
+		$refusal = $lookup['refusal'];
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $target['objectService']->find($lookup['id'], new ObjectFindOptions(register: $target['register'], schema: $lookup['schema']));
 		} catch (Throwable $e) {
 			throw $refusal;
 		}
@@ -397,16 +399,14 @@ class CaseAccessPurposeService {
 	/**
 	 * The special categories the case's case type names, [] when it names none.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param object $case          The case entity.
-	 * @param string $register      The register.
-	 * @param string $schema        The case type schema.
+	 * @param array{objectService: object, register: string, caseTypeSchema: string} $target Where the case type is read.
+	 * @param object                                                                 $case   The case entity.
 	 *
 	 * @return list<string> The categories.
 	 *
 	 * @throws RefusedException When the case type cannot be read.
 	 */
-	private function categoriesOf(object $objectService, object $case, string $register, string $schema): array {
+	private function categoriesOf(array $target, object $case): array {
 		$caseData = $this->dataOf(entity: $case);
 		$caseTypeId = (string)($caseData['caseType'] ?? '');
 		if ($caseTypeId === '') {
@@ -416,11 +416,8 @@ class CaseAccessPurposeService {
 		// The case type decides whether a purpose is asked, so one that cannot
 		// be read is not taken to ask nothing.
 		$caseType = $this->find(
-			objectService: $objectService,
-			id: $caseTypeId,
-			register: $register,
-			schema: $schema,
-			refusal: $this->notRecorded(previous: null)
+			target: $target,
+			lookup: ['id' => $caseTypeId, 'schema' => $target['caseTypeSchema'], 'refusal' => $this->notRecorded(previous: null)]
 		);
 
 		$categories = ($this->dataOf(entity: $caseType)['specialDataCategories'] ?? []);
@@ -455,6 +452,72 @@ class CaseAccessPurposeService {
 
 		return [];
 	}//end dataOf()
+
+	/**
+	 * The audit mapper, the case and its special data categories, read before a purpose is
+	 * recorded or checked.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array{mapper: object, case: object, categories: array<int, string>} The three.
+	 *
+	 * @throws RefusedException When OpenRegister, the mapper, the register or a schema is missing,
+	 *                           the case cannot be opened (404), or its type cannot be read.
+	 */
+	private function purposeRead(string $caseId): array {
+		$target = $this->purposeTarget();
+		$case = $this->readableCase(target: $target, caseId: $caseId);
+		$categories = $this->categoriesOf(target: $target, case: $case);
+
+		return ['mapper' => $target['mapper'], 'case' => $case, 'categories' => $categories];
+	}//end purposeRead()
+
+	/**
+	 * The case, or the refusal that it cannot be opened.
+	 *
+	 * @param array{objectService: object, register: string, caseSchema: string} $target Where cases are read.
+	 * @param string                                                             $caseId The case.
+	 *
+	 * @return object The case.
+	 *
+	 * @throws RefusedException When the case cannot be opened (404).
+	 */
+	private function readableCase(array $target, string $caseId): object {
+		return $this->find(
+			target: $target,
+			lookup: [
+				'id' => $caseId,
+				'schema' => $target['caseSchema'],
+				'refusal' => new RefusedException(rule: 'case-not-readable', sentence: 'This case cannot be opened.', status: 404),
+			]
+		);
+	}//end readableCase()
+
+	/**
+	 * The object service, the audit mapper, the register and the two schemas, or the not-recorded refusal.
+	 *
+	 * Read in that order; any of them missing (no service or mapper, an empty register or schema)
+	 * refuses before a case is read.
+	 *
+	 * @return array{objectService: object, mapper: object, register: string, caseSchema: string, caseTypeSchema: string}
+	 *                                                                                                                The five.
+	 *
+	 * @throws RefusedException When any of them is missing.
+	 */
+	private function purposeTarget(): array {
+		$target = [
+			'objectService' => $this->settingsService->getObjectService(),
+			'mapper' => $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER),
+			'register' => $this->settingsService->getConfigValue('register'),
+			'caseSchema' => $this->settingsService->getConfigValue('case_schema'),
+			'caseTypeSchema' => $this->settingsService->getConfigValue('case_type_schema'),
+		];
+		if (in_array(null, $target, true) === true || in_array('', $target, true) === true) {
+			throw $this->notRecorded(previous: null);
+		}
+
+		return $target;
+	}//end purposeTarget()
 
 	/**
 	 * The refusal of a purpose that could not be recorded.

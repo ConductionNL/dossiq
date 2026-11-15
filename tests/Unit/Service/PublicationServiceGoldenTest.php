@@ -31,12 +31,15 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
 use Throwable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden test for PublicationService::publish(): the answer or the exception, every
  * settings, store and dispatch call, the dispatched delivery request and the logs.
  *
  * @covers \OCA\Dossiq\Service\PublicationService
+ * @uses \OCA\Dossiq\Service\Publication\PublicationDateRule
  */
 class PublicationServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -112,7 +115,9 @@ class PublicationServiceGoldenTest extends TestCase {
 			 *
 			 * @return mixed The case.
 			 */
-			public function find(string $id, mixed $register, mixed $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				$found = ($this->world['case'] ?? null);
 				if ($found === 'throw') {
@@ -131,7 +136,9 @@ class PublicationServiceGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function saveObject(array $object, mixed $register, mixed $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['saveObject', $object, $register, $schema];
 				return $object;
 			}

@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Service\Kcc;
 /**
  * Deterministic Dutch sentiment analyser for KCC transcripts.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
 class SentimentService {
 	/**
@@ -117,7 +117,7 @@ class SentimentService {
 	 * @return array{score: float, label: string, triggers: array<int, string>,
 	 *               escalationRecommended: bool, escalationLevel: string}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function analyzeSentiment(string $text, ?array $triggerWords = null): array {
 		$triggers = $this->detectTriggers(
@@ -148,7 +148,7 @@ class SentimentService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function shouldEscalate(float $score, array $triggers): bool {
 		if ($score <= -0.5) {
@@ -172,7 +172,7 @@ class SentimentService {
 	 *
 	 * @return string The badge slug.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function getEscalationLevel(float $score, array $triggers): string {
 		foreach ($triggers as $trigger) {

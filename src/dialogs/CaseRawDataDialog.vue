@@ -23,7 +23,7 @@
   the one that answers this fetch too. A handler who reached this dialog by
   hand sees the refusal, not the case.
 
-  @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<CnDialog
@@ -124,7 +124,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The case this dialog reads.
-		 * @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
@@ -135,7 +135,7 @@ export default {
 	 * Read the case as soon as the dialog is on screen.
 	 *
 	 * @return {Promise<void>} Nothing.
-	 * @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	async mounted() {
 		await this.load()
@@ -168,7 +168,7 @@ export default {
 		 * reader is here because something is already not adding up.
 		 *
 		 * @return {Promise<void>} Nothing.
-		 * @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async load() {
 			if (!this.targetCaseId) {

@@ -41,23 +41,64 @@ function typeLabels() {
  */
 export function fieldKind(field) {
 	const row = field && typeof field === 'object' ? field : {}
-	const options = Array.isArray(row.enumValues) ? row.enumValues.length : 0
-	let kind
-	if (row.propertyType === 'enum' || options > 0) {
-		const count = n('dossiq', '%n option', '%n options', options)
-		kind = t('dossiq', 'Choice list, {options}', { options: count })
-	} else {
-		const type = typeof row.propertyType === 'string' ? row.propertyType : ''
-		kind = typeLabels()[type] || type
-	}
+	const kind = baseKind(row)
 	if (kind === '') {
 		return ''
 	}
-	if (typeof row.propertySource === 'string' && row.propertySource !== '') {
-		kind = t('dossiq', '{kind} from {source}', { kind, source: row.propertySource.toUpperCase() })
+	return calculatedKind(row, sourcedKind(row, kind))
+}
+
+/**
+ * The kind of answer before its source and calculation: a choice list, or
+ * the label of its type.
+ *
+ * @param {object} row The field.
+ * @return {string} The kind, or ''.
+ */
+function baseKind(row) {
+	const options = Array.isArray(row.enumValues) ? row.enumValues.length : 0
+	if (row.propertyType === 'enum' || options > 0) {
+		const count = n('dossiq', '%n option', '%n options', options)
+		return t('dossiq', 'Choice list, {options}', { options: count })
 	}
+	return typeKind(row)
+}
+
+/**
+ * The label of a field's type, or the type itself when it has none.
+ *
+ * @param {object} row The field.
+ * @return {string} The label, or ''.
+ */
+function typeKind(row) {
+	const type = typeof row.propertyType === 'string' ? row.propertyType : ''
+	return typeLabels()[type] || type
+}
+
+/**
+ * The kind, naming the register it is read from when it has one.
+ *
+ * @param {object} row The field.
+ * @param {string} kind The kind so far.
+ * @return {string} The kind.
+ */
+function sourcedKind(row, kind) {
+	if (typeof row.propertySource === 'string' && row.propertySource !== '') {
+		return t('dossiq', '{kind} from {source}', { kind, source: row.propertySource.toUpperCase() })
+	}
+	return kind
+}
+
+/**
+ * The kind, saying it is calculated when it is.
+ *
+ * @param {object} row The field.
+ * @param {string} kind The kind so far.
+ * @return {string} The kind.
+ */
+function calculatedKind(row, kind) {
 	if (typeof row.calculation === 'string' && row.calculation !== '') {
-		kind = t('dossiq', '{kind}, calculated', { kind })
+		return t('dossiq', '{kind}, calculated', { kind })
 	}
 	return kind
 }

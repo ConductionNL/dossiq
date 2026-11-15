@@ -80,13 +80,13 @@ class ComplaintPatternFigures {
 	public function compute(QuarterPeriod $period, array $complaints, array $dispositions): array {
 		$current = $this->receivedIn(period: $period, complaints: $complaints);
 		$previous = $this->receivedIn(period: $period->previous(), complaints: $complaints);
-		$channel = $this->breakdown(field: 'receiptChannel', current: $current, previous: []);
+		$channel = $this->breakdown(field: 'receiptChannel', quarters: [$current, []]);
 		unset($channel['risePercent'], $channel['previousCounts']);
 
 		return [
 			'count' => count($current),
-			'byCategory' => $this->breakdown(field: 'category', current: $current, previous: $previous),
-			'byDepartment' => $this->breakdown(field: 'involvedDepartment', current: $current, previous: $previous),
+			'byCategory' => $this->breakdown(field: 'category', quarters: [$current, $previous]),
+			'byDepartment' => $this->breakdown(field: 'involvedDepartment', quarters: [$current, $previous]),
 			'byChannel' => $channel,
 			'byMonth' => $this->byMonth(period: $period, complaints: $complaints),
 			'handling' => $this->handling(current: $current, dispositions: $dispositions),
@@ -111,13 +111,14 @@ class ComplaintPatternFigures {
 	 * Counts per value of one field, most first, with the rise against the
 	 * quarter before where it passes the flag.
 	 *
-	 * @param string                     $field    The complaint field.
-	 * @param list<array<string, mixed>> $current  This quarter's complaints.
-	 * @param list<array<string, mixed>> $previous The quarter before's complaints.
+	 * @param string                                                         $field    The complaint field.
+	 * @param array{0: list<array<string, mixed>>, 1: list<array<string, mixed>>} $quarters This quarter's complaints, and the
+	 *                                                                                  quarter before's.
 	 *
 	 * @return array{labels: list<string>, counts: list<int>, risePercent: list<int|null>, previousCounts: list<int>}
 	 */
-	private function breakdown(string $field, array $current, array $previous): array {
+	private function breakdown(string $field, array $quarters): array {
+		[$current, $previous] = $quarters;
 		$now = $this->countBy(field: $field, complaints: $current);
 		$before = $this->countBy(field: $field, complaints: $previous);
 		arsort($now);
@@ -203,15 +204,49 @@ class ComplaintPatternFigures {
 	 *               resolutionByCategory: list<array<string, mixed>>}
 	 */
 	private function handling(array $current, array $dispositions): array {
+		[$total, $perCategory] = $this->tallies(current: $current, dispositions: $dispositions);
+
+		$rows = $this->categoryRows(perCategory: $perCategory);
+
+		return [
+			'handled' => $total['handled'],
+			'withinAwbPercent' => $this->share(part: $total['within'], whole: $total['handled'], scale: 100),
+			'upheldPercent' => $this->share(part: $total['upheld'], whole: $total['handled'], scale: 100),
+			'averageDays' => $this->share(part: $total['days'], whole: $total['handled'], scale: 1),
+			'resolutionByCategory' => $rows,
+		];
+	}//end handling()
+
+	/**
+	 * The quarter's complaints summed overall and per category.
+	 *
+	 * @param list<array<string, mixed>> $current This quarter's complaints.
+	 * @param array<string, array<string, mixed>> $dispositions The final disposition per complaint id.
+	 *
+	 * @return array{0: array<string, int>, 1: array<string, array<string, int>>} The overall sum and the sum per category.
+	 */
+	private function tallies(array $current, array $dispositions): array {
 		$zero = ['count' => 0, 'handled' => 0, 'days' => 0, 'within' => 0, 'upheld' => 0];
 		$total = $zero;
 		$perCategory = [];
 		foreach ($current as $complaint) {
 			$category = trim((string)($complaint['category'] ?? ''));
-			$perCategory[$category] = $this->tally(sum: ($perCategory[$category] ?? $zero), complaint: $complaint, dispositions: $dispositions);
-			$total = $this->tally(sum: $total, complaint: $complaint, dispositions: $dispositions);
+			$handled = [$complaint, ($dispositions[(string)($complaint['id'] ?? '')] ?? null)];
+			$perCategory[$category] = $this->tally(sum: ($perCategory[$category] ?? $zero), handled: $handled);
+			$total = $this->tally(sum: $total, handled: $handled);
 		}
 
+		return [$total, $perCategory];
+	}//end tallies()
+
+	/**
+	 * One row per named category with handled complaints, the largest first.
+	 *
+	 * @param array<string, array<string, int>> $perCategory The sum per category.
+	 *
+	 * @return list<array<string, mixed>> The rows.
+	 */
+	private function categoryRows(array $perCategory): array {
 		$rows = [];
 		foreach ($perCategory as $category => $sum) {
 			if ($category !== '' && $sum['handled'] > 0) {
@@ -226,27 +261,20 @@ class ComplaintPatternFigures {
 
 		usort($rows, static fn (array $a, array $b): int => ($b['count'] <=> $a['count']));
 
-		return [
-			'handled' => $total['handled'],
-			'withinAwbPercent' => $this->share(part: $total['within'], whole: $total['handled'], scale: 100),
-			'upheldPercent' => $this->share(part: $total['upheld'], whole: $total['handled'], scale: 100),
-			'averageDays' => $this->share(part: $total['days'], whole: $total['handled'], scale: 1),
-			'resolutionByCategory' => $rows,
-		];
-	}//end handling()
+		return $rows;
+	}//end categoryRows()
 
 	/**
 	 * One complaint added to a running sum.
 	 *
-	 * @param array<string, int>                  $sum          The sum so far.
-	 * @param array<string, mixed>                $complaint    The complaint.
-	 * @param array<string, array<string, mixed>> $dispositions The final disposition per complaint id.
+	 * @param array<string, int>                                     $sum     The sum so far.
+	 * @param array{0: array<string, mixed>, 1: array<string, mixed>|null} $handled The complaint, and its final disposition or null.
 	 *
 	 * @return array<string, int>
 	 */
-	private function tally(array $sum, array $complaint, array $dispositions): array {
+	private function tally(array $sum, array $handled): array {
 		$sum['count']++;
-		$disposition = ($dispositions[(string)($complaint['id'] ?? '')] ?? null);
+		[$complaint, $disposition] = $handled;
 		$received = $this->dayOf(value: (string)($complaint['receiptDate'] ?? ''));
 		$closed = $this->dayOf(value: (string)($disposition['closureDate'] ?? ''));
 		if ($disposition === null || $received === null || $closed === null) {

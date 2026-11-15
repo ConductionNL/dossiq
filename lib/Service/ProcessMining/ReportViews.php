@@ -162,6 +162,27 @@ class ReportViews {
 	 * @spec openspec/specs/process-mining-bottlenecks/spec.md
 	 */
 	public function summary(array $caseTypes): array {
+		$totals = self::totalsOf(caseTypes: $caseTypes);
+		$top    = ($this->bottlenecks(caseTypes: $caseTypes, limit: 1)[0] ?? null);
+
+		return [
+			'totalCases'           => $totals['totalCases'],
+			'caseTypeCount'        => count($caseTypes),
+			'overallReworkPercent' => $totals['rework'],
+			'topBottleneck'        => $top,
+			'topBottleneckLabel'   => self::bottleneckLabel(top: $top),
+			'reworkNotice'         => $this->reworkNotice(rework: $totals['rework']),
+		];
+	}//end summary()
+
+	/**
+	 * The case volume over every case type, and the rework share weighted by transitions.
+	 *
+	 * @param array<int, array<string, mixed>> $caseTypes The per-type reports.
+	 *
+	 * @return array{totalCases: int, rework: float} The totals.
+	 */
+	private static function totalsOf(array $caseTypes): array {
 		$totalCases  = 0;
 		$weighted    = 0.0;
 		$transitions = 0;
@@ -177,30 +198,42 @@ class ReportViews {
 			$rework = (round(($weighted / $transitions) * 10) / 10);
 		}
 
-		$top   = ($this->bottlenecks(caseTypes: $caseTypes, limit: 1)[0] ?? null);
-		$label = '—';
-		if ($top !== null) {
-			$label = $top['statusName'].' ('.$top['medianHours'].'h)';
+		return ['totalCases' => $totalCases, 'rework' => $rework];
+	}//end totalsOf()
+
+	/**
+	 * The top bottleneck as a label, or a dash when there is none.
+	 *
+	 * @param array<string, mixed>|null $top The top bottleneck.
+	 *
+	 * @return string The label.
+	 */
+	private static function bottleneckLabel(?array $top): string {
+		if ($top === null) {
+			return '—';
 		}
 
-		$notice = null;
-		if ($rework >= self::REWORK_NOTICE_PERCENT) {
-			$notice = str_replace(
-				'{percent}',
-				(string)$rework,
-				$this->l10n->t(self::REWORK_NOTICE)
-			);
+		return $top['statusName'].' ('.$top['medianHours'].'h)';
+	}//end bottleneckLabel()
+
+	/**
+	 * The rework notice, when the rework share reaches the notice threshold.
+	 *
+	 * @param float $rework The rework share, in percent.
+	 *
+	 * @return string|null The notice, or null.
+	 */
+	private function reworkNotice(float $rework): ?string {
+		if ($rework < self::REWORK_NOTICE_PERCENT) {
+			return null;
 		}
 
-		return [
-			'totalCases'           => $totalCases,
-			'caseTypeCount'        => count($caseTypes),
-			'overallReworkPercent' => $rework,
-			'topBottleneck'        => $top,
-			'topBottleneckLabel'   => $label,
-			'reworkNotice'         => $notice,
-		];
-	}//end summary()
+		return str_replace(
+			'{percent}',
+			(string)$rework,
+			$this->l10n->t(self::REWORK_NOTICE)
+		);
+	}//end reworkNotice()
 
 	/**
 	 * Every type's bottlenecks in one ranking, highest score first.

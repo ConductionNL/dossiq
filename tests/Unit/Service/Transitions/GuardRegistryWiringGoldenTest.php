@@ -25,8 +25,10 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 use OCA\Dossiq\Service\Transitions\ApprovalGuard;
 use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
+use OCA\Dossiq\Service\Transitions\DateReachedGuard;
 use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard;
+use OCA\Dossiq\Service\Transitions\GuardEvaluatorInterface;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\GuardResult;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
@@ -56,11 +58,11 @@ class GuardRegistryWiringGoldenTest extends TestCase {
 	 */
 	private const TYPES = [
 		'checklist', 'requiredField', 'requiredDocument', 'roleGuard', 'delegatedAuthorityGuard', 'mandaatGuard',
-		'statusChecklist', 'statusCapacity', 'approvalGate', 'documentAssessment', 'statusEntryRequirements', 'nobodysGuard',
+		'statusChecklist', 'statusCapacity', 'approvalGate', 'documentAssessment', 'statusEntryRequirements', 'dateReached', 'nobodysGuard',
 	];
 
 	/**
-	 * Every evaluator present, and the three optional ones left out.
+	 * Every evaluator present, and the optional ones left out.
 	 *
 	 * @return array<string, array{0: bool}>
 	 */
@@ -95,6 +97,39 @@ class GuardRegistryWiringGoldenTest extends TestCase {
 	}//end testEachGuardTypeIsAnsweredAsRecorded()
 
 	/**
+	 * Every shape of snapshot: skipped, passed without details, failed with and without, unknown.
+	 *
+	 * @return void
+	 */
+	public function testEveryShapeOfASnapshot(): void {
+		$registry = $this->registry(withOptional: false);
+		$answers  = [
+			'passes' => new GuardResult(passed: true),
+			'fails-bare' => new GuardResult(passed: false, failureMessage: 'Nee'),
+			'fails-detailed' => new GuardResult(passed: false, failureMessage: null, details: ['field' => 'x']),
+		];
+		foreach ($answers as $type => $result) {
+			$evaluator = $this->createMock(GuardEvaluatorInterface::class);
+			$evaluator->method('evaluate')->willReturn($result);
+			$registry->registerEvaluator(type: $type, evaluator: $evaluator);
+		}
+
+		$this->assertSame(
+			[
+				['type' => 'passes', 'passed' => true, 'failureMessage' => null],
+				['type' => 'fails-bare', 'passed' => false, 'failureMessage' => 'Nee'],
+				['type' => 'fails-detailed', 'passed' => false, 'failureMessage' => null, 'details' => ['field' => 'x']],
+				['type' => 'unheard-of', 'passed' => false, 'failureMessage' => 'Onbekende guard', 'details' => ['unknown' => true]],
+			],
+			$registry->evaluateAll(
+				guards: [['type' => ''], [], ['type' => 'passes', 'config' => ['field' => 'x']], ['type' => 'fails-bare'], ['type' => 'fails-detailed', 'config' => []], ['type' => 'unheard-of']],
+				case: ['id' => 'case-1'],
+				userId: 'behandelaar'
+			)
+		);
+	}//end testEveryShapeOfASnapshot()
+
+	/**
 	 * The registry, built the way its constructor takes the evaluators.
 	 *
 	 * @param bool $withOptional Whether the three optional evaluators are given.
@@ -117,6 +152,7 @@ class GuardRegistryWiringGoldenTest extends TestCase {
 			'approvalGuard' => $withOptional ? $this->evaluator(class: ApprovalGuard::class, name: 'approval') : null,
 			'documentAssessment' => $withOptional ? $this->evaluator(class: DocumentAssessmentGuard::class, name: 'documentAssessment') : null,
 			'entryRequirements' => $withOptional ? $this->evaluator(class: StatusEntryRequirementsGuard::class, name: 'entryRequirements') : null,
+			'dateReached' => $withOptional ? $this->evaluator(class: DateReachedGuard::class, name: 'dateReached') : null,
 		];
 
 		$parameters = (new ReflectionClass(GuardRegistry::class))->getConstructor()->getParameters();

@@ -75,91 +75,145 @@ function dayAfter(day) {
  * 2 november"). Without a term in whole days only the date is shown.
  *
  * @param {object} fill One fill, `term` naming the case's period field.
- * @param {object} kase The case.
- * @param {string} locale The locale for dates.
+ * @param {{kase: object, locale: string}} run The case and the locale for dates.
  * @return {string} The note, or empty.
  * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
  */
-function deadlineNote(fill, kase, locale) {
-	const day = dayOf(kase[fill.field])
-	const parts = parseDuration(kase[fill.term])
+function deadlineNote(fill, run) {
+	const day = dayOf(run.kase[fill.field])
+	const parts = parseDuration(run.kase[fill.term])
 	if (!day || !parts || parts.years !== 0 || parts.months !== 0) {
 		return ''
 	}
 	const days = parts.weeks * 7 + parts.days
-	const late = dayAfter(day).toLocaleDateString(locale, { day: 'numeric', month: 'long', timeZone: 'UTC' })
+	const late = dayAfter(day).toLocaleDateString(run.locale, { day: 'numeric', month: 'long', timeZone: 'UTC' })
 	return n('dossiq', '{days} calendar day, late from {date}', '{days} calendar days, late from {date}', days, { days, date: late })
+}
+
+/**
+ * The value of a date or deadline fill: the date written out in full.
+ *
+ * @param {object} fill One fill.
+ * @param {{kase: object, locale: string}} run The case and the locale for dates.
+ * @return {string|null} The value, or null for a value that is no date.
+ * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
+ */
+function dateValue(fill, run) {
+	const day = dayOf(run.kase[fill.field])
+	return day ? longDate(day, run.locale) : null
 }
 
 /**
  * The value of an extension fill: the period and the day it ends, or for
  * `after-extension` the day after that end.
  *
- * @param {object} fill One fill, `from` naming the date the period counts from.
- * @param {string} period The ISO 8601 period.
- * @param {object} kase The case.
- * @param {string} locale The locale for dates.
+ * @param {object} fill One fill, `field` naming the ISO 8601 period and `from` the date it counts from.
+ * @param {{kase: object, locale: string}} run The case and the locale for dates.
  * @return {string|null} The value.
  * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
  */
-function extensionValue(fill, period, kase, locale) {
-	const from = dayOf(kase[fill.from])
+function extensionValue(fill, run) {
+	const period = run.kase[fill.field]
+	const from = dayOf(run.kase[fill.from])
 	const end = from ? endOf(from, period) : null
 	if (fill.as === 'after-extension') {
-		return end ? longDate(dayAfter(end), locale) : null
+		return end ? longDate(dayAfter(end), run.locale) : null
 	}
 	return end
-		? t('dossiq', '{period}, until {date}', { period: periodWords(period), date: longDate(end, locale) })
+		? t('dossiq', '{period}, until {date}', { period: periodWords(period), date: longDate(end, run.locale) })
 		: periodWords(period)
+}
+
+// How a fill's value is read, per `as`; any other reads as plain text. A Map,
+// so a name such as `toString` is not found on an object's prototype.
+const VALUE_READERS = new Map([
+	['date', dateValue],
+	['deadline', dateValue],
+	['extension', extensionValue],
+	['after-extension', extensionValue],
+])
+
+/**
+ * Whether a case holds no value: absent, null or empty.
+ *
+ * @param {unknown} raw The stored value.
+ * @return {boolean} True for no value.
+ */
+function isBlank(raw) {
+	return raw === undefined || raw === null || raw === ''
 }
 
 /**
  * The value one fill reads off the case, or null when the case lacks it.
  *
  * @param {object} fill One fill.
- * @param {object} kase The case.
- * @param {string} locale The locale for dates.
+ * @param {{kase: object, locale: string}} run The case and the locale for dates.
  * @return {string|null} The value.
  * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
  */
-function fillValue(fill, kase, locale) {
-	const raw = fill && fill.field ? kase[fill.field] : undefined
-	if (raw === undefined || raw === null || raw === '') {
+function fillValue(fill, run) {
+	const raw = fill && fill.field ? run.kase[fill.field] : undefined
+	if (isBlank(raw)) {
 		return null
 	}
-	if (fill.as === 'date' || fill.as === 'deadline') {
-		const day = dayOf(raw)
-		return day ? longDate(day, locale) : null
-	}
-	if (fill.as === 'extension' || fill.as === 'after-extension') {
-		return extensionValue(fill, raw, kase, locale)
-	}
-	return String(raw)
+	const read = VALUE_READERS.get(fill.as)
+	return read ? read(fill, run) : String(raw)
+}
+
+/**
+ * Whether a fill states a value of its own instead of reading the case.
+ *
+ * @param {object} fill One fill.
+ * @return {boolean} True for a fixed value.
+ */
+function hasFixedValue(fill) {
+	return Boolean(fill && typeof fill.value === 'string' && fill.value !== '')
+}
+
+/**
+ * The row of a required fill: its value, or marked still to fill in.
+ *
+ * @param {object} fill One fill.
+ * @param {string|null} value Its value off the case.
+ * @return {object} The row.
+ */
+function requiredRow(fill, value) {
+	return value === null
+		? { label: fill.label, value: t('dossiq', 'Still to fill in, not in the case'), required: true, missing: true }
+		: { label: fill.label, value, required: true, missing: false }
+}
+
+/**
+ * The note a fill adds after its value: a deadline's term, else nothing.
+ *
+ * @param {object} fill One fill.
+ * @param {{kase: object, locale: string}} run The case and the locale for dates.
+ * @return {string} The note, or empty.
+ */
+function noteFor(fill, run) {
+	return fill?.as === 'deadline' ? deadlineNote(fill, run) : ''
 }
 
 /**
  * One row of the card, or null for a fill that stays out of it.
  *
  * @param {object} fill One fill.
- * @param {object} kase The case.
- * @param {string} locale The locale for dates.
+ * @param {{kase: object, locale: string}} run The case and the locale for dates.
  * @return {object|null} The row.
  * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
  */
-function fillRow(fill, kase, locale) {
-	if (fill && typeof fill.value === 'string' && fill.value !== '') {
+function fillRow(fill, run) {
+	if (hasFixedValue(fill)) {
 		return { label: fill.label, value: fill.value, fixed: true }
 	}
-	const value = fillValue(fill, kase, locale)
+	const value = fillValue(fill, run)
 	if (fill?.required === true) {
-		return value === null
-			? { label: fill.label, value: t('dossiq', 'Still to fill in, not in the case'), required: true, missing: true }
-			: { label: fill.label, value, required: true, missing: false }
+		return requiredRow(fill, value)
 	}
 	if (value === null) {
 		return null
 	}
-	const note = fill?.as === 'deadline' ? deadlineNote(fill, kase, locale) : ''
+	const note = noteFor(fill, run)
 	return note === '' ? { label: fill.label, value } : { label: fill.label, value, note }
 }
 
@@ -184,5 +238,6 @@ export function templateFillRows(fills, kase, locale = getCanonicalLocale()) {
 	if (!Array.isArray(fills) || !kase) {
 		return []
 	}
-	return fills.map((fill) => fillRow(fill, kase, locale)).filter(Boolean)
+	const run = { kase, locale }
+	return fills.map((fill) => fillRow(fill, run)).filter(Boolean)
 }

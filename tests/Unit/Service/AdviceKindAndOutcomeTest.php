@@ -31,6 +31,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An object store double for the advice writes.
@@ -46,11 +47,12 @@ interface AdviceKindObjectStoreStub {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
  * @covers \OCA\Dossiq\Service\AdviceService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class AdviceKindAndOutcomeTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -84,7 +86,10 @@ class AdviceKindAndOutcomeTest extends TestCase {
 	private function service(): AdviceService {
 		$store = $this->createMock(AdviceKindObjectStoreStub::class);
 		$store->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = ['schema' => $schema, 'object' => $object];
 
 				return $object + ['id' => 'advice-1'];

@@ -28,15 +28,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZtcUrlValidityFilterInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 /**
  * Drops the cross-reference URLs of ZTC types that do not point at a published, current type.
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class ZtcUrlValidityFilter {
+class ZtcUrlValidityFilter implements ZtcUrlValidityFilterInterface {
 	use NormalisesObjectRows;
 
 	/**
@@ -53,14 +55,13 @@ class ZtcUrlValidityFilter {
 		'case_type_schema'     => 'zaaktypen',
 	];
 
-
 	/**
 	 * Constructor.
 	 *
-	 * @param ZgwService $zgwService Supplies the ObjectService and the ZGW mappings
+	 * @param ZgwServiceInterface $zgwService Supplies the ObjectService and the ZGW mappings
 	 */
 	public function __construct(
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 	) {
 	}//end __construct()
 
@@ -86,35 +87,48 @@ class ZtcUrlValidityFilter {
 				continue;
 			}
 
-			$filtered = [];
-			foreach ($data[$field] as $item) {
-				if ($this->isValidListItem(item: $item, config: $config, today: $today) === true) {
-					$filtered[] = $item;
-				}
-			}
-
-			$data[$field] = $filtered;
+			$data[$field] = $this->keptItems(items: $data[$field], config: $config + ['today' => $today]);
 		}
 
 		return $data;
 	}//end filter()
 
 	/**
+	 * The list items that may stay.
+	 *
+	 * @param array<int, mixed>                                     $items  The list.
+	 * @param array{schemaKey: string, nested: bool, today: string} $config The list's target and today's date in
+	 *                                                                      Y-m-d format.
+	 *
+	 * @return array<int, mixed> The items that stay.
+	 */
+	private function keptItems(array $items, array $config): array {
+		$filtered = [];
+		foreach ($items as $item) {
+			if ($this->isValidListItem(item: $item, config: $config) === true) {
+				$filtered[] = $item;
+			}
+		}
+
+		return $filtered;
+	}//end keptItems()
+
+	/**
 	 * Whether one list item may stay: a URL string, or (nested) a relation whose caseType URL is valid.
 	 *
 	 * @param mixed $item The list item
-	 * @param array{schemaKey: string, nested: bool} $config The list's target
-	 * @param string $today Today's date in Y-m-d format
+	 * @param array{schemaKey: string, nested: bool, today: string} $config The list's target and today's date in Y-m-d format
 	 *
 	 * @return bool True when the item may stay
 	 */
-	private function isValidListItem(mixed $item, array $config, string $today): bool {
+	private function isValidListItem(mixed $item, array $config): bool {
 		// GerelateerdeZaaktypen: array of objects with 'caseType' URL field.
+		$target = ['schemaKey' => $config['schemaKey'], 'today' => $config['today']];
 		if ($config['nested'] === true) {
-			return $this->isUrlValid(url: $item['caseType'] ?? '', schemaKey: $config['schemaKey'], today: $today);
+			return $this->isUrlValid(url: $item['caseType'] ?? '', target: $target);
 		}
 
-		return is_string($item) === true && $this->isUrlValid(url: $item, schemaKey: $config['schemaKey'], today: $today);
+		return is_string($item) === true && $this->isUrlValid(url: $item, target: $target);
 	}//end isValidListItem()
 
 	/**
@@ -124,12 +138,13 @@ class ZtcUrlValidityFilter {
 	 * a URL without a uuid, or an object that cannot be read, does not.
 	 *
 	 * @param string $url The URL
-	 * @param string $schemaKey The settings key of the target schema
-	 * @param string $today Today's date in Y-m-d format
+	 * @param array{schemaKey: string, today: string} $target The settings key of the target schema and today's
+	 *                                                        date in Y-m-d format
 	 *
 	 * @return bool True when the URL may stay
 	 */
-	private function isUrlValid(string $url, string $schemaKey, string $today): bool {
+	private function isUrlValid(string $url, array $target): bool {
+		['schemaKey' => $schemaKey, 'today' => $today] = $target;
 		if (preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $url, $matches) !== 1) {
 			return false;
 		}
@@ -191,7 +206,7 @@ class ZtcUrlValidityFilter {
 	 */
 	private function findIn(?object $objectService, array $mapping, string $id): array {
 		return $this->objectToArray(
-			row: $objectService->find(id: $id, register: $mapping['sourceRegister'], schema: $mapping['sourceSchema'])
+			row: $objectService->find(id: $id, options: new ObjectFindOptions(register: $mapping['sourceRegister'], schema: $mapping['sourceSchema']))
 		);
 	}//end findIn()
 }//end class

@@ -19,3 +19,12 @@ The generate dialog SHALL list, under the addressee and the case, each fill of t
 #### Scenario: Verdagingsbrief on a Woo case
 - GIVEN a case with decision deadline 1 November 2026 and a statutory extension of P14D
 - THEN the dialog lists "Beslistermijn 1 november 2026" and "Verdaging 2 weken, tot 15 november 2026"
+
+### Requirement: A template carries notes for the generate dialog
+
+The template list SHALL answer each template's `notes` (strings, empty when the template has none).
+
+#### Scenario: Woo decision
+
+- **WHEN** the generate dialog lists the templates
+- **THEN** the Woo decision templates carry their note about the objection period

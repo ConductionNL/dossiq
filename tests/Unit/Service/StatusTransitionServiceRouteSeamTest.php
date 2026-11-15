@@ -51,6 +51,8 @@ use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The OpenRegister ObjectService shape CaseStatusStore reads through.
@@ -59,11 +61,11 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * over as the strings app-config stores.
  */
 interface RouteSeamObjectServiceStub {
-	public function find(string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	public function searchObjects(array $query): array;
 
-	public function saveObject(array $object, mixed $register = null, mixed $schema = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -86,6 +88,8 @@ interface RouteSeamObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class StatusTransitionServiceRouteSeamTest extends TestCase {
 	use MakesStatusDeclarations;

@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\Import\CaseRecordImport;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseRecordImportInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Throwable;
@@ -45,12 +45,12 @@ class RunUpgradeRecordImports implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseRecordImport $import   The generic record import.
-	 * @param SettingsService  $settings Whether OpenRegister is available.
+	 * @param CaseRecordImportInterface $import   The generic record import.
+	 * @param SettingsServiceInterface  $settings Whether OpenRegister is available.
 	 */
 	public function __construct(
-		private readonly CaseRecordImport $import,
-		private readonly SettingsService $settings,
+		private readonly CaseRecordImportInterface $import,
+		private readonly SettingsServiceInterface $settings,
 	) {
 	}//end __construct()
 
@@ -87,27 +87,69 @@ class RunUpgradeRecordImports implements IRepairStep {
 			return;
 		}
 
+		$this->reportAnswers(output: $output, answers: $answers);
+	}//end run()
+
+	/**
+	 * Report every import's answer, or that no case type imports on upgrade.
+	 *
+	 * @param IOutput $output Where the step reports.
+	 * @param array<int, array<string, mixed>> $answers The import answers.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 */
+	private function reportAnswers(IOutput $output, array $answers): void {
 		if ($answers === []) {
 			$output->info('No case type imports records on upgrade.');
 			return;
 		}
 
 		foreach ($answers as $answer) {
-			$output->info(
-				sprintf(
-					'Record import %s (case type %s): %d imported, %d already imported, %d not moved.',
-					(string)$answer['key'],
-					(string)$answer['caseType'],
-					(int)$answer['imported'],
-					(int)$answer['alreadyImported'],
-					(int)$answer['unmigrated']
-				)
-			);
-			foreach ((array)$answer['failed'] as $failed) {
-				$output->warning(
-					sprintf('Record %s was not moved: %s', (string)($failed['requestId'] ?? ''), (string)($failed['reason'] ?? ''))
-				);
-			}
+			$this->reportAnswer(output: $output, answer: $answer);
 		}
-	}//end run()
+	}//end reportAnswers()
+
+	/**
+	 * Report one import's counts and each record it did not move.
+	 *
+	 * @param IOutput $output Where the step reports.
+	 * @param array<string, mixed> $answer The import answer.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 */
+	private function reportAnswer(IOutput $output, array $answer): void {
+		$output->info(
+			sprintf(
+				'Record import %s (case type %s): %d imported, %d already imported, %d not moved.',
+				(string)$answer['key'],
+				(string)$answer['caseType'],
+				(int)$answer['imported'],
+				(int)$answer['alreadyImported'],
+				(int)$answer['unmigrated']
+			)
+		);
+		$this->reportFailures(output: $output, failures: (array)$answer['failed']);
+	}//end reportAnswer()
+
+	/**
+	 * Report each record an import did not move, with why.
+	 *
+	 * @param IOutput $output Where the step reports.
+	 * @param array<int, mixed> $failures The records not moved.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 */
+	private function reportFailures(IOutput $output, array $failures): void {
+		foreach ($failures as $failed) {
+			$output->warning(
+				sprintf('Record %s was not moved: %s', (string)($failed['requestId'] ?? ''), (string)($failed['reason'] ?? ''))
+			);
+		}
+	}//end reportFailures()
 }//end class

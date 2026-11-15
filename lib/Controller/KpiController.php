@@ -27,9 +27,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
-use OCA\Dossiq\Service\KpiAggregationService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DashboardWidgetScopeInterface;
+use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -46,7 +46,7 @@ use Psr\Log\LoggerInterface;
  * The `KpiCacheInvalidationListener` increments the version counter on any
  * OpenRegister object event, causing the next GET to compute fresh data.
  *
- * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T09
+ * @spec openspec/changes/archive/2026-05-11-add-server-side-kpi-aggregation/tasks.md#T09
  */
 class KpiController extends Controller {
 
@@ -77,9 +77,9 @@ class KpiController extends Controller {
 	 *
 	 * @param IRequest $request The HTTP request
 	 * @param IUserSession $userSession The user session
-	 * @param KpiAggregationService $kpiAggregation The KPI aggregation service
+	 * @param KpiAggregationServiceInterface $kpiAggregation The KPI aggregation service
 	 * @param ICacheFactory $cacheFactory The cache factory
-	 * @param DashboardWidgetScope $widgetScope Narrows the payload to the widgets this reader may see
+	 * @param DashboardWidgetScopeInterface $widgetScope Narrows the payload to the widgets this reader may see
 	 * @param LoggerInterface $logger Logger
 	 *
 	 * @return void
@@ -87,13 +87,13 @@ class KpiController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private IUserSession $userSession,
-		private KpiAggregationService $kpiAggregation,
+		private KpiAggregationServiceInterface $kpiAggregation,
 		ICacheFactory $cacheFactory,
-		private DashboardWidgetScope $widgetScope,
+		private DashboardWidgetScopeInterface $widgetScope,
 		private LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
-		$this->cache = $cacheFactory->createLocal(Application::APP_ID);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+		$this->cache = $cacheFactory->createLocal(AppIdentity::APP_ID);
 	}//end __construct()
 
 	/**
@@ -106,7 +106,7 @@ class KpiController extends Controller {
 	 *
 	 * @return JSONResponse JSON response with KPI data
 	 *
-	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-05-11-add-server-side-kpi-aggregation/tasks.md#T09
 	 */
 	public function index(): JSONResponse {
 		$user = $this->userSession->getUser();

@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\Access\CaseRecordGrantsBackfill;
+use OCA\Dossiq\Kernel\Contracts\CaseRecordGrantsBackfillInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -62,13 +62,13 @@ class ReconcileCaseRecordGrants implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseRecordGrantsBackfill $backfill The walk over every declaring case.
+	 * @param CaseRecordGrantsBackfillInterface $backfill The walk over every declaring case.
 	 * @param LoggerInterface          $logger   The log an unfinished run is written to.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly CaseRecordGrantsBackfill $backfill,
+		private readonly CaseRecordGrantsBackfillInterface $backfill,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -123,30 +123,14 @@ class ReconcileCaseRecordGrants implements IRepairStep {
 	 * @return string
 	 */
 	private function sentenceFor(array $answer, string $counts): string {
-		if ($answer['status'] === 'no-service-account') {
-			return 'Case record access: NOT reconciled. There is no usable background service account to write the grants as,'
-				.' and no administrator account is used instead. Choose one in the dossiq admin settings.';
-		}
-
-		if ($answer['status'] === 'no-grant-right') {
-			return 'Case record access: NOT reconciled. OpenRegister could not give the background service group'
-				.' the special right grant_manage, so no grant was written.';
-		}
-
-		if ($answer['status'] === 'unavailable') {
-			return 'Case record access: NOT reconciled. This OpenRegister has no per-object sharing, so no grant was written.';
+		$refusal = $this->refusalSentence(status: $answer['status']);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$failed = (array)$answer['failed'];
 		$sentence = 'Case record access: NOT finished ('.$counts.').';
-		if ($failed !== []) {
-			$sentence .= ' '.count($failed).' cases were not fully reconciled: '.implode(', ', array_slice($failed, 0, self::NAMED));
-			if (count($failed) > self::NAMED) {
-				$sentence .= ' and '.(count($failed) - self::NAMED).' more';
-			}
-
-			$sentence .= '.';
-		}
+		$sentence .= $this->failedPhrase(failed: $failed);
 
 		if ((array)$answer['unfinished'] !== []) {
 			$sentence .= ' Case types with more cases than one run walks: '.implode(', ', (array)$answer['unfinished']).'.';
@@ -154,6 +138,51 @@ class ReconcileCaseRecordGrants implements IRepairStep {
 
 		return $sentence;
 	}//end sentenceFor()
+
+	/**
+	 * The sentence for a run that reconciled nothing, by the backfill's status.
+	 *
+	 * @param mixed $status The backfill's status.
+	 *
+	 * @return string|null Null when the status is not one of the refusals.
+	 */
+	private function refusalSentence(mixed $status): string|null {
+		if ($status === 'no-service-account') {
+			return 'Case record access: NOT reconciled. There is no usable background service account to write the grants as,'
+				.' and no administrator account is used instead. Choose one in the dossiq admin settings.';
+		}
+
+		if ($status === 'no-grant-right') {
+			return 'Case record access: NOT reconciled. OpenRegister could not give the background service group'
+				.' the special right grant_manage, so no grant was written.';
+		}
+
+		if ($status === 'unavailable') {
+			return 'Case record access: NOT reconciled. This OpenRegister has no per-object sharing, so no grant was written.';
+		}
+
+		return null;
+	}//end refusalSentence()
+
+	/**
+	 * The phrase naming the cases that were not fully reconciled, '' when there are none.
+	 *
+	 * @param array<mixed> $failed The case ids that failed.
+	 *
+	 * @return string
+	 */
+	private function failedPhrase(array $failed): string {
+		if ($failed === []) {
+			return '';
+		}
+
+		$phrase = ' '.count($failed).' cases were not fully reconciled: '.implode(', ', array_slice($failed, 0, self::NAMED));
+		if (count($failed) > self::NAMED) {
+			$phrase .= ' and '.(count($failed) - self::NAMED).' more';
+		}
+
+		return $phrase.'.';
+	}//end failedPhrase()
 
 	/**
 	 * Say an unfinished run where an administrator reads it: the upgrade output and the log.

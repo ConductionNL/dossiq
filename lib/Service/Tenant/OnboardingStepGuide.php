@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Tenant;
 
+use OCA\Dossiq\Kernel\Contracts\OnboardingStepGuideInterface;
 use OCA\Dossiq\Service\TenantOnboardingService;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -37,7 +38,7 @@ use OCP\IURLGenerator;
  *
  * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
  */
-class OnboardingStepGuide {
+class OnboardingStepGuide implements OnboardingStepGuideInterface {
 	/**
 	 * Where each step is done, as an admin settings section; a step without one has no link.
 	 *
@@ -78,7 +79,8 @@ class OnboardingStepGuide {
 		foreach (TenantOnboardingService::STEPS as $step) {
 			$row = ($byStep[$step] ?? ['step' => $step, 'status' => 'pending']);
 			$isNext = ($nextFound === false && $this->isDone(row: $row) === false);
-			$ordered[] = $this->guided(row: $row, isNext: $isNext, waiting: $nextFound);
+			$row['isNext'] = $isNext;
+			$ordered[] = $this->guided(row: $row, waiting: $nextFound);
 			$nextFound = ($nextFound || $isNext);
 		}
 
@@ -101,18 +103,16 @@ class OnboardingStepGuide {
 	/**
 	 * One step with its flag, note and action.
 	 *
-	 * @param array<string, mixed> $row     The step.
-	 * @param bool                 $isNext  Whether it is the first step not done.
+	 * @param array<string, mixed> $row     The step, with its `isNext` flag set: whether it is the first step not done.
 	 * @param bool                 $waiting Whether an earlier step is still open.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function guided(array $row, bool $isNext, bool $waiting): array {
-		$row['isNext'] = $isNext;
-		$row['note'] = $this->noteFor(row: $row, isNext: $isNext, waiting: $waiting);
+	private function guided(array $row, bool $waiting): array {
+		$row['note'] = $this->noteFor(row: $row, waiting: $waiting);
 		$row['action'] = null;
 		$section = (self::SECTIONS[(string)$row['step']] ?? '');
-		if ($isNext === true && $section !== '') {
+		if ($row['isNext'] === true && $section !== '') {
 			$row['action'] = [
 				'label' => $this->actionLabel(step: (string)$row['step']),
 				'href' => $this->urls->linkToRoute('settings.AdminSettings.index', ['section' => $section]),
@@ -125,13 +125,13 @@ class OnboardingStepGuide {
 	/**
 	 * The line under a step.
 	 *
-	 * @param array<string, mixed> $row     The step.
-	 * @param bool                 $isNext  Whether it is the next step.
+	 * @param array<string, mixed> $row     The step, with its `isNext` flag set.
 	 * @param bool                 $waiting Whether an earlier step is still open.
 	 *
 	 * @return string
 	 */
-	private function noteFor(array $row, bool $isNext, bool $waiting): string {
+	private function noteFor(array $row, bool $waiting): string {
+		$isNext = $row['isNext'];
 		$status = (string)($row['status'] ?? '');
 		if ($status === 'skipped') {
 			return $this->l10n->t('Skipped');

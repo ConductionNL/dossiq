@@ -23,7 +23,7 @@
   It reads the case from the ROUTE, because an open-modal action forwards its
   props verbatim and `@objectId` would arrive as that literal string.
 
-  @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+  @spec openspec/specs/workflow-definition-engine/spec.md
 -->
 <template>
 	<CnDialog
@@ -210,7 +210,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether a repeat was chosen.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		repeats() {
 			return (this.recurrence?.id ?? 'none') !== 'none'
@@ -218,7 +218,7 @@ export default {
 
 		/**
 		 * @return {string} The chosen end date as YYYY-MM-DD, or the empty string.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		isoUntil() {
 			if (!this.until) {
@@ -233,7 +233,7 @@ export default {
 
 		/**
 		 * @return {object} The plan as the server reads it.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		plan() {
 			const end = this.repeats ? (this.end?.id ?? 'open') : 'open'
@@ -250,7 +250,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the plan may be sent.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		canConfirm() {
 			return this.busy === false && isPlanComplete(this.plan, this.earliest)
@@ -305,7 +305,7 @@ export default {
 		 * Post the plan.
 		 *
 		 * @return {Promise<void>} Nothing.
-		 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm || !this.targetCaseId) {

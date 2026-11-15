@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service\Cases;
  * One case moving onto another case type, landing in one of its statuses,
  * and what that move records on the case and answers its caller.
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 final class RebindMove {
 
@@ -59,7 +59,7 @@ final class RebindMove {
 	 *
 	 * @return array<string, mixed> The case, with the entry appended.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function journal(array $case, array $applied): array {
@@ -87,7 +87,7 @@ final class RebindMove {
 	 *
 	 * @return array<string, mixed> The outcome.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function outcome(array $applied): array {
 		$impact = $applied['impact'];

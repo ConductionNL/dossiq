@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Substitution;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CoveredWorkInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SubstitutionService;
 use OCP\IUser;
@@ -46,7 +47,7 @@ use OCP\IUserManager;
  *
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-class CoveredWork {
+class CoveredWork implements CoveredWorkInterface {
 
 	/**
 	 * Constructor.

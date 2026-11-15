@@ -185,14 +185,46 @@ class OnboardingSteps {
 			'objectUuid' => $tenantId,
 			'state' => self::STATE_FOR_STATUS[$status],
 		];
-		if ($status === 'skipped') {
+
+		return $this->imported(
+			payload: $this->withOptionalFields(payload: $payload, optional: ['status' => $status, 'metadata' => $metadata]),
+			actor: $actor
+		);
+	}//end open()
+
+	/**
+	 * Add the skipped outcome and the step's metadata to an onboarding task payload.
+	 *
+	 * @param array<string, mixed>                              $payload  The task payload.
+	 * @param array{status: string, metadata: array<string, mixed>} $optional The onboarding status it starts in, and anything the step carries along.
+	 *
+	 * @return array<string, mixed> The payload with its optional fields.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md
+	 */
+	private function withOptionalFields(array $payload, array $optional): array {
+		if ($optional['status'] === 'skipped') {
 			$payload['outcome'] = self::OUTCOME_SKIPPED;
 		}
 
-		if ($metadata !== []) {
-			$payload['metadata'] = ['dossiq' => $metadata];
+		if ($optional['metadata'] !== []) {
+			$payload['metadata'] = ['dossiq' => $optional['metadata']];
 		}
 
+		return $payload;
+	}//end withOptionalFields()
+
+	/**
+	 * Import one onboarding task payload on the engine.
+	 *
+	 * @param array<string, mixed> $payload The task payload.
+	 * @param string|null          $actor   Who creates it.
+	 *
+	 * @return string The engine task's uuid, or '' when it was not written.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md
+	 */
+	private function imported(array $payload, ?string $actor): string {
 		try {
 			// Positional: resolved by name from an app that need not be
 			// installed, so dossiq binds to its parameter order, not names.
@@ -200,12 +232,15 @@ class OnboardingSteps {
 			$task = $service->import($payload, $actor);
 		} catch (Throwable $e) {
 			$this->lastError = $e->getMessage();
-			$this->logger->error('Dossiq: the engine refused an onboarding step', ['tenantId' => $tenantId, 'step' => $step, 'exception' => $e->getMessage()]);
+			$this->logger->error(
+				'Dossiq: the engine refused an onboarding step',
+				['tenantId' => $payload['organisation'], 'step' => $payload['key'], 'exception' => $e->getMessage()]
+			);
 			return '';
 		}
 
 		return self::field(row: $task, key: 'uuid');
-	}//end open()
+	}//end imported()
 
 	/**
 	 * Complete one step through the engine's completion verb.

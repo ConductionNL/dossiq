@@ -10,7 +10,7 @@
  *
  * @return {*} The stored value, or undefined.
  *
- * @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
+ * @spec openspec/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
  */
 function propertyOf(caseObject, name) {
 	const stored = caseObject?.properties
@@ -30,7 +30,7 @@ function propertyOf(caseObject, name) {
  *
  * @return {string} The value, or a dash.
  *
- * @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
+ * @spec openspec/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
  */
 function rowValue(row, caseObject) {
 	const read = row.field ? (propertyOf(caseObject, row.field) ?? caseObject[row.field]) : row.value
@@ -47,7 +47,7 @@ function rowValue(row, caseObject) {
  *
  * @return {Array<object>} The sections to draw.
  *
- * @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
+ * @spec openspec/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
  */
 export function resolveOverviewSections(declared, caseObject) {
 	if (!Array.isArray(declared) || !caseObject) {

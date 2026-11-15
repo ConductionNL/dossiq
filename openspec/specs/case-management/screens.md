@@ -2,7 +2,7 @@
 
 - dossiq/DqVolgendeStap volgende stap (levenscyclus) https://identity.conduction.nl/screens/board?id=dossiq/DqVolgendeStap
 - dossiq/DqZaakGerelateerd zaak, gerelateerd https://identity.conduction.nl/screens/board?id=dossiq/DqZaakGerelateerd
-- dossiq/DqZaakDialogen twaalf kleine zaakdialogen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDialogen
+- dossiq/DqZaakDialogen twaalf kleine zaakdialogen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDialogen (Ruwe gegevens with the flow variables and run log, REQ-CM-36 and REQ-CRS-27)
 - dossiq/DqZaakEmail zaak, e-mail en notities https://identity.conduction.nl/screens/board?id=dossiq/DqZaakEmail
 - dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
 - dossiq/DqDashboard dashboard https://identity.conduction.nl/screens/board?id=dossiq/DqDashboard

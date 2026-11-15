@@ -29,12 +29,15 @@ use OCA\OpenRegister\Service\Form\FormSubmission;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden test for FormsIntakeService::caseFor(): the answer, every store and settings call, and the logs.
  *
  * @covers \OCA\Dossiq\Service\FormsIntakeService
  * @uses \OCA\Dossiq\Service\Intake\IntakeFormBinding
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class FormsIntakeServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -103,7 +106,9 @@ class FormsIntakeServiceGoldenTest extends TestCase {
 			 *
 			 * @return mixed The saved row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = ''): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
 				$this->calls[] = ['saveObject', $object, $register, $schema];
 				if (($this->world['save'] ?? null) === 'throw') {
 					throw new RuntimeException('save failed');

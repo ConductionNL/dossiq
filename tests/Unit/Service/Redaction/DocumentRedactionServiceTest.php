@@ -69,6 +69,11 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\Redaction\FilinqRedaction
+ * @uses \OCA\Dossiq\Service\Redaction\RedactedUpload
+ * @uses \OCA\Dossiq\Service\Redaction\RedactionRun
+ * @uses \OCA\Dossiq\Service\WooAssessmentLocation
  */
 class DocumentRedactionServiceTest extends TestCase {
 

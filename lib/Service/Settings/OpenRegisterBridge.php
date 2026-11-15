@@ -98,7 +98,7 @@ class OpenRegisterBridge {
 	 *
 	 * @return object|null The OpenRegister ObjectService or null when unavailable
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function objectService(): ?object {
 		if ($this->isAvailable() === false) {
@@ -136,7 +136,7 @@ class OpenRegisterBridge {
 	 *
 	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function objectGrantResolver(): ?object {
 		if ($this->isAvailable() === false) {
@@ -173,7 +173,7 @@ class OpenRegisterBridge {
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function fileService(): ?object {
 		if ($this->isAvailable() === false) {
@@ -202,7 +202,7 @@ class OpenRegisterBridge {
 	 *
 	 * @return object|null The resolved service, or null when unavailable
 	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+	 * @spec openspec/changes/archive/2026-06-14-migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function classNamed(string $class): ?object {
 		if ($this->isAvailable() === false) {

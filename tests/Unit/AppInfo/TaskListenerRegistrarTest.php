@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\TaskListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\TaskListenerRegistrar;
 use OCA\Dossiq\Listener\TaskCompletionEffectsListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -27,7 +27,7 @@ use PHPUnit\Framework\TestCase;
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\AppInfo
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\TaskListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\TaskListenerRegistrar
  *
  * @spec openspec/specs/task-management/spec.md
  */

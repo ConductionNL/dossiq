@@ -28,10 +28,14 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * @covers \OCA\Dossiq\Repair\MapLegacyArchivalActions
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Repair\LinkInFlightRemainingDecisionsRepair
+ * @uses \OCA\Dossiq\Repair\Support\RepairSchema
+ * @uses \OCA\Dossiq\Repair\Support\RepairSchemas
  */
 class MapLegacyArchivalActionsTest extends TestCase {
 
@@ -102,7 +106,11 @@ class MapLegacyArchivalActionsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->identities[] = ($this->asSystem === true) ? 'system' : 'user';
 				if (in_array($objectId, $this->refuse, true) === true) {
 					throw new RuntimeException('refused');

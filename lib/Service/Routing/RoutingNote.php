@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
+ * @spec openspec/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ final class RoutingNote {
 	 *
 	 * @return array{kind: string, level: string, team: string, reason: string}
 	 *
-	 * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
 	 */
 	public static function handoverRefused(string $team, string $reason): array {
 		return ['kind' => 'handover-refused', 'level' => 'error', 'team' => $team, 'reason' => $reason];
@@ -52,7 +52,7 @@ final class RoutingNote {
 	 *
 	 * @return array<string, mixed> The note: kind, level, submission, siblings and failed.
 	 *
-	 * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
 	 */
 	public static function intakeSplit(string $submission, array $siblings, array $failed): array {
 		return [

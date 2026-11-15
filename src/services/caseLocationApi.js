@@ -50,13 +50,49 @@ export function parcelOf(result) {
 export function caseLocationRecord(caseId, chosen) {
 	const result = chosen?.result || {}
 	const coordinates = chosen?.coordinates || {}
-	const parcel = parcelOf(result)
+	const address = addressText(chosen, result)
 	return {
 		case: caseId,
-		label: chosen?.address || result.weergavenaam || '',
-		formattedAddress: chosen?.address || result.weergavenaam || '',
-		latitude: Number.isFinite(coordinates.lat) ? coordinates.lat : null,
-		longitude: Number.isFinite(coordinates.lng) ? coordinates.lng : null,
+		label: address,
+		formattedAddress: address,
+		latitude: finiteOrNull(coordinates.lat),
+		longitude: finiteOrNull(coordinates.lng),
+		...bagFields(result),
+	}
+}
+
+/**
+ * The address as the reader saw it: what the search emitted, else the
+ * result's own name.
+ *
+ * @param {object|null|undefined} chosen What the address search emitted.
+ * @param {object} result The PDOK lookup result.
+ * @return {string} The address, or ''.
+ */
+function addressText(chosen, result) {
+	return chosen?.address || result.weergavenaam || ''
+}
+
+/**
+ * A coordinate, or null when it is not a finite number.
+ *
+ * @param {unknown} value The coordinate.
+ * @return {number|null} The coordinate.
+ */
+function finiteOrNull(value) {
+	return Number.isFinite(value) ? value : null
+}
+
+/**
+ * The BAG fields of a location: its address designation and parcel, and
+ * whether it is a BAG address at all.
+ *
+ * @param {object} result The PDOK lookup result.
+ * @return {{addressDesignationId: string|null, parcelId: string|null, source: string}} The fields.
+ */
+function bagFields(result) {
+	const parcel = parcelOf(result)
+	return {
 		addressDesignationId: result.nummeraanduiding_id || null,
 		parcelId: parcel ? parcel.label : null,
 		source: result.nummeraanduiding_id ? 'bag' : 'free',

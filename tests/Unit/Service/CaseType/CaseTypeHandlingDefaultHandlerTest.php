@@ -88,4 +88,53 @@ class CaseTypeHandlingDefaultHandlerTest extends TestCase {
 		$caseType = ['handling' => ['defaultHandler' => ['id' => 'piet']], 'defaultAssignee' => (object)['id' => 'anna']];
 		$this->assertSame(expected: '', actual: $this->handlerOf(caseType: $caseType));
 	}//end testNonStringAssigneeLeavesTheCaseUnclaimed()
+	/**
+	 * The block answers every read switch at once, with the legacy fallbacks.
+	 *
+	 * The group falls back to the first intake destination that names a
+	 * department, skipping a destination that is not a row at all, and that
+	 * group leads the teams list ahead of the declared teams.
+	 *
+	 * @return void
+	 */
+	public function testTheBlockAppliesEveryFallback(): void {
+		$caseType = [
+			'handling' => [
+				'teams' => ['juristen', ' ', 'vergunningen', 'juristen'],
+				'automaticMessages' => ['extension', 'not-a-message', 'doorzending'],
+				'intakeScreen' => 'woo-intake',
+			],
+			'intakeDestinations' => ['stray string', ['department' => ''], ['department' => 'vergunningen']],
+			'defaultAssignee' => 'anna',
+		];
+
+		$this->assertSame(
+			[
+				'defaultGroup' => 'vergunningen',
+				'teams' => ['vergunningen', 'juristen'],
+				'defaultHandler' => 'anna',
+				'automaticMessages' => ['extension', 'doorzending'],
+				'intakeScreen' => 'woo-intake',
+			],
+			(new CaseTypeHandling())->block(caseType: $caseType)
+		);
+	}//end testTheBlockAppliesEveryFallback()
+
+	/**
+	 * A case type that declares nothing still sends every message, to nobody.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyCaseTypeBlockKeepsEveryMessage(): void {
+		$this->assertSame(
+			[
+				'defaultGroup' => '',
+				'teams' => [],
+				'defaultHandler' => '',
+				'automaticMessages' => CaseTypeHandling::MESSAGES,
+				'intakeScreen' => '',
+			],
+			(new CaseTypeHandling())->block(caseType: ['intakeDestinations' => ['x', 7]])
+		);
+	}//end testAnEmptyCaseTypeBlockKeepsEveryMessage()
 }//end class

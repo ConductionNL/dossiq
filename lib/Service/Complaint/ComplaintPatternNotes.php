@@ -58,64 +58,133 @@ class ComplaintPatternNotes {
 	 */
 	public function kpis(array $figures, array $targets): array {
 		$handling = $figures['handling'];
-		$perMonth = (int)round(((int)$figures['count']) / 3);
-		$withinAwb = $handling['withinAwbPercent'];
-		$upheld = $handling['upheldPercent'];
-		$averageDays = $handling['averageDays'];
 		$noneHandled = $this->l10n->t('No complaint was handled this quarter');
 
+		return $this->perMonthKpi(figures: $figures, targets: $targets)
+			+ $this->withinAwbKpi(handling: $handling, goal: ['target' => $targets[ComplaintPatterns::TARGET_WITHIN_AWB], 'noneHandled' => $noneHandled])
+			+ $this->upheldKpi(handling: $handling, goal: ['target' => $targets[ComplaintPatterns::TARGET_UPHELD], 'noneHandled' => $noneHandled])
+			+ $this->averageDaysKpi(handling: $handling, noneHandled: $noneHandled);
+	}//end kpis()
+
+	/**
+	 * The complaints per month with its note.
+	 *
+	 * @param array<string, mixed> $figures The quarter's figures.
+	 * @param array<string, int>   $targets The organisation's targets.
+	 *
+	 * @return array<string, int|string>
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function perMonthKpi(array $figures, array $targets): array {
+		$perMonth = (int)round(((int)$figures['count']) / 3);
 		$perMonthTarget = $targets[ComplaintPatterns::TARGET_PER_MONTH];
-		$awbTarget = $targets[ComplaintPatterns::TARGET_WITHIN_AWB];
-		$upheldTarget = $targets[ComplaintPatterns::TARGET_UPHELD];
 
 		return [
 			'perMonth' => $perMonth,
 			'perMonthNote' => $this->l10n->t('Target: at most %s.', [(string)$perMonthTarget]).' '
 				.$this->verdict(onTarget: $perMonth <= $perMonthTarget, over: true),
+		];
+	}//end perMonthKpi()
+
+	/**
+	 * The share handled within the Awb term with its note.
+	 *
+	 * @param array<string, mixed>                    $handling The quarter's handling figures.
+	 * @param array{target: int, noneHandled: string} $goal     The target percentage and the note when nothing was handled.
+	 *
+	 * @return array<string, int|string|null>
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function withinAwbKpi(array $handling, array $goal): array {
+		['target' => $awbTarget, 'noneHandled' => $noneHandled] = $goal;
+		$withinAwb = $handling['withinAwbPercent'];
+
+		return [
 			'withinAwbPercent' => $withinAwb,
 			'withinAwbNote' => $this->noted(
 				value: $withinAwb,
 				none: $noneHandled,
-				note: $this->l10n->t('Target: more than %s %%.', [(string)$awbTarget]),
-				onTarget: ($withinAwb ?? 0) > $awbTarget,
-				over: false
+				target: new TargetNote(
+					note: $this->l10n->t('Target: more than %s %%.', [(string)$awbTarget]),
+					onTarget: ($withinAwb ?? 0) > $awbTarget,
+					over: false
+				)
 			),
+		];
+	}//end withinAwbKpi()
+
+	/**
+	 * The share upheld with its note.
+	 *
+	 * @param array<string, mixed>                    $handling The quarter's handling figures.
+	 * @param array{target: int, noneHandled: string} $goal     The target percentage and the note when nothing was handled.
+	 *
+	 * @return array<string, int|string|null>
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function upheldKpi(array $handling, array $goal): array {
+		['target' => $upheldTarget, 'noneHandled' => $noneHandled] = $goal;
+		$upheld = $handling['upheldPercent'];
+
+		return [
 			'upheldPercent' => $upheld,
 			'upheldNote' => $this->noted(
 				value: $upheld,
 				none: $noneHandled,
-				note: $this->l10n->t('Target: less than %s %%.', [(string)$upheldTarget]),
-				onTarget: ($upheld ?? 0) < $upheldTarget,
-				over: true
+				target: new TargetNote(
+					note: $this->l10n->t('Target: less than %s %%.', [(string)$upheldTarget]),
+					onTarget: ($upheld ?? 0) < $upheldTarget,
+					over: true
+				)
 			),
+		];
+	}//end upheldKpi()
+
+	/**
+	 * The average handling days with its note.
+	 *
+	 * @param array<string, mixed> $handling    The quarter's handling figures.
+	 * @param string               $noneHandled The note when nothing was handled.
+	 *
+	 * @return array<string, int|string|null>
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	private function averageDaysKpi(array $handling, string $noneHandled): array {
+		$averageDays = $handling['averageDays'];
+
+		return [
 			'averageDays' => $averageDays,
 			'averageDaysNote' => $this->noted(
 				value: $averageDays,
 				none: $noneHandled,
-				note: $this->l10n->t('Awb term 6 weeks (%s d).', [(string)ComplaintPatternFigures::AWB_TERM_DAYS]),
-				onTarget: ($averageDays ?? 0) <= ComplaintPatternFigures::AWB_TERM_DAYS,
-				over: true
+				target: new TargetNote(
+					note: $this->l10n->t('Awb term 6 weeks (%s d).', [(string)ComplaintPatternFigures::AWB_TERM_DAYS]),
+					onTarget: ($averageDays ?? 0) <= ComplaintPatternFigures::AWB_TERM_DAYS,
+					over: true
+				)
 			),
 		];
-	}//end kpis()
+	}//end averageDaysKpi()
 
 	/**
 	 * A note for a figure that may be absent.
 	 *
-	 * @param int|null $value    The figure.
-	 * @param string   $none     The note when there is no figure.
-	 * @param string   $note     The target sentence.
-	 * @param bool     $onTarget Whether the figure meets its target.
-	 * @param bool     $over     Whether missing the target means being above it.
+	 * @param int|null   $value  The figure.
+	 * @param string     $none   The note when there is no figure.
+	 * @param TargetNote $target The target sentence, and where the figure stands against it.
 	 *
 	 * @return string
 	 */
-	private function noted(?int $value, string $none, string $note, bool $onTarget, bool $over): string {
+	private function noted(?int $value, string $none, TargetNote $target): string {
 		if ($value === null) {
 			return $none;
 		}
 
-		return $note.' '.$this->verdict(onTarget: $onTarget, over: $over);
+		return $target->note.' '.$this->verdict(onTarget: $target->onTarget, over: $target->over);
 	}//end noted()
 
 	/**

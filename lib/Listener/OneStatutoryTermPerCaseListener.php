@@ -31,9 +31,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
+use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\TermKind;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -62,15 +64,15 @@ class OneStatutoryTermPerCaseListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the term instance schema.
-	 * @param TermijnService  $terms           Reads the case's terms and writes the withdrawal.
+	 * @param SettingsServiceInterface $settingsService Names the term instance schema.
+	 * @param TermijnServiceInterface  $terms           Reads the case's terms and writes the withdrawal.
 	 * @param LoggerInterface $logger          Logs a withdrawal that could not be written.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly TermijnService $terms,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly TermijnServiceInterface $terms,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -87,26 +89,58 @@ class OneStatutoryTermPerCaseListener implements IEventListener {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatedEvent === false) {
+		$entity = $this->createdTermInstance(event: $event);
+		if ($entity === null) {
 			return;
 		}
 
-		$entity   = $event->getObject();
-		$expected = (string)$this->settingsService->getConfigValue(key: 'termijn_instance_schema');
-		if ($expected === '' || (string)$entity->getSchema() !== $expected) {
-			return;
-		}
-
-		$written = (array)($entity->getObject() ?? []);
+		$written = (array)$entity->getObject();
 		$caseId  = $this->referenced(value: ($written['case'] ?? ''));
 		if ($caseId === '' || TermKind::ofInstance(instance: $written) !== TermKind::STATUTORY) {
 			return;
 		}
 
+		$this->withdrawEarlier(caseId: $caseId, writtenId: (string)$entity->getUuid());
+	}//end handle()
+
+	/**
+	 * The term instance a created event carries, or null for any other event or object.
+	 *
+	 * @param Event $event The dispatched event.
+	 *
+	 * @return ObjectEntity|null
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 */
+	private function createdTermInstance(Event $event): ?ObjectEntity {
+		if ($event instanceof ObjectCreatedEvent === false) {
+			return null;
+		}
+
+		$entity   = $event->getObject();
+		$expected = (string)$this->settingsService->getConfigValue(key: 'termijn_instance_schema');
+		if ($expected === '' || (string)$entity->getSchema() !== $expected) {
+			return null;
+		}
+
+		return $entity;
+	}//end createdTermInstance()
+
+	/**
+	 * Withdraw the statutory term the new one takes over from.
+	 *
+	 * @param string $caseId    The case.
+	 * @param string $writtenId The new term instance.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 */
+	private function withdrawEarlier(string $caseId, string $writtenId): void {
 		try {
 			foreach ($this->terms->instancesForCase(caseId: $caseId) as $other) {
 				$id = (string)($other['id'] ?? '');
-				if ($this->takenOver(other: $other, id: $id, writtenId: (string)$entity->getUuid()) === true) {
+				if ($this->takenOver(other: $other, id: $id, writtenId: $writtenId) === true) {
 					$this->terms->updateTermijnInstance(termInstanceId: $id, patch: ['status' => 'withdrawn']);
 				}
 			}
@@ -116,7 +150,7 @@ class OneStatutoryTermPerCaseListener implements IEventListener {
 				context: ['case' => $caseId, 'exception' => $e->getMessage()]
 			);
 		}
-	}//end handle()
+	}//end withdrawEarlier()
 
 	/**
 	 * Whether another term of the case is the running statutory term the new one takes over from.
@@ -142,14 +176,6 @@ class OneStatutoryTermPerCaseListener implements IEventListener {
 	 * @return string The uuid, empty when there is none.
 	 */
 	private function referenced(mixed $value): string {
-		if (is_array($value) === true) {
-			return trim((string)($value['id'] ?? ''));
-		}
-
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		return '';
+		return ReferencedUuid::inReference(value: $value);
 	}//end referenced()
 }//end class

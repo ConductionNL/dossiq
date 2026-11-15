@@ -36,19 +36,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
+use OCA\Dossiq\Kernel\Contracts\CasePaymentStateInterface;
+
 /**
  * The case-level payment state, derived from shillinq's own report.
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
-class CasePaymentState {
+class CasePaymentState implements CasePaymentStateInterface {
 	/**
 	 * No money is owed on this case: the type publishes no fee, or nothing was
 	 * ever raised.
@@ -78,14 +80,6 @@ class CasePaymentState {
 	 * @var string
 	 */
 	public const WAIVED = 'waived';
-
-	/**
-	 * shillinq could not be asked, so the last word this case carries may be
-	 * out of date and is treated as unknown.
-	 *
-	 * @var string
-	 */
-	public const STALE = 'stale';
 
 	/**
 	 * Every state a case may carry.
@@ -147,7 +141,7 @@ class CasePaymentState {
 	 *                request shillinq cannot price, or an item this app cannot
 	 *                parse. Everything else is an answer and reads as one.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function fromRequests(array $requests): string {
 		if ($requests === []) {
@@ -188,42 +182,60 @@ class CasePaymentState {
 	 * @return array{waivedOnly: bool, anyOutstanding: bool, anyUnreadable: bool} What the list holds.
 	 */
 	private function tally(array $requests): array {
-		$waivedOnly = true;
-		$anyOutstanding = false;
-		$anyUnreadable = false;
-
+		$kinds = [];
 		foreach ($requests as $request) {
-			if (is_array($request) === false) {
-				// Skipping it was worse than it looks: a case whose ONLY request
-				// was unparseable fell through to the waiver branch and read
-				// `waived`, which opens the gate and says a person decided to let
-				// the money go. Nobody decided anything.
-				$anyUnreadable = true;
-				continue;
-			}
-
-			$reported = (string)($request['reported']['state'] ?? '');
-			if (in_array($reported, self::UNREADABLE, true) === true) {
-				$anyUnreadable = true;
-				continue;
-			}
-
-			if (in_array($reported, self::SETTLED, true) === false) {
-				$anyOutstanding = true;
-				continue;
-			}
-
-			if ($this->wasWaived(request: $request) === false) {
-				$waivedOnly = false;
-			}
+			$kinds[$this->kindOf(request: $request)] = true;
 		}
 
 		return [
-			'waivedOnly' => $waivedOnly,
-			'anyOutstanding' => $anyOutstanding,
-			'anyUnreadable' => $anyUnreadable,
+			'waivedOnly' => isset($kinds['paid']) === false,
+			'anyOutstanding' => isset($kinds['outstanding']),
+			'anyUnreadable' => isset($kinds['unreadable']),
 		];
 	}//end tally()
+
+	/**
+	 * What one request holds: `unreadable`, `outstanding`, `paid` or `waived`.
+	 *
+	 * @param mixed $request One payment request as the leaf sent it.
+	 *
+	 * @return string The kind of request.
+	 */
+	private function kindOf(mixed $request): string {
+		if (is_array($request) === false) {
+			// Skipping it was worse than it looks: a case whose ONLY request
+			// was unparseable fell through to the waiver branch and read
+			// `waived`, which opens the gate and says a person decided to let
+			// the money go. Nobody decided anything.
+			return 'unreadable';
+		}
+
+		return $this->kindOfReported(request: $request);
+	}//end kindOf()
+
+	/**
+	 * What one readable request holds, by the state the leaf reported.
+	 *
+	 * @param array<string, mixed> $request One payment request as the leaf sent it.
+	 *
+	 * @return string The kind of request.
+	 */
+	private function kindOfReported(array $request): string {
+		$reported = (string)($request['reported']['state'] ?? '');
+		if (in_array($reported, self::UNREADABLE, true) === true) {
+			return 'unreadable';
+		}
+
+		if (in_array($reported, self::SETTLED, true) === false) {
+			return 'outstanding';
+		}
+
+		if ($this->wasWaived(request: $request) === false) {
+			return 'paid';
+		}
+
+		return 'waived';
+	}//end kindOfReported()
 
 	/**
 	 * Whether a settled request was settled by letting the money go.
@@ -257,7 +269,7 @@ class CasePaymentState {
 	 *
 	 * @return bool True when the state is known.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function isKnown(string $state): bool {
 		return ($state !== self::STALE && in_array($state, self::ALL, true) === true);
@@ -279,7 +291,7 @@ class CasePaymentState {
 	 *
 	 * @return string|null The ZGW value, or null when this state must not be mapped.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function zgwIndication(string $state): ?string {
 		return match ($state) {
@@ -303,7 +315,7 @@ class CasePaymentState {
 	 *
 	 * @return array{paymentState: string, paymentStateCheckedAt: string} The projection.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function projection(string $state, string $checkedAt): array {
 		$known = self::STALE;
