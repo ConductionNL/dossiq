@@ -117,19 +117,27 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 			return ['recorded' => false, 'required' => false];
 		}
 
-		$visit = new CaseVisit(mapper: $mapper, case: $case, readerId: $readerId);
-		$this->write(
-			visit: $visit,
-			entry: [
-				'action' => self::ACTION,
-				'context' => ['purpose' => $purpose, 'note' => $note, 'categories' => $categories],
-			],
+		return $this->recordVisit(
+			visit: new CaseVisit(mapper: $mapper, case: $case, readerId: $readerId),
+			context: ['purpose' => $purpose, 'note' => $note, 'categories' => $categories]
 		);
+	}//end record()
 
-		$roleAdded = $this->bindFor(visit: $visit, purpose: $purpose);
+	/**
+	 * Write the purpose to the case's trail and bind the reader to the role it names.
+	 *
+	 * @param CaseVisit            $visit   The reader on the case, and the trail it is written to.
+	 * @param array<string, mixed> $context The purpose, the note and the case's special categories.
+	 *
+	 * @return array{recorded: bool, required: bool, roleAdded: bool}
+	 */
+	private function recordVisit(CaseVisit $visit, array $context): array {
+		$this->write(visit: $visit, entry: ['action' => self::ACTION, 'context' => $context]);
+
+		$roleAdded = $this->bindFor(visit: $visit, purpose: $context['purpose']);
 
 		return ['recorded' => true, 'required' => true, 'roleAdded' => $roleAdded];
-	}//end record()
+	}//end recordVisit()
 
 	/**
 	 * Whether the reader must state a purpose to open this case.

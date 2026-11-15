@@ -152,18 +152,30 @@ class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInte
 			return false;
 		}
 
+		$this->lifted(record: $record, removal: ['by' => $user->getUID(), 'old' => $old, 'reason' => trim($reason)]);
+
+		return true;
+	}//end remove()
+
+	/**
+	 * Lift the exception off the record and its file, with a history entry saying who did and why.
+	 *
+	 * @param array<string, mixed> $record  The stored record.
+	 * @param array<string, mixed> $removal Who removes it, the exception it carried and why.
+	 *
+	 * @return void
+	 */
+	private function lifted(array $record, array $removal): void {
 		$fileId = $this->liftFile(record: $record);
 		unset($record[DocumentAccessExceptionRule::PROPERTY]);
 		$at = (new DateTimeImmutable())->format(DATE_ATOM);
 		$record[DocumentAccessExceptionRule::HISTORY] = $this->withEntry(
 			record: $record,
-			entry: ['action' => 'remove', 'by' => $user->getUID(), 'at' => $at, 'old' => $old, 'new' => null, 'reason' => trim($reason)]
+			entry: ['action' => 'remove', 'by' => $removal['by'], 'at' => $at, 'old' => $removal['old'], 'new' => null, 'reason' => $removal['reason']]
 		);
 
-		$this->saveOrRestore(record: $record, file: ['id' => $fileId, 'old' => $old]);
-
-		return true;
-	}//end remove()
+		$this->saveOrRestore(record: $record, file: ['id' => $fileId, 'old' => $removal['old']]);
+	}//end lifted()
 
 	/**
 	 * The exception as stored: its users, groups and reason, then who set it and when.
