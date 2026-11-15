@@ -176,11 +176,8 @@ class ConsultationService implements ConsultationServiceInterface {
 		// persist its ref. Fail CLOSED — never author the consultation advice
 		// outcome locally as a fallback.
 		$decisionRef = $this->raiseAndPersistAdviceDecision(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			consultationId: (string)$consultationId,
-			data: $data,
+			store: ['objectService' => $objectService, 'register' => $register, 'schema' => $schema],
+			consultation: ['id' => (string)$consultationId, 'data' => $data],
 		);
 
 		// 🔑 THE ADVICE REQUEST IS THE FIRST OBLIGATION, NOT A SPECIAL CASE.
@@ -765,18 +762,16 @@ class ConsultationService implements ConsultationServiceInterface {
 	 *
 	 * Fails CLOSED — never authors the consultation advice outcome locally.
 	 *
-	 * @param object $objectService The OpenRegister object service
-	 * @param string $register The register slug
-	 * @param string $schema The schema slug
-	 * @param string $consultationId The freshly created consultation UUID
-	 * @param array<string, mixed> $data Consultation data used to build the decision payload
+	 * @param array{objectService: object, register: string, schema: string} $store        The OpenRegister object service, register and schema
+	 * @param array{id: string, data: array<string, mixed>}                  $consultation The freshly created consultation UUID and its data
 	 *
 	 * @return string The decidesk decision reference
 	 *
 	 * @throws \RuntimeException If decidesk is unavailable (REQ-PDRD-002)
 	 */
-	private function raiseAndPersistAdviceDecision(object $objectService, string $register, string $schema,
-		string $consultationId, array $data): string {
+	private function raiseAndPersistAdviceDecision(array $store, array $consultation): string {
+		[$objectService, $register, $schema] = [$store['objectService'], $store['register'], $store['schema']];
+		[$consultationId, $data] = [$consultation['id'], $consultation['data']];
 		try {
 			$decisionRef = $this->raiseConsultationAdvice(register: $register, consultationId: $consultationId, data: $data);
 
