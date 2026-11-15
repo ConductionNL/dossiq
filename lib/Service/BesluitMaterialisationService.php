@@ -181,12 +181,23 @@ class BesluitMaterialisationService implements BesluitMaterialisationServiceInte
 	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function materialiseFromConcludedEvent(string $caseId, string $decisionId, array $event): array {
+		return $this->materialise(caseId: $caseId, decisionId: $decisionId, outcome: self::outcomeOf(event: $event));
+	}//end materialiseFromConcludedEvent()
+
+	/**
+	 * The decidesk outcome a concluded event carries: its outcome (or status), when, why, by whom and how.
+	 *
+	 * @param array<string, mixed> $event The DecisionConcludedEvent payload.
+	 *
+	 * @return array<string, mixed> The outcome, with the raw event.
+	 */
+	private static function outcomeOf(array $event): array {
 		$result = (string)($event['outcome'] ?? '');
 		if ($result === '') {
 			$result = (string)($event['status'] ?? '');
 		}
 
-		$outcome = [
+		return [
 			'result' => $result,
 			'decidedAt' => (string)($event['decidedAt'] ?? ''),
 			'rationale' => (string)($event['rationale'] ?? ''),
@@ -194,9 +205,7 @@ class BesluitMaterialisationService implements BesluitMaterialisationServiceInte
 			'method' => (string)($event['method'] ?? ''),
 			'raw' => $event,
 		];
-
-		return $this->materialise(caseId: $caseId, decisionId: $decisionId, outcome: $outcome);
-	}//end materialiseFromConcludedEvent()
+	}//end outcomeOf()
 
 	/**
 	 * Build the Besluiten-API payload from a decidesk outcome.
