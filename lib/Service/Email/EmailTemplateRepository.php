@@ -198,14 +198,6 @@ class EmailTemplateRepository implements EmailTemplateRepositoryInterface {
 	 *                                   nor a JSON-serialisable entity.
 	 */
 	private function toArrayOrNull(mixed $value): ?array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$value = $value->jsonSerialize();
-		}
-
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return null;
+		return $this->objectToArrayOrNull(value: $value);
 	}//end toArrayOrNull()
 }//end class
