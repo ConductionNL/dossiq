@@ -1374,18 +1374,10 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->requireValidJwt();
-		if ($authError !== null) {
-			return $authError;
-		}
-
 		// Drc-008c (VNG): Return 404 if the parent resource no longer exists.
-		$missing = $this->missingResourceRefusal(resource: $resource, uuid: $uuid, detail: $this->l10n->t('Not found.'));
-		if ($missing !== null) {
-			return $missing;
-		}
-
-		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->requireValidJwt()
+			?? $this->missingResourceRefusal(resource: $resource, uuid: $uuid, detail: $this->l10n->t('Not found.'))
+			?? $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
 	}//end audittrailIndex()
 
 	/**

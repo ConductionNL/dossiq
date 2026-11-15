@@ -302,18 +302,10 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->requireValidJwt();
-		if ($authError !== null) {
-			return $authError;
-		}
-
 		// Brc-009d: Verify the parent resource exists before returning audit trail.
-		$missing = $this->missingResourceRefusal(resource: $resource, uuid: $uuid, detail: 'Not found');
-		if ($missing !== null) {
-			return $missing;
-		}
-
-		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->requireValidJwt()
+			?? $this->missingResourceRefusal(resource: $resource, uuid: $uuid, detail: 'Not found')
+			?? $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
 	}//end audittrailIndex()
 
 	/**
