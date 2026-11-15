@@ -649,19 +649,31 @@ class CaseTransferService implements CaseTransferServiceInterface {
 			doorzending: $doorzending,
 		);
 
-		// One door, one chain. The internal handover moves the case on
-		// initiate — the receiving team owns it before anybody accepts — so
-		// the holding opens here rather than on the answer.
-		$this->custody->move(
-			caseId: $caseId,
-			organisationUnit: $targetTeam,
-			handler: '',
-			reason: $reason,
-			movedBy: $initiatedBy,
-		);
+		$this->openTeamHolding(handover: ['caseId' => $caseId, 'targetTeam' => $targetTeam, 'reason' => $reason, 'initiatedBy' => $initiatedBy]);
 
 		return $record;
 	}//end handToTeam()
+
+	/**
+	 * Open the receiving team's holding of the case.
+	 *
+	 * One door, one chain. The internal handover moves the case on
+	 * initiate — the receiving team owns it before anybody accepts — so
+	 * the holding opens here rather than on the answer.
+	 *
+	 * @param array<string, string> $handover The case, the receiving team, why it moves and who handed it on.
+	 *
+	 * @return void
+	 */
+	private function openTeamHolding(array $handover): void {
+		$this->custody->move(
+			caseId: $handover['caseId'],
+			organisationUnit: $handover['targetTeam'],
+			handler: '',
+			reason: $handover['reason'],
+			movedBy: $handover['initiatedBy'],
+		);
+	}//end openTeamHolding()
 
 	/**
 	 * Accept a handover on the receiving team's behalf.
