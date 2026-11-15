@@ -85,25 +85,38 @@ class TransferShareBroker {
 			return null;
 		}
 
+		return $this->createShare(
+			shareService: $shareService,
+			params: [
+				'scope' => 'object',
+				'register' => $register,
+				'schema' => $schema,
+				'objectUri' => $transferUuid,
+				'sharedWith' => $remoteCloudId,
+				'permissions' => 'read-write',
+			]
+		);
+	}//end mintTransferShare()
+
+	/**
+	 * Create the outgoing share; a failure is logged and answers null.
+	 *
+	 * @param object               $shareService OpenRegister's federation share service.
+	 * @param array<string, mixed> $params       The share, naming the transfer object as `objectUri`.
+	 *
+	 * @return object|null The share, or null when it could not be created.
+	 */
+	private function createShare(object $shareService, array $params): ?object {
 		try {
-			return $shareService->createOutgoingShare(
-				params: [
-					'scope' => 'object',
-					'register' => $register,
-					'schema' => $schema,
-					'objectUri' => $transferUuid,
-					'sharedWith' => $remoteCloudId,
-					'permissions' => 'read-write',
-				]
-			);
+			return $shareService->createOutgoingShare(params: $params);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CaseTransferService: OR createOutgoingShare failed',
-				['transferUuid' => $transferUuid, 'exception' => $e->getMessage()]
+				['transferUuid' => $params['objectUri'], 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
-	}//end mintTransferShare()
+	}//end createShare()
 
 	/**
 	 * Resolve a scoped bearer token to the transfer it authorises — used
