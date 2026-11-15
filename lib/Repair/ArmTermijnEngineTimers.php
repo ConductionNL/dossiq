@@ -300,15 +300,13 @@ class ArmTermijnEngineTimers implements IRepairStep {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'termijn_definitie_schema');
+		if ($target === null) {
 			return [];
 		}
 
 		try {
-			$def = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $defId);
+			$def = $this->findObjectAsArray(objectService: $target->objectService, register: $target->register, schema: $target->schema, id: $defId);
 			if ($def !== null) {
 				return $def;
 			}
