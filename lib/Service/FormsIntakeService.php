@@ -228,7 +228,7 @@ class FormsIntakeService implements FormsIntakeServiceInterface {
 			return null;
 		}
 
-		$rows = $this->rowsBoundTo(objectService: $objectService, register: $register, schema: $schema, formHash: $formHash);
+		$rows = $this->rowsBoundTo(objectService: $objectService, filters: ['register' => $register, 'schema' => $schema, 'intakeFormRef' => $formHash]);
 		if ($rows === null) {
 			return null;
 		}
@@ -239,34 +239,28 @@ class FormsIntakeService implements FormsIntakeServiceInterface {
 	/**
 	 * The case type rows the store answers for the form.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $schema        The case type schema id.
-	 * @param string $formHash      The form's hash.
+	 * @param object                $objectService The OpenRegister ObjectService.
+	 * @param array<string, string> $filters       The register, the case type schema and the form's hash as `intakeFormRef`.
 	 *
 	 * @return array<int, mixed>|null The rows, or null when the lookup failed.
 	 *
 	 * @spec openspec/specs/leaf-integrations/spec.md
 	 */
-	private function rowsBoundTo(object $objectService, string $register, string $schema, string $formHash): ?array {
+	private function rowsBoundTo(object $objectService, array $filters): ?array {
 		try {
 			// 🔴 A BARE KEY, NOT `filter[intakeFormRef]`. The objects endpoint
 			// reads a bare property name and answers the EMPTY SET for a
 			// `filter[...]` one, with no error either way (openregister#3611).
 			$rows = $objectService->findAll(
 				[
-					'filters' => [
-						'register' => $register,
-						'schema' => $schema,
-						'intakeFormRef' => $formHash,
-					],
+					'filters' => $filters,
 					'limit' => 2,
 				]
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'FormsIntakeService: could not look up the case type bound to a form',
-				['form' => $formHash, 'error' => $e->getMessage()]
+				['form' => $filters['intakeFormRef'], 'error' => $e->getMessage()]
 			);
 			return null;
 		}

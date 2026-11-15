@@ -109,7 +109,10 @@ class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 		$byRole = $this->grantsByRole(matrix: $caseType['rightsMatrix'] ?? []);
 
 		$statusNames = $this->statusNames(caseTypeId: $caseTypeId);
-		$decide = $this->decideByRole(caseType: $caseType, caseTypeId: $caseTypeId, roles: array_keys($byRole));
+		$decide = $this->decideByRole(
+			keys: [$caseTypeId, (string)($caseType['slug'] ?? ''), (string)($caseType['identifier'] ?? '')],
+			roles: array_keys($byRole)
+		);
 
 		return $this->rowsOf(byRole: $byRole, statusNames: $statusNames, decide: $decide);
 	}//end rowsFor()
@@ -297,18 +300,17 @@ class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 	/**
 	 * The Decide cell per role, from the mandate register.
 	 *
-	 * @param array<string, mixed> $caseType   The case type.
-	 * @param string               $caseTypeId Its id.
-	 * @param array<int, string>   $roles      The roles named in the rights rows.
+	 * @param array{0: string, 1: string, 2: string} $keys  The case type's id, slug and identifier.
+	 * @param array<int, string>                     $roles The roles named in the rights rows.
 	 *
 	 * @return array<string, string> The cell by role.
 	 */
-	private function decideByRole(array $caseType, string $caseTypeId, array $roles): array {
+	private function decideByRole(array $keys, array $roles): array {
 		$cells = [];
 		try {
 			$mandates = $this->forCaseType(
-				mandates: $this->mandates->activeRows(date: new DateTimeImmutable(), context: ['caseType' => $caseTypeId]),
-				keys: [$caseTypeId, (string)($caseType['slug'] ?? ''), (string)($caseType['identifier'] ?? '')]
+				mandates: $this->mandates->activeRows(date: new DateTimeImmutable(), context: ['caseType' => $keys[0]]),
+				keys: $keys
 			);
 			$known = $this->roles->all();
 		} catch (RefusedException $e) {
