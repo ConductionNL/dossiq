@@ -164,39 +164,71 @@ class CaseStatusStore {
 		bool $noWorkflowTemplate,
 		string $actor = '',
 	): array {
+		$move = ['caseId' => $caseId, 'toStatus' => $toStatus, 'fromStatus' => $fromStatus];
+		$move += ['label' => $label, 'comment' => $comment, 'actor' => $actor];
+		$record = $this->saveStatusRecord(move: $move, verdict: ['evaluatedGuards' => $evaluatedGuards, 'noWorkflowTemplate' => $noWorkflowTemplate]);
+		$this->recordMoveEntry(move: $move, record: $record);
+
+		return $record;
+	}//end writeStatusRecord()
+
+	/**
+	 * Save the statusRecord row of a move.
+	 *
+	 * @param array<string, mixed> $move    The move: caseId, toStatus, fromStatus, label, comment, actor.
+	 * @param array<string, mixed> $verdict The evaluatedGuards snapshots and the noWorkflowTemplate flag.
+	 *
+	 * @return array<string, mixed> The written statusRecord.
+	 *
+	 * @throws RuntimeException When OpenRegister or the statusRecord schema is unavailable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function saveStatusRecord(array $move, array $verdict): array {
 		[$objectService, $register, $recordSchema] = $this->statusRecordStore();
 
 		$payload = [
-			'case' => $caseId,
-			'statusType' => $toStatus,
-			'transitionLabel' => $label,
-			'evaluatedGuards' => $evaluatedGuards,
+			'case' => $move['caseId'],
+			'statusType' => $move['toStatus'],
+			'transitionLabel' => $move['label'],
+			'evaluatedGuards' => $verdict['evaluatedGuards'],
 			'dispatchedActions' => [],
-			'noWorkflowTemplate' => $noWorkflowTemplate,
+			'noWorkflowTemplate' => $verdict['noWorkflowTemplate'],
 		];
 
-		$payload = $this->withActor(payload: $payload, actor: $actor);
-		$payload = $this->withGiven(payload: $payload, fields: ['fromStatus' => $fromStatus, 'description' => $comment]);
+		$payload = $this->withActor(payload: $payload, actor: $move['actor']);
+		$given = ['fromStatus' => $move['fromStatus'], 'description' => $move['comment']];
+		$payload = $this->withGiven(payload: $payload, fields: $given);
 
-		$record = $this->toArray(
+		return $this->toArray(
 			value: $objectService->saveObject(
 				object: $payload,
 				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $recordSchema))
 			)
 		);
+	}//end saveStatusRecord()
 
+	/**
+	 * Hand a written move to the timeline.
+	 *
+	 * @param array<string, mixed> $move   The move: caseId, toStatus, fromStatus, label, comment, actor.
+	 * @param array<string, mixed> $record The written statusRecord.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function recordMoveEntry(array $move, array $record): void {
 		$this->moveEntry?->record(
-			caseId: $caseId,
-			toStatus: $toStatus,
-			fromStatus: $fromStatus,
-			label: $label,
-			comment: $comment,
+			caseId: $move['caseId'],
+			toStatus: $move['toStatus'],
+			fromStatus: $move['fromStatus'],
+			label: $move['label'],
+			comment: $move['comment'],
 			record: $record,
-			actor: $actor,
+			actor: $move['actor'],
 		);
-
-		return $record;
-	}//end writeStatusRecord()
+	}//end recordMoveEntry()
 
 	/**
 	 * The object service, register and statusRecord schema.
