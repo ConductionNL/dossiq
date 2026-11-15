@@ -118,7 +118,7 @@ class BeschikkingGenerationService implements BeschikkingGenerationServiceInterf
 			);
 
 			return $this->savedAnswer(
-				bijlageId: $this->attachBijlageToZaak(caseId: $caseId, generated: $generated, outcome: $outcome),
+				bijlageId: $this->attachBijlageToZaak(ask: $ask, generated: $generated),
 				messages: ['Beschikking generated and attached.', 'Beschikking generated, but the bijlage could not be saved.']
 			);
 		} catch (\Throwable $e) {
@@ -226,7 +226,7 @@ class BeschikkingGenerationService implements BeschikkingGenerationServiceInterf
 	 */
 	private function stubAnswer(array $ask, array $messages): array {
 		return $this->savedAnswer(
-			bijlageId: $this->createStubBijlage(caseId: $ask['caseId'], outcome: $ask['outcome'], motivation: $ask['motivation']),
+			bijlageId: $this->createStubBijlage(ask: $ask),
 			messages: $messages
 		);
 	}//end stubAnswer()
@@ -324,25 +324,21 @@ class BeschikkingGenerationService implements BeschikkingGenerationServiceInterf
 	 * Attaches a text-based placeholder bijlage to the vergunningaanvraag
 	 * via ObjectService so that the workflow can continue without a PDF.
 	 *
-	 * @param string $caseId The zaak UUID
-	 * @param string $outcome The decision outcome
-	 * @param string $motivation The motivation text
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask The zaak UUID, the decision outcome and the motivation text.
 	 *
 	 * @return string|null The UUID of the created stub bijlage, or null when it could not be saved
 	 */
-	private function createStubBijlage(string $caseId, string $outcome, string $motivation): ?string {
+	private function createStubBijlage(array $ask): ?string {
 		return $this->storeBijlage(
 			object: [
-				'caseId' => $caseId,
+				'caseId' => $ask['caseId'],
 				'type' => 'beschikking',
-				'outcome' => $outcome,
-				'motivation' => $motivation,
+				'outcome' => $ask['outcome'],
+				'motivation' => $ask['motivation'],
 				'stub' => true,
 				'createdAt' => date('c'),
-				'title' => 'Beschikking ' . ucfirst($outcome) . ' (stub)',
-			],
-			fallback: 'stub-' . $caseId,
-			failure: self::STUB_NOT_SAVED
+				'title' => 'Beschikking ' . ucfirst($ask['outcome']) . ' (stub)',
+			]
 		);
 	}//end createStubBijlage()
 
@@ -355,13 +351,13 @@ class BeschikkingGenerationService implements BeschikkingGenerationServiceInterf
 	 * been keys of that array, so they are kept only as a fallback for a
 	 * caller that hands over an already-flattened shape.
 	 *
-	 * @param string $caseId The zaak UUID
-	 * @param array<string,mixed> $generated The generation envelope from filinq
-	 * @param string $outcome The decision outcome
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask       The zaak UUID and the decision outcome.
+	 * @param array<string,mixed>                                         $generated The generation envelope from filinq
 	 *
 	 * @return string|null The bijlage UUID, or null when it could not be saved
 	 */
-	private function attachBijlageToZaak(string $caseId, array $generated, string $outcome): ?string {
+	private function attachBijlageToZaak(array $ask, array $generated): ?string {
+		$outcome = $ask['outcome'];
 		$output = [];
 		if (is_array($generated['output'] ?? null) === true) {
 			$output = $generated['output'];
@@ -369,29 +365,35 @@ class BeschikkingGenerationService implements BeschikkingGenerationServiceInterf
 
 		return $this->storeBijlage(
 			object: [
-				'caseId' => $caseId,
+				'caseId' => $ask['caseId'],
 				'type' => 'beschikking',
 				'outcome' => $outcome,
 				'fileId' => ($output['fileId'] ?? ($generated['fileId'] ?? '')),
 				'fileName' => ($output['name'] ?? ($generated['fileName'] ?? ('beschikking_' . $outcome . '.pdf'))),
 				'createdAt' => date('c'),
 				'title' => 'Beschikking ' . ucfirst($outcome),
-			],
-			fallback: '',
-			failure: self::ATTACH_NOT_SAVED
+			]
 		);
 	}//end attachBijlageToZaak()
 
 	/**
 	 * Save a bijlage record in the configured register.
 	 *
-	 * @param array<string,mixed> $object   The bijlage record.
-	 * @param string              $fallback The id answered when the store returns none.
-	 * @param string              $failure  The log line for a save that fails.
+	 * A stub answers `stub-<caseId>` when the store returns no id, and logs a failed
+	 * save as a stub; a generated document answers '' and logs it as an attachment.
+	 *
+	 * @param array<string,mixed> $object The bijlage record.
 	 *
 	 * @return string|null The bijlage UUID, or null when it could not be saved
 	 */
-	private function storeBijlage(array $object, string $fallback, string $failure): ?string {
+	private function storeBijlage(array $object): ?string {
+		$fallback = '';
+		$failure = self::ATTACH_NOT_SAVED;
+		if (($object['stub'] ?? false) === true) {
+			$fallback = 'stub-' . $object['caseId'];
+			$failure = self::STUB_NOT_SAVED;
+		}
+
 		try {
 			$objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
 			$register = $this->appConfig->getValueString(
