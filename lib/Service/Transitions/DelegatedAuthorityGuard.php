@@ -122,7 +122,7 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 			return $refusal;
 		}
 
-		return $this->ask(actor: $actor, act: $act, amount: $this->amountOf(config: $config, case: $case));
+		return $this->ask(actor: $actor, asked: ['act' => $act, 'amount' => $this->amountOf(config: $config, case: $case)]);
 	}//end evaluate()
 
 	/**
@@ -213,13 +213,13 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	/**
 	 * Ask decidiq and translate the answer.
 	 *
-	 * @param string     $actor  The acting account.
-	 * @param string     $act    The act key.
-	 * @param float|null $amount The amount in euro.
+	 * @param string                                 $actor The acting account.
+	 * @param array{act: string, amount: float|null} $asked The act key and the amount in euro.
 	 *
 	 * @return GuardResult
 	 */
-	private function ask(string $actor, string $act, ?float $amount): GuardResult {
+	private function ask(string $actor, array $asked): GuardResult {
+		['act' => $act, 'amount' => $amount] = $asked;
 		$check = FleetAppId::getService(
 			container: $this->container,
 			canonical: 'decidiq',
