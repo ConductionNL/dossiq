@@ -150,17 +150,29 @@ class CaseStageDatesService implements CaseStageDatesServiceInterface {
 			return $dates;
 		}
 
-		usort(
-			$statusTypes,
-			static fn (array $left, array $right): int => ((int)($left['order'] ?? 0) <=> (int)($right['order'] ?? 0))
-		);
-		$first = (string)($statusTypes[0]['id'] ?? '');
+		$first = $this->firstStatusId(statusTypes: $statusTypes);
 		if ($first !== '' && isset($dates[$first]) === false) {
 			$dates[$first] = $day;
 		}
 
 		return $dates;
 	}//end withInitialStatus()
+
+	/**
+	 * The id of the status type with the lowest order.
+	 *
+	 * @param array<int, array<string, mixed>> $statusTypes The case type's status types.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private function firstStatusId(array $statusTypes): string {
+		usort(
+			$statusTypes,
+			static fn (array $left, array $right): int => ((int)($left['order'] ?? 0) <=> (int)($right['order'] ?? 0))
+		);
+
+		return (string)($statusTypes[0]['id'] ?? '');
+	}//end firstStatusId()
 
 	/**
 	 * Fold status moves into the first day each status was reached.
