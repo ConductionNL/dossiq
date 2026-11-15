@@ -104,7 +104,7 @@ class TalkConversationBroker {
 		}
 
 		try {
-			return $this->openRoom(broker: $broker, name: $name, moderators: $moderators);
+			return $this->openRoom(broker: $broker, wanted: ['name' => $name, 'moderators' => $moderators]);
 		} catch (Throwable $e) {
 			// A REFUSAL, not a null. Talk being absent and Talk failing to
 			// open a room are different answers, and the caller can only act
@@ -140,15 +140,15 @@ class TalkConversationBroker {
 	 * Create the conversation and answer its id and absolute url.
 	 *
 	 * @param IBroker       $broker     Talk's broker.
-	 * @param string        $name       Room name, shown in Talk.
-	 * @param array<string> $moderators User ids that moderate the room.
+	 * @param array{name: string, moderators: array<string>} $wanted Room name, shown in Talk, and the user ids that
+	 *                                                               moderate the room.
 	 *
 	 * @return array{id: string, url: string}
 	 */
-	private function openRoom(IBroker $broker, string $name, array $moderators): array {
+	private function openRoom(IBroker $broker, array $wanted): array {
 		$room = $broker->createConversation(
-			name: $name,
-			moderators: $this->resolveModerators(moderators: $moderators),
+			name: $wanted['name'],
+			moderators: $this->resolveModerators(moderators: $wanted['moderators']),
 			options: $broker->newConversationOptions(),
 		);
 
