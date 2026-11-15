@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersFlaggedRefusals;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseCollaborationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
@@ -61,6 +62,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
 class CaseFederationController extends Controller {
+	use AnswersFlaggedRefusals;
 
 	/**
 	 * Brute-force throttler action for rejected federation share tokens.
@@ -138,7 +140,7 @@ class CaseFederationController extends Controller {
 	public function createFederatedShare(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		$wanted = $this->requestedShare();
@@ -351,7 +353,7 @@ class CaseFederationController extends Controller {
 	private function shareCaller(string $shareId): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		$caseId = $this->caseSharingService->getCaseIdForFederatedShare($shareId);
