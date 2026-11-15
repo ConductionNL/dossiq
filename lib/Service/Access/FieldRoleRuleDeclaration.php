@@ -58,12 +58,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Service\Support\OrdersRuleBlocks;
+
 /**
  * Reads a case type's per-role field rules and writes them in OpenRegister's shapes.
  *
  * @spec openspec/specs/security-hardening/spec.md
  */
 class FieldRoleRuleDeclaration {
+	use OrdersRuleBlocks;
 
 	/**
 	 * The property the rules are declared under, on the case type.
@@ -454,28 +457,4 @@ class FieldRoleRuleDeclaration {
 
 		return $names;
 	}//end names()
-
-	/**
-	 * The block with its kinds in the order OpenRegister lists them.
-	 *
-	 * Order changes nothing about what is enforced. It makes the block
-	 * DIFFABLE, which is what keeps the projector from rewriting the schema on
-	 * every publish over a difference that is not one.
-	 *
-	 * @param array<string, array<int, array<string, mixed>>> $block The gathered block.
-	 *
-	 * @return array<string, array<int, array<string, mixed>>> The block, ordered.
-	 *
-	 * @spec openspec/specs/security-hardening/spec.md
-	 */
-	private function inPublishedOrder(array $block): array {
-		$ordered = [];
-		foreach (self::RULES as $kind) {
-			if (($block[$kind] ?? []) !== []) {
-				$ordered[$kind] = $block[$kind];
-			}
-		}
-
-		return $ordered;
-	}//end inPublishedOrder()
 }//end class
