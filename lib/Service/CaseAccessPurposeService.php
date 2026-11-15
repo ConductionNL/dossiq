@@ -119,7 +119,8 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 	 * @param array{readerId: string, purpose: string, note: string} $visit  `readerId` the reader's user id; `purpose` one of {@see
 	 *                                                                       self::PURPOSES}; `note` the reader's own words, for `other`.
 	 *
-	 * @return array{recorded: bool, required: bool, roleAdded?: bool} Whether a purpose was required and recorded, and whether it bound the reader to a role.
+	 * @return array{recorded: bool, required: bool, roleAdded?: bool} Whether a purpose was required and recorded,
+	 *                                                                 and whether it bound the reader to a role.
 	 *
 	 * @throws RefusedException When the purpose is invalid, the case cannot be read, or the entry cannot be written.
 	 */
