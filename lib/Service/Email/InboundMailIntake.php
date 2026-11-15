@@ -68,10 +68,6 @@ use Throwable;
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
- *
- * @SuppressWarnings(PHPMD.ExcessiveParameterList) — the ten collaborators are the
- *  ten steps of the intake path, and this is the one class allowed to know all of
- *  them. Bundling them behind a holder would hide which step is missing when one is.
  */
 class InboundMailIntake implements InboundMailIntakeInterface {
 

@@ -31,7 +31,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseType;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeRightsByRoleInterface;
 use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
 use OCA\Dossiq\Service\Access\OrganisationRoles;
@@ -45,8 +44,6 @@ use OCP\IL10N;
  *
  * @spec openspec/changes/case-type-rights-by-role/specs/case-types/spec.md
  * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 
@@ -65,6 +62,13 @@ class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 	private const EDIT_VERBS = ['create', 'update', 'delete', 'handle'];
 
 	/**
+	 * The Decide column: the mandate ceiling of each role.
+	 *
+	 * @var RoleMandateCeilings
+	 */
+	private readonly RoleMandateCeilings $ceilings;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseTypeResolver    $resolver  Reads the case type with its inherited parts.
@@ -76,10 +80,11 @@ class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 	public function __construct(
 		private readonly CaseTypeResolver $resolver,
 		private readonly IL10N $l10n,
-		private readonly MandaatCheckService $mandates,
-		private readonly OrganisationRoles $roles,
+		MandaatCheckService $mandates,
+		OrganisationRoles $roles,
 		private readonly ?TranslatedText $text=null,
 	) {
+		$this->ceilings = new RoleMandateCeilings(mandates: $mandates, roles: $roles, l10n: $l10n);
 	}//end __construct()
 
 	/**
@@ -109,10 +114,7 @@ class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 		$byRole = $this->grantsByRole(matrix: $caseType['rightsMatrix'] ?? []);
 
 		$statusNames = $this->statusNames(caseTypeId: $caseTypeId);
-		$decide = $this->decideByRole(
-			keys: [$caseTypeId, (string)($caseType['slug'] ?? ''), (string)($caseType['identifier'] ?? '')],
-			roles: array_keys($byRole)
-		);
+		$decide = $this->ceilings->byRole(caseType: $caseType, caseTypeId: $caseTypeId, roles: array_keys($byRole));
 
 		return $this->rowsOf(byRole: $byRole, statusNames: $statusNames, decide: $decide);
 	}//end rowsFor()
@@ -296,86 +298,6 @@ class CaseTypeRightsByRole implements CaseTypeRightsByRoleInterface {
 
 		return $text;
 	}//end nameOf()
-
-	/**
-	 * The Decide cell per role, from the mandate register.
-	 *
-	 * @param array{0: string, 1: string, 2: string} $keys  The case type's id, slug and identifier.
-	 * @param array<int, string>                     $roles The roles named in the rights rows.
-	 *
-	 * @return array<string, string> The cell by role.
-	 */
-	private function decideByRole(array $keys, array $roles): array {
-		$cells = [];
-		try {
-			$mandates = $this->forCaseType(
-				mandates: $this->mandates->activeRows(date: new DateTimeImmutable(), context: ['caseType' => $keys[0]]),
-				keys: $keys
-			);
-			$known = $this->roles->all();
-		} catch (RefusedException $e) {
-			foreach ($roles as $role) {
-				$cells[(string)$role] = $this->l10n->t('Unknown');
-			}
-
-			return $cells;
-		}
-
-		foreach ($roles as $role) {
-			$keys = $this->roles->keysOf(role: (string)$role, roles: $known);
-			$held = array_filter($mandates, static fn (array $mandate): bool => in_array((string)($mandate['mandateeRole'] ?? ''), $keys, true));
-			$cells[(string)$role] = $this->ceiling(mandates: array_values($held));
-		}
-
-		return $cells;
-	}//end decideByRole()
-
-	/**
-	 * The mandates that apply to the case type: no case types named, or one of its keys.
-	 *
-	 * @param array<int, array<string, mixed>> $mandates The active mandates.
-	 * @param array<int, string>               $keys     The case type's id, slug and identifier.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function forCaseType(array $mandates, array $keys): array {
-		$keys = array_values(array_filter($keys, static fn (string $key): bool => $key !== ''));
-
-		return array_values(
-			array_filter(
-				$mandates,
-				static function (array $mandate) use ($keys): bool {
-					$caseTypes = (array)($mandate['terms']['caseTypes'] ?? []);
-					return $caseTypes === [] || array_intersect($keys, $caseTypes) !== [];
-				}
-			)
-		);
-	}//end forCaseType()
-
-	/**
-	 * The highest ceiling of a role's mandates: Up to an amount, Unlimited, or No.
-	 *
-	 * @param array<int, array<string, mixed>> $mandates The role's mandates.
-	 *
-	 * @return string
-	 */
-	private function ceiling(array $mandates): string {
-		if ($mandates === []) {
-			return $this->l10n->t('No');
-		}
-
-		$highest = 0;
-		foreach ($mandates as $mandate) {
-			$cents = ($mandate['terms']['plafondCents'] ?? null);
-			if (is_int($cents) === false) {
-				return $this->l10n->t('Unlimited');
-			}
-
-			$highest = max($highest, $cents);
-		}
-
-		return $this->l10n->t('Up to %s', ['€ ' . number_format(intdiv($highest, 100), 0, ',', '.')]);
-	}//end ceiling()
 
 	/**
 	 * What one rights row lets the role do with documents.

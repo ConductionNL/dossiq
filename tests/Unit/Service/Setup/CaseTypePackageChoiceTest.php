@@ -100,6 +100,23 @@ class CaseTypePackageChoiceTest extends TestCase {
 	}//end testOffersValidOnRequestPackagesOnly()
 
 	/**
+	 * An offered package that is already installed is described as installed.
+	 *
+	 * @return void
+	 */
+	public function testAnInstalledPackageIsDescribedAsInstalled(): void {
+		$written = [];
+		$options = $this->choice(catalogue: $this->catalogue(installed: '2.1.0'), config: [], outcome: null, written: $written)->options();
+
+		$this->assertSame(expected: ['none', 'subsidie'], actual: array_column($options, 'id'));
+		$this->assertSame(expected: 'Subsidie', actual: $options[1]['label']);
+		$this->assertSame(expected: 'Installed', actual: $options[1]['description']);
+		$this->assertSame(expected: 'FolderCogOutline', actual: $options[1]['icon']);
+		$this->assertSame(expected: [], actual: $written);
+
+	}//end testAnInstalledPackageIsDescribedAsInstalled()
+
+	/**
 	 * The step is decided by a stored choice or by an installed package.
 	 *
 	 * @return void
