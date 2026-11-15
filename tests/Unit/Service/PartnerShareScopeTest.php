@@ -131,6 +131,7 @@ final class PssShareStore {
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\CaseShare\ShareStore
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */

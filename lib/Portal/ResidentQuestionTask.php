@@ -35,7 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\ResidentQuestionTaskInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
  */
-class ResidentQuestionTask {
+class ResidentQuestionTask implements ResidentQuestionTaskInterface {
 
 	/**
 	 * OpenRegister's task service, by name.
@@ -67,12 +68,12 @@ class ResidentQuestionTask {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The container OpenRegister's task service is resolved from.
-	 * @param CaseDateNormaliser $dates     Reads a due date as a day in the administrator's time zone.
+	 * @param CaseDateNormaliserInterface $dates     Reads a due date as a day in the administrator's time zone.
 	 * @param LoggerInterface    $logger    Structured logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -89,34 +90,42 @@ class ResidentQuestionTask {
 	 * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
 	 */
 	public function raise(array $question, string $actor): ?string {
-		$subject = trim((string)($question['portalSubject'] ?? ''));
-		$case = trim((string)($question['case'] ?? ''));
-		$id = trim((string)($question['id'] ?? ''));
-		$title = trim((string)($question['title'] ?? ''));
-		if ($subject === '' || $case === '' || $id === '' || $title === '') {
+		$asked = new ResidentQuestion(question: $question);
+		if ($asked->isComplete() === false) {
 			return null;
 		}
 
-		try {
-			$task = $this->container->get(self::TASK_SERVICE)->import(
-				data: $this->taskData(question: $question, subject: $subject, case: $case, id: $id, title: $title),
-				actor: $actor
-			);
-			$uuid = trim((string)$task->getUuid());
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the question to the resident stands, but its portal task could not be raised',
-				['question' => $id, 'case' => $case, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
-
-		if ($uuid === '') {
+		$uuid = $this->importTask(asked: $asked, actor: $actor);
+		if ($uuid === null || $uuid === '') {
 			return null;
 		}
 
 		return $uuid;
 	}//end raise()
+
+	/**
+	 * Have OpenRegister write the task, logging a failure.
+	 *
+	 * @param ResidentQuestion $asked The complete question.
+	 * @param string           $actor Who asked.
+	 *
+	 * @return string|null The task's trimmed uuid, or null when it could not be written.
+	 */
+	private function importTask(ResidentQuestion $asked, string $actor): ?string {
+		try {
+			$task = $this->container->get(self::TASK_SERVICE)->import(
+				data: $this->taskData(asked: $asked),
+				actor: $actor
+			);
+			return trim((string)$task->getUuid());
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the question to the resident stands, but its portal task could not be raised',
+				['question' => $asked->id, 'case' => $asked->case, 'error' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end importTask()
 
 	/**
 	 * Close the task of a question that is settled.
@@ -151,34 +160,42 @@ class ResidentQuestionTask {
 	/**
 	 * The external task OpenRegister writes for a question.
 	 *
-	 * @param array<string, mixed> $question The question.
-	 * @param string               $subject  The case's portal subject.
-	 * @param string               $case     The case uuid.
-	 * @param string               $id       The question's id.
-	 * @param string               $title    The task title.
+	 * @param ResidentQuestion $asked The complete question.
 	 *
 	 * @return array<string, mixed> The task fields.
 	 */
-	private function taskData(array $question, string $subject, string $case, string $id, string $title): array {
-		$party = self::PARTY_PREFIX . $subject;
+	private function taskData(ResidentQuestion $asked): array {
+		$party = self::PARTY_PREFIX . $asked->subject;
 
 		return [
-			'title' => $title,
-			'description' => $this->description(question: $question),
+			'title' => $asked->title,
+			'description' => $this->description(question: $asked->question),
 			'state' => 'active',
 			'performerType' => 'external',
 			'priority' => 'normal',
 			'assignee' => $party,
-			'dueAt' => $this->dueAt(date: (string)($question['due'] ?? '')),
-			'objectUuid' => $case,
-			'metadata' => [
-				'source' => (string)($question['source'] ?? ''),
-				'question' => $id,
-				'case' => $case,
-				'partyReference' => $party,
-			],
+			'dueAt' => $this->dueAt(date: (string)($asked->question['due'] ?? '')),
+			'objectUuid' => $asked->case,
+			'metadata' => $this->taskMetadata(asked: $asked, party: $party),
 		];
 	}//end taskData()
+
+	/**
+	 * What the task records about where it came from: the source, question, case and party.
+	 *
+	 * @param ResidentQuestion $asked The complete question.
+	 * @param string           $party The resident's party reference.
+	 *
+	 * @return array<string, string> The metadata.
+	 */
+	private function taskMetadata(ResidentQuestion $asked, string $party): array {
+		return [
+			'source' => (string)($asked->question['source'] ?? ''),
+			'question' => $asked->id,
+			'case' => $asked->case,
+			'partyReference' => $party,
+		];
+	}//end taskMetadata()
 
 	/**
 	 * What the resident reads on the task: what is asked and by when.

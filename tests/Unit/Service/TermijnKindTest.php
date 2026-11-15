@@ -48,6 +48,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
  */
 class TermijnKindTest extends TestCase {
 	use MakesCaseDateNormaliser;

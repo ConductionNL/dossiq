@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentApprovalClearanceInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
-class DocumentApprovalClearance {
+class DocumentApprovalClearance implements DocumentApprovalClearanceInterface {
 
 	/**
 	 * The clearance answer for a document nobody routed, and for an instance
@@ -100,45 +101,56 @@ class DocumentApprovalClearance {
 			return self::NOT_ROUTED;
 		}
 
-		$routeService = FleetAppId::getService(
-			container: $this->container,
-			canonical: 'decidiq',
-			relative: 'Service\\ApprovalRouteService'
-		);
-		$clearanceService = FleetAppId::getService(
-			container: $this->container,
-			canonical: 'decidiq',
-			relative: 'Service\\SubjectClearanceService'
-		);
-
-		if ($routeService === null || $clearanceService === null) {
+		$services = $this->decidiq();
+		if ($services === null) {
 			// No decidiq on this instance. Every document is unrouted, which
 			// is the state every document was in before this change.
 			return self::NOT_ROUTED;
 		}
 
+		return $this->askDecidiq(services: $services, subject: ['app' => 'dossiq', 'document' => $documentId, 'schema' => $schema]);
+	}//end forDocument()
+
+	/**
+	 * Decidiq's route and clearance services, null when either is not on this instance.
+	 *
+	 * @return array{routes: object, clearance: object}|null The two services.
+	 */
+	private function decidiq(): ?array {
+		$routeService     = FleetAppId::getService(container: $this->container, canonical: 'decidiq', relative: 'Service\\ApprovalRouteService');
+		$clearanceService = FleetAppId::getService(container: $this->container, canonical: 'decidiq', relative: 'Service\\SubjectClearanceService');
+		if ($routeService === null || $clearanceService === null) {
+			return null;
+		}
+
+		return ['routes' => $routeService, 'clearance' => $clearanceService];
+	}//end decidiq()
+
+	/**
+	 * Ask decidiq for the document's routes and their clearance.
+	 *
+	 * @param array{routes: object, clearance: object}               $services Decidiq's two services.
+	 * @param array{app: string, document: string, schema: string} $subject  The document, as it is logged.
+	 *
+	 * @return array{routed: bool, cleared: bool, waitingOn: array<int, array<string, mixed>>} The answer.
+	 */
+	private function askDecidiq(array $services, array $subject): array {
 		try {
-			$routes = $routeService->routesWithStagesFor(subject: $documentId);
+			$routes = $services['routes']->routesWithStagesFor(subject: $subject['document']);
 			if (is_array($routes) === false || $routes === []) {
 				return self::NOT_ROUTED;
 			}
 
-			$clearance = $clearanceService->clearanceFor(routes: $routes);
+			$clearance = $services['clearance']->clearanceFor(routes: $routes);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq could not read the approval clearance of document ' . $documentId . ': ' . $e->getMessage(),
-				['app' => 'dossiq', 'document' => $documentId, 'schema' => $schema]
-			);
+			$message = 'Dossiq could not read the approval clearance of document ' . $subject['document'] . ': ' . $e->getMessage();
+			$this->logger->warning($message, $subject);
 
 			return self::NOT_ROUTED;
 		}
 
-		return [
-			'routed' => true,
-			'cleared' => (($clearance['cleared'] ?? false) === true),
-			'waitingOn' => (array)($clearance['waitingOn'] ?? []),
-		];
-	}//end forDocument()
+		return ['routed' => true, 'cleared' => (($clearance['cleared'] ?? false) === true), 'waitingOn' => (array)($clearance['waitingOn'] ?? [])];
+	}//end askDecidiq()
 
 	/**
 	 * The sentence a refusal carries: the route and the step it waits on.
@@ -166,24 +178,7 @@ class DocumentApprovalClearance {
 				continue;
 			}
 
-			$route = trim((string)($entry['routeName'] ?? ($entry['route'] ?? '')));
-			$step = trim((string)($entry['stageName'] ?? ''));
-			$actor = trim((string)($entry['actor'] ?? ''));
-
-			$part = $route;
-			if ($part === '') {
-				$part = 'an approval route';
-			}
-
-			if ($step !== '') {
-				$part .= ', step "' . $step . '"';
-			}
-
-			if ($actor !== '') {
-				$part .= ', waiting on ' . $actor;
-			}
-
-			$parts[] = $part;
+			$parts[] = $this->waitingPart(entry: $entry);
 		}
 
 		if ($parts === []) {
@@ -192,4 +187,34 @@ class DocumentApprovalClearance {
 
 		return implode('; ', $parts);
 	}//end describe()
+
+	/**
+	 * One waiting entry as a phrase: the route, the step and who it waits on.
+	 *
+	 * @param array<string, mixed> $entry The waiting entry.
+	 *
+	 * @return string The phrase.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
+	 */
+	private function waitingPart(array $entry): string {
+		$route = trim((string)($entry['routeName'] ?? ($entry['route'] ?? '')));
+		$step = trim((string)($entry['stageName'] ?? ''));
+		$actor = trim((string)($entry['actor'] ?? ''));
+
+		$part = $route;
+		if ($part === '') {
+			$part = 'an approval route';
+		}
+
+		if ($step !== '') {
+			$part .= ', step "' . $step . '"';
+		}
+
+		if ($actor !== '') {
+			$part .= ', waiting on ' . $actor;
+		}
+
+		return $part;
+	}//end waitingPart()
 }//end class

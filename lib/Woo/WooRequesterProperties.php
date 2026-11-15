@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -48,11 +48,11 @@ class WooRequesterProperties {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the propertyDefinition schema.
+	 * @param SettingsServiceInterface $settingsService Names the propertyDefinition schema.
 	 * @param LoggerInterface $logger          Says when the definitions cannot be read.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -79,8 +79,20 @@ class WooRequesterProperties {
 			return [];
 		}
 
-		$definitions = $this->definitions(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
+		$definitions = $this->definitions(store: ['objectService' => $objectService, 'register' => $register], caseTypeId: $caseTypeId);
 
+		return $this->entriesFor(answers: $answers, definitions: $definitions);
+	}//end forCaseType()
+
+	/**
+	 * One property entry per answer the case type defines a property for.
+	 *
+	 * @param array<string, mixed>  $answers     The requester's answers, by field.
+	 * @param array<string, string> $definitions The property definition ids, by name.
+	 *
+	 * @return array<int, array{propertyDefinition: string, name: string, value: mixed}> The entries.
+	 */
+	private function entriesFor(array $answers, array $definitions): array {
 		$entries = [];
 		foreach ($answers as $field => $value) {
 			if (isset($definitions[$field]) === false) {
@@ -91,7 +103,7 @@ class WooRequesterProperties {
 		}
 
 		return $entries;
-	}//end forCaseType()
+	}//end entriesFor()
 
 	/**
 	 * The requester answers that were given, by field name.
@@ -115,25 +127,35 @@ class WooRequesterProperties {
 	/**
 	 * The case type's property definitions, as id by name.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The dossiq register.
-	 * @param string $caseTypeId    The case type.
+	 * @param array{objectService: object, register: string} $store      The OpenRegister ObjectService and the dossiq register.
+	 * @param string                                         $caseTypeId The case type.
 	 *
 	 * @return array<string, string> The definition id per name.
 	 */
-	private function definitions(object $objectService, string $register, string $caseTypeId): array {
+	private function definitions(array $store, string $caseTypeId): array {
 		$schema = (string)$this->settingsService->getConfigValue('property_definition_schema');
 		if ($schema === '') {
 			return [];
 		}
 
+		$rows = $this->readDefinitionRows(where: $store + ['schema' => $schema], caseTypeId: $caseTypeId);
+
+		return $this->idsByName(rows: $rows);
+	}//end definitions()
+
+	/**
+	 * Read the case type's property definition rows, or none when they cannot be read.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $where      The OpenRegister ObjectService,
+	 *                                                                        the dossiq register and the property
+	 *                                                                        definition schema.
+	 * @param string                                                          $caseTypeId The case type.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, or [] when unreadable.
+	 */
+	private function readDefinitionRows(array $where, string $caseTypeId): array {
 		try {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseTypeId],
-			);
+			return $this->definitionRows(where: $where, caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'WooRequestIntake: the case type property definitions could not be read, so the requester details are kept on the request only',
@@ -141,7 +163,35 @@ class WooRequesterProperties {
 			);
 			return [];
 		}
+	}//end readDefinitionRows()
 
+	/**
+	 * Read the case type's property definition rows.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $where      The OpenRegister ObjectService,
+	 *                                                                        the dossiq register and the property
+	 *                                                                        definition schema.
+	 * @param string                                                          $caseTypeId The case type.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function definitionRows(array $where, string $caseTypeId): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $where['objectService'],
+			register: $where['register'],
+			schema: $where['schema'],
+			filters: ['caseType' => $caseTypeId],
+		);
+	}//end definitionRows()
+
+	/**
+	 * The definition id per name, for the rows that have both.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The definition rows.
+	 *
+	 * @return array<string, string> The definition id per name.
+	 */
+	private function idsByName(array $rows): array {
 		$definitions = [];
 		foreach ($rows as $row) {
 			$name = trim((string)($row['name'] ?? ''));
@@ -152,7 +202,7 @@ class WooRequesterProperties {
 		}
 
 		return $definitions;
-	}//end definitions()
+	}//end idsByName()
 
 	/**
 	 * One row's id, wherever the store put it.

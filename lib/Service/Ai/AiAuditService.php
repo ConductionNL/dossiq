@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
 
@@ -37,12 +37,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
+use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
+
 /**
  * Records and reads the AI oversight audit trail.
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
  */
-class AiAuditService {
+class AiAuditService implements AiAuditServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -74,7 +76,7 @@ class AiAuditService {
 	 *
 	 * @return array
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function recordUserAction(
 		string $caseId,
@@ -86,16 +88,11 @@ class AiAuditService {
 		string $userId,
 		array $context = [],
 	): array {
-		$model = (string)($context['model'] ?? '');
-		if ($model === '') {
-			$model = $this->modelIdentity->identifier();
-		}
-
 		$entry = [
 			'type' => $type,
 			'action' => $userAction,
 			'caseId' => $caseId,
-			'model' => $model,
+			'model' => $this->modelOf(context: $context),
 			'suggestion' => $suggestion,
 			'userAction' => $userAction,
 			'actualValue' => ($actualValue ?? []),
@@ -104,13 +101,18 @@ class AiAuditService {
 			'timestamp' => date('c'),
 		];
 
-		foreach (['unusedBecause', 'prompt', 'documentId'] as $key) {
-			if ((string)($context[$key] ?? '') !== '') {
-				$entry[$key] = (string)$context[$key];
-			}
-		}
+		return $this->recorded(entry: $this->withContextKeys(entry: $entry, context: $context), context: $context);
+	}//end recordUserAction()
 
-
+	/**
+	 * Record the entry locally and hand it to hermiq's AI oversight.
+	 *
+	 * @param array<string, mixed>  $entry   The audit entry, with its context keys.
+	 * @param array<string, string> $context The caller's context.
+	 *
+	 * @return array
+	 */
+	private function recorded(array $entry, array $context): array {
 		$this->recordAuditEntry(entry: $entry);
 
 		// Hermiq owns AI oversight (EU AI Act Art. 14); this is the moment the
@@ -122,7 +124,45 @@ class AiAuditService {
 		$delegated = $this->oversight->delegate(entry: $this->withSuggestionRef(entry: $entry, context: $context));
 
 		return ['success' => true, 'delegated' => $delegated];
-	}//end recordUserAction()
+	}//end recorded()
+
+	/**
+	 * The model the caller named, else this instance's own model identifier.
+	 *
+	 * @param array<string, string> $context The caller's context.
+	 *
+	 * @return string The model identifier.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function modelOf(array $context): string {
+		$model = (string)($context['model'] ?? '');
+		if ($model === '') {
+			$model = $this->modelIdentity->identifier();
+		}
+
+		return $model;
+	}//end modelOf()
+
+	/**
+	 * The entry with the non-empty `unusedBecause`, `prompt` and `documentId` of the context.
+	 *
+	 * @param array<string, mixed>  $entry   The audit entry.
+	 * @param array<string, string> $context The caller's context.
+	 *
+	 * @return array<string, mixed> The entry.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function withContextKeys(array $entry, array $context): array {
+		foreach (['unusedBecause', 'prompt', 'documentId'] as $key) {
+			if ((string)($context[$key] ?? '') !== '') {
+				$entry[$key] = (string)$context[$key];
+			}
+		}
+
+		return $entry;
+	}//end withContextKeys()
 
 	/**
 	 * Add the reference the surface gave the suggestion, for hermiq only.
@@ -159,7 +199,7 @@ class AiAuditService {
 	 *
 	 * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.1
 	 */
 	public function listAuditEntries(array $filters = [], int $limit = 50, int $offset = 0): array {
 		return $this->audit->list(filters: $filters, limit: $limit, offset: $offset);

@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
  */
 
 declare(strict_types=1);
@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\MandaatCheckServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -46,7 +47,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class MandaatCheckService {
+class MandaatCheckService implements MandaatCheckServiceInterface {
 	use SearchesObjects;
 
 	public const REDEN_NIET_BEVOEGD = 'non_competent';
@@ -82,8 +83,8 @@ class MandaatCheckService {
 	 *
 	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
 	 */
 	public function isAuthorized(
@@ -93,26 +94,39 @@ class MandaatCheckService {
 		array $caseProperties = [],
 		?DateTimeImmutable $decisionDate = null,
 	): array {
-		$decisionDate = ($decisionDate ?? new DateTimeImmutable());
+		$check = new MandateCheck();
+		$check->userId = $userId;
+		$check->decisionType = $decisionType;
+		$check->caseId = $caseId;
+		$check->caseProperties = $caseProperties;
+		$check->decisionDate = ($decisionDate ?? new DateTimeImmutable());
 
-		// Belangenconflict check (REQ-MANDAAT-006). NOT optional at runtime: a
-		// null conflict service used to skip the check entirely, which is the
-		// same fail-open defect class as the check itself returning "no
-		// conflict" unconditionally. An unavailable check is indeterminate, and
-		// indeterminate denies.
-		if ($this->conflictService === null) {
-			$this->logger->warning(
-				'Dossiq MandaatCheckService: no conflict-of-interest service bound — denying',
-				['userId' => $userId, 'caseId' => $caseId]
-			);
-			return [
-				'authorized' => false,
-				'reason' => self::REDEN_BELANGENCONFLICT,
-				'conflictReason' => ConflictOfInterestService::REASON_IDENTITY_INDETERMINATE,
-			];
+		$conflictRefusal = $this->conflictRefusal(check: $check);
+		if ($conflictRefusal !== null) {
+			return $conflictRefusal;
 		}
 
-		$conflict = $this->conflictService->checkConflict($userId, $caseId, $caseProperties);
+		return $this->mandateVerdict(check: $check);
+	}//end isAuthorized()
+
+	/**
+	 * The belangenconflict refusal (REQ-MANDAAT-006), or null when there is no conflict.
+	 *
+	 * NOT optional at runtime: a null conflict service used to skip the check
+	 * entirely, which is the same fail-open defect class as the check itself
+	 * returning "no conflict" unconditionally. An unavailable check is
+	 * indeterminate, and indeterminate denies.
+	 *
+	 * @param MandateCheck $check The check; it then carries the relation step's answer.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function conflictRefusal(MandateCheck $check): ?array {
+		if ($this->conflictService === null) {
+			return $this->unboundConflictRefusal(check: $check);
+		}
+
+		$conflict = $this->conflictService->checkConflict($check->userId, $check->caseId, $check->caseProperties);
 		if ($conflict['conflict'] === true) {
 			return [
 				'authorized' => false,
@@ -124,15 +138,46 @@ class MandaatCheckService {
 		// Whether the family relation step ran travels with every verdict
 		// below, so a decision made without it does not read like one made
 		// with it.
-		$relation = array_intersect_key($conflict, ['relationCheck' => true, 'relationCheckReason' => true]);
+		$check->relation = array_intersect_key($conflict, ['relationCheck' => true, 'relationCheckReason' => true]);
 
-		$role = $this->resolveUserRole(userId: $userId, date: $decisionDate);
+		return null;
+	}//end conflictRefusal()
+
+	/**
+	 * The refusal when no conflict-of-interest service is bound: indeterminate denies.
+	 *
+	 * @param MandateCheck $check The check.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function unboundConflictRefusal(MandateCheck $check): array {
+		$this->logger->warning(
+			'Dossiq MandaatCheckService: no conflict-of-interest service bound — denying',
+			['userId' => $check->userId, 'caseId' => $check->caseId]
+		);
+
+		return [
+			'authorized' => false,
+			'reason' => self::REDEN_BELANGENCONFLICT,
+			'conflictReason' => ConflictOfInterestService::REASON_IDENTITY_INDETERMINATE,
+		];
+	}//end unboundConflictRefusal()
+
+	/**
+	 * The verdict of the user's role against the mandates that apply.
+	 *
+	 * @param MandateCheck $check The check, past the conflict step.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function mandateVerdict(MandateCheck $check): array {
+		$role = $this->resolveUserRole(userId: $check->userId, date: $check->decisionDate);
 		if ($role === null) {
-			return (['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD] + $relation);
+			return (['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD] + $check->relation);
 		}
 
-		$caseType = (string)($caseProperties['caseType'] ?? '');
-		$mandaten = $this->getApplicableMandaten(decisionType: $decisionType, caseType: $caseType, date: $decisionDate);
+		$caseType = (string)($check->caseProperties['caseType'] ?? '');
+		$mandaten = $this->getApplicableMandaten(decisionType: $check->decisionType, caseType: $caseType, date: $check->decisionDate);
 
 		$relevant = array_values(
 			array_filter(
@@ -142,20 +187,31 @@ class MandaatCheckService {
 		);
 
 		if (count($relevant) === 0) {
-			return (['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD] + $relation);
+			return (['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD] + $check->relation);
 		}
 
-		// Pick the first mandaat whose voorwaarden pass; surface the most-specific
-		// failure reason when none pass.
+		return $this->firstPassingMandate(check: $check, relevant: $relevant);
+	}//end mandateVerdict()
+
+	/**
+	 * Pick the first mandaat whose voorwaarden pass; surface the most-specific
+	 * failure reason when none pass.
+	 *
+	 * @param MandateCheck                     $check    The check.
+	 * @param array<int, array<string, mixed>> $relevant The applicable mandates of the user's role.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function firstPassingMandate(MandateCheck $check, array $relevant): array {
 		$lastFailure = ['reason' => self::REDEN_NIET_BEVOEGD, 'failedConditions' => []];
 		foreach ($relevant as $m) {
-			$eval = $this->evaluateConditions(mandate: $m, caseProperties: $caseProperties);
+			$eval = $this->evaluateConditions(mandate: $m, caseProperties: $check->caseProperties);
 			if ($eval['passed'] === true) {
 				return ([
 					'authorized' => true,
 					'mandaatId' => (string)($m['id'] ?? ''),
 					'reason' => null,
-				] + $relation);
+				] + $check->relation);
 			}
 
 			$lastFailure = [
@@ -168,8 +224,8 @@ class MandaatCheckService {
 			'authorized' => false,
 			'reason' => $lastFailure['reason'],
 			'failedConditions' => $lastFailure['failedConditions'],
-		] + $relation);
-	}//end isAuthorized()
+		] + $check->relation);
+	}//end firstPassingMandate()
 
 	/**
 	 * Get the applicable mandaten for a decision-type + case-type pair,
@@ -183,13 +239,14 @@ class MandaatCheckService {
 	 *
 	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function getApplicableMandaten(string $decisionType, string $caseType, ?DateTimeImmutable $date = null): array {
 		$out = [];
-		foreach ($this->activeRows(date: ($date ?? new DateTimeImmutable()), context: ['decisionType' => $decisionType, 'caseType' => $caseType]) as $row) {
-			if ($this->matchesTypeTerms(row: $row, decisionType: $decisionType, caseType: $caseType) === false) {
+		$context = ['decisionType' => $decisionType, 'caseType' => $caseType];
+		foreach ($this->activeRows(date: ($date ?? new DateTimeImmutable()), context: $context) as $row) {
+			if ($this->matchesTypeTerms(row: $row, request: $context) === false) {
 				continue;
 			}
 
@@ -215,15 +272,160 @@ class MandaatCheckService {
 	 */
 	public function activeRows(DateTimeImmutable $date, array $context): array {
 		$dateStr = $date->format('Y-m-d');
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->storeFor(schemaKey: 'mandaat_schema');
+		if ($store === null) {
 			return [];
 		}
 
+		return array_values(
+			array_filter(
+				$this->readActiveMandates(store: $store, context: $context),
+				fn (array $row): bool => $this->isRowTemporallyValid(row: $row, dateStr: $dateStr)
+			)
+		);
+	}//end activeRows()
+
+	/**
+	 * Whether an organisation holds a mandate that is active on the date.
+	 *
+	 * Active means status active and a validity window covering the date. The
+	 * register is read across organisations, because the question is asked
+	 * about a tenant from the admin's tenant page; only the yes or no leaves
+	 * this method. An unreadable register answers no.
+	 *
+	 * @param string            $organisation The organisation UUID.
+	 * @param DateTimeImmutable $date         The date.
+	 *
+	 * @return bool True when the organisation has an active mandate.
+	 *
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
+	 */
+	public function hasActiveMandateFor(string $organisation, DateTimeImmutable $date): bool {
+		if (trim($organisation) === '') {
+			return false;
+		}
+
+		$store = $this->storeFor(schemaKey: 'mandaat_schema');
+		if ($store === null) {
+			return false;
+		}
+
+		$rows = $this->activeMandateRows(store: $store, organisation: $organisation);
+		if ($rows === false) {
+			return false;
+		}
+
+		$dateStr = $date->format('Y-m-d');
+
+		return $this->anyActiveFor(rows: $rows, organisation: $organisation, dateStr: $dateStr);
+	}//end hasActiveMandateFor()
+
+	/**
+	 * The active mandate rows across organisations.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store        The ObjectService, the register id and the mandate schema id.
+	 * @param string                                 $organisation The organisation UUID, for the log.
+	 *
+	 * @return array<int, array<string, mixed>>|false The rows, or false when the register could not be read.
+	 *
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
+	 */
+	private function activeMandateRows(array $store, string $organisation): array|false {
+		[$objectService, $register, $schema] = $store;
 		try {
-			$rows = $this->searchObjectsAsArrays(
+			$rows = $this->searchObjectsAsArraysUnscoped(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['status' => 'active']
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq MandaatCheckService: mandate register could not be read for an organisation',
+				['organisation' => $organisation, 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+
+		return $rows;
+	}//end activeMandateRows()
+
+	/**
+	 * Whether any row is an active mandate of the organisation, valid on the date.
+	 *
+	 * @param array<int, array<string, mixed>> $rows         The mandate rows.
+	 * @param string                           $organisation The organisation UUID.
+	 * @param string                           $dateStr      The date, `Y-m-d`.
+	 *
+	 * @return bool True when one is.
+	 *
+	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
+	 */
+	private function anyActiveFor(array $rows, string $organisation, string $dateStr): bool {
+		foreach ($rows as $row) {
+			if ((string)($row['status'] ?? '') === 'active'
+				&& self::organisationOf(row: $row) === $organisation
+				&& $this->isRowTemporallyValid(row: $row, dateStr: $dateStr) === true
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end anyActiveFor()
+
+	/**
+	 * The organisation that owns a row: its `@self` organisation, else its own field.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The organisation UUID, or ''.
+	 */
+	private static function organisationOf(array $row): string {
+		$organisation = ($row['@self']['organisation'] ?? ($row['organisation'] ?? ''));
+		if (is_array($organisation) === true) {
+			$organisation = ($organisation['uuid'] ?? ($organisation['id'] ?? ''));
+		}
+
+		if (is_scalar($organisation) === false) {
+			return '';
+		}
+
+		return (string)$organisation;
+	}//end organisationOf()
+
+	/**
+	 * The object service, the register and one schema, or null when any is missing.
+	 *
+	 * @param string $schemaKey The config key of the schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function storeFor(string $schemaKey): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue($schemaKey);
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end storeFor()
+
+	/**
+	 * The active mandate rows; an unreadable register refuses as indeterminate.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store   The object service, register and mandate schema.
+	 * @param array<string, mixed>                   $context What is being decided, for the log.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @throws RefusedException When the mandate register cannot be read.
+	 */
+	private function readActiveMandates(array $store, array $context): array {
+		[$objectService, $register, $schema] = $store;
+		try {
+			return $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
@@ -244,14 +446,7 @@ class MandaatCheckService {
 				previous: $e,
 			);
 		}//end try
-
-		return array_values(
-			array_filter(
-				$rows,
-				fn (array $row): bool => $this->isRowTemporallyValid(row: $row, dateStr: $dateStr)
-			)
-		);
-	}//end activeRows()
+	}//end readActiveMandates()
 
 	/**
 	 * Check whether a row's validFrom/validUntil window covers the given date.
@@ -281,13 +476,14 @@ class MandaatCheckService {
 	 * An empty list means "no restriction"; an empty case type skips the
 	 * case-type filter entirely.
 	 *
-	 * @param array<string, mixed> $row Mandaat row.
-	 * @param string $decisionType Decision type slug.
-	 * @param string $caseType Case type slug (may be empty).
+	 * @param array<string, mixed>                          $row     Mandaat row.
+	 * @param array{decisionType: string, caseType: string} $request The decision type slug and the case type slug (may be empty).
 	 *
 	 * @return bool True when the mandaat applies to the pair.
 	 */
-	private function matchesTypeTerms(array $row, string $decisionType, string $caseType): bool {
+	private function matchesTypeTerms(array $row, array $request): bool {
+		$decisionType = $request['decisionType'];
+		$caseType = $request['caseType'];
 		$voorw = (array)($row['terms'] ?? []);
 		$decTypes = (array)($voorw['decisionTypes'] ?? []);
 		if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
@@ -318,23 +514,50 @@ class MandaatCheckService {
 	 *
 	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-08-user-ui/tasks.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function getApplicableForUser(string $userId, string $caseType = '', string $decisionType = ''): array {
 		$date = new DateTimeImmutable();
-		$role = $this->resolveUserRole(userId: $userId, date: $date);
-		if ($role === null) {
-			return [];
-		}
-
-		$roleId = (string)($role['roleId'] ?? '');
+		$roleId = $this->roleIdOf(userId: $userId, date: $date);
 		if ($roleId === '') {
 			return [];
 		}
 
-		$rows = $this->getApplicableMandaten(decisionType: $decisionType, caseType: $caseType, date: $date);
+		return $this->forRole(
+			rows: $this->getApplicableMandaten(decisionType: $decisionType, caseType: $caseType, date: $date),
+			roleId: $roleId
+		);
+	}//end getApplicableForUser()
 
+	/**
+	 * The id of the user's active role on the date, or '' when they hold none.
+	 *
+	 * @param string            $userId The user.
+	 * @param DateTimeImmutable $date   The date.
+	 *
+	 * @return string The role id, or ''.
+	 */
+	private function roleIdOf(string $userId, DateTimeImmutable $date): string {
+		$role = $this->resolveUserRole(userId: $userId, date: $date);
+		if ($role === null) {
+			return '';
+		}
+
+		return (string)($role['roleId'] ?? '');
+	}//end roleIdOf()
+
+	/**
+	 * The mandates a role may use: those given to the role, and those given to no role.
+	 *
+	 * Each carries `unilateral`: whether it was given to this role.
+	 *
+	 * @param array<int, array<string, mixed>> $rows   The applicable mandates.
+	 * @param string                           $roleId The role id.
+	 *
+	 * @return array<int, array<string, mixed>> The mandates.
+	 */
+	private function forRole(array $rows, string $roleId): array {
 		$out = [];
 		foreach ($rows as $row) {
 			$mandateRoleId = (string)($row['mandateeRole'] ?? '');
@@ -347,7 +570,7 @@ class MandaatCheckService {
 		}
 
 		return $out;
-	}//end getApplicableForUser()
+	}//end forRole()
 
 	/**
 	 * Resolve the user's *primary* active role at the given date.
@@ -359,16 +582,36 @@ class MandaatCheckService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
 	 */
 	public function resolveUserRole(string $userId, DateTimeImmutable $date): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('medewerker_rol_toewijzing_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$rows = $this->roleAssignmentsOf(userId: $userId);
+		if ($rows === null) {
 			return null;
 		}
 
+		$active = $this->validOn(rows: $rows, dateStr: $date->format('Y-m-d'));
+		if (count($active) === 0) {
+			return null;
+		}
+
+		return $this->firstByAllocation(active: $active);
+	}//end resolveUserRole()
+
+	/**
+	 * The user's role assignments; a failed read is logged and answers none (fail closed).
+	 *
+	 * @param string $userId The user.
+	 *
+	 * @return array<int, array<string, mixed>>|null The assignments, or null without a store.
+	 */
+	private function roleAssignmentsOf(string $userId): ?array {
+		$store = $this->storeFor(schemaKey: 'medewerker_rol_toewijzing_schema');
+		if ($store === null) {
+			return null;
+		}
+
+		[$objectService, $register, $schema] = $store;
 		try {
 			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['userId' => $userId]);
 		} catch (\Throwable $e) {
@@ -380,7 +623,18 @@ class MandaatCheckService {
 			$rows = [];
 		}
 
-		$dateStr = $date->format('Y-m-d');
+		return $rows;
+	}//end roleAssignmentsOf()
+
+	/**
+	 * The rows valid on the day.
+	 *
+	 * @param array<int, array<string, mixed>> $rows    The rows.
+	 * @param string                           $dateStr The day (Y-m-d).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function validOn(array $rows, string $dateStr): array {
 		$active = [];
 		foreach ($rows as $row) {
 			if ($this->isRowTemporallyValid(row: $row, dateStr: $dateStr) === false) {
@@ -390,11 +644,17 @@ class MandaatCheckService {
 			$active[] = $row;
 		}
 
-		if (count($active) === 0) {
-			return null;
-		}
+		return $active;
+	}//end validOn()
 
-		// Sort: primair first, then waarnemer, then tijdelijk.
+	/**
+	 * The assignment that counts: primair first, then waarnemer, then tijdelijk.
+	 *
+	 * @param array<int, array<string, mixed>> $active The valid assignments, at least one.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function firstByAllocation(array $active): array {
 		$order = ['primair' => 0, 'observer' => 1, 'tijdelijk' => 2];
 		usort(
 			$active,
@@ -403,7 +663,7 @@ class MandaatCheckService {
 		);
 
 		return $active[0];
-	}//end resolveUserRole()
+	}//end firstByAllocation()
 
 	/**
 	 * Evaluate voorwaarden (plafond, subdelegatie) against the case properties.
@@ -413,7 +673,7 @@ class MandaatCheckService {
 	 *
 	 * @return array{passed:bool, reason:string, failedConditions:array<int,string>}
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
 	 */
 	public function evaluateConditions(array $mandate, array $caseProperties): array {
 		$voorw = (array)($mandate['terms'] ?? []);

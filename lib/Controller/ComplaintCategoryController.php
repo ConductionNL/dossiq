@@ -25,15 +25,15 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -45,7 +45,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 class ComplaintCategoryController extends Controller {
 	use SearchesObjects;
@@ -55,16 +55,16 @@ class ComplaintCategoryController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param SettingsService $settingsService Settings service
-	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
+	 * @param SettingsServiceInterface $settingsService Settings service
+	 * @param ComplaintAccessGuardInterface $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly SettingsService $settingsService,
-		private readonly ComplaintAccessGuard $accessGuard,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -76,7 +76,7 @@ class ComplaintCategoryController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function categories(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -112,19 +112,12 @@ class ComplaintCategoryController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function createCategory(): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
-		}
-
-		$this->accessGuard->requireCoordinator(userId: $userId);
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		$objectService = $this->requireCategoryWriter();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
 		}
 
 		try {
@@ -153,19 +146,12 @@ class ComplaintCategoryController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function updateCategory(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
-		}
-
-		$this->accessGuard->requireCoordinator(userId: $userId);
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		$objectService = $this->requireCategoryWriter();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
 		}
 
 		try {
@@ -183,4 +169,28 @@ class ComplaintCategoryController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end updateCategory()
+
+	/**
+	 * The object service for a coordinator writing categories, or the refusal.
+	 *
+	 * Not signed in is a 401, a non-coordinator is refused by the guard, and
+	 * without OpenRegister nothing can be written.
+	 *
+	 * @return object|JSONResponse The object service, or the refusal.
+	 */
+	private function requireCategoryWriter(): object {
+		$userId = $this->accessGuard->currentUid();
+		if ($userId === '') {
+			return $this->accessGuard->notAuthenticated();
+		}
+
+		$this->accessGuard->requireCoordinator(userId: $userId);
+
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return $objectService;
+	}//end requireCategoryWriter()
 }//end class

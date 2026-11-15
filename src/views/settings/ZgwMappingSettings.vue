@@ -75,12 +75,12 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		store() {
 			return useZgwMappingStore()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		mappings() {
 			return this.store.mappings
 		},
@@ -96,7 +96,7 @@ export default {
 		 * fourteen mappings had no row at all. Reading the API's own keys is
 		 * what stops the list drifting again.
 		 *
-		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		resourceKeys() {
 			return Object.keys(this.mappings)
@@ -121,7 +121,7 @@ export default {
 
 		/**
 		 * @param {string} key The key.
-		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		editMapping(key) {
 			this.editingKey = key
@@ -129,7 +129,7 @@ export default {
 
 		/**
 		 * @param {object} config The config.
-		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async saveMapping(config) {
 			const result = await this.store.saveMapping(this.editingKey, config)
@@ -144,7 +144,7 @@ export default {
 
 		/**
 		 * @param {string} key The key.
-		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async resetMapping(key) {
 			await this.store.resetMapping(key)

@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Queue\QueueSourceStatus;
+use OCA\Dossiq\Kernel\Contracts\QueueSourceStatusInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -50,14 +50,14 @@ class WorkQueueSourcesController extends Controller {
 	 * @param IRequest          $request     Request.
 	 * @param IUserSession      $userSession User session.
 	 * @param LoggerInterface   $logger      Logger.
-	 * @param QueueSourceStatus $status      The sources that did not answer.
+	 * @param QueueSourceStatusInterface $status      The sources that did not answer.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly QueueSourceStatus $status,
+		private readonly QueueSourceStatusInterface $status,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

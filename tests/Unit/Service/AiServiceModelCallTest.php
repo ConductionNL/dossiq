@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\AiService
  * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
+ * @uses \OCA\Dossiq\Service\Ai\AiModelRequest
  */
 class AiServiceModelCallTest extends TestCase {
 
@@ -50,6 +51,13 @@ class AiServiceModelCallTest extends TestCase {
 	 * @var list<array{0: string, 1: string}>
 	 */
 	private array $guarded = [];
+
+	/**
+	 * The app config keys the service read, in order.
+	 *
+	 * @var list<string>
+	 */
+	private array $read = [];
 
 	/**
 	 * A real AiService over this configuration and guard answer.
@@ -62,7 +70,10 @@ class AiServiceModelCallTest extends TestCase {
 	private function service(array $config, ?string $address): AiService {
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
-			static fn (string $app, string $key, string $default = ''): string => ($config[$key] ?? $default)
+			function (string $app, string $key, string $default = '') use ($config): string {
+				$this->read[] = $key;
+				return ($config[$key] ?? $default);
+			}
 		);
 
 		$guard = $this->createMock(AiEndpointGuard::class);
@@ -220,6 +231,41 @@ class AiServiceModelCallTest extends TestCase {
 		self::assertStringEndsWith('{"model":"gpt","prompt":"Vraag?","stream":false,"format":"json"}', $request);
 		self::assertSame([[$url, 'cloud']], $this->guarded);
 	}//end testTheModelCallPostsThePromptAndDecodesTheAnswer()
+
+	/**
+	 * A local model gets the default model name and no API key, even when one
+	 * is stored, and the settings are read in their fixed order.
+	 *
+	 * @return void
+	 */
+	public function testALocalModelIsCalledWithoutAnApiKey(): void {
+		[$process, $pipes, $port] = $this->oneShotServer(body: '{"response": "{\"answer\": \"nee\"}"}');
+		$url = 'http://127.0.0.1:' . $port;
+		$service = $this->service(config: ['ai_model_url' => $url, 'ai_api_key' => 'secret'], address: '127.0.0.1');
+
+		$answer = (new \ReflectionMethod(AiService::class, 'callAiModel'))->invoke($service, 'Vraag?');
+		$request = base64_decode(trim((string)fgets($pipes[1])));
+		proc_close($process);
+
+		self::assertSame(['answer' => 'nee'], $answer);
+		self::assertStringStartsWith("POST /api/generate HTTP/1.1\r\n", $request);
+		self::assertStringNotContainsString('Authorization', $request);
+		self::assertStringEndsWith('{"model":"llama3.1","prompt":"Vraag?","stream":false,"format":"json"}', $request);
+		self::assertSame(['ai_model_url', 'ai_model_name', 'ai_model_type'], $this->read);
+		self::assertSame([[$url, 'local']], $this->guarded);
+	}//end testALocalModelIsCalledWithoutAnApiKey()
+
+	/**
+	 * A cloud model reads its API key after the model settings.
+	 *
+	 * @return void
+	 */
+	public function testACloudModelReadsItsApiKeyLast(): void {
+		$this->service(config: ['ai_model_url' => 'http://127.0.0.1:1/', 'ai_model_type' => 'cloud'], address: '127.0.0.1')->testHealth();
+
+		$start = array_search('ai_model_url', $this->read, true);
+		self::assertSame(['ai_model_url', 'ai_model_name', 'ai_model_type', 'ai_api_key'], array_slice($this->read, (int)$start, 4));
+	}//end testACloudModelReadsItsApiKeyLast()
 
 	/**
 	 * A model that answers is reported healthy, with the model named.

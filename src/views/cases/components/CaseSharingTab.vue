@@ -59,6 +59,8 @@
 			@createFederatedShare="createFederatedShareDialogOpen = true"
 			@revokeFederated="revokeFederatedShare"
 			@openActivity="openActivity" />
+		<!-- Access for a named user or group on this instance (REQ-CRS-43). -->
+		<CaseAccessGrants :objectId="objectId" />
 
 		<CreateAccessLinkDialog
 			:open="createAccessLinkDialogOpen"
@@ -129,6 +131,7 @@ import CreateAccessLinkDialog from '../../../dialogs/CreateAccessLinkDialog.vue'
 import CreateFederatedShareDialog from '../../../dialogs/CreateFederatedShareDialog.vue'
 import CreateShareDialog from '../../../dialogs/CreateShareDialog.vue'
 import FederatedActivityPanel from '../../../dialogs/FederatedActivityPanel.vue'
+import CaseAccessGrants from './CaseAccessGrants.vue'
 import ShareTab from './ShareTab.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 import {
@@ -147,6 +150,7 @@ export default {
 		NcNoteCard,
 		CreateAccessLinkDialog,
 		CreateShareDialog,
+		CaseAccessGrants,
 		CaseTransferDialog,
 		CreateFederatedShareDialog,
 		FederatedActivityPanel,
@@ -195,7 +199,7 @@ export default {
 		 * later screen could tell them so.
 		 *
 		 * @return {string} The sentence.
-		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 * @spec openspec/specs/deelzaak-support/spec.md
 		 */
 		inheritanceWarning() {
 			return n(
@@ -234,7 +238,7 @@ export default {
 		 * exist would teach them to ignore the line.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 * @spec openspec/specs/deelzaak-support/spec.md
 		 */
 		async loadDeelzaken() {
 			if (!this.objectId) {
@@ -384,7 +388,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md */
 		async loadShares() {
 			if (!this.objectId) {
 				return
@@ -441,7 +445,7 @@ export default {
 		 * existing caseShare objects keeps resolving.
 		 *
 		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md
-		 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+		 * @spec openspec/specs/partner-organisations/spec.md
 		 * @spec openspec/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 		 *
 		 * @return {Promise<void>}
@@ -475,7 +479,7 @@ export default {
 
 		/**
 		 * @param {object} payload the partner-share creation payload.
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 		 */
 		async createShare(payload) {
 			try {
@@ -493,7 +497,7 @@ export default {
 
 		/**
 		 * @param {string} shareId the caseShare UUID to revoke.
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 		 */
 		async revokeShare(shareId) {
 			try {

@@ -44,10 +44,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Intake\CaseReceiptDates;
-use OCA\Dossiq\Service\Intake\IntakeTermStart;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseReceiptDatesInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\EventDispatcher\Event;
@@ -69,9 +69,9 @@ class IntakeTermStartListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param IntakeTermStart          $intake          The two moments and the flag between them.
-	 * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver.
-	 * @param SettingsService          $settingsService Bridge to OpenRegister.
+	 * @param IntakeTermStartInterface          $intake          The two moments and the flag between them.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver    Schema id-to-slug resolver.
+	 * @param SettingsServiceInterface          $settingsService Bridge to OpenRegister.
 	 * @param LoggerInterface          $logger          Records a case that went unstamped.
 	 * @param ReceiptClock $clock The receipt dates, the receipt moment and the time factory.
 	 *
@@ -80,9 +80,9 @@ class IntakeTermStartListener implements IEventListener {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function __construct(
-		private readonly IntakeTermStart $intake,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
-		private readonly SettingsService $settingsService,
+		private readonly IntakeTermStartInterface $intake,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ReceiptClock $clock,
 	) {
@@ -100,7 +100,7 @@ class IntakeTermStartListener implements IEventListener {
 	 *    the process zone (UTC). A case made at 01:52 in Amsterdam was stored
 	 *    with the day before, and a later write keeps what the case carries.
 	 *    Registered above that calculation
-	 *    ({@see \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY}),
+	 *    ({@see \OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY}),
 	 *    this listener sets the day in the administered zone first, and the
 	 *    calculation keeps it.
 	 * 2. The second write sent the whole case back, including materialised
@@ -138,19 +138,42 @@ class IntakeTermStartListener implements IEventListener {
 	public function handle(Event $event): void {
 		$entity = $this->clock->receipt->objectBeingReceived(event: $event);
 		if ($entity !== null) {
-			$sentAt = '';
-			if ($this->clock->receipt->sendsDraft(event: $event) === true) {
-				$sentAt = $this->clock->time->now()->format('c');
-			}
-
-			$this->setBeforeStore(entity: $entity, sentAt: $sentAt);
+			$this->stampBeforeStore(event: $event, entity: $entity);
 			return;
 		}
 
+		$this->stampCreated(event: $event);
+	}//end handle()
+
+	/**
+	 * Stamp the receipt dates onto a case being stored, its sent moment when a draft is sent.
+	 *
+	 * @param Event        $event  The creating or updating event.
+	 * @param ObjectEntity $entity The case being received.
+	 *
+	 * @return void
+	 */
+	private function stampBeforeStore(Event $event, ObjectEntity $entity): void {
+		$sentAt = '';
+		if ($this->clock->receipt->sendsDraft(event: $event) === true) {
+			$sentAt = $this->clock->time->now()->format('c');
+		}
+
+		$this->setBeforeStore(entity: $entity, sentAt: $sentAt);
+	}//end stampBeforeStore()
+
+	/**
+	 * Write the receipt dates onto a case stored without the creating event.
+	 *
+	 * @param Event $event The event.
+	 *
+	 * @return void
+	 */
+	private function stampCreated(Event $event): void {
 		// The created event, for a path that stored the case without the
 		// creating event. A draft's own create is not a receipt there either,
 		// and any other event answers null.
-		$payload = $this->clock->receipt->receivedObject(event: $event, for: self::class);
+		$payload = $this->receivedPayload(event: $event);
 		if ($payload === null) {
 			return;
 		}
@@ -166,7 +189,18 @@ class IntakeTermStartListener implements IEventListener {
 		}
 
 		$this->write(caseId: $caseId, changes: $changes);
-	}//end handle()
+	}//end stampCreated()
+
+	/**
+	 * The case a created event stored, null for a draft or any other event.
+	 *
+	 * @param Event $event The event.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function receivedPayload(Event $event): ?array {
+		return $this->clock->receipt->receivedObject(event: $event, for: self::class);
+	}//end receivedPayload()
 
 	/**
 	 * Set the stamp and the dates on a case that is about to be stored.
@@ -224,8 +258,8 @@ class IntakeTermStartListener implements IEventListener {
 			return [];
 		}
 
-		if ($sentAt !== '' && trim((string)($case[IntakeTermStart::RECEIVED_AT] ?? '')) === '') {
-			$case[IntakeTermStart::RECEIVED_AT] = $sentAt;
+		if ($sentAt !== '' && trim((string)($case[IntakeTermStartInterface::RECEIVED_AT] ?? '')) === '') {
+			$case[IntakeTermStartInterface::RECEIVED_AT] = $sentAt;
 		}
 
 		$changes = [];
@@ -235,11 +269,11 @@ class IntakeTermStartListener implements IEventListener {
 
 		// The start date follows the term start this case was just given, or
 		// the one it already carries (decision 181, Q11).
-		$termStartsAt = trim((string)($changes[IntakeTermStart::TERM_STARTS_AT] ?? ($case[IntakeTermStart::TERM_STARTS_AT] ?? '')));
+		$termStartsAt = trim((string)($changes[IntakeTermStartInterface::TERM_STARTS_AT] ?? ($case[IntakeTermStartInterface::TERM_STARTS_AT] ?? '')));
 
 		$changes = array_merge($changes, $this->clock->receiptDates->changesFor(case: $case, termStartsAt: $termStartsAt));
 		if ($sentAt !== '') {
-			$changes[CaseReceiptDates::START_DATE] = $this->clock->receiptDates->startDateFor(case: $case, termStartsAt: $termStartsAt);
+			$changes[CaseReceiptDatesInterface::START_DATE] = $this->clock->receiptDates->startDateFor(case: $case, termStartsAt: $termStartsAt);
 		}
 
 		return $changes;

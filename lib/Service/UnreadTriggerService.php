@@ -257,6 +257,26 @@ class UnreadTriggerService {
 			return [];
 		}
 
+		$unknown = $this->unknownNames(declared: $declared);
+
+		$warnings = [];
+		if ($unknown !== []) {
+			$warnings[] = $this->unknownNamesWarning(unknown: $unknown);
+		}
+
+		return $this->withStatusWarning(warnings: $warnings, caseType: $caseType);
+	}//end publicationWarnings()
+
+	/**
+	 * The declared names outside the vocabulary.
+	 *
+	 * @param array<int, string> $declared The declared names.
+	 *
+	 * @return array<int, string> The names nobody recognises.
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+	 */
+	private function unknownNames(array $declared): array {
 		$unknown = [];
 		foreach ($declared as $name) {
 			if (in_array($name, self::VOCABULARY, true) === false) {
@@ -264,18 +284,40 @@ class UnreadTriggerService {
 			}
 		}
 
-		$warnings = [];
-		if ($unknown !== []) {
-			$warnings[] = $this->l10n->n(
-				'This case type names a change nobody recognises as a reason to mark a case unread: %s. '
-				. 'Nothing watches it, so the case type behaves as if it had named nothing.',
-				'This case type names %n changes nobody recognises as a reason to mark a case unread: %s. '
-				. 'Nothing watches them, so the case type behaves as if it had named nothing.',
-				count($unknown),
-				[implode(', ', $unknown)]
-			);
-		}
+		return $unknown;
+	}//end unknownNames()
 
+	/**
+	 * The warning that names the unrecognised names.
+	 *
+	 * @param array<int, string> $unknown The names nobody recognises.
+	 *
+	 * @return string The warning.
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+	 */
+	private function unknownNamesWarning(array $unknown): string {
+		return $this->l10n->n(
+			'This case type names a change nobody recognises as a reason to mark a case unread: %s. '
+			. 'Nothing watches it, so the case type behaves as if it had named nothing.',
+			'This case type names %n changes nobody recognises as a reason to mark a case unread: %s. '
+			. 'Nothing watches them, so the case type behaves as if it had named nothing.',
+			count($unknown),
+			[implode(', ', $unknown)]
+		);
+	}//end unknownNamesWarning()
+
+	/**
+	 * The warnings, with one more when a status move does not mark the case unread.
+	 *
+	 * @param array<int, string>   $warnings The warnings so far.
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, string> The warnings.
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+	 */
+	private function withStatusWarning(array $warnings, array $caseType): array {
 		// The EFFECTIVE triggers, never the declared names. A case type whose
 		// whole declaration was typos falls back to the default, which does
 		// watch the status, and warning that it does not would send somebody
@@ -286,7 +328,7 @@ class UnreadTriggerService {
 		}
 
 		return $warnings;
-	}//end publicationWarnings()
+	}//end withStatusWarning()
 
 	/**
 	 * The raw names this case type declared, trimmed and de-duplicated.

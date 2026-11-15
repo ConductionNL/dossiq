@@ -1085,4 +1085,63 @@ class WOOAssessmentControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 		$this->assertSame('owned-by-another-reviewer', $response->getData()['error']);
 	}//end testProposeRedactionRefusesAnotherReviewersAssessment()
+	/**
+	 * A JSON-text body is decoded the same way for bulk assessments and decisions; unreadable text reads as nothing.
+	 *
+	 * @return void
+	 */
+	public function testJsonTextParametersAreDecodedAndUnreadableTextIsEmpty(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+
+		$this->request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => match ($key) {
+				'assessments' => '[{"documentRef":"doc-001"}]',
+				'decision' => '{not json',
+				'letter' => '  ',
+				default => $default,
+			}
+		);
+
+		$this->assessmentService->expects($this->once())->method('bulkUpsert')
+			->with('case-uuid-001', [['documentRef' => 'doc-001']])
+			->willReturn(['saved' => [], 'errors' => []]);
+		$this->decisionService->expects($this->once())->method('assembleDecision')
+			->with('case-uuid-001', [], '')
+			->willThrowException(new \RuntimeException('store down'));
+
+		$this->assertSame(Http::STATUS_OK, $this->controller->bulkAssess('case-uuid-001')->getStatus());
+
+		$decision = $this->controller->createDecision('case-uuid-001');
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $decision->getStatus());
+		$this->assertSame(['error' => 'store down'], $decision->getData());
+	}//end testJsonTextParametersAreDecodedAndUnreadableTextIsEmpty()
+
+	/**
+	 * Edited spans that are not a list reach the review as none; an invalid argument answers 400.
+	 *
+	 * @return void
+	 */
+	public function testReviewRedactionProposalReadsSpansOnlyAsAList(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+
+		$this->request->method('getParam')->willReturnMap([
+			['decision', '', 'edit'],
+			['spans', null, 'not a list'],
+		]);
+
+		$this->anonymisationAssist->expects($this->once())->method('reviewProposal')
+			->with('case-uuid-001', 'doc-uuid-001', 'edit', 'j.dejong', null)
+			->willThrowException(new \InvalidArgumentException('bad decision'));
+
+		$response = $this->controller->reviewRedactionProposal('case-uuid-001', 'doc-uuid-001');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'bad decision'], $response->getData());
+	}//end testReviewRedactionProposalReadsSpansOnlyAsAList()
 }//end class

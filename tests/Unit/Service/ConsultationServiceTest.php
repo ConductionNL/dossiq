@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
@@ -89,13 +90,11 @@ interface ConsultationObjectServiceStub {
 	/**
 	 * Delete an object by id.
 	 *
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
-	 * @param string $id The object id.
+	 * @param ObjectDeletion $deletion The object and the register and schema it lives in.
 	 *
 	 * @return void
 	 */
-	public function deleteObject(string $register, string $schema, string $id): void;
+	public function deleteObject(ObjectDeletion $deletion): void;
 }//end interface
 
 /**
@@ -109,6 +108,7 @@ interface ConsultationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  * @uses   \OCA\Dossiq\Service\Obligations\ObligationDeclaration
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ConsultationServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

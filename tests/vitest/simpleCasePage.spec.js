@@ -271,7 +271,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 39 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 44 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -290,10 +290,14 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(39)
+		// 43: Advice from the decision table joined Case (DqHandhaving,
+		// enforcement-intervention-from-the-case 3.2), and so did two acts
+		// of vth-cases-run-end-to-end. 44: Ask a partner joined Case
+		// (capability-rows-said-and-planned T04).
+		expect(placed).toHaveLength(44)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(24)
+		expect(count('Case')).toBe(29)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)
@@ -483,7 +487,7 @@ describe('the tabs', () => {
 		const strip = tabsOf(simple)
 		const fees = strip.tabs.find((tab) => tab.label === 'Fees and payments')
 		expect(fees.overflow).toBe(true)
-		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract'])
+		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract', 'case-notices-of-default'])
 		expect(strip.tabs.find((tab) => tab.label === 'Merge into one PDF').widgetId).toBe('case-merge-to-pdf')
 		const overview = strip.tabs.find((tab) => tab.label === 'Overview').widgetIds
 		expect(overview.indexOf('goal-plan')).toBe(overview.indexOf('case-household-cases-card') + 1)
@@ -567,7 +571,11 @@ describe('the tabs', () => {
 		added.push('case-summary')
 		added.push('case-grant-decisions-card')
 		added.push('case-payment-schedule')
+		// overview-cards-per-case-type: the settlement of a grant case, a card of the Overview tab.
+		added.push('case-settlement')
 		added.push('case-overview-sections')
+		// notice-of-default-from-the-case: the case's notices of default, a card of the Fees tab.
+		added.push('case-notices-of-default')
 		expect(others(simple)).toEqual(others(original))
 		expect(find(simple, 'case-banner-stack')).toEqual({ ...find(original, 'case-banner-stack'), title: 'Status', _note: expect.any(String) })
 		// Its attention strip asks the reason behind one button, with the board's hint.

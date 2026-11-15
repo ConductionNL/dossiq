@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use OCA\Dossiq\Service\Email\CaseContactDirectory;
 /**
  * Where an acknowledgement is delivered and recorded: the case contacts, the portal and the case fields.
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 final class AcknowledgementDelivery {
 	/**

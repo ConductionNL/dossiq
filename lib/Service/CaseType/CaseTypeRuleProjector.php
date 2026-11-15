@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
@@ -224,11 +224,7 @@ class CaseTypeRuleProjector {
 	 */
 	public function publish(string $caseTypeId): array {
 		$plan = $this->plan(caseTypeId: $caseTypeId);
-		$warnings = [];
-		foreach ($plan['unprojected'] as $action) {
-			$warnings[] = 'Rule action ' . $action . ' is not carried out: it names no target, or a required document '
-				. 'names no status to enter.';
-		}
+		$warnings = $this->unprojectedWarnings(unprojected: $plan['unprojected']);
 
 		$flowService = $this->service(name: 'OCA\OpenRegister\Service\Flow\FlowService');
 		if ($flowService === null) {
@@ -239,6 +235,39 @@ class CaseTypeRuleProjector {
 			return $warnings;
 		}
 
+		$warnings = array_merge($warnings, $this->removeExisting(flowService: $flowService, caseTypeId: $caseTypeId));
+		$warnings = array_merge($warnings, $this->createFlows(flowService: $flowService, flows: $plan['flows']));
+
+		return $warnings;
+	}//end publish()
+
+	/**
+	 * One warning per rule action the plan could not carry out.
+	 *
+	 * @param array<int, string> $unprojected The rule actions left out of the plan.
+	 *
+	 * @return array<int, string> The warnings.
+	 */
+	private function unprojectedWarnings(array $unprojected): array {
+		$warnings = [];
+		foreach ($unprojected as $action) {
+			$warnings[] = 'Rule action ' . $action . ' is not carried out: it names no target, or a required document '
+				. 'names no status to enter.';
+		}
+
+		return $warnings;
+	}//end unprojectedWarnings()
+
+	/**
+	 * Delete the rule flows published earlier for the case type.
+	 *
+	 * @param object $flowService OpenRegister's FlowService.
+	 * @param string $caseTypeId  The case type uuid.
+	 *
+	 * @return array<int, string> A warning per flow that could not be removed.
+	 */
+	private function removeExisting(object $flowService, string $caseTypeId): array {
+		$warnings = [];
 		foreach ($this->existing(flowService: $flowService, caseTypeId: $caseTypeId) as $uuid) {
 			try {
 				$flowService->delete($uuid);
@@ -247,7 +276,20 @@ class CaseTypeRuleProjector {
 			}
 		}
 
-		foreach ($plan['flows'] as $document) {
+		return $warnings;
+	}//end removeExisting()
+
+	/**
+	 * Create the planned rule flows.
+	 *
+	 * @param object                           $flowService OpenRegister's FlowService.
+	 * @param array<int, array<string, mixed>> $flows       The flow documents.
+	 *
+	 * @return array<int, string> A warning per flow that could not be created.
+	 */
+	private function createFlows(object $flowService, array $flows): array {
+		$warnings = [];
+		foreach ($flows as $document) {
 			$warning = $this->create(flowService: $flowService, document: $document);
 			if ($warning !== null) {
 				$warnings[] = $warning;
@@ -255,7 +297,7 @@ class CaseTypeRuleProjector {
 		}
 
 		return $warnings;
-	}//end publish()
+	}//end createFlows()
 
 	/**
 	 * Store and publish one rule flow.
@@ -272,7 +314,7 @@ class CaseTypeRuleProjector {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a case type rule flow could not be published',
-				['app' => Application::APP_ID, 'flow' => $document['notes'] ?? '', 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'flow' => $document['notes'] ?? '', 'exception' => $e->getMessage()]
 			);
 			return 'Rule ' . (string)($document['name'] ?? '') . ' was not published: ' . $e->getMessage();
 		}
@@ -295,7 +337,7 @@ class CaseTypeRuleProjector {
 		$more = true;
 
 		while ($more === true) {
-			$page = $flowService->findAll(Application::APP_ID, null, null, self::FLOW_PAGE, $offset);
+			$page = $flowService->findAll(AppIdentity::APP_ID, null, null, self::FLOW_PAGE, $offset);
 			if (is_array($page) === false) {
 				break;
 			}

@@ -26,7 +26,6 @@
 	},
 	"settingsSection": [
 		"WmsLayersMenu",
-		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
 		"IntegrationsMenu",
 		"CasesDeletedMenu",
@@ -143,10 +142,21 @@
 					"plannedEndDate",
 					"assignee",
 					"confidentiality",
+					"gdprClassification",
 					"impact",
 					"urgency"
 				],
 				"fieldOverrides": {
+					"gdprClassification": {
+						"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+						"enumLabels": {
+							"health": "Health",
+							"ethnicity": "Racial or ethnic origin",
+							"religion": "Religion or belief",
+							"politicalOpinion": "Political opinions",
+							"criminal": "Criminal convictions and offences"
+						}
+					},
 					"description": {
 						"widget": "textarea"
 					},
@@ -2114,6 +2124,18 @@
 					"message-applicant": {
 						"group": "Case"
 					},
+					"ask-partner": {
+						"group": "Case"
+					},
+					"dso-forward": {
+						"group": "Case"
+					},
+					"dso-collaborate": {
+						"group": "Case"
+					},
+					"request-information": {
+						"group": "Case"
+					},
 					"link-object": {
 						"group": "Case"
 					},
@@ -2128,6 +2150,9 @@
 						"group": "Case"
 					},
 					"notice-of-default-register": {
+						"group": "Case"
+					},
+					"advice-from-decision-table": {
 						"group": "Case"
 					},
 					"start-flow": {
@@ -2293,6 +2318,7 @@
 										"case-overview-sections",
 										"case-grant-decisions-card",
 										"case-payment-schedule",
+										"case-settlement",
 										"case-request",
 										"case-details",
 										"case-priority-card",
@@ -2631,7 +2657,8 @@
 									"overflow": true,
 									"widgetIds": [
 										"case-payment-requests",
-										"case-contract"
+										"case-contract",
+										"case-notices-of-default"
 									],
 									"_note": "The fees and the contract shillinq renders for this case, as cards of their own tab. They stood as grid cells under the tab card, outside every tab, so each tab ended in two untitled blocks; the boards draw neither there, and the Linked side card already names both."
 								},
@@ -3433,6 +3460,64 @@
 							"title": "{title}",
 							"meta": "{metWhen}",
 							"emptyText": "",
+							"rowActions": [
+								{
+									"id": "close-goal",
+									"label": "Close",
+									"icon": "CheckCircleOutline",
+									"type": "open-modal",
+									"target": "RowRecordActionDialog",
+									"visibleWhen": {
+										"field": "closedDate",
+										"op": "empty"
+									},
+									"props": {
+										"objectId": "@objectId",
+										"config": {
+											"title": "Close goal",
+											"summary": {
+												"title": "{title}",
+												"meta": "{metWhen}"
+											},
+											"fields": [
+												{
+													"field": "state",
+													"type": "select",
+													"label": "Outcome",
+													"options": [
+														{
+															"value": "met",
+															"label": "Met"
+														},
+														{
+															"value": "not-met",
+															"label": "Not met"
+														},
+														{
+															"value": "withdrawn",
+															"label": "Withdrawn"
+														}
+													]
+												}
+											],
+											"reason": {
+												"label": "What was observed",
+												"field": "observation",
+												"rows": 3
+											},
+											"confirm": {
+												"label": "Close goal",
+												"icon": "CheckCircleOutline",
+												"request": {
+													"method": "POST",
+													"url": "/apps/dossiq/api/cases/@objectId/goals/@object.id/close"
+												}
+											},
+											"doneText": "The goal is closed."
+										}
+									}
+								}
+							],
 							"footerAction": {
 								"label": "Add goal",
 								"icon": "Plus",
@@ -4262,6 +4347,72 @@
 							],
 							"emptyText": "No advance schedule on this case",
 							"errorText": "The advance schedule could not be read."
+						}
+					},
+					{
+						"id": "case-settlement",
+						"type": "record-list",
+						"title": "Settlement",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Subsidies",
+								"Grants"
+							]
+						},
+						"_note": "DqSubsidie Vaststelling: the settlement of the grant, its date, the actual costs, the settled amount and its state, from GET /api/cases/{caseId}/settlements. A settlement hangs off the execution, which hangs off the application, two references away from the case, so the server walks that chain. Shown on a case whose case type sits in the Subsidies folder and lists the card in overviewCards, as the Grant decisions card is.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/settlements",
+								"responsePath": "settlements"
+							},
+							"presentation": "table",
+							"tableLook": "data",
+							"valueLabels": {
+								"status": {
+									"determined": "Settled",
+									"draft": "Draft"
+								}
+							},
+							"columns": [
+								{
+									"label": "Settlement date",
+									"value": [
+										"{determinationDate|date}",
+										"Not yet"
+									]
+								},
+								{
+									"label": "Actual costs",
+									"value": [
+										"{actualCostTotal|currency}",
+										"Not yet"
+									],
+									"align": "end"
+								},
+								{
+									"label": "Settled amount",
+									"value": [
+										"{determinedAmount|currency}",
+										"Not yet"
+									],
+									"align": "end"
+								},
+								{
+									"label": "Status",
+									"value": "{status}",
+									"tone": {
+										"field": "status",
+										"map": {
+											"determined": "success",
+											"draft": "default"
+										}
+									}
+								}
+							],
+							"emptyText": "No settlement on this case yet",
+							"errorText": "The settlement could not be read."
 						}
 					},
 					{
@@ -6261,6 +6412,109 @@
 						}
 					},
 					{
+						"id": "case-notices-of-default",
+						"type": "object-table",
+						"title": "Notices of default",
+						"subtitle": "Awb 4:17 and 4:18",
+						"_note": "notice-of-default-from-the-case task 3: the notices of default on THIS case, read with the case's own access through GET /api/cases/{caseId}/notices-of-default (NoticeOfDefaultRows::forCase, the same rows as the DqTermijnen card, so the two never disagree). A definitive amount is prepared for payout from its row through the same prepareNoticePayout handler. Shown only where the case type says a late decision costs a penalty, as the Register notice of default header action is.",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/case-types/@object.caseType/terms",
+							"field": "penaltyApplies",
+							"op": "eq",
+							"value": true
+						},
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/notices-of-default",
+								"responsePath": "notices"
+							},
+							"limit": 20,
+							"columns": [
+								{
+									"key": "receiptDate",
+									"label": "Notice of default",
+									"formatter": "receivedOn"
+								},
+								{
+									"key": "validityStatus",
+									"label": "Assessment",
+									"widget": "badge",
+									"enum": [
+										"unknown",
+										"valid",
+										"premaat",
+										"ongeldig"
+									],
+									"enumLabels": {
+										"unknown": "Not assessed yet",
+										"valid": "Valid",
+										"premaat": "Too early: the term is still running",
+										"ongeldig": "Invalid"
+									},
+									"widgetProps": {
+										"colorMap": {
+											"valid": "success",
+											"premaat": "warning",
+											"ongeldig": "error"
+										}
+									}
+								},
+								{
+									"key": "penaltyState",
+									"label": "Penalty payment",
+									"formatter": "penaltyLine"
+								},
+								{
+									"key": "financeState",
+									"label": "Finances",
+									"widget": "badge",
+									"enum": [
+										"payout-due",
+										"prepared",
+										"signal-sent",
+										"paid",
+										"rejected",
+										"on-hold",
+										"amount-open"
+									],
+									"enumLabels": {
+										"payout-due": "Ready for payout",
+										"prepared": "Payout prepared",
+										"signal-sent": "Payment signal sent",
+										"paid": "Paid",
+										"rejected": "Payout rejected",
+										"on-hold": "On hold for an objection",
+										"amount-open": "Amount not fixed yet"
+									},
+									"widgetProps": {
+										"colorMap": {
+											"payout-due": "warning",
+											"signal-sent": "teal",
+											"paid": "success",
+											"rejected": "error"
+										}
+									},
+									"emptyLabel": "Not applicable"
+								}
+							],
+							"actions": [
+								{
+									"id": "payout-prepare",
+									"type": "handler",
+									"handler": "prepareNoticePayout",
+									"label": "Prepare payout",
+									"icon": "Cash",
+									"visibleWhen": {
+										"field": "financeState",
+										"op": "eq",
+										"value": "payout-due"
+									}
+								}
+							],
+							"emptyText": "No notice of default has been received on this case"
+						}
+					},
+					{
 							"id": "case-advice-requests",
 							"type": "record-list",
 							"title": "Advice on the case",
@@ -6624,8 +6878,13 @@
 					"case-version-move",
 					"cross-domain-lookup",
 					"message-applicant",
+					"ask-partner",
+					"dso-forward",
+					"dso-collaborate",
+					"request-information",
 					"remedy-lodge",
 					"start-enforcement",
+					"advice-from-decision-table",
 					"advice-request",
 					"woo-publish",
 					"woo-withdraw",
@@ -7727,10 +7986,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"description": "",
 								"widget": "textarea",
@@ -8829,6 +9099,7 @@
 									"id": "rules",
 									"label": "Rules",
 									"widgetIds": [
+										"case-type-rule-rows",
 										"case-type-rules"
 									],
 									"countField": "rules"
@@ -9822,6 +10093,43 @@
 							"footnote": "Anyone who opted out of messages only receives what the law requires. Every e-mail carries an unsubscribe link.",
 							"footnoteVariant": "info",
 							"emptyText": "This case type sends no messages yet"
+						}
+					},
+					{
+						"id": "case-type-rule-rows",
+						"type": "record-list",
+						"title": "Rules of this case type",
+						"subtitle": "What happens when a case of this type meets a condition, in order",
+						"_note": "case-type-conditional-rules Task 3, board DqZaaktypeRegels: the case type's own rules (caseType.rules) as 'If ... / then ...' rows with an On or Off pill, written by GET /api/case-types/{id}/rules because a rule is stored as kinds and operands and a status as a uuid. Above the OpenRegister rules of the case schema (case-type-rules). Adding, editing, turning off and deleting a rule happen in the form and row menu of case-type-rules (CaseTypeRuleDialog).",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/case-types/@objectId/rules",
+								"responsePath": "rules"
+							},
+							"presentation": "rows",
+							"limit": 100,
+							"title": [
+								"{title}"
+							],
+							"meta": "{moment}",
+							"text": "{line}",
+							"pill": {
+								"cases": [
+									{
+										"when": {
+											"field": "enabled",
+											"op": "eq",
+											"value": false
+										},
+										"label": "Off",
+										"variant": "default"
+									}
+								],
+								"label": "On",
+								"variant": "success"
+							},
+							"emptyText": "This case type has no rules yet",
+							"errorText": "The rules of this case type could not be read"
 						}
 					},
 					{

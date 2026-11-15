@@ -52,6 +52,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Controller\WooSourcesController
+ * @covers \OCA\Dossiq\Controller\WooSourceSearch
  * @uses   \OCA\Dossiq\Woo\WooSources
  * @uses   \OCA\Dossiq\Support\FleetAppId
  * @uses   \OCA\Dossiq\Woo\WooSearchPlans

@@ -32,15 +32,16 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Consultation;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -52,11 +53,18 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 class ConsultationRepository {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -68,6 +76,7 @@ class ConsultationRepository {
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -77,26 +86,12 @@ class ConsultationRepository {
 	 *
 	 * @return array<int, array<string, mixed>> List of consultations
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getConsultationsForCase(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('consultation_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['parentCase' => $caseId, '_limit' => 100],
+		return $this->rows->search(
+			schemaKey: 'consultation_schema',
+			filters: ['parentCase' => $caseId, '_limit' => 100]
 		);
 	}//end getConsultationsForCase()
 
@@ -107,7 +102,7 @@ class ConsultationRepository {
 	 *
 	 * @return array<string, mixed>|null The consultation data or null if not found
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getConsultation(string $consultationId): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -139,7 +134,7 @@ class ConsultationRepository {
 	 *
 	 * @throws \RuntimeException If OpenRegister is unavailable
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function deleteConsultation(string $consultationId): bool {
 		$objectService = $this->settingsService->getObjectService();
@@ -163,7 +158,7 @@ class ConsultationRepository {
 
 		$this->logger->info(
 			'Consultation deleted: ' . $consultationId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return true;
@@ -174,7 +169,7 @@ class ConsultationRepository {
 	 *
 	 * @return array<int, array<string, mixed>> List of overdue consultations
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getOverdueConsultations(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -275,27 +270,31 @@ class ConsultationRepository {
 	 *
 	 * @return string Generated consultation number (e.g. ADV-2026-0001)
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
-	public function nextConsultationNumber(
-		object $objectService,
-		string $register,
-		string $schema,
-	): string {
+	public function nextConsultationNumber(object $objectService, string $register, string $schema): string {
 		$year = (int)date('Y');
 		$prefix = 'ADV-' . $year . '-';
 
-		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'consultationNumber' => $prefix . '%',
-				'_order' => ['consultationNumber' => 'DESC'],
-				'_limit' => 1,
-			],
-		);
+		$filters = ['consultationNumber' => $prefix . '%', '_order' => ['consultationNumber' => 'DESC'], '_limit' => 1];
+		$existing = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 
+		$maxSeq = self::maxSequence(existing: $existing, prefix: $prefix);
+
+		return $prefix . str_pad((string)($maxSeq + 1), 4, '0', STR_PAD_LEFT);
+	}//end nextConsultationNumber()
+
+	/**
+	 * The highest sequence number among the latest consultation numbers of the year.
+	 *
+	 * @param array<int, array<string, mixed>> $existing The latest consultation of the year, if any.
+	 * @param string                           $prefix   The year's `ADV-{year}-` prefix.
+	 *
+	 * @return int The sequence, 0 when there is none.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
+	 */
+	private static function maxSequence(array $existing, string $prefix): int {
 		$maxSeq = 0;
 		if (empty($existing) === false) {
 			$latest = $existing[0];
@@ -309,6 +308,6 @@ class ConsultationRepository {
 			}
 		}
 
-		return $prefix . str_pad((string)($maxSeq + 1), 4, '0', STR_PAD_LEFT);
-	}//end nextConsultationNumber()
+		return $maxSeq;
+	}//end maxSequence()
 }//end class

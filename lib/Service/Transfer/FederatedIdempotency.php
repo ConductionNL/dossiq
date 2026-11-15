@@ -75,15 +75,9 @@ class FederatedIdempotency {
 		int $schema,
 		object $objectService,
 	): array {
-		if ($remoteCloudId === null || $remoteCloudId === '') {
-			return ['key' => null, 'answer' => null];
-		}
-
-		if ($this->gateway->federationShareService() === null) {
-			return [
-				'key' => null,
-				'answer' => ['error' => 'Federated case transfer requires the OpenRegister federation leaf'],
-			];
+		$unkeyed = $this->unkeyed(remoteCloudId: $remoteCloudId);
+		if ($unkeyed !== null) {
+			return $unkeyed;
 		}
 
 		$idempotencyKey = hash('sha256', $caseId . '|' . $targetOrganization . '|' . $remoteCloudId);
@@ -98,6 +92,28 @@ class FederatedIdempotency {
 			),
 		];
 	}//end precheck()
+
+	/**
+	 * The precheck answer when the transfer is not federated or cannot be: no key, and the refusal if any.
+	 *
+	 * @param string|null $remoteCloudId The receiving instance's cloud id, or null/'' for a local transfer.
+	 *
+	 * @return array{key: null, answer: array<string, mixed>|null}|null The answer, or null when the transfer gets a key.
+	 */
+	private function unkeyed(?string $remoteCloudId): ?array {
+		if ($remoteCloudId === null || $remoteCloudId === '') {
+			return ['key' => null, 'answer' => null];
+		}
+
+		if ($this->gateway->federationShareService() === null) {
+			return [
+				'key' => null,
+				'answer' => ['error' => 'Federated case transfer requires the OpenRegister federation leaf'],
+			];
+		}
+
+		return null;
+	}//end unkeyed()
 
 	/**
 	 * Find an existing transfer by idempotency key (pending or accepted
@@ -119,6 +135,17 @@ class FederatedIdempotency {
 			return null;
 		}
 
+		return self::openMatch(matches: $matches);
+	}//end findByKey()
+
+	/**
+	 * The first match that is still pending or accepted.
+	 *
+	 * @param mixed $matches The findAll answer: rows as arrays or as serialisable objects.
+	 *
+	 * @return array<string, mixed>|null The match, or null when none is open.
+	 */
+	private static function openMatch(mixed $matches): ?array {
 		foreach ((array)$matches as $match) {
 			$matchData = $match;
 			if (is_array($match) === false) {
@@ -132,5 +159,5 @@ class FederatedIdempotency {
 		}
 
 		return null;
-	}//end findByKey()
+	}//end openMatch()
 }//end class

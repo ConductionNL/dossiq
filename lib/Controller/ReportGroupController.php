@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Ai\ReportGroupingConsumer;
+use OCA\Dossiq\Kernel\Contracts\ReportGroupingConsumerInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -48,14 +48,14 @@ class ReportGroupController extends Controller {
 	 *
 	 * @param string                 $appName     The application name.
 	 * @param IRequest               $request     The request.
-	 * @param ReportGroupingConsumer $grouping    Reads the group.
+	 * @param ReportGroupingConsumerInterface $grouping    Reads the group.
 	 * @param IUserSession           $userSession Resolves the requesting user.
 	 * @param IL10N                  $l10n        Translations.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ReportGroupingConsumer $grouping,
+		private readonly ReportGroupingConsumerInterface $grouping,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

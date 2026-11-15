@@ -36,6 +36,7 @@ use RuntimeException;
  * Unit tests for BezwaarCreationHook.
  *
  * @covers \OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class BezwaarCreationHookTest extends TestCase {
 

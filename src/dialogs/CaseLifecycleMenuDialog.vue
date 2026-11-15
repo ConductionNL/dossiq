@@ -28,8 +28,8 @@
   and the acts and their reasons wrap less (lifecycle-dialog-title-clears-the-
   close-button).
 
-  @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-  @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
+  @spec openspec/specs/case-management/spec.md
+  @spec openspec/specs/template-library/spec.md
   @spec openspec/specs/case-management/spec.md#requirement-the-lifecycle-dialogs-title-stays-clear-of-its-close-button-req-cm-78
   @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 -->
@@ -186,7 +186,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
  *
  * @param {object} entry A menu entry.
  * @return {string} The label.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function moveLabel(entry) {
 	const own = String(entry?.label ?? '')
@@ -195,6 +195,164 @@ function moveLabel(entry) {
 		return t('dossiq', 'To {status}', { status })
 	}
 	return own
+}
+
+/**
+ * A menu entry's act id, the empty string when it has none.
+ *
+ * @param {object} entry A menu entry.
+ * @return {string} The act id.
+ */
+function actId(entry) {
+	return String(entry?.id ?? '')
+}
+
+// The explainer per entry kind; read before the act's own explainer.
+// A transition is explained in general, a remedy carries its own words.
+const KIND_EXPLAINERS = new Map([
+	['transition', () => t(
+		'dossiq',
+		'The next status of the case type. Statuses that cannot follow from here are greyed out.',
+	)],
+	['remedy', (entry) => String(entry.explainer ?? '')],
+])
+
+/**
+ * The translated label per act. Each entry calls t() on a literal key, so
+ * the extractor finds every one; an act without an entry is a move.
+ */
+const ACT_LABELS = new Map([
+	['suspend', () => t('dossiq', 'Suspend')],
+	['resume', () => t('dossiq', 'Resume')],
+	['extend', () => t('dossiq', 'Extend term')],
+	['reopen', () => t('dossiq', 'Reopen or restore from the archive')],
+	['finish', () => t('dossiq', 'Finish')],
+	['abort', () => t('dossiq', 'Break off')],
+	['archive', () => t('dossiq', 'Archive it')],
+	['unarchive', () => t('dossiq', 'Reopen or restore from the archive')],
+	['hold', () => t('dossiq', 'Hold')],
+	['release-hold', () => t('dossiq', 'Take off hold')],
+	['promote', () => t('dossiq', 'Promote to case')],
+])
+
+/**
+ * The explainer of the extend act.
+ *
+ * Board DqVolgendeStap. Two literal keys, so the extractor finds both;
+ * caseActsMenu picks which one applies.
+ *
+ * @param {object} entry The extend menu entry.
+ * @return {string} The translated explainer.
+ */
+function extendExplainer(entry) {
+	return entry?.explainer
+		=== 'Once, with a reason. The requester gets a message.'
+		? t(
+				'dossiq',
+				'Once, with a reason. The requester gets a message.',
+			)
+		: t('dossiq', 'With a reason. The requester gets a message.')
+}
+
+/**
+ * The translated explainer per act, literal keys for the extractor; an
+ * act without an entry carries no explainer.
+ */
+const ACT_EXPLAINERS = new Map([
+	['finish', () => t(
+		'dossiq',
+		'Choose the result type. The end date and the archive outcome are recorded.',
+	)],
+	['suspend', () => t('dossiq', 'The term stands still until the answer is in.')],
+	['abort', () => t(
+		'dossiq',
+		'The case stops without a decision. Asks for a reason.',
+	)],
+	['archive', () => t(
+		'dossiq',
+		'The case moves to the retention rule its result type carries.',
+	)],
+	['reopen', () => t('dossiq', 'Only for a finished or archived case.')],
+	['unarchive', () => t('dossiq', 'Only for a finished or archived case.')],
+	['hold', () => t('dossiq', 'Park it internally, the term keeps running.')],
+	['release-hold', () => t('dossiq', 'You pick the case up again before its date.')],
+	['promote', () => t(
+		'dossiq',
+		'The term starts now. The case leaves your drafts.',
+	)],
+	['extend', extendExplainer],
+])
+
+/**
+ * Ask the three endpoints behind the menu and keep what each answered.
+ *
+ * `allSettled` and not `all`: one endpoint that is down must not empty
+ * the menu. A refused or empty read answers no transitions, or null.
+ *
+ * @param {string} caseId The case.
+ * @return {Promise<{transitions: Array, state: object|null, acts: object|null}>} The menu's input.
+ */
+async function readLifecycleMenu(caseId) {
+	const id = encodeURIComponent(caseId)
+	const [moves, state, acts] = await Promise.allSettled([
+		axios.get(
+			generateUrl(`/apps/dossiq/api/case/${id}/available-transitions`),
+		),
+		axios.get(generateUrl(`/apps/dossiq/api/case/${id}/lifecycle`)),
+		axios.get(generateUrl(`/apps/dossiq/api/case/${id}/acts`)),
+	])
+	return {
+		transitions: settledData(moves)?.transitions ?? [],
+		state: settledData(state),
+		acts: settledData(acts),
+	}
+}
+
+/**
+ * The response body of a settled read, null when it was refused or empty.
+ *
+ * @param {object} result One `Promise.allSettled` result.
+ * @return {object|null} The body.
+ */
+function settledData(result) {
+	return result.status === 'fulfilled' ? (result.value?.data ?? null) : null
+}
+
+/**
+ * Where to ask for the approval one act of a case waits on.
+ *
+ * @param {string} caseId The case.
+ * @param {string} act The act waiting on the approval.
+ * @return {string} The endpoint.
+ */
+function approvalRequestUrl(caseId, act) {
+	const id = encodeURIComponent(caseId)
+	return generateUrl(`/apps/dossiq/api/case/${id}/approvals/${encodeURIComponent(act)}`)
+}
+
+/**
+ * The translated sentence for a refused request.
+ *
+ * @param {object} error What the request threw.
+ * @return {string} What to show the handler.
+ */
+function refusalText(error) {
+	return refusalMessage(error?.response?.data ?? {}, (key) =>
+		t('dossiq', key),
+	)
+}
+
+/**
+ * The fields an act sends, each defaulted to the empty string.
+ *
+ * Only what the act asks now is sent: text typed before a pause
+ * reason was picked instead of Other is not a reason.
+ *
+ * @param {object} data What the act's form answers.
+ * @return {object} The fields to send.
+ */
+function askedFields(data) {
+	return { reason: '', resultTypeId: '', until: '', days: '', pauseReason: '', ...data }
 }
 
 export default {
@@ -274,13 +432,13 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The context line above the title.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		eyebrow() {
 			return caseEyebrow(this.menuMode ? t('dossiq', 'Next step') : this.label(this.chosen), this.kase)
 		},
 
-		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
+		/** @spec openspec/specs/case-management/spec.md */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
@@ -289,7 +447,7 @@ export default {
 		 * The chosen act's form: its input declarations and layout.
 		 *
 		 * @return {object} The form (`actForm`).
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		form() {
 			return actForm(this.chosen, {
@@ -305,7 +463,7 @@ export default {
 		 * case type's pause reasons and the act's result types.
 		 *
 		 * @return {object} The context.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		formContext() {
 			return { kase: this.kase, pauseReasons: this.pauseReasons, resultTypes: this.resultOptions }
@@ -316,7 +474,7 @@ export default {
 		 * and what it sends.
 		 *
 		 * @return {{complete: boolean, data: object}} The reading.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		answers() {
 			return readTransitionInputs(this.form.inputs, this.values, { context: this.formContext })
@@ -339,7 +497,7 @@ export default {
 		 * than opening on one act the manifest named (`act`).
 		 *
 		 * @return {boolean} True for the list.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		menuMode() {
 			return this.act === '' || this.chosen === null
@@ -350,7 +508,7 @@ export default {
 		 * A refused act carries its reason once, as the card's disabled reason.
 		 *
 		 * @return {Array<object>} CnChoiceCards options.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		choiceOptions() {
 			return this.entries.map((entry) => ({
@@ -367,7 +525,7 @@ export default {
 		 * The icon the chosen act's card shows, for its confirm button.
 		 *
 		 * @return {string} A registered icon name, '' when none is chosen.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		actIcon() {
 			return this.chosen === null ? '' : iconFor(this.chosen)
@@ -377,7 +535,7 @@ export default {
 		 * The chosen act's card, or null.
 		 *
 		 * @return {string|null} The card value.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		chosenKey() {
 			return this.chosen === null ? null : this.entryKey(this.chosen)
@@ -387,7 +545,7 @@ export default {
 		 * What the chosen act's inputs are drawn with.
 		 *
 		 * @return {object} CnTransitionInputFields props.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		fieldProps() {
 			return {
@@ -412,7 +570,7 @@ export default {
 		 * because the engine refuses the close without it.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		canConfirm() {
 			return !this.busy && this.chosen !== null && this.answers.complete
@@ -423,7 +581,7 @@ export default {
 	 * Read what the case allows before anything is on screen.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	async mounted() {
 		await this.load()
@@ -435,7 +593,7 @@ export default {
 		/**
 		 * One translated label.
 		 *
-		 * 🔴 EVERY ACT'S LABEL IS A LITERAL `t()` CALL HERE, not a lookup of
+		 * 🔴 EVERY ACT'S LABEL IS A LITERAL `t()` CALL (in `ACT_LABELS`), not a lookup of
 		 * the string the menu carries. The l10n extractor reads literal calls
 		 * out of the source, so `t('dossiq', entry.label)` gives translators
 		 * nothing at all: the strings would ship English on every instance and
@@ -447,97 +605,23 @@ export default {
 		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The label.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		label(entry) {
-			switch (String(entry?.id ?? '')) {
-				case 'suspend':
-					return t('dossiq', 'Suspend')
-				case 'resume':
-					return t('dossiq', 'Resume')
-				case 'extend':
-					return t('dossiq', 'Extend term')
-				case 'reopen':
-					return t('dossiq', 'Reopen or restore from the archive')
-				case 'finish':
-					return t('dossiq', 'Finish')
-				case 'abort':
-					return t('dossiq', 'Break off')
-				case 'archive':
-					return t('dossiq', 'Archive it')
-				case 'unarchive':
-					return t('dossiq', 'Reopen or restore from the archive')
-				case 'hold':
-					return t('dossiq', 'Hold')
-				case 'release-hold':
-					return t('dossiq', 'Take off hold')
-				case 'promote':
-					return t('dossiq', 'Promote to case')
-				default:
-					return moveLabel(entry)
-			}
+			const label = ACT_LABELS.get(actId(entry))
+			return label ? label() : moveLabel(entry)
 		},
 
 		/**
-		 * One translated explainer, for the same reason label() is a switch.
+		 * One translated explainer, for the same reason label() reads literal keys.
 		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The explainer, empty when the entry carries none.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		explainer(entry) {
-			if (entry?.kind === 'transition') {
-				return t(
-					'dossiq',
-					'The next status of the case type. Statuses that cannot follow from here are greyed out.',
-				)
-			}
-			if (entry?.kind === 'remedy') {
-				return String(entry.explainer ?? '')
-			}
-			switch (String(entry?.id ?? '')) {
-				case 'finish':
-					return t(
-						'dossiq',
-						'Choose the result type. The end date and the archive outcome are recorded.',
-					)
-				case 'suspend':
-					return t('dossiq', 'The term stands still until the answer is in.')
-				case 'abort':
-					return t(
-						'dossiq',
-						'The case stops without a decision. Asks for a reason.',
-					)
-				case 'archive':
-					return t(
-						'dossiq',
-						'The case moves to the retention rule its result type carries.',
-					)
-				case 'reopen':
-				case 'unarchive':
-					return t('dossiq', 'Only for a finished or archived case.')
-				case 'hold':
-					return t('dossiq', 'Park it internally, the term keeps running.')
-				case 'release-hold':
-					return t('dossiq', 'You pick the case up again before its date.')
-				case 'promote':
-					return t(
-						'dossiq',
-						'The term starts now. The case leaves your drafts.',
-					)
-				case 'extend':
-					// Board DqVolgendeStap. Two literal keys, so the extractor
-					// finds both; caseActsMenu picks which one applies.
-					return entry?.explainer
-						=== 'Once, with a reason. The requester gets a message.'
-						? t(
-								'dossiq',
-								'Once, with a reason. The requester gets a message.',
-							)
-						: t('dossiq', 'With a reason. The requester gets a message.')
-				default:
-					return ''
-			}
+			const explainer = KIND_EXPLAINERS.get(entry?.kind) ?? ACT_EXPLAINERS.get(actId(entry))
+			return explainer ? explainer(entry) : ''
 		},
 
 		/**
@@ -551,7 +635,7 @@ export default {
 		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The refusal, empty when the entry is not refused.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		refusalOn(entry) {
 			if (!entry?.disabled || !entry?.reason) {
@@ -571,56 +655,55 @@ export default {
 		 * a terminal status and the two would be indistinguishable.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async load() {
 			if (!this.targetCaseId) {
 				this.loading = false
 				return
 			}
-			const id = encodeURIComponent(this.targetCaseId)
-			const [moves, state, acts] = await Promise.allSettled([
-				axios.get(
-					generateUrl(`/apps/dossiq/api/case/${id}/available-transitions`),
-				),
-				axios.get(generateUrl(`/apps/dossiq/api/case/${id}/lifecycle`)),
-				axios.get(generateUrl(`/apps/dossiq/api/case/${id}/acts`)),
-			])
+			const read = await readLifecycleMenu(this.targetCaseId)
 
-			const actsBody =
-				acts.status === 'fulfilled' ? (acts.value?.data ?? null) : null
+			this.entries = this.withOwnDialogs(buildActsMenu(read))
+			this.readSummary()
+			this.choosePreset()
+			this.awaiting = awaitingApprovals(read.acts)
+			this.applyLifecycleState(read.state)
+			this.loading = false
+		},
 
-			this.entries = this.withOwnDialogs(buildActsMenu({
-				transitions:
-					moves.status === 'fulfilled'
-						? (moves.value?.data?.transitions ?? [])
-						: [],
-				state:
-					state.status === 'fulfilled'
-						? (state.value?.data ?? null)
-						: null,
-				acts: actsBody,
-			}))
+		/**
+		 * Read the case summary for the menu's heading, in the background.
+		 */
+		readSummary() {
 			fetchCaseSummary(this.targetCaseId).then((kase) => {
 				this.kase = kase
 			})
+		},
+
+		/**
+		 * Open the act the menu was opened for, when it is on offer and enabled.
+		 */
+		choosePreset() {
 			const preset = this.entries.find((entry) => entry.id === this.act && !entry.disabled)
 			if (this.act !== '' && preset !== undefined) {
 				this.choose(preset)
 			}
-			this.awaiting = awaitingApprovals(actsBody)
+		},
+
+		/**
+		 * Keep what the lifecycle answer says about the case type.
+		 *
+		 * @param {object|null} stateBody The lifecycle answer, null when refused.
+		 */
+		applyLifecycleState(stateBody) {
 			// The case type scopes the result templates. '' is a real answer:
 			// the picker then offers the templates meant for every case type.
-			this.caseType =
-				state.status === 'fulfilled'
-					? String(state.value?.data?.caseType ?? '')
-					: ''
-			this.pauseReasons =
-				state.status === 'fulfilled' && Array.isArray(state.value?.data?.pauseReasons)
-					? state.value.data.pauseReasons
-					: []
-			this.reminder = state.status === 'fulfilled' ? (state.value?.data?.requesterReminder ?? null) : null
-			this.loading = false
+			this.caseType = String(stateBody?.caseType ?? '')
+			this.pauseReasons = Array.isArray(stateBody?.pauseReasons)
+				? stateBody.pauseReasons
+				: []
+			this.reminder = stateBody?.requesterReminder ?? null
 		},
 
 		/**
@@ -632,22 +715,17 @@ export default {
 		 *
 		 * @param {object} entry One row of the awaiting list.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		async askForApproval(entry) {
 			this.busy = true
 			this.error = ''
-			const id = encodeURIComponent(this.targetCaseId)
-			const act = encodeURIComponent(entry.act)
+			const url = approvalRequestUrl(this.targetCaseId, entry.act)
 			try {
-				await axios.post(
-					generateUrl(`/apps/dossiq/api/case/${id}/approvals/${act}`),
-				)
+				await axios.post(url)
 				await this.load()
 			} catch (e) {
-				this.error = refusalMessage(e?.response?.data ?? {}, (key) =>
-					t('dossiq', key),
-				)
+				this.error = refusalText(e)
 			} finally {
 				this.busy = false
 			}
@@ -658,7 +736,7 @@ export default {
 		 *
 		 * @param {object} entry One row of the awaiting list.
 		 * @return {string} The heading.
-		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		/**
 		 * The menu without the remedies this page has no dialog for: a remedy
@@ -684,7 +762,7 @@ export default {
 		 *
 		 * @param {object} entry One row of the awaiting list.
 		 * @return {string} The names, or ''.
-		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		approvers(entry) {
 			return approversLine(entry)
@@ -693,7 +771,7 @@ export default {
 		/**
 		 * @param {object} entry A menu entry.
 		 * @return {string} The dialog title while that act is open.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		actTitle(entry) {
 			return actForm(entry).title || this.label(entry)
@@ -704,7 +782,7 @@ export default {
 		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The value.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		entryKey(entry) {
 			return `${entry.kind}:${entry.id}`
@@ -715,7 +793,7 @@ export default {
 		 *
 		 * @param {string} key The card value.
 		 * @return {void}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		chooseByKey(key) {
 			const entry = this.entries.find((candidate) => this.entryKey(candidate) === key)
@@ -729,7 +807,7 @@ export default {
 		 *
 		 * @param {object} entry The entry the handler pressed.
 		 * @return {void}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		choose(entry) {
 			if (entry.disabled) {
@@ -752,7 +830,7 @@ export default {
 		 *
 		 * @param {object} entry The entry the handler pressed.
 		 * @return {boolean} Whether a dialog of its own was opened.
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		openOwnDialog(entry) {
 			const named = String(this.actDialogs?.[String(entry?.id ?? '')] ?? '')
@@ -772,7 +850,7 @@ export default {
 		 * Go back to the list, or close when already on it.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		back() {
 			if (this.chosen === null || this.menuMode) {
@@ -787,7 +865,7 @@ export default {
 		 * Post the act, and keep the form open on a refusal.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm) {
@@ -795,49 +873,89 @@ export default {
 			}
 			this.busy = true
 			this.error = ''
-			const id = encodeURIComponent(this.targetCaseId)
-			// Only what the act asks now is sent: text typed before a pause
-			// reason was picked instead of Other is not a reason.
-			const sent = { reason: '', resultTypeId: '', until: '', days: '', pauseReason: '', ...this.answers.data }
 			try {
-				if (this.chosen.kind === 'transition') {
-					const { data } = await axios.post(
-						generateUrl(`/apps/dossiq/api/case/${id}/transition`),
-						buildTransitionPayload({
-							transitionId: this.chosen.id,
-							comment: sent.reason,
-							resultTypeId: sent.resultTypeId,
-						}),
-					)
-					// A 200 is not the same as everything having happened: the
-					// status moves before the automatic actions run, and the
-					// engine answers `partial` naming what failed.
-					this.warnAboutFailedActions(data)
-				} else {
-					const { data } = await axios.post(
-						generateUrl(
-							`/apps/dossiq/api/case/${id}/${endpointFor(this.chosen)}`,
-						),
-						{
-							reason: sent.reason,
-							resultTypeId: sent.resultTypeId,
-							until: sent.until,
-							days: Number(sent.days) || 0,
-							pauseReason: sent.pauseReason,
-							...(this.chosen.id === 'archive' ? { notifyRequester: this.values.notifyRequester === true } : {}),
-							...(this.chosen.id === 'suspend' && this.reminder ? { remindRequester: this.values.remindRequester === true } : {}),
-						},
-					)
-					this.sayWhetherTheRequesterWasTold(data, this.chosen.id)
-				}
-				emit(PAGE_REFRESH, {})
-				this.$emit('close')
+				await this.postChosen(askedFields(this.answers.data))
+				this.refreshAndClose()
 			} catch (error) {
-				this.error = refusalMessage(error?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = refusalText(error)
 			} finally {
 				this.busy = false
+			}
+		},
+
+		/**
+		 * Post the chosen act: a transition, or a lifecycle act.
+		 *
+		 * @param {object} sent The fields the act asks.
+		 * @return {Promise<void>}
+		 */
+		postChosen(sent) {
+			return this.chosen.kind === 'transition' ? this.postTransition(sent) : this.postAct(sent)
+		},
+
+		/**
+		 * Tell the page to re-read, and close the menu.
+		 */
+		refreshAndClose() {
+			emit(PAGE_REFRESH, {})
+			this.$emit('close')
+		},
+
+		/**
+		 * Take the chosen transition.
+		 *
+		 * @param {object} sent The fields the act asks.
+		 * @return {Promise<void>}
+		 */
+		async postTransition(sent) {
+			const id = encodeURIComponent(this.targetCaseId)
+			const { data } = await axios.post(
+				generateUrl(`/apps/dossiq/api/case/${id}/transition`),
+				buildTransitionPayload({
+					transitionId: this.chosen.id,
+					comment: sent.reason,
+					resultTypeId: sent.resultTypeId,
+				}),
+			)
+			// A 200 is not the same as everything having happened: the
+			// status moves before the automatic actions run, and the
+			// engine answers `partial` naming what failed.
+			this.warnAboutFailedActions(data)
+		},
+
+		/**
+		 * Post the chosen lifecycle act to its own endpoint.
+		 *
+		 * @param {object} sent The fields the act asks.
+		 * @return {Promise<void>}
+		 */
+		async postAct(sent) {
+			const id = encodeURIComponent(this.targetCaseId)
+			const { data } = await axios.post(
+				generateUrl(
+					`/apps/dossiq/api/case/${id}/${endpointFor(this.chosen)}`,
+				),
+				this.actPayload(sent),
+			)
+			this.sayWhetherTheRequesterWasTold(data, this.chosen.id)
+		},
+
+		/**
+		 * The body of a lifecycle act: the asked fields, plus whether to tell
+		 * the requester on an archive, or remind them on a suspend that offers it.
+		 *
+		 * @param {object} sent The fields the act asks.
+		 * @return {object} The request body.
+		 */
+		actPayload(sent) {
+			return {
+				reason: sent.reason,
+				resultTypeId: sent.resultTypeId,
+				until: sent.until,
+				days: Number(sent.days) || 0,
+				pauseReason: sent.pauseReason,
+				...(this.chosen.id === 'archive' ? { notifyRequester: this.values.notifyRequester === true } : {}),
+				...(this.chosen.id === 'suspend' && this.reminder ? { remindRequester: this.values.remindRequester === true } : {}),
 			}
 		},
 
@@ -850,7 +968,7 @@ export default {
 		 *
 		 * @param {object} data The transition response body.
 		 * @return {void}
-		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		warnAboutFailedActions(data) {
 			const warning = failedActionsWarning(data)

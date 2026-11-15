@@ -15,3 +15,7 @@ Filed and built 10 Oct 2026 by lane L2 (decision 169, Q-dossiq-L2-1).
 ## 3. Live
 
 - [ ] 3.1 Live: a handler asks on a case of Sanne de Vries; her portal task list shows "Vul uw aanvraag aan" due on the hersteltermijn; recording the answer removes it. (live pass, decision 139)
+
+## 4. A partner organisation gets a task from the case
+
+- [ ] 4.1 Place portaliq's `ask-partner` action (REQ-PTP-002) on `#CaseDetail`, so a handler asks a partner organisation for a contribution with a due date, and the answer lands on the case (REQ-PTP-003). It goes through the same external-task path as `ResidentQuestionTask`, with the partner's portal subject as assignee. Capability row 3.19. Test: a handler asks an advisory body from a case and the partner's portal lists the task.

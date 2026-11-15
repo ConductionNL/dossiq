@@ -1,0 +1,246 @@
+{
+    "no credential": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "Authenticatiegegevens zijn niet opgegeven."
+        }
+    ],
+    "an expired token": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZGW auth failed: The token has expired",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "The token has expired."
+        }
+    ],
+    "a token that does not validate": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZGW auth failed: The token does not match the shared secret",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "The token is not valid."
+        }
+    ],
+    "an unknown issuer": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZGW auth failed: Unknown issuer",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "The token is not valid."
+        }
+    ],
+    "a token that is not three parts": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZGW auth failed: Invalid JWT format",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "The token is not valid."
+        }
+    ],
+    "an unknown api key": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZGW auth failed: Unknown API key",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "The API key is not known."
+        }
+    ],
+    "a certificate header from an untrusted address": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZGW auth failed: Untrusted certificate header",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "The certificate header does not come from a trusted proxy."
+        }
+    ],
+    "an unknown certificate": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZGW auth failed: Unknown certificate",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "The certificate is not known."
+        }
+    ],
+    "another authorization scheme": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZGW auth failed: Unsupported authorization scheme",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "The authorization scheme is not supported."
+        }
+    ],
+    "unreadable consumers": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZGW auth failed: Authorization service is unavailable",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 401,
+            "message": "The authorization service is unavailable."
+        }
+    ],
+    "a superuser": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "allowed"
+        }
+    ],
+    "a superuser flag that is not true": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "allowed"
+        }
+    ],
+    "a uri outside the api": [
+        {
+            "resolve": true
+        },
+        {
+            "warning": "ZgwAuthMiddleware: could not derive ZGW API group from URI",
+            "context": {
+                "uri": "/index.php/apps/dossiq/elsewhere"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Unknown API component"
+        }
+    ],
+    "an unknown api group": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Unknown API component"
+        }
+    ],
+    "an unsupported method": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Unsupported HTTP method"
+        }
+    ],
+    "a covering scope": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "allowed"
+        }
+    ],
+    "a covering scope among others": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "allowed"
+        }
+    ],
+    "a scope for another method": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Scope 'zrc.aanmaken' is required for this operation"
+        }
+    ],
+    "a scope for another component": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Scope 'brc.lezen' is required for this operation"
+        }
+    ],
+    "a malformed scope": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Scope 'zrc.lezen' is required for this operation"
+        }
+    ],
+    "no scopes at all": [
+        {
+            "resolve": true
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Scope 'zrc.lezen' is required for this operation"
+        }
+    ]
+}

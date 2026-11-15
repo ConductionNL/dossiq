@@ -315,6 +315,7 @@ class AdviceControllerRequestStub implements IRequest {
  * Wire-contract tests for AdviceController.
  *
  * @covers \OCA\Dossiq\Controller\AdviceController
+ * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
  */
 class AdviceControllerContractTest extends TestCase {
 

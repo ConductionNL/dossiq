@@ -37,7 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Flow\ShippedFlowAdoption;
+use OCA\Dossiq\Kernel\Contracts\ShippedFlowAdoptionInterface;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -53,11 +53,11 @@ class AdoptShippedFlowsCommand extends Command {
 	/**
 	 * Wire the command against the adoption service.
 	 *
-	 * @param ShippedFlowAdoption $adoption Reports and performs the adoption.
+	 * @param ShippedFlowAdoptionInterface $adoption Reports and performs the adoption.
 	 * @param IUserManager $userManager Resolves the acting user.
 	 */
 	public function __construct(
-		private readonly ShippedFlowAdoption $adoption,
+		private readonly ShippedFlowAdoptionInterface $adoption,
 		private readonly IUserManager $userManager,
 	) {
 		parent::__construct();
@@ -134,7 +134,7 @@ class AdoptShippedFlowsCommand extends Command {
 			dryRun: $dryRun
 		);
 
-		return $this->report(summary: $summary, dryRun: $dryRun, output: $output);
+		return $this->report(summary: [...$summary, 'dryRun' => $dryRun], output: $output);
 	}//end execute()
 
 	/**
@@ -144,33 +144,19 @@ class AdoptShippedFlowsCommand extends Command {
 	 * how an administrator ends up believing the shipped flows are armed when
 	 * one of them still is not.
 	 *
-	 * @param array{note: string, rows: array<int, array{name: string, uuid: string, outcome: string, detail: string}>} $summary The service summary.
-	 * @param bool $dryRun Whether this was a dry run.
+	 * @param array{note: string, rows: array<int, array<string, string>>, dryRun: bool} $summary The service summary, and whether it was a dry run.
 	 * @param OutputInterface $output Console output.
 	 *
 	 * @return int Symfony command exit code.
 	 */
-	private function report(array $summary, bool $dryRun, OutputInterface $output): int {
+	private function report(array $summary, OutputInterface $output): int {
 		if ($summary['note'] !== '') {
 			$output->writeln('<comment>' . $summary['note'] . '</comment>');
 			return Command::SUCCESS;
 		}
 
-		$prefix = 'dossiq:flows:adopt';
-		if ($dryRun === true) {
-			$prefix .= ' (dry run — nothing was written)';
-		}
-
-		$failed = 0;
-		foreach ($summary['rows'] as $row) {
-			if ($row['outcome'] === 'failed') {
-				$failed++;
-			}
-
-			$output->writeln(
-				sprintf('  %-9s %s — %s', $row['outcome'], $row['name'], $row['detail'])
-			);
-		}
+		$prefix = $this->reportPrefix(dryRun: $summary['dryRun']);
+		$failed = $this->printRows(rows: $summary['rows'], output: $output);
 
 		$output->writeln(
 			sprintf('%s: %d flow(s), %d failed.', $prefix, count($summary['rows']), $failed)
@@ -182,4 +168,43 @@ class AdoptShippedFlowsCommand extends Command {
 
 		return Command::SUCCESS;
 	}//end report()
+
+	/**
+	 * The command name the summary line starts with, marked on a dry run.
+	 *
+	 * @param bool $dryRun Whether this was a dry run.
+	 *
+	 * @return string
+	 */
+	private function reportPrefix(bool $dryRun): string {
+		$prefix = 'dossiq:flows:adopt';
+		if ($dryRun === true) {
+			$prefix .= ' (dry run — nothing was written)';
+		}
+
+		return $prefix;
+	}//end reportPrefix()
+
+	/**
+	 * Print one line per outcome row, and count the failed ones.
+	 *
+	 * @param array<int, array{name: string, uuid: string, outcome: string, detail: string}> $rows   The outcome rows.
+	 * @param OutputInterface                                                                $output Console output.
+	 *
+	 * @return int How many rows failed.
+	 */
+	private function printRows(array $rows, OutputInterface $output): int {
+		$failed = 0;
+		foreach ($rows as $row) {
+			if ($row['outcome'] === 'failed') {
+				$failed++;
+			}
+
+			$output->writeln(
+				sprintf('  %-9s %s — %s', $row['outcome'], $row['name'], $row['detail'])
+			);
+		}
+
+		return $failed;
+	}//end printRows()
 }//end class

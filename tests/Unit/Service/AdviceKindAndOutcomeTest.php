@@ -51,6 +51,7 @@ interface AdviceKindObjectStoreStub {
 
 /**
  * @covers \OCA\Dossiq\Service\AdviceService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class AdviceKindAndOutcomeTest extends TestCase {
 	use MakesCaseDateNormaliser;

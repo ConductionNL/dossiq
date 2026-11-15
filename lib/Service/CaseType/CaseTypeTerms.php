@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeTermsInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCP\IL10N;
 
@@ -38,7 +39,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeTerms {
+class CaseTypeTerms implements CaseTypeTermsInterface {
 
 	private const DURATION = '/^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$/';
 

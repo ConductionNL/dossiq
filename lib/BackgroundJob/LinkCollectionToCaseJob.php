@@ -32,10 +32,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Intake\CollectionCaseLinks;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
@@ -53,7 +53,7 @@ class LinkCollectionToCaseJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory             $time            The time factory.
-	 * @param SettingsService          $settingsService Register, schemas and OpenRegister.
+	 * @param SettingsServiceInterface          $settingsService Register, schemas and OpenRegister.
 	 * @param IURLGenerator            $urlGenerator    Makes the publication links absolute.
 	 * @param IJobList                 $jobList         The job list, to queue the argument again.
 	 * @param LoggerInterface          $logger          The logger.
@@ -61,7 +61,7 @@ class LinkCollectionToCaseJob extends QueuedJob {
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly IJobList $jobList,
 		private readonly LoggerInterface $logger,

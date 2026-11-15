@@ -49,6 +49,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Milestone;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\MilestoneScheduleInterface;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 
 /**
@@ -56,7 +57,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
  *
  * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/milestone-tracking/spec.md
  */
-class MilestoneSchedule {
+class MilestoneSchedule implements MilestoneScheduleInterface {
 
 	/**
 	 * How deep a dependency chain may be resolved.

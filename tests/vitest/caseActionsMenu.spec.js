@@ -792,7 +792,7 @@ describe('Archive and Restore on the case page', () => {
 		expect(iconsSource).toContain('\n\tArchiveOutline,\n')
 	})
 
-	it('hides the eight write actions on an archived case and keeps the lifecycle menu', () => {
+	it('hides the nine write actions on an archived case and keeps the lifecycle menu', () => {
 		// REQ-CM-43. The marker is read off the case object the page already
 		// holds, so the gate costs no round trip. The operator is `empty`,
 		// because OpenRegister leaves the key off until a case is archived.
@@ -807,6 +807,9 @@ describe('Archive and Restore on the case page', () => {
 			'log-contact',
 			'generate-document',
 			'advice-request',
+			// Asking a partner hands work to someone outside on the case
+			// (capability-rows-said-and-planned T04), a write like the others.
+			'ask-partner',
 			'case-acknowledgement-met',
 			'plan-follow-up',
 			// A reminder is work somebody is asked to do on the case, so it is

@@ -18,18 +18,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Middleware;
 
-use OCA\Dossiq\Service\TenantAuditTrailService;
-use OCA\Dossiq\Service\TenantAuthenticationService;
-use OCA\Dossiq\Service\TenantContext;
-use OCA\Dossiq\Service\TenantService;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantContextInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantServiceInterface;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
@@ -44,7 +44,7 @@ use OCP\IUserSession;
  * makes it on OpenRegister's routes only. It moved here when the active
  * tenant became OpenRegister's active organisation (Q3, Ruben 2026-10-08).
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 class MandateValidationMiddleware extends Middleware {
 	/**
@@ -88,18 +88,18 @@ class MandateValidationMiddleware extends Middleware {
 	 *
 	 * @param IRequest $request Request.
 	 * @param IUserSession $userSession User session.
-	 * @param TenantContext $context Tenant context.
-	 * @param TenantAuthenticationService $authService Auth service.
-	 * @param TenantService $tenantService Platform admin check.
-	 * @param TenantAuditTrailService $auditTrail Writes each decision to the tenant's audit trail.
+	 * @param TenantContextInterface $context Tenant context.
+	 * @param TenantAuthenticationServiceInterface $authService Auth service.
+	 * @param TenantServiceInterface $tenantService Platform admin check.
+	 * @param TenantAuditTrailServiceInterface $auditTrail Writes each decision to the tenant's audit trail.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly TenantContext $context,
-		private readonly TenantAuthenticationService $authService,
-		private readonly TenantService $tenantService,
-		private readonly TenantAuditTrailService $auditTrail,
+		private readonly TenantContextInterface $context,
+		private readonly TenantAuthenticationServiceInterface $authService,
+		private readonly TenantServiceInterface $tenantService,
+		private readonly TenantAuditTrailServiceInterface $auditTrail,
 	) {
 	}//end __construct()
 
@@ -116,7 +116,7 @@ class MandateValidationMiddleware extends Middleware {
 	 * OCP\AppFramework\Middleware::beforeController(); this middleware
 	 * dispatches on the controller class and the request URI instead.
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function beforeController($controller, $methodName): void {
@@ -135,13 +135,10 @@ class MandateValidationMiddleware extends Middleware {
 		}
 		$tenantId = $this->context->getTenantId();
 
-		$decision = $this->authService->validateMandateMatrix(
-			tenantId: $tenantId,
-			userId: $userId,
-			action: $action
-		);
+		$asked = ['tenantId' => $tenantId, 'userId' => $userId, 'action' => $action];
+		$decision = $this->authService->validateMandateMatrix(...$asked);
 
-		$this->logDecision(tenantId: $tenantId, userId: $userId, action: $action, decision: $decision);
+		$this->logDecision(asked: $asked, decision: $decision);
 
 		if ($decision['allowed'] === false) {
 			throw new MandateDeniedException(
@@ -167,35 +164,57 @@ class MandateValidationMiddleware extends Middleware {
 	 * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
 	 * inspected.
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response {
 		if ($exception instanceof MandateDeniedException) {
-			$answer = ['success' => false, 'error' => $exception->getMessage()];
-			if ($exception->getLifecycleStatus() !== '') {
-				$answer['status'] = $exception->getLifecycleStatus();
-			}
-
-			return new JSONResponse($answer, 403);
+			return $this->deniedResponse(exception: $exception);
 		}
 
 		// A mandate check that could not run is not a denial. It used to leave
 		// here as 403 "No active mandate matrix for tenant", which reads as a
 		// decision about the caller rather than a failure of the store.
 		if ($exception instanceof RefusedException) {
-			return new JSONResponse(
-				[
-					'success' => false,
-					'message' => $exception->getSentence(),
-					'error' => $exception->getRule(),
-					'code' => $exception->getMessage(),
-				],
-				$exception->getStatus()
-			);
+			return $this->refusedResponse(exception: $exception);
 		}
 
 		throw $exception;
 	}//end afterException()
+
+	/**
+	 * The 403 answer for a denied mandate, with the organisation's status when it is the reason.
+	 *
+	 * @param MandateDeniedException $exception The denial.
+	 *
+	 * @return JSONResponse The answer.
+	 */
+	private function deniedResponse(MandateDeniedException $exception): JSONResponse {
+		$answer = ['success' => false, 'error' => $exception->getMessage()];
+		if ($exception->getLifecycleStatus() !== '') {
+			$answer['status'] = $exception->getLifecycleStatus();
+		}
+
+		return new JSONResponse($answer, 403);
+	}//end deniedResponse()
+
+	/**
+	 * The answer for a mandate check that could not run.
+	 *
+	 * @param RefusedException $exception The refusal.
+	 *
+	 * @return JSONResponse The answer, with the refusal's own status.
+	 */
+	private function refusedResponse(RefusedException $exception): JSONResponse {
+		return new JSONResponse(
+			[
+				'success' => false,
+				'message' => $exception->getSentence(),
+				'error' => $exception->getRule(),
+				'code' => $exception->getMessage(),
+			],
+			$exception->getStatus()
+		);
+	}//end refusedResponse()
 
 	/**
 	 * Refuse a request whose organisation is not `active` (REQ-TAO-003).
@@ -248,7 +267,7 @@ class MandateValidationMiddleware extends Middleware {
 	 *
 	 * @return string|null Action or null when no mandate gate applies.
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 */
 	public function resolveAction(string $verb, string $path): ?string {
 		foreach (self::STATUS_PATH_HINTS as $hint) {
@@ -268,16 +287,14 @@ class MandateValidationMiddleware extends Middleware {
 	 * no row and logs an error when the tenant has no anchor, and mirrors
 	 * every entry to the log as a `Dossiq AUDIT` line for the SIEM stream.
 	 *
-	 * @param string $tenantId Tenant UUID.
-	 * @param string $userId NC user ID.
-	 * @param string $action Action.
+	 * @param array{tenantId:string,userId:string,action:string} $asked Tenant UUID, NC user ID and action.
 	 * @param array{allowed:bool,reason:string} $decision Decision.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
-	private function logDecision(string $tenantId, string $userId, string $action, array $decision): void {
+	private function logDecision(array $asked, array $decision): void {
 		$outcome = 'denied';
 		if ($decision['allowed'] === true) {
 			$outcome = 'allowed';
@@ -285,10 +302,10 @@ class MandateValidationMiddleware extends Middleware {
 
 		$this->auditTrail->emit(
 			[
-				'action' => 'mandate.'.$action.'.'.$outcome,
-				'actor' => $userId,
+				'action' => 'mandate.'.$asked['action'].'.'.$outcome,
+				'actor' => $asked['userId'],
 				'resource' => $this->request->getRequestUri().' ('.(string)$decision['reason'].')',
-				'tenantId' => $tenantId,
+				'tenantId' => $asked['tenantId'],
 			]
 		);
 	}//end logDecision()

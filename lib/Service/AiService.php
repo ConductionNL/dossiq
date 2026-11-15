@@ -31,10 +31,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
 use OCA\Dossiq\Service\Ai\AiAuditLog;
 use OCA\Dossiq\Service\Ai\AiEndpointGuard;
 use OCA\Dossiq\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiModelRequest;
 use OCA\Dossiq\Service\Ai\AiPiiRedactor;
 use OCA\Dossiq\Service\Ai\AiPromptFactory;
 use OCA\Dossiq\Service\Ai\AiRequest;
@@ -58,13 +60,11 @@ use RuntimeException;
  * recording a conversational assistant exchange, and reading the trail back —
  * lives in {@see \OCA\Dossiq\Service\Ai\AiAuditService}.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- *
- * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-ai-assistance/tasks.md
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
  */
-class AiService {
+class AiService implements AiServiceInterface {
 	/**
 	 * Per operation: the label of its unavailable message, the log line and the
 	 * answer prefix of a failure, the result key recorded as confidence (null:
@@ -148,7 +148,7 @@ class AiService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isEnabled(): bool {
 		return $this->flagEnabled(key: 'ai_enabled');
@@ -171,7 +171,7 @@ class AiService {
 	 */
 	private function flagEnabled(string $key, string $default = ''): bool {
 		return $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$key,
 			$default
 		) === '1';
@@ -214,7 +214,7 @@ class AiService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isFeatureEnabled(string $feature): bool {
 		if ($this->isEnabled() === false) {
@@ -259,7 +259,7 @@ class AiService {
 	 *
 	 * @return array Classification result with suggestion and confidence
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function classifyDocument(string $caseId, string $documentId, string $userId): array {
 		return $this->operate(
@@ -281,7 +281,7 @@ class AiService {
 	 *
 	 * @return array Extraction result with field suggestions and confidence
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function extractData(string $caseId, ?string $documentId, string $userId): array {
 		return $this->operate(
@@ -303,7 +303,7 @@ class AiService {
 	 *
 	 * @return array Answer with source citations
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function askQuestion(string $caseId, string $question, string $userId): array {
 		// The one prompt carrying free text a person typed: the audit entry
@@ -328,7 +328,7 @@ class AiService {
 	 *
 	 * @return array Summary text
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function summarize(string $caseId, string $type, ?string $documentId, string $userId): array {
 		return $this->operate(
@@ -349,7 +349,7 @@ class AiService {
 	 *
 	 * @return array Routing suggestion with recommended case worker
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestRouting(string $caseId, string $userId): array {
 		return $this->operate(
@@ -370,7 +370,7 @@ class AiService {
 	 *
 	 * @return array Next-step suggestions
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestNextStep(string $caseId, string $userId): array {
 		return $this->operate(
@@ -398,7 +398,7 @@ class AiService {
 	 * @return array{healthy: bool, status: string, model: string, message: string, responseTimeMs: int}
 	 *                                                                                                   Health check result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function testHealth(): array {
 		$startTime = microtime(true);
@@ -430,15 +430,15 @@ class AiService {
 	 *
 	 * @return array AI settings (without sensitive data like API keys)
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getAiSettings(): array {
 		return [
 			'ai_enabled' => $this->isEnabled(),
-			'ai_model_type' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local'),
-			'ai_model_url' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_url', ''),
-			'ai_model_name' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', ''),
-			'ai_api_key_set' => $this->appConfig->getValueString(Application::APP_ID, 'ai_api_key', '') !== '',
+			'ai_model_type' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_type', 'local'),
+			'ai_model_url' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_url', ''),
+			'ai_model_name' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_model_name', ''),
+			'ai_api_key_set' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'ai_api_key', '') !== '',
 			'ai_feature_classification' => $this->flagEnabled(key: 'ai_feature_classification'),
 			'ai_feature_extraction' => $this->flagEnabled(key: 'ai_feature_extraction'),
 			'ai_feature_qa' => $this->flagEnabled(key: 'ai_feature_qa'),
@@ -477,7 +477,7 @@ class AiService {
 	 * @return array<int, array{start: int, end: int, category: string, text: string}>
 	 *                                                                                 Spans sorted by `start`, ascending.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
 	 */
 	public function detectDeterministicPiiSpans(string $text): array {
 		return $this->pii->detectSpans(text: $text);
@@ -519,53 +519,14 @@ class AiService {
 	 * @spec openspec/specs/ai-assistance/spec.md
 	 */
 	protected function callAiModel(string $prompt): array {
-		$modelUrl = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_model_url',
-			''
-		);
-
-		if (empty($modelUrl) === true) {
-			throw new RuntimeException('AI model URL is not configured');
-		}
-
-		$modelName = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_model_name',
-			'llama3.1'
-		);
-
-		$modelType = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_model_type',
-			'local'
-		);
-
-		// Build the request payload for Ollama-compatible API.
-		$payload = json_encode(
-			[
-				'model' => $modelName,
-				'prompt' => $prompt,
-				'stream' => false,
-				'format' => 'json',
-			]
-		);
-
+		$request = new AiModelRequest(appConfig: $this->appConfig, endpointGuard: $this->endpointGuard);
+		$modelUrl = $request->configuredModelUrl();
+		$modelName = $request->setting(key: 'ai_model_name', default: 'llama3.1');
+		$modelType = $request->setting(key: 'ai_model_type', default: 'local');
+		$payload = $request->generateRequestBody(modelName: $modelName, prompt: $prompt);
 		$endpoint = rtrim($modelUrl, '/') . '/api/generate';
-
-		// SSRF guard: resolve the configured model URL to the ONE address it may
-		// be connected to, before making any outbound request.
-		$pinnedAddress = $this->endpointGuard->resolveSafeAddress(url: $modelUrl, modelType: $modelType);
-		if ($pinnedAddress === null) {
-			throw new RuntimeException('AI model URL failed SSRF security check');
-		}
-
-		$ch = curl_init($endpoint);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_POST, true);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+		$pinnedAddress = $request->pinnedModelAddress(url: $modelUrl, modelType: $modelType);
+		$ch = $request->openGenerateRequest(endpoint: $endpoint, payload: $payload);
 
 		// Connect to the address the guard INSPECTED, not to whatever the name
 		// resolves to now. Without this, the guard's answer and curl's own
@@ -573,70 +534,11 @@ class AiService {
 		// second one carries the request — which is the whole of a DNS
 		// rebinding attack. The Host header and TLS SNI still carry the
 		// configured name, so certificate validation is unaffected.
-		curl_setopt($ch, CURLOPT_RESOLVE, [$this->pinnedResolveEntry(url: $modelUrl, address: $pinnedAddress)]);
+		curl_setopt($ch, CURLOPT_RESOLVE, [$request->pinnedResolveEntry(url: $modelUrl, address: $pinnedAddress)]);
+		$request->sendCloudApiKey(ch: $ch, modelType: $modelType);
 
-		// Add API key for cloud models.
-		if ($modelType === 'cloud') {
-			$apiKey = $this->appConfig->getValueString(
-				Application::APP_ID,
-				'ai_api_key',
-				''
-			);
-			if (empty($apiKey) === false) {
-				curl_setopt(
-					$ch,
-					CURLOPT_HTTPHEADER,
-					[
-						'Content-Type: application/json',
-						'Authorization: Bearer ' . $apiKey,
-					]
-				);
-			}
-		}
-
-		$response = curl_exec($ch);
-		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		$error = curl_error($ch);
-		curl_close($ch);
-
-		if ($response === false || empty($error) === false) {
-			throw new RuntimeException('AI model connection failed: ' . $error);
-		}
-
-		if ($httpCode < 200 || $httpCode >= 300) {
-			throw new RuntimeException('AI model returned HTTP ' . $httpCode);
-		}
-
-		return $this->decodeAiModelResponse(response: $response);
+		return $this->decodeAiModelResponse(response: $request->modelAnswer(ch: $ch));
 	}//end callAiModel()
-
-	/**
-	 * Build the `CURLOPT_RESOLVE` entry that pins one host:port to one address.
-	 *
-	 * The port has to be stated explicitly because `CURLOPT_RESOLVE` matches on
-	 * `host:port`, and an entry naming the wrong port is simply ignored — the
-	 * pin would silently do nothing and curl would resolve the name itself.
-	 * A URL without a port takes the scheme's default.
-	 *
-	 * @param string $url The configured model URL.
-	 * @param string $address The address the guard approved.
-	 *
-	 * @return string The `host:port:address` entry.
-	 */
-	private function pinnedResolveEntry(string $url, string $address): string {
-		$parsed = parse_url($url);
-		$host = strtolower(trim(($parsed['host'] ?? ''), '[]'));
-
-		$port = ($parsed['port'] ?? null);
-		if ($port === null) {
-			$port = 80;
-			if (strtolower($parsed['scheme'] ?? '') === 'https') {
-				$port = 443;
-			}
-		}
-
-		return $host . ':' . $port . ':' . $address;
-	}//end pinnedResolveEntry()
 
 	/**
 	 * Decode the raw AI model HTTP body into the suggestion array.

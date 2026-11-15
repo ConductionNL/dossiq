@@ -174,6 +174,104 @@ final class CasePlanBlobTest extends TestCase {
 	}//end testMismatchesNameMissingAndDifferingRows()
 
 	/**
+	 * A part that is not a list is refused, a scalar JSON blob too.
+	 *
+	 * @return void
+	 */
+	public function testAPartThatIsNotAListIsRefused(): void {
+		foreach ([['caseFile' => 'x'], ['eventLog' => 3], ['planItemStates' => 'active'], '"just a string"', 42] as $raw) {
+			try {
+				$this->blob->decode(raw: $raw);
+				$this->fail('Refusal expected for ' . json_encode($raw));
+			} catch (UnexpectedValueException $e) {
+				$this->assertSame('blob_undecodable', $e->getMessage());
+			}
+		}
+	}//end testAPartThatIsNotAListIsRefused()
+
+	/**
+	 * Missing parts default to empty, states are read as strings and the event log is re-indexed.
+	 *
+	 * @return void
+	 */
+	public function testDecodeNormalisesTheParts(): void {
+		$decoded = $this->blob->decode(raw: ['planItemStates' => [7 => 'active', 'besluit' => 1], 'eventLog' => [3 => ['a'], 9 => ['b']]]);
+
+		$this->assertSame(
+			['planItemStates' => ['7' => 'active', 'besluit' => '1'], 'caseFile' => [], 'eventLog' => [['a'], ['b']]],
+			$decoded
+		);
+	}//end testDecodeNormalisesTheParts()
+
+	/**
+	 * An event that is not a record is refused by its position.
+	 *
+	 * @return void
+	 */
+	public function testAnEventThatIsNotARecordIsRefused(): void {
+		$this->expectException(UnexpectedValueException::class);
+		$this->expectExceptionMessage('unreadable_event:1');
+		$this->blob->history(
+			eventLog: [['at' => '2026-09-01T10:00:00Z', 'itemId' => 'intake', 'to' => 'active'], 'intake -> active'],
+			definition: self::definition()
+		);
+	}//end testAnEventThatIsNotARecordIsRefused()
+
+	/**
+	 * History trims the item, moment and from, and reads a missing target as empty.
+	 *
+	 * @return void
+	 */
+	public function testHistoryTrimsWhatItReads(): void {
+		$history = $this->blob->history(
+			eventLog: [['at' => ' 2026-09-01T10:00:00.250+0200 ', 'itemId' => ' besluit ', 'from' => '  ']],
+			definition: self::definition()
+		);
+
+		$this->assertSame([['item' => 'besluit', 'to' => '', 'at' => '2026-09-01T10:00:00.250+0200']], $history);
+	}//end testHistoryTrimsWhatItReads()
+
+	/**
+	 * Nodes that are not records pass through unstamped, and their keys cannot be targeted.
+	 *
+	 * @return void
+	 */
+	public function testNodesThatAreNotRecordsPassThrough(): void {
+		$definition = ['items' => ['loose', ['key' => 'intake', 'children' => 'none']]];
+
+		$stamped = $this->blob->withStates(definition: $definition, states: ['intake' => 'active']);
+
+		$this->assertSame(['items' => ['loose', ['key' => 'intake', 'children' => [], 'state' => 'active']]], $stamped);
+
+		$this->expectExceptionMessage('orphan_item:loose');
+		$this->blob->withStates(definition: $definition, states: ['loose' => 'active']);
+	}//end testNodesThatAreNotRecordsPassThrough()
+
+	/**
+	 * A definition without items stamps nothing and refuses any state.
+	 *
+	 * @return void
+	 */
+	public function testADefinitionWithoutItemsHasNoKeys(): void {
+		$this->assertSame(['settings' => [], 'items' => []], $this->blob->withStates(definition: ['settings' => []], states: []));
+
+		$this->expectExceptionMessage('orphan_item:intake');
+		$this->blob->withStates(definition: ['items' => 'none'], states: ['intake' => 'active']);
+	}//end testADefinitionWithoutItemsHasNoKeys()
+
+	/**
+	 * Rows that are not records are ignored when comparing.
+	 *
+	 * @return void
+	 */
+	public function testMismatchesIgnoreRowsThatAreNotRecords(): void {
+		$this->assertSame(
+			['intake: active -> missing'],
+			$this->blob->mismatches(states: ['intake' => 'active'], rows: ['intake', null, ['state' => 'active']])
+		);
+	}//end testMismatchesIgnoreRowsThatAreNotRecords()
+
+	/**
 	 * A stage with one child task, and a milestone.
 	 *
 	 * @return array<string, mixed> The definition.

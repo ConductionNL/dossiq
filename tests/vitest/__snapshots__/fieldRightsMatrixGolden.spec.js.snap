@@ -1,0 +1,148 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`fieldRightsMatrix golden > draws every column and cell 1`] = `
+{
+  "columns": [
+    {
+      "id": "intake",
+      "label": "Intaker / Balie, ontvangen, in behandeling",
+      "statuses": [
+        "s1",
+        "s2",
+      ],
+    },
+    {
+      "id": "legal",
+      "label": "legal",
+      "statuses": [],
+    },
+    {
+      "id": "audit",
+      "label": "audit, besluit",
+      "statuses": [
+        "s3",
+      ],
+    },
+  ],
+  "rows": [
+    {
+      "cells": [
+        {
+          "state": "readOnly",
+        },
+        {
+          "state": "required",
+        },
+        {
+          "state": "edit",
+        },
+      ],
+      "field": "amount",
+      "label": "Bedrag",
+    },
+    {
+      "cells": [
+        {
+          "state": "required",
+        },
+        {
+          "state": "hidden",
+        },
+        {
+          "state": "edit",
+        },
+      ],
+      "field": "reason",
+      "label": "reason",
+    },
+    {
+      "cells": [
+        {
+          "state": "edit",
+        },
+        {
+          "state": "required",
+        },
+        {
+          "state": "required",
+        },
+      ],
+      "field": "decision",
+      "label": "Besluit",
+    },
+    {
+      "cells": [
+        {
+          "state": "hidden",
+        },
+        {
+          "state": "edit",
+        },
+        {
+          "state": "edit",
+        },
+      ],
+      "field": "secret",
+      "label": "Geheim",
+    },
+    {
+      "cells": [
+        {
+          "state": "edit",
+        },
+        {
+          "state": "edit",
+        },
+        {
+          "state": "readOnly",
+        },
+      ],
+      "field": "unlisted",
+      "label": "unlisted",
+    },
+    {
+      "cells": [
+        {
+          "state": "required",
+        },
+        {
+          "state": "required",
+        },
+        {
+          "state": "edit",
+        },
+      ],
+      "field": " ",
+      "label": " ",
+    },
+  ],
+}
+`;
+
+exports[`fieldRightsMatrix golden > lists required fields without columns when no role rule exists 1`] = `
+{
+  "columns": [],
+  "rows": [
+    {
+      "cells": [],
+      "field": "amount",
+      "label": "Bedrag",
+    },
+    {
+      "cells": [],
+      "field": "reason",
+      "label": "reason",
+    },
+    {
+      "cells": [],
+      "field": "decision",
+      "label": "Besluit",
+    },
+    {
+      "cells": [],
+      "field": " ",
+      "label": " ",
+    },
+  ],
+}
+`;

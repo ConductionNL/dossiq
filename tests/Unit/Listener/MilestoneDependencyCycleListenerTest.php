@@ -45,6 +45,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Listener\MilestoneDependencyCycleListener
+ * @uses \OCA\Dossiq\Listener\Support\PreSaveCheck
  * @covers \OCA\Dossiq\Service\Settings\SchemaScopeResolver
  * @uses   \OCA\Dossiq\Service\Milestone\MilestoneSchedule
  * @uses   \OCA\Dossiq\Service\Milestone\MilestoneProjection

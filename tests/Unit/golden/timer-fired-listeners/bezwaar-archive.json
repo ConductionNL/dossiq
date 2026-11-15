@@ -1,0 +1,32 @@
+{
+    "plain event": [],
+    "acted on": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "another app": [],
+    "another source": [],
+    "no source": [],
+    "a warning rung": [],
+    "no rung": [],
+    "no account": [
+        {
+            "runAsWhenNobodyIsSignedIn": "unavailable"
+        }
+    ],
+    "a failing operation": [
+        {
+            "runAsWhenNobodyIsSignedIn": "failed"
+        },
+        {
+            "error": "Dossiq bezwaar: timer fire handling failed",
+            "context": {
+                "trigger": "trg-1",
+                "error": "store down"
+            }
+        }
+    ],
+    "without triggerId": [],
+    "an empty triggerId": []
+}

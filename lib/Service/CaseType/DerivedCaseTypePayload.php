@@ -130,7 +130,7 @@ class DerivedCaseTypePayload {
 	 *
 	 * @return array<string, mixed> The payload to save as a new object.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function nextVersion(array $source, string $sourceId): array {
 		$payload = $this->stripIdentity(data: $source);

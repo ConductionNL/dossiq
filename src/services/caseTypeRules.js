@@ -46,25 +46,95 @@ const PROPERTY_TYPES = {
 export function ruleFields({ propertyDefinitions = [], statusTypes = [], documentTypes = [] } = {}) {
 	const fields = propertyDefinitions
 		.filter((p) => p && p.name)
-		.map((p) => {
-			const field = { id: p.name, label: resolveTranslatable(p.title || p.label || wordsOf(p.name)).text, type: PROPERTY_TYPES[p.propertyType] || 'string' }
-			if (Array.isArray(p.enumValues) && p.enumValues.length > 0) {
-				field.options = p.enumValues.map((v) => ({ id: v, label: String(v) }))
-			}
-			if (/kosten|bedrag|amount|price|prijs/i.test(p.name) && field.type === 'number') {
-				field.format = 'currency'
-			}
-			return field
-		})
-	if (statusTypes.length > 0) {
-		fields.push({ id: STATUS_FIELD, label: t('dossiq', 'status'), type: 'enum', options: statusTypes.map((s) => ({ id: s.id, label: resolveTranslatable(s.name || s.title || s.id).text })) })
-	}
+		.map(propertyField)
+	fields.push(...statusFields(statusTypes))
+	fields.push(...documentFields(documentTypes))
+	return fields
+}
+
+/**
+ * The status as a condition field, when the case type has statuses.
+ *
+ * @param {Array<object>} statusTypes The statuses.
+ * @return {Array<object>} The status field, or none.
+ */
+function statusFields(statusTypes) {
+	return statusTypes.length > 0 ? [statusField(statusTypes)] : []
+}
+
+/**
+ * The document types as condition fields, those without an id left out.
+ *
+ * @param {Array<object>} documentTypes The document types.
+ * @return {Array<object>} The fields.
+ */
+function documentFields(documentTypes) {
+	const fields = []
 	for (const d of documentTypes) {
 		if (d && d.id) {
-			fields.push({ id: DOCUMENT_FIELD_PREFIX + d.id, label: t('dossiq', 'Document {name}', { name: resolveTranslatable(d.name || d.title || d.id).text }), type: 'presence' })
+			fields.push(documentField(d))
 		}
 	}
 	return fields
+}
+
+/**
+ * One property definition as a condition field.
+ *
+ * @param {object} p The property definition.
+ * @return {{id: string, label: string, type: string, options?: Array, format?: string}} The field.
+ */
+function propertyField(p) {
+	const field = { id: p.name, label: resolveTranslatable(p.title || p.label || wordsOf(p.name)).text, type: PROPERTY_TYPES[p.propertyType] || 'string' }
+	addOptions(field, p)
+	addCurrencyFormat(field, p)
+	return field
+}
+
+/**
+ * Give a field the choices its property definition lists.
+ *
+ * @param {object} field The field, changed in place.
+ * @param {object} p The property definition.
+ * @return {void}
+ */
+function addOptions(field, p) {
+	if (Array.isArray(p.enumValues) && p.enumValues.length > 0) {
+		field.options = p.enumValues.map((v) => ({ id: v, label: String(v) }))
+	}
+}
+
+/**
+ * Mark a number field that holds money as currency.
+ *
+ * @param {object} field The field, changed in place.
+ * @param {object} p The property definition.
+ * @return {void}
+ */
+function addCurrencyFormat(field, p) {
+	if (/kosten|bedrag|amount|price|prijs/i.test(p.name) && field.type === 'number') {
+		field.format = 'currency'
+	}
+}
+
+/**
+ * The status as a condition field, with the case type's statuses as choices.
+ *
+ * @param {Array<object>} statusTypes The statuses.
+ * @return {object} The field.
+ */
+function statusField(statusTypes) {
+	return { id: STATUS_FIELD, label: t('dossiq', 'status'), type: 'enum', options: statusTypes.map((s) => ({ id: s.id, label: resolveTranslatable(s.name || s.title || s.id).text })) }
+}
+
+/**
+ * One document type as a condition field: it can only be filled in.
+ *
+ * @param {object} d The document type.
+ * @return {object} The field.
+ */
+function documentField(d) {
+	return { id: DOCUMENT_FIELD_PREFIX + d.id, label: t('dossiq', 'Document {name}', { name: resolveTranslatable(d.name || d.title || d.id).text }), type: 'presence' }
 }
 
 /**
@@ -101,19 +171,63 @@ export async function fetchBlueprintCatalogue(caseTypeId) {
 export async function fetchRoleNamesByGroup(caseTypeId) {
 	try {
 		const { data } = await axios.get(generateUrl('/apps/openregister/api/objects/dossiq/roleType'), { params: { caseType: caseTypeId, _limit: 100 } })
-		const names = {}
-		for (const roleType of Array.isArray(data?.results) ? data.results : []) {
-			const group = typeof roleType?.ncGroupId === 'string' ? roleType.ncGroupId : ''
-			const name = typeof roleType?.name === 'string' ? roleType.name.trim() : ''
-			if (group !== '' && name !== '') {
-				names[group] = [...(names[group] || []), name]
-			}
-		}
-		return names
+		return roleNamesByGroup(data?.results)
 	} catch {
 		return {}
 	}
 }
+
+/**
+ * The role type names per group, from the role types read.
+ *
+ * @param {unknown} results The role types; anything but a list reads as none.
+ * @return {Object<string, Array<string>>} The names per group.
+ */
+function roleNamesByGroup(results) {
+	const names = {}
+	for (const roleType of Array.isArray(results) ? results : []) {
+		addRoleName(names, roleType)
+	}
+	return names
+}
+
+/**
+ * Add a role type's trimmed name under its group, when it has both.
+ *
+ * @param {Object<string, Array<string>>} names The names per group, changed in place.
+ * @param {object|null} roleType One role type.
+ * @return {void}
+ */
+function addRoleName(names, roleType) {
+	const group = textOf(roleType?.ncGroupId)
+	const name = textOf(roleType?.name).trim()
+	if (group !== '' && name !== '') {
+		names[group] = [...(names[group] || []), name]
+	}
+}
+
+/**
+ * A value when it is text, else the empty string.
+ *
+ * @param {unknown} value The value.
+ * @return {string} The text.
+ */
+function textOf(value) {
+	return typeof value === 'string' ? value : ''
+}
+
+/**
+ * How each stored condition kind reads as an editor row.
+ *
+ * @type {Map<string, function(object): {field: string, operator: string, value?: unknown}>}
+ */
+const EDITOR_ROWS_BY_KIND = new Map([
+	['fieldCompare', (condition) => ({ field: condition.field, operator: condition.op || 'eq', value: condition.value })],
+	['fieldEquals', (condition) => ({ field: condition.field, operator: 'eq', value: condition.value })],
+	['fieldPresent', (condition) => ({ field: condition.field, operator: 'present' })],
+	['statusIs', (condition) => ({ field: STATUS_FIELD, operator: 'eq', value: condition.status })],
+	['documentPresent', (condition) => ({ field: DOCUMENT_FIELD_PREFIX + condition.documentType, operator: 'present' })],
+])
 
 /**
  * A stored condition as an editor row.
@@ -122,14 +236,8 @@ export async function fetchRoleNamesByGroup(caseTypeId) {
  * @return {{field: string, operator: string, value?: unknown}}
  */
 export function toEditorCondition(condition) {
-	switch (condition?.kind) {
-	case 'fieldCompare': return { field: condition.field, operator: condition.op || 'eq', value: condition.value }
-	case 'fieldEquals': return { field: condition.field, operator: 'eq', value: condition.value }
-	case 'fieldPresent': return { field: condition.field, operator: 'present' }
-	case 'statusIs': return { field: STATUS_FIELD, operator: 'eq', value: condition.status }
-	case 'documentPresent': return { field: DOCUMENT_FIELD_PREFIX + condition.documentType, operator: 'present' }
-	default: return { field: '', operator: 'eq', value: '' }
-	}
+	const toRow = EDITOR_ROWS_BY_KIND.get(condition?.kind)
+	return toRow === undefined ? { field: '', operator: 'eq', value: '' } : toRow(condition)
 }
 
 /**
@@ -146,12 +254,34 @@ export function fromEditorCondition(row) {
 	if (field.startsWith(DOCUMENT_FIELD_PREFIX)) {
 		return { kind: 'documentPresent', documentType: field.slice(DOCUMENT_FIELD_PREFIX.length) }
 	}
+	return namedFieldCondition(field, row)
+}
+
+/**
+ * The stored condition for an editor row on the status or a property field.
+ *
+ * @param {string} field The row's field.
+ * @param {{operator: string, value?: unknown}} row The editor row.
+ * @return {object} The stored condition.
+ */
+function namedFieldCondition(field, row) {
 	if (field === STATUS_FIELD && row.operator === 'eq') {
 		return { kind: 'statusIs', status: String(row.value ?? '') }
 	}
 	if (row.operator === 'present') {
 		return { kind: 'fieldPresent', field }
 	}
+	return fieldCompareCondition(field, row)
+}
+
+/**
+ * The stored comparison of a field, `eq` when the row names no operator.
+ *
+ * @param {string} field The row's field.
+ * @param {{operator: string, value?: unknown}} row The editor row.
+ * @return {object} The stored condition.
+ */
+function fieldCompareCondition(field, row) {
 	return { kind: 'fieldCompare', field, op: row.operator || 'eq', value: row.value }
 }
 
