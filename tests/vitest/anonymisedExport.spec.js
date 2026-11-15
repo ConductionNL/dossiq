@@ -33,7 +33,7 @@ const {
 	ANONYMISED_EXPORT_URL,
 	anonymisedCsv,
 	csvCell,
-	exportAnonymisedSelection,
+	exportCasesAnonymised,
 } = await import('../../src/utils/anonymisedExport.js')
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -72,7 +72,7 @@ describe('exporting the selection anonymised', () => {
 		post.mockResolvedValue({ data: { cases: [{ title: 'Wmo' }, { title: 'Jeugd' }] } })
 		const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
 
-		await expect(exportAnonymisedSelection({ selectedIds: ['c1', 'c2'] })).resolves.toBe(true)
+		await expect(exportCasesAnonymised(['c1', 'c2'])).resolves.toBe(true)
 
 		expect(post).toHaveBeenCalledWith(`/index.php${ANONYMISED_EXPORT_URL}`, { caseIds: ['c1', 'c2'] })
 		expect(click).toHaveBeenCalledTimes(1)
@@ -84,7 +84,7 @@ describe('exporting the selection anonymised', () => {
 		post.mockRejectedValue({ response: { data: { error: 'A case type could not be read' } } })
 		const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
 
-		await expect(exportAnonymisedSelection({ selectedIds: ['c1'] })).resolves.toBe(false)
+		await expect(exportCasesAnonymised(['c1'])).resolves.toBe(false)
 
 		expect(showError).toHaveBeenCalledWith('A case type could not be read')
 		expect(click).not.toHaveBeenCalled()
@@ -92,11 +92,11 @@ describe('exporting the selection anonymised', () => {
 	})
 
 	it('does nothing without a selection, and says so when nothing came back', async () => {
-		await expect(exportAnonymisedSelection({ selectedIds: [] })).resolves.toBe(false)
+		await expect(exportCasesAnonymised([])).resolves.toBe(false)
 		expect(post).not.toHaveBeenCalled()
 
 		post.mockResolvedValue({ data: { cases: [] } })
-		await expect(exportAnonymisedSelection({ selectedIds: ['c1'] })).resolves.toBe(false)
+		await expect(exportCasesAnonymised(['c1'])).resolves.toBe(false)
 		expect(showError).toHaveBeenCalledWith('None of the selected cases could be exported')
 	})
 

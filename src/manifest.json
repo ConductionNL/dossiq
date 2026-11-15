@@ -650,10 +650,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes. A case type that sets requiresSpecialCategory refuses a case without them at intake (SpecialCategoryClassification, 422 naming the field), on every create path; the form offers the field on every case because a form condition reads the form's own values and cannot ask the chosen case type.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"widget": "textarea"
 							},
@@ -1187,10 +1198,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"widget": "textarea"
 							},
@@ -2869,8 +2891,9 @@
 				],
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",
-				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
+				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "gdprClassification", "impact", "urgency"],
 				"fieldOverrides": {
+					"gdprClassification": { "_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.", "enumLabels": { "health": "Health", "ethnicity": "Racial or ethnic origin", "religion": "Religion or belief", "politicalOpinion": "Political opinions", "criminal": "Criminal convictions and offences" } },
 					"description": { "widget": "textarea" },
 					"requester": { "widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }], "label": "Requester" },
 					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
@@ -5461,8 +5484,27 @@
 								},
 								{
 									"widgetId": "case-attention"
+								},
+								{
+									"widgetId": "case-special-categories"
 								}
 							]
+						}
+					},
+					{
+						"id": "case-special-categories",
+						"type": "banner",
+						"title": "Special categories of personal data",
+						"_note": "social-domain-consent-and-safeguards 3.1, REQ-SDC-SAFE-01: a case that records special categories of personal data (its gdprClassification, required at intake when the case type sets requiresSpecialCategory) says so on the case page, naming them. A strip in case-banner-stack, shown only while the field holds a category.",
+						"content": {
+							"variant": "warning",
+							"icon": "ShieldAccountOutline",
+							"lead": "This case processes special categories of personal data: {subject.gdprClassification|values}.",
+							"fallbackLead": "This case processes special categories of personal data.",
+							"visibleWhen": {
+								"field": "gdprClassification",
+								"op": "notEmpty"
+							}
 						}
 					},
 					{
@@ -15313,10 +15355,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"widget": "textarea"
 							},
@@ -16125,10 +16178,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"widget": "textarea"
 							},

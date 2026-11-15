@@ -2,8 +2,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The anonymised export of a case list: the Cases page's bulk action that
- * sends the selected cases to `POST /api/cases/anonymised-export` and saves
+ * The anonymised export of a case list: what the Cases page's bulk action
+ * (exportAnonymisedSelection in caseBulkActions.js) runs. It sends the cases to `POST /api/cases/anonymised-export` and saves
  * what comes back as a CSV file.
  *
  * The server does the anonymising (each case type's `identifyingFields`
@@ -87,14 +87,13 @@ function saveFile(text, filename) {
 }
 
 /**
- * Export the selected cases anonymised.
+ * Export cases anonymised.
  *
- * @param {object} args The bulk action arguments.
- * @param {Array<string>} args.selectedIds The selected case ids.
+ * @param {Array<string>} selectedIds The case ids.
  * @return {Promise<boolean>} Whether a file was saved.
  * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
-export async function exportAnonymisedSelection({ selectedIds } = {}) {
+export async function exportCasesAnonymised(selectedIds) {
 	const caseIds = (Array.isArray(selectedIds) ? selectedIds : []).map(String).filter((id) => id !== '')
 	if (caseIds.length === 0) {
 		return false

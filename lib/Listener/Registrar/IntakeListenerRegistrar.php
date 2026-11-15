@@ -34,6 +34,7 @@ use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
+use OCA\Dossiq\Listener\SpecialCategoryProcessingLogListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -194,6 +195,17 @@ class IntakeListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,
 			listener: IntakeRequirementsListener::class
+		);
+
+		// The special categories a case processes go to the processing log
+		// once they are saved (social-domain-consent-and-safeguards 3.1).
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: SpecialCategoryProcessingLogListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: SpecialCategoryProcessingLogListener::class
 		);
 	}//end registerIntakeRequirementsListeners()
 

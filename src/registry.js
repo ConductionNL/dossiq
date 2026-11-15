@@ -162,8 +162,8 @@ import WorkloadTeamChips from './views/WorkloadTeamChips.vue'
 import WorkloadTeamHeading from './views/WorkloadTeamHeading.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
-import { exportAnonymisedSelection } from './utils/anonymisedExport.js'
 import {
+	exportAnonymisedSelection,
 	extendTermSelection,
 	reassignSelection,
 	resumeSelection,
