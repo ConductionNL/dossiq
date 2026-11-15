@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ComplaintHearingServiceInterface;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
@@ -38,7 +39,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
-class HearingService {
+class HearingService implements ComplaintHearingServiceInterface {
 
 	use SearchesObjects;
 

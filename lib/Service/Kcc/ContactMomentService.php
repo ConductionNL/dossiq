@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Kcc;
 
+use OCA\Dossiq\Kernel\Contracts\KccContactMomentServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
@@ -48,7 +49,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
  */
-class ContactMomentService {
+class ContactMomentService implements KccContactMomentServiceInterface {
 	/**
 	 * Allowed channels for a contact moment.
 	 *

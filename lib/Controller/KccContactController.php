@@ -33,7 +33,7 @@ use Closure;
 use OCA\Dossiq\Controller\Support\ReadsKccBodies;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CallbackServiceInterface;
-use OCA\Dossiq\Service\Kcc\ContactMomentService;
+use OCA\Dossiq\Kernel\Contracts\KccContactMomentServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -56,14 +56,14 @@ class KccContactController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param ContactMomentService $contactMomentService The contact-moment service.
+	 * @param KccContactMomentServiceInterface $contactMomentService The contact-moment service.
 	 * @param CallbackServiceInterface $callbackService The callback service.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager The group manager.
 	 */
 	public function __construct(
 		IRequest $request,
-		private ContactMomentService $contactMomentService,
+		private KccContactMomentServiceInterface $contactMomentService,
 		private CallbackServiceInterface $callbackService,
 		private IUserSession $userSession,
 		private IGroupManager $groupManager,
