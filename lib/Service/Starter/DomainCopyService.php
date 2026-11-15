@@ -290,7 +290,7 @@ class DomainCopyService implements DomainCopyServiceInterface {
 	 * @param array<int, array<string, mixed>> $templates The stored templates.
 	 * @param array<string, string>            $map       Old case type id to new case type id.
 	 *
-	 * @return integer How many templates came along.
+	 * @return array{copied: int, notCarried: array<int, string>} How many templates came along, and why the rest did not.
 	 */
 	private function copyEachTemplate(array $templates, array $map): array {
 		$copied = 0;
