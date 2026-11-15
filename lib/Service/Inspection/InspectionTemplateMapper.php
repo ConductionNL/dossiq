@@ -85,7 +85,7 @@ class InspectionTemplateMapper {
 		$items = [];
 		foreach ($this->listOf(value: ($checklist['items'] ?? [])) as $index => $item) {
 			$label = (string)($item['label'] ?? '');
-			$items[] = $this->item(item: $item, id: $label, label: $label, order: $index);
+			$items[] = $this->item(item: $item, placement: ['id' => $label, 'label' => $label, 'order' => $index]);
 		}
 
 		$status = (string)($checklist['status'] ?? 'draft');
@@ -168,9 +168,7 @@ class InspectionTemplateMapper {
 
 		return $this->item(
 			item: $item,
-			id: $id,
-			label: (string)($item['question'] ?? $item['label'] ?? ''),
-			order: $index
+			placement: ['id' => $id, 'label' => (string)($item['question'] ?? $item['label'] ?? ''), 'order' => $index]
 		);
 	}//end stackCItem()
 
@@ -270,19 +268,17 @@ class InspectionTemplateMapper {
 	 *
 	 * The response type is read from the source item's older `type`.
 	 *
-	 * @param array<string, mixed> $item  The source item.
-	 * @param string               $id    Its answer key.
-	 * @param string               $label Its question.
-	 * @param integer              $order Its position.
+	 * @param array<string, mixed>                          $item      The source item.
+	 * @param array{id: string, label: string, order: int} $placement Its answer key, its question and its position.
 	 *
 	 * @return array<string, mixed> The item.
 	 */
-	private function item(array $item, string $id, string $label, int $order): array {
+	private function item(array $item, array $placement): array {
 		$type = (string)($item['type'] ?? '');
 		$out = [
-			'id' => $id,
-			'order' => (int)($item['order'] ?? ($order + 1)),
-			'label' => $label,
+			'id' => $placement['id'],
+			'order' => (int)($item['order'] ?? ($placement['order'] + 1)),
+			'label' => $placement['label'],
 			'responseType' => $this->responseType(type: $type),
 			'required' => (($item['required'] ?? false) === true),
 			'photoRequired' => $this->photoGate(value: ($item['photoRequired'] ?? $item['fotoRequired'] ?? false)),
