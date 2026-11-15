@@ -2761,7 +2761,7 @@ class DrcController extends ZgwController {
 			$existingData['locked'] = true;
 			$existingData['lockId'] = $lockId;
 
-			$this->saveLockData(document: $document, data: $existingData);
+			$this->saveFallbackObject(document: $document, data: $existingData);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning('DRC: Failed to store lockId in data blob: ' . $e->getMessage());
 		}//end try
@@ -2780,7 +2780,7 @@ class DrcController extends ZgwController {
 			$existingData['locked'] = false;
 			$existingData['lockId'] = '';
 
-			$this->saveLockData(document: $document, data: $existingData);
+			$this->saveFallbackObject(document: $document, data: $existingData);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning('DRC: Failed to clear lockId in data blob: ' . $e->getMessage());
 		}//end try
@@ -2807,23 +2807,4 @@ class DrcController extends ZgwController {
 
 		return $existingData;
 	}//end lockDataOf()
-
-	/**
-	 * Write the document's data back.
-	 *
-	 * @param EioDocument          $document The document, its object service and its mapping.
-	 * @param array<string, mixed> $data     The data to write.
-	 *
-	 * @return void
-	 *
-	 * @throws \Throwable When the save fails.
-	 */
-	private function saveLockData(EioDocument $document, array $data): void {
-		$document->objectService->saveObject(
-			register: $document->mappingConfig['sourceRegister'],
-			schema: $document->mappingConfig['sourceSchema'],
-			object: $data,
-			uuid: $document->uuid
-		);
-	}//end saveLockData()
 }//end class
