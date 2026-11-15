@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersNoCaseAccess;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\BatchSelectionInterface;
@@ -48,6 +49,7 @@ use OCP\IUserSession;
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
  */
 class DocumentReviewController extends Controller {
+	use AnswersNoCaseAccess;
 
 	/**
 	 * Constructor.
@@ -303,18 +305,6 @@ class DocumentReviewController extends Controller {
 
 		return $user;
 	}//end caseWriter()
-
-	/**
-	 * The refusal of a user without access to the case.
-	 *
-	 * @return JSONResponse The refusal.
-	 */
-	private function noAccess(): JSONResponse {
-		return new JSONResponse(
-			['error' => 'no-case-access', 'message' => $this->l10n->t('You do not have access to this case')],
-			Http::STATUS_FORBIDDEN
-		);
-	}//end noAccess()
 
 	/**
 	 * The answer for a refused review write: the rule, its sentence and its status.

@@ -24,11 +24,11 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\CaseRoleVocabularyInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ResyncsRoleVocabulary;
 use OCA\OpenRegister\Event\SchemaUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Re-syncs the case role vocabulary when the case schema is updated.
@@ -44,6 +44,8 @@ use Throwable;
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-the-case-schemas-role-vocabulary-survives-a-rewrite-of-the-schema
  */
 class CaseSchemaVocabularyListener implements IEventListener {
+	use ResyncsRoleVocabulary;
+
 	/**
 	 * The case schema's slug, matched besides the configured id.
 	 */
@@ -85,12 +87,6 @@ class CaseSchemaVocabularyListener implements IEventListener {
 			return;
 		}
 
-		try {
-			$this->vocabulary->sync();
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq people: the case role vocabulary was not re-synced after the case schema changed: ' . $e->getMessage()
-			);
-		}
+		$this->resyncVocabularyAfter(change: 'the case schema changed');
 	}//end handle()
 }//end class

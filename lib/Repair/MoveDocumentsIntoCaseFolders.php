@@ -17,8 +17,8 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchema;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -40,7 +40,6 @@ use Throwable;
  */
 class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
 
 	/**
 	 * The app-config key that records the step has run.
@@ -153,51 +152,18 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	 * @return array{moved: int, skipped: int, missing: int} The outcomes counted.
 	 */
 	private function moveEveryPage(object $objectService, string $register, string $infoSchema): array {
+		$source = new RepairSchema(objectService: $objectService, register: $register);
+		$source->schema = $infoSchema;
 		$counts = ['moved' => 0, 'skipped' => 0, 'missing' => 0];
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $infoSchema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			$counts = $this->moveRows(rows: $rows, counts: $counts);
-
-			$page++;
+		foreach ($source->rows(pageSize: self::PAGE_SIZE) as $row) {
+			$outcome = $this->moveOne(row: $row);
+			if (array_key_exists($outcome, $counts) === true) {
+				$counts[$outcome]++;
+			}
 		}
 
 		return $counts;
 	}//end moveEveryPage()
-
-	/**
-	 * Move each row of one page and add its outcome to the counts.
-	 *
-	 * @param array<int, array<string, mixed>>              $rows   The page's rows.
-	 * @param array{moved: int, skipped: int, missing: int} $counts The counts so far.
-	 *
-	 * @return array{moved: int, skipped: int, missing: int} The counts.
-	 */
-	private function moveRows(array $rows, array $counts): array {
-		foreach ($rows as $row) {
-			$outcome = $this->moveOne(row: $row);
-			if ($outcome === 'moved') {
-				$counts['moved']++;
-			}
-
-			if ($outcome === 'skipped') {
-				$counts['skipped']++;
-			}
-
-			if ($outcome === 'missing') {
-				$counts['missing']++;
-			}
-		}
-
-		return $counts;
-	}//end moveRows()
 
 	/**
 	 * Move one record's file, when it has one and a case to go to.

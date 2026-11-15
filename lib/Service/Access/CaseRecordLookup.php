@@ -88,9 +88,24 @@ class CaseRecordLookup {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
 	 */
 	public function rowsOf(string $schema, string $field, string $caseId): array {
+		return $this->everyPage(query: ['schema' => $schema, 'field' => $field, 'value' => $caseId]);
+	}//end rowsOf()
+
+	/**
+	 * Every row of a schema whose field holds the value, a page at a time.
+	 *
+	 * @param array{schema: string, field: string, value: string} $query The schema slug, the field and the value.
+	 *
+	 * @return list<array<string, mixed>> The rows.
+	 *
+	 * @throws RuntimeException When more rows name the value than this reads.
+	 */
+	private function everyPage(array $query): array {
+		$schema = $query['schema'];
+		$caseId = $query['value'];
 		$rows = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			$read = $this->page(schema: $schema, field: $field, value: $caseId, offset: ($page * self::PAGE), limit: self::PAGE);
+			$read = $this->page(schema: $schema, field: $query['field'], value: $caseId, offset: ($page * self::PAGE), limit: self::PAGE);
 			$rows = array_merge($rows, $read['rows']);
 			if ($read['read'] < self::PAGE) {
 				return $rows;
@@ -100,7 +115,7 @@ class CaseRecordLookup {
 		throw new RuntimeException(
 			'Dossiq case record lookup: more than '.(self::MAX_PAGES * self::PAGE).' rows of '.$schema.' name '.$caseId.'; not read in part'
 		);
-	}//end rowsOf()
+	}//end everyPage()
 
 	/**
 	 * One page of the rows of a schema whose field holds the value, read regardless of the caller.
@@ -118,18 +133,7 @@ class CaseRecordLookup {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-existing-records-are-reconciled-on-upgrade-req-cra-012
 	 */
 	public function page(string $schema, string $field, string $value, int $offset, int $limit): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '' || $schema === '' || $value === '') {
-			return ['rows' => [], 'read' => 0];
-		}
-
-		$rows = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [$field => $value, '_limit' => $limit, '_offset' => $offset]
-		);
+		$rows = $this->unscopedPage(schema: $schema, filters: [$field => $value, '_limit' => $limit, '_offset' => $offset]);
 
 		return [
 			'rows' => array_values(
@@ -138,6 +142,30 @@ class CaseRecordLookup {
 			'read' => count($rows),
 		];
 	}//end page()
+
+	/**
+	 * One page of a schema's rows read regardless of the caller, or none when the store, the schema
+	 * or the value looked for (the first filter) is missing.
+	 *
+	 * @param string               $schema  The schema slug; '' answers none.
+	 * @param array<string, mixed> $filters The field and its value first, then the page filters.
+	 *
+	 * @return array<array<string, mixed>> The rows the store answered.
+	 */
+	private function unscopedPage(string $schema, array $filters): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '' || $schema === '' || reset($filters) === '') {
+			return [];
+		}
+
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: $filters
+		);
+	}//end unscopedPage()
 
 	/**
 	 * Every row of a schema, read regardless of the caller and a page at a time.

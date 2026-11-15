@@ -114,7 +114,19 @@ class CitizenLookupRecorder {
 	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	public function record(string $employeeId, string $subjectId, bool $allowed, array $fields = [], string $ground = ''): bool {
-		$lookup = new CitizenLookup(employeeId: $employeeId, subjectId: $subjectId, allowed: $allowed, fields: $fields, ground: $ground);
+		return $this->recorded(
+			lookup: new CitizenLookup(employeeId: $employeeId, subjectId: $subjectId, allowed: $allowed, fields: $fields, ground: $ground)
+		);
+	}//end record()
+
+	/**
+	 * Write the lookup's row, answering false and logging when it could not be written.
+	 *
+	 * @param CitizenLookup $lookup Who looked, at whom, whether it was permitted, the fields answered and the ground.
+	 *
+	 * @return bool Whether the row was written.
+	 */
+	private function recorded(CitizenLookup $lookup): bool {
 		try {
 			[$objectService, $register] = $this->target();
 
@@ -129,7 +141,7 @@ class CitizenLookupRecorder {
 			// fail-open is the right one here and nowhere else.
 			return $this->unrecorded(error: $e, lookup: $lookup);
 		}
-	}//end record()
+	}//end recorded()
 
 	/**
 	 * Log that a lookup could not be recorded.

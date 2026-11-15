@@ -202,15 +202,7 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function move(string $caseId, string $targetCaseTypeId, string $reason, string $actorUid): array {
-		$reason = trim($reason);
-		if ($reason === '') {
-			throw new RefusedException(
-				rule: 'version-move-needs-a-reason',
-				sentence: 'Say why this case is moving to another version of its case type.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
+		$reason = $this->requiredReason(reason: $reason);
 		$preview = $this->movablePreview(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId);
 
 		$this->applyMove(
@@ -227,6 +219,28 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 
 		return $preview;
 	}//end move()
+
+	/**
+	 * The trimmed reason for a move, refused when it is empty.
+	 *
+	 * @param string $reason Why the case is being moved.
+	 *
+	 * @return string The trimmed reason.
+	 *
+	 * @throws RefusedException When no reason is given.
+	 */
+	private function requiredReason(string $reason): string {
+		$reason = trim($reason);
+		if ($reason === '') {
+			throw new RefusedException(
+				rule: 'version-move-needs-a-reason',
+				sentence: 'Say why this case is moving to another version of its case type.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $reason;
+	}//end requiredReason()
 
 	/**
 	 * The move's preview, re-computed, refused when the case has nowhere to land.
@@ -275,7 +289,9 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 		$case['caseType'] = $targetCaseTypeId;
 		$case['status'] = (string)$act->preview['status']['targetStatusId'];
 		$case = $this->rebindTemplate(case: $case, targetCaseTypeId: $targetCaseTypeId);
-		$case = $this->journal(case: $case, sourceId: $sourceId, act: $act);
+		$entries = $this->journalOf(case: $case);
+		$entries[] = $this->journalEntry(sourceId: $sourceId, act: $act);
+		$case['activity'] = json_encode($entries);
 
 		$this->write(caseId: $caseId, case: $case);
 
@@ -393,22 +409,15 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 	}//end rebindTemplate()
 
 	/**
-	 * Record the move on the case's own activity journal.
+	 * The entries of the case's own activity journal, stored as JSON or as a list.
 	 *
-	 * Both version ids, the reason and the actor, because "the case type
-	 * changed" with nothing beside it is the audit entry that sends somebody
-	 * digging through the store to work out what it used to be.
+	 * @param array<string, mixed> $case The case being moved.
 	 *
-	 * @param array<string, mixed> $case     The case being moved.
-	 * @param string               $sourceId The version it is leaving.
-	 * @param VersionMoveAct       $act      What the move changes, why, and who moved it.
-	 *
-	 * @return array<string, mixed> The case, with the entry appended.
+	 * @return array<mixed> The journal entries.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	private function journal(array $case, string $sourceId, VersionMoveAct $act): array {
-		$preview = $act->preview;
+	private function journalOf(array $case): array {
 		$entries = [];
 		$raw = ($case['activity'] ?? null);
 		if (is_string($raw) === true && trim($raw) !== '') {
@@ -422,7 +431,27 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 			$entries = $raw;
 		}
 
-		$entries[] = [
+		return $entries;
+	}//end journalOf()
+
+	/**
+	 * The journal entry that records the move.
+	 *
+	 * Both version ids, the reason and the actor, because "the case type
+	 * changed" with nothing beside it is the audit entry that sends somebody
+	 * digging through the store to work out what it used to be.
+	 *
+	 * @param string         $sourceId The version it is leaving.
+	 * @param VersionMoveAct $act      What the move changes, why, and who moved it.
+	 *
+	 * @return array<string, mixed> The entry.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function journalEntry(string $sourceId, VersionMoveAct $act): array {
+		$preview = $act->preview;
+
+		return [
 			'type' => 'case-type-version-move',
 			'fromCaseType' => $sourceId,
 			'toCaseType' => (string)($preview['to']['id'] ?? ''),
@@ -434,11 +463,7 @@ class CaseVersionMove implements CaseVersionMoveInterface {
 			'actor' => $act->actorUid,
 			'timestamp' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 		];
-
-		$case['activity'] = json_encode($entries);
-
-		return $case;
-	}//end journal()
+	}//end journalEntry()
 
 	/**
 	 * Read one case, refusing rather than answering an empty one.

@@ -133,6 +133,7 @@ import CreateShareDialog from '../../../dialogs/CreateShareDialog.vue'
 import FederatedActivityPanel from '../../../dialogs/FederatedActivityPanel.vue'
 import CaseAccessGrants from './CaseAccessGrants.vue'
 import ShareTab from './ShareTab.vue'
+import { caseTab } from '../../../mixins/caseTab.js'
 import { useObjectStore } from '../../../store/modules/object.js'
 import {
 	createFederatedShareEndpoint,
@@ -156,13 +157,7 @@ export default {
 		FederatedActivityPanel,
 	},
 
-	props: {
-		/** Case UUID; forwarded by CnObjectSidebar's sharedTabProps. */
-		objectId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTab],
 
 	data() {
 		return {

@@ -84,7 +84,7 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 
 		$completed = $this->completedTitles(case: $case, actor: $userId);
 
-		return $this->resultFor(required: $required, completed: $completed, statusTypeId: $statusTypeId);
+		return $this->resultFor(required: $required, progress: ['completed' => $completed, 'statusTypeId' => $statusTypeId]);
 	}//end evaluate()
 
 	/**
@@ -106,13 +106,14 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 	/**
 	 * Pass when every required item is done, else fail naming the first open one.
 	 *
-	 * @param array<int, array<string, mixed>> $required     The required items.
-	 * @param array<int, string>               $completed    The titles of the items done.
-	 * @param string                           $statusTypeId The status type uuid.
+	 * @param array<int, array<string, mixed>>                           $required The required items.
+	 * @param array{completed: array<int, string>, statusTypeId: string} $progress `completed` the titles of the items done; `statusTypeId` the
+	 *                                                                             status type uuid.
 	 *
 	 * @return GuardResult
 	 */
-	private function resultFor(array $required, array $completed, string $statusTypeId): GuardResult {
+	private function resultFor(array $required, array $progress): GuardResult {
+		[$completed, $statusTypeId] = [$progress['completed'], $progress['statusTypeId']];
 		$open = $this->openTitles(required: $required, completed: $completed);
 		if ($open === []) {
 			return new GuardResult(passed: true, details: ['required' => count($required)]);

@@ -234,7 +234,7 @@ class BesluitMigrationService implements BesluitMigrationServiceInterface {
 	 */
 	private function migrateFrom(BesluitMigrationRun $run, string $sourceSchema): array {
 		try {
-			$sources = $this->rows(objectService: $run->objectService, register: self::SOURCE_REGISTER, schema: $sourceSchema);
+			$sources = $this->rows(objectService: $run->objectService, where: ['register' => self::SOURCE_REGISTER, 'schema' => $sourceSchema]);
 			$run->alreadyThere = $this->migratedSourceIds(objectService: $run->objectService, schema: $run->targetSchema);
 		} catch (Throwable $e) {
 			return $this->blockedSummary(message: 'Could not read the decision rows: ' . $e->getMessage());
@@ -405,14 +405,13 @@ class BesluitMigrationService implements BesluitMigrationServiceInterface {
 	/**
 	 * Read a schema's rows.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $schema The schema id.
+	 * @param object                                  $objectService The OpenRegister object service.
+	 * @param array{register: string, schema: string} $where         The register slug and the schema id.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function rows(object $objectService, string $register, string $schema): array {
-		$registerId = $this->registerId(slug: $register);
+	private function rows(object $objectService, array $where): array {
+		$registerId = $this->registerId(slug: $where['register']);
 		if ($registerId === '') {
 			return [];
 		}
@@ -420,7 +419,7 @@ class BesluitMigrationService implements BesluitMigrationServiceInterface {
 		$read = fn (): array => $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: (int)$registerId,
-			schema: (int)$schema,
+			schema: (int)$where['schema'],
 			// NO `_rbac`/`_multitenancy` here. On `ObjectService::searchObjects()`
 			// those are PARAMETERS, not query keys, and this bridge passes the
 			// array through as the query — so a key named `_rbac` reads as a
@@ -449,7 +448,7 @@ class BesluitMigrationService implements BesluitMigrationServiceInterface {
 	 */
 	private function migratedSourceIds(object $objectService, string $schema): array {
 		$seen = [];
-		foreach ($this->rows(objectService: $objectService, register: self::TARGET_REGISTER, schema: $schema) as $row) {
+		foreach ($this->rows(objectService: $objectService, where: ['register' => self::TARGET_REGISTER, 'schema' => $schema]) as $row) {
 			$reference = (string)($row['externalReference'] ?? '');
 			if (str_starts_with($reference, self::PROVENANCE_PREFIX) === false) {
 				continue;

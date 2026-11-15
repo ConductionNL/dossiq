@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsKccBodies;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\RoutingRuleServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -48,6 +49,8 @@ use OCP\IUserSession;
  * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 class KccRoutingController extends Controller {
+	use ReadsKccBodies;
+
 	/**
 	 * Constructor.
 	 *
@@ -234,24 +237,4 @@ class KccRoutingController extends Controller {
 
 		return null;
 	}//end requireAdmin()
-
-	/**
-	 * Read the JSON / form body parameters, excluding routing params.
-	 *
-	 * @return array<string, mixed> The body parameters.
-	 */
-	private function bodyParams(): array {
-		$params = $this->request->getParams();
-		unset($params['id'], $params['uuid'], $params['@self'], $params['_route']);
-		return $params;
-	}//end bodyParams()
-
-	/**
-	 * Build a 401 Unauthorized response.
-	 *
-	 * @return JSONResponse
-	 */
-	private function unauthorized(): JSONResponse {
-		return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
-	}//end unauthorized()
 }//end class

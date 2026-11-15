@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -146,15 +147,13 @@ class PublishSeededCaseTypes implements IRepairStep {
 	 * @return SeededCaseTypePublication|null
 	 */
 	private function publicationTarget(): ?SeededCaseTypePublication {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'case_type_schema');
+		if ($target === null) {
 			return null;
 		}
 
-		$publication = new SeededCaseTypePublication(objectService: $objectService, register: $register);
-		$publication->schema = $schema;
+		$publication = new SeededCaseTypePublication(objectService: $target->objectService, register: $target->register);
+		$publication->schema = $target->schema;
 
 		return $publication;
 	}//end publicationTarget()

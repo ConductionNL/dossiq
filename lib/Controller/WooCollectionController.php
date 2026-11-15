@@ -233,6 +233,23 @@ class WooCollectionController extends Controller {
 	 * @return JSONResponse The step's answer, or 401/403/4xx/503.
 	 */
 	private function run(string $caseId, bool $change, callable $step): JSONResponse {
+		$user = $this->permittedUser(caseId: $caseId, change: $change);
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		return $this->attempt(step: $step, user: $user);
+	}//end run()
+
+	/**
+	 * The signed-in user when they may read the case (and change it, when asked), or the refusal.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param bool   $change Whether the step changes the case.
+	 *
+	 * @return IUser|JSONResponse The user, or the 401 or 403 answer.
+	 */
+	private function permittedUser(string $caseId, bool $change): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -247,8 +264,8 @@ class WooCollectionController extends Controller {
 			return new JSONResponse(['error' => 'forbidden', 'message' => $this->l10n->t('You do not have access to this case.')], Http::STATUS_FORBIDDEN);
 		}
 
-		return $this->attempt(step: $step, user: $user);
-	}//end run()
+		return $user;
+	}//end permittedUser()
 
 	/**
 	 * Run a step for the caller, answering a refusal or an unreachable register as JSON.
