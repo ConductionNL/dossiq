@@ -212,11 +212,9 @@ class ZrcController extends ZgwController {
 	private function createValidated(string $resource, array $mappingConfig): JSONResponse {
 		$originalBody = $this->zgwService->getRequestBody($this->request);
 		$ruleResult = $this->validateCreate(resource: $resource, body: $originalBody, mappingConfig: $mappingConfig);
-		if ($ruleResult['valid'] === false) {
-			return new JSONResponse(
-				data: $this->zgwService->buildValidationError($ruleResult),
-				statusCode: $ruleResult['status']
-			);
+		$refusal = $this->ruleRefusal(ruleResult: $ruleResult);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return $this->createFromBody(

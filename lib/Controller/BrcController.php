@@ -488,11 +488,9 @@ class BrcController extends ZgwController {
 			body: [],
 			existingObject: $existingData
 		);
-		if ($ruleResult['valid'] === false) {
-			return new JSONResponse(
-				data: $this->zgwService->buildValidationError($ruleResult),
-				statusCode: $ruleResult['status']
-			);
+		$refusal = $this->ruleRefusal(ruleResult: $ruleResult);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Build the besluit URL for OIO cleanup.

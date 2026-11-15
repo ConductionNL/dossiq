@@ -167,4 +167,21 @@ final class GuardsZgwRequestsTest extends TestCase {
 		self::assertSame(['detail' => 'Not found'], $refusal->getData());
 		self::assertNull($host->call('missingResourceRefusal', ['resource' => 'x', 'uuid' => 'u1', 'detail' => 'Not found']));
 	}//end testMissingResourceIsNotFound()
+
+	/**
+	 * Rules that refuse answer their validation error with their status; rules that accept answer null.
+	 *
+	 * @return void
+	 */
+	public function testRuleRefusal(): void {
+		$refused = ['valid' => false, 'status' => Http::STATUS_BAD_REQUEST, 'errors' => ['x']];
+		$this->zgwService->method('buildValidationError')->with($refused)->willReturn(['detail' => 'invalid']);
+
+		$answer = $this->host()->call('ruleRefusal', ['ruleResult' => $refused]);
+		self::assertInstanceOf(JSONResponse::class, $answer);
+		self::assertSame(Http::STATUS_BAD_REQUEST, $answer->getStatus());
+		self::assertSame(['detail' => 'invalid'], $answer->getData());
+
+		self::assertNull($this->host()->call('ruleRefusal', ['ruleResult' => ['valid' => true]]));
+	}//end testRuleRefusal()
 }//end class

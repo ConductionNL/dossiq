@@ -336,11 +336,9 @@ class DrcController extends ZgwController {
 			objectService: $this->zgwService->getObjectService(),
 			mappingConfig: $mappingConfig
 		);
-		if ($ruleResult['valid'] === false) {
-			return new JSONResponse(
-				data: $this->zgwService->buildValidationError($ruleResult),
-				statusCode: $ruleResult['status']
-			);
+		$refusal = $this->ruleRefusal(ruleResult: $ruleResult);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return $ruleResult['enrichedBody'];
@@ -2419,11 +2417,9 @@ class DrcController extends ZgwController {
 	 */
 	private function applyUpdateRules(EioUpdateRun $run): ?JSONResponse {
 		$ruleResult = $this->validateUpdate(run: $run);
-		if ($ruleResult['valid'] === false) {
-			return new JSONResponse(
-				data: $this->zgwService->buildValidationError($ruleResult),
-				statusCode: $ruleResult['status']
-			);
+		$refusal = $this->ruleRefusal(ruleResult: $ruleResult);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$run->body = $ruleResult['enrichedBody'];

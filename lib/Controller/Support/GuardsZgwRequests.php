@@ -142,4 +142,22 @@ trait GuardsZgwRequests {
 
 		return null;
 	}//end missingResourceRefusal()
+
+	/**
+	 * The validation error the business rules answered, or null when they accepted.
+	 *
+	 * @param array<string, mixed> $ruleResult The rules' result: `valid`, `status` and the errors.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function ruleRefusal(array $ruleResult): ?JSONResponse {
+		if ($ruleResult['valid'] === false) {
+			return new JSONResponse(
+				data: $this->zgwService->buildValidationError($ruleResult),
+				statusCode: $ruleResult['status']
+			);
+		}
+
+		return null;
+	}//end ruleRefusal()
 }//end trait
