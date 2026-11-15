@@ -252,22 +252,21 @@ class CaseTools implements CaseToolsInterface {
 			return $this->error(code: 'task_not_found', message: 'That task could not be found on a case.');
 		}
 
-		return $this->completeAsMutator(task: $task, caseId: $caseId, outcome: $outcome);
+		return $this->completeAsMutator(task: $task, outcome: $outcome);
 	}//end completeTask()
 
 	/**
 	 * Complete a task on a case as the caller, when they may change the case.
 	 *
-	 * @param array<string, mixed> $task    The task.
-	 * @param string               $caseId  The case it is on.
+	 * @param array<string, mixed> $task    The task, on the case its `objectUuid` names.
 	 * @param string               $outcome The outcome to complete with, `done` when blank.
 	 *
 	 * @return array<string, mixed> The completed task, or an error envelope.
 	 *
 	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
 	 */
-	private function completeAsMutator(array $task, string $caseId, string $outcome): array {
-		$user = $this->mutator(caseId: $caseId);
+	private function completeAsMutator(array $task, string $outcome): array {
+		$user = $this->mutator(caseId: (string)($task['objectUuid'] ?? ''));
 		if (is_array($user) === true) {
 			return $user;
 		}
