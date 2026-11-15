@@ -10,7 +10,7 @@
  * tested without mounting a dialog and so the payload can be read in one
  * place rather than inferred from a template.
  *
- * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 /**
@@ -36,7 +36,7 @@ export const REMINDER_KIND = 'reminder'
  *
  * @param {Date} [now] The current moment, injectable for tests.
  * @return {string} The date as `YYYY-MM-DD`.
- * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function defaultReminderDate(now = new Date()) {
 	const next = new Date(now.getTime())
@@ -60,7 +60,7 @@ export function defaultReminderDate(now = new Date()) {
  * @param {object} form The form state, `{assignee, date, title}`.
  * @param {string} earliest The earliest allowed date, as `YYYY-MM-DD`.
  * @return {boolean} True when the reminder may be sent.
- * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function isReminderComplete(form, earliest) {
 	const assignee = String(form?.assignee ?? '').trim()
@@ -89,7 +89,7 @@ export function isReminderComplete(form, earliest) {
  * @param {object} form The form state, `{assignee, date, title}`.
  * @param {string} caseId The case the reminder is about.
  * @return {object} The task in the store's shape.
- * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function reminderPayload(form, caseId) {
 	return {

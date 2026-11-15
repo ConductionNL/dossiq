@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCA\Dossiq\Service\Status\StatusDeclarations;
 /**
  * Builds a StatusDeclarations double for a case type that declares nothing.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 trait MakesStatusDeclarations {
 	/**

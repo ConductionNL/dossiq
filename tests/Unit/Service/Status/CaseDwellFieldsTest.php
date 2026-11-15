@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  *
- * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 class CaseDwellFieldsTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -74,7 +74,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testAMoveBanksTheTimeSpentInTheStatusItLeaves(): void {
 		// Monday 1 June 2026 to Monday 8 June 2026: five working days between.
@@ -103,7 +103,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testASecondVisitAddsToTheSameStatusTotal(): void {
 		$case = [
@@ -139,7 +139,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testTheCountSkipsTheWeekendAndTheGeneralHoliday(): void {
 		$case = ['status' => 'review', 'currentStatusEnteredAt' => '2026-04-30T09:00:00+02:00'];
@@ -158,7 +158,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testACaseWithNoEntryMomentAndNoStartDateAnswersZero(): void {
 		self::assertSame(
@@ -180,7 +180,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testTheTotalsFoldInTheStatusStillRunning(): void {
 		$case = [
@@ -211,7 +211,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testTheDwellNeverTouchesTheTerm(): void {
 		$case = [
@@ -234,4 +234,102 @@ class CaseDwellFieldsTest extends TestCase {
 		// The move does not set the status itself; the engine does, after this.
 		self::assertSame(expected: 'review', actual: $moved['status']);
 	}//end testTheDwellNeverTouchesTheTerm()
+
+	/**
+	 * A clock behind the entry moment answers zero, never a negative dwell.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function testAClockBeforeTheEntryMomentAnswersZero(): void {
+		self::assertSame(
+			expected: 0,
+			actual: $this->dwell->elapsedWorkingDays(
+				case: ['status' => 'review', 'currentStatusEnteredAt' => '2026-06-08T09:00:00+02:00'],
+				now: new DateTimeImmutable('2026-06-01T09:00:00+02:00'),
+			),
+		);
+	}//end testAClockBeforeTheEntryMomentAnswersZero()
+
+	/**
+	 * The start date stands in for a missing entry moment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function testTheStartDateStandsInForAMissingEntryMoment(): void {
+		$snapshot = $this->dwell->snapshot(
+			case: ['status' => 'review', 'startDate' => '2026-06-01'],
+			maximum: 3,
+			now: new DateTimeImmutable('2026-06-08T09:00:00+02:00'),
+		);
+
+		self::assertSame(expected: 5, actual: $snapshot['days']);
+		self::assertSame(expected: 3, actual: $snapshot['maximum']);
+		self::assertTrue(condition: $snapshot['breached']);
+		self::assertStringStartsWith(prefix: '2026-06-01T', string: $snapshot['enteredAt']);
+	}//end testTheStartDateStandsInForAMissingEntryMoment()
+
+	/**
+	 * Malformed stored totals are skipped by the reader and dropped by a move.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function testMalformedStoredTotalsAreSkipped(): void {
+		$case = [
+			'status' => 'review',
+			'currentStatusEnteredAt' => '2026-06-01T09:00:00+02:00',
+			'statusDwellTotals' => [
+				'garbage',
+				['workingDays' => 9],
+				['statusType' => 'intake', 'workingDays' => 4],
+			],
+		];
+		$now = new DateTimeImmutable('2026-06-08T09:00:00+02:00');
+
+		self::assertSame(
+			expected: ['intake' => 4, 'review' => 5],
+			actual: $this->dwell->totalsFor(case: $case, now: $now),
+		);
+
+		$moved = $this->dwell->applyStatusChange(case: $case, toStatus: 'decision', now: $now);
+		self::assertSame(
+			expected: [
+				['statusType' => 'intake', 'workingDays' => 4],
+				['statusType' => 'review', 'workingDays' => 5],
+			],
+			actual: $moved['statusDwellTotals'],
+		);
+	}//end testMalformedStoredTotalsAreSkipped()
+
+	/**
+	 * Totals that are not a list read as none, and a case with no status
+	 * folds in no running time.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function testNonListTotalsAndNoStatusReadAsEmpty(): void {
+		$now = new DateTimeImmutable('2026-06-08T09:00:00+02:00');
+
+		self::assertSame(
+			expected: [],
+			actual: $this->dwell->totalsFor(case: ['statusDwellTotals' => 'nonsense'], now: $now),
+		);
+
+		$moved = $this->dwell->applyStatusChange(
+			case: ['status' => 'review', 'statusDwellTotals' => 'nonsense', 'currentStatusEnteredAt' => '2026-06-01T09:00:00+02:00'],
+			toStatus: 'decision',
+			now: $now,
+		);
+		self::assertSame(
+			expected: [['statusType' => 'review', 'workingDays' => 5]],
+			actual: $moved['statusDwellTotals'],
+		);
+	}//end testNonListTotalsAndNoStatusReadAsEmpty()
 }//end class

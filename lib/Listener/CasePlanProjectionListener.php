@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\CasePlanProjectionService;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\Dossiq\Kernel\Contracts\CasePlanProjectionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -50,14 +50,16 @@ class CasePlanProjectionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CasePlanProjectionService $projection   The caseModel-to-plan projection.
-	 * @param ObjectSchemaSlugResolver  $slugResolver Schema id-to-slug resolver.
+	 * @param CasePlanProjectionServiceInterface $projection   The caseModel-to-plan projection.
+	 * @param ObjectSchemaSlugResolverInterface  $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface           $logger       Logger.
+	 * @param ReceiptMoment $receipt Tells a received case from a draft (decision 180).
 	 */
 	public function __construct(
-		private readonly CasePlanProjectionService $projection,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CasePlanProjectionServiceInterface $projection,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
+		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()
 
@@ -71,32 +73,76 @@ class CasePlanProjectionListener implements IEventListener {
 	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $this->extractObject(event: $event);
+		// A draft has no plan; the plan is projected when the draft is sent.
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null || $this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
 			return;
 		}
 
-		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
-		$caseTypeId = (string)($payload['caseType'] ?? '');
+		$case = $this->caseAndType(payload: $payload);
+		[$caseId, $caseTypeId] = $case;
 		if ($caseId === '' || $caseTypeId === '') {
 			return;
 		}
 
+		$result = $this->project(caseId: $caseId, caseTypeId: $caseTypeId);
+		if ($result === null) {
+			return;
+		}
+
+		$this->reportUnplanned(case: $case, result: $result);
+	}//end handle()
+
+	/**
+	 * The case id and case type id of a created case.
+	 *
+	 * @param array<string, mixed> $payload The created case.
+	 *
+	 * @return array{0: string, 1: string} The case id and the case type id, '' when absent.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	private function caseAndType(array $payload): array {
+		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
+		$caseTypeId = (string)($payload['caseType'] ?? '');
+
+		return [$caseId, $caseTypeId];
+	}//end caseAndType()
+
+	/**
+	 * Project the case type's caseModel onto the new case, or null (logged) when that fails.
+	 *
+	 * @param string $caseId     The new case.
+	 * @param string $caseTypeId Its case type.
+	 *
+	 * @return array<string, mixed>|null The projection result (`projected`, `reason`), or null.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	private function project(string $caseId, string $caseTypeId): ?array {
 		try {
-			$result = $this->projection->projectForCase(caseId: $caseId, caseTypeId: $caseTypeId);
+			return $this->projection->projectForCase(caseId: $caseId, caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq case plan: projecting the caseModel of a new case failed',
 				['case' => $caseId, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
 			);
 
-			return;
+			return null;
 		}
+	}//end project()
 
+	/**
+	 * Warn about a CMMN case that started without a plan.
+	 *
+	 * @param array{0: string, 1: string} $case   The new case's id and its case type id.
+	 * @param array<string, mixed>        $result The projection result.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	private function reportUnplanned(array $case, array $result): void {
 		if ($result['projected'] === true || $result['reason'] === 'case_not_cmmn_managed') {
 			return;
 		}
@@ -107,34 +153,7 @@ class CasePlanProjectionListener implements IEventListener {
 		// somebody has to see.
 		$this->logger->warning(
 			'Dossiq case plan: a new case started without an OpenRegister case plan',
-			['case' => $caseId, 'caseType' => $caseTypeId, 'reason' => $result['reason']]
+			['case' => $case[0], 'caseType' => $case[1], 'reason' => $result['reason']]
 		);
-	}//end handle()
-
-	/**
-	 * Extract the OpenRegister object payload from an event.
-	 *
-	 * @param Event $event The dispatched event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null when it carries none.
-	 */
-	private function extractObject(Event $event): ?array {
-		if (method_exists($event, 'getObject') === false) {
-			return null;
-		}
-
-		$object = $event->getObject();
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end extractObject()
+	}//end reportUnplanned()
 }//end class

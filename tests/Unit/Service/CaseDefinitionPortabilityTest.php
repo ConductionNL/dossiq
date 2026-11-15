@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseDefinitionExportService;
+use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
 use OCA\Dossiq\Service\CaseDefinition\PackageIds;
 use OCA\Dossiq\Service\CaseDefinition\PackageValidator;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
@@ -48,8 +49,18 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use ZipArchive;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class CaseDefinitionPortabilityTest extends TestCase {
+
+	/**
+	 * The logger the importer writes to, when a test listens.
+	 *
+	 * @var \Psr\Log\LoggerInterface|null
+	 */
+	private ?\Psr\Log\LoggerInterface $importLog = null;
+
 
 	/** The case type the fixture instance holds. */
 	private const CASE_TYPE_ID = 'ct-1';
@@ -185,7 +196,11 @@ class CaseDefinitionPortabilityTest extends TestCase {
 	private function importer(bool $writesFail = false): CaseDefinitionImportService {
 		$objects = $this->createMock(ObjectServiceInterface::class);
 		$objects->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null, ...$rest) use ($writesFail): ObjectEntityInterface {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true, ...$rest) use ($writesFail): ObjectEntityInterface {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$key = (string)$schema;
 				$this->written[$key] ??= [];
 				if ($writesFail === true && ($object['name'] ?? '') === 'Afgehandeld') {
@@ -202,7 +217,8 @@ class CaseDefinitionPortabilityTest extends TestCase {
 			}
 		);
 		$objects->method('deleteObject')->willReturnCallback(
-			function (string $uuid, ...$rest): bool {
+			function (ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false, ...$rest): bool {
+				$uuid = $deletion->uuid;
 				$this->deleted[] = $uuid;
 
 				return true;
@@ -224,8 +240,8 @@ class CaseDefinitionPortabilityTest extends TestCase {
 		// A REAL writer over the SAME settings double. What this test observes
 		// did not move when the writer was split out: only the wiring line did.
 		return new CaseDefinitionImportService(
-			new NullLogger(),
-			new PackageWriter(new NullLogger(), $settings),
+			$this->importLog ?? new NullLogger(),
+			new PackageWriter(new NullLogger(), $settings, new ExistingRowMatcher(new NullLogger())),
 			new WorkflowDeployer(new NullLogger(), $settings),
 			new PackageValidator(new NullLogger(), new PackageIds()),
 		);
@@ -374,6 +390,143 @@ class CaseDefinitionPortabilityTest extends TestCase {
 		// instance would be wrong in every field.
 		$this->assertArrayNotHasKey('@self', $this->written['status_type_schema'][0]);
 	}//end testACaseTypeSurvivesARoundTrip()
+
+	/**
+	 * A partial export: its manifest (keys in order, versions, environment,
+	 * generator, excluded components), the version it stores, the entries the
+	 * archive carries, the file name and the log line; and the refusal of a
+	 * component that does not exist.
+	 *
+	 * @return void
+	 */
+	public function testAPartialExportKeepsItsWholeShape(): void {
+		$stored = [];
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			static fn (string $app, string $key, string $default = ''): string => match ($key) {
+				'export_version_ct-1' => '1.4',
+				'environment_name' => 'acceptatie',
+				'installed_version' => '0.4.54',
+				default => $default,
+			}
+		);
+		$appConfig->method('setValueString')->willReturnCallback(
+			static function (string $app, string $key, string $value) use (&$stored): bool {
+				$stored[] = [$app, $key, $value];
+				return true;
+			}
+		);
+		$logged = [];
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$logger->method('info')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$logged): void {
+				$logged[] = [$message, $context];
+			}
+		);
+		$exporter = new CaseDefinitionExportService($appConfig, $logger, $this->store(caseTypeExists: true));
+
+		$package = $exporter->exportCaseDefinition(self::CASE_TYPE_ID, ['statuses', 'workflows']);
+		$manifest = $this->entry(path: $package['path'], entry: 'manifest.json');
+		$zip = new ZipArchive();
+		$zip->open($package['path'], ZipArchive::RDONLY);
+		$names = [];
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$names[] = $zip->getNameIndex($i);
+		}
+
+		$zip->close();
+		unlink($package['path']);
+
+		self::assertSame(['version', 'previousVersion', 'exportDate', 'sourceEnvironment', 'generator', 'caseType', 'components', 'excludedComponents', 'dependencies'], array_keys($manifest));
+		self::assertSame(['1.5', '1.4', 'acceptatie', 'dossiq/0.4.54'], [$manifest['version'], $manifest['previousVersion'], $manifest['sourceEnvironment'], $manifest['generator']]);
+		self::assertSame(['id' => 'ct-1', 'slug' => 'omgevingsvergunning', 'title' => 'Omgevingsvergunning'], $manifest['caseType']);
+		self::assertSame(['statuses', 'workflows'], $manifest['components']);
+		self::assertSame(['schema', 'permissions', 'documents', 'metadata'], $manifest['excludedComponents']);
+		self::assertSame([['dossiq', 'export_version_ct-1', '1.5']], $stored);
+		self::assertSame('manifest.json', $names[0]);
+		self::assertContains('statuses.json', $names);
+		self::assertNotContains('schema.json', $names);
+		self::assertSame('case-definition-omgevingsvergunning-v1.5.zip', $package['filename']);
+		self::assertSame([['Exporting case definition {caseTypeId} with components: {components}', ['caseTypeId' => 'ct-1', 'components' => 'statuses, workflows']]], $logged);
+
+		try {
+			$exporter->exportCaseDefinition(self::CASE_TYPE_ID, ['statuses', 'bogus', 'other']);
+			self::fail('an unknown component must be refused');
+		} catch (\InvalidArgumentException $e) {
+			self::assertSame('Invalid export components: bogus, other', $e->getMessage());
+		}
+	}//end testAPartialExportKeepsItsWholeShape()
+
+	/**
+	 * What an import answers and logs: a refused package, a clean import and
+	 * one with a failed component.
+	 *
+	 * @return void
+	 */
+	public function testTheImportAnswersAndLogsItsOutcome(): void {
+		$lines = [];
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		foreach (['info', 'error'] as $level) {
+			$logger->method($level)->willReturnCallback(
+				static function (string $message, array $context = []) use (&$lines, $level): void {
+					$lines[] = [$level, $message, $context];
+				}
+			);
+		}
+
+		$this->importLog = $logger;
+
+		$bad = tempnam(sys_get_temp_dir(), 'dossiq_bad_');
+		file_put_contents((string)$bad, 'not a zip');
+		$refused = $this->importer()->importCaseDefinition((string)$bad);
+		unlink((string)$bad);
+		self::assertFalse($refused['success']);
+		self::assertSame([], $refused['components']);
+		self::assertStringStartsWith('Package validation failed: ', $refused['message']);
+		self::assertSame([], $lines);
+
+		$package = $this->exporter()->exportCaseDefinition(self::CASE_TYPE_ID);
+		$clean = $this->importer()->importCaseDefinition($package['path']);
+		self::assertSame('Import completed successfully', $clean['message']);
+		self::assertSame(['info', 'Case definition import completed: {success}, components: {count}', ['success' => 'true', 'count' => count($clean['components'])]], end($lines));
+
+		$lines = [];
+		$failed = $this->importer(writesFail: true)->importCaseDefinition($package['path']);
+		unlink($package['path']);
+		self::assertSame('Import completed with errors', $failed['message']);
+		self::assertSame([['info', 'Case definition import completed: {success}, components: {count}', ['success' => 'false', 'count' => count($failed['components'])]]], $lines);
+	}//end testTheImportAnswersAndLogsItsOutcome()
+
+	/**
+	 * A component this import does not know answers its own error. (A missing
+	 * or unreadable component file never gets this far: the validator refuses
+	 * the package first.)
+	 *
+	 * @return void
+	 */
+	public function testEachUnusableComponentAnswersItsOwnResult(): void {
+		$path = tempnam(sys_get_temp_dir(), 'dossiq_parts_');
+		$zip = new ZipArchive();
+		$zip->open((string)$path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+		$zip->addFromString('manifest.json', json_encode([
+			'version' => '1.0',
+			'exportDate' => '2026-09-18T00:00:00+00:00',
+			'caseType' => ['id' => 'ct-1', 'slug' => 'x'],
+			'components' => ['mystery'],
+		]));
+		$zip->addFromString('mystery.json', '{}');
+		$zip->close();
+
+		$result = $this->importer()->importCaseDefinition((string)$path);
+		unlink((string)$path);
+
+		self::assertSame(
+			[
+				'mystery' => ['status' => 'error', 'message' => "Component 'mystery' names no collection this import knows how to write."],
+			],
+			$result['components']
+		);
+	}//end testEachUnusableComponentAnswersItsOwnResult()
 
 	/**
 	 * A component that writes nothing is not a success.

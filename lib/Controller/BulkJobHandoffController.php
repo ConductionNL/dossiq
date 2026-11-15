@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -30,13 +30,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
+use OCA\Dossiq\Kernel\Contracts\BulkJobHandoffInterface;
 use OCA\Dossiq\Service\Bulk\MixedCaseTypeVersionsException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -45,7 +46,7 @@ use Throwable;
 /**
  * Hand a bulk act on cases over to the job.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class BulkJobHandoffController extends Controller {
 
@@ -54,18 +55,18 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
-	 * @param BulkJobHandoff  $handoff     The hand-off to OpenRegister's job.
+	 * @param BulkJobHandoffInterface  $handoff     The hand-off to OpenRegister's job.
 	 * @param IUserSession    $userSession The user session.
 	 * @param LoggerInterface $logger      The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BulkJobHandoff $handoff,
+		private readonly BulkJobHandoffInterface $handoff,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -82,7 +83,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return JSONResponse The previewed job, or the refusal.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function create(): JSONResponse {
@@ -91,24 +92,20 @@ class BulkJobHandoffController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$action = (string)$this->request->getParam('action', '');
-		$parameters = $this->arrayParam(name: 'parameters');
-		$selection = $this->arrayParam(name: 'selection');
-		$justification = trim((string)$this->request->getParam('justification', ''));
+		return $this->startJob(action: (string)$this->request->getParam('action', ''), user: $user);
+	}//end create()
 
-		$reason = null;
-		if ($justification !== '') {
-			$reason = $justification;
-		}
-
+	/**
+	 * Start the job, and answer each refusal the hand-over can raise.
+	 *
+	 * @param string $action The act.
+	 * @param IUser  $user   The caller, who acts.
+	 *
+	 * @return JSONResponse 201 with the job, or the refusal.
+	 */
+	private function startJob(string $action, IUser $user): JSONResponse {
 		try {
-			$job = $this->handoff->create(
-				actionId: $action,
-				parameters: $parameters,
-				selection: $selection,
-				justification: $reason,
-				actorUid: $user->getUID(),
-			);
+			$job = $this->handOver(action: $action, user: $user);
 		} catch (MixedCaseTypeVersionsException $e) {
 			return $this->versionRefusal(exception: $e);
 		} catch (InvalidArgumentException $e) {
@@ -116,19 +113,63 @@ class BulkJobHandoffController extends Controller {
 		} catch (RuntimeException $e) {
 			return $this->engineRefusal(exception: $e, action: $action);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'BulkJobHandoffController: the act could not be handed over',
-				['exception' => $e->getMessage(), 'action' => $action],
-			);
-
-			return new JSONResponse(
-				['error' => 'The bulk act could not be started'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
+			return $this->handOverFailed(exception: $e, action: $action);
 		}//end try
 
 		return new JSONResponse($job, Http::STATUS_CREATED);
-	}//end create()
+	}//end startJob()
+
+	/**
+	 * Hand the act over to the job engine with the request's parameters, selection and justification.
+	 *
+	 * @param string $action The act.
+	 * @param IUser  $user   The caller, who acts.
+	 *
+	 * @return array<string, mixed> The created job.
+	 */
+	private function handOver(string $action, IUser $user): array {
+		return $this->handoff->create(
+			actionId: $action,
+			parameters: $this->arrayParam(name: 'parameters'),
+			selection: $this->arrayParam(name: 'selection'),
+			justification: $this->justification(),
+			actorUid: $user->getUID(),
+		);
+	}//end handOver()
+
+	/**
+	 * The trimmed justification, or null when none was given.
+	 *
+	 * @return string|null
+	 */
+	private function justification(): ?string {
+		$justification = trim((string)$this->request->getParam('justification', ''));
+		if ($justification === '') {
+			return null;
+		}
+
+		return $justification;
+	}//end justification()
+
+	/**
+	 * The logged 500 for an act that could not be handed over for any other reason.
+	 *
+	 * @param Throwable $exception The failure.
+	 * @param string    $action    The act.
+	 *
+	 * @return JSONResponse
+	 */
+	private function handOverFailed(Throwable $exception, string $action): JSONResponse {
+		$this->logger->error(
+			'BulkJobHandoffController: the act could not be handed over',
+			['exception' => $exception->getMessage(), 'action' => $action],
+		);
+
+		return new JSONResponse(
+			['error' => 'The bulk act could not be started'],
+			Http::STATUS_INTERNAL_SERVER_ERROR,
+		);
+	}//end handOverFailed()
 
 	/**
 	 * The refusal a selection spanning two case type versions gets.
@@ -140,7 +181,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return JSONResponse The 422.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function versionRefusal(MixedCaseTypeVersionsException $exception): JSONResponse {
 		return new JSONResponse(
@@ -168,7 +209,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return array<string, int> The same map, safe to serialise as an object.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private static function byVersion(array $counts): array {
 		$byVersion = [];
@@ -192,7 +233,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return JSONResponse The 422, or a 503 when OpenRegister is simply absent.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function engineRefusal(RuntimeException $exception, string $action): JSONResponse {
 		if (method_exists($exception, 'getReason') === false) {
@@ -232,7 +273,7 @@ class BulkJobHandoffController extends Controller {
 	 *
 	 * @return array<string, mixed> The parameter.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function arrayParam(string $name): array {
 		$value = $this->request->getParam($name, []);

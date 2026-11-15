@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\CaseArchiveState;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -110,15 +111,14 @@ class CaseArchiveStateTest extends TestCase {
 			/**
 			 * Archive an object.
 			 *
-			 * @param string $id The object id.
-			 * @param string $reason Why.
-			 * @param string $register The register.
-			 * @param string $schema The schema.
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
 			 *
 			 * @return array<string, mixed> The marker.
 			 */
-			public function archive(string $id, string $reason, string $register, string $schema): array {
-				$this->calls[] = ['verb' => 'archive', 'id' => $id, 'reason' => $reason, 'register' => $register, 'schema' => $schema];
+			public function archiveWith(ObjectStateRequest $request): array {
+				$id = $request->identifier;
+				$reason = (string)$request->reason;
+				$this->calls[] = ['verb' => 'archive', 'id' => $id, 'reason' => $reason, 'register' => (string)$request->register, 'schema' => (string)$request->schema];
 
 				return ['uuid' => $id, 'archived' => ['by' => 'anna', 'at' => '2026-09-12T09:00:00+00:00', 'reason' => $reason]];
 			}
@@ -126,15 +126,13 @@ class CaseArchiveStateTest extends TestCase {
 			/**
 			 * Restore an object.
 			 *
-			 * @param string $id The object id.
-			 * @param string $reason Why.
-			 * @param string $register The register.
-			 * @param string $schema The schema.
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
 			 *
 			 * @return array<string, mixed> The cleared marker.
 			 */
-			public function unarchive(string $id, string $reason, string $register, string $schema): array {
-				$this->calls[] = ['verb' => 'unarchive', 'id' => $id, 'reason' => $reason, 'register' => $register, 'schema' => $schema];
+			public function unarchiveWith(ObjectStateRequest $request): array {
+				$id = $request->identifier;
+				$this->calls[] = ['verb' => 'unarchive', 'id' => $id, 'reason' => (string)$request->reason, 'register' => (string)$request->register, 'schema' => (string)$request->schema];
 
 				return ['uuid' => $id, 'archived' => null];
 			}
@@ -275,14 +273,11 @@ class CaseArchiveStateTest extends TestCase {
 			/**
 			 * Refuse the way the platform refuses.
 			 *
-			 * @param string $id The object id.
-			 * @param string $reason Why.
-			 * @param string $register The register.
-			 * @param string $schema The schema.
+			 * @param ObjectStateRequest $request The object, why, and where it lives.
 			 *
 			 * @return array<string, mixed> Never returns.
 			 */
-			public function archive(string $id, string $reason, string $register, string $schema): array {
+			public function archiveWith(ObjectStateRequest $request): array {
 				throw new RuntimeException('Schema "Case" does not declare x-openregister-archive, so its objects cannot be archived.');
 			}
 		};

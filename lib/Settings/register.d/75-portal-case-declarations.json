@@ -1,0 +1,45 @@
+{
+  "_note": "portal-case-list-declarations, design D3 and D4. portalBranch is the vestigingsnummer of the company branch a case was filed under; portaliq's branch scope reads it through mijnZaken.branchField, so a session restricted to one branch sees only that branch's cases. portalIdentityKind says how a resident may reach a case of this type in the portal; absent means account only. No case type is seeded with reference, because portaliq does not yet check the e-mail address against the case. portalParty (site-business-and-authorisation D2) names the party a case belongs to in portaliq's typed form, subject:<subjectRef> or kvk:<8 digits>, never a BSN; portaliq's mandate filter reads it through mijnZaken.mandateField.",
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "portalBranch": {
+            "type": "string",
+            "pattern": "^[0-9]{12}$",
+            "matchType": "exact",
+            "inputControl": "text",
+            "visible": false,
+            "title": "Branch number",
+            "description": "The branch number (vestigingsnummer) of the company that filed the case in the portal."
+          },
+          "portalParty": {
+            "type": "string",
+            "pattern": "^(subject:.+|kvk:[0-9]{8})$",
+            "matchType": "exact",
+            "inputControl": "text",
+            "visible": false,
+            "title": "Portal party",
+            "description": "Who the case belongs to in the portal: a person (subject:) or a company (kvk:)."
+          }
+        }
+      },
+      "caseType": {
+        "properties": {
+          "portalIdentityKind": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "account",
+                "reference"
+              ]
+            },
+            "title": "Ways in to the portal",
+            "description": "How an applicant may open a case of this type in the portal. Empty means with an account only."
+          }
+        }
+      }
+    }
+  }
+}

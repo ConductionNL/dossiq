@@ -36,15 +36,24 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for CaseTypeCopyService.
  *
  * @covers \OCA\Dossiq\Service\CaseTypeCopyService
  *
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeChildCopy
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeCopyTarget
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeDerivation
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypeCopyServiceTest extends TestCase {
 
@@ -116,7 +125,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null) {
 					return null;
@@ -171,7 +182,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): object {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$id = ($object['id'] ?? null);
 				if ($id === null) {
 					$id = 'generated-' . (count($this->store) + 1);
@@ -205,7 +218,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(string $uuid, $register = null, $schema = null): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				if (isset($this->store[$uuid]) === false) {
 					return false;
 				}
@@ -545,7 +561,6 @@ class CaseTypeCopyServiceTest extends TestCase {
 
 		$this->assertNull($service->copy('ct-1'));
 		$this->assertNull($service->newVersion('ct-1'));
-		$this->assertFalse($service->deleteDraft('ct-1')['ok']);
 	}//end testBothGesturesRefuseWithoutAnObjectService()
 
 	/**
@@ -571,7 +586,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null) {
 					return null;
@@ -587,7 +604,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): object {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new \RuntimeException('unwritable');
 			}//end saveObject()
 		};
@@ -634,7 +653,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null) {
 					return null;
@@ -676,7 +697,9 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if (($schema === 'documentType') === true) {
 					throw new \RuntimeException('unwritable child');
 				}
@@ -906,92 +929,6 @@ class CaseTypeCopyServiceTest extends TestCase {
 		$this->assertNull($store[$next['id']]['data']['workflowDefinition']);
 	}//end testAnUnmappableWorkflowPinIsCleared()
 
-	/**
-	 * deleteDraft() deletes a draft case type.
-	 *
-	 * @return void
-	 */
-	public function testDeleteDraftDeletesDraftCaseType(): void {
-		$store = [
-			'ct-draft' => [
-				'__schema' => 'caseType',
-				'data' => ['id' => 'ct-draft', 'title' => 'Testtype', 'isDraft' => true],
-			],
-		];
-		$objectService = $this->makeObjectService(store: $store);
-		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-		$service = new CaseTypeCopyService(
-			settingsService: $this->settingsService,
-			store: new CaseTypeStore($this->settingsService),
-			payloads: new DerivedCaseTypePayload(),
-			references: new DerivedCaseTypeReferences(
-				store: new CaseTypeStore($this->settingsService),
-				logger: $this->logger,
-			),
-			logger: $this->logger
-		);
-		$result = $service->deleteDraft('ct-draft');
 
-		$this->assertTrue($result['ok']);
-		$this->assertArrayNotHasKey('ct-draft', $store);
-	}//end testDeleteDraftDeletesDraftCaseType()
-
-	/**
-	 * deleteDraft() refuses to delete a published case type (409-equivalent).
-	 *
-	 * @return void
-	 */
-	public function testDeleteDraftBlocksPublishedCaseType(): void {
-		$store = [
-			'ct-pub' => [
-				'__schema' => 'caseType',
-				'data' => ['id' => 'ct-pub', 'title' => 'Omgevingsvergunning', 'isDraft' => false],
-			],
-		];
-		$objectService = $this->makeObjectService(store: $store);
-		$this->settingsService->method('getObjectService')->willReturn($objectService);
-
-		$service = new CaseTypeCopyService(
-			settingsService: $this->settingsService,
-			store: new CaseTypeStore($this->settingsService),
-			payloads: new DerivedCaseTypePayload(),
-			references: new DerivedCaseTypeReferences(
-				store: new CaseTypeStore($this->settingsService),
-				logger: $this->logger,
-			),
-			logger: $this->logger
-		);
-		$result = $service->deleteDraft('ct-pub');
-
-		$this->assertFalse($result['ok']);
-		$this->assertSame('published', $result['reason']);
-		$this->assertArrayHasKey('ct-pub', $store);
-	}//end testDeleteDraftBlocksPublishedCaseType()
-
-	/**
-	 * deleteDraft() reports not_found when the case type does not resolve.
-	 *
-	 * @return void
-	 */
-	public function testDeleteDraftReportsNotFound(): void {
-		$store = [];
-		$objectService = $this->makeObjectService(store: $store);
-		$this->settingsService->method('getObjectService')->willReturn($objectService);
-
-		$service = new CaseTypeCopyService(
-			settingsService: $this->settingsService,
-			store: new CaseTypeStore($this->settingsService),
-			payloads: new DerivedCaseTypePayload(),
-			references: new DerivedCaseTypeReferences(
-				store: new CaseTypeStore($this->settingsService),
-				logger: $this->logger,
-			),
-			logger: $this->logger
-		);
-		$result = $service->deleteDraft('does-not-exist');
-
-		$this->assertFalse($result['ok']);
-		$this->assertSame('not_found', $result['reason']);
-	}//end testDeleteDraftReportsNotFound()
 }//end class

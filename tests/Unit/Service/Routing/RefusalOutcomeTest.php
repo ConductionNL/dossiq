@@ -43,6 +43,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * An in-memory case store with the PATCH seam the writer prefers.
@@ -74,8 +76,8 @@ class RefusalCaseStore {
 	 * Answer a slug-addressed search.
 	 *
 	 * Only the `organisatieRol` schema is answered: it is the one search the
-	 * refusal makes, to turn a declared department and role into the uuid
-	 * `case.assignedGroup` requires.
+	 * refusal makes, to turn a declared department and role into the
+	 * Nextcloud group `case.assignedGroup` holds.
 	 *
 	 * @param string               $register The register slug.
 	 * @param string               $schema   The schema slug.
@@ -101,7 +103,9 @@ class RefusalCaseStore {
 	 *
 	 * @return array<string, mixed>|null The case, or null.
 	 */
-	public function find(string $id, string $register = '', string $schema = ''): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		return ($this->cases[$id] ?? null);
 	}//end find()
 
@@ -116,11 +120,14 @@ class RefusalCaseStore {
 	 * @return array<string, mixed> The case as it now stands.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		string $register = '',
-		string $schema = '',
+		ObjectPatch $patch,
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register ?? '';
+		$schema = $patch->target->schema ?? '';
 		$this->cases[$objectId] = array_merge(($this->cases[$objectId] ?? []), $data);
 
 		return $this->cases[$objectId];
@@ -165,6 +172,7 @@ class RefusalOutcomeTest extends TestCase {
 				'id' => 'rol-juza-intake',
 				'roleName' => 'intake',
 				'department' => 'Juridische Zaken',
+				'ncGroupId' => 'juza-intake',
 			],
 		];
 		$this->caseType = [
@@ -255,14 +263,12 @@ class RefusalOutcomeTest extends TestCase {
 		$this->assertSame(expected: 'Juridische Zaken', actual: $record['department']);
 		$this->assertSame(expected: 'intake', actual: $record['role']);
 
-		// 🔴 THE UUID, NEVER THE DEPARTMENT NAME. This assertion read
-		// `'Juridische Zaken'` until 2026-09-19, and passed, because the fake
-		// store validates nothing. `case.assignedGroup` is declared
-		// `format: uuid, $ref: organisatieRol`, so on a real instance
-		// OpenRegister refused that write and the whole refusal answered 503:
-		// no case type declaring a destination could be refused at all.
+		// 🔴 THE GROUP, NEVER THE DEPARTMENT NAME AND NEVER THE ROLE UUID.
+		// This assertion read `'Juridische Zaken'` until 2026-09-19 and the
+		// role uuid until one-team-model: `case.assignedGroup` is a Nextcloud
+		// group id, and the role names its group in `ncGroupId`.
 		$this->assertSame(
-			expected: 'rol-juza-intake',
+			expected: 'juza-intake',
 			actual: $this->store->cases[$caseId]['assignedGroup']
 		);
 	}//end testARefusedCaseLandsAtItsDeclaredDestination()
@@ -295,6 +301,30 @@ class RefusalOutcomeTest extends TestCase {
 		);
 		$this->assertArrayNotHasKey(key: 'assignedGroup', array: $this->store->cases[$caseId]);
 	}//end testADestinationNoTeamAnswersToStillRefusesTheCase()
+
+	/**
+	 * A destination role that names no group refuses the case, unassigned.
+	 *
+	 * The role's uuid is not a team and its words are not a group id, so
+	 * neither is written. The refusal is still recorded.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
+	 */
+	public function testADestinationRoleWithoutAGroupLeavesTheCaseUnassigned(): void {
+		unset($this->store->teams['Juridische Zaken|intake']['ncGroupId']);
+		$caseId = $this->seedCase();
+
+		$record = $this->outcome()->refuse(
+			caseId: $caseId,
+			reason: 'Dit is een melding voor de provincie.',
+			refusedBy: 'jdevries'
+		);
+
+		$this->assertTrue(condition: $record['refused']);
+		$this->assertArrayNotHasKey(key: 'assignedGroup', array: $this->store->cases[$caseId]);
+	}//end testADestinationRoleWithoutAGroupLeavesTheCaseUnassigned()
 
 	/**
 	 * The reason and the refuser are recorded on the case.

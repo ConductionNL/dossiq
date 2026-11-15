@@ -47,6 +47,7 @@ use OCA\Dossiq\Service\DeadlinePauseService;
 use OCA\Dossiq\Service\Kcc\ContactMomentService as KccContactMomentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
@@ -58,6 +59,8 @@ use OCP\IUserSession;
 use OCP\Notification\IManager as INotificationManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A capture-only object store for the write paths that persist a payload.
@@ -72,7 +75,7 @@ interface RoundTripObjectStoreStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Persist an object and hand the payload back to the test.
@@ -84,7 +87,7 @@ interface RoundTripObjectStoreStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -98,6 +101,8 @@ interface RoundTripObjectStoreStub {
  * @uses \OCA\Dossiq\Service\Advice\AdviceRepository
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Kcc\ContactMomentPayload
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class OneDateWritePathRoundTripTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -354,8 +359,11 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		$store = $this->createMock(originalClassName: RoundTripObjectStoreStub::class);
 		$store->method('find')->willReturn(['id' => 'case-1']);
 		$store->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
-				if ($schema === 'adviceRequest') {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				if ($schema === 'adviesAanvraag') {
 					$captured = $object;
 				}
 
@@ -437,7 +445,10 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		$captured = [];
 		$store = $this->createMock(originalClassName: RoundTripObjectStoreStub::class);
 		$store->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$captured = $object;
 				return $object;
 			}
@@ -490,6 +501,22 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			notificationManager: $this->createMock(originalClassName: INotificationManager::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dates: $this->caseDates(zone: $zone),
+			definitions: $this->wooDefinitions(),
 		);
 	}//end woo()
+
+	/**
+	 * The Woo term definition as seeded: 28 days, counted in calendar days.
+	 *
+	 * @return TermDefinitions The definitions double.
+	 */
+	private function wooDefinitions(): TermDefinitions {
+		$definitions = $this->createMock(originalClassName: TermDefinitions::class);
+		$definitions->method('activeFor')->willReturn(['standardDurationDays' => 28]);
+		$definitions->method('endDateFor')->willReturnCallback(
+			static fn (DateTimeImmutable $start, int $days): DateTimeImmutable => $start->modify('+' . $days . ' days')
+		);
+
+		return $definitions;
+	}//end wooDefinitions()
 }//end class

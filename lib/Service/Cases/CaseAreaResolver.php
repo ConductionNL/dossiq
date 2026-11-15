@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 /**
  * Resolves a case's area from an address, through the boundary set in force.
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 class CaseAreaResolver {
 	/**
@@ -82,7 +82,7 @@ class CaseAreaResolver {
 	 * @return array{district: string, neighbourhood: string, areaSource: string, areaResolvedAt: string, areaFallbackUsed: bool}
 	 *         The projection, always answered.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	public function forAddressId(string $addressId): array {
 		if ($addressId === '') {
@@ -110,7 +110,7 @@ class CaseAreaResolver {
 	 * @return array{district: string, neighbourhood: string, areaSource: string, areaResolvedAt: string, areaFallbackUsed: bool}
 	 *         The projection.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	public function fromDocument(array $doc): array {
 		$district = trim((string)($doc['wijknaam'] ?? ''));
@@ -140,7 +140,7 @@ class CaseAreaResolver {
 	 *
 	 * @return bool True when the area should be resolved again.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	public function needsResolving(array $case, string $addressId): bool {
 		if ($addressId === '') {

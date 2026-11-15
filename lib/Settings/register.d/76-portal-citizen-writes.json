@@ -1,0 +1,152 @@
+{
+  "_note": "portal-citizen-writes-on-the-case (dossiq#3152), design D2 and D3. What portaliq's case screen reads and writes on a dossiq case, in exactly the shapes of portaliq's portalCaseType and portalCase schemas (portaliq development 4176916, lib/Settings/portaliq_register.json). The case type decides what a resident may change and until when; a case type that declares none of these offers nothing, because portaliq reads an absent window as closed. portalWrites and portalDocuments are portaliq's record of what a resident changed and added. They are NOT readOnly: OpenRegister refuses an update that changes a readOnly property (ValidateObject::validateReadOnlyConstraints), and portaliq appends to them on every update.",
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "portalWrites": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "title": "Changes from the portal",
+            "description": "Every change the applicant made through the portal, with the time and the old and new answer."
+          },
+          "portalDocuments": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "title": "Documents from the portal",
+            "description": "The documents the applicant added through the portal."
+          },
+          "withdrawnAt": {
+            "type": "string",
+            "matchType": "range",
+            "inputControl": "date-range",
+            "format": "date-time",
+            "title": "Withdrawn at",
+            "description": "When the applicant withdrew the case in the portal."
+          },
+          "withdrawalReason": {
+            "type": "string",
+            "matchType": "fulltext",
+            "inputControl": "text",
+            "title": "Withdrawal reason",
+            "description": "The reason the applicant gave when withdrawing in the portal."
+          }
+        }
+      },
+      "caseType": {
+        "properties": {
+          "portalWritable": {
+            "type": "array",
+            "title": "Answers the applicant may change",
+            "description": "One entry per field the applicant may still change in the portal, and for whom.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "title": "Field",
+                  "description": "The field on the case the applicant may change."
+                },
+                "audiences": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Portal audiences",
+                  "description": "Who may change it, for example client for a resident."
+                },
+                "openStatuses": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Open in these statuses",
+                  "description": "The statuses in which the field stays open. Leave empty to follow the amendment window."
+                },
+                "closedReason": {
+                  "type": "string",
+                  "title": "Sentence when closed",
+                  "description": "What the applicant reads once the field is closed."
+                }
+              }
+            }
+          },
+          "portalAmendmentWindow": {
+            "type": "object",
+            "title": "Amendment window",
+            "description": "The statuses in which the applicant may still correct their answers. Without it, nothing can be changed.",
+            "properties": {
+              "openStatuses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Open in these statuses",
+                "description": "The statuses in which the applicant may still correct their answers."
+              },
+              "closedReason": {
+                "type": "string",
+                "title": "Sentence when closed",
+                "description": "What the applicant reads once the window has closed."
+              }
+            }
+          },
+          "portalDocumentWindow": {
+            "type": "object",
+            "title": "Document window",
+            "description": "The statuses in which the applicant may still add a document. Without it, no document can be added.",
+            "properties": {
+              "openStatuses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Open in these statuses",
+                "description": "The statuses in which the applicant may still add a document."
+              },
+              "closedReason": {
+                "type": "string",
+                "title": "Sentence when closed",
+                "description": "What the applicant reads once the window has closed."
+              }
+            }
+          },
+          "portalWithdrawal": {
+            "type": "object",
+            "title": "Withdrawal from the portal",
+            "description": "Whether the applicant may withdraw the case in the portal, until when, and onto which status. Without it, the portal offers no withdrawal.",
+            "properties": {
+              "openStatuses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Open in these statuses",
+                "description": "The statuses in which the applicant may still withdraw."
+              },
+              "closedReason": {
+                "type": "string",
+                "title": "Sentence when closed",
+                "description": "What the applicant reads once withdrawing is no longer possible."
+              },
+              "targetStatus": {
+                "type": "string",
+                "title": "Status after withdrawal",
+                "description": "The status of this case type the case moves to when the applicant withdraws."
+              },
+              "confirmText": {
+                "type": "string",
+                "title": "Confirmation text",
+                "description": "What the applicant reads before confirming the withdrawal."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -26,7 +26,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseEmailService;
+use Closure;
+use OCA\Dossiq\Exception\RecipientOptedOutException;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\OptOutGateInterface;
+use OCA\Dossiq\Kernel\Contracts\OutboundStateInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -36,21 +41,26 @@ use OCP\IUserSession;
 /**
  * Controller for case email operations.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class EmailController extends Controller {
+
+	/**
+	 * The categories a handler may pick in the case mail dialog.
+	 */
+	private const HANDLER_CATEGORIES = [OptOutGateInterface::CATEGORY_CASE_UPDATE, OptOutGateInterface::CATEGORY_BESLUIT];
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param CaseEmailService $emailService The email service
+	 * @param CaseEmailServiceInterface $emailService The email service
 	 * @param IUserSession $userSession The user session
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseEmailService $emailService,
+		private readonly CaseEmailServiceInterface $emailService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -65,35 +75,66 @@ class EmailController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function send(string $caseId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		return $this->guarded(send: fn (): JSONResponse => $this->sendComposed(caseId: $caseId));
+	}//end send()
+
+	/**
+	 * Send the message the handler composed, in a category a handler may send.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function sendComposed(string $caseId): JSONResponse {
+		$data = $this->readJsonBody();
+
+		// A handler sends a case update or a besluit, nothing else.
+		// statutory is for templates; marketing never comes from here.
+		$category = (string)($data['category'] ?? OptOutGateInterface::CATEGORY_CASE_UPDATE);
+		if (in_array($category, self::HANDLER_CATEGORIES, true) === false) {
+			return new JSONResponse(['error' => 'invalid-category'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$result = $this->emailService->sendEmail(
+			$caseId,
+			$data['to'] ?? '',
+			$data['subject'] ?? '',
+			$data['body'] ?? '',
+			$data['attachments'] ?? [],
+			$category,
+		);
+		return $this->answer(result: $result);
+	}//end sendComposed()
+
+	/**
+	 * Run a send and answer its refusals: an opted-out recipient, a refused send, or a bad request.
+	 *
+	 * @param Closure(): JSONResponse $send The send.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function guarded(Closure $send): JSONResponse {
 		try {
-			$data = $this->readJsonBody();
-
-			$result = $this->emailService->sendEmail(
-				$caseId,
-				$data['to'] ?? '',
-				$data['subject'] ?? '',
-				$data['body'] ?? '',
-				$data['attachments'] ?? [],
-			);
-			return new JSONResponse($result);
+			return $send();
+		} catch (RecipientOptedOutException $e) {
+			return $this->refused(exception: $e);
+		} catch (RefusedException $e) {
+			return $this->refusedSend(exception: $e);
 		} catch (\RuntimeException $e) {
-			// M4: Never expose internal error details (SMTP host/credentials) to callers.
-			// 'email_send_failed' is the sentinel thrown by CaseEmailService when the
-			// transport layer itself fails; surface a safe generic message for that case.
-			if ($e->getMessage() === 'email_send_failed') {
-				return new JSONResponse(['error' => 'email_send_failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
-			}
-
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}//end try
-	}//end send()
+	}//end guarded()
 
 	/**
 	 * Send email using a template.
@@ -104,30 +145,26 @@ class EmailController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function sendFromTemplate(string $caseId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		try {
-			$data = $this->readJsonBody();
+		return $this->guarded(
+			send: function () use ($caseId): JSONResponse {
+				$data = $this->readJsonBody();
 
-			$result = $this->emailService->sendFromTemplate(
-				$caseId,
-				$data['templateId'] ?? '',
-				$data['to'] ?? '',
-			);
-			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
-			// M4: Surface generic error for transport failures.
-			if ($e->getMessage() === 'email_send_failed') {
-				return new JSONResponse(['error' => 'email_send_failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+				return $this->answer(
+					result: $this->emailService->sendFromTemplate(
+						$caseId,
+						$data['templateId'] ?? '',
+						$data['to'] ?? '',
+					)
+				);
 			}
-
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}//end try
+		);
 	}//end sendFromTemplate()
 
 	/**
@@ -154,7 +191,7 @@ class EmailController extends Controller {
 	 * STUB IS FILLED IN: loading the case here makes it a per-object read and
 	 * it must then take the same CaseAccessGuard check as its siblings.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function preview(string $caseId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -185,7 +222,7 @@ class EmailController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function templates(string $caseTypeId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -195,6 +232,65 @@ class EmailController extends Controller {
 		$templates = $this->emailService->getTemplatesForCaseType($caseTypeId);
 		return new JSONResponse(['results' => $templates]);
 	}//end templates()
+
+	/**
+	 * The answer to a mail integriq said may not go out: 409 with the code.
+	 *
+	 * @param RecipientOptedOutException $exception The refusal.
+	 *
+	 * @return JSONResponse The 409.
+	 *
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 */
+	private function refused(RecipientOptedOutException $exception): JSONResponse {
+		return new JSONResponse(
+			['error' => $exception->getReasonCode(), 'message' => $exception->getMessage(), 'sent' => false],
+			Http::STATUS_CONFLICT
+		);
+	}//end refused()
+
+	/**
+	 * Answer a send the Mail account took.
+	 *
+	 * A message the account took but could not send yet is queued there and
+	 * recorded on the case; the caller still hears that sending is unavailable
+	 * right now (503), never a plain 200 (REQ-IMF-11).
+	 *
+	 * @param array<string, mixed> $result The service's result.
+	 *
+	 * @return JSONResponse 200 when sent, 503 with `state: queued` when queued.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	private function answer(array $result): JSONResponse {
+		if (($result['state'] ?? OutboundStateInterface::SENT) === OutboundStateInterface::QUEUED) {
+			return new JSONResponse(
+				['error' => 'mail-account-unavailable', 'sent' => false] + $result,
+				Http::STATUS_SERVICE_UNAVAILABLE
+			);
+		}
+
+		return new JSONResponse($result);
+	}//end answer()
+
+	/**
+	 * Answer a send refused before it reached the Mail account.
+	 *
+	 * A sender-not-held refusal is 422, mail-account-unavailable is 503. No Mail or
+	 * SMTP detail reaches the caller: the sentence is dossiq's own.
+	 *
+	 * @param RefusedException $exception The refusal.
+	 *
+	 * @return JSONResponse The refusal, with its rule as `error`.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
+	 */
+	private function refusedSend(RefusedException $exception): JSONResponse {
+		return new JSONResponse(
+			['error' => $exception->getRule(), 'message' => $exception->getSentence(), 'sent' => false],
+			$exception->getStatus()
+		);
+	}//end refusedSend()
 
 	/**
 	 * Read and decode the JSON request body.

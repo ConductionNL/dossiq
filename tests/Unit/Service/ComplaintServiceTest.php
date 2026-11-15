@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Typed stub for the OpenRegister ObjectService.
@@ -79,7 +80,7 @@ interface ComplaintObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -89,6 +90,7 @@ interface ComplaintObjectServiceStub {
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class ComplaintServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -262,7 +264,10 @@ class ComplaintServiceTest extends TestCase {
 		$objectServiceMock
 			->method('saveObject')
 			->willReturnCallback(
-				function (array $data, string $reg, string $sch, ?string $id = null) {
+				function (array $data, ObjectSaveOptions $options = new ObjectSaveOptions()) {
+					$reg = $options->extend;
+					$sch = $options->target->register;
+					$id = $options->target->schema;
 					$this->assertFalse($data['postponementPossible']);
 					$this->assertSame('2026-05-10', $data['afhandelDeadline']);
 					return $data;
@@ -521,6 +526,50 @@ class ComplaintServiceTest extends TestCase {
 	}//end testGetDeadlineAlertsHonoursTheWarningWindow()
 
 	/**
+	 * The overdue list for an assistant carries no complainant (REQ-MCP-203).
+	 *
+	 * The rows carry a fully populated complainant, so a projection that let
+	 * any of it through is caught here, and an unknown field added later stays
+	 * out because the row is rebuilt from an allowlist.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-203-overdue-complaints-via-redacted-projection
+	 */
+	public function testListOverdueComplaintsNeverCarriesTheComplainant(): void {
+		$today = $this->dates->today();
+		$this->withComplaints(
+			rows: [
+				[
+					'id' => 'k-1',
+					'complaintNumber' => 'KL-2026-0007',
+					'subject' => 'Lang wachten',
+					'status' => 'received',
+					'handler' => 'henk',
+					'acknowledgementOfReceiptDeadline' => $today->modify('-3 days')->format('Y-m-d'),
+					'afhandelDeadline' => $today->modify('-1 day')->format('Y-m-d'),
+					'complainant' => ['naam' => 'Fatima El-Amrani', 'email' => 'fatima@example.org', 'telefoon' => '0612345678'],
+					'description' => 'Ik wacht al zes weken.',
+					'someFutureField' => 'kept out',
+				],
+				['id' => 'k-2', 'afhandelDeadline' => $today->modify('+10 days')->format('Y-m-d'), 'complainant' => ['naam' => 'Henk']],
+			]
+		);
+
+		$result = $this->service->listOverdueComplaints();
+
+		$this->assertSame(1, $result['count']);
+		$row = $result['complaints'][0];
+		$this->assertSame('KL-2026-0007', $row['complaintNumber']);
+		$this->assertTrue($row['handlingOverdue']);
+		$this->assertTrue($row['acknowledgementOverdue']);
+		$this->assertArrayNotHasKey('complainant', $row);
+		$this->assertArrayNotHasKey('description', $row);
+		$this->assertArrayNotHasKey('someFutureField', $row);
+		$this->assertStringNotContainsString('Fatima', (string)json_encode($result));
+	}//end testListOverdueComplaintsNeverCarriesTheComplainant()
+
+	/**
 	 * createComplaint sends no klachtnummer, and reports the one it got back.
 	 *
 	 * The number is `complaintNumber`'s `x-openregister-generated` declaration
@@ -542,7 +591,10 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectService = $this->createMock(ComplaintObjectServiceStub::class);
 		$objectService->method('saveObject')->willReturnCallback(
-			static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$sent): array {
+			static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$sent): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$sent = $object;
 
 				return array_merge($object, ['id' => 'uuid-1', 'complaintNumber' => 'KL-2026-0042']);

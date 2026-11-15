@@ -60,6 +60,7 @@ use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * ObjectService stub matching the named-arg `saveObject()` signature the audit
@@ -81,7 +82,7 @@ interface ScrubbingSaveObjectStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(string $register, string $schema, array $object): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -129,10 +130,12 @@ class PromptCapturingAiService extends AiService {
  * @covers \OCA\Dossiq\Service\AiService
  *
  * @uses \OCA\Dossiq\Service\Ai\AiAuditLog
+ * @uses \OCA\Dossiq\Service\Ai\AiRequest
  * @uses \OCA\Dossiq\Service\Ai\AiEndpointGuard
  * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
  * @uses \OCA\Dossiq\Service\Ai\AiPiiRedactor
  * @uses \OCA\Dossiq\Service\Ai\AiPromptFactory
+ * @uses \OCA\Dossiq\Service\Outbound\OutboundUrlGuard
  */
 class AiServicePromptScrubbingTest extends TestCase {
 
@@ -272,7 +275,9 @@ class AiServicePromptScrubbingTest extends TestCase {
 		$recorded = null;
 		$this->objectService->method('saveObject')
 			->willReturnCallback(
-				static function (string $register, string $schema, array $object) use (&$recorded): mixed {
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$recorded): mixed {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
 					$recorded = $object;
 					return null;
 				}

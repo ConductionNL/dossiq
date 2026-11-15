@@ -1,0 +1,16 @@
+{
+  "caseType": {
+    "id": "0f1c0000-0000-4000-8000-000000000001",
+    "title": "Fixture request",
+    "identifier": "fixture-request",
+    "description": "A neutral case type used to test the package installer.",
+    "isDraft": false
+  },
+  "statusTypes": [
+    {"id": "0f1c0000-0000-4000-8000-000000000011", "name": "Received", "order": 1, "caseType": "0f1c0000-0000-4000-8000-000000000001"},
+    {"id": "0f1c0000-0000-4000-8000-000000000012", "name": "Done", "order": 2, "isFinal": true, "caseType": "0f1c0000-0000-4000-8000-000000000001"}
+  ],
+  "roleTypes": [
+    {"id": "0f1c0000-0000-4000-8000-000000000021", "name": "Handler", "caseType": "0f1c0000-0000-4000-8000-000000000001"}
+  ]
+}

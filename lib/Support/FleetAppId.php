@@ -78,6 +78,7 @@ final class FleetAppId
         'decidiq'  => ['decidiq', 'decidesk'],
         'buildiq'  => ['buildiq', 'openbuild'],
         'keepiq'   => ['keepiq', 'doriath'],
+        'humaniq'  => ['humaniq', 'hrmq'],
     ];
 
 

@@ -1,0 +1,85 @@
+{
+    "answer": {
+        "adopted": false,
+        "reason": "not_found"
+    },
+    "caseTypes": [
+        {
+            "title": "Type untouched",
+            "processingDeadline": "P6W",
+            "note": "kept",
+            "updated": "2026-01-01T00:00:00+00:00",
+            "@self": {
+                "owner": "admin"
+            },
+            "id": "untouched"
+        },
+        {
+            "title": "Type changed",
+            "processingDeadline": "P8W",
+            "note": "kept",
+            "id": "changed"
+        },
+        {
+            "title": "Type local",
+            "processingDeadline": "P6W",
+            "note": "kept",
+            "id": "local"
+        },
+        {
+            "title": "Type foreign",
+            "processingDeadline": "P6W",
+            "note": "kept",
+            "id": "foreign"
+        },
+        {
+            "title": "Type same",
+            "processingDeadline": "P6W",
+            "note": "kept",
+            "id": "same"
+        }
+    ],
+    "ledger": [
+        {
+            "set": "gemeentelijke-rollen",
+            "setVersion": "1.0.0",
+            "targetSchema": "caseType",
+            "targetObject": "untouched",
+            "fingerprint": "4ab534ebffc03da9b80b703c02e5f44ea78371641d61dd6e8946bfaba8e0c141",
+            "shippedFingerprint": "4ab534ebffc03da9b80b703c02e5f44ea78371641d61dd6e8946bfaba8e0c141",
+            "seededAt": "<stamped>",
+            "id": "generated-1"
+        },
+        {
+            "set": "gemeentelijke-rollen",
+            "setVersion": "1.0.0",
+            "targetSchema": "caseType",
+            "targetObject": "changed",
+            "fingerprint": "0e1450c4f55083d462b73cb580561a8eb67b90a2f32a9b2983a36341204b59dd",
+            "shippedFingerprint": "0e1450c4f55083d462b73cb580561a8eb67b90a2f32a9b2983a36341204b59dd",
+            "seededAt": "<stamped>",
+            "id": "generated-2"
+        },
+        {
+            "set": "gemeentelijke-rollen",
+            "setVersion": "1.0.0",
+            "targetSchema": "caseType",
+            "targetObject": "same",
+            "fingerprint": "b919267730bcff95a4691b48ff7f64badb6e8392c48483cc329c9d8d3e366be6",
+            "shippedFingerprint": "b919267730bcff95a4691b48ff7f64badb6e8392c48483cc329c9d8d3e366be6",
+            "seededAt": "<stamped>",
+            "id": "generated-3"
+        },
+        {
+            "set": "another-set",
+            "setVersion": "2.0.0",
+            "targetSchema": "caseType",
+            "targetObject": "foreign",
+            "fingerprint": "a9af8d495ff69956086f2253cc4637a68fec83768e4269aff0399a3255103d2c",
+            "shippedFingerprint": "a9af8d495ff69956086f2253cc4637a68fec83768e4269aff0399a3255103d2c",
+            "seededAt": "<stamped>",
+            "id": "generated-4"
+        }
+    ],
+    "warnings": []
+}

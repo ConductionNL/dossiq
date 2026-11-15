@@ -28,6 +28,7 @@ use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The audit sink for a citizen lookup.
@@ -35,6 +36,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Kcc\CitizenLookupRecorder
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CitizenLookupRecorderTest extends TestCase {
 
@@ -76,7 +78,10 @@ class CitizenLookupRecorderTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($this->refuses === true) {
 					throw new \RuntimeException('OpenRegister refused the audit row');
 				}

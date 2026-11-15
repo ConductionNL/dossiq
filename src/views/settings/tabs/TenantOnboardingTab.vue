@@ -34,12 +34,18 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<NcEmptyContent v-if="!loading && !tenantId">
+		<!--
+			The words go in `name`. NcEmptyContent renders the slots icon,
+			name, description and action and no default slot, so the text that
+			sat in #default never reached the page and the section showed a
+			bare icon (round-4 cloud check).
+		-->
+		<NcEmptyContent
+			v-if="!loading && !tenantId"
+			data-testid="tenant-onboarding-empty"
+			:name="t('dossiq', 'Select a tenant to view onboarding progress.')">
 			<template #icon>
 				<AccountTie :size="48" />
-			</template>
-			<template #default>
-				{{ t('dossiq', 'Select a tenant to view onboarding progress.') }}
 			</template>
 		</NcEmptyContent>
 
@@ -62,10 +68,10 @@
 					:key="step.step"
 					class="tenant-onboarding__step"
 					:class="{
-						'tenant-onboarding__step--done': step.status === 'complete',
+						'tenant-onboarding__step--done': step.status === 'completed',
 					}">
 					<div class="tenant-onboarding__step-icon">
-						<CheckCircle v-if="step.status === 'complete'" :size="22" />
+						<CheckCircle v-if="step.status === 'completed'" :size="22" />
 						<CircleOutline v-else :size="22" />
 					</div>
 					<div class="tenant-onboarding__step-body">
@@ -84,7 +90,7 @@
 						</div>
 					</div>
 					<NcButton
-						v-if="step.status !== 'complete'"
+						v-if="step.status !== 'completed'"
 						size="small"
 						variant="primary"
 						:disabled="markingStep === step.step"
@@ -209,28 +215,28 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		selectedTenant() {
 			return this.tenantOptions.find((o) => o.id === this.tenantId) || null
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		steps() {
 			if (!this.progress) return []
 			return this.progress.steps || this.progress.tasks || []
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		totalSteps() {
 			return this.steps.length || 7
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		completedSteps() {
-			return this.steps.filter((s) => s.status === 'complete').length
+			return this.steps.filter((s) => s.status === 'completed').length
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		progressPercent() {
 			if (!this.totalSteps) return 0
 			return Math.round((this.completedSteps / this.totalSteps) * 100)
@@ -248,7 +254,7 @@ export default {
 		 *
 		 * @param {string} step The step key.
 		 * @return {string} The translated label, falling back to the key.
-		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		stepLabel(step) {
 			return t('dossiq', STEP_LABELS[step] || step)
@@ -259,7 +265,7 @@ export default {
 		 *
 		 * @param {object|null} opt The selected tenant option, or null to clear.
 		 * @return {void}
-		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		onTenantChange(opt) {
 			this.tenantId = opt ? opt.id : ''
@@ -268,20 +274,31 @@ export default {
 			if (this.tenantId) this.loadProgress()
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/**
+		 * List the tenants to onboard: OpenRegister's organisations.
+		 *
+		 * A tenant is an OpenRegister Organisation, and its uuid is the tenant
+		 * id the onboarding routes take. dossiq's own tenant list retired
+		 * with the tenant admin store.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+		 */
 		async loadTenants() {
 			this.loading = true
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/dossiq/api/saas/tenants'),
+					generateUrl('/apps/openregister/api/organisations'),
 				)
 				const list = Array.isArray(res.data)
 					? res.data
 					: res.data?.results || []
-				this.tenantOptions = list.map((tn) => ({
-					id: tn.id || tn.tenantId,
-					label: tn.name || tn.label || tn.id,
-				}))
+				this.tenantOptions = list
+					.filter((org) => org && org.uuid)
+					.map((org) => ({
+						id: org.uuid,
+						label: org.name || org.slug || org.uuid,
+					}))
 			} catch (e) {
 				this.error =
 					e?.response?.data?.message
@@ -292,7 +309,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async loadProgress() {
 			if (!this.tenantId) return
 			this.loading = true
@@ -321,7 +338,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async initialise() {
 			try {
 				await axios.post(
@@ -352,7 +369,7 @@ export default {
 		 *
 		 * @param {string} step The step key to complete.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		async markComplete(step) {
 			this.markingStep = step
@@ -377,7 +394,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async checkGoLive() {
 			this.checkingGoLive = true
 			try {
@@ -410,7 +427,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async activate() {
 			this.activating = true
 			try {
@@ -437,23 +454,26 @@ export default {
 </script>
 
 <style scoped>
+/* A section of the admin card: no frame of its own. The tenant field and
+   Refresh stack at the content edge, as board DqBeheerGeavanceerd draws them. */
 .tenant-onboarding {
-	padding: 16px;
-	max-width: 1000px;
-	margin: 0 auto;
+	padding: 0;
 }
 
 .tenant-onboarding__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
 	margin-bottom: 16px;
 }
 
 .tenant-onboarding__controls {
 	display: flex;
-	gap: 8px;
-	align-items: center;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 16px;
+	max-width: 560px;
+}
+
+.tenant-onboarding__controls > :first-child {
+	align-self: stretch;
 }
 
 .tenant-onboarding__progress {
@@ -504,7 +524,7 @@ export default {
 }
 
 .tenant-onboarding__step-icon {
-	color: var(--color-success);
+	color: var(--color-success-text);
 }
 
 .tenant-onboarding__step-body {
@@ -538,7 +558,7 @@ export default {
 	gap: 12px;
 	padding: 12px;
 	background: var(--color-success);
-	color: var(--color-main-background);
+	color: var(--color-success-text);
 	border-radius: var(--border-radius);
 }
 
@@ -547,7 +567,7 @@ export default {
 	gap: 12px;
 	padding: 12px;
 	background: var(--color-warning);
-	color: var(--color-main-background);
+	color: var(--color-warning-text);
 	border-radius: var(--border-radius);
 }
 

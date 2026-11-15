@@ -1,0 +1,6 @@
+{
+  "schema": "property_definition_schema",
+  "rows": [
+    {"id": "0f1c0000-0000-4000-8000-000000000041", "name": "reference", "propertyType": "string", "caseType": "0f1c0000-0000-4000-8000-000000000001"}
+  ]
+}

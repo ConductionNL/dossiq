@@ -31,7 +31,6 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\ConnectionTestController;
 use OCA\Dossiq\Service\Starter\ConnectionTestService;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use OCA\Dossiq\Service\Stuf\StufServices;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -84,19 +83,11 @@ class ConnectionTestControllerTest extends TestCase {
 			->onlyMethods(['findAll'])
 			->getMock();
 
-		$stuf = $this->getMockBuilder(StufServices::class)
-			->disableOriginalConstructor()
-			->getMock();
-		// `register` is a promoted public readonly property on StufServices, so
-		// the double carries it the same way the real object does.
-		$reflection = new \ReflectionProperty(StufServices::class, 'register');
-		$reflection->setValue($stuf, $this->register);
-
 		$this->controller = new ConnectionTestController(
 			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			probe: $this->probe,
-			stuf: $stuf,
+			stufRegister: $this->register,
 			logger: new NullLogger(),
 		);
 	}//end setUp()

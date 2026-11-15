@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for DeelzaakService::unlinkSubCases().
@@ -61,6 +62,9 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
  * @uses   \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
+ * @uses   \OCA\Dossiq\Service\Deelzaak\SubCaseStore
+ * @uses   \OCA\Dossiq\Service\Deelzaak\SubCaseLink
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class DeelzaakUnlinkSubCasesTest extends TestCase {
 
@@ -176,7 +180,9 @@ class DeelzaakUnlinkSubCasesTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = ''): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
 				$this->saveCalls++;
 				$id = (string)($object['id'] ?? '');
 				if (in_array($id, $this->failIds, true) === true) {

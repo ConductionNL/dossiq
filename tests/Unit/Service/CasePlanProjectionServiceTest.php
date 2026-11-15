@@ -39,6 +39,10 @@ use UnexpectedValueException;
 /**
  * @covers \OCA\Dossiq\Service\CasePlanProjectionService
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\CaseModelConverter
+ * @uses \OCA\Dossiq\Service\SentryConverter
+ * @uses \OCA\Dossiq\Service\CaseModelSearchHits
+ * @uses \OCA\Dossiq\Service\PlanItemIndex
  */
 final class CasePlanProjectionServiceTest extends TestCase {
 
@@ -295,6 +299,125 @@ final class CasePlanProjectionServiceTest extends TestCase {
 	}//end testAnAbsentCaseLayerIsReported()
 
 	/**
+	 * The plan is created through the system verb, acting as dossiq.
+	 *
+	 * The first bridge passed `uid: null` to `createPlan()`, which
+	 * OpenRegister refuses, so every case start created nothing and logged an
+	 * error. This pins the call that replaced it.
+	 *
+	 * @return void
+	 */
+	public function testThePlanIsCreatedAsTheDossiqSystemActor(): void {
+		$layer = new class {
+			/**
+			 * What the projection handed over.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public array $calls = [];
+
+			/**
+			 * Record the call, the way OpenRegister's system verb is shaped.
+			 *
+			 * @param string               $objectUuid The anchoring object.
+			 * @param int|null             $registerId Its register.
+			 * @param int|null             $schemaId   Its schema.
+			 * @param array<string, mixed> $definition The definition.
+			 * @param string               $app        The acting app id.
+			 *
+			 * @return array<string, mixed> An empty plan.
+			 */
+			public function createPlanAsSystem(string $objectUuid, ?int $registerId, ?int $schemaId, array $definition, string $app): array {
+				$this->calls[] = compact('objectUuid', 'registerId', 'schemaId', 'definition', 'app');
+
+				return [];
+			}
+		};
+
+		$projection = new CasePlanProjectionService($this->settingsWith(layer: $layer), $this->createMock(LoggerInterface::class));
+		$result = $projection->projectAtCaseStart(caseId: 'case-1', caseType: ['id' => 'ct-1', 'handlingModel' => 'cmmn']);
+
+		$this->assertSame(['projected' => true, 'reason' => 'projected'], $result);
+		$this->assertCount(1, $layer->calls);
+		$this->assertSame('dossiq', $layer->calls[0]['app']);
+		$this->assertSame('case-1', $layer->calls[0]['objectUuid']);
+		$this->assertSame(7, $layer->calls[0]['registerId']);
+		$this->assertSame(11, $layer->calls[0]['schemaId']);
+		$this->assertSame('intake', $layer->calls[0]['definition']['items'][0]['key']);
+	}//end testThePlanIsCreatedAsTheDossiqSystemActor()
+
+	/**
+	 * An OpenRegister without the system verb is named, not called with no identity.
+	 *
+	 * @return void
+	 */
+	public function testACaseLayerWithoutTheSystemVerbIsReportedByName(): void {
+		$layer = new class {
+			/**
+			 * The old, identity-bound verb: calling it would be refused.
+			 *
+			 * @return array<string, mixed> Never.
+			 */
+			public function createPlan(): array {
+				throw new \LogicException('the projection must not call createPlan without an identity');
+			}
+		};
+
+		$projection = new CasePlanProjectionService($this->settingsWith(layer: $layer), $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(
+			['projected' => false, 'reason' => 'case_layer_lacks_system_verbs'],
+			$projection->projectAtCaseStart(caseId: 'case-1', caseType: ['id' => 'ct-1', 'handlingModel' => 'cmmn']),
+		);
+	}//end testACaseLayerWithoutTheSystemVerbIsReportedByName()
+
+	/**
+	 * Settings that resolve the given case layer and answer the fixture model.
+	 *
+	 * @param object $layer The stand-in case layer.
+	 *
+	 * @return SettingsService The settings stub.
+	 */
+	private function settingsWith(object $layer): SettingsService {
+		$model = self::model();
+		$objects = new class($model) {
+			/**
+			 * Hold the model to answer with.
+			 *
+			 * @param array<string, mixed> $model The published caseModel.
+			 */
+			public function __construct(private readonly array $model) {
+			}//end __construct()
+
+			/**
+			 * Answer the published model for any query.
+			 *
+			 * @param array<string, mixed> $query The search query.
+			 *
+			 * @return array<int, array<string, mixed>> The model, as one hit.
+			 */
+			public function searchObjects(array $query): array {
+				unset($query);
+
+				return [$this->model];
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn($layer);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnMap(
+			[
+				['register', '', '7'],
+				['case_schema', '', '11'],
+				['case_model_schema', '', '13'],
+			]
+		);
+
+		return $settings;
+	}//end settingsWith()
+
+	/**
 	 * The case layer is resolved by the name OpenRegister actually publishes.
 	 *
 	 * @return void
@@ -328,4 +451,205 @@ final class CasePlanProjectionServiceTest extends TestCase {
 			],
 		];
 	}//end model()
+	/**
+	 * Malformed plan-item lists are refused by name, in the order the checks run.
+	 *
+	 * @return array<string, array{0: mixed, 1: string}>
+	 */
+	public static function malformedPlanItems(): array {
+		return [
+			'not a list' => ['text', 'caseModel.planItems must be a list of plan items.'],
+			'not an object' => [[['id' => 'a', 'type' => 'stage'], 'x'], 'caseModel.planItems[1] must be an object.'],
+			'no id' => [[['id' => '  ', 'type' => 'stage']], 'caseModel.planItems[0] has no id.'],
+			'repeated id' => [
+				[['id' => 'a', 'type' => 'stage'], ['id' => ' a ', 'type' => 'stage']],
+				"caseModel repeats plan-item id 'a'; ids are unique within a model.",
+			],
+			'unknown type' => [
+				[['id' => 'a', 'type' => 'task']],
+				"caseModel plan item 'a' has type 'task'; expected stage, humanTask or milestone.",
+			],
+		];
+	}//end malformedPlanItems()
+
+	/**
+	 * Each malformed plan-item list is refused with its own message.
+	 *
+	 * @param mixed  $planItems The planItems value.
+	 * @param string $message   The refusal it must raise.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider malformedPlanItems
+	 */
+	public function testAMalformedPlanItemListIsRefusedByName(mixed $planItems, string $message): void {
+		$this->expectException(UnexpectedValueException::class);
+		$this->expectExceptionMessage($message);
+		$this->projection->convertModel(caseModel: ['planItems' => $planItems]);
+	}//end testAMalformedPlanItemListIsRefusedByName()
+
+	/**
+	 * A node keeps a trimmed description and its authorization rules as strings; the name falls back to the id.
+	 *
+	 * @return void
+	 */
+	public function testANodeCarriesItsOptionalFieldsOnlyWhenSet(): void {
+		$definition = $this->projection->convertModel(
+			caseModel: [
+				'planItems' => [
+					['id' => 'a', 'type' => 'stage', 'description' => ' Eerste fase ', 'authorization' => ['behandelaar', 7]],
+					['id' => 'b', 'type' => 'milestone', 'description' => '  ', 'authorization' => []],
+				],
+			],
+		);
+
+		$this->assertSame(
+			['key', 'type', 'name', 'required', 'discretionary', 'entryCriteria', 'exitCriteria', 'description', 'authorization', 'children'],
+			array_keys($definition['items'][0])
+		);
+		$this->assertSame('a', $definition['items'][0]['name']);
+		$this->assertSame('Eerste fase', $definition['items'][0]['description']);
+		$this->assertSame(['behandelaar', '7'], $definition['items'][0]['authorization']);
+		$this->assertSame(
+			['key', 'type', 'name', 'required', 'discretionary', 'entryCriteria', 'exitCriteria'],
+			array_keys($definition['items'][1])
+		);
+	}//end testANodeCarriesItsOptionalFieldsOnlyWhenSet()
+
+	/**
+	 * A sentry with only an id, or with empty parts, has nothing to convert; a blank id is left out.
+	 *
+	 * @return void
+	 */
+	public function testASentryWithoutPartsIsRefusedAndABlankIdIsLeftOut(): void {
+		$this->assertSame(
+			['if' => ['!!' => ['var' => 'advies']]],
+			$this->projection->convertSentry(
+				sentry: ['id' => ' ', 'onPart' => [], 'ifPart' => ['field' => 'advies', 'operator' => 'truthy']],
+				where: 'fixture',
+			)
+		);
+
+		$this->expectException(UnexpectedValueException::class);
+		$this->expectExceptionMessage('fixture has neither an onPart nor an ifPart; there is nothing to convert.');
+		$this->projection->convertSentry(sentry: ['id' => 's1', 'onPart' => 'x', 'ifPart' => []], where: 'fixture');
+	}//end testASentryWithoutPartsIsRefusedAndABlankIdIsLeftOut()
+
+	/**
+	 * The first usable search hit is projected: empty rows are skipped and serialisable objects read.
+	 *
+	 * @return void
+	 */
+	public function testTheFirstUsableSearchHitIsTheModel(): void {
+		$model  = self::model();
+		$hit    = new class($model) implements \JsonSerializable {
+			/**
+			 * Hold the row it serialises to.
+			 *
+			 * @param array<string, mixed> $row The row.
+			 */
+			public function __construct(private readonly array $row) {
+			}//end __construct()
+
+			/**
+			 * The row.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function jsonSerialize(): array {
+				return $this->row;
+			}
+		};
+		$empty  = new class implements \JsonSerializable {
+			/**
+			 * Nothing.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function jsonSerialize(): array {
+				return [];
+			}
+		};
+		$layer  = new class {
+			/**
+			 * What the projection handed over.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $definitions = [];
+
+			/**
+			 * Record the definition.
+			 *
+			 * @param string               $objectUuid The anchoring object.
+			 * @param int|null             $registerId Its register.
+			 * @param int|null             $schemaId   Its schema.
+			 * @param array<string, mixed> $definition The definition.
+			 * @param string               $app        The acting app id.
+			 *
+			 * @return array<string, mixed> An empty plan.
+			 */
+			public function createPlanAsSystem(string $objectUuid, ?int $registerId, ?int $schemaId, array $definition, string $app): array {
+				unset($objectUuid, $registerId, $schemaId, $app);
+				$this->definitions[] = $definition;
+
+				return [];
+			}
+		};
+
+		$settings = $this->settingsWithHits(layer: $layer, hits: [[], 'row', new \stdClass(), $empty, $hit]);
+		$projection = new CasePlanProjectionService($settings, $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(
+			['projected' => true, 'reason' => 'projected'],
+			$projection->projectAtCaseStart(caseId: 'case-1', caseType: ['id' => 'ct-1', 'handlingModel' => 'cmmn'])
+		);
+		$this->assertSame(['intake', 'besluit'], array_column($layer->definitions[0]['items'], 'key'));
+	}//end testTheFirstUsableSearchHitIsTheModel()
+
+	/**
+	 * Settings that resolve the given case layer and answer the given search hits.
+	 *
+	 * @param object $layer The stand-in case layer.
+	 * @param mixed  $hits  What searchObjects() answers.
+	 *
+	 * @return SettingsService The settings stub.
+	 */
+	private function settingsWithHits(object $layer, mixed $hits): SettingsService {
+		$objects = new class($hits) {
+			/**
+			 * Hold the hits to answer with.
+			 *
+			 * @param mixed $hits The hits.
+			 */
+			public function __construct(private readonly mixed $hits) {
+			}//end __construct()
+
+			/**
+			 * Answer the hits for any query.
+			 *
+			 * @param array<string, mixed> $query The search query.
+			 *
+			 * @return mixed The hits.
+			 */
+			public function searchObjects(array $query): mixed {
+				unset($query);
+
+				return $this->hits;
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn($layer);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnMap(
+			[
+				['register', '', '7'],
+				['case_schema', '', '11'],
+				['case_model_schema', '', '13'],
+			]
+		);
+
+		return $settings;
+	}//end settingsWithHits()
 }//end class

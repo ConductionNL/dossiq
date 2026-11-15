@@ -1,0 +1,33 @@
+{
+  "_note": "Who may run the case's macros (Ruben, 20 October 2026): whoever may edit the case. OpenRegister checks a declared action's own right on every run (ObjectActionsController::runOne), and an action with no rule fell back to OpenRegister's default. Each macro now carries the case's `update` rule, the same groups and the same assignee match, so a macro cannot do what its user could not do by hand. Kept equal to `update` by tests/Unit/Flow/CaseMacroDeclarationTest; change both together.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "authorization": {
+          "finish-woo-request": [
+            {
+              "group": "authenticated",
+              "match": {
+                "assignee": "$userId"
+              }
+            },
+            "dossiq-background-service"
+          ],
+          "suspend-for-supplement": [
+            {
+              "group": "authenticated",
+              "match": {
+                "assignee": "$userId"
+              }
+            },
+            "dossiq-background-service"
+          ]
+        }
+      }
+    }
+  }
+}
