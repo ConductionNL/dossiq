@@ -302,6 +302,63 @@ class ExampleDataFragmentsTest extends TestCase {
 	}//end testAReferenceToAStoredObjectBecomesItsId()
 
 	/**
+	 * Without an object service no reference can be looked up, so every token is left for the importer.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAnObjectServiceReferencesStayTokens(): void {
+		$dir = $this->appWith(objects: [['@self' => ['schema' => 'case', 'slug' => 'a'], 'caseType' => '@ref:caseType:building-permit-type']]);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->expects($this->never())->method('getConfigValue');
+
+		$objects = $this->fragments(appDir: $dir, uid: 'pieter', settings: $settings)->objects();
+
+		$this->assertSame(expected: '@ref:caseType:building-permit-type', actual: $objects[0]['caseType']);
+
+	}//end testWithoutAnObjectServiceReferencesStayTokens()
+
+	/**
+	 * A lookup that fails for any reason leaves that token in place and still resolves the others.
+	 *
+	 * @return void
+	 */
+	public function testAFailingLookupLeavesTheTokenInPlace(): void {
+		$dir = $this->appWith(
+			objects: [
+				['@self' => ['schema' => 'case', 'slug' => 'a'], 'caseType' => '@ref:caseType:broken', 'status' => '@ref:statusType:bp-received'],
+			]
+		);
+		$objects = new class {
+			/**
+			 * Find a stored object, failing for one slug.
+			 *
+			 * @param string $id       The slug.
+			 * @param mixed  $register The register.
+			 * @param string $schema   The schema slug.
+			 *
+			 * @return array<string, mixed> The object.
+			 */
+			public function find(string $id, mixed $register, string $schema): array {
+				if ($id === 'broken') {
+					throw new \RuntimeException('database unavailable');
+				}
+
+				return ['id' => 'uuid-' . $schema . '-' . $id];
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+
+		$resolved = $this->fragments(appDir: $dir, uid: 'pieter', settings: $settings)->objects();
+
+		$this->assertSame(expected: '@ref:caseType:broken', actual: $resolved[0]['caseType']);
+		$this->assertSame(expected: 'uuid-statusType-bp-received', actual: $resolved[0]['status']);
+
+	}//end testAFailingLookupLeavesTheTokenInPlace()
+
+	/**
 	 * The English demo cases ship as example data, and every type they name is found in the register.
 	 *
 	 * @return void

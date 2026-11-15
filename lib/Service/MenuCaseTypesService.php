@@ -36,7 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\MenuCaseTypesServiceInterface;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeMenuEntry;
 use OCA\Dossiq\Service\CaseType\SupersededCaseTypes;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\TranslatedText;
@@ -49,7 +49,6 @@ use OCP\IUserManager;
  *
  * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 
@@ -88,6 +87,13 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 	private array $supersededBy = [];
 
 	/**
+	 * Turns a stored case type row into its menu entry.
+	 *
+	 * @var CaseTypeMenuEntry
+	 */
+	private readonly CaseTypeMenuEntry $entries;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (register, schema, ObjectService).
@@ -101,46 +107,12 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 		private readonly IConfig $config,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserManager $userManager,
-		private readonly TranslatedText $text,
+		TranslatedText $text,
 	) {
+		$this->entries = new CaseTypeMenuEntry(text: $text);
 	}//end __construct()
 
-	/**
-	 * A case type as the menu and its picker see it: id and title, and its
-	 * icon when it names one.
-	 *
-	 * @param array{id: string, title: string, icon: string} $row The case type.
-	 *
-	 * @return array{id: string, title: string, icon?: string} The row.
-	 *
-	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
-	 */
-	private static function publicRow(array $row): array {
-		$public = ['id' => $row['id'], 'title' => $row['title']];
-		if ($row['icon'] !== '') {
-			$public['icon'] = $row['icon'];
-		}
 
-		return $public;
-	}//end publicRow()
-
-	/**
-	 * The icon a case type row names (`caseType.icon`), or '' when it names none.
-	 *
-	 * @param array<string, mixed> $row The case type row.
-	 *
-	 * @return string The icon name.
-	 *
-	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
-	 */
-	private function iconOf(array $row): string {
-		$icon = ($row['icon'] ?? '');
-		if (is_string($icon) === false) {
-			return '';
-		}
-
-		return trim($icon);
-	}//end iconOf()
 
 	/**
 	 * The case types offered to this user for their menu, sorted by title.
@@ -169,7 +141,7 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 		}
 
 		return array_map(
-			static fn (array $row): array => self::publicRow(row: $row),
+			fn (array $row): array => $this->entries->publicRow(row: $row),
 			$handled
 		);
 	}//end offeredCaseTypes()
@@ -226,7 +198,7 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 	 */
 	public function visibleCaseTypes(): array {
 		return array_map(
-			static fn (array $row): array => self::publicRow(row: $row),
+			fn (array $row): array => $this->entries->publicRow(row: $row),
 			$this->currentCaseTypes()
 		);
 	}//end visibleCaseTypes()
@@ -279,12 +251,12 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 				continue;
 			}
 
-			$uuid = $this->resolveUuid(object: $row);
+			$uuid = $this->entries->uuidOf(object: $row);
 			if ($uuid === null || isset($caseTypes[$uuid]) === true) {
 				continue;
 			}
 
-			$caseTypes[$uuid] = $this->menuEntry(row: $row, uuid: $uuid);
+			$caseTypes[$uuid] = $this->entries->entry(row: $row, uuid: $uuid);
 		}
 
 		return $this->byTitle(caseTypes: array_values($caseTypes));
@@ -311,33 +283,6 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 		);
 	}//end caseTypeRows()
 
-	/**
-	 * One case type as the menu lists it.
-	 *
-	 * The title is declared translatable, so a row carries it as a language
-	 * map. A (string) cast of that map is "Array", which is what every case
-	 * type in the picker, the chosen list and the menu was called (finding
-	 * B2, 10 Oct).
-	 *
-	 * @param array<string, mixed> $row  The case type row.
-	 * @param string               $uuid Its uuid.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function menuEntry(array $row, string $uuid): array {
-		$title = $this->text->forReader(value: ($row['title'] ?? ''));
-		if ($title === '') {
-			$title = $uuid;
-		}
-
-		return [
-			'id' => $uuid,
-			'title' => $title,
-			'identifier' => (string)($row['identifier'] ?? ''),
-			'icon' => $this->iconOf(row: $row),
-			'teams' => (new CaseTypeHandling())->teams(caseType: $row),
-		];
-	}//end menuEntry()
 
 	/**
 	 * The case types in title order, case-insensitively.
@@ -434,43 +379,11 @@ class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	private function rememberSuperseded(array $row): void {
-		$old = $this->resolveUuid(object: $row);
+		$old = $this->entries->uuidOf(object: $row);
 		if ($old !== null && is_string($row['supersededBy']) === true) {
 			$this->supersededBy[$old] = $row['supersededBy'];
 		}
 	}//end rememberSuperseded()
 
-	/**
-	 * Resolve an OpenRegister object's UUID from its array shape.
-	 *
-	 * @param array<string, mixed> $object The object as an associative array.
-	 *
-	 * @return string|null The UUID, or null when none is resolvable.
-	 *
-	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
-	 */
-	private function resolveUuid(array $object): ?string {
-		$self = ($object['@self'] ?? null);
 
-		$candidates = [
-			($object['uuid'] ?? null),
-			($object['id'] ?? null),
-		];
-
-		if (is_array($self) === true) {
-			$candidates[] = ($self['id'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if (is_string($candidate) === true && $candidate !== '') {
-				return $candidate;
-			}
-
-			if (is_int($candidate) === true) {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
-	}//end resolveUuid()
 }//end class

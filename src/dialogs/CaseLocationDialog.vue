@@ -126,6 +126,7 @@ import { fetchCaseSummary } from '../services/caseSummary.js'
 import { lookupWozValueByNummeraanduiding } from '../services/wozApi.js'
 import { dialogNoticeProps } from '../utils/dialogNotice.js'
 import { locationSaveRefusal } from '../utils/locationSaveRefusal.js'
+import { mapLayerDefinition } from '../utils/mapLayers.js'
 
 /** The centre of the Netherlands, before an address is chosen. */
 const DEFAULT_CENTER = [52.13, 5.29]
@@ -151,7 +152,7 @@ export default {
 		return {
 			/** What the address search emitted for the chosen address, or null. */
 			chosen: null,
-			/** The configured WMS/WFS layers, `{ id, title, type, url, layerName, isDefault }`. */
+			/** The configured WMS, WFS and ArcGIS layers, `{ id, title, type, url, layerName, isDefault }`. */
 			layers: [],
 			/** The ids of the layers drawn on the map. */
 			shown: [],
@@ -222,11 +223,8 @@ export default {
 		activeLayers() {
 			return this.layers
 				.filter((layer) => this.shown.includes(layer.id))
-				.map((layer) => ({
-					type: String(layer.type).toLowerCase() === 'wfs' ? 'wfs' : 'wms',
-					url: layer.url,
-					options: { layers: layer.layerName, format: 'image/png', transparent: true },
-				}))
+				.map(mapLayerDefinition)
+				.filter((definition) => definition !== null)
 		},
 
 		/**
