@@ -76,7 +76,7 @@ class TermInstanceMovesCaseDeadlineListener implements IEventListener {
 			return;
 		}
 
-		$this->mirror->followInstance(instance: (array)($entity->getObject() ?? []));
+		$this->mirror->followInstance(instance: (array)$entity->getObject());
 	}//end handle()
 
 	/**
