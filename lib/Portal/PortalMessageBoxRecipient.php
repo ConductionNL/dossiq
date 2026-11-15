@@ -123,7 +123,7 @@ class PortalMessageBoxRecipient {
 		try {
 			$recipient = $this->runAsSystemIfAvailable(
 				objectService: $source['objectService'],
-				operation: fn (): ?string => $this->recipientOf(objectService: $source['objectService'], schemas: $source['schemas'], messageId: $messageId)
+				operation: fn (): ?string => $this->recipientOf(source: $source, messageId: $messageId)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the message box recipient could not be read', ['exception' => get_class($e)]);
@@ -140,13 +140,14 @@ class PortalMessageBoxRecipient {
 	/**
 	 * Read the message and its case, inside the system context.
 	 *
-	 * @param object                $objectService The OpenRegister object service.
-	 * @param array<string, string> $schemas       `register`, `message` and `case`.
-	 * @param string                $messageId     The portaalBericht uuid.
+	 * @param array<string, mixed> $source    The OpenRegister object service (`objectService`) and the `register`,
+	 *                                        `message` and `case` schemas (`schemas`).
+	 * @param string               $messageId The portaalBericht uuid.
 	 *
 	 * @return string|null
 	 */
-	private function recipientOf(object $objectService, array $schemas, string $messageId): ?string {
+	private function recipientOf(array $source, string $messageId): ?string {
+		['objectService' => $objectService, 'schemas' => $schemas] = $source;
 		$message = $this->findObjectAsArray(objectService: $objectService, register: $schemas['register'], schema: $schemas['message'], id: $messageId);
 		if ($message === null || ($message['direction'] ?? '') !== 'handler_to_citizen') {
 			return null;

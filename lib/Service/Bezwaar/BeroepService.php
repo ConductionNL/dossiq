@@ -264,7 +264,7 @@ class BeroepService {
 		$requests = (array)($current['fileInspectionRequests'] ?? []);
 		$requests[] = $entry;
 
-		return $this->patchInspectionRequests(store: $store, appealId: $appealId, current: $current, requests: $requests);
+		return $this->patchInspectionRequests(store: $store, appeal: ['id' => $appealId, 'current' => $current, 'requests' => $requests]);
 	}//end addFileInspectionRequest()
 
 	/**
@@ -293,9 +293,8 @@ class BeroepService {
 	 * Write the beroep's file-inspection requests.
 	 *
 	 * @param array<string, mixed>             $store    The beroep store.
-	 * @param string                           $appealId UUID of the beroep
-	 * @param array<string, mixed>             $current  The stored beroep.
-	 * @param array<int, array<string, mixed>> $requests The requests, with the new one.
+	 * @param array<string, mixed>             $appeal   UUID of the beroep (`id`), the stored beroep (`current`) and
+	 *                                                   the requests, with the new one (`requests`).
 	 *
 	 * @return array<string, mixed> The updated beroep record
 	 *
@@ -303,13 +302,13 @@ class BeroepService {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function patchInspectionRequests(array $store, string $appealId, array $current, array $requests): array {
+	private function patchInspectionRequests(array $store, array $appeal): array {
 		return $this->patchAppeal(
 			store: $store,
 			patch: [
-				'id' => $appealId,
-				'current' => $current,
-				'changes' => ['fileInspectionRequests' => $requests],
+				'id' => $appeal['id'],
+				'current' => $appeal['current'],
+				'changes' => ['fileInspectionRequests' => $appeal['requests']],
 				'log' => 'Dossiq beroep: failed to add file-inspection request: ',
 				'error' => 'Could not add file-inspection request',
 			]
