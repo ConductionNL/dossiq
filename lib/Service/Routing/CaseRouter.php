@@ -138,7 +138,7 @@ class CaseRouter implements CaseRouterInterface {
 		$case = $this->caseOrFail(caseId: $caseId);
 
 		try {
-			return $this->routeCase(case: $case, rule: $this->ruleOf(rule: $rule), exclude: '');
+			return $this->routeCase(case: $case, ask: ['rule' => $this->ruleOf(rule: $rule), 'exclude' => '']);
 		} catch (RoutingStrategyMissingException $e) {
 			throw new RefusedException(
 				rule: 'routing-strategy-unknown',
@@ -166,7 +166,7 @@ class CaseRouter implements CaseRouterInterface {
 			return self::NOT_DUE;
 		}
 
-		if ($this->stillUnaccepted(case: $case, routedTo: $routedTo, routedAt: $routedAt) === false) {
+		if ($this->stillUnaccepted(case: $case, window: ['routedTo' => $routedTo, 'routedAt' => $routedAt]) === false) {
 			return self::NOT_DUE;
 		}
 
@@ -187,7 +187,7 @@ class CaseRouter implements CaseRouterInterface {
 		$record  = $this->takeBackRecord(routedTo: $routedTo, rule: $rule);
 
 		$this->resolver->invalidateCache(caseId: (string) $dueCase['id']);
-		$answer = $this->routeCase(case: $dueCase, rule: $rule, exclude: $routedTo);
+		$answer = $this->routeCase(case: $dueCase, ask: ['rule' => $rule, 'exclude' => $routedTo]);
 		$record = $this->withOutcome(record: $record, assignee: $answer['assignee']);
 		$this->write(case: $dueCase, changes: ['routingTakeBacks' => [...$records, $record]]);
 
@@ -243,16 +243,16 @@ class CaseRouter implements CaseRouterInterface {
 	/**
 	 * Resolve, write and arm.
 	 *
-	 * @param array<string, mixed> $case    The case.
-	 * @param array<string, mixed> $rule    The sanitised rule.
-	 * @param string               $exclude A person who may not get it, or ''.
+	 * @param array<string, mixed>                               $case The case.
+	 * @param array{rule: array<string, mixed>, exclude: string} $ask  The sanitised rule, and a person who may not get it or ''.
 	 *
 	 * @return array{caseId: string, assignee: string, team: string, areaFallbackUsed: bool, reason: string, takeBack: string}
 	 */
-	private function routeCase(array $case, array $rule, string $exclude): array {
+	private function routeCase(array $case, array $ask): array {
+		['rule' => $rule, 'exclude' => $exclude] = $ask;
 		$caseId = (string) $case['id'];
 		$area   = $this->area->resolve(rule: $rule, case: $case, caseType: null);
-		$pick   = $this->pick(rule: $rule, case: $case, exclude: $exclude);
+		$pick   = $this->pick(case: $case, ask: $ask);
 		$answer = ['caseId' => $caseId] + $this->areaAnswer(area: $area, pick: $pick);
 
 		if ($pick === '') {
@@ -325,13 +325,13 @@ class CaseRouter implements CaseRouterInterface {
 	/**
 	 * The first person the rule names who is not excluded.
 	 *
-	 * @param array<string, mixed> $rule    The rule.
-	 * @param array<string, mixed> $case    The case.
-	 * @param string               $exclude A person who may not get it, or ''.
+	 * @param array<string, mixed>                               $case The case.
+	 * @param array{rule: array<string, mixed>, exclude: string} $ask  The rule, and a person who may not get it or ''.
 	 *
 	 * @return string The person, or '' when the rule names nobody else.
 	 */
-	private function pick(array $rule, array $case, string $exclude): string {
+	private function pick(array $case, array $ask): string {
+		['rule' => $rule, 'exclude' => $exclude] = $ask;
 		for ($ask = 0; $ask < self::MAX_ASKS; $ask++) {
 			foreach ($this->resolver->resolve(rule: $rule, case: $case) as $participant) {
 				$participant = trim((string) $participant);
@@ -355,13 +355,13 @@ class CaseRouter implements CaseRouterInterface {
 	/**
 	 * Whether the routing the window was armed for still stands unaccepted.
 	 *
-	 * @param array<string, mixed> $case     The fresh case, with its routing record.
-	 * @param string               $routedTo The person the window was armed for.
-	 * @param string               $routedAt The moment the window was armed for.
+	 * @param array<string, mixed>                     $case   The fresh case, with its routing record.
+	 * @param array{routedTo: string, routedAt: string} $window The person and the moment the window was armed for.
 	 *
 	 * @return bool
 	 */
-	private function stillUnaccepted(array $case, string $routedTo, string $routedAt): bool {
+	private function stillUnaccepted(array $case, array $window): bool {
+		['routedTo' => $routedTo, 'routedAt' => $routedAt] = $window;
 		$routing = $this->routingOf(case: $case);
 		if (trim((string) ($case['endDate'] ?? '')) !== '') {
 			return false;
