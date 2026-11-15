@@ -74,6 +74,19 @@ class SideEffectDispatcher {
 	public function dispatch(array $actions, array $case, array $transitionContext): array {
 		$nodes = $this->nodes();
 		$transitioned = new TransitionedCase(case: $case, transitionContext: $transitionContext);
+
+		return $this->dispatchEach(actions: $actions, route: ['nodes' => $nodes, 'transitioned' => $transitioned]);
+	}//end dispatch()
+
+	/**
+	 * Dispatch every typed action along the route; an action without a type is left out.
+	 *
+	 * @param array<int, array<string, mixed>>                $actions The declared actions.
+	 * @param array{nodes: FlowNodeRegistry|null, transitioned: TransitionedCase} $route   The node registry, and the case with its transition.
+	 *
+	 * @return array<int, mixed> One result per dispatched action.
+	 */
+	private function dispatchEach(array $actions, array $route): array {
 		$results = [];
 		foreach ($actions as $action) {
 			$type = (string)($action['type'] ?? '');
@@ -81,11 +94,11 @@ class SideEffectDispatcher {
 				continue;
 			}
 
-			$results[] = $this->dispatchOne(action: $action, route: ['nodes' => $nodes, 'transitioned' => $transitioned]);
+			$results[] = $this->dispatchOne(action: $action, route: $route);
 		}//end foreach
 
 		return $results;
-	}//end dispatch()
+	}//end dispatchEach()
 
 	/**
 	 * Run one action: as its replacing node when retired, else as an OpenRegister node, else locally.

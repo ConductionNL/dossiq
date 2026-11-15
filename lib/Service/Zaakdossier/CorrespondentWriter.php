@@ -318,16 +318,28 @@ class CorrespondentWriter {
 			return 0;
 		}
 
+		return $this->dispatchedTo(document: ['caseId' => $caseId, 'documentId' => $documentId], correspondents: $correspondents);
+	}//end recordDispatches()
+
+	/**
+	 * Write one dispatch of the document per wanted correspondent.
+	 *
+	 * @param array{caseId: string, documentId: string}             $document       The case, and the informatieobject uuid.
+	 * @param array{sender: string, recipients: array<int, string>} $correspondents What the document names.
+	 *
+	 * @return int How many dispatch rows were created.
+	 */
+	private function dispatchedTo(array $document, array $correspondents): int {
 		$written = 0;
 		foreach (self::wantedDispatches(correspondents: $correspondents) as [$party, $role]) {
-			$dispatch = new Dispatch(caseId: $caseId, documentId: $documentId, party: $party, role: $role);
+			$dispatch = new Dispatch(caseId: $document['caseId'], documentId: $document['documentId'], party: $party, role: $role);
 			if ($this->writeDispatch(dispatch: $dispatch) === true) {
 				$written++;
 			}
 		}
 
 		return $written;
-	}//end recordDispatches()
+	}//end dispatchedTo()
 
 	/**
 	 * The party and role of every dispatch a document's correspondents ask for, sender first.
