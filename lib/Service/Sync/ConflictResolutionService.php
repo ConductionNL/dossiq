@@ -251,7 +251,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 
 		$fields = $this->fieldsOf(data: $data);
 		$current = $this->dataOf(object: $target);
-		$refreshed = $this->refreshedServerVersion(data: $data, fields: $fields, current: $current);
+		$refreshed = $this->refreshedServerVersion(data: $data, view: ['fields' => $fields, 'current' => $current]);
 		if ($refreshed !== null) {
 			$this->storeServerVersion(request: $request, refreshed: $refreshed);
 			return ConflictResolutionOutcome::refused(
@@ -260,12 +260,12 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			);
 		}
 
-		$changes = $this->deviceChanges(data: $data, fields: $fields, current: $current);
+		$changes = $this->deviceChanges(data: $data, view: ['fields' => $fields, 'current' => $current]);
 		if ($changes === []) {
 			return null;
 		}
 
-		return $this->writeOntoTarget(request: $request, data: $data, changes: $changes);
+		return $this->writeOntoTarget(request: $request, write: ['target' => $this->targetOf(data: $data), 'changes' => $changes]);
 	}//end writeDeviceValues()
 
 	/**
@@ -325,13 +325,13 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 * The server version with the office's current values, or null when the
 	 * office did not change any of the fields since the conflict was recorded.
 	 *
-	 * @param array<string, mixed> $data    The conflict record.
-	 * @param array<int, string>   $fields  The conflicting field paths.
-	 * @param array<string, mixed> $current The target's current data.
+	 * @param array<string, mixed>                                          $data The conflict record.
+	 * @param array{fields: array<int, string>, current: array<string, mixed>} $view The conflicting field paths and the target's current data.
 	 *
 	 * @return array<string, mixed>|null The refreshed server version, or null.
 	 */
-	private function refreshedServerVersion(array $data, array $fields, array $current): ?array {
+	private function refreshedServerVersion(array $data, array $view): ?array {
+		[$fields, $current] = [$view['fields'], $view['current']];
 		$serverVersion = $this->arrayOf(value: ($data['serverVersion'] ?? null));
 		$officeMoved = false;
 		$refreshed = $serverVersion;
@@ -379,13 +379,13 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	/**
 	 * The device's values per top-level field, merged into the current data.
 	 *
-	 * @param array<string, mixed> $data    The conflict record.
-	 * @param array<int, string>   $fields  The conflicting field paths.
-	 * @param array<string, mixed> $current The target's current data.
+	 * @param array<string, mixed>                                          $data The conflict record.
+	 * @param array{fields: array<int, string>, current: array<string, mixed>} $view The conflicting field paths and the target's current data.
 	 *
 	 * @return array<string, mixed> The changes to write.
 	 */
-	private function deviceChanges(array $data, array $fields, array $current): array {
+	private function deviceChanges(array $data, array $view): array {
+		[$fields, $current] = [$view['fields'], $view['current']];
 		$clientVersion = $this->arrayOf(value: ($data['clientVersion'] ?? null));
 		$changes = [];
 		foreach ($fields as $path) {
@@ -405,13 +405,14 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 * Write the changes onto the conflict's target.
 	 *
 	 * @param ConflictResolutionRequest $request The conflict record, for the object service and the log.
-	 * @param array<string, mixed>      $data    The conflict record.
-	 * @param array<string, mixed>      $changes The changes to write.
+	 * @param array<string, mixed>      $write   Where the target lives (`target`: register, schema and id, as
+	 *                                           targetOf() answers them) and the changes to write (`changes`).
 	 *
 	 * @return ConflictResolutionOutcome|null The refusal, or null once written.
 	 */
-	private function writeOntoTarget(ConflictResolutionRequest $request, array $data, array $changes): ?ConflictResolutionOutcome {
-		[$targetRegister, $targetSchema, $targetId] = $this->targetOf(data: $data);
+	private function writeOntoTarget(ConflictResolutionRequest $request, array $write): ?ConflictResolutionOutcome {
+		[$targetRegister, $targetSchema, $targetId] = $write['target'];
+		$changes = $write['changes'];
 		try {
 			$this->patchObjectAsArray(
 				objectService: $request->objectService,
