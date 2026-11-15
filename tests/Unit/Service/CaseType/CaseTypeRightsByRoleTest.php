@@ -259,6 +259,91 @@ class CaseTypeRightsByRoleTest extends TestCase {
 	}//end testAnUnnamedStatusIsNamedByItsId()
 
 	/**
+	 * Only mandates for this case type count: one naming its id, slug or
+	 * identifier, or one naming no case type at all; one for another case
+	 * type is ignored.
+	 *
+	 * @return void
+	 */
+	public function testOnlyMandatesForThisCaseTypeCount(): void {
+		$matrix = [['department' => '*', 'role' => 'r-vv', 'confidentiality' => 'intern', 'actions' => ['read']]];
+
+		$cell = fn (array $caseTypes): string => $this->service(
+			$matrix,
+			[['mandateeRole' => 'r-vv', 'terms' => ['plafondCents' => 100000, 'caseTypes' => $caseTypes]]]
+		)->rowsFor(caseTypeId: 'ct-1')[0]['decide'];
+
+		$this->assertSame('Up to € 1.000', $cell(['ct-1']));
+		$this->assertSame('Up to € 1.000', $cell(['omgevingsvergunning']));
+		$this->assertSame('Up to € 1.000', $cell([]));
+		$this->assertSame('No', $cell(['kapvergunning']));
+		// An empty slug on the case type is not a key that matches an empty entry.
+		$this->assertSame('No', $cell(['']));
+	}//end testOnlyMandatesForThisCaseTypeCount()
+
+	/**
+	 * The register is asked for the mandates active now, in this case type's context.
+	 *
+	 * @return void
+	 */
+	public function testTheRegisterIsAskedForThisCaseType(): void {
+		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver->method('effectiveCaseType')->willReturn(['id' => 'ct-1', 'identifier' => 'OV-1', 'rightsMatrix' => [['department' => '*', 'role' => 'r-vv', 'actions' => ['read']]]]);
+		$resolver->method('statusTypesFor')->willReturn([]);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
+		$before = new \DateTimeImmutable();
+		$mandateService = $this->createMock(MandaatCheckService::class);
+		$mandateService->expects($this->once())
+			->method('activeRows')
+			->with(
+				$this->callback(static fn (\DateTimeImmutable $date): bool => $date >= $before && $date <= new \DateTimeImmutable()),
+				['caseType' => 'ct-1']
+			)
+			->willReturn([['mandateeRole' => 'r-vv', 'terms' => ['plafondCents' => 250000, 'caseTypes' => ['OV-1']]]]);
+		$roles = $this->getMockBuilder(OrganisationRoles::class)->disableOriginalConstructor()->onlyMethods(['all'])->getMock();
+		$roles->method('all')->willReturn([]);
+
+		$rows = (new CaseTypeRightsByRole(resolver: $resolver, l10n: $l10n, mandates: $mandateService, roles: $roles))->rowsFor(caseTypeId: 'ct-1');
+
+		$this->assertSame('Up to € 2.500', $rows[0]['decide']);
+	}//end testTheRegisterIsAskedForThisCaseType()
+
+	/**
+	 * One mandate without a whole-cent ceiling makes the role Unlimited, and
+	 * the highest ceiling is shown in whole euros with dot thousands.
+	 *
+	 * @return void
+	 */
+	public function testTheCeilingCell(): void {
+		$matrix = [['department' => '*', 'role' => 'r-vv', 'confidentiality' => 'intern', 'actions' => ['read']]];
+		$cell   = fn (array $mandates): string => $this->service($matrix, $mandates)->rowsFor(caseTypeId: 'ct-1')[0]['decide'];
+
+		$this->assertSame('Up to € 1.234.567', $cell([['mandateeRole' => 'r-vv', 'terms' => ['plafondCents' => 123456789]], ['mandateeRole' => 'r-vv', 'terms' => ['plafondCents' => 99]]]));
+		$this->assertSame('Unlimited', $cell([['mandateeRole' => 'r-vv', 'terms' => ['plafondCents' => 500]], ['mandateeRole' => 'r-vv', 'terms' => ['plafondCents' => '9000']]]));
+		$this->assertSame('No', $cell([['mandateeRole' => 'r-intake', 'terms' => ['plafondCents' => 500]], ['terms' => ['plafondCents' => 500]]]));
+		$this->assertSame('Up to € 0', $cell([['mandateeRole' => 'r-vv', 'terms' => ['plafondCents' => 0]]]));
+	}//end testTheCeilingCell()
+
+	/**
+	 * An unreadable register makes every role Unknown, whatever its grants.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableRegisterMakesEveryRoleUnknown(): void {
+		$rows = $this->service(
+			[
+				['department' => '*', 'role' => 'Intaker', 'actions' => ['read']],
+				['department' => '*', 'role' => 'r-vv', 'actions' => ['update']],
+			],
+			[],
+			true
+		)->rowsFor(caseTypeId: 'ct-1');
+
+		$this->assertSame(['Unknown', 'Unknown'], array_column($rows, 'decide'));
+	}//end testAnUnreadableRegisterMakesEveryRoleUnknown()
+
+	/**
 	 * The service over a raw case type row and its statuses, no mandates.
 	 *
 	 * @param array<string, mixed>             $row      The effective case type.
