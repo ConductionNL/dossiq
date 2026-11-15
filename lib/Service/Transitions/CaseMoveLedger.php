@@ -88,18 +88,32 @@ class CaseMoveLedger {
 			throw new RuntimeException('case_not_found');
 		}
 
+		self::assertUnchanged(caseAtSave: $caseAtSave, read: ['version' => $readVersion, 'status' => $currentId]);
+
+		return $caseAtSave;
+	}//end reloadUnchanged()
+
+	/**
+	 * Refuse the move when the case no longer has the version and status it was read with.
+	 *
+	 * @param array<string, mixed>               $caseAtSave The case as it is now.
+	 * @param array{version: int, status: string} $read       The version and the status it was read with.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When another change reached the case first.
+	 */
+	private static function assertUnchanged(array $caseAtSave, array $read): void {
 		$versionAtSave = (int)(($caseAtSave['@self']['version'] ?? ($caseAtSave['version'] ?? 0)));
 		$statusAtSave = (string)($caseAtSave['status'] ?? '');
-		if ($versionAtSave !== $readVersion || $statusAtSave !== $currentId) {
+		if ($versionAtSave !== $read['version'] || $statusAtSave !== $read['status']) {
 			throw new RefusedException(
 				rule: 'transition-conflict',
 				sentence: 'Another change reached this case first. Reload it and try again.',
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
-
-		return $caseAtSave;
-	}//end reloadUnchanged()
+	}//end assertUnchanged()
 
 	/**
 	 * Write the result a closing move records onto the case payload. Not saved here.
