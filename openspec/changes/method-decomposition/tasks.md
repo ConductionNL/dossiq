@@ -613,3 +613,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Own test: `tests/Unit/Service/CaseType/RoleMandateCeilingsTest` (4); taking the lowest
         ceiling instead of the highest turns 9 tests red (checked).
         Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8p `MenuCaseTypesService` (1: ExcessiveClassComplexity 50 against 50). Reading one stored
+        case type row as a menu entry (its uuid from `uuid`, `id` or `@self.id`, the title in the
+        reader's language, the identifier, the trimmed icon, the handling teams, and the public
+        shape the menu is sent) is the new `CaseType/CaseTypeMenuEntry` (`uuidOf()`, `entry()`,
+        `publicRow()`; bodies moved unchanged, `publicRow()` no longer static so no StaticAccess
+        finding replaces the one removed). The service keeps the reads, the team filter, the
+        superseded-version folding and the user's choice; it builds the entry reader in its
+        constructor, so its constructor, interface and container binding are unchanged.
+        phpmd: zero findings on both files.
+        Characterisation, green on the single class first (own commit): 3 tests added to
+        `MenuCaseTypesServiceTest` (16 in all) for the icon, the uuid precedence with the first
+        row of a uuid winning, and `byIdentifier()`. Unchanged and green after but for one
+        `@uses` line. Own test: `tests/Unit/Service/CaseType/CaseTypeMenuEntryTest` (3);
+        dropping the integer-id branch turns it red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
