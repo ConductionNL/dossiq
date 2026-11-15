@@ -327,10 +327,20 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	private function storeUploadedRecord(InformatieobjectStore $store, DocumentUpload $upload, array $informatieobject): string {
-		$objectService = $store->objectService;
-		$register = $store->register;
-		$infoSchema = $store->infoSchema;
+		[$record, $infoId] = $this->recordOfFile(upload: $upload, informatieobject: $informatieobject);
 
+		return $this->savedRecordId(store: $store, record: [$record, $infoId]);
+	}//end storeUploadedRecord()
+
+	/**
+	 * Store the upload's bytes on its case, and the record they belong to: the one the file already has, merged.
+	 *
+	 * @param DocumentUpload       $upload           The upload: its case, file name and bytes.
+	 * @param array<string, mixed> $informatieobject The record as built for the upload.
+	 *
+	 * @return array{0: array<string, mixed>, 1: string} The record to save, and its id ('' for a new one).
+	 */
+	private function recordOfFile(DocumentUpload $upload, array $informatieobject): array {
 		$fileId = $this->recordStore->storeFileOnObject(objectId: $upload->caseId, fileName: $upload->fileName, content: $upload->content);
 		$existing = [];
 		if ($fileId > 0) {
@@ -340,7 +350,23 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 
 		$infoId = (string)($existing['id'] ?? '');
 		unset($existing['id'], $existing['@self']);
-		$record = array_merge($existing, $informatieobject);
+
+		return [array_merge($existing, $informatieobject), $infoId];
+	}//end recordOfFile()
+
+	/**
+	 * Save the record, updating it when it has an id, and answer its id.
+	 *
+	 * @param InformatieobjectStore                     $store  The object service, register and informatieobject schema.
+	 * @param array{0: array<string, mixed>, 1: string} $record The record, and its id ('' for a new one).
+	 *
+	 * @return string The record's id.
+	 */
+	private function savedRecordId(InformatieobjectStore $store, array $record): string {
+		[$record, $infoId] = $record;
+		$objectService = $store->objectService;
+		$register = $store->register;
+		$infoSchema = $store->infoSchema;
 		if ($infoId !== '') {
 			$objectService->saveObject(object: $record, register: $register, schema: $infoSchema, uuid: $infoId);
 		}
@@ -351,7 +377,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 		}
 
 		return $infoId;
-	}//end storeUploadedRecord()
+	}//end savedRecordId()
 
 	/**
 	 * The record an uploaded document gets.
