@@ -197,4 +197,40 @@ class WorkflowTemplateLoaderRegressionTest extends TestCase {
 		$this->assertNull($this->loader->getActiveTemplate('ct-x'));
 
 	}//end testGetActiveTemplateReturnsNullWithoutObjectService()
+	/**
+	 * A found template and a miss are both read once per case type, and an empty id reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testAFoundTemplateAndAMissAreEachReadOnce(): void {
+		$objectService = $this->createMock(WorkflowTemplateObjectServiceStub::class);
+		$this->withObjectService($objectService);
+		$objectService->expects($this->exactly(2))
+			->method('searchObjects')
+			->willReturnCallback(
+				static fn (array $query): array => ($query['caseType'] === 'ct-1') ? [['id' => 'tmpl-1', 'caseType' => 'ct-1']] : []
+			);
+
+		$this->assertNull($this->loader->getActiveTemplate(''));
+		$first = $this->loader->getActiveTemplate('ct-1');
+		$this->assertSame('tmpl-1', $first['id']);
+		$this->assertSame($first, $this->loader->getActiveTemplate('ct-1'));
+		$this->assertNull($this->loader->getActiveTemplate('ct-2'));
+		$this->assertNull($this->loader->getActiveTemplate('ct-2'));
+	}//end testAFoundTemplateAndAMissAreEachReadOnce()
+
+	/**
+	 * Without a register or schema nothing is searched, and the miss is remembered.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredRegisterSearchesNothing(): void {
+		$objectService = $this->createMock(WorkflowTemplateObjectServiceStub::class);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->expects($this->exactly(2))->method('getConfigValue')->willReturn('');
+		$objectService->expects($this->never())->method('searchObjects');
+
+		$this->assertNull($this->loader->getActiveTemplate('ct-1'));
+		$this->assertNull($this->loader->getActiveTemplate('ct-1'));
+	}//end testAnUnconfiguredRegisterSearchesNothing()
 }//end class

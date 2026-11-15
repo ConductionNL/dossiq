@@ -1,0 +1,137 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`saving a triage rule > asks, emits and refuses as before 1`] = `
+{
+  "busy": {
+    "calls": [],
+    "error": "old",
+    "saving": true,
+  },
+  "created": {
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/cases/case%201/review/triage/rules",
+        {
+          "conditions": [
+            {
+              "field": "sender",
+              "value": "x",
+            },
+          ],
+          "effect": "junk",
+          "name": "Spam",
+        },
+      ],
+      [
+        "emit",
+        "saved",
+        {
+          "id": "r1",
+        },
+      ],
+    ],
+    "error": "",
+    "saving": false,
+  },
+  "failed": {
+    "calls": [
+      [
+        "put",
+        "/index.php/apps/dossiq/api/cases/case%201/review/triage/rules/r4",
+        {
+          "conditions": [
+            {
+              "field": "sender",
+              "value": "x",
+            },
+          ],
+          "effect": "junk",
+          "name": "Spam",
+        },
+      ],
+    ],
+    "error": "The triage rules cannot be stored or applied, so nothing was marked.",
+    "saving": false,
+  },
+  "missing": {
+    "calls": [],
+    "error": "old",
+    "saving": false,
+  },
+  "refused": {
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/cases/case%201/review/triage/rules",
+        {
+          "conditions": [
+            {
+              "field": "sender",
+              "value": "x",
+            },
+          ],
+          "effect": "junk",
+          "name": "Spam",
+        },
+      ],
+    ],
+    "error": "Name taken",
+    "saving": false,
+  },
+  "ruleWithoutId": {
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/cases/case%201/review/triage/rules",
+        {
+          "conditions": [
+            {
+              "field": "sender",
+              "value": "x",
+            },
+          ],
+          "effect": "junk",
+          "name": "Spam",
+        },
+      ],
+      [
+        "emit",
+        "saved",
+        {
+          "id": "r3",
+        },
+      ],
+    ],
+    "error": "",
+    "saving": false,
+  },
+  "updated": {
+    "calls": [
+      [
+        "put",
+        "/index.php/apps/dossiq/api/cases/case%201/review/triage/rules/r%2F2",
+        {
+          "conditions": [
+            {
+              "field": "sender",
+              "value": "x",
+            },
+          ],
+          "effect": "junk",
+          "name": "Spam",
+        },
+      ],
+      [
+        "emit",
+        "saved",
+        {
+          "id": "r/2",
+        },
+      ],
+    ],
+    "error": "",
+    "saving": false,
+  },
+}
+`;

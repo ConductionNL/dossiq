@@ -2,7 +2,9 @@
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
 
-  What dossiq needs, and what this instance has.
+  What dossiq needs, and what this instance has: three tables (platform,
+  PHP extensions, apps) with what each does and whether it is here, as board
+  DqBeheerGeavanceerd draws them.
 
   Every row is read on the server at page load, from `Prerequisites::check()`.
   Nothing here asks the browser anything: a PHP extension is not visible from
@@ -13,7 +15,7 @@
   (ADR-102). Only Open Register blocks; everything else says what it would
   have added, so an administrator can decide whether they want it.
 
-  @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+  @spec openspec/specs/admin-settings/spec.md
 -->
 <template>
 	<div class="prerequisites" data-testid="prerequisites-block">
@@ -22,60 +24,64 @@
 			type="error"
 			data-testid="prerequisites-blocking">
 			{{ t('dossiq', 'Dossiq cannot run until this is installed:') }}
-			{{ missingRequired.map((row) => row.id).join(', ') }}
+			{{ missingRequired.map((row) => row.name || row.id).join(', ') }}
 		</NcNoteCard>
 
-		<h4>{{ t('dossiq', 'Platform') }}</h4>
-		<ul class="prerequisites__list">
-			<li data-testid="prerequisite-php">
-				<span :class="markClass(php.present)">{{ mark(php.present) }}</span>
-				{{ t('dossiq', 'PHP') }} {{ php.required }}
-				{{ t('dossiq', 'or higher') }}
-				<span class="prerequisites__detail">
-					({{ t('dossiq', 'this instance runs') }} {{ php.running }})
-				</span>
-			</li>
-			<li data-testid="prerequisite-nextcloud">
-				{{ t('dossiq', 'Nextcloud') }} {{ nextcloud.min }}
-				{{ t('dossiq', 'to') }} {{ nextcloud.max }}
-			</li>
-		</ul>
+		<table class="prerequisites__table" data-testid="prerequisites-platform">
+			<PrerequisitesTableHead :label="t('dossiq', 'Platform')" />
+			<tbody>
+				<tr data-testid="prerequisite-php">
+					<th scope="row">
+						{{ t('dossiq', 'PHP {version} or higher', { version: php.required }) }}
+					</th>
+					<td>{{ t('dossiq', 'This instance runs {version}', { version: php.running }) }}</td>
+					<td><span :class="markClass(php.present)">{{ mark(php.present) }}</span></td>
+				</tr>
+				<tr data-testid="prerequisite-nextcloud">
+					<th scope="row">
+						{{ t('dossiq', 'Nextcloud {min} to {max}', { min: nextcloud.min, max: nextcloud.max }) }}
+					</th>
+					<td>
+						<template v-if="nextcloud.running">
+							{{ t('dossiq', 'This instance runs {version}', { version: nextcloud.running }) }}
+						</template>
+					</td>
+					<td><span :class="markClass(nextcloud.present)">{{ mark(nextcloud.present) }}</span></td>
+				</tr>
+			</tbody>
+		</table>
 
-		<h4>{{ t('dossiq', 'PHP extensions') }}</h4>
-		<ul class="prerequisites__list">
-			<li
-				v-for="row in extensions"
-				:key="row.name"
-				:data-testid="`prerequisite-ext-${row.name}`">
-				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
-				{{ row.name }}
-				<span class="prerequisites__detail">{{ row.why }}</span>
-			</li>
-		</ul>
+		<table class="prerequisites__table" data-testid="prerequisites-extensions">
+			<PrerequisitesTableHead :label="t('dossiq', 'PHP extension')" />
+			<tbody>
+				<tr
+					v-for="row in extensions"
+					:key="row.name"
+					:data-testid="`prerequisite-ext-${row.name}`">
+					<th scope="row">
+						{{ row.name }}
+					</th>
+					<td>{{ t('dossiq', row.why) }}</td>
+					<td><span :class="markClass(row.present)">{{ mark(row.present) }}</span></td>
+				</tr>
+			</tbody>
+		</table>
 
-		<h4>{{ t('dossiq', 'Apps dossiq needs') }}</h4>
-		<ul class="prerequisites__list">
-			<li
-				v-for="row in required"
-				:key="row.id"
-				:data-testid="`prerequisite-app-${row.id}`">
-				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
-				{{ row.id }}
-				<span class="prerequisites__detail">{{ row.unlocks }}</span>
-			</li>
-		</ul>
-
-		<h4>{{ t('dossiq', 'Apps dossiq works with') }}</h4>
-		<ul class="prerequisites__list">
-			<li
-				v-for="row in optional"
-				:key="row.id"
-				:data-testid="`prerequisite-app-${row.id}`">
-				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
-				{{ row.id }}
-				<span class="prerequisites__detail">{{ row.unlocks }}</span>
-			</li>
-		</ul>
+		<table class="prerequisites__table" data-testid="prerequisites-apps">
+			<PrerequisitesTableHead :label="t('dossiq', 'App')" />
+			<tbody v-for="(apps, group) in appGroups" :key="group">
+				<tr
+					v-for="row in apps"
+					:key="row.id"
+					:data-testid="`prerequisite-app-${row.id}`">
+					<th scope="row">
+						{{ row.name || row.id }}
+					</th>
+					<td>{{ t('dossiq', row.unlocks) }}</td>
+					<td><span :class="markClass(row.present)">{{ mark(row.present) }}</span></td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
 </template>
 
@@ -83,11 +89,12 @@
 import { loadState } from '@nextcloud/initial-state'
 import { translate as t } from '@nextcloud/l10n'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import PrerequisitesTableHead from './PrerequisitesTableHead.vue'
 
 export default {
 	name: 'PrerequisitesTab',
 
-	components: { NcNoteCard },
+	components: { NcNoteCard, PrerequisitesTableHead },
 
 	data() {
 		// An absent state renders an empty block rather than throwing. The
@@ -97,7 +104,13 @@ export default {
 
 		return {
 			php: state.php ?? { required: '', running: '', present: false },
-			nextcloud: state.nextcloud ?? { min: '', max: '' },
+			nextcloud: state.nextcloud ?? {
+				min: '',
+				max: '',
+				running: '',
+				present: false,
+			},
+
 			extensions: state.extensions ?? [],
 			required: state.apps?.required ?? [],
 			optional: state.apps?.optional ?? [],
@@ -107,10 +120,21 @@ export default {
 	computed: {
 		/**
 		 * @return {Array} The required apps this instance does not have.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		missingRequired() {
 			return this.required.filter((row) => row.present !== true)
+		},
+
+		/**
+		 * The apps in the order the table lists them, one body each: required, then optional.
+		 *
+		 * @return {Array<Array>} The required and the optional apps.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		appGroups() {
+			return [this.required, this.optional]
 		},
 	},
 
@@ -125,7 +149,7 @@ export default {
 		 *
 		 * @param {boolean} present Whether the item is there.
 		 * @return {string} The word.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		mark(present) {
 			return present === true ? t('dossiq', 'present') : t('dossiq', 'missing')
@@ -136,43 +160,50 @@ export default {
 		 *
 		 * @param {boolean} present Whether the item is there.
 		 * @return {string} The class.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		markClass(present) {
 			return present === true
-				? 'prerequisites__mark prerequisites__mark--present'
-				: 'prerequisites__mark prerequisites__mark--missing'
+				? 'prerequisites__mark cn-status-badge cn-status-badge--success'
+				: 'prerequisites__mark cn-status-badge cn-status-badge--default prerequisites__mark--missing'
 		},
 	},
 }
 </script>
 
 <style scoped>
-.prerequisites__list {
-	list-style: none;
-	margin: 0 0 16px 0;
-	padding: 0;
+.prerequisites {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
-.prerequisites__list li {
-	padding: 2px 0;
+.prerequisites__table th[scope='row'] {
+	font-weight: 600;
+	text-align: start;
 }
 
+.prerequisites__table td:nth-child(2)::first-letter {
+	text-transform: uppercase;
+}
+
+/*
+ * Fill and ink in matching pairs. Since Nextcloud 32 `--color-success` and
+ * `--color-error` are light FILLS; used as ink they were near-invisible on the
+ * page background (round-4 cloud check). Each fill has a `-text` partner
+ * that meets WCAG AA on it, in the light and the dark theme.
+ */
 .prerequisites__mark {
 	display: inline-block;
-	font-weight: bold;
-	min-width: 72px;
 }
 
-.prerequisites__mark--present {
-	color: var(--color-success);
+.prerequisites__mark::first-letter {
+	text-transform: uppercase;
 }
 
-.prerequisites__mark--missing {
-	color: var(--color-error);
-}
-
-.prerequisites__detail {
-	color: var(--color-text-maxcontrast);
+.prerequisites .prerequisites__mark--missing {
+	background: var(--color-error);
+	--cn-status-badge-ink: var(--color-error-text);
+	color: var(--cn-status-badge-ink);
 }
 </style>

@@ -1,0 +1,24 @@
+{
+  "_note": "Overview cards per case type (Ruben, 18 October 2026: a domain page is case type configuration). `overviewCards` lists the ids of the case page's Overview cards a case of this type shows. The generic cards (the request, case data, priority, locations, plan, term and payment, flows, hours) show only while it is empty, so nothing changes for an existing case type; a domain card follows its own condition. Declared here because OpenRegister stores only declared keys. caseType moves to 1.25.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.25.0",
+        "properties": {
+          "overviewCards": {
+            "type": "array",
+            "title": "Overview cards",
+            "description": "The cards on the Overview tab of a case of this type, by the id of the case page's card. Empty shows the default cards.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

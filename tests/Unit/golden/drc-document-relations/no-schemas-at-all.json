@@ -1,0 +1,11 @@
+{
+    "calls": [
+        {
+            "getConfigValue": "document_link_schema"
+        },
+        {
+            "getConfigValue": "decision_document_schema"
+        }
+    ],
+    "answer": null
+}

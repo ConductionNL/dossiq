@@ -1,0 +1,42 @@
+{
+    "calls": [
+        {
+            "getConfigValue": "document_link_schema"
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "document": "https://drc.example.com/enkelvoudiginformatieobjecten/71000000-1111-4222-8333-444455556666",
+                    "object": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "11"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "document": "https://drc.example.com/enkelvoudiginformatieobjecten/71000000-1111-4222-8333-444455556666",
+                    "object": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "11"
+            }
+        }
+    ],
+    "answer": {
+        "valid": false,
+        "status": 400,
+        "detail": "De combinatie informatieobject + object + objectType bestaat al.",
+        "invalidParams": [
+            {
+                "name": "nonFieldErrors",
+                "code": "unique",
+                "reason": "De combinatie informatieobject + object + objectType bestaat al."
+            }
+        ],
+        "enrichedBody": []
+    }
+}

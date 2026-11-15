@@ -87,7 +87,7 @@ async function navLinks(page) {
 	// accessible name — the foldout's `data-testid` sits on the wrapper and
 	// does not always contain a directly-matchable button element.
 	const settingsToggle = sidebarNav(page)
-		.getByRole('button', { name: 'Settings', exact: true })
+		.getByRole('button', { name: 'Advanced', exact: true })
 		.first()
 	if (await settingsToggle.isVisible().catch(() => false)) {
 		await settingsToggle.click().catch(() => {})

@@ -100,7 +100,9 @@ async function seedDeclaringType(
  * @param caseId The case uuid.
  */
 async function readTerms(api: any, caseId: string) {
-	const response = await api.get(`${TERMS_BASE}/${caseId}/terms`)
+	const response = await api.get(`${TERMS_BASE}/${caseId}/terms`, {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
 	expect(response.ok(), 'the terms endpoint answers').toBeTruthy()
 	return response.json()
 }
@@ -280,7 +282,9 @@ test.describe('The four clocks on a case', () => {
 			'the teamleider sees the internal target',
 		).toContain('internal')
 
-		const citizen = await request.get(`${TERMS_BASE}/${caseId}/terms/citizen`)
+		const citizen = await request.get(`${TERMS_BASE}/${caseId}/terms/citizen`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(citizen.ok()).toBeTruthy()
 		const body = await citizen.json()
 
@@ -366,7 +370,7 @@ test.describe('The four clocks on a case', () => {
 			.toISOString()
 			.slice(0, 10)
 		const refused = await request.post(
-			`/index.php/apps/dossiq/api/termijn/instances/${statutory.id}/verleng`,
+			`/index.php/apps/dossiq/api/deadlines/instances/${statutory.id}/extend`,
 			{
 				headers: { requesttoken: token },
 				data: { rationale: 'Extra onderzoek', newEinddatum: tooFar },
@@ -458,7 +462,8 @@ test.describe('The four clocks on a case', () => {
 		})
 
 		const response = await request.get(
-			'/index.php/apps/dossiq/api/termijn/reports/open-workload-age',
+			'/index.php/apps/dossiq/api/deadlines/reports/open-workload-age',
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(response.ok(), 'the workload report answers').toBeTruthy()
 

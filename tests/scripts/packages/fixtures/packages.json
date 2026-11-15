@@ -1,0 +1,244 @@
+{
+  "flow-package": {
+    "case-type.json": {
+      "caseType": [
+        {
+          "id": "c1",
+          "identifier": "alpha",
+          "title": "Alpha",
+          "processingDeadline": "P2W",
+          "confidentiality": "openbaar",
+          "publicationRequired": false,
+          "x-index": {
+            "columns": [
+              "title",
+              "status"
+            ]
+          },
+          "workflowDefinition": "f1",
+          "nested": {
+            "skip": true
+          }
+        },
+        {
+          "id": "c2",
+          "title": "No identifier",
+          "identifier": "",
+          "processingDeadline": 10
+        }
+      ],
+      "statusTypes": [
+        {
+          "id": "s3",
+          "name": "Last",
+          "caseType": "c1",
+          "order": 3,
+          "isFinal": true
+        },
+        {
+          "id": "s1",
+          "name": "First",
+          "caseType": "c1",
+          "order": 1
+        },
+        {
+          "id": "s2",
+          "name": "Also final",
+          "caseType": "c1",
+          "order": 2,
+          "isFinal": true
+        },
+        {
+          "id": "s9",
+          "name": "Other",
+          "caseType": "c2"
+        }
+      ],
+      "roleTypes": [
+        {
+          "id": "r1",
+          "name": "One",
+          "caseType": "c1"
+        },
+        {
+          "id": "r2",
+          "name": "Two",
+          "caseType": "c1"
+        },
+        {
+          "id": "r3",
+          "caseType": "c2"
+        }
+      ],
+      "propertyDefinitions": [
+        {
+          "id": "p1",
+          "name": "first",
+          "caseType": "c1"
+        },
+        {
+          "id": "p2",
+          "name": "second",
+          "caseType": "c1"
+        }
+      ],
+      "documentTypes": [
+        {
+          "id": "d1",
+          "name": "Doc",
+          "caseType": "c2"
+        }
+      ],
+      "resultTypes": []
+    },
+    "flows/a.json": {
+      "id": "f1",
+      "title": "Alpha flow",
+      "caseType": "c1",
+      "lifecycleStatus": "published"
+    },
+    "flows/b.json": {
+      "id": "f2",
+      "title": "Second alpha flow",
+      "caseType": "c1"
+    },
+    "package.json": {
+      "id": "flow-package",
+      "version": "1.2.3",
+      "title": "Flow package"
+    },
+    "seed/a-empty.json": {
+      "schema": "plain",
+      "rows": []
+    },
+    "seed/b-items.json": {
+      "schema": "inspection_checklist_template_schema",
+      "rows": [
+        {
+          "id": "i1",
+          "name": "Item, named",
+          "caseType": "c1",
+          "status": "open"
+        },
+        {
+          "id": "i2",
+          "caseType": "unknown",
+          "status": 3
+        },
+        {
+          "id": "i3",
+          "caseType": "c2",
+          "name": "Third",
+          "status": [
+            "not",
+            "scalar"
+          ]
+        }
+      ]
+    }
+  },
+  "draft-package": {
+    "case-type.json": {
+      "caseType": {
+        "id": "c7",
+        "identifier": "gamma",
+        "title": "Gamma"
+      },
+      "statusTypes": [
+        {
+          "id": "s7",
+          "name": "Start",
+          "caseType": "c7"
+        }
+      ]
+    },
+    "flows/1.json": {
+      "id": "g1",
+      "title": "Gamma live",
+      "caseType": "c7",
+      "lifecycleStatus": "published",
+      "isActive": true,
+      "variant": "main"
+    },
+    "flows/2.json": {
+      "id": "g2",
+      "title": "Gamma next",
+      "caseType": "c7",
+      "lifecycleStatus": "draft",
+      "isDraft": true
+    },
+    "flows/3.json": {
+      "id": "g3",
+      "title": "Delta draft",
+      "caseType": "c8",
+      "lifecycleStatus": "draft"
+    },
+    "flows/4.json": {
+      "id": "g4",
+      "title": "Gamma pinned",
+      "caseType": "c9",
+      "lifecycleStatus": "published"
+    },
+    "package.json": {
+      "id": "draft-package",
+      "version": "0.1.0"
+    }
+  },
+  "pinned-draft-package": {
+    "case-type.json": {
+      "caseType": [
+        {
+          "id": "c9",
+          "title": "Pinned",
+          "workflowDefinition": "g4"
+        },
+        {
+          "id": "c10",
+          "identifier": "nodraft"
+        }
+      ]
+    },
+    "flows/1.json": {
+      "id": "g4",
+      "title": "Pinned live",
+      "caseType": "c9",
+      "lifecycleStatus": "published"
+    },
+    "flows/2.json": {
+      "id": "g5",
+      "title": "Pinned draft",
+      "caseType": "c9",
+      "lifecycleStatus": "draft"
+    },
+    "flows/3.json": {
+      "id": "g6",
+      "title": "Only draft",
+      "caseType": "c10",
+      "lifecycleStatus": "draft"
+    },
+    "package.json": {
+      "id": "pinned",
+      "version": "2"
+    }
+  },
+  "foreign-seed": {
+    "case-type.json": {
+      "caseType": {
+        "id": "c11"
+      }
+    },
+    "package.json": {
+      "id": "foreign",
+      "version": "1"
+    },
+    "seed/x.json": {
+      "schema": {
+        "app": "other",
+        "register": "r",
+        "slug": "s"
+      },
+      "rows": []
+    }
+  },
+  "no-manifest": {}
+}

@@ -216,6 +216,8 @@ class SeedContributedCaseTypesTest extends TestCase {
 			 * @param int|string           $register Ignored.
 			 * @param int|string           $schema   The schema slug.
 			 * @param string|null          $uuid     The uuid, or null to create.
+			 * @param bool                 $_rbac          Ignored.
+			 * @param bool                 $_multitenancy  Ignored.
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
@@ -224,6 +226,8 @@ class SeedContributedCaseTypesTest extends TestCase {
 				int|string $register = '',
 				int|string $schema = '',
 				?string $uuid = null,
+				bool $_rbac = true,
+				bool $_multitenancy = true,
 			): array {
 				if (($object['identifier'] ?? '') === 'broken-type') {
 					throw new RuntimeException('caseType/identifier: value is not allowed');

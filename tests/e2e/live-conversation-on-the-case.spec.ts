@@ -54,7 +54,9 @@ const CAPTURE_BYTES =
  * @return Whether Talk answered.
  */
 async function talkAvailable(api: APIRequestContext): Promise<boolean> {
-	const res = await api.get(`${APP_BASE}/api/conversations/availability`)
+	const res = await api.get(`${APP_BASE}/api/conversations/availability`, {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
 	expect(
 		res.ok(),
 		`the availability endpoint is missing: ${res.status()} ${await res.text()}`,

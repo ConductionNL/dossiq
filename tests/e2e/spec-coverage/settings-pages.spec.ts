@@ -107,7 +107,9 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// what a flow came from. Flows are authored at /flows, covered by
 	// flows.spec.ts, whose create control is a canvas action rather than the
 	// "Add X" button every row in this table asserts on.
-	{ name: 'Organisations', route: '/settings/tenants', addBtn: 'Add Tenant' },
+	// The tenant admin page (Organisations, /settings/tenants) retired with
+	// dossiq's tenant store: a tenant is an OpenRegister organisation
+	// (tenancy-onto-openregister-organisation step 5). Entry removed.
 	// The standalone "Status history" (StatusRecords) settings page was retired
 	// by retire-status-history-page — change history is now the CaseDetail
 	// audit-trail surface, not a page/menu item. Entry removed accordingly.

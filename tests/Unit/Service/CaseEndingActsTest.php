@@ -43,6 +43,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseIncompleteness
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class CaseEndingActsTest extends TestCase {
 

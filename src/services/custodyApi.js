@@ -16,7 +16,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import axios from '@nextcloud/axios'
@@ -39,7 +39,7 @@ function caseUrl(caseId, verb) {
  * @param {string} caseId The case uuid.
  * @return {Promise<object>} The chain, its open holding and the total.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+ * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
  */
 export async function readChain(caseId) {
 	const { data } = await axios.get(caseUrl(caseId, 'custody'))
@@ -54,7 +54,7 @@ export async function readChain(caseId) {
  * @param {string} on The moment, in anything the server's date reader takes.
  * @return {Promise<object|null>} The holding, or null when the case did not exist yet.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+ * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
  */
 export async function readHolderOn(caseId, on) {
 	const { data } = await axios.get(caseUrl(caseId, 'custody/holder'), {
@@ -70,7 +70,7 @@ export async function readHolderOn(caseId, on) {
  * @param {string} caseId The case uuid.
  * @return {Promise<Array<object>>} The requests.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+ * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
  */
 export async function readTakeovers(caseId) {
 	const { data } = await axios.get(caseUrl(caseId, 'takeovers'))
@@ -85,7 +85,7 @@ export async function readTakeovers(caseId) {
  * @param {string} reason Why the asker should have it.
  * @return {Promise<object>} The request as stored.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+ * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
  */
 export async function askForCase(caseId, reason) {
 	const { data } = await axios.post(caseUrl(caseId, 'takeover'), { reason })
@@ -100,7 +100,7 @@ export async function askForCase(caseId, reason) {
  * @param {string} takeoverId The request uuid.
  * @return {Promise<object>} The answered request.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+ * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
  */
 export async function acceptTakeover(caseId, takeoverId) {
 	const { data } = await axios.post(
@@ -123,7 +123,7 @@ export async function acceptTakeover(caseId, takeoverId) {
  * @param {string} reason Why the holder is keeping the case.
  * @return {Promise<object>} The answered request.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+ * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
  */
 export async function refuseTakeover(caseId, takeoverId, reason) {
 	const { data } = await axios.post(

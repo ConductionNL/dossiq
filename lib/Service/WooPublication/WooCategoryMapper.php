@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d3
+ * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d3
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -37,7 +37,7 @@ namespace OCA\Dossiq\Service\WooPublication;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d3
+ * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d3
  */
 class WooCategoryMapper {
 
@@ -60,6 +60,8 @@ class WooCategoryMapper {
 	 */
 	private const DECISION_TYPE_MAP = [
 		'WOO-besluit' => self::DEFAULT_CATEGORY,
+		// The seeded WOO-besluit decision type, by the uuid a decision now carries.
+		'3c0f5a00-0000-4000-a000-00000000d001' => self::DEFAULT_CATEGORY,
 	];
 
 	/**
@@ -70,7 +72,7 @@ class WooCategoryMapper {
 	 *
 	 * @return array{code: string, label: string, uri: string} The resolved category.
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d3
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d3
 	 */
 	public function forDecision(array $decision): array {
 		$decisionType = (string)($decision['decisionType'] ?? '');

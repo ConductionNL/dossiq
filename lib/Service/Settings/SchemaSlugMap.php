@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+
 /**
  * Schema slug to appconfig key mapping, plus the owned annotation block names.
  *
@@ -50,6 +52,9 @@ class SchemaSlugMap {
 		// shared OpenRegister, so both definitions would resolve to each other.
 		'zgwCatalogus' => 'catalogus_schema',
 		'case' => 'case_schema',
+		// One Berichtenbox letter and what became of it (mijn-overheid-integration).
+		// Not `berichtenboxMessage`: pipelinq owns that slug, and slugs are global.
+		'caseBerichtenboxMessage' => 'berichtenbox_message_schema',
 		// `caseTask` is gone. remove-casetask deleted the schema from both
 		// descriptors, so a mapping left here would ask SchemaKeyReconciler to
 		// resolve a slug the register no longer declares, once per import. The
@@ -129,7 +134,8 @@ class SchemaSlugMap {
 		'automaticAction' => 'automatic_action_schema',
 		'lhsMatrix' => 'lhs_matrix_schema',
 		'lhsRecommendation' => 'lhs_recommendation_schema',
-		'location' => 'location_schema',
+		'decisionAdvice' => 'decision_advice_schema',
+		'case-location' => 'location_schema',
 		'objectionProceeding' => 'bezwaar_schema',
 		'bezwaaradviescommissie' => 'bezwaaradviescommissie_schema',
 		'bacAdviceRequest' => 'bac_advice_request_schema',
@@ -176,9 +182,9 @@ class SchemaSlugMap {
 		'deadlineDefinition' => 'termijn_definitie_schema',
 		'deadlineInstance' => 'termijn_instance_schema',
 		'termijnGebeurtenis' => 'termijn_gebeurtenis_schema',
-		'noticeOfDefault' => 'ingebrekestelling_schema',
-		'penaltyPaymentCalculation' => 'dwangsom_berekening_schema',
-		'dwangsomUitbetaling' => 'dwangsom_uitbetaling_schema',
+		'noticeOfDefault' => MoneyConfigKeys::NOTICE_OF_DEFAULT_SCHEMA,
+		'penaltyPaymentCalculation' => MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
+		'dwangsomUitbetaling' => MoneyConfigKeys::PAYOUT_SCHEMA,
 		// Mandaat-matrix authorization engine.
 		// KEY renamed with the schema slug; VALUE deliberately left as-is. The
 		// value is the app-config key under which this schema's numeric id is
@@ -218,6 +224,29 @@ class SchemaSlugMap {
 		// ZGW DRC case dossier (document-zaakdossier spec).
 		'informatieobject' => 'dossier_informatieobject_schema',
 		'zaakinformatieobject' => 'dossier_zaakinformatieobject_schema',
+		// The Woo document assessment. NOT 'wooAssessment': opencatalogi owns that slug.
+		'wooDocumentAssessment' => 'woo_assessment_schema',
+		// The settled Woo refusal grounds (woo-refusal-grounds-list).
+		'wooRefusalGround' => 'woo_refusal_ground_schema',
+		// The corpus of a Woo request (woo-request-corpus-collection).
+		'wooSearchPlan' => 'woo_search_plan_schema',
+		'wooRequestConfiguration' => 'woo_request_configuration_schema',
+		'wooExclusion' => 'woo_exclusion_schema',
+		'wooCollectionQuery' => 'woo_collection_query_schema',
+		// The Woo review: relevance, triage rules and batches (woo-review-triage).
+		'documentReview' => 'document_review_schema',
+		'triageRule' => 'triage_rule_schema',
+		'reviewBatch' => 'review_batch_schema',
+		// The recall of a Woo review: the stopping rule and its samples (woo-review-recall-and-stopping).
+		'stoppingRule' => 'stopping_rule_schema',
+		'recallSample' => 'recall_sample_schema',
+		// What a Woo delivery sent out, frozen with its publication (woo-delivered-set-is-a-record).
+		'wooDeliveredSet' => 'woo_delivered_set_schema',
+		// The records a tender is worked with (tenders-run-on-the-tender-case-type).
+		'bid' => 'bid_schema',
+		'tenderQuestion' => 'tender_question_schema',
+		'evaluation' => 'evaluation_schema',
+		'scoringFormula' => 'scoring_formula_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).
@@ -319,6 +348,14 @@ class SchemaSlugMap {
 		// answer about duplicates, and a dropped hierarchy block gives a wrong
 		// answer about who may open a dossier.
 		'x-openregister-hierarchy',
+		// Who may change a reviewer's decision on a file of the schema's
+		// objects (a redaction on a document). OpenRegister's
+		// ReviewPolicyResolver reads this block off
+		// `Schema::getConfiguration()` and answers the instance default when
+		// it is absent, which is "anyone who may write the object". So a
+		// dropped block does not fail loudly: a second reviewer silently
+		// overwrites the first reviewer's redaction (REQ-WSA-007).
+		'x-openregister-review',
 	];
 
 	/**

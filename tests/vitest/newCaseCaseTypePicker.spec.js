@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Conduction B.V.
 
 /**
- * The New case form must not offer a draft case type.
+ * The New case form must not offer a draft case type, or a superseded version.
  *
  * Where the scoping has to live, and why it is not the manifest. The design
  * sketched `headerActions[new-case].fieldOverrides.caseType.filter`. Read
@@ -41,7 +41,14 @@ export function newCaseAction() {
 
 describe('New case, case type picker', () => {
 	it('scopes the picker on the schema property, where the form reads it', () => {
-		expect(caseTypeProperty['x-relation-filter']).toEqual({ isDraft: false })
+		// `supersededBy: 'IS NULL'` offers only the current version of a
+		// versioned case type (zaaktype-versioning REQ-ZV-02): review on
+		// 11 Oct 2026 found Evenementenvergunning offered twice, v1 and v2.
+		// OpenRegister reads the literal `IS NULL` as a null test.
+		expect(caseTypeProperty['x-relation-filter']).toEqual({
+			isDraft: false,
+			supersededBy: 'IS NULL',
+		})
 	})
 
 	it('ships no field override the form would silently ignore', () => {

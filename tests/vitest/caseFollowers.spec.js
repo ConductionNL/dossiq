@@ -3,13 +3,13 @@
 // Copyright (C) 2026 Conduction B.V.
 
 /**
- * Following a case you do not own: the two verbs, the strip, the list, the
- * lens and the rule that makes a follower hear anything at all.
+ * Following a case you do not own: the two verbs, the list, the lens, the one
+ * control on the case page and the rule that makes a follower hear anything.
  *
  * THE VERB IS THE FIRST THING ASSERTED, for the reason the star's own file
  * records. Following is a PUT and stopping is a DELETE on the same path, and
  * every declarative action in the library writes POST or PUT: `executeApiCall`
- * maps anything that is not `PUT` to `post`. A strip that PUT in both
+ * maps anything that is not `PUT` to `post`. A row action that PUT in both
  * directions would look right, would report success, and would leave a
  * subscription nobody could take off. So the method is asserted per direction
  * rather than the call count.
@@ -27,20 +27,19 @@
  * so `"yes"` is how a rule quietly addresses nobody.
  *
  * @spec openspec/changes/case-followers/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-the-case-page-shows-one-follow-control-req-cm-40a
  */
 
 import axios from '@nextcloud/axios'
-import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import CaseFollowersPanel from '../../src/components/case/CaseFollowersPanel.vue'
-import CaseFollowStrip from '../../src/components/case/CaseFollowStrip.vue'
 import {
-	followerCountOf,
 	isFollowing,
 	objectIdOf,
+	setFollowing,
 } from '../../src/services/watcherApi.js'
+import { pageGrids, pageWidgets } from './helpers/pageViews.js'
 
 const mockShowError = vi.fn()
 
@@ -60,70 +59,11 @@ const register = JSON.parse(
 	),
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
-const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const caseDetail = page('CaseDetail')
 const caseNotifications =
 	register.components.schemas.case['x-openregister-notifications']
-
-/**
- * Mount the Follow strip over a case payload.
- *
- * @param {object} objectData The case as the page holds it.
- * @return {Promise<object>} The mounted wrapper.
- */
-async function mountStrip(objectData) {
-	const wrapper = mount(CaseFollowStrip, {
-		// `objectData`, spelled the way `CnDetailWidgetHost.rendererProps()`
-		// spells it. A test that mounted with `object` would pass while the
-		// real page handed the widget nothing and drew Follow on every case.
-		props: { objectId: 'case-7', objectData },
-		global: {
-			stubs: {
-				NcButton: {
-					props: { pressed: { type: Boolean, default: null } },
-					template:
-						'<button v-bind="$attrs" :aria-pressed="pressed === null ? null : String(pressed)">'
-						+ '<slot name="icon" /><slot /></button>',
-				},
-				BellRing: { template: '<i class="bell-ring" />' },
-				BellOutline: { template: '<i class="bell-outline" />' },
-			},
-		},
-	})
-
-	await wrapper.vm.$nextTick()
-
-	return wrapper
-}
-
-/**
- * Mount the Followers panel and let its read settle.
- *
- * @return {Promise<object>} The mounted wrapper.
- */
-async function mountPanel() {
-	const wrapper = mount(CaseFollowersPanel, {
-		props: { objectId: 'case-7' },
-		global: {
-			stubs: {
-				NcLoadingIcon: { template: '<i class="loading" />' },
-				NcEmptyContent: {
-					props: { name: String, description: String },
-					template:
-						'<div class="empty">{{ name }} {{ description }}</div>',
-				},
-			},
-		},
-	})
-
-	await wrapper.vm.$nextTick()
-	await wrapper.vm.$nextTick()
-	await wrapper.vm.$nextTick()
-
-	return wrapper
-}
 
 beforeEach(() => {
 	vi.clearAllMocks()
@@ -132,56 +72,7 @@ beforeEach(() => {
 	axios.get.mockResolvedValue({ data: { results: [], total: 0 } })
 })
 
-describe('the strip reads off the object it was given', () => {
-	it('declares the prop name the detail widget host actually binds', () => {
-		const host = fs.readFileSync(
-			path.join(
-				ROOT,
-				'node_modules/@conduction/nextcloud-vue/src/components/CnDetailWidgetHost/CnDetailWidgetHost.vue',
-			),
-			'utf8',
-		)
-		expect(host).toContain('objectData: this.object,')
-
-		const strip = fs.readFileSync(
-			path.join(ROOT, 'src/components/case/CaseFollowStrip.vue'),
-			'utf8',
-		)
-		expect(Object.keys(CaseFollowStrip.props)).toContain('objectData')
-		expect(strip).not.toContain('\n\t\tobject: {')
-	})
-
-	it('makes no call on mount', async () => {
-		await mountStrip({ id: 'case-7', '@self': { watching: true } })
-
-		expect(axios.get).not.toHaveBeenCalled()
-		expect(axios.put).not.toHaveBeenCalled()
-		expect(axios.delete).not.toHaveBeenCalled()
-	})
-
-	it('offers stopping when you already follow', async () => {
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: true },
-		})
-
-		expect(wrapper.find('.bell-ring').exists()).toBe(true)
-		expect(wrapper.text()).toContain('Stop following')
-		// The state reaches a screen reader, not only the glyph.
-		expect(wrapper.find('button').attributes('aria-pressed')).toBe('true')
-	})
-
-	it('offers following when you do not', async () => {
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: false },
-		})
-
-		expect(wrapper.find('.bell-outline').exists()).toBe(true)
-		expect(wrapper.text()).toContain('Follow this case')
-		expect(wrapper.find('button').attributes('aria-pressed')).toBe('false')
-	})
-
+describe('the state is read off the object', () => {
 	it('treats an absent marker as not following', () => {
 		// `@self.watching` is omitted entirely for an anonymous read, where
 		// there is no "you" to answer for.
@@ -191,54 +82,17 @@ describe('the strip reads off the object it was given', () => {
 		// A control, so the three above cannot pass because the reader is broken.
 		expect(isFollowing({ '@self': { watching: true } })).toBe(true)
 	})
-})
 
-describe('the count beside the button', () => {
-	it('says nothing at all when OpenRegister told this reader no count', async () => {
-		// `@self.watcherCount` rides only for a reader who may update the case.
-		// Absent means "not your business", and drawing it as 0 followers would
-		// be a claim about the audience this reader was never told.
-		expect(followerCountOf({ '@self': { watching: true } })).toBe(null)
-
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: true },
-		})
-
-		expect(wrapper.find('[data-testid="case-follow-count"]').exists()).toBe(
-			false,
-		)
-	})
-
-	it('counts for a reader who was told one, and moves with the press', async () => {
-		expect(followerCountOf({ '@self': { watcherCount: 0 } })).toBe(0)
-
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: false, watcherCount: 2 },
-		})
-
-		expect(wrapper.find('[data-testid="case-follow-count"]').text()).toBe(
-			'2 followers',
-		)
-
-		await wrapper.find('button').trigger('click')
-		await wrapper.vm.$nextTick()
-
-		expect(wrapper.find('[data-testid="case-follow-count"]').text()).toBe(
-			'3 followers',
-		)
+	it('reads the id from either shape a list row comes in', () => {
+		expect(objectIdOf({ id: 'a' })).toBe('a')
+		expect(objectIdOf({ '@self': { id: 'b' } })).toBe('b')
+		expect(objectIdOf({})).toBe('')
 	})
 })
 
 describe('the two verbs', () => {
 	it('follows with a PUT on the watch path', async () => {
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: false },
-		})
-		await wrapper.find('button').trigger('click')
-		await wrapper.vm.$nextTick()
+		await setFollowing('case-7', true)
 
 		expect(axios.delete).not.toHaveBeenCalled()
 		expect(axios.put).toHaveBeenCalledTimes(1)
@@ -248,12 +102,7 @@ describe('the two verbs', () => {
 	})
 
 	it('stops with a DELETE on the same path', async () => {
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: true },
-		})
-		await wrapper.find('button').trigger('click')
-		await wrapper.vm.$nextTick()
+		await setFollowing('case-7', false)
 
 		expect(axios.put).not.toHaveBeenCalled()
 		expect(axios.delete).toHaveBeenCalledTimes(1)
@@ -261,189 +110,39 @@ describe('the two verbs', () => {
 			'/apps/openregister/api/objects/dossiq/case/case-7/watch',
 		)
 	})
-
-	it('puts the button back when the write is refused, and says what the server said', async () => {
-		axios.put.mockRejectedValue({
-			response: { data: { message: 'Not yours to follow.' } },
-		})
-
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: false, watcherCount: 2 },
-		})
-		await wrapper.find('button').trigger('click')
-		await wrapper.vm.$nextTick()
-		await wrapper.vm.$nextTick()
-
-		expect(mockShowError).toHaveBeenCalledWith('Not yours to follow.')
-		expect(wrapper.find('.bell-outline').exists()).toBe(true)
-		expect(wrapper.text()).toContain('Follow this case')
-		expect(wrapper.find('[data-testid="case-follow-count"]').text()).toBe(
-			'2 followers',
-		)
-	})
-
-	it('reads the id from either shape a list row comes in', () => {
-		expect(objectIdOf({ id: 'a' })).toBe('a')
-		expect(objectIdOf({ '@self': { id: 'b' } })).toBe('b')
-		expect(objectIdOf({})).toBe('')
-	})
-})
-
-describe('the Followers section on the People tab', () => {
-	it('lists who follows the case, from the watchers sub-resource', async () => {
-		axios.get.mockResolvedValue({
-			data: {
-				results: [
-					{ userId: 'anna', created: '2026-09-01T09:00:00+00:00' },
-					{ userId: 'teamleider', displayName: 'Ilse Mulder' },
-				],
-				total: 2,
-			},
-		})
-
-		const wrapper = await mountPanel()
-
-		expect(axios.get.mock.calls[0][0]).toContain(
-			'/apps/openregister/api/objects/dossiq/case/case-7/watchers',
-		)
-
-		const people = wrapper.findAll('[data-testid="case-followers-person"]')
-		expect(people).toHaveLength(2)
-		// The display name wins where the platform sends one, so the day
-		// OpenRegister enriches the row this panel needs no change.
-		expect(people[1].text()).toContain('Ilse Mulder')
-		expect(people[1].text()).not.toContain('teamleider')
-		// And the account name is what is left when it does not.
-		expect(people[0].text()).toContain('anna')
-	})
-
-	it('draws a refusal apart from an empty list', async () => {
-		axios.get.mockRejectedValue({ response: { status: 403 } })
-
-		const refused = await mountPanel()
-		expect(refused.text()).toContain('Only a handler of this case sees')
-
-		// The control: the SAME panel over an empty answer says the opposite
-		// thing, so the assertion above is about the 403 and not about the
-		// panel drawing one message for every outcome.
-		axios.get.mockResolvedValue({ data: { results: [], total: 0 } })
-		const empty = await mountPanel()
-		expect(empty.text()).toContain('Nobody follows this case yet')
-	})
-
-	it('says a failed read failed, rather than drawing nobody', async () => {
-		axios.get.mockRejectedValue({ response: { status: 500 } })
-
-		const wrapper = await mountPanel()
-
-		expect(wrapper.text()).toContain('could not be read')
-		expect(wrapper.text()).not.toContain('Nobody follows this case')
-	})
-
-	it('offers no way to unsubscribe a colleague', async () => {
-		axios.get.mockResolvedValue({
-			data: { results: [{ userId: 'anna' }], total: 1 },
-		})
-
-		const wrapper = await mountPanel()
-
-		// Removing somebody else's subscription needs `manage` in OpenRegister,
-		// and a button that 403s on press teaches nobody anything.
-		expect(wrapper.findAll('button')).toHaveLength(0)
-	})
 })
 
 describe('following is declared on the case page', () => {
-	it('rides the banner row, above the panels', () => {
-		// The strips share ONE grid row (case-banner-stack): three of them are
-		// a root v-if, so a row each reserved three empty ones on an ordinary
-		// case. Their ORDER is the component's, asserted below.
-		const banners = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-banner-stack',
-		)
-		const panels = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-panels',
-		)
-
-		expect(banners, 'the banner row is missing from the layout').toBeTruthy()
-		expect(banners.gridY).toBeLessThan(panels.gridY)
-		// The row is only as tall as whatever rendered; without this an empty
-		// stack costs its whole authored height back again.
-		expect(banners.sizeToContent).toBe(true)
+	it('is the header control only: the Follow toggle and its popover list the followers', () => {
+		// Ruben, 20 Oct 2026: followers show only in the header popover. The
+		// case page shows ONE Follow control, nextcloud-vue's CnFollowToggle
+		// beside the title, whose popover lists who follows the case (403
+		// closes quietly, managers may remove). A Followers section on the
+		// People tab listed the same people a second time, and a strip in the
+		// banner row once drew a second Follow button that did not sync.
+		expect(caseDetail.config.follow).not.toBe(false)
+		const people = caseDetail.config.widgets.find((w) => w.id === 'case-people-panel')
+		expect(people.content.sections.some((s) => s.label === 'Followers')).toBe(false)
+		expect(JSON.stringify(manifest)).not.toContain('"type": "case-followers"')
+		expect(JSON.stringify(manifest)).not.toContain('"type":"case-followers"')
+		expect(registrySource).not.toContain("'case-followers': {")
+		expect(registrySource).not.toContain("'case-follow': {")
 	})
 
-	it('follows the star in the banner stack', () => {
-		// Beside the star and directly after it: both are per-reader state,
-		// where every strip under them is about the case rather than about you.
-		const stack = fs.readFileSync(
-			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
-			'utf8',
-		)
-		const star = stack.indexOf('<CaseFavouriteStrip')
-		const follow = stack.indexOf('<CaseFollowStrip')
-		const unread = stack.indexOf('<CaseUnreadPanel')
-
-		expect(follow, 'the follow strip is missing from the stack').toBeGreaterThan(
-			-1,
-		)
-		expect(follow).toBeGreaterThan(star)
-		expect(follow).toBeLessThan(unread)
-		// `objectData` and NOT `object`: the strip reads `@self.watching` off
-		// the case the host already loaded, and an unbound prop would leave
-		// the first paint reading "Follow" on a case this reader follows.
-		expect(stack).toContain(
-			'<CaseFollowStrip :objectId="objectId" :objectData="objectData" />',
-		)
-	})
-
-	it('declares widgets whose types the registry answers', () => {
-		// A tab child renders through CnTabsWidget, which resolves from
-		// `cnRegistry[widget.type]` and renders NOTHING, silently, when no key
-		// answers. The strip's own type stays registered even though this page
-		// mounts it through the banner stack: still a valid placement.
-		expect(registrySource).toContain("'case-follow': {")
-		expect(registrySource).toContain('component: CaseFollowStrip,')
-
-		const people = caseDetail.config.widgets.find(
-			(w) => w.id === 'case-people-panel',
-		)
-		const section = people.content.sections.find((s) => s.label === 'Followers')
-
-		expect(section, 'the Followers section is missing').toBeTruthy()
-		expect(section.widget.type).toBe('case-followers')
-		expect(registrySource).toContain("'case-followers': {")
-		expect(registrySource).toContain('component: CaseFollowersPanel,')
-		expect(iconsSource).toContain(`\n\t${section.widget.icon},\n`)
-	})
-
-	it('carries the reason gate 29 asks a custom widget for', () => {
-		const strip = registrySource.slice(
-			registrySource.indexOf("'case-follow': {"),
-			registrySource.indexOf("'case-followers': {"),
-		)
-		const panel = registrySource.slice(
-			registrySource.indexOf("'case-followers': {"),
-			registrySource.indexOf("'case-party-roles': {"),
-		)
-
-		expect(strip).toContain('@custom-widget-ratchet exclude')
-		expect(panel).toContain('@custom-widget-ratchet exclude')
-	})
-
-	it('registers the bell icons the strip names', () => {
-		// An icon named in a manifest and missing from the registry renders
-		// NOTHING rather than a fallback glyph (hydra gate-60).
-		expect(iconsSource).toContain('\n\tBellRing,\n')
-		expect(iconsSource).toContain('\n\tBellOutline,\n')
+	it('leaves no Follow strip in the banner row', () => {
+		const stack = caseDetail.config.widgets.find((w) => w.id === 'case-banner-stack')
+		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-claim-banner', 'case-status-declaration', 'case-attention', 'case-special-categories'])
+		expect(fs.existsSync(path.join(ROOT, 'src', 'components', 'case', 'CaseFollowStrip.vue'))).toBe(false)
+		expect(fs.existsSync(path.join(ROOT, 'src', 'components', 'case', 'CaseFollowersPanel.vue'))).toBe(false)
 	})
 })
 
 describe('the lens and the tile', () => {
-	it('offers a Followed chip on Cases over the platform lens', () => {
-		const chip = page('Cases').config.quickFilters.find(
-			(c) => c.label === 'Followed',
-		)
+	it('offers one Following chip on Cases over the platform lens, and no Favourites chip', () => {
+		const chips = page('Cases').config.quickFilters
+		const chip = chips.find((c) => c.label === 'Following')
+		expect(chips.some((c) => c.label === 'Favourites')).toBe(false)
+		expect(chips.some((c) => c.filter && '_favourite' in c.filter)).toBe(false)
 
 		expect(chip).toBeTruthy()
 		// `_watching` is resolved INSIDE the query the way `_unread` and
@@ -457,7 +156,7 @@ describe('the lens and the tile', () => {
 
 	it('puts the tile on My Work, pointing at that same chip', () => {
 		const home = page('MyWorkHome')
-		const tile = home.config.widgets.find((w) => w.id === 'followed-cases')
+		const tile = pageWidgets(home).find((w) => w.id === 'followed-cases')
 
 		expect(tile).toBeTruthy()
 		expect(tile.content.source.filter._watching).toBe(true)
@@ -466,15 +165,22 @@ describe('the lens and the tile', () => {
 		expect(tile.content.viewAllRoute.query._watching).toBe('true')
 		expect(tile.content.rowRoute).toBe('CaseDetail')
 		expect(
-			home.config.layout.some((c) => c.widgetId === 'followed-cases'),
+			pageGrids(home).some((grid) =>
+				grid.layout.some((c) => c.widgetId === 'followed-cases'),
+			),
 			'followed-cases has no cell on the My Work grid',
 		).toBe(true)
 	})
 
 	it('fills its rows on both pages: no cell overlaps another', () => {
-		for (const id of ['CaseDetail', 'MyWorkHome']) {
+		// Each grid on its own: the landing page draws its own grid and the
+		// chosen view's below it, so two grids may use the same rows.
+		for (const [id, layout] of [
+			['CaseDetail', page('CaseDetail').config.layout],
+			...pageGrids(page('MyWorkHome')).map((g) => ['MyWorkHome', g.layout]),
+		]) {
 			const grid = new Map()
-			for (const cell of page(id).config.layout) {
+			for (const cell of layout) {
 				expect(
 					cell.gridX + cell.gridWidth,
 					cell.widgetId,

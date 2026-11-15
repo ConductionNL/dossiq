@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -29,7 +30,7 @@ const manifest = JSON.parse(
 const STUB = {}
 
 /** The pages a handler triages from, which are the only ones that split. */
-const TRIAGED_FROM = ['Cases', 'Queue']
+const TRIAGED_FROM = ['Cases']
 
 /**
  * One page of the shipped manifest.
@@ -56,80 +57,30 @@ function routesByName() {
 	)
 }
 
-describe('a case opens beside its list', () => {
-	it.each(TRIAGED_FROM)('%s declares a working split view', (id) => {
-		expect(page(id).splitView).toEqual({
-			enabled: true,
-			breakpoint: 1024,
-			paneWidth: '42%',
-		})
+describe('a case opens as its own page', () => {
+	// Round 6 (9 Oct): no board draws a split pane, and the canon is that a row
+	// opens the detail page. A row click on Cases or Queue went to
+	// /cases/split/<id> because both pages declared splitView.
+	it.each(TRIAGED_FROM)('%s declares no split view', (id) => {
+		expect(page(id).splitView).toBeUndefined()
 	})
 
-	it.each(TRIAGED_FROM)('%s has the split address the pane opens at', (id) => {
-		const records = routesByName()
-		const split = records[`${id}__split`]
-		expect(
-			split,
-			`${id} declares splitView but registers no split route, so every row click warns and does nothing`,
-		).toBeTruthy()
-		expect(split.path).toBe(`${page(id).route}/split/:id`)
+	it.each(TRIAGED_FROM)('%s registers no split address', (id) => {
+		expect(routesByName()[`${id}__split`]).toBeUndefined()
 	})
 
-	it('mounts the same page at both addresses, so the list never unmounts', () => {
-		const records = routesByName()
-		for (const id of TRIAGED_FROM) {
-			expect(records[`${id}__split`].meta.cnPageId).toBe(id)
-			expect(records[`${id}__split`].meta.cnSplitOf).toBe(id)
-		}
-	})
-
-	it('carries the breakpoint onto the record, so a phone gets the full page', () => {
-		const records = routesByName()
-		expect(records.Cases__split.meta.cnSplitBreakpoint).toBe(1024)
-	})
-
-	it('declares it on no page anybody merely browses', () => {
-		const declaring = (manifest.pages || [])
-			.filter((entry) => entry.splitView)
-			.map((entry) => entry.id)
-		expect(declaring.sort()).toEqual([...TRIAGED_FROM].sort())
-		// The one the spec names by hand: nobody triages a case type.
-		expect(page('CaseTypes').splitView).toBeUndefined()
-	})
-
-	it('keeps the page permission on the split address too', () => {
-		// A split record is the same page at a second URL. `permissionGuard`
-		// reads `meta.permission` and nothing else, so a record that lost the
-		// field is an open door with no sign on it.
-		const records = routesByName()
-		for (const id of TRIAGED_FROM) {
-			expect(records[`${id}__split`].meta.permission).toBe(
-				page(id).permission || '',
-			)
-		}
-	})
-})
-
-describe('a handler holds their own order', () => {
-	it('is declared on the all-cases list', () => {
-		expect(page('Cases').manualOrder).toBe(true)
-	})
-
-	it('is declared nowhere else, and never on a shared queue', () => {
-		const declaring = (manifest.pages || [])
-			.filter((entry) => entry.manualOrder === true)
-			.map((entry) => entry.id)
-		expect(declaring).toEqual(['Cases'])
-	})
-})
-
-describe('the case page', () => {
-	it('puts the open tab in the address', () => {
-		expect(page('CaseDetail').tabInAddress).toBe(true)
+	it('declares a split view on no page', () => {
+		const declaring = (manifest.pages || []).filter((entry) => entry.splitView)
+		expect(declaring).toEqual([])
 	})
 
 	it('offers a reference its summary in place', () => {
 		expect(page('CaseDetail').referencePreview).toBe(true)
+	})
+
+	it('steps to the next and previous case of the list it was opened from', () => {
+		// nextcloud-vue lists navigation only for a detail page that opts in.
+		expect(page('CaseDetail').listNavigation).toBe(true)
 	})
 
 	it('is still a detail page reached at /cases/:id', () => {
@@ -138,7 +89,6 @@ describe('the case page', () => {
 		// that ever stopped being true, a case would open the list instead.
 		const records = routesByName()
 		expect(records.CaseDetail.path).toBe('/cases/:id')
-		expect(records.Cases__split.path).toBe('/cases/split/:id')
 	})
 })
 
@@ -175,5 +125,43 @@ describe('the personal layer', () => {
 		// a product where those terms are the point. A person may still choose
 		// relative for themselves; the app default does not choose it for them.
 		expect(manifest.personalisation.dateDisplay).toBe('absolute')
+	})
+})
+
+describe('the retired workflow board address', () => {
+	it('opens the Cases list in board view', async () => {
+		const { createMemoryHistory, createRouter } = await import('vue-router')
+		const router = createRouter({
+			history: createMemoryHistory(),
+			routes: routesFromManifest(manifest, STUB),
+		})
+		await router.push('/workflow-board')
+		expect(router.currentRoute.value.name).toBe('Cases')
+		expect(router.currentRoute.value.query).toEqual({ _view: 'board' })
+	})
+
+	it('is no page of its own any more', () => {
+		expect((manifest.pages || []).map((entry) => entry.id)).not.toContain(
+			'WorkflowBoard',
+		)
+	})
+})
+
+describe('the retired case map address', () => {
+	it('opens the Cases list in map view', async () => {
+		const { createMemoryHistory, createRouter } = await import('vue-router')
+		const router = createRouter({
+			history: createMemoryHistory(),
+			routes: routesFromManifest(manifest, STUB),
+		})
+		await router.push('/map')
+		expect(router.currentRoute.value.name).toBe('Cases')
+		expect(router.currentRoute.value.query).toEqual({ _view: 'map' })
+	})
+
+	it('is no page of its own any more', () => {
+		expect((manifest.pages || []).map((entry) => entry.id)).not.toContain(
+			'CaseMap',
+		)
 	})
 })

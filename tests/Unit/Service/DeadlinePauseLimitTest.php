@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\DeadlinePauseService
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\PauseRegistrationRun
  */
 class DeadlinePauseLimitTest extends TestCase {
 	use BindsTermFixtures;

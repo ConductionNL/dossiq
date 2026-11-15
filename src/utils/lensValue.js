@@ -16,7 +16,7 @@
 // "you may not see this" into something else. Every surface that renders a
 // lens goes through here.
 //
-// @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+// @spec openspec/specs/case-management/spec.md
 
 /**
  * Whether a lens value is the withheld marker rather than a value.
@@ -24,7 +24,7 @@
  * @param {unknown} value The resolved lens value.
  * @return {boolean} True when the reader may not see the underlying value.
  *
- * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function isWithheld(value) {
 	return (
@@ -41,7 +41,7 @@ export function isWithheld(value) {
  * @param {unknown} value The resolved lens value.
  * @return {string} The reason OpenRegister gave, or the empty string.
  *
- * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function withheldReason(value) {
 	if (!isWithheld(value)) return ''
@@ -60,7 +60,7 @@ export function withheldReason(value) {
  * @param {Array<string>} lensNames The lens property names of its schema.
  * @return {object} A copy of the record with the lens properties removed.
  *
- * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function withoutLenses(record, lensNames) {
 	const out = { ...(record || {}) }

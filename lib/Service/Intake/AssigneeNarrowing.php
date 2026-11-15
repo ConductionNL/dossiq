@@ -31,7 +31,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -39,15 +39,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\AssigneeNarrowingInterface;
 
 /**
  * Who a case type lets a handler pick.
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
-class AssigneeNarrowing {
+class AssigneeNarrowing implements AssigneeNarrowingInterface {
 
 	/**
 	 * The case-type property holding the declaration.
@@ -81,7 +82,7 @@ class AssigneeNarrowing {
 	 *
 	 * @return array{allowedGroups: array<int, string>, allowedUsers: array<int, string>}
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function declarationFor(array $caseType): array {
 		$declared = ($caseType[self::PROPERTY] ?? null);
@@ -106,7 +107,7 @@ class AssigneeNarrowing {
 	 *
 	 * @return boolean True when every team and every person stays choosable.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function narrowsNothing(array $caseType): bool {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -125,7 +126,7 @@ class AssigneeNarrowing {
 	 *
 	 * @return array<int, string> The teams that survive the narrowing.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function narrowGroups(array $offered, array $caseType): array {
 		return $this->narrow(
@@ -142,7 +143,7 @@ class AssigneeNarrowing {
 	 *
 	 * @return array<int, string> The people that survive the narrowing.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function narrowUsers(array $offered, array $caseType): array {
 		return $this->narrow(
@@ -159,7 +160,7 @@ class AssigneeNarrowing {
 	 *
 	 * @return boolean True when the team is allowed.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function allowsGroup(string $group, array $caseType): bool {
 		return $this->allows(
@@ -176,7 +177,7 @@ class AssigneeNarrowing {
 	 *
 	 * @return boolean True when the person is allowed.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function allowsUser(string $user, array $caseType): bool {
 		return $this->allows(
@@ -195,7 +196,7 @@ class AssigneeNarrowing {
 	 *
 	 * @throws RefusedException When the team or the person is outside the narrowing.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function assertWritable(array $case, array $caseType): void {
 		$group = trim((string)($case[self::FIELD_GROUP] ?? ''));

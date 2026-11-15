@@ -94,7 +94,6 @@ class CaseAssignmentControllerTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new CaseAssignmentController(
-			appName: 'dossiq',
 			request: $this->createMock(originalClassName: IRequest::class),
 			assignment: $this->assignment,
 			caseAccessGuard: $this->guard,

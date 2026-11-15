@@ -96,14 +96,16 @@ Re-verified 2026-09-09 against `development`. The Berichtenbox half is not waiti
 anyone's code. A MijnOverheid transport needs a Logius aansluiting — credentials issued to
 the municipality — and a PKIoverheid certificate on the OIN behind it. Both are procurement
 with a lead time, so this phase stays open on a purchase order rather than on a branch, and
-should not be read as unfinished engineering. `BerichtenboxReadStatusJob` is still absent
-from `appinfo/info.xml`, so its cron is still dead.
+should not be read as unfinished engineering. `BerichtenboxReadStatusJob` was removed on
+2026-10-08: Logius Berichtenbox has no read status (integriq spec `berichtenbox-client`), so
+there is nothing for a cron to poll.
 
 - [ ] When a real MijnOverheid transport is commissioned: build it as an integriq provider quintet
       (controller + provider seam + sync service + `*_message` schema + retry job, the
       IwmoIjw/StufZkn pattern); dossiq keeps `BerichtenboxRoutingService` (channel choice is
       domain) and calls through the delivery seam.
-- [ ] Also fix en route: `BerichtenboxReadStatusJob` is not registered in `appinfo/info.xml`.
+- [x] Also fix en route: `BerichtenboxReadStatusJob` is not registered in `appinfo/info.xml`.
+      Resolved 2026-10-08 by removing it: the Berichtenbox has no read status to poll.
       Re-verified 2026-09-10: still unregistered, and DELIBERATELY so rather than by oversight.
       The class docblock at `lib/BackgroundJob/BerichtenboxReadStatusJob.php:9-28` now says why,
       in the words the audit needed: integriq ships only `BerichtenboxClientMock`, so scheduling
@@ -116,12 +118,48 @@ from `appinfo/info.xml`, so its cron is still dead.
 - [ ] DSO-LV: land production auth (OAuth2 + PKIoverheid mTLS) on integriq's `dso-omgevingsloket`
       source config; `DsoLvAuthService` retires.
 
-## Phase 5: Shillinq billing export — staged
+## Phase 5: Shillinq billing export
 
-Blocked on: **shillinq must define its event contract first** (per ADR-041 the target app defines
-the typed event; shillinq is an NC sibling, so integriq HTTP is the wrong seam — this is a
-cross-app command to shillinq, mirroring the decidiq `DecisionRequestedEvent` precedent).
+Decision 174 (10 Oct 2026, Q-dossiq-L11-1): a shillinq `CustomerMaster` carries the dossiq tenant
+id as its external reference. Shillinq defines the command (ADR-041), and its listener drafts the
+invoice through the path its time intake already uses, or refuses in a way dossiq records.
 
-- [ ] shillinq defines `InvoiceIngestRequestedEvent` (its repo, its openspec).
-- [ ] `ShillinqIntegrationService::exportInvoice()` dispatches it (class-guarded, fail-closed);
-      the blocking `sleep()` retry loop and the bearer-token HTTP client retire.
+- [x] shillinq defines `BillablePeriodClosedEvent` (its repo, its openspec: change
+      `billable-period-becomes-an-invoice`, REQ-UMB-005; paired shillinq PR). Its listener drafts a
+      usage `BillableInvoice` for the one customer whose `externalReference` is the tenant id, and
+      refuses when none or more than one carries it.
+- [x] `ShillinqIntegrationService::exportInvoice()` dispatches it (class-guarded by name, fail-closed:
+      absent shillinq, no listener, a throwing dispatch and a refusal all answer `success: false`);
+      the blocking `sleep()` retry loop and the bearer-token HTTP client retire, and so does the
+      `SaasServiceRegistrar` factory that read `shillinq_base_url` / `shillinq_api_key`. A refusal
+      is recorded on the tenant's audit trail (`procest.tenant.invoice.refused`, the reason in
+      `resource`) and returned as the month's `error`, so the events stay unbilled.
+      Tests: `tests/Unit/Service/ShillinqIntegrationServiceTest.php` against
+      `tests/Stubs/Shillinq/Event/BillablePeriodClosedEvent.php`, a verbatim copy of shillinq's class.
+- [ ] Live pass (decision 139): with both apps on one instance and a shillinq customer carrying a
+      tenant id, run the tenant's monthly invoicing; see one draft invoice in shillinq and the
+      events stamped with its id; run it again and see the same invoice; clear the reference and
+      see the refusal on the tenant's audit trail.
+
+## Re-verified 2026-10-10 against integriq `development` (lane L11, decision 156)
+
+Decision 156 says a dependency in another repo is built there, not parked. So each blocker
+above was measured again against integriq before anyone builds it, and one of them is already
+gone:
+
+- **The `<stuf:functie>` prerequisite is met another way.** integriq's
+  `OutboundNotificationTranslator` writes `StUF:verwerkingssoort` `T` (create), `W` (update) or
+  `V` (vervallen) on the object and `mutatiesoort` in the parameters. StUF 3.01 tells a
+  `creeerZaak` from an `actualiseerZaak` kennisgeving by exactly that. `<stuf:functie>` belongs
+  to vrije berichten (Di/Du). The 2026-09-12 reading looked at the older translator.
+- **A request/response StUF call exists.** `StufZknClient::exchange()` posts with an explicit
+  SOAPAction and returns the answer, and `StufZdsDocumentDelivery` already uses it for the ZDS
+  identificatie round-trip. A `genereerZaakIdentificatie` Du01 call can use the same path, so
+  this needs a caller, not a new seam.
+- **What is really missing is the route.** `DeliveryRequestedEvent` fans out to CloudEvents
+  subscriptions. No subscription target sends a StUF-ZKN kennisgeving, so a `creeerZaak`
+  dispatched through the seam would reach no zaaksysteem. That target (a subscription that
+  calls `StufZknSyncService::sendNotification()`) is the integriq piece to build. And since
+  `creeerZaak`/`actualiseerZaak` have zero production callers in dossiq, it is worth building
+  only once a municipality's zaaksysteem actually needs them.
+

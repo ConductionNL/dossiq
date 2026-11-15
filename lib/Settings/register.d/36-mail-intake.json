@@ -180,6 +180,11 @@
                         "enum": ["accept", "quarantine", "refuse"],
                         "default": "quarantine",
                         "description": "What a failing sender-authentication verdict means for this kind of case. A melding from an unauthenticated sender is normal. A bezwaar from one is a forgery risk. Quarantine is the default because it neither drops a message nor files a forged one."
+                    },
+                    "mailAccount": {
+                        "title": "Sending mail account",
+                        "type": "string",
+                        "description": "The address of the Nextcloud Mail account this team's case mail leaves from, so a bezwaar goes out as Juridische Zaken. Leave it empty to use the account picked in the dossiq mail settings. A case type naming an address no Mail account holds cannot be published."
                     }
                 }
             }

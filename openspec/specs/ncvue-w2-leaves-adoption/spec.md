@@ -1,7 +1,7 @@
 # ncvue-w2-leaves-adoption Specification
 
 ## Purpose
-TBD - created by archiving change ncvue-w2-leaves-adoption. Update Purpose after archive.
+Adopt the second wave of nextcloud-vue leaves: saved views and multi-column sort on the main lists, and note mentions that send a real Nextcloud notification.
 ## Requirements
 ### Requirement: REQ-W2L-001 — Saved Views On The Main List Pages
 

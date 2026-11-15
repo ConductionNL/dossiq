@@ -331,7 +331,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 	/**
 	 * Guard regression: the deadline cron runs with NO user session and must
 	 * still be able to expire advice. A guard that required a session here
-	 * would silently break AdviceDeadlineJob.
+	 * would silently break the advice expiry on its engine timer.
 	 *
 	 * @return void
 	 */

@@ -28,16 +28,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Custody\CaseCustodyChain;
-use OCA\Dossiq\Service\Custody\CaseCustodyQuery;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyChainInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyQueryInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,35 +50,33 @@ use OCP\IUserSession;
 /**
  * The chain, who held the case on a date, and what a unit held.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseCustodyController extends Controller {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param string           $appName     The app name.
 	 * @param IRequest         $request     The request.
-	 * @param CaseCustodyChain $chain       The chain of holdings.
-	 * @param CaseCustodyQuery $query       The two questions the chain exists for.
-	 * @param CaseAccessGuard  $accessGuard Per-case authorization, failing closed.
+	 * @param CaseCustodyChainInterface $chain       The chain of holdings.
+	 * @param CaseCustodyQueryInterface $query       The two questions the chain exists for.
+	 * @param CaseAccessGuardInterface  $accessGuard Per-case authorization, failing closed.
 	 * @param IGroupManager    $groups      The units a caller belongs to.
 	 * @param IUserSession     $userSession The session.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
-		private readonly CaseCustodyChain $chain,
-		private readonly CaseCustodyQuery $query,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseCustodyChainInterface $chain,
+		private readonly CaseCustodyQueryInterface $query,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IGroupManager $groups,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -87,7 +86,7 @@ class CaseCustodyController extends Controller {
 	 *
 	 * @return JSONResponse The chain, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	#[NoAdminRequired]
 	public function chain(string $caseId): JSONResponse {
@@ -114,7 +113,7 @@ class CaseCustodyController extends Controller {
 	 *
 	 * @return JSONResponse The holding, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	#[NoAdminRequired]
 	public function holder(string $caseId): JSONResponse {
@@ -146,17 +145,11 @@ class CaseCustodyController extends Controller {
 	 *
 	 * @return JSONResponse The holdings, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	#[NoAdminRequired]
 	public function unit(string $unit): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notYours();
-		}
-
-		$mine = array_map('strval', $this->groups->getUserGroupIds($user));
-		if (in_array($unit, $mine, true) === false && $this->groups->isAdmin($user->getUID()) === false) {
+		if ($this->mayReadUnit(unit: $unit) === false) {
 			return $this->notYours();
 		}
 
@@ -181,6 +174,25 @@ class CaseCustodyController extends Controller {
 			]
 		);
 	}//end unit()
+
+	/**
+	 * Whether the caller may read a unit's custody: a member of it, or an administrator.
+	 *
+	 * @param string $unit The organisation unit (a group id).
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	private function mayReadUnit(string $unit): bool {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return false;
+		}
+
+		$mine = array_map('strval', $this->groups->getUserGroupIds($user));
+		return in_array($unit, $mine, true) === true || $this->groups->isAdmin($user->getUID()) === true;
+	}//end mayReadUnit()
 
 	/**
 	 * Whether the caller may read this case at all.

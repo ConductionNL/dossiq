@@ -3,9 +3,10 @@
 /**
  * ManifestController Unit Tests
  *
- * Tests the backend case-type navigation delta: one menu child per visible
- * caseType under `CasesGroup`, and the no-op (`['menu' => []]`) fallbacks for
- * the anonymous, no-ObjectService, unconfigured and empty-list paths.
+ * Tests the backend case-type navigation delta: the caption "My case types"
+ * and one entry per case type the user chose, in their order, and the no-op
+ * (`['menu' => []]`) fallbacks for the anonymous, no-ObjectService and
+ * empty-list paths.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Controller
@@ -16,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-navigation/tasks.md
+ * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-001
  */
 
 declare(strict_types=1);
@@ -24,10 +25,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ManifestController;
+use OCA\Dossiq\Service\CaseTypeViews;
+use OCA\Dossiq\Service\MenuCaseTypesService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
+use OCP\IConfig;
+use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
@@ -62,6 +69,13 @@ class FakeCaseTypeObjectService {
  * Unit tests for ManifestController.
  *
  * @covers \OCA\Dossiq\Controller\ManifestController
+ * @uses \OCA\Dossiq\Service\MenuCaseTypesService
+ * @uses \OCA\Dossiq\Service\Archival\ReadsConfiguredRows
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\CaseTypeViews
+ * @uses \OCA\Dossiq\Service\CaseType\SupersededCaseTypes
  */
 class ManifestControllerTest extends TestCase {
 
@@ -71,19 +85,14 @@ class ManifestControllerTest extends TestCase {
 	private SettingsService $settingsService;
 
 	/**
-	 * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
+	 * @var IConfig|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private IUserSession $userSession;
+	private IConfig $config;
 
 	/**
 	 * @var IRequest|\PHPUnit\Framework\MockObject\MockObject
 	 */
 	private IRequest $request;
-
-	/**
-	 * @var ManifestController
-	 */
-	private ManifestController $controller;
 
 	/**
 	 * Set up test fixtures.
@@ -92,20 +101,52 @@ class ManifestControllerTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->settingsService = $this->createMock(SettingsService::class);
-		$this->userSession = $this->createMock(IUserSession::class);
+		$this->config = $this->createMock(IConfig::class);
 		$this->request = $this->createMock(IRequest::class);
+	}//end setUp()
 
-		$user = $this->createMock(IUser::class);
-		$user->method('getUID')->willReturn('test-user');
-		$this->userSession->method('getUser')->willReturn($user);
+	/**
+	 * Build the controller for a user (or anonymous) whose stored choice is given.
+	 *
+	 * @param string|null $userId The user id, or null for anonymous.
+	 * @param string $stored The stored `menu_case_types` user value.
+	 * @param array<int, string> $groups The Nextcloud groups the user is in.
+	 *
+	 * @return ManifestController
+	 */
+	private function controller(?string $userId='test-user', string $stored='', array $groups=[]): ManifestController {
+		$userSession = $this->createMock(IUserSession::class);
+		$user = null;
+		if ($userId !== null) {
+			$user = $this->createMock(IUser::class);
+			$user->method('getUID')->willReturn($userId);
+		}
 
-		$this->controller = new ManifestController(
+		$userSession->method('getUser')->willReturn($user);
+		$this->config->method('getUserValue')->willReturn($stored);
+
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+
+		$userManager = $this->createMock(IUserManager::class);
+		$userManager->method('get')->willReturn($user);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('getUserGroupIds')->willReturn($groups);
+
+		return new ManifestController(
 			appName: 'dossiq',
 			request: $this->request,
-			settingsService: $this->settingsService,
-			userSession: $this->userSession,
+			menuCaseTypes: new MenuCaseTypesService(
+				settingsService: $this->settingsService,
+				config: $this->config,
+				groupManager: $groupManager,
+				userManager: $userManager,
+				text: new \OCA\Dossiq\Service\Support\TranslatedText(l10n: $l10n),
+			),
+			userSession: $userSession,
+			caseTypeViews: new CaseTypeViews(),
 		);
-	}//end setUp()
+	}//end controller()
 
 	/**
 	 * Wire the settings service to return a fake object service + config values.
@@ -131,39 +172,127 @@ class ManifestControllerTest extends TestCase {
 	}//end withCaseTypes()
 
 	/**
-	 * manifest: returns one CasesGroup child per case type, each routed to Cases.
+	 * The default views the delta adds to the Cases page.
+	 *
+	 * @param array<string, mixed> $data The response data.
+	 *
+	 * @return array<int, array<string, mixed>> The views.
+	 */
+	private static function views(array $data): array {
+		$pages = ($data['pages'] ?? []);
+		self::assertSame(expected: ['Cases'], actual: array_column($pages, 'id'));
+		return $pages[0]['config'][CaseTypeViews::DEFAULT_VIEWS_KEY];
+	}//end views()
+
+	/**
+	 * manifest: one view of the case list per pinned case type, in the user's
+	 * order, and no menu entries of dossiq's own; the Woo request case type
+	 * keeps the view the page ships.
 	 *
 	 * @return void
 	 */
-	public function testManifestReturnsChildPerCaseType(): void {
+	public function testManifestReturnsAViewPerPinnedCaseTypeAndNoMenuEntries(): void {
 		$this->withCaseTypes(
-			[
+			rows: [
+				['id' => MenuCaseTypesService::DEFAULT_CASE_TYPE, 'title' => 'Woo-verzoek'],
 				['id' => 'uuid-b', 'title' => 'Bezwaar'],
-				['id' => 'uuid-a', 'title' => 'Aanvraag'],
+				['id' => 'uuid-k', 'title' => 'Klacht'],
 			]
 		);
 
-		$response = $this->controller->manifest();
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$response = $this->controller(stored: '["uuid-k","' . MenuCaseTypesService::DEFAULT_CASE_TYPE . '","uuid-b"]')->manifest();
 
-		$data = $response->getData();
-		$this->assertArrayHasKey('menu', $data);
-		$this->assertCount(1, $data['menu']);
-		$this->assertSame('CasesGroup', $data['menu'][0]['id']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: [], actual: $response->getData()['menu']);
+		$views = self::views(data: $response->getData());
+		$this->assertSame(expected: ['case-type-uuid-k', 'case-type-uuid-b'], actual: array_column($views, 'slug'));
+		$this->assertSame(expected: 'Klacht', actual: $views[0]['name']);
+		$this->assertSame(
+			expected: ['caseType' => 'uuid-k', 'statusHiddenInLists' => false, 'isDraft' => false],
+			actual: $views[0]['filters']
+		);
+	}//end testManifestReturnsAViewPerPinnedCaseTypeAndNoMenuEntries()
 
-		$children = $data['menu'][0]['children'];
-		$this->assertCount(2, $children);
+	/**
+	 * manifest: a list the instance names by case type identifier (Complaints)
+	 * is a view for every user, ahead of the user's own pinned case types.
+	 *
+	 * @return void
+	 */
+	public function testManifestAddsTheComplaintsViewWhenTheInstanceHasThatCaseType(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => 'uuid-k', 'title' => 'Klacht behandeling', 'identifier' => 'klacht-behandeling'],
+				['id' => 'uuid-b', 'title' => 'Bezwaar'],
+			]
+		);
 
-		// Deterministic sort by name: "Aanvraag" precedes "Bezwaar".
-		$this->assertSame('ct-uuid-a', $children[0]['id']);
-		$this->assertSame('Aanvraag', $children[0]['label']);
-		$this->assertSame('Cases', $children[0]['route']);
-		$this->assertSame('uuid-a', $children[0]['query']['caseType']);
+		$views = self::views(data: $this->controller(stored: '["uuid-b"]')->manifest()->getData());
 
-		$this->assertSame('ct-uuid-b', $children[1]['id']);
-		$this->assertSame('Cases', $children[1]['route']);
-		$this->assertSame('uuid-b', $children[1]['query']['caseType']);
-	}//end testManifestReturnsChildPerCaseType()
+		$this->assertSame(expected: ['complaints', 'case-type-uuid-b'], actual: array_column($views, 'slug'));
+		$this->assertSame(
+			expected: ['caseType' => 'uuid-k', 'statusHiddenInLists' => false, 'isDraft' => false],
+			actual: $views[0]['filters']
+		);
+	}//end testManifestAddsTheComplaintsViewWhenTheInstanceHasThatCaseType()
+
+	/**
+	 * manifest: the case-type views sit under "More default views" (Ruben, 23
+	 * October 2026: the board's three default views first, the rest behind
+	 * that disclosure), each with a description of its own so the panel never
+	 * shows the case type's uuid while it resolves the filter.
+	 *
+	 * @return void
+	 */
+	public function testManifestCaseTypeViewsAreSecondaryWithADescription(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => 'uuid-k', 'title' => 'Klacht behandeling', 'identifier' => 'klacht-behandeling'],
+				['id' => 'uuid-b', 'title' => 'Bezwaar'],
+			]
+		);
+
+		$views = self::views(data: $this->controller(stored: '["uuid-b"]')->manifest()->getData());
+
+		$this->assertSame(expected: [true, true], actual: array_column($views, 'secondary'));
+		$this->assertSame(expected: ['Case type complaint handling', 'Bezwaar'], actual: array_column($views, 'description'));
+	}//end testManifestCaseTypeViewsAreSecondaryWithADescription()
+
+	/**
+	 * manifest: a pinned case type the user's team does not handle gets no view.
+	 *
+	 * @return void
+	 */
+	public function testManifestLeavesOutAPinnedCaseTypeTheTeamDoesNotHandle(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => 'uuid-o', 'title' => 'Omgevingsvergunning', 'handling' => ['defaultGroup' => 'vergunningen']],
+				['id' => 'uuid-x', 'title' => 'Klacht', 'handling' => ['defaultGroup' => 'klachten']],
+			]
+		);
+
+		$data = $this->controller(stored: '["uuid-x","uuid-o"]', groups: ['vergunningen'])->manifest()->getData();
+
+		$this->assertSame(expected: ['case-type-uuid-o'], actual: array_column(self::views(data: $data), 'slug'));
+	}//end testManifestLeavesOutAPinnedCaseTypeTheTeamDoesNotHandle()
+
+	/**
+	 * manifest: a user who pinned nothing, or only the Woo request case type,
+	 * gets a no-op delta.
+	 *
+	 * @return void
+	 */
+	public function testManifestAddsNothingWhenNoViewIsNeeded(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => MenuCaseTypesService::DEFAULT_CASE_TYPE, 'title' => 'Woo-verzoek'],
+				['id' => 'uuid-b', 'title' => 'Bezwaar'],
+			]
+		);
+
+		$this->assertSame(expected: ['menu' => []], actual: $this->controller(stored: '[]')->manifest()->getData());
+		$this->assertSame(expected: ['menu' => []], actual: $this->controller(stored: '')->manifest()->getData());
+	}//end testManifestAddsNothingWhenNoViewIsNeeded()
 
 	/**
 	 * manifest: an unauthenticated caller is refused (401), never leaking data.
@@ -171,20 +300,10 @@ class ManifestControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testManifestAnonymousReturnsUnauthorized(): void {
-		$userSession = $this->createMock(IUserSession::class);
-		$userSession->method('getUser')->willReturn(null);
-
-		$controller = new ManifestController(
-			appName: 'dossiq',
-			request: $this->request,
-			settingsService: $this->settingsService,
-			userSession: $userSession,
-		);
-
-		$response = $controller->manifest();
+		$response = $this->controller(userId: null)->manifest();
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 		$this->assertSame([], $response->getData());
-	}//end testManifestAnonymousReturnsEmptyDelta()
+	}//end testManifestAnonymousReturnsUnauthorized()
 
 	/**
 	 * manifest: no ObjectService yields a no-op delta without throwing.
@@ -194,7 +313,7 @@ class ManifestControllerTest extends TestCase {
 	public function testManifestReturnsEmptyWhenNoObjectService(): void {
 		$this->settingsService->method('getObjectService')->willReturn(null);
 
-		$response = $this->controller->manifest();
+		$response = $this->controller()->manifest();
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['menu' => []], $response->getData());
 	}//end testManifestReturnsEmptyWhenNoObjectService()
@@ -207,7 +326,7 @@ class ManifestControllerTest extends TestCase {
 	public function testManifestReturnsEmptyWhenNoCaseTypes(): void {
 		$this->withCaseTypes([]);
 
-		$response = $this->controller->manifest();
+		$response = $this->controller()->manifest();
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['menu' => []], $response->getData());
 	}//end testManifestReturnsEmptyWhenNoCaseTypes()

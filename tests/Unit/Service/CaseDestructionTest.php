@@ -31,6 +31,8 @@ use OCA\Dossiq\Service\Recycle\CaseDestructionService;
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
 use OCA\Dossiq\Service\Recycle\RetentionClocks;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\RecordingAuditTrailMapper;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -43,6 +45,7 @@ use RuntimeException;
  * The destroying role, the two clocks and the open window, each a refusal.
  *
  * @covers \OCA\Dossiq\Service\Recycle\CaseDestructionService
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class CaseDestructionTest extends TestCase {
 
@@ -96,6 +99,13 @@ class CaseDestructionTest extends TestCase {
 	private object $objectService;
 
 	/**
+	 * The OpenRegister classes the settings service hands out, by FQCN.
+	 *
+	 * @var array<string, object>
+	 */
+	private array $openRegisterClasses = [];
+
+	/**
 	 * Wire a deleted case whose window has lapsed, handled by a plain user.
 	 *
 	 * @return void
@@ -144,7 +154,9 @@ class CaseDestructionTest extends TestCase {
 		};
 
 		$this->settingsService->method('getObjectService')->willReturn($this->objectService);
-		$this->settingsService->method('getOpenRegisterClass')->willReturn(null);
+		$this->settingsService->method('getOpenRegisterClass')->willReturnCallback(
+			fn (string $class): ?object => ($this->openRegisterClasses[$class] ?? null)
+		);
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => match ($key) {
 				'register' => 'dossiq',
@@ -174,32 +186,14 @@ class CaseDestructionTest extends TestCase {
 	/**
 	 * One soft-deleted case entity.
 	 *
-	 * @return object The entity.
+	 * @return ObjectEntity The entity.
 	 */
-	private function entity(): object {
-		return new class {
+	private function entity(): ObjectEntity {
+		$entity = new ObjectEntity();
+		$entity->setUuid('case-9');
+		$entity->setObject(['caseType' => 'ct-bezwaar', 'title' => 'Bezwaar tegen de aanslag']);
 
-			/**
-			 * The entity's UUID.
-			 *
-			 * @return string The UUID.
-			 */
-			public function getUuid(): string {
-				return 'case-9';
-			}
-
-			/**
-			 * The entity's payload.
-			 *
-			 * @return array<string, mixed> The payload.
-			 */
-			public function getObject(): array {
-				return [
-					'caseType' => 'ct-bezwaar',
-					'title' => 'Bezwaar tegen de aanslag',
-				];
-			}
-		};
+		return $entity;
 	}//end entity()
 
 	/**
@@ -404,6 +398,27 @@ class CaseDestructionTest extends TestCase {
 		$this->assertSame('case-9', $record['objectUuid']);
 		$this->assertNotSame('', (string)$record['destroyedAt']);
 	}//end testTheRecordNamesWhoDecided()
+
+	/**
+	 * Without OpenRegister's destruction recorder the destruction is still
+	 * written to the case's audit trail, naming who decided.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function testWithoutARecorderTheAuditTrailKeepsTheDestruction(): void {
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$audit = new RecordingAuditTrailMapper();
+		$this->openRegisterClasses[CaseRecycleService::AUDIT_MAPPER] = $audit;
+
+		$this->service()->destroy(caseId: 'case-9');
+
+		$this->assertCount(1, $audit->rows);
+		$this->assertSame(CaseDestructionService::DESTROY_ACTION, $audit->rows[0]['action']);
+		$this->assertSame('case-9', $audit->rows[0]['object']);
+		$this->assertSame('behandelaar', $audit->rows[0]['actor']);
+	}//end testWithoutARecorderTheAuditTrailKeepsTheDestruction()
 
 	/**
 	 * The recovery window a case type declares is published, so the page can

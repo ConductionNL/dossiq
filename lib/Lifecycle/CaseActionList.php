@@ -43,11 +43,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Lifecycle;
 
-use OCA\Dossiq\Service\Cases\ExternalHome;
-use OCA\Dossiq\Service\Money\CasePaymentReader;
-use OCA\Dossiq\Service\Money\UnpaidCaseGate;
-use OCA\Dossiq\Service\Transitions\CaseResultWriter;
-use OCA\Dossiq\Service\Transitions\CaseTypeReader;
+use OCA\Dossiq\Kernel\Contracts\CasePaymentReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseResultWriterInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\ExternalHomeInterface;
+use OCA\Dossiq\Kernel\Contracts\UnpaidCaseGateInterface;
+use OCP\IL10N;
 
 /**
  * The acts a case offers, and what blocks them.
@@ -75,18 +76,20 @@ class CaseActionList {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseResultWriter  $resultWriter Decides whether a target status closes the case.
-	 * @param ExternalHome      $externalHome Whether the work on this case lives in another app.
-	 * @param CaseTypeReader    $caseTypes    What the case type declares about paying first.
-	 * @param UnpaidCaseGate    $unpaidCases  Whether an unpaid case proceeds.
-	 * @param CasePaymentReader $payments     The live payment state of one case.
+	 * @param CaseResultWriterInterface  $resultWriter Decides whether a target status closes the case.
+	 * @param ExternalHomeInterface      $externalHome Whether the work on this case lives in another app.
+	 * @param CaseTypeReaderInterface    $caseTypes    What the case type declares about paying first.
+	 * @param UnpaidCaseGateInterface    $unpaidCases  Whether an unpaid case proceeds.
+	 * @param CasePaymentReaderInterface $payments     The live payment state of one case.
+	 * @param IL10N|null        $l10n         Names the closing input; without it the input carries no label.
 	 */
 	public function __construct(
-		private readonly CaseResultWriter $resultWriter,
-		private readonly ExternalHome $externalHome,
-		private readonly CaseTypeReader $caseTypes,
-		private readonly UnpaidCaseGate $unpaidCases,
-		private readonly CasePaymentReader $payments,
+		private readonly CaseResultWriterInterface $resultWriter,
+		private readonly ExternalHomeInterface $externalHome,
+		private readonly CaseTypeReaderInterface $caseTypes,
+		private readonly UnpaidCaseGateInterface $unpaidCases,
+		private readonly CasePaymentReaderInterface $payments,
+		private readonly ?IL10N $l10n=null,
 	) {
 	}//end __construct()
 
@@ -130,7 +133,7 @@ class CaseActionList {
 	 *
 	 * @param array<string, mixed> $transition One entry off the engine's answer.
 	 *
-	 * @return array{action:string,to:string,requires:null,description:string,inputs:list<array{field:string,required:bool}>,label:string,blocked:bool}|null
+	 * @return array{action:string,to:string,requires:null,description:string,inputs:list<array<string, mixed>>,label:string,blocked:bool}|null
 	 *         Null when the transition names no action, which is unpublishable.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
@@ -153,7 +156,7 @@ class CaseActionList {
 			// publish. The failure reasons travel in `description` instead.
 			'requires' => null,
 			'description' => $this->describe(transition: $transition, passed: $passed),
-			'inputs' => $this->inputsFor(toStatus: $toStatus),
+			'inputs' => $this->inputsFor(toStatus: $toStatus, transition: $transition),
 			'label' => (string)($transition['label'] ?? ''),
 			'blocked' => ($passed === false),
 		];
@@ -204,19 +207,71 @@ class CaseActionList {
 	 * Publishing the input is what turns that refusal into a question the
 	 * client asks first.
 	 *
-	 * @param string $toStatus The statusType UUID the move targets.
+	 * The input offers the results the case may close with as `options`, so
+	 * the handler picks one by name instead of typing a UUID. They are the
+	 * `resultTypes` the engine already put on the offered move (the case
+	 * type's own and the ones a parent case type contributes), read and not
+	 * derived again, so the picker cannot offer a result the close refuses.
 	 *
-	 * @return list<array{field:string,required:bool}> The declared inputs, empty for an ordinary move.
+	 * @param string               $toStatus   The statusType UUID the move targets.
+	 * @param array<string, mixed> $transition The offered move, carrying its `resultTypes`.
+	 *
+	 * @return list<array<string, mixed>> The declared inputs, empty for an ordinary move.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function inputsFor(string $toStatus): array {
+	private function inputsFor(string $toStatus, array $transition): array {
 		if ($toStatus === '' || $this->resultWriter->isFinalStatus(statusTypeId: $toStatus) === false) {
 			return [];
 		}
 
-		return [['field' => self::CLOSING_INPUT, 'required' => true]];
+		$input = ['field' => self::CLOSING_INPUT, 'required' => true];
+		if ($this->l10n !== null) {
+			$input['label'] = $this->l10n->t('Result');
+		}
+
+		$options = $this->resultOptions(resultTypes: ($transition['resultTypes'] ?? []));
+		if ($options !== []) {
+			$input['options'] = $options;
+		}
+
+		return [$input];
 	}//end inputsFor()
+
+	/**
+	 * The results a closing move offers, as an input's `options`.
+	 *
+	 * @param mixed $resultTypes The offered move's `resultTypes`, `[{id, name}]`.
+	 *
+	 * @return list<array{value:string,label:string}> One option per result with an id, labelled by its name.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function resultOptions(mixed $resultTypes): array {
+		if (is_array($resultTypes) === false) {
+			return [];
+		}
+
+		$options = [];
+		foreach ($resultTypes as $row) {
+			if (is_array($row) === false || is_string(($row['id'] ?? null)) === false || trim($row['id']) === '') {
+				continue;
+			}
+
+			$name = '';
+			if (is_string(($row['name'] ?? null)) === true) {
+				$name = trim($row['name']);
+			}
+
+			if ($name === '') {
+				$name = trim($row['id']);
+			}
+
+			$options[] = ['value' => trim($row['id']), 'label' => $name];
+		}
+
+		return $options;
+	}//end resultOptions()
 
 	/**
 	 * Disable the acts that perform work on a case handled elsewhere.
@@ -226,7 +281,7 @@ class CaseActionList {
 	 *
 	 * @return list<array<string, mixed>> The moves, blocked when the work is elsewhere.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
 	 */
 	public function honourExternalHome(array $actions, array $object): array {
 		$sentence = $this->externalHome->whereTheWorkIs(case: $object);
@@ -253,7 +308,7 @@ class CaseActionList {
 	 *
 	 * @return list<array<string, mixed>> The moves, blocked when payment is owed.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function honourPaymentRule(array $actions, array $object, string $caseId): array {
 		$sentence = $this->whyPaymentBlocks(object: $object, caseId: $caseId);
@@ -261,6 +316,18 @@ class CaseActionList {
 			return $actions;
 		}
 
+		return self::allBlocked(actions: $actions, sentence: $sentence);
+	}//end honourPaymentRule()
+
+	/**
+	 * Every action blocked, carrying the sentence that says why.
+	 *
+	 * @param array<int, array<string, mixed>> $actions  The actions.
+	 * @param string                           $sentence Why they are blocked.
+	 *
+	 * @return array<int, array<string, mixed>> The actions, blocked.
+	 */
+	private static function allBlocked(array $actions, string $sentence): array {
 		$disabled = [];
 		foreach ($actions as $action) {
 			$action['blocked'] = true;
@@ -269,7 +336,7 @@ class CaseActionList {
 		}
 
 		return $disabled;
-	}//end honourPaymentRule()
+	}//end allBlocked()
 
 	/**
 	 * The payment rule's verdict on this case, as a sentence or an empty string.
@@ -285,7 +352,7 @@ class CaseActionList {
 	 *
 	 * @return string The refusal, '' when the money is not in the way.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function whyPaymentBlocks(array $object, string $caseId): string {
 		$rule = $this->caseTypes->paymentRule(caseTypeId: $this->caseTypeIdOf(object: $object));
@@ -318,7 +385,7 @@ class CaseActionList {
 	 *
 	 * @return string The case type uuid, '' when the case names none.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	private function caseTypeIdOf(array $object): string {
 		$caseType = ($object['caseType'] ?? '');

@@ -1,0 +1,17 @@
+{
+  "schema": "consent_schema",
+  "rows": [
+    {
+      "id": "3d903a5f-7066-50c8-a952-7e1c775055bb",
+      "caseId": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+      "grantedByBsn": "999990019",
+      "grantedByName": "Beide ouders",
+      "grantedDate": "{{date:-14}}",
+      "withdrawalPossible": true,
+      "withdrawn": false,
+      "tedoel": "Onderzoek naar jeugdhulp",
+      "scope": "Gegevens over gezondheid en school van het kind, voor de duur van het onderzoek.",
+      "recordedViaChannel": "schriftelijk"
+    }
+  ]
+}

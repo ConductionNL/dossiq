@@ -271,7 +271,7 @@ class FileRequestServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	public function testAPartyWhoseIndicatorRefusesASendIsNotSentTo(): void {
 		$this->party(partyUuid: 'party-1');

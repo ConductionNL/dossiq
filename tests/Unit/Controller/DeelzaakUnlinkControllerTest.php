@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-deletion-protection
+ * @spec openspec/specs/case-management/spec.md#requirement-a-held-case-cannot-be-deleted-and-you-are-told-why-req-cm-35
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2

@@ -7,7 +7,7 @@ The New case dialog asks a case handler for the fields a case handler fills. The
 
 ### Requirement: REQ-FCF-001 The New Case Dialog Is The Plain Form
 
-The `new-case` header action SHALL open the plain schema-driven form, never the properties-and-JSON table. The action SHALL declare `includeFields` naming exactly the fields collected at create time: `caseType`, `title`, `description`, `assignee`, `priority`, `confidentiality`, `intakeChannel`, `startDate`, `plannedEndDate`. The case detail page remains the surface for every other property.
+The `new-case` header action SHALL open the plain schema-driven form, never the properties-and-JSON table. The action SHALL declare `includeFields` naming exactly the fields collected at create time: `caseType`, `title`, `requester`, `intakeChannel`, `description`, `plannedEndDate`, `assignee`, `confidentiality`, `impact`, `urgency`. The case detail page remains the surface for every other property. `startDate` SHALL NOT be asked: dossiq sets it when the case is created (REQ-TERM-042).
 
 #### Scenario: The dialog carries no schema-inspection tabs
 
@@ -17,10 +17,11 @@ The `new-case` header action SHALL open the plain schema-driven form, never the 
 - **AND** it SHALL offer a "Create" button, disabled until the required fields are answered
 
 #### Scenario: The dialog asks only for create-time fields
+@e2e tests/e2e/case-create-form.spec.ts
 
 - **GIVEN** the New case dialog is open
-- **THEN** it SHALL render a field for each of the nine declared `includeFields`
-- **AND** it SHALL render no field for `result`, `workflowTemplate`, `archiveNomination`, `qualityScore`, `casePlanState`, `statusHistory` or `portalSubject`
+- **THEN** it SHALL render a field for each of the ten declared `includeFields`
+- **AND** it SHALL render no field for `startDate`, `result`, `workflowTemplate`, `archiveNomination`, `qualityScore`, `casePlanState`, `statusHistory` or `portalSubject`
 
 ### Requirement: REQ-FCF-002 The Schema States Which Properties A Person Deals With
 
@@ -132,3 +133,26 @@ A property the New case action does not ask for SHALL remain editable on the cas
 - **THEN** there SHALL be no parent case field
 - **WHEN** they open an existing case
 - **THEN** the core case data SHALL offer a parent case field
+
+### Requirement: The create form warns about likely duplicates (REQ-FCF-10)
+
+The `case` schema SHALL declare dedup rules (requester and type within 30
+days; address and type; subject similarity). The New case form SHALL show
+the platform's matches as a warning with links before save.
+`caseType.duplicatePolicy` SHALL be `warn` or `block`; under `block` only
+`dossiq-coordinators` may continue, with a reason recorded on the case.
+
+#### Scenario: A likely duplicate is shown
+@e2e tests/e2e/duplicate-warning.spec.ts
+
+- **GIVEN** an open case for requester Jan of type Kapvergunning filed this week
+- **WHEN** you start a new Kapvergunning for Jan
+- **THEN** the form SHALL show the open case as a likely duplicate with a link
+
+#### Scenario: Block stops a handler, not a coordinator
+@e2e tests/e2e/duplicate-warning.spec.ts
+
+- **GIVEN** the case type's policy is block and a match is shown
+- **WHEN** a handler tries to save
+- **THEN** Save SHALL be disabled
+- **AND** a coordinator SHALL be offered Continue anyway with a reason

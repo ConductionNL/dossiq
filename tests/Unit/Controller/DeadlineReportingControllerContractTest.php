@@ -39,7 +39,10 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DeadlineReportingController;
 use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
+use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -56,6 +59,15 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\DeadlineReportingService
  * @uses \OCA\Dossiq\Service\Reporting\ReportingAudience
  * @uses \OCA\Dossiq\Service\Term\FirstResponseOutcome
+ * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
+ * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
+ * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
+ * @uses \OCA\Dossiq\Service\Reporting\AnnualPayoutStatement
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class DeadlineReportingControllerContractTest extends TestCase {
 
@@ -532,4 +544,128 @@ class DeadlineReportingControllerContractTest extends TestCase {
 		self::assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
 	}//end testFirstResponseReportIsUnavailableRatherThanFiveHundredWithoutItsService()
 
+	/**
+	 * REQ-WTR-004 through the route: GET kwartaal groups each term by the case
+	 * type of its case, over the real reporting service.
+	 *
+	 * @return void
+	 */
+	public function testTheQuarterlyRouteGroupsByCaseType(): void {
+		$this->signIn();
+		$store = new FakeTermijnStore();
+		$store->seed('caseType', ['id' => 'ct-woo', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek']);
+		foreach (['w1', 'w2'] as $id) {
+			$store->seed('case', ['id' => 'case-' . $id, 'caseType' => 'ct-woo']);
+			$store->seed('deadlineInstance', [
+				'id' => $id,
+				'case' => 'case-' . $id,
+				'startDate' => '2026-10-05T09:00:00+02:00',
+				'endDateCurrent' => '2026-11-02',
+				'status' => 'lopend',
+			]);
+		}
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'termijn_instance_schema' => 'deadlineInstance',
+				'termijn_definitie_schema' => 'deadlineDefinition',
+				'case_schema' => 'case',
+				'case_type_schema' => 'caseType',
+				default => '',
+			}
+		);
+		$controller = new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: new DeadlineReportingService($settings),
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+		);
+
+		$data = $controller->quarterlyReport(period: '2026-Q4')->getData();
+
+		$this->assertSame(['woo-verzoek'], array_keys($data['perType']));
+		$this->assertSame(2, $data['perType']['woo-verzoek']['totaal']);
+		$this->assertSame([], $data['metadata']['unresolvedInstances']);
+	}//end testTheQuarterlyRouteGroupsByCaseType()
+
+	/**
+	 * The penalty payment route answers the year's rows for a caller in the audience.
+	 *
+	 * Contract coverage for `deadlineReporting#penaltyPayments`.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsAnswersTheYearsRows(): void {
+		$this->signIn();
+		$rows = $this->createMock(PenaltyPaymentRows::class);
+		$rows->expects($this->once())->method('forYear')->with(2026)
+			->willReturn(['year' => 2026, 'rows' => [['caseIdentifier' => '2026-0018']], 'summary' => ['count' => 1, 'totalEuros' => 1260.0, 'disputedCount' => 0]]);
+
+		$response = $this->paymentsController(rows: $rows)->penaltyPayments(year: 2026);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('2026-0018', $response->getData()['rows'][0]['caseIdentifier']);
+	}//end testPenaltyPaymentsAnswersTheYearsRows()
+
+	/**
+	 * The penalty payment route refuses an anonymous caller and a year out of range.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsRefusesAnonymousAndOutOfRange(): void {
+		$rows = $this->createMock(PenaltyPaymentRows::class);
+		$rows->expects($this->never())->method('forYear');
+
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->paymentsController(rows: $rows)->penaltyPayments(year: 2026)->getStatus());
+	}//end testPenaltyPaymentsRefusesAnonymousAndOutOfRange()
+
+	/**
+	 * A year outside 2020..2100 is a 400.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsRefusesAYearOutOfRange(): void {
+		$this->signIn();
+		$rows = $this->createMock(PenaltyPaymentRows::class);
+		$rows->expects($this->never())->method('forYear');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->paymentsController(rows: $rows)->penaltyPayments(year: 2019)->getStatus());
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->paymentsController(rows: $rows)->penaltyPayments()->getStatus());
+	}//end testPenaltyPaymentsRefusesAYearOutOfRange()
+
+	/**
+	 * Without the payment rows the route says it is not available.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsIsUnavailableWithoutTheRows(): void {
+		$this->signIn();
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $this->controller->penaltyPayments(year: 2026)->getStatus());
+	}//end testPenaltyPaymentsIsUnavailableWithoutTheRows()
+
+	/**
+	 * A controller holding the given payment rows.
+	 *
+	 * @param PenaltyPaymentRows $rows The payment rows.
+	 *
+	 * @return DeadlineReportingController
+	 */
+	private function paymentsController(PenaltyPaymentRows $rows): DeadlineReportingController {
+		return new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: $this->service,
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+			penaltyPayments: $rows,
+		);
+	}//end paymentsController()
 }//end class

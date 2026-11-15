@@ -12,7 +12,7 @@
  *
  * So these specs read the real files and hold three things:
  *
- *   1. the queue view names NO source, so a ninth mechanism needs no edit here
+ *   1. the queue page names NO source, so a ninth mechanism needs no edit here
  *   2. the declared sources are the eight the design names, by name
  *   3. what a reader may do to an item cannot remove live work
  *
@@ -30,15 +30,11 @@ vi.mock('@nextcloud/l10n', () => ({
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
-const { OFFER_HIDE_GROUP, canDismiss, offerInsteadOfDismissing, visibleGroups } =
+const { OFFER_HIDE_GROUP, canDismiss, offerInsteadOfDismissing } =
 	await import('../../src/utils/personalQueueHelpers.js')
 
 const catalogue = readFileSync(
 	resolve(root, 'lib/Service/Queue/QueueSourceCatalogue.php'),
-	'utf8',
-)
-const queueView = readFileSync(
-	resolve(root, 'src/views/queue/PersonalQueueView.vue'),
 	'utf8',
 )
 const manifest = JSON.parse(readFileSync(resolve(root, 'src/manifest.json'), 'utf8'))
@@ -91,8 +87,8 @@ describe('every mechanism reaches the queue by declaring itself', () => {
 		])
 	})
 
-	it('the queue page hard-codes no source name', () => {
-		// A source name in the view is a source the view has to be edited for,
+	it('the queue page names no source', () => {
+		// A source name on the page is a source the page has to be edited for,
 		// which is the coupling the contract exists to remove. The names are
 		// checked against the catalogue above, so this cannot pass by the
 		// catalogue being empty.
@@ -106,28 +102,52 @@ describe('every mechanism reaches the queue by declaring itself', () => {
 			'planned-items',
 		]
 
+		// The plan-an-item dialog posts to its own endpoint; what must name no
+		// source is the queue the page draws.
+		const declared = JSON.stringify(page('PersonalQueue').config.widgets)
 		for (const name of names) {
-			expect(queueView, `${name} is named in the queue view`).not.toContain(
+			expect(declared, `${name} is named on the queue page`).not.toContain(
 				name,
 			)
 		}
 	})
 
-	it('renders the group heading and closing sentence the server sent', () => {
-		expect(queueView).toContain('{{ group.label }}')
-		expect(queueView).toContain('{{ group.closesWhen }}')
+	it('draws the groups the server sent through the library work queue, which names unreadable sources', () => {
+		const widgets = page('PersonalQueue').config.widgets
+		expect(widgets).toHaveLength(1)
+		expect(widgets[0].type).toBe('work-queue')
+		expect(widgets[0].content).toEqual({
+			source: { url: '/apps/dossiq/api/personal-queue' },
+			hide: '/apps/dossiq/api/personal-queue/groups/{group}/hide',
+			show: '/apps/dossiq/api/personal-queue/groups/{group}/show',
+			emptyText: 'Nothing is waiting on you.',
+		})
+		expect(page('PersonalQueue').config.layout.map((cell) => cell.widgetId)).toEqual([widgets[0].id])
 	})
 
-	it('names a source that could not be read, rather than showing fewer items', () => {
-		expect(queueView).toContain('could not be read, so this list is incomplete.')
-		expect(queueView).toContain('queue-source-unavailable-')
+	it('plans an item through the library action dialog, which refreshes the queue', () => {
+		// CnActionDialog posts the item and fires `cn:page:refresh`, and the
+		// work queue reads again on that channel.
+		const plan = page('PersonalQueue').config.headerActions.find((action) => action.id === 'plan-item')
+		expect(plan.type).toBe('open-modal')
+		expect(plan.target).toBe('CnActionDialog')
+		expect(plan.label).toBe('Plan an item')
+		expect(plan.props.config.confirm.request).toEqual({
+			method: 'POST',
+			url: '/apps/dossiq/api/personal-queue/planned-items',
+		})
+		expect(plan.props.config.fields.map((field) => field.field)).toEqual(['template', 'title', 'startsAt'])
+	})
+
+	it('keeps the way back to My work', () => {
+		expect(page('PersonalQueue').config.breadcrumb).toEqual({ label: 'My work', route: 'MyWorkHome' })
 	})
 })
 
 describe('the page is a page, and not a second case index', () => {
-	it('the personal queue is a custom page', () => {
-		expect(page('PersonalQueue').type).toBe('custom')
-		expect(page('PersonalQueue').component).toBe('PersonalQueueView')
+	it('the personal queue is a manifest page with no app component', () => {
+		expect(page('PersonalQueue').type).toBe('dashboard')
+		expect(page('PersonalQueue').component).toBeUndefined()
 	})
 
 	it('it does not name the case schema, so it is not a second index over it', () => {
@@ -135,12 +155,14 @@ describe('the page is a page, and not a second case index', () => {
 		expect(page('PersonalQueue').config.register).toBeUndefined()
 	})
 
-	it('the unclaimed pool keeps its own page and its own meaning', () => {
-		// Two pages, two different questions. `Queue` is every open case nobody
-		// has picked up, a team surface; `PersonalQueue` is one person's own.
-		expect(page('Queue').type).toBe('index')
-		expect(page('Queue').config.filter.assignee).toBe('IS NULL')
-		expect(page('PersonalQueue').route).not.toBe(page('Queue').route)
+	it('the unclaimed pool keeps its own meaning, as a view of the case list', () => {
+		// Two different questions. The team queue is every open case nobody has
+		// picked up, a team surface and a view of Cases now; `PersonalQueue` is
+		// one person's own, across stores, and stays a page.
+		const teamQueue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue')
+		expect(teamQueue.overrides.lockedFilters.assignee).toBe('IS NULL')
+		expect(page('Queue')).toBeUndefined()
+		expect(page('PersonalQueue').type).toBe('dashboard')
 	})
 
 	it('both new entries live under the existing My work group', () => {
@@ -163,18 +185,6 @@ describe('a person orders and hides, and cannot dismiss', () => {
 			offer: OFFER_HIDE_GROUP,
 			group: 'tasks',
 		})
-	})
-
-	it('hides a whole group and leaves the rest', () => {
-		const groups = [{ key: 'tasks' }, { key: 'assigned-cases' }]
-
-		expect(visibleGroups(groups, ['tasks'])).toEqual([{ key: 'assigned-cases' }])
-	})
-
-	it('shows every group when nothing is hidden', () => {
-		const groups = [{ key: 'tasks' }, { key: 'assigned-cases' }]
-
-		expect(visibleGroups(groups, [])).toEqual(groups)
 	})
 
 	it('offers no call that would remove an item', async () => {

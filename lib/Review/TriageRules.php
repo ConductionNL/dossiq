@@ -1,0 +1,592 @@
+<?php
+
+/**
+ * Dossiq triage rules: visible rules that mark a case's unmarked documents in or out of scope.
+ *
+ * @category Review
+ * @package  OCA\Dossiq\Review
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Review;
+
+use DateTimeImmutable;
+use DateTimeInterface;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageRulesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Keeps the `triageRule` objects of a case and applies them.
+ *
+ * A created rule reconciles the case's reviewer access in the same request,
+ * so a case type that keeps its review records private grants them at once.
+ * Applying evaluates the active rules in order on every unmarked document;
+ * the first rule that matches marks the document with its effect and its
+ * name, with `relevanceSource` `rule`. A document a reviewer marked is never
+ * touched, also when the reviewer set it back to unmarked. Nothing is opened:
+ * the facts are the document's provenance, its mail headers, its record and
+ * the text OpenRegister already extracted.
+ *
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+ */
+class TriageRules implements TriageRulesInterface {
+
+	use SearchesObjects;
+
+	/**
+	 * The app config key of the rule schema.
+	 */
+	public const SCHEMA_KEY = 'triage_rule_schema';
+
+	/**
+	 * The effects a rule can have.
+	 */
+	public const EFFECTS = [DocumentRelevance::IN_SCOPE, DocumentRelevance::OUT_OF_SCOPE];
+
+	/**
+	 * The sentence of a rule that cannot be stored or applied.
+	 */
+	private const UNSTORED = 'The triage rules cannot be stored or applied, so nothing was marked.';
+
+	/**
+	 * The status of a rule this case does not have.
+	 */
+	private const NOT_FOUND = 404;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsServiceInterface        $settingsService The settings and OpenRegister access.
+	 * @param DocumentRelevance      $reviews         The reviews a rule marks.
+	 * @param WooCaseDocumentsInterface       $caseDocuments   The case's documents.
+	 * @param TriageFacts            $facts           What a rule reads about each document.
+	 * @param TriageConditions       $conditions      Checks and matches a rule's conditions.
+	 * @param CaseReviewerAccessInterface     $reviewerAccess  Who may read the case's private review records.
+	 * @param LoggerInterface        $logger          The logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly DocumentRelevance $reviews,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
+		private readonly TriageFacts $facts,
+		private readonly TriageConditions $conditions,
+		private readonly CaseReviewerAccessInterface $reviewerAccess,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * The case's rules in order, each with how many documents it decided and how many reviewers overturned.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return list<array<string, mixed>> The rules with `decided` and `overturned`.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	public function forCase(string $caseId): array {
+		$reviews = $this->reviews->forCase(caseId: $caseId);
+		$decided = $this->decidedPerRule(reviews: $reviews);
+		$overturned = $this->overturnedPerRule(reviews: $reviews);
+
+		$listed = [];
+		foreach ($this->rows(caseId: $caseId) as $rule) {
+			$name = (string)($rule['name'] ?? '');
+			$rule['decided'] = ($decided[$name] ?? 0);
+			$rule['overturned'] = ($overturned[$name] ?? 0);
+			$listed[] = $rule;
+		}
+
+		return $listed;
+	}//end forCase()
+
+	/**
+	 * How many documents each rule decided: reviews whose relevance a rule set.
+	 *
+	 * @param array<string, array<string, mixed>> $reviews The case's reviews, by document.
+	 *
+	 * @return array<string, int> Count per rule name.
+	 */
+	private function decidedPerRule(array $reviews): array {
+		$decided = [];
+		foreach ($reviews as $review) {
+			$rule = (string)($review['rule'] ?? '');
+			if ($rule !== '' && ($review['relevanceSource'] ?? '') === 'rule') {
+				$decided[$rule] = (($decided[$rule] ?? 0) + 1);
+			}
+		}
+
+		return $decided;
+	}//end decidedPerRule()
+
+	/**
+	 * How many of each rule's markings a reviewer overturned.
+	 *
+	 * @param array<string, array<string, mixed>> $reviews The case's reviews, by document.
+	 *
+	 * @return array<string, int> Count per rule name.
+	 */
+	private function overturnedPerRule(array $reviews): array {
+		$overturned = [];
+		foreach ($reviews as $review) {
+			$over = (string)($review['overturnedRule'] ?? '');
+			if ($over !== '') {
+				$overturned[$over] = (($overturned[$over] ?? 0) + 1);
+			}
+		}
+
+		return $overturned;
+	}//end overturnedPerRule()
+
+	/**
+	 * Create a rule, or change the case's rule `ruleId`.
+	 *
+	 * @param string               $caseId The case UUID.
+	 * @param array<string, mixed> $input  `name`, `conditions`, `effect`, and optionally `order` and `active`.
+	 * @param string|null          $ruleId The rule to change, null to create one.
+	 *
+	 * @return array<string, mixed> The saved rule.
+	 *
+	 * @throws RefusedException When the rule is incomplete, its name is taken, the rule is not the case's, or nothing can be stored.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	public function save(string $caseId, array $input, ?string $ruleId = null): array {
+		$rows = $this->rows(caseId: $caseId);
+		$current = [];
+		if ($ruleId !== null) {
+			$current = $this->ruleOf(rows: $rows, ruleId: $ruleId);
+		}
+
+		$rule = $this->validated(caseId: $caseId, input: ($input + $current), rows: $rows, ruleId: $ruleId);
+		if ($ruleId !== null) {
+			$rule['id'] = $ruleId;
+			return $this->write(rule: $rule);
+		}
+
+		$saved = $this->write(rule: $rule);
+		try {
+			$this->reviewerAccess->reconcile(caseId: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: a triage rule was stored but the reviewer access of its case could not be reconciled',
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+			);
+		}
+
+		return $saved;
+	}//end save()
+
+	/**
+	 * Delete the case's rule `ruleId`. The documents it marked keep their marking and its name.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $ruleId The rule.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the rule is not the case's, or cannot be deleted.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	public function delete(string $caseId, string $ruleId): void {
+		$this->ruleOf(rows: $this->rows(caseId: $caseId), ruleId: $ruleId);
+		try {
+			$this->settingsService->getObjectService()->deleteObject(
+				uuid: $ruleId,
+				register: $this->settingsService->getConfigValue('register'),
+				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+			);
+		} catch (Throwable $e) {
+			throw $this->unavailable(previous: $e);
+		}
+	}//end delete()
+
+	/**
+	 * Apply the active rules in order to every unmarked document of the case.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{counts: array<string, int>, marked: int, considered: int} The documents each rule marked,
+	 *         the total, and how many unmarked documents were looked at.
+	 *
+	 * @throws RefusedException When the rules, the reviews or a document's facts cannot be read or written.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	public function apply(string $caseId): array {
+		$rules = $this->activeRules(caseId: $caseId);
+		$counts = array_fill_keys(array_map(static fn (array $rule): string => (string)$rule['name'], $rules), 0);
+		if ($rules === []) {
+			return ['counts' => $counts, 'marked' => 0, 'considered' => 0];
+		}
+
+		$created = 0;
+		$reviews = $this->reviews->forCase(caseId: $caseId);
+		$open = $this->reviewsOpenToRules(caseId: $caseId, reviews: $reviews);
+		$considered = count($open);
+		foreach ($open as [$documentId, $review]) {
+			$rule = $this->firstMatch(caseId: $caseId, documentId: $documentId, rules: $rules);
+			if ($rule === null) {
+				continue;
+			}
+
+			$this->reviews->save(review: $this->markedByRule(review: $review, rule: $rule));
+			$counts[(string)$rule['name']]++;
+			if (isset($reviews[$documentId]) === false) {
+				$created++;
+			}
+		}
+
+		// A review a rule just created is private to the case like any other: share it with the people on it.
+		$this->reviewerAccess->reconcileAfterCreate(caseId: $caseId, created: $created);
+
+		return ['counts' => $counts, 'marked' => array_sum($counts), 'considered' => $considered];
+	}//end apply()
+
+	/**
+	 * A review as the rule marks it: its effect, the rule as source and name, and the moment.
+	 *
+	 * @param array<string, mixed> $review The review.
+	 * @param array<string, mixed> $rule   The rule that matched.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function markedByRule(array $review, array $rule): array {
+		$review['relevance'] = (string)$rule['effect'];
+		$review['relevanceSource'] = 'rule';
+		$review['rule'] = (string)$rule['name'];
+		$review['markedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+
+		return $review;
+	}//end markedByRule()
+
+	/**
+	 * The documents of the case a rule may still mark, in order, each with its review (a new one when it has none).
+	 *
+	 * @param string                              $caseId  The case UUID.
+	 * @param array<string, array<string, mixed>> $reviews The case's reviews, by document.
+	 *
+	 * @return list<array{0: string, 1: array<string, mixed>}> Document id and review.
+	 */
+	private function reviewsOpenToRules(string $caseId, array $reviews): array {
+		$open = [];
+		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
+			$review = ($reviews[$documentId] ?? ['case' => $caseId, 'documentRef' => $documentId, 'relevance' => DocumentRelevance::UNMARKED]);
+			if ($this->isOpenToRules(review: $review) === true) {
+				$open[] = [$documentId, $review];
+			}
+		}
+
+		return $open;
+	}//end reviewsOpenToRules()
+
+	/**
+	 * Whether a rule may mark this review: unmarked, and never marked by a reviewer.
+	 *
+	 * @param array<string, mixed> $review The review.
+	 *
+	 * @return bool
+	 */
+	private function isOpenToRules(array $review): bool {
+		return ($review['relevance'] ?? DocumentRelevance::UNMARKED) === DocumentRelevance::UNMARKED
+			&& ($review['relevanceSource'] ?? '') !== 'reviewer';
+	}//end isOpenToRules()
+
+	/**
+	 * The first rule whose conditions the document meets, or null.
+	 *
+	 * @param string                           $caseId     The case UUID.
+	 * @param string                           $documentId The document.
+	 * @param list<array<string, mixed>>       $rules      The active rules, in order.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @throws RefusedException When the document's facts cannot be read.
+	 */
+	private function firstMatch(string $caseId, string $documentId, array $rules): ?array {
+		$facts = $this->facts->forDocument(caseId: $caseId, documentId: $documentId);
+		$textRead = false;
+		foreach ($rules as $rule) {
+			$conditions = (array)$rule['conditions'];
+			if ($textRead === false && $this->conditions->needsText(conditions: $conditions) === true) {
+				$facts = $this->facts->withText(facts: $facts);
+				$textRead = true;
+			}
+
+			if ($this->conditions->matches(conditions: $conditions, facts: $facts) === true) {
+				return $rule;
+			}
+		}
+
+		return null;
+	}//end firstMatch()
+
+	/**
+	 * The active rules of the case in order.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function activeRules(string $caseId): array {
+		return $this->conditions->runnable(
+			// Whoever applies the rules applies every rule of the case. A rule is private to the
+			// case assignee (REQ-CRA-008), so the caller's own read could answer none of them.
+			rules: $this->reviewerAccess->recordsOf(schemaKey: self::SCHEMA_KEY, caseField: 'case', caseId: $caseId),
+			effects: self::EFFECTS
+		);
+	}//end activeRules()
+
+	/**
+	 * The rule as it will be stored, or the refusal.
+	 *
+	 * @param string                     $caseId The case UUID.
+	 * @param array<string, mixed>       $input  The rule as given, over the current one.
+	 * @param list<array<string, mixed>> $rows   The case's rules.
+	 * @param string|null                $ruleId The rule being changed, or null.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RefusedException When something is missing, unknown or taken.
+	 */
+	private function validated(string $caseId, array $input, array $rows, ?string $ruleId): array {
+		if ($this->isAvailable() === false) {
+			throw $this->unavailable(previous: null);
+		}
+
+		$name = $this->freeName(input: $input, takenNames: $this->otherRuleNames(rows: $rows, ruleId: $ruleId));
+
+		$effect = (string)($input['effect'] ?? '');
+		if (in_array($effect, self::EFFECTS, true) === false) {
+			throw $this->refusal(rule: 'triage-rule-effect-required', sentence: 'Choose whether the rule marks documents in scope or out of scope.');
+		}
+
+		$order = $this->orderOf(input: $input, rows: $rows);
+
+		return [
+			'case' => $caseId,
+			'name' => $name,
+			'conditions' => $this->conditions->normalise(raw: (array)($input['conditions'] ?? [])),
+			'effect' => $effect,
+			'order' => $order,
+			'active' => (($input['active'] ?? true) !== false),
+		];
+	}//end validated()
+
+	/**
+	 * The trimmed name of the rule as given, refused when blank or taken by another rule of the case.
+	 *
+	 * @param array<string, mixed> $input      The rule as given.
+	 * @param array<int, string>   $takenNames The names of the case's other rules.
+	 *
+	 * @return string
+	 *
+	 * @throws RefusedException When the name is missing or taken.
+	 */
+	private function freeName(array $input, array $takenNames): string {
+		$name = trim((string)($input['name'] ?? ''));
+		if ($name === '') {
+			throw $this->refusal(rule: 'triage-rule-name-required', sentence: 'Give the rule a name.');
+		}
+
+		if (in_array($name, $takenNames, true) === true) {
+			throw $this->refusal(
+				rule: 'triage-rule-name-taken',
+				sentence: 'Another rule of this case has that name.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+
+		return $name;
+	}//end freeName()
+
+	/**
+	 * The names of the case's rules other than the one being changed.
+	 *
+	 * @param list<array<string, mixed>> $rows   The case's rules.
+	 * @param string|null                $ruleId The rule being changed, or null.
+	 *
+	 * @return array<int, string>
+	 */
+	private function otherRuleNames(array $rows, ?string $ruleId): array {
+		$names = [];
+		foreach ($rows as $row) {
+			if ($this->idOf(row: $row) !== $ruleId) {
+				$names[] = (string)($row['name'] ?? '');
+			}
+		}
+
+		return $names;
+	}//end otherRuleNames()
+
+	/**
+	 * The order the rule is stored with: the given number, else after the last rule.
+	 *
+	 * @param array<string, mixed>       $input The rule as given.
+	 * @param list<array<string, mixed>> $rows  The case's rules.
+	 *
+	 * @return int
+	 */
+	private function orderOf(array $input, array $rows): int {
+		if (is_numeric($input['order'] ?? null) === true) {
+			return (int)$input['order'];
+		}
+
+		return (count($rows) + 1);
+	}//end orderOf()
+
+	/**
+	 * The case's rule with this id.
+	 *
+	 * @param list<array<string, mixed>> $rows   The case's rules.
+	 * @param string                     $ruleId The rule.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RefusedException When the case has no rule with this id.
+	 */
+	private function ruleOf(array $rows, string $ruleId): array {
+		foreach ($rows as $row) {
+			if ($this->idOf(row: $row) === $ruleId) {
+				return $row;
+			}
+		}
+
+		throw $this->refusal(rule: 'triage-rule-unknown', sentence: 'This case has no such rule.', status: self::NOT_FOUND);
+	}//end ruleOf()
+
+	/**
+	 * The uuid of a stored row.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string
+	 */
+	private function idOf(array $row): string {
+		return (string)($row['id'] ?? ($row['uuid'] ?? ($row['@self']['id'] ?? '')));
+	}//end idOf()
+
+	/**
+	 * Whether the rule schema can be read and written.
+	 *
+	 * @return bool
+	 */
+	private function isAvailable(): bool {
+		return $this->reviews->isAvailable() === true
+			&& $this->settingsService->getConfigValue(self::SCHEMA_KEY) !== '';
+	}//end isAvailable()
+
+	/**
+	 * Every rule of a case the caller may read, as stored: what a listing shows and a change starts from.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function rows(string $caseId): array {
+		if ($this->isAvailable() === false || $caseId === '') {
+			return [];
+		}
+
+		$rows = $this->searchObjectsAsArrays(
+			objectService: $this->settingsService->getObjectService(),
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+			filters: ['case' => $caseId, '_limit' => 200],
+		);
+
+		return array_values(array_filter($rows, static fn (array $row): bool => (string)($row['case'] ?? '') === $caseId));
+	}//end rows()
+
+	/**
+	 * Store a rule, creating or replacing it.
+	 *
+	 * @param array<string, mixed> $rule The rule; `id` names an existing one.
+	 *
+	 * @return array<string, mixed> The saved rule.
+	 *
+	 * @throws RefusedException When the rule cannot be written.
+	 */
+	private function write(array $rule): array {
+		$uuid = null;
+		if (isset($rule['id']) === true) {
+			$uuid = (string)$rule['id'];
+		}
+
+		unset($rule['id']);
+		try {
+			$saved = $this->saveObjectAsArray(
+				objectService: $this->settingsService->getObjectService(),
+				register: $this->settingsService->getConfigValue('register'),
+				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+				object: $rule,
+				uuid: $uuid,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: a triage rule could not be written',
+				['app' => AppIdentity::APP_ID, 'case' => ($rule['case'] ?? ''), 'exception' => $e->getMessage()]
+			);
+			throw $this->unavailable(previous: $e);
+		}
+
+		return ($saved ?? $rule);
+	}//end write()
+
+	/**
+	 * The refusal of rules that cannot be stored or applied (503).
+	 *
+	 * @param Throwable|null $previous The cause.
+	 *
+	 * @return RefusedException
+	 */
+	private function unavailable(?Throwable $previous): RefusedException {
+		return $this->refusal(
+			rule: 'triage-rule-unavailable',
+			sentence: self::UNSTORED,
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unavailable()
+
+	/**
+	 * A refusal, 422 unless said otherwise.
+	 *
+	 * @param string         $rule     The rule.
+	 * @param string         $sentence The static sentence.
+	 * @param int            $status   The status.
+	 * @param Throwable|null $previous The cause.
+	 *
+	 * @return RefusedException
+	 */
+	private function refusal(
+		string $rule,
+		string $sentence,
+		int $status = RefusedException::STATUS_UNPROCESSABLE,
+		?Throwable $previous = null,
+	): RefusedException {
+		return new RefusedException(rule: $rule, sentence: $sentence, status: $status, previous: $previous);
+	}//end refusal()
+}//end class
