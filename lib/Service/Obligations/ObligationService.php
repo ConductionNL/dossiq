@@ -313,19 +313,31 @@ class ObligationService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function blocking(string $caseId, string $statusId, bool $isClosing): array {
+		return $this->blockingAmong(obligations: $this->openFor(caseId: $caseId), move: ['statusId' => $statusId, 'isClosing' => $isClosing]);
+	}//end blocking()
+
+	/**
+	 * The obligations that block entering the status.
+	 *
+	 * @param array<int, array<string, mixed>>       $obligations The case's open obligations.
+	 * @param array{statusId: string, isClosing: bool} $move        The status entered, and whether it closes the case.
+	 *
+	 * @return array<int, array<string, mixed>> The blocking obligations.
+	 */
+	private function blockingAmong(array $obligations, array $move): array {
 		$blocking = [];
-		foreach ($this->openFor(caseId: $caseId) as $obligation) {
+		foreach ($obligations as $obligation) {
 			if ($this->declaration->blocksStatus(
 				obligation: $obligation,
-				statusId: $statusId,
-				isClosing: $isClosing,
+				statusId: $move['statusId'],
+				isClosing: $move['isClosing'],
 			) === true) {
 				$blocking[] = $obligation;
 			}
 		}
 
 		return $blocking;
-	}//end blocking()
+	}//end blockingAmong()
 
 	/**
 	 * Settle an obligation into a terminal state.
