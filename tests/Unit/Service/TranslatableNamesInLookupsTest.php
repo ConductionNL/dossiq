@@ -35,7 +35,6 @@ use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Service\Transitions\TransitionDestination;
 use OCA\Dossiq\Service\Transitions\TransitionPreconditions;
 use OCA\Dossiq\Service\Zgw\BrcDocumentLinkRules;
-use OCA\Dossiq\Service\Zgw\MappedObjects;
 use OCA\Dossiq\Service\Zgw\ZtcRelatedTypeLookup;
 use OCA\Dossiq\Service\ZgwBrcRulesService;
 use OCA\Dossiq\Service\ZgwService;
@@ -214,10 +213,12 @@ class TranslatableNamesInLookupsTest extends TestCase {
 			}
 		};
 
-		(new ReflectionMethod($lookup, 'sameNameDocumentTypeIds'))->invoke(
+		(new ReflectionMethod($lookup, 'sameNameDocumentTypeUrls'))->invoke(
 			$lookup,
-			new MappedObjects(objectService: $objectService, mapping: ['sourceRegister' => '1', 'sourceSchema' => '2']),
-			'iot-1'
+			$objectService,
+			['sourceRegister' => '1', 'sourceSchema' => '2'],
+			'iot-1',
+			'https://example.org'
 		);
 
 		self::assertSame('Aanvraagformulier', $objectService->asked['name']);
