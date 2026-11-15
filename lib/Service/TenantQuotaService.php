@@ -130,7 +130,7 @@ class TenantQuotaService implements TenantQuotaServiceInterface {
 
 		$rows = [];
 		foreach (self::TIER_DEFAULTS[$tier] as $quotaType => $cfg) {
-			$object = $this->initialQuotaRow(tenantId: $tenantId, quotaType: $quotaType, cfg: $cfg);
+			$object = $this->initialQuotaRow(tenantId: $tenantId, quota: ['quotaType' => $quotaType] + $cfg);
 
 			$row = $this->persistQuotaRow(objectService: $objectService, object: $object);
 			if ($row !== null) {
@@ -145,20 +145,20 @@ class TenantQuotaService implements TenantQuotaServiceInterface {
 	 * The quota row a tier default starts a tenant on.
 	 *
 	 * @param string $tenantId Tenant UUID.
-	 * @param string $quotaType Type.
-	 * @param array<string, mixed> $cfg The tier default (limit, enforcement).
+	 * @param array<string, mixed> $quota The type (quotaType) and its tier default (limit, enforcement).
 	 *
 	 * @return array<string, mixed> The row to persist.
 	 *
 	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
-	private function initialQuotaRow(string $tenantId, string $quotaType, array $cfg): array {
+	private function initialQuotaRow(string $tenantId, array $quota): array {
+		$quotaType = $quota['quotaType'];
 		$object = [
 			'tenantRef' => $tenantId,
 			'quotaType' => $quotaType,
 			'currentUsage' => 0,
 			'softLimitWarningPercent' => 80,
-			'enforcement' => $cfg['enforcement'],
+			'enforcement' => $quota['enforcement'],
 			'resetAt' => $this->nextResetAt(quotaType: $quotaType),
 		];
 
@@ -169,12 +169,12 @@ class TenantQuotaService implements TenantQuotaServiceInterface {
 			$this->organisationLimits->write(
 				tenantId: $tenantId,
 				quotaType: $quotaType,
-				limit: $cfg['limit']
+				limit: $quota['limit']
 			);
 		}
 
 		if ($isMapped === false) {
-			$object['limit'] = $cfg['limit'];
+			$object['limit'] = $quota['limit'];
 		}
 
 		return $object;
