@@ -231,30 +231,8 @@ class ZgwAuthMiddleware extends Middleware {
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): JSONResponse {
-		if ($exception instanceof ZgwAuthException && $exception->getStatusCode() === Http::STATUS_UNAUTHORIZED) {
-			return new JSONResponse(
-				data: [
-					'type' => 'https://datatracker.ietf.org/doc/html/rfc7235#section-3.1',
-					'code' => 'not_authenticated',
-					'title' => 'Authenticatiegegevens zijn niet geldig.',
-					'status' => Http::STATUS_UNAUTHORIZED,
-					'detail' => $exception->getMessage(),
-				],
-				statusCode: Http::STATUS_UNAUTHORIZED
-			);
-		}
-
 		if ($exception instanceof ZgwAuthException) {
-			return new JSONResponse(
-				data: [
-					'type' => 'https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3',
-					'code' => 'permission_denied',
-					'title' => 'U heeft geen toestemming om deze actie uit te voeren.',
-					'status' => $exception->getStatusCode(),
-					'detail' => $exception->getMessage(),
-				],
-				statusCode: $exception->getStatusCode()
-			);
+			return $this->authErrorResponse(exception: $exception);
 		}
 
 		// Per the Nextcloud middleware contract, an afterException() handler
@@ -267,6 +245,39 @@ class ZgwAuthMiddleware extends Middleware {
 		// offers the exception to the next middleware / NC's core handler.
 		throw $exception;
 	}//end afterException()
+
+	/**
+	 * The ZGW error response for an authentication or authorisation failure.
+	 *
+	 * @param ZgwAuthException $exception The failure.
+	 *
+	 * @return JSONResponse A 401 for a failed authentication, else the permission error.
+	 */
+	private function authErrorResponse(ZgwAuthException $exception): JSONResponse {
+		if ($exception->getStatusCode() === Http::STATUS_UNAUTHORIZED) {
+			return new JSONResponse(
+				data: [
+					'type' => 'https://datatracker.ietf.org/doc/html/rfc7235#section-3.1',
+					'code' => 'not_authenticated',
+					'title' => 'Authenticatiegegevens zijn niet geldig.',
+					'status' => Http::STATUS_UNAUTHORIZED,
+					'detail' => $exception->getMessage(),
+				],
+				statusCode: Http::STATUS_UNAUTHORIZED
+			);
+		}
+
+		return new JSONResponse(
+			data: [
+				'type' => 'https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3',
+				'code' => 'permission_denied',
+				'title' => 'U heeft geen toestemming om deze actie uit te voeren.',
+				'status' => $exception->getStatusCode(),
+				'detail' => $exception->getMessage(),
+			],
+			statusCode: $exception->getStatusCode()
+		);
+	}//end authErrorResponse()
 
 	/**
 	 * Enforce ZGW scope-based authorization.
