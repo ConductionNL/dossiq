@@ -241,6 +241,22 @@ class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 			return ['note' => $flowService, 'rows' => []];
 		}
 
+		return $this->adoptStored(
+			user: $user,
+			adopt: ['objectService' => $objectService, 'flowService' => $flowService, 'enable' => $enable, 'dryRun' => $dryRun]
+		);
+	}//end adoptAll()
+
+	/**
+	 * Adopt every stored dossiq flow as the administrator, or say none is stored yet.
+	 *
+	 * @param IUser                $user  The administrator volunteering to own the flows.
+	 * @param array<string, mixed> $adopt The object service, the flow service, whether to enable each adopted flow
+	 *                                    and whether to write nothing.
+	 *
+	 * @return array{note: string, rows: array<int, array<string, mixed>>}
+	 */
+	private function adoptStored(IUser $user, array $adopt): array {
 		$census = $this->census();
 		if ($census['flows'] === []) {
 			return [
@@ -249,15 +265,15 @@ class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 			];
 		}
 
-		$run = new AdoptionRun(flowService: $flowService, uid: $user->getUID());
-		$run->enable = $enable;
-		$run->dryRun = $dryRun;
+		$run = new AdoptionRun(flowService: $adopt['flowService'], uid: $user->getUID());
+		$run->enable = $adopt['enable'];
+		$run->dryRun = $adopt['dryRun'];
 
-		return $objectService->runAs(
+		return $adopt['objectService']->runAs(
 			$user,
 			fn (): array => ['note' => '', 'rows' => $this->adoptEach(run: $run, flows: $census['flows'])]
 		);
-	}//end adoptAll()
+	}//end adoptStored()
 
 	/**
 	 * Why OpenRegister cannot run an adoption pass, or an empty string when it can.
