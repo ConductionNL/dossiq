@@ -76,6 +76,7 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateOcsUrl, generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
 import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { fileNodeDialog } from '../mixins/fileNodeDialog.js'
 
 /** Nextcloud's share types for a person and a group. */
 const SHARE_TYPE_USER = 0
@@ -106,21 +107,7 @@ export default {
 	name: 'DocumentAccessExceptionDialog',
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect, NcTextField },
 
-	mixins: [caseDialogResolved],
-
-	props: {
-		/** The selected file's Nextcloud id, merged on by CnFilesBrowser. */
-		fileId: {
-			type: [String, Number],
-			default: '',
-		},
-
-		/** The selected file's name, for the title. */
-		fileName: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogResolved, fileNodeDialog],
 
 	emits: ['close'],
 

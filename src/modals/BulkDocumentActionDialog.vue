@@ -113,6 +113,7 @@ import { emit } from '@nextcloud/event-bus'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcNoteCard, NcSelect } from '@nextcloud/vue'
 import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { fileNodeDialog } from '../mixins/fileNodeDialog.js'
 import { classificationOptions as buildClassificationOptions } from '../utils/dossierHelpers.js'
 
 /**
@@ -150,7 +151,7 @@ export default {
 	name: 'BulkDocumentActionDialog',
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect },
 
-	mixins: [caseDialogResolved],
+	mixins: [caseDialogResolved, fileNodeDialog],
 
 	props: {
 		/**
@@ -177,27 +178,12 @@ export default {
 		},
 
 		/**
-		 * The clicked node's Nextcloud file id, merged onto an `open-modal`
-		 * row action's props by CnFilesBrowser.
-		 */
-		fileId: {
-			type: [String, Number],
-			default: '',
-		},
-
-		/**
 		 * The Nextcloud file ids of the files ticked in the Files tab, handed
 		 * in by CnFilesBrowser's bulk bar.
 		 */
 		fileIds: {
 			type: Array,
 			default: () => [],
-		},
-
-		/** The clicked node's name, for the dialog's own sentence. */
-		fileName: {
-			type: String,
-			default: '',
 		},
 	},
 
