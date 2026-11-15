@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\RefusesOutsideReportAudience;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DeadlineComplianceCalculatorInterface;
 use OCA\Dossiq\Kernel\Contracts\DoorlooptijdServiceInterface;
@@ -46,6 +47,8 @@ use OCP\IUserSession;
  * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T02
  */
 class DoorlooptijdController extends Controller {
+	use RefusesOutsideReportAudience;
+
 	/**
 	 * Constructor.
 	 *
@@ -79,7 +82,9 @@ class DoorlooptijdController extends Controller {
 	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 */
 	public function metrics(): JSONResponse|DataDownloadResponse {
-		$denied = $this->refuseReader();
+		// The report is an aggregate over cases the caller was never granted, so
+		// OpenRegister's per-object refusal never gets a chance to speak.
+		$denied = $this->audienceRefusal();
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -107,31 +112,6 @@ class DoorlooptijdController extends Controller {
 
 		return new JSONResponse($this->leadTimeService->getMetrics(params: $this->metricsParams(query: $query)));
 	}//end metrics()
-
-	/**
-	 * Refuse a reader who may not see the organisation's processing times.
-	 *
-	 * @return JSONResponse|null A 401 or 403 response, or null when the reader may see them.
-	 *
-	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
-	 */
-	private function refuseReader(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// 🔴 MEASURED 2026-09-18: `@NoAdminRequired` and no group check, so every
-		// authenticated account read the organisation's processing times, its
-		// cases at risk and its performance per case type. It is an AGGREGATE
-		// over cases the caller was never granted, so OpenRegister's per-object
-		// refusal never gets a chance to speak.
-		if ($this->audience->isInAudience(user: $user) === false) {
-			return new JSONResponse(['message' => ReportingAudienceInterface::REFUSAL], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
-	}//end refuseReader()
 
 	/**
 	 * Refuse a download format or a grouping the metrics do not offer.

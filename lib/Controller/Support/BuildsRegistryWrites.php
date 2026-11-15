@@ -38,7 +38,6 @@ trait BuildsRegistryWrites {
 	 * Writes registry objects from this request's body.
 	 *
 	 * @return RegistryObjectWrite
-
 	 */
 	private function writes(): RegistryObjectWrite {
 		$writes = new RegistryObjectWrite();
