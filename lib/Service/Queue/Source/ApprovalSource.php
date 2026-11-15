@@ -26,7 +26,6 @@ namespace OCA\Dossiq\Service\Queue\Source;
 
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\ListsWaitingRequests;
 use OCP\IL10N;
 
 /**
@@ -35,8 +34,6 @@ use OCP\IL10N;
  * @spec openspec/specs/my-work/spec.md
  */
 class ApprovalSource extends RegisterBackedSource {
-	use ListsWaitingRequests;
-
 	/**
 	 * The statuses an advice request has finished in: the register's own
 	 * (`received`, `expired`) and the Dutch ones older rows still carry.
@@ -125,7 +122,16 @@ class ApprovalSource extends RegisterBackedSource {
 	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function itemsFor(string $userId): array {
-		return $this->waitingItems(schema: 'adviesAanvraag', filters: ['advisor' => $userId]);
+		$rows = new WaitingRequestRows(closedStatuses: self::CLOSED_STATUSES);
+		$items = [];
+		foreach ($this->rows(schema: 'adviesAanvraag', filters: ['advisor' => $userId]) as $row) {
+			$id = $this->idOf(row: $row);
+			if ($rows->isWaiting(id: $id, row: $row) === true) {
+				$items[] = $this->itemOf(row: $row, id: $id);
+			}
+		}
+
+		return $items;
 	}//end itemsFor()
 
 	/**
