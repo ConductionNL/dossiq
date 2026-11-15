@@ -370,7 +370,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 				resultTypeId: $this->textOf(data: $data, field: CaseActionList::CLOSING_INPUT),
 			);
 		} catch (Throwable $e) {
-			throw $this->classify(failure: $e, object: $object, caseId: $caseId, action: $action);
+			throw $this->classify(failure: $e, move: ['object' => $object, 'caseId' => $caseId, 'action' => $action]);
 		}
 	}//end execute()
 
@@ -419,15 +419,15 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * mapping is one expression a test can drive one row at a time.
 	 *
 	 * @param Throwable $failure What the engine threw.
-	 * @param array<string, mixed> $object The case payload OpenRegister handed over.
-	 * @param string $caseId The case UUID.
-	 * @param string $action The transition id that was asked for.
+	 * @param array{object: array<string, mixed>, caseId: string, action: string} $move The case payload OpenRegister
+	 *        handed over, the case UUID and the transition id that was asked for.
 	 *
 	 * @return Throwable The refusal unchanged, or the breakage/not-found type that wraps it.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function classify(Throwable $failure, array $object, string $caseId, string $action): Throwable {
+	private function classify(Throwable $failure, array $move): Throwable {
+		['object' => $object, 'caseId' => $caseId, 'action' => $action] = $move;
 		// A guard said no, and said why. Matched by type rather than by message
 		// so the failed-guard snapshots reach the client intact.
 		if ($failure instanceof GuardFailedException) {

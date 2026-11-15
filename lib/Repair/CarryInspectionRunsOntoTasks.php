@@ -136,7 +136,7 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 				$this->loadTemplates(objects: $objects, register: $register);
 				foreach (array_keys(InspectionRunCarryOver::SOURCES) as $schema) {
 					foreach ($this->read(objects: $objects, register: $register, schema: $schema) as $object) {
-						$outcome = $this->carryOne(tasks: $tasks, schema: $schema, object: $object, output: $output);
+						$outcome = $this->carryOne(sink: ['tasks' => $tasks, 'output' => $output], source: ['schema' => $schema, 'object' => $object]);
 						$counts[$outcome]++;
 					}
 				}
@@ -151,14 +151,14 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	/**
 	 * Carry one source run, unless its case already holds it.
 	 *
-	 * @param object               $tasks  OpenRegister's TaskService.
-	 * @param string               $schema The source schema slug.
-	 * @param array<string, mixed> $object The source run.
-	 * @param IOutput              $output The output.
+	 * @param array{tasks: object, output: IOutput}               $sink   OpenRegister's TaskService and the output.
+	 * @param array{schema: string, object: array<string, mixed>} $source The source schema slug and the source run.
 	 *
 	 * @return string The count it adds to: `already`, `failed` or `carried`.
 	 */
-	private function carryOne(object $tasks, string $schema, array $object, IOutput $output): string {
+	private function carryOne(array $sink, array $source): string {
+		['tasks' => $tasks, 'output' => $output] = $sink;
+		['schema' => $schema, 'object' => $object] = $source;
 		$ref = $this->carry->legacyRef(schema: $schema, object: $object);
 		$caseId = (string)($object['case'] ?? '');
 		if (isset($this->carriedFor(caseId: $caseId)[$ref]) === true) {
