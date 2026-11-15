@@ -127,15 +127,17 @@ class MandaatRepository {
 	 */
 	private function mandatenOf(array $store, string $decisionId): array {
 		try {
-			return $this->searchObjectsAsArrays(
+			$mandaten = $this->searchObjectsAsArrays(
 				objectService: $store['objectService'],
 				register: $store['register'],
 				schema: $store['schema'],
 				filters: ['mandateDecision' => $decisionId]
 			);
 		} catch (\Throwable $e) {
-			return [];
+			$mandaten = [];
 		}
+
+		return $mandaten;
 	}//end mandatenOf()
 
 	/**
