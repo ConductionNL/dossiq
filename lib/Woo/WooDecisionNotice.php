@@ -115,7 +115,17 @@ class WooDecisionNotice {
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
 	 */
 	public function tell(array $case, string $caseId, string $publicationId): bool {
-		$decision = new PublishedDecision(case: $case, caseId: $caseId, publicationId: $publicationId);
+		return $this->tellAbout(decision: new PublishedDecision(case: $case, caseId: $caseId, publicationId: $publicationId));
+	}//end tell()
+
+	/**
+	 * Tell the resident about the published decision, when the notice can be written.
+	 *
+	 * @param PublishedDecision $decision The case, its uuid and the publication.
+	 *
+	 * @return bool True when the notice was written.
+	 */
+	private function tellAbout(PublishedDecision $decision): bool {
 		$objectService = $this->settingsService->getObjectService();
 		$ready = $this->canTell(decision: $decision, objectService: $objectService);
 		if ($ready === false) {
@@ -130,7 +140,7 @@ class WooDecisionNotice {
 		}//end try
 
 		return true;
-	}//end tell()
+	}//end tellAbout()
 
 	/**
 	 * Write the decision notice into the resident's portal messages, as the system.

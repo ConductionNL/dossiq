@@ -323,14 +323,7 @@ class RemedyLodging implements RemedyLodgingInterface {
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-lodged-remedy-is-judged-timely-against-the-declared-term-req-rml-002
 	 */
 	public function isTimely(array $decision, int $termDays, DateTimeImmutable $received): bool {
-		$madeKnown = null;
-		foreach (['publicationDate', 'deliveryDate', 'decisionDate'] as $field) {
-			$madeKnown = $this->dates->tryParse(value: ($decision[$field] ?? null));
-			if ($madeKnown !== null) {
-				break;
-			}
-		}
-
+		$madeKnown = $this->madeKnownOn(decision: $decision);
 		if ($madeKnown === null || $termDays <= 0) {
 			return true;
 		}
@@ -344,6 +337,24 @@ class RemedyLodging implements RemedyLodgingInterface {
 		// whatever hour either moment carries.
 		return $this->dates->formatCalendarDate(moment: $received) <= $this->dates->formatCalendarDate(moment: $end);
 	}//end isTimely()
+
+	/**
+	 * The day the decision was made known: its publication, else its delivery, else its decision date.
+	 *
+	 * @param array<string, mixed> $decision The decision.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null when none parses.
+	 */
+	private function madeKnownOn(array $decision): ?DateTimeImmutable {
+		foreach (['publicationDate', 'deliveryDate', 'decisionDate'] as $field) {
+			$madeKnown = $this->dates->tryParse(value: ($decision[$field] ?? null));
+			if ($madeKnown !== null) {
+				return $madeKnown;
+			}
+		}
+
+		return null;
+	}//end madeKnownOn()
 
 	/**
 	 * Refuse, before anything is opened, an objection the objection schema would refuse.

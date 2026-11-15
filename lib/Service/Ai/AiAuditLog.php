@@ -125,7 +125,18 @@ class AiAuditLog {
 		$limit = $this->clampLimit(limit: $limit);
 		$offset = max(0, $offset);
 
-		$window = new AuditPageWindow(limit: $limit, offset: $offset);
+		return $this->listIn(window: new AuditPageWindow(limit: $limit, offset: $offset), filters: $filters);
+	}//end list()
+
+	/**
+	 * One window of the audit entries matching the filters; an empty page when the store is away or the read fails.
+	 *
+	 * @param AuditPageWindow      $window  The page size and offset.
+	 * @param array<string, mixed> $filters The filters.
+	 *
+	 * @return array<string, mixed> The page.
+	 */
+	private function listIn(AuditPageWindow $window, array $filters): array {
 		$empty = $this->page(entries: [], window: $window);
 
 		try {
@@ -139,7 +150,7 @@ class AiAuditLog {
 			$this->logger->error('Failed to list AI audit entries', ['error' => $e->getMessage()]);
 			return $empty;
 		}//end try
-	}//end list()
+	}//end listIn()
 
 	/**
 	 * Read one page of audit entries from the storage, as the list answer.
