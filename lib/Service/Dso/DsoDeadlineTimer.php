@@ -186,25 +186,11 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 		$critical = $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5);
 
 		return [
-			$this->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
-			$this->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
-			$this->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
+			$this->timers()->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
+			$this->timers()->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
+			$this->timers()->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
 		];
 	}//end escalationRules()
-
-	/**
-	 * One escalation rule.
-	 *
-	 * @param string $trigger slaBreached or preBreach.
-	 * @param int    $offset  The offset.
-	 * @param string $unit    The offset unit.
-	 * @param string $message The message identity.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function rule(string $trigger, int $offset, string $unit, string $message): array {
-		return $this->timers()->rule(trigger: $trigger, offset: $offset, unit: $unit, message: $message);
-	}//end rule()
 
 	/**
 	 * A lead setting, read as the job read it.
