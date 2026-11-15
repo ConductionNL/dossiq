@@ -156,16 +156,9 @@ class AppointmentController extends Controller {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function cancel(string $appointmentId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->mayMutateAppointment(appointmentId: $appointmentId, user: $user) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Not authorized'],
-				Http::STATUS_FORBIDDEN
-			);
+		$refusal = $this->requireAppointmentMutator(appointmentId: $appointmentId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$result = $this->appointmentService->cancelAppointment($appointmentId);
@@ -184,16 +177,9 @@ class AppointmentController extends Controller {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function noShow(string $appointmentId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->mayMutateAppointment(appointmentId: $appointmentId, user: $user) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Not authorized'],
-				Http::STATUS_FORBIDDEN
-			);
+		$refusal = $this->requireAppointmentMutator(appointmentId: $appointmentId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$result = $this->appointmentService->markNoShow($appointmentId);
@@ -231,6 +217,29 @@ class AppointmentController extends Controller {
 		$slots = $this->appointmentService->getTimeslots($productId, $locationId, $date);
 		return new JSONResponse(['success' => true, 'timeslots' => $slots]);
 	}//end timeslots()
+
+	/**
+	 * The refusal for a caller who may not change this appointment, else null.
+	 *
+	 * @param string $appointmentId The appointment UUID.
+	 *
+	 * @return JSONResponse|null 401 without a session, 403 without the right, else null.
+	 */
+	private function requireAppointmentMutator(string $appointmentId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->mayMutateAppointment(appointmentId: $appointmentId, user: $user) === false) {
+			return new JSONResponse(
+				['success' => false, 'error' => 'Not authorized'],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return null;
+	}//end requireAppointmentMutator()
 
 	/**
 	 * Whether the caller may mutate the appointment with the given id.

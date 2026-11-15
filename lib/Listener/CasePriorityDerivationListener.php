@@ -43,7 +43,8 @@ namespace OCA\Dossiq\Listener;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\CasePriorityServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
-use OCA\Dossiq\Listener\Support\SchemaMembership;
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
+use OCA\Dossiq\Listener\Support\ReadsCaseWrites;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -51,7 +52,6 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Derive a case's priority, and record an override as a fact.
@@ -61,6 +61,13 @@ use Throwable;
  * @spec openspec/specs/case-priority/spec.md
  */
 class CasePriorityDerivationListener implements IEventListener {
+	use ReadsCaseWrites;
+
+	/**
+	 * The check named in the log when a payload cannot be read.
+	 */
+	private const PAYLOAD_CHECK = 'priority derivation';
+
 	/**
 	 * The bookkeeping an override carries, cleared together with it.
 	 *
@@ -98,18 +105,7 @@ class CasePriorityDerivationListener implements IEventListener {
 	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->apply(event: $event, entity: $event->getObject(), previous: null);
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->apply(
-				event: $event,
-				entity: $event->getNewObject(),
-				previous: $event->getOldObject()
-			);
-		}
+		(new PreSaveCheck(logger: $this->logger))->inspectWithPrevious(event: $event, inspect: $this->apply(...));
 	}//end handle()
 
 	/**
@@ -122,13 +118,12 @@ class CasePriorityDerivationListener implements IEventListener {
 	 * @return void
 	 */
 	private function apply(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity, ?ObjectEntity $previous): void {
-		$payload = $this->payload(entity: $entity);
-		if ($payload === null || $this->isCaseSchema(object: $payload) === false) {
+		$payload = $this->caseAsSaved(event: $event, entity: $entity);
+		if ($payload === null) {
 			return;
 		}
 
 		$modified = $event->getModifiedData();
-		$payload = array_merge($payload, $modified);
 
 		$stamp = $this->overrideStamp(payload: $payload, previous: $this->previousPayload(previous: $previous));
 		$payload = array_merge($payload, $stamp);
@@ -198,33 +193,4 @@ class CasePriorityDerivationListener implements IEventListener {
 
 		return $user->getUID();
 	}//end actor()
-
-	/**
-	 * Read an entity's payload, or null when it cannot be read.
-	 *
-	 * @param ObjectEntity $entity The entity carried by the event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null.
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: priority derivation could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
-	}//end payload()
-
-	/**
-	 * Whether the supplied payload belongs to the `case` schema.
-	 *
-	 * @param array<string, mixed> $object Object payload (incl. `@self`).
-	 *
-	 * @return boolean True when this is a case.
-	 */
-	private function isCaseSchema(array $object): bool {
-		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('case_schema'));
-	}//end isCaseSchema()
 }//end class

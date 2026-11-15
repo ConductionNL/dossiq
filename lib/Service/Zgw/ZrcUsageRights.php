@@ -36,6 +36,7 @@ use OCA\Dossiq\Support\NormalisesObjectRows;
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 class ZrcUsageRights {
+	use FindsMappedObjects;
 	use NormalisesObjectRows;
 
 	/**
@@ -354,35 +355,4 @@ class ZrcUsageRights {
 
 		return $indGr;
 	}//end usageRightsOf()
-
-	/**
-	 * Find one object of a mapped schema.
-	 *
-	 * @param string $uuid The object.
-	 * @param array $config The mapping.
-	 *
-	 * @return mixed The row, or null.
-	 */
-	private function find(string $uuid, array $config): mixed {
-		return $this->zgwService->getObjectService()->find(
-			$uuid,
-			register: $config['sourceRegister'],
-			schema: $config['sourceSchema']
-		);
-	}//end find()
-
-	/**
-	 * The first UUID in a value, or null.
-	 *
-	 * @param string $value A URL or bare uuid.
-	 *
-	 * @return string|null
-	 */
-	private function uuidOf(string $value): ?string {
-		if ($value === '' || preg_match(self::UUID_PATTERN, $value, $matches) !== 1) {
-			return null;
-		}
-
-		return $matches[1];
-	}//end uuidOf()
 }//end class

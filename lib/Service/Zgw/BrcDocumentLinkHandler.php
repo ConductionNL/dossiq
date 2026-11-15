@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service\Zgw;
 use OCA\Dossiq\Kernel\Contracts\BrcCrossRegisterSyncInterface;
 use OCA\Dossiq\Kernel\Contracts\BrcDocumentLinkHandlerInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Support\MapsZgwRows;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -43,6 +44,7 @@ use OCP\IRequest;
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
+	use MapsZgwRows;
 	use NormalisesObjectRows;
 
 	/**
@@ -76,34 +78,19 @@ class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function index(IRequest $request): JSONResponse {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $this->zgwService->unavailableResponse();
-		}
-
-		$resource = 'besluitinformatieobjecten';
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-		if ($mappingConfig === null) {
-			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
+		$bio = $this->bioRequest(request: $request);
+		if ($bio instanceof JSONResponse) {
+			return $bio;
 		}
 
 		try {
-			$objects = $this->searchLinks(
-				bio: new BioRequest(request: $request, objectService: $objectService, mappingConfig: $mappingConfig)
-			);
-			$baseUrl = $this->zgwService->buildBaseUrl($request, self::ZGW_API, $resource);
-			$mapped = $this->mapOutbound(objects: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
+			$objects = $this->searchLinks(bio: $bio);
+			$baseUrl = $this->zgwService->buildBaseUrl($request, self::ZGW_API, 'besluitinformatieobjecten');
+			$mapped = $this->mapOutbound(objects: $objects, mappingConfig: $bio->mappingConfig, baseUrl: $baseUrl);
 
 			return new JSONResponse(data: $mapped);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'BRC list BIO error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Internal server error'],
-				statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->loggedServerError(logPrefix: 'BRC list BIO error: ', e: $e);
 		}//end try
 	}//end indexBesluitInformatieObjecten()
 
@@ -117,24 +104,7 @@ class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function searchLinks(BioRequest $bio): array {
-		$objectService = $bio->objectService;
-		$mappingConfig = $bio->mappingConfig;
-		$params = $bio->request->getParams();
-		$filters = $this->zgwService->translateQueryParams(
-			params: $params,
-			mappingConfig: $mappingConfig
-		);
-
-		$searchParams = array_merge($filters, ['_limit' => 100]);
-
-		$query = $objectService->buildSearchQuery(
-			requestParams: $searchParams,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
-		);
-		$result = $objectService->searchObjectsPaginated(query: $query);
-
-		return $result['results'] ?? [];
+		return $this->filteredRows(objectService: $bio->objectService, mappingConfig: $bio->mappingConfig, params: $bio->request->getParams());
 	}//end searchLinks()
 
 	/**
@@ -149,20 +119,7 @@ class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function mapOutbound(array $objects, array $mappingConfig, string $baseUrl): array {
-		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-		$mapped = [];
-		foreach ($objects as $object) {
-			$objectData = $this->objectToArray(row: $object);
-
-			$mapped[] = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
-		}
-
-		return $mapped;
+		return $this->outboundRows(rows: $objects, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
 	}//end mapOutbound()
 
 	/**
@@ -178,30 +135,15 @@ class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function create(IRequest $request): JSONResponse {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $this->zgwService->unavailableResponse();
-		}
-
-		$resource = 'besluitinformatieobjecten';
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-		if ($mappingConfig === null) {
-			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
+		$bio = $this->bioRequest(request: $request);
+		if ($bio instanceof JSONResponse) {
+			return $bio;
 		}
 
 		try {
-			return $this->createChecked(
-				bio: new BioRequest(request: $request, objectService: $objectService, mappingConfig: $mappingConfig)
-			);
+			return $this->createChecked(bio: $bio);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'BRC create BIO error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->loggedFailure(logPrefix: 'BRC create BIO error: ', e: $e);
 		}//end try
 	}//end createBesluitInformatieObject()
 
@@ -327,19 +269,13 @@ class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function destroy(IRequest $request, string $uuid): JSONResponse {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $this->zgwService->unavailableResponse();
+		$bio = $this->bioRequest(request: $request);
+		if ($bio instanceof JSONResponse) {
+			return $bio;
 		}
 
 		$resource = 'besluitinformatieobjecten';
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-		if ($mappingConfig === null) {
-			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
-		}
-
 		$object = $resource . ' ' . $uuid;
-		$bio = new BioRequest(request: $request, objectService: $objectService, mappingConfig: $mappingConfig);
 		$bioObj = $this->readBio(bio: $bio, uuid: $uuid, object: $object);
 		if ($bioObj instanceof JSONResponse) {
 			return $bioObj;
@@ -420,6 +356,28 @@ class BrcDocumentLinkHandler implements BrcDocumentLinkHandlerInterface {
 
 		return [$decisionUrl, $ioUrl];
 	}//end deleteBio()
+
+	/**
+	 * The object service and BIO mapping for a request, or the response that says why they are missing.
+	 *
+	 * @param IRequest $request The incoming request.
+	 *
+	 * @return BioRequest|JSONResponse
+	 */
+	private function bioRequest(IRequest $request): BioRequest|JSONResponse {
+		$objectService = $this->zgwService->getObjectService();
+		if ($objectService === null) {
+			return $this->zgwService->unavailableResponse();
+		}
+
+		$resource = 'besluitinformatieobjecten';
+		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
+		if ($mappingConfig === null) {
+			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
+		}
+
+		return new BioRequest(request: $request, objectService: $objectService, mappingConfig: $mappingConfig);
+	}//end bioRequest()
 
 	/**
 	 * Delete the OIO in the DRC that matched the deleted BIO.

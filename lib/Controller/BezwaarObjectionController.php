@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
 use OCA\Dossiq\Kernel\Contracts\BezwaarCreationHookInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
@@ -134,13 +135,9 @@ class BezwaarObjectionController extends Controller {
 	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
 	 */
 	private function accessRefusal(string $caseId): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = (new CaseAccessRefusal(userSession: $this->userSession, guard: $this->accessGuard))->requireChangeAccess(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return null;

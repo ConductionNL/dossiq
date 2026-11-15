@@ -76,12 +76,12 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 		array $roleSnapshot = [],
 		array $conditionsApplied = [],
 	): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = $this->target();
+		if ($target === null) {
 			return [];
 		}
+
+		[$objectService, $register, $schema] = $target;
 
 		$row = [
 			'caseId' => $caseId,
@@ -118,12 +118,12 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function getDecisionAuditTrail(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = $this->target();
+		if ($target === null) {
 			return [];
 		}
+
+		[$objectService, $register, $schema] = $target;
 
 		try {
 			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['caseId' => $caseId]);
@@ -144,12 +144,12 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function getDecisionByMandaat(string $mandateId, ?DateTimeImmutable $from = null, ?DateTimeImmutable $until = null): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = $this->target();
+		if ($target === null) {
 			return [];
 		}
+
+		[$objectService, $register, $schema] = $target;
 
 		try {
 			$rows = $this->searchObjectsAsArrays(
@@ -197,4 +197,20 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 
 		return $out;
 	}//end filterByDateRange()
+
+	/**
+	 * OpenRegister, the register and the mandate-use schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function target(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end target()
 }//end class

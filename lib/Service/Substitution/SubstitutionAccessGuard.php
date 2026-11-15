@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Service\Substitution;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SessionUid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
@@ -81,12 +82,7 @@ class SubstitutionAccessGuard {
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function currentUid(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new SessionUid(userSession: $this->userSession))->uid();
 	}//end currentUid()
 
 	/**
