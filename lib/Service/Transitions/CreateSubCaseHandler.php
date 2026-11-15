@@ -61,29 +61,9 @@ class CreateSubCaseHandler implements ActionHandlerInterface, CreateSubCaseHandl
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		try {
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return new ActionResult(succeeded: false, error: 'storage_unavailable');
-			}
-
-			$target = $this->caseTarget();
-			if ($target === null) {
-				return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
-			}
-
-			[$register, $caseSchema] = $target;
-
-			$subCase = ['title' => (string)($actionConfig['title'] ?? sprintf('Deelzaak na %s', $transitionContext['transitionLabel'] ?? ''))]
-				+ $this->subCaseRecord(actionConfig: $actionConfig, case: $case);
-
-			// On the flow path the engine's RegistryStepDispatcher already runs
-			// this handler inside `ObjectService::runAs()` as the run's acting
-			// identity (openregister#3332); on the interactive path the ambient
-			// session user answers the permission checks. No local wrap needed.
-			$created = $objectService->saveObject(object: $subCase, register: $register, schema: $caseSchema);
-			$subId = $this->createdId(created: $created);
-
-			return new ActionResult(succeeded: true, data: ['subCaseId' => $subId]);
+			return $this->createSubCase(
+				request: ['actionConfig' => $actionConfig, 'case' => $case, 'transitionLabel' => ($transitionContext['transitionLabel'] ?? '')]
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CreateSubCaseHandler failed',
@@ -92,6 +72,42 @@ class CreateSubCaseHandler implements ActionHandlerInterface, CreateSubCaseHandl
 			return new ActionResult(succeeded: false, error: 'create_sub_case_failed');
 		}//end try
 	}//end handle()
+
+	/**
+	 * Save the sub-case the action declares, under the parent case.
+	 *
+	 * @param array<string, mixed> $request The `actionConfig`, the parent `case` and the transition's `transitionLabel`.
+	 *
+	 * @return ActionResult
+	 *
+	 * @throws \Throwable When the sub-case cannot be saved.
+	 */
+	private function createSubCase(array $request): ActionResult {
+		$actionConfig = $request['actionConfig'];
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return new ActionResult(succeeded: false, error: 'storage_unavailable');
+		}
+
+		$target = $this->caseTarget();
+		if ($target === null) {
+			return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
+		}
+
+		[$register, $caseSchema] = $target;
+
+		$subCase = ['title' => (string)($actionConfig['title'] ?? sprintf('Deelzaak na %s', $request['transitionLabel']))]
+			+ $this->subCaseRecord(actionConfig: $actionConfig, case: $request['case']);
+
+		// On the flow path the engine's RegistryStepDispatcher already runs
+		// this handler inside `ObjectService::runAs()` as the run's acting
+		// identity (openregister#3332); on the interactive path the ambient
+		// session user answers the permission checks. No local wrap needed.
+		$created = $objectService->saveObject(object: $subCase, register: $register, schema: $caseSchema);
+		$subId = $this->createdId(created: $created);
+
+		return new ActionResult(succeeded: true, data: ['subCaseId' => $subId]);
+	}//end createSubCase()
 
 	/**
 	 * The configured register and case schema, or null when either is missing.
