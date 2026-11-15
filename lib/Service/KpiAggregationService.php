@@ -48,6 +48,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
 use OCA\Dossiq\Service\Queue\QueueOldestNote;
+use OCA\Dossiq\Service\Zgw\SchemaFilter;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IL10N;
@@ -87,7 +88,7 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	 * belongs in no working list, count or report. A concept-zaak counted as
 	 * open work is a number a manager acts on for a case nobody has accepted.
 	 *
-	 * 🔴 0 AND NOT `false`. `countObjects()` documents it: a PHP bool reaches
+	 * 🔴 0 AND NOT `false`. `countCases()` documents it: a PHP bool reaches
 	 * PostgreSQL as a type it will not compare against the stored JSON and the
 	 * query throws.
 	 *
@@ -180,8 +181,7 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		$run->closed = $this->closedThisMonth(run: $run);
 		$run->openCases = $this->rows(
 			ids: $ids,
-			schema: $ids['case'],
-			filters: self::OPEN_WORK
+			query: new SchemaFilter(schema: $ids['case'], filters: self::OPEN_WORK)
 		);
 
 		return $run;
@@ -282,7 +282,7 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 		}
 
 		$titles = [];
-		foreach ($this->rows(ids: $ids, schema: $schema, filters: []) as $row) {
+		foreach ($this->rows(ids: $ids, query: new SchemaFilter(schema: $schema, filters: [])) as $row) {
 			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 			if ($id !== '') {
 				$titles[$id] = $this->sources->text->textOr(value: ($row['title'] ?? ''), fallback: $id, language: $this->l10n->getLanguageCode());
@@ -329,19 +329,7 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	}//end emptyKpis()
 
 	/**
-	 * Count cases matching a filter.
-	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param array $filters The filter criteria.
-	 *
-	 * @return int The count.
-	 */
-	private function countCases(array $ids, array $filters): int {
-		return $this->countObjects(ids: $ids, schema: $ids['case'], filters: $filters);
-	}//end countCases()
-
-	/**
-	 * Count objects of one schema, server-side.
+	 * Count cases matching a filter, server-side.
 	 *
 	 * 🔴 THE REGISTER AND SCHEMA GO INSIDE `filters`, NOT VIA setRegister(). With
 	 * only setRegister()/setSchema() the count IGNORES the filters entirely, and
@@ -352,13 +340,13 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	 * 🔴 BOOLEANS MUST BE 0/1, NOT true/false. A PHP bool reaches PostgreSQL as a
 	 * type it will not compare against the stored JSON and the query throws.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $schema The schema id to count within.
+	 * @param array<string, string> $ids The register and schema ids; the cases are counted within `case`.
 	 * @param array $filters The filter criteria.
 	 *
 	 * @return int The count, or 0 when OpenRegister cannot answer.
 	 */
-	private function countObjects(array $ids, string $schema, array $filters): int {
+	private function countCases(array $ids, array $filters): int {
+		$schema = $ids['case'];
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return 0;
@@ -386,18 +374,19 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 			);
 			return 0;
 		}
-	}//end countObjects()
+	}//end countCases()
 
 	/**
 	 * Fetch rows of one schema, bounded.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $schema The schema id to read.
-	 * @param array $filters The filter criteria.
+	 * @param array<string, string> $ids   The register and schema ids.
+	 * @param SchemaFilter          $query The schema id to read and the filter criteria.
 	 *
 	 * @return array<int, array> The rows, as plain arrays.
 	 */
-	private function rows(array $ids, string $schema, array $filters): array {
+	private function rows(array $ids, SchemaFilter $query): array {
+		$schema = $query->schema;
+		$filters = $query->filters;
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
@@ -494,8 +483,10 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	private function closedThisMonth(KpiRun $run): array {
 		return $this->rows(
 			ids: $run->ids,
-			schema: $run->ids['case'],
-			filters: ['endDate' => ['gte' => $run->monthStart, 'lte' => $run->monthEnd]]
+			query: new SchemaFilter(
+				schema: $run->ids['case'],
+				filters: ['endDate' => ['gte' => $run->monthStart, 'lte' => $run->monthEnd]]
+			)
 		);
 	}//end closedThisMonth()
 
