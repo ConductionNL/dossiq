@@ -109,10 +109,7 @@ class CaseAssignmentController extends Controller {
 	public function state(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		return $this->answer(
@@ -134,10 +131,7 @@ class CaseAssignmentController extends Controller {
 	public function claim(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		$refusal = $this->requireClaimableCase(caseId: $caseId, user: $user);
@@ -164,10 +158,7 @@ class CaseAssignmentController extends Controller {
 	public function release(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
@@ -300,4 +291,16 @@ class CaseAssignmentController extends Controller {
 			(self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST)
 		);
 	}//end refusal()
+
+	/**
+	 * The 401 for a caller without a session.
+	 *
+	 * @return JSONResponse
+	 */
+	private function notSignedIn(): JSONResponse {
+		return new JSONResponse(
+			['error' => $this->l10n->t('You are not signed in.')],
+			Http::STATUS_UNAUTHORIZED
+		);
+	}//end notSignedIn()
 }//end class
