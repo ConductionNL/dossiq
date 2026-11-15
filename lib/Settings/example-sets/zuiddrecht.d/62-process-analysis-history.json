@@ -1,5 +1,5 @@
 {
-	"$comment": "Finished cases for DqProcesanalyse, so its days-per-phase matrix reads the six phases and the case types the board draws: a complaint that spent 13 days in Onderzoek, a licence-plate change 3 days in Ontvangen, an advice 4 days in behandeling, a Bezwaar whose committee advice (11 days) sent it back to In behandeling (the rework the report counts), and a re-integration that ran 21 days In uitvoering. All closed more than three weeks before the install and held by colleagues other than Pieter, so his work lists and his month's closed count stay as drawn.",
+	"$comment": "Finished cases for DqProcesanalyse, so its days-per-phase matrix reads the six phases and the case types the board draws: a complaint that spent 13 days in its Hoorgesprek (phase Beoordeling), a licence-plate change 3 days in Ontvangen, an advice 4 days in behandeling, a Bezwaar whose committee advice (11 days) sent it back to In behandeling (the rework the report counts), and a re-integration that ran 21 days In uitvoering. All closed more than three weeks before the install and held by colleagues other than Pieter, so his work lists and his month's closed count stay as drawn.",
 	"objects": [
 		{
 			"key": "procesanalyse-klacht-afhandeling-melding",
@@ -16,7 +16,7 @@
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Onderzoek"
+						"name": "Hoorgesprek"
 					}
 				},
 				"status": {

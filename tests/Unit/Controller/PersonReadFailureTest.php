@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\CaseNextStatusController;
 use OCA\Dossiq\Controller\PersonLookupController;
 use OCA\Dossiq\Controller\PersonReachabilityController;
+use OCA\Dossiq\Service\Access\ReadableObjects;
 use OCA\Dossiq\Service\Cases\CaseNextStatus;
 use OCA\Dossiq\Service\People\PersonNumberLookup;
 use OCA\Dossiq\Service\People\PersonReachability;
@@ -69,7 +70,13 @@ final class PersonReadFailureTest extends TestCase {
 		$reachability = $this->createMock(PersonReachability::class);
 		$reachability->method('forPerson')->willThrowException(new RuntimeException('register unreachable'));
 
-		$response = (new PersonReachabilityController(appName: 'dossiq', request: $this->createMock(IRequest::class), reachability: $reachability))->show(id: 'p-1');
+		$caller = $this->readableToTheCaller();
+		$response = (new PersonReachabilityController(
+			appName: 'dossiq',
+			request: $this->createMock(IRequest::class),
+			reachability: $reachability,
+			readable: $caller['readable']
+		))->show(id: 'p-1');
 
 		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
 	}//end testTheReachabilityAnswersAFailedReadWith503()
@@ -83,8 +90,27 @@ final class PersonReadFailureTest extends TestCase {
 		$next = $this->createMock(CaseNextStatus::class);
 		$next->method('forCase')->willThrowException(new RuntimeException('register unreachable'));
 
-		$response = (new CaseNextStatusController(appName: 'dossiq', request: $this->createMock(IRequest::class), nextStatus: $next))->show(caseId: 'case-1');
+		$caller = $this->readableToTheCaller();
+		$response = (new CaseNextStatusController(
+			appName: 'dossiq',
+			request: $this->createMock(IRequest::class),
+			nextStatus: $next,
+			readable: $caller['readable']
+		))->show(caseId: 'case-1');
 
 		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
 	}//end testTheNextStatusAnswersAFailedReadWith503()
+
+	/**
+	 * A signed-in caller who may read the object, so the read itself is what fails.
+	 *
+	 * @return array{readable: ReadableObjects}
+	 */
+	private function readableToTheCaller(): array {
+		$readable = $this->createMock(ReadableObjects::class);
+		$readable->method('hasCaller')->willReturn(true);
+		$readable->method('findsAsCaller')->willReturn(true);
+
+		return ['readable' => $readable];
+	}//end readableToTheCaller()
 }//end class

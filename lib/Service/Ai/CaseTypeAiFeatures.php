@@ -32,19 +32,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Ai;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeAiFeaturesInterface;
+
 /**
  * Reads a case type's declared AI features.
  *
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-a-case-type-declares-which-ai-features-are-on-and-where-they-appear-req-aic-01
  */
-class CaseTypeAiFeatures {
-
-	/**
-	 * The case detail page.
-	 *
-	 * @var string
-	 */
-	public const SURFACE_CASE = 'case';
+class CaseTypeAiFeatures implements CaseTypeAiFeaturesInterface {
 
 	/**
 	 * The create form.

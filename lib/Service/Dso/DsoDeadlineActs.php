@@ -32,7 +32,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Dso;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DsoDeadlineActsInterface;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class DsoDeadlineActs {
+class DsoDeadlineActs implements DsoDeadlineActsInterface {
 	use SearchesObjects;
 
 	/**
@@ -117,7 +118,7 @@ class DsoDeadlineActs {
 
 		try {
 			$notification = $this->notifications->createNotification();
-			$notification->setApp(app: Application::APP_ID);
+			$notification->setApp(app: AppIdentity::APP_ID);
 			$notification->setUser(user: $assignee);
 			$notification->setSubject(subject: $subject, parameters: ['caseId' => $caseId]);
 			$notification->setObject(type: 'case', id: $caseId);
@@ -150,6 +151,19 @@ class DsoDeadlineActs {
 			return false;
 		}
 
+		return $this->writeOverdue(case: $case);
+	}//end markOverdue()
+
+	/**
+	 * Write the overdue marker and its journal entry onto the case.
+	 *
+	 * @param array<string, mixed> $case The case, read fresh.
+	 *
+	 * @return bool True when the marker was written, false when the register is not configured.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function writeOverdue(array $case): bool {
 		$objectService = $this->settingsService->getObjectService();
 		$register      = (string) $this->settingsService->getConfigValue('register');
 		$schema        = (string) $this->settingsService->getConfigValue('case_schema');
@@ -173,7 +187,7 @@ class DsoDeadlineActs {
 		);
 
 		return true;
-	}//end markOverdue()
+	}//end writeOverdue()
 
 	/**
 	 * Whether the DSO term still runs on the case.

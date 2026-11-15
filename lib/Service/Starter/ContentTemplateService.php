@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\ContentTemplateServiceInterface;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use Psr\Log\LoggerInterface;
@@ -48,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
-class ContentTemplateService {
+class ContentTemplateService implements ContentTemplateServiceInterface {
 
 	/**
 	 * The app config key naming the content template schema.
@@ -145,6 +146,22 @@ class ContentTemplateService {
 			return null;
 		}
 
+		return $this->offeredRows(rows: $rows, kind: $kind, caseTypeId: $caseTypeId, search: $search);
+	}//end offered()
+
+	/**
+	 * The stored templates in scope for the case type and matching the search.
+	 *
+	 * @param array<int, array<string, mixed>> $rows       The stored templates of the kind.
+	 * @param string                           $kind       The kind.
+	 * @param string                           $caseTypeId The case type the handler is working on.
+	 * @param string                           $search     Part of the name, or '' for all of them.
+	 *
+	 * @return array<int, array<string, mixed>> The templates.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
+	 */
+	private function offeredRows(array $rows, string $kind, string $caseTypeId, string $search): array {
 		$offered = [];
 		foreach ($rows as $row) {
 			if ($this->inScope(row: $row, caseTypeId: $caseTypeId) === false) {
@@ -166,7 +183,7 @@ class ContentTemplateService {
 		}//end foreach
 
 		return $offered;
-	}//end offered()
+	}//end offeredRows()
 
 	/**
 	 * The fields one template presets, ready to drop into the dialog that
@@ -256,6 +273,18 @@ class ContentTemplateService {
 			return null;
 		}
 
+		return $this->offeredMail(rows: $rows, search: $search);
+	}//end mailTemplates()
+
+	/**
+	 * The mail templates whose name holds the search term, as offers.
+	 *
+	 * @param array<int, array<string, mixed>> $rows   The case type's mail templates.
+	 * @param string                           $search The term the name must hold; empty for all.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function offeredMail(array $rows, string $search): array {
 		$offered = [];
 		foreach ($rows as $row) {
 			$name = (string)($row['name'] ?? '');
@@ -263,15 +292,27 @@ class ContentTemplateService {
 				continue;
 			}
 
-			$offered[] = [
-				'id' => (string)($row['id'] ?? ''),
-				'kind' => self::KIND_MAIL,
-				'name' => $name,
-				'body' => (string)($row['body'] ?? ''),
-				'presets' => ['subject' => (string)($row['subject'] ?? '')],
-			];
+			$offered[] = $this->mailOffer(row: $row, name: $name);
 		}
 
 		return $offered;
-	}//end mailTemplates()
+	}//end offeredMail()
+
+	/**
+	 * One mail template as an offer.
+	 *
+	 * @param array<string, mixed> $row  The mail template.
+	 * @param string               $name Its name.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function mailOffer(array $row, string $name): array {
+		return [
+			'id' => (string)($row['id'] ?? ''),
+			'kind' => self::KIND_MAIL,
+			'name' => $name,
+			'body' => (string)($row['body'] ?? ''),
+			'presets' => ['subject' => (string)($row['subject'] ?? '')],
+		];
+	}//end mailOffer()
 }//end class

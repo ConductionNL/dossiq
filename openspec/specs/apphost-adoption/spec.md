@@ -1,7 +1,7 @@
 # apphost-adoption Specification
 
 ## Purpose
-TBD - created by archiving change adopt-apphost. Update Purpose after archive.
+Run dossiq on the shared AppHost, so health, metrics and date-token filters come from declarations instead of app code.
 ## Requirements
 ### Requirement: Declarative Health Endpoint
 

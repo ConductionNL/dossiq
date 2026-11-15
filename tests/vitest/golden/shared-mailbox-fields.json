@@ -1,0 +1,294 @@
+{
+  "fields": [
+    {
+      "key": "mailbox-explanation",
+      "type": "status",
+      "advanced": true,
+      "foldable": true,
+      "text": "dossiq|Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen."
+    },
+    {
+      "key": "email_mail_account_id",
+      "label": "dossiq|Intake mail account",
+      "type": "select",
+      "optionsUrl": "/apps/dossiq/api/settings/email/mail-accounts",
+      "optionsPath": "accounts",
+      "optionLabel": "name",
+      "optionValue": "id",
+      "optionDetail": "email",
+      "placeholder": "dossiq|Pick the mailbox intake reads",
+      "hint": "dossiq|Nextcloud Mail keeps the account and the password. Pick the mailbox dossiq reads. Dossiq stores no password of its own."
+    },
+    {
+      "key": "mail-app-missing",
+      "type": "status",
+      "tone": "warning",
+      "url": "/apps/dossiq/api/settings/email/mail-accounts",
+      "valuePath": "available",
+      "textMap": {
+        "false": "dossiq|The Mail app is not installed, so intake reads nothing. Your messages stay in the mailbox and none are lost. Install Mail to start reading them.",
+        "*": ""
+      }
+    },
+    {
+      "key": "email_imap_folder",
+      "label": "Folder",
+      "placeholder": "INBOX",
+      "default": "INBOX"
+    },
+    {
+      "key": "email_transport",
+      "advanced": true,
+      "label": "dossiq|Transport / source mailbox account",
+      "placeholder": "dossiq|Nextcloud Mail account or functional mailbox id",
+      "hint": "dossiq|Which Nextcloud Mail account or functional mailbox is the case-correspondence source. No per-user SMTP send credentials are configured here."
+    },
+    {
+      "key": "email_poll_interval",
+      "label": "dossiq|Fetch every (seconds)",
+      "type": "number",
+      "integer": true,
+      "min": 0,
+      "default": 300
+    },
+    {
+      "key": "email_poll_batch_size",
+      "label": "dossiq|Messages per fetch",
+      "type": "number",
+      "integer": true,
+      "min": 0,
+      "default": 50
+    },
+    {
+      "key": "email_fallback_case_type",
+      "label": "dossiq|Case type for mail nobody claims",
+      "type": "select",
+      "optionsUrl": "/apps/openregister/api/objects/dossiq/caseType?_limit=100&isDraft=false",
+      "optionsPath": "results",
+      "optionLabel": "title",
+      "optionValue": "id",
+      "placeholder": "dossiq|Leave it in the mailbox",
+      "hint": "dossiq|A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today."
+    },
+    {
+      "key": "email_case_matching_enabled",
+      "label": "dossiq|Link mail to cases by case number",
+      "type": "switch",
+      "trueValue": "yes",
+      "falseValue": "no",
+      "url": "/apps/dossiq/api/settings/email-case-matching/instance",
+      "saveMethod": "PUT",
+      "wide": true,
+      "hint": "dossiq|Each user still switches it on for their own mailbox. Until then, nothing is linked."
+    },
+    {
+      "key": "email_case_matching_pattern",
+      "advanced": true,
+      "label": "dossiq|Case number pattern",
+      "url": "/apps/dossiq/api/settings/email-case-matching/instance",
+      "saveMethod": "PUT",
+      "placeholder": "/(?<![\\w-])(?:\\[)?(?:[A-Z]{2,10}-)?((?:19|20)\\d{2}-\\d{4,6})(?:\\])?(?![\\w-])/u",
+      "hint": "dossiq|Leave it empty to match numbers like 2026-0042 and [ZAAK-2026-0042]. The first group in the pattern must capture the case number. dossiq|Only the subject and the start of each message are read. A case number further down is missed."
+    },
+    {
+      "key": "email_from_address",
+      "advanced": true,
+      "label": "dossiq|Sender address",
+      "placeholder": "zaken@gemeente.nl",
+      "url": "/apps/dossiq/api/settings",
+      "valuePath": "config.email_from_address",
+      "saveMethod": "PUT",
+      "hint": "dossiq|The address term notices and service mail are sent from. Leave it empty and dossiq does not send them. Mail a handler writes about a case leaves from the Nextcloud Mail account."
+    },
+    {
+      "key": "email_from_name",
+      "advanced": true,
+      "label": "dossiq|Sender name",
+      "placeholder": "Gemeente Voorbeeld",
+      "url": "/apps/dossiq/api/settings",
+      "valuePath": "config.email_from_name",
+      "saveMethod": "PUT"
+    },
+    {
+      "key": "email_recipient_allowlist",
+      "advanced": true,
+      "label": "dossiq|Allowed recipients",
+      "placeholder": "@gemeente.nl, team@gemeente.nl",
+      "url": "/apps/dossiq/api/settings",
+      "valuePath": "config.email_recipient_allowlist",
+      "saveMethod": "PUT",
+      "hint": "dossiq|List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient."
+    },
+    {
+      "key": "email_intake_role",
+      "advanced": true,
+      "label": "dossiq|Group that runs intake",
+      "placeholder": "zaakbehandelaars",
+      "hint": "dossiq|Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it."
+    },
+    {
+      "key": "email_intake_blocklist",
+      "advanced": true,
+      "label": "dossiq|Senders that may not open a case",
+      "placeholder": "spam@voorbeeld.nl, @voorbeeld.nl",
+      "hint": "dossiq|List addresses, or whole domains written as @voorbeeld.nl. A blocked sender opens no case by mail. They can still mail a colleague. The allow half of this list is Nextcloud Mail’s trusted senders."
+    },
+    {
+      "key": "email_intake_junk_rules",
+      "advanced": true,
+      "label": "dossiq|Junk rules",
+      "type": "textarea",
+      "rows": 3,
+      "wide": true,
+      "placeholder": "X-Spam-Status: Yes",
+      "hint": "dossiq|Write one rule per line: a header name, a colon, the text to find. Plain text on its own is matched against the subject. A message a rule calls junk is held, never deleted. The intake log names the rule that held it."
+    }
+  ],
+  "calls": [
+    [
+      "dossiq",
+      "Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.",
+      null
+    ],
+    [
+      "dossiq",
+      "Intake mail account",
+      null
+    ],
+    [
+      "dossiq",
+      "Pick the mailbox intake reads",
+      null
+    ],
+    [
+      "dossiq",
+      "Nextcloud Mail keeps the account and the password. Pick the mailbox dossiq reads. Dossiq stores no password of its own.",
+      null
+    ],
+    [
+      "dossiq",
+      "The Mail app is not installed, so intake reads nothing. Your messages stay in the mailbox and none are lost. Install Mail to start reading them.",
+      null
+    ],
+    [
+      "dossiq",
+      "Transport / source mailbox account",
+      null
+    ],
+    [
+      "dossiq",
+      "Nextcloud Mail account or functional mailbox id",
+      null
+    ],
+    [
+      "dossiq",
+      "Which Nextcloud Mail account or functional mailbox is the case-correspondence source. No per-user SMTP send credentials are configured here.",
+      null
+    ],
+    [
+      "dossiq",
+      "Fetch every (seconds)",
+      null
+    ],
+    [
+      "dossiq",
+      "Messages per fetch",
+      null
+    ],
+    [
+      "dossiq",
+      "Case type for mail nobody claims",
+      null
+    ],
+    [
+      "dossiq",
+      "Leave it in the mailbox",
+      null
+    ],
+    [
+      "dossiq",
+      "A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.",
+      null
+    ],
+    [
+      "dossiq",
+      "Link mail to cases by case number",
+      null
+    ],
+    [
+      "dossiq",
+      "Each user still switches it on for their own mailbox. Until then, nothing is linked.",
+      null
+    ],
+    [
+      "dossiq",
+      "Case number pattern",
+      null
+    ],
+    [
+      "dossiq",
+      "Leave it empty to match numbers like 2026-0042 and [ZAAK-2026-0042]. The first group in the pattern must capture the case number.",
+      null
+    ],
+    [
+      "dossiq",
+      "Only the subject and the start of each message are read. A case number further down is missed.",
+      null
+    ],
+    [
+      "dossiq",
+      "Sender address",
+      null
+    ],
+    [
+      "dossiq",
+      "The address term notices and service mail are sent from. Leave it empty and dossiq does not send them. Mail a handler writes about a case leaves from the Nextcloud Mail account.",
+      null
+    ],
+    [
+      "dossiq",
+      "Sender name",
+      null
+    ],
+    [
+      "dossiq",
+      "Allowed recipients",
+      null
+    ],
+    [
+      "dossiq",
+      "List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.",
+      null
+    ],
+    [
+      "dossiq",
+      "Group that runs intake",
+      null
+    ],
+    [
+      "dossiq",
+      "Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.",
+      null
+    ],
+    [
+      "dossiq",
+      "Senders that may not open a case",
+      null
+    ],
+    [
+      "dossiq",
+      "List addresses, or whole domains written as @voorbeeld.nl. A blocked sender opens no case by mail. They can still mail a colleague. The allow half of this list is Nextcloud Mail’s trusted senders.",
+      null
+    ],
+    [
+      "dossiq",
+      "Junk rules",
+      null
+    ],
+    [
+      "dossiq",
+      "Write one rule per line: a header name, a colon, the text to find. Plain text on its own is matched against the subject. A message a rule calls junk is held, never deleted. The intake log names the rule that held it.",
+      null
+    ]
+  ]
+}

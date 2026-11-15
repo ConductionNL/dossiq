@@ -1,0 +1,73 @@
+{
+    "not signed in": {
+        "status": 401,
+        "body": {
+            "error": "Not authenticated"
+        },
+        "calls": []
+    },
+    "may not read the template": {
+        "status": 403,
+        "body": {
+            "error": "Not allowed"
+        },
+        "calls": [
+            "hasCaseReadAccess tpl-1"
+        ]
+    },
+    "started with overrides": {
+        "status": 201,
+        "body": {
+            "ok": true,
+            "caseId": "case-9"
+        },
+        "calls": [
+            "hasCaseReadAccess tpl-1",
+            "startFrom [\"tpl-1\",{\"title\":\"Mijn bezwaar\"}]"
+        ]
+    },
+    "started with overrides that are not a list": {
+        "status": 201,
+        "body": {
+            "ok": true,
+            "caseId": "case-9"
+        },
+        "calls": [
+            "hasCaseReadAccess tpl-1",
+            "startFrom [\"tpl-1\",[]]"
+        ]
+    },
+    "not a template": {
+        "status": 404,
+        "body": {
+            "ok": false,
+            "reason": "not_found"
+        },
+        "calls": [
+            "hasCaseReadAccess tpl-1",
+            "startFrom [\"tpl-1\",[]]"
+        ]
+    },
+    "refused otherwise": {
+        "status": 409,
+        "body": {
+            "ok": false,
+            "reason": "not_a_template"
+        },
+        "calls": [
+            "hasCaseReadAccess tpl-1",
+            "startFrom [\"tpl-1\",[]]"
+        ]
+    },
+    "starting fails": {
+        "status": 500,
+        "body": {
+            "error": "Could not start the case"
+        },
+        "calls": [
+            "hasCaseReadAccess tpl-1",
+            "startFrom [\"tpl-1\",[]]",
+            "error: Dossiq: could not start from a template: register offline"
+        ]
+    }
+}

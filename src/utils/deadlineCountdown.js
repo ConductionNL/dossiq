@@ -56,7 +56,7 @@ function localMidnight(value) {
  * @return {number|null} Positive when the deadline is ahead, negative when it
  *   has passed, 0 on the day itself; null when there is no readable deadline.
  *
- * @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
+ * @spec openspec/specs/signalering-widgets/spec.md
  */
 export function daysUntilDeadline(deadline, now = new Date()) {
 	const due = localMidnight(deadline)

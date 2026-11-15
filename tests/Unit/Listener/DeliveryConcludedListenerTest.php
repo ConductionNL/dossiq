@@ -30,6 +30,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Integriq\Event\DeliveryConcludedEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * ObjectService stub matching the named-argument signatures used by the listener.
@@ -44,7 +46,7 @@ interface DeliveryObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, string $register, string $schema): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Save or update an object.
@@ -55,13 +57,14 @@ interface DeliveryObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function saveObject(array $object, string $register, string $schema): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
  * Unit tests for DeliveryConcludedListener.
  *
  * @covers \OCA\Dossiq\Listener\DeliveryConcludedListener
+ * @covers \OCA\Dossiq\Listener\Support\ConcludedDelivery
  */
 class DeliveryConcludedListenerTest extends TestCase {
 

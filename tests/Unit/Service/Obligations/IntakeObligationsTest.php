@@ -21,6 +21,8 @@ use OCA\Dossiq\Service\Obligations\IntakeObligations;
 use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -89,18 +91,18 @@ class IntakeObligationsTest extends TestCase {
 			/**
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				return $this->test->storedCase();
 			}
 
 			/**
-			 * @param array<string, mixed> $data The changes.
+			 * @param ObjectPatch $patch The changes and the object they go to.
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
-				$this->test->recordPatch(data: $data);
-				return $data;
+			public function patchObject(ObjectPatch $patch): array {
+				$this->test->recordPatch(data: $patch->data);
+				return $patch->data;
 			}
 		};
 

@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Consultation\ConsultationRecords;
 use DateTimeImmutable;
 use OCA\Dossiq\Controller\ConsultationReportController;
 use OCA\Dossiq\Service\AdviceDelegationService;
@@ -40,6 +41,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An object store that keeps what is saved and answers searches by status.
@@ -82,7 +85,9 @@ class SettingsReadersObjectStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->saved = $object;
 
 		return $object + ['id' => 'cn-new'];
@@ -98,7 +103,11 @@ class SettingsReadersObjectStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		return $data + ['id' => $objectId];
 	}//end patchObject()
 }//end class
@@ -133,10 +142,17 @@ class ConsultationSettingsReadersTest extends TestCase {
 			settingsService: $settings,
 			logger: $logger,
 			adviceDelegation: $delegation,
-			repository: $repository,
-			dependencyGraph: new ConsultationDependencyGraph($repository),
+			records: new ConsultationRecords(
+				repository: $repository,
+				dependencyGraph: new ConsultationDependencyGraph(repository: $repository),
+				obligations: new ObligationService(
+					settingsService: $settings,
+					declaration: new ObligationDeclaration(),
+					dates: $this->caseDates(),
+					logger: $logger
+				),
+			),
 			dates: $this->caseDates(),
-			obligations: new ObligationService(settingsService: $settings, declaration: new ObligationDeclaration(), dates: $this->caseDates(), logger: $logger),
 			terms: new ConsultationTerms(settingsService: $settings, today: new DateTimeImmutable('2026-10-24')),
 		);
 	}//end service()

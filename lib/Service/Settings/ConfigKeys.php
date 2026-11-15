@@ -98,6 +98,11 @@ class ConfigKeys {
 		'handhavingsactie_schema',
 		'advies_aanvraag_schema',
 		'advice_reminder_days',
+		// The complaint targets the process analysis page holds a quarter against
+		// (ComplaintPatterns); empty reads the default.
+		'complaint_target_per_month',
+		'complaint_target_within_awb_percent',
+		'complaint_target_upheld_percent',
 		'tenant_schema',
 		'appointment_schema',
 		'appointment_product_schema',
@@ -156,6 +161,7 @@ class ConfigKeys {
 		'lhsMatrix',
 		'lhs_matrix_schema',
 		'lhs_recommendation_schema',
+		'decision_advice_schema',
 		// AI-Assisted Processing settings.
 		'ai_audit_entry_schema',
 		'ai_enabled',
@@ -327,6 +333,8 @@ class ConfigKeys {
 		'queue_warning_days',
 		'queue_priority_weight',
 		'queue_idle_weight',
+		'queue_in_sight_days',
+		'queue_resident_wait_weight',
 		// Besluitvorming workflow integration endpoints (besluitvorming-workflow spec).
 		// Official publication (DROP / LVBB) — empty disables dispatch.
 		'drop_lvbb_endpoint',
@@ -340,6 +348,10 @@ class ConfigKeys {
 		'review_batch_schema',
 		'stopping_rule_schema',
 		'recall_sample_schema',
+		'bid_schema',
+		'tender_question_schema',
+		'evaluation_schema',
+		'scoring_formula_schema',
 		'dossier_besluitinformatieobject_schema',
 		'dossier_informatieobjecttype_schema',
 		// Maximum upload size in bytes (0 = no app-level limit, NC limit applies).
@@ -405,5 +417,56 @@ class ConfigKeys {
 		'wooReviewerThroughputReport',
 		'wooReviewerThroughputReaders',
 		'wooCollectionPartiesReport',
+		// General: the app's own time zone when no tenant is bound
+		// (CaseDateNormaliser), the date format and the beta switch the page
+		// reads as initial state (DisplaySettingsInitialStateListener).
+		'timezone',
+		'date_format',
+		'feature_new_case_page',
+		// VTH public notices: the template integriq composes the text from and
+		// the rule for the publication date (PublicationService).
+		'publication_template',
+		'publication_date_rule',
+		// Public ZGW API access: the header a trusted reverse proxy forwards
+		// the client certificate's SHA-256 fingerprint in. Empty switches
+		// certificate access off (ApiCredentialResolver, REQ-PAA-02).
+		'public_api_client_cert_header',
+		// The administrator's own text per notification kind (REQ-CRS-13);
+		// Notifier::customText() reads them.
+		...self::NOTIFICATION_TEXT_KEYS,
+	];
+
+	/**
+	 * One key per notification kind whose text an administrator may set
+	 * (REQ-CRS-13): `notification_text_` and the Notifier subject. Empty keeps
+	 * the shipped, translated wording.
+	 *
+	 * @var string[]
+	 *
+	 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/admin-settings/spec.md#requirement-an-administrator-edits-the-text-of-each-notification-req-crs-13
+	 */
+	public const NOTIFICATION_TEXT_KEYS = [
+		'notification_text_note_mention',
+		'notification_text_case_status_changed',
+		'notification_text_case_role_notified',
+		'notification_text_milestone_bottleneck',
+		'notification_text_cases_reassigned',
+		'notification_text_advice_requested',
+		'notification_text_advies_ontvangen',
+		'notification_text_advies_herinnering',
+		'notification_text_woo_deadline_warning',
+		'notification_text_woo_deadline_overdue',
+		'notification_text_dso_deadline_warning',
+		'notification_text_dso_deadline_critical',
+		'notification_text_dso_deadline_overdue',
+		'notification_text_term_nearing',
+		'notification_text_term_exceeded',
+		'notification_text_applicant_responded',
+		'notification_text_applicant_withdrew',
+		'notification_text_stuf_circuit_open',
+		'notification_text_stuf_timeout',
+		'notification_text_stuf_permanent_error',
+		'notification_text_background_service_account_missing',
+		'notification_text_tenant_quota_soft_limit',
 	];
 }//end class

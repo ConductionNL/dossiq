@@ -18,7 +18,9 @@ const ROOT = path.resolve(__dirname, '../..')
 const simple = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.simple.json'), 'utf8'))
 
 /**
- * Every column with this key anywhere in the overlay.
+ * Every column with this key anywhere in the overlay, outside widgets that
+ * read another schema than the task: a bid, a tender question or an
+ * evaluation has a `state` of its own lifecycle, not a task state.
  *
  * @param {unknown} node The node to search.
  * @param {string} key The column key.
@@ -29,6 +31,9 @@ function columnsWithKey(node, key, out = []) {
 	if (Array.isArray(node)) {
 		node.forEach((child) => columnsWithKey(child, key, out))
 	} else if (node && typeof node === 'object') {
+		if (typeof node.schema === 'string' && node.schema !== 'task') {
+			return out
+		}
 		if (node.key === key && node.widget === 'badge') {
 			out.push(node)
 		}
@@ -42,7 +47,7 @@ describe('board pill tones', () => {
 		expect(CONNECTION_STATUS_TONES).toEqual({
 			configured: 'success',
 			error: 'error',
-			simulated: 'info',
+			simulated: 'purple',
 			unavailable: 'warning',
 		})
 	})

@@ -1,7 +1,7 @@
 # case-appointment-via-calendar-leaf Specification
 
 ## Purpose
-TBD - created by archiving change migrate-appointments-to-calendar-leaf. Update Purpose after archive.
+Schedule case appointments through OpenRegister's calendar leaf and keep the zaak-specific details as case fields. External Qmatic or JCC scheduling stays an ADR-022 exception.
 
 ## Requirements
 

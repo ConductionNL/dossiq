@@ -174,31 +174,22 @@ An entry found deprecated SHALL NOT be republished by the seeder. A row is depre
 
 ### Requirement: VTH workflow template library
 
-The system SHALL provide a browsable library of VTH workflow templates that administrators can preview and import into their case types.
+The VTH case types and their flows SHALL ship as the `vth` case definition package (decision 182), not as a template library on the case type page. An administrator installs the package where any package is installed (the Marketplace, or the Zaaktypen step of the setup wizard), and edits an installed flow in the standard visual workflow editor. The case type admin page SHALL NOT offer an "Importeer VTH sjabloon" button.
 
 **Feature tier**: V1
 
-#### Scenario: Browse VTH template library
+#### Scenario: The VTH flows come with the package
 
-- **WHEN** the beheerder navigates to the workflow tab on a case type admin page
-- **THEN** the system SHALL display an "Importeer VTH sjabloon" button
-- **THEN** clicking it SHALL show a list of available VTH templates: Omgevingsvergunning (regulier), Omgevingsvergunning (uitgebreid), Toezichtzaak Bouw, Toezichtzaak Milieu, Handhavingstraject, Spoedig herstel (Awb 5:31), Sloopmelding
-- **THEN** the two enforcement templates SHALL be listed as two routes through Handhavingszaak, not as one entry
-- **THEN** each template SHALL show: name, description, number of steps, estimated processing time
+- **WHEN** the beheerder installs the `vth` package
+- **THEN** its case types and the flows "The VTH flows ship in the vth package" names SHALL be in the beheerder's own configuration
+- **THEN** the two enforcement flows SHALL be two routes through Handhavingszaak, not one entry
+- **THEN** the workflow tab on a case type admin page SHALL show no "Importeer VTH sjabloon" button and no template list
 
-#### Scenario: Preview template before import
+#### Scenario: Customize an installed flow
 
-- **WHEN** the beheerder clicks on a template in the library
-- **THEN** the system SHALL display a read-only preview of the workflow diagram (using the visual workflow editor in view-only mode)
-- **THEN** the preview SHALL show all steps, transitions, guards, and actions
-- **THEN** the beheerder SHALL be able to confirm import or go back to the library
-
-#### Scenario: Customize imported template
-
-- **WHEN** the beheerder imports a VTH template
-- **THEN** the imported workflow SHALL be editable via the standard visual workflow editor
+- **WHEN** the beheerder opens an installed VTH flow
+- **THEN** it SHALL be editable via the standard visual workflow editor
 - **THEN** the beheerder SHALL be able to add, remove, or modify steps and transitions
-- **THEN** the original template SHALL remain unchanged in the library for future imports
 
 ---
 

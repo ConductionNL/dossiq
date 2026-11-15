@@ -47,7 +47,7 @@ describe('the Geavanceerd admin tab', () => {
 			expect(advanced).toContain(id)
 		}
 		expect(sectionsOf('system')).toEqual(['section-configuration', 'section-menu-structure', 'section-background-service-account', 'section-mailbox', 'section-ai', 'section-consultation', 'section-search-index'])
-		expect(sectionsOf('integrations')).toEqual(['section-connections', 'section-kadaster'])
+		expect(sectionsOf('integrations')).toEqual(['section-connections', 'section-kadaster', 'section-dependency-apps', 'section-term-definitions', 'section-woo-refusal-grounds'])
 	})
 
 	it('sends a connection row to its card on the tab it moved to', () => {

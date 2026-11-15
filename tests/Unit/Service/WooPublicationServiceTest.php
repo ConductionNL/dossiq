@@ -35,11 +35,14 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
 use OCA\Dossiq\Tests\Unit\Service\Publication\FakeWithheldDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use Psr\Container\ContainerInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Object service stub for WOO publication tests (OpenRegister object-first signature).
@@ -56,7 +59,7 @@ interface WooPublicationObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null);
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true);
 
 	/**
 	 * Single-object fetch (real ObjectService::find()).
@@ -69,7 +72,7 @@ interface WooPublicationObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, ?array $extend = null, bool $files = false, ?string $register = null, ?string $schema = null);
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true);
 
 	/**
 	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
@@ -89,8 +92,8 @@ interface WooPublicationObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WooPublicationService
  *
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooCaseLedger
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -100,6 +103,7 @@ interface WooPublicationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Publication\WithheldListRecorder
  * @uses \OCA\Dossiq\Service\Assessment\DocumentSearchOutcome
  * @uses \OCA\Dossiq\Service\Assessment\NothingToDisclose
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooPublicationServiceTest extends TestCase {
 
@@ -368,10 +372,10 @@ class WooPublicationServiceTest extends TestCase {
 		$this->appManager->method('isEnabledForUser')->willReturn(true);
 
 		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
-		$objectService->method('find')->willReturnMap([
+		$objectService->method('find')->willReturnCallback(LegacyObjectArgs::returnMap(method: 'find', map: [
 			['case-001', null, false, 'dossiq', 'case', ['id' => 'case-001', 'title' => 'Test case']],
 			['decision-001', null, false, 'dossiq', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit']],
-		]);
+		]));
 		$objectService->method('searchObjectsBySlug')->willReturn([
 			['documentRef' => 'doc-001', 'classification' => 'niet_openbaar'],
 		]);
@@ -410,14 +414,18 @@ class WooPublicationServiceTest extends TestCase {
 		$this->appManager->method('isEnabledForUser')->willReturn(true);
 
 		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
-		$objectService->method('find')->willReturnMap([
+		$objectService->method('find')->willReturnCallback(LegacyObjectArgs::returnMap(method: 'find', map: [
 			['case-001', null, false, 'dossiq', 'case', ['id' => 'case-001', 'title' => 'Fietspad Lindelaan'] + $case],
 			['decision-001', null, false, 'dossiq', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'description' => 'Niet openbaar gemaakt']],
-		]);
+		]));
 		$objectService->method('searchObjectsBySlug')->willReturn($assessments);
 		$saves = [];
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) use (&$saves) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saves) {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$saves[] = [$schema, $uuid, $object];
 				return ['id' => $uuid];
 			}
@@ -587,11 +595,11 @@ class WooPublicationServiceTest extends TestCase {
 		$this->appManager->method('isEnabledForUser')->willReturn(true);
 
 		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
-		$objectService->method('find')->willReturnMap([
+		$objectService->method('find')->willReturnCallback(LegacyObjectArgs::returnMap(method: 'find', map: [
 			['case-001', null, false, 'dossiq', 'case', ['id' => 'case-001', 'title' => 'Test case']],
 			['decision-001', null, false, 'dossiq', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'decisionDate' => '2026-07-13']],
 			['doc-001', null, false, 'dossiq', 'document', ['id' => 'doc-001', 'title' => 'Besluit document', 'fileName' => 'besluit.pdf', 'format' => 'application/pdf', 'content' => base64_encode('public content')]],
-		]);
+		]));
 		$objectService->method('searchObjectsBySlug')->willReturn([
 			['documentRef' => 'doc-001', 'classification' => 'openbaar'],
 		]);
@@ -601,7 +609,11 @@ class WooPublicationServiceTest extends TestCase {
 		$saves = [];
 		$objectService->expects($this->exactly(2))
 			->method('saveObject')
-			->willReturnCallback(function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) use (&$saves) {
+			->willReturnCallback(function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saves) {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$saves[] = [$schema, $uuid, $object];
 				return ['id' => $uuid];
 			});
@@ -678,15 +690,15 @@ class WooPublicationServiceTest extends TestCase {
 		]);
 		$objectService->expects($this->once())
 			->method('saveObject')
-			->with(
-				$this->callback(function (array $object) {
+			->with(...LegacyObjectArgs::with(method: 'saveObject', expected: [
+					'object' => $this->callback(function (array $object) {
 					return $object['wooPublication']['status'] === 'withdrawn';
 				}),
-				[],
-				'dossiq',
-				'decision',
-				'decision-001'
-			)
+					'extend' => [],
+					'register' => 'dossiq',
+					'schema' => 'decision',
+					'uuid' => 'decision-001',
+				]))
 			->willReturn(['id' => 'decision-001']);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
@@ -750,7 +762,11 @@ class WooPublicationServiceTest extends TestCase {
 		$objectService->method('searchObjectsBySlug')->willReturn($assessments);
 		$this->saves = [];
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = [$schema, $object];
 				return ['id' => $uuid];
 			}
@@ -780,7 +796,7 @@ class WooPublicationServiceTest extends TestCase {
 			$this->appManager,
 			$this->createMock(LoggerInterface::class),
 			null,
-			new WooCaseLedger(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
+			new CasePublicationState(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
 		);
 	}//end decidedCase()
 

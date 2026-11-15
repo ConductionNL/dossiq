@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-archival-review/specs/example-set-archival-review/spec.md#requirement-pieter-has-one-archival-review-waiting
+ * @spec openspec/specs/example-set-zuiddrecht-data/spec.md#requirement-pieter-has-one-archival-review-waiting
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Pieter's pending archival review.
  *
- * @spec openspec/changes/example-set-archival-review/specs/example-set-archival-review/spec.md#requirement-pieter-has-one-archival-review-waiting
+ * @spec openspec/specs/example-set-zuiddrecht-data/spec.md#requirement-pieter-has-one-archival-review-waiting
  */
 class ZuiddrechtArchivalReviewTest extends TestCase {
 

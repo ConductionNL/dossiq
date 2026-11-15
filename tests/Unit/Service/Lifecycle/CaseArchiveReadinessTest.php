@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseArchiveReadiness
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Lifecycle\DossierDocumentStore
  */
 class CaseArchiveReadinessTest extends TestCase {
 
@@ -55,6 +56,9 @@ class CaseArchiveReadinessTest extends TestCase {
 			$register->seed('zaakinformatieobject', 'j-' . $at, ['case' => 'case-1', 'informatieobject' => 'io-' . $at]);
 		}
 
+		$register->seed('decision', 'd-dated', ['decisionDate' => '2026-10-28']);
+		$register->seed('decision', 'd-older', ['decisionDate' => '2026-09-01']);
+
 		// A document of another case is not counted.
 		$register->seed('informatieobject', 'io-other', ['status' => 'draft']);
 		$register->seed('zaakinformatieobject', 'j-other', ['case' => 'case-2', 'informatieobject' => 'io-other']);
@@ -65,6 +69,7 @@ class CaseArchiveReadinessTest extends TestCase {
 				'register' => 'dossiq',
 				'dossier_informatieobject_schema' => 'informatieobject',
 				'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
+				'decision_schema' => 'decision',
 			][$key] ?? $default
 		);
 
@@ -112,6 +117,108 @@ class CaseArchiveReadinessTest extends TestCase {
 		$this->assertSame(['id' => 'documents', 'met' => false, 'count' => 2, 'total' => 3], $checklist['documents']);
 		$this->assertSame(['id' => 'openTasks', 'met' => false, 'count' => 1], $checklist['openTasks']);
 	}//end testAFinishedCaseIsReadItemByItem()
+
+	/**
+	 * A case without documents has all of them final; a document store that
+	 * cannot be read says it does not know.
+	 *
+	 * @return void
+	 */
+	public function testNoDocumentsAreAllFinalAndAnUnreadableStoreIsUnknown(): void {
+		$none = $this->byId($this->readiness(documents: [], tasks: [])->checklist(caseId: 'case-1', case: []));
+		$this->assertSame(['id' => 'documents', 'met' => true, 'count' => 0, 'total' => 0], $none['documents']);
+
+		$broken = $this->createMock(SettingsService::class);
+		$broken->method('getObjectService')->willReturn(
+			new class {
+				/**
+				 * @param mixed ...$arguments Any search.
+				 *
+				 * @return array<int, mixed> Never returns.
+				 */
+				public function searchObjects(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end searchObjects()
+
+				/**
+				 * @param mixed ...$arguments Any search.
+				 *
+				 * @return array<string, mixed> Never returns.
+				 */
+				public function searchObjectsPaginated(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end searchObjectsPaginated()
+
+				/**
+				 * @param mixed ...$arguments Any query.
+				 *
+				 * @return array<string, mixed> Never returns.
+				 */
+				public function buildSearchQuery(mixed ...$arguments): array {
+					throw new \RuntimeException('store down');
+				}//end buildSearchQuery()
+			}
+		);
+		$broken->method('getConfigValue')->willReturn('configured');
+		$session = $this->createMock(IUserSession::class);
+		$readiness = new CaseArchiveReadiness(
+			settingsService: $broken,
+			tasks: $this->createMock(EngineTaskInbox::class),
+			userSession: $session,
+			endings: $this->createMock(CaseEndingActs::class)
+		);
+		$unknown = $this->byId($readiness->checklist(caseId: 'case-1', case: []));
+		$this->assertSame(['id' => 'documents', 'met' => null], $unknown['documents']);
+	}//end testNoDocumentsAreAllFinalAndAnUnreadableStoreIsUnknown()
+
+	/**
+	 * The decision item carries the date of the latest decision.
+	 *
+	 * @return void
+	 */
+	public function testTheDecisionCarriesTheDateOfTheLatestOne(): void {
+		$checklist = $this->byId(
+			checklist: $this->readiness(documents: [], tasks: [])->checklist(
+				caseId: 'case-1',
+				case: ['decisions' => ['d-older', 'd-dated']]
+			)
+		);
+
+		$this->assertSame(
+			expected: ['id' => 'decision', 'met' => true, 'count' => 2, 'date' => '2026-10-28'],
+			actual: $checklist['decision']
+		);
+	}//end testTheDecisionCarriesTheDateOfTheLatestOne()
+
+	/**
+	 * A published case names when and where it was published.
+	 *
+	 * @return void
+	 */
+	public function testAPublishedCaseNamesWhenAndWhere(): void {
+		$case      = ['publishedAt' => '2026-10-28T10:00:00+01:00', 'publications' => [['channel' => 'website'], ['channel' => 'opencatalogi']]];
+		$checklist = $this->byId(
+			checklist: $this->readiness(documents: [], tasks: [])->checklist(caseId: 'case-1', case: $case)
+		);
+
+		$this->assertSame(
+			expected: ['id' => 'publication', 'met' => true, 'date' => '2026-10-28T10:00:00+01:00', 'channel' => 'opencatalogi'],
+			actual: $checklist['publication']
+		);
+	}//end testAPublishedCaseNamesWhenAndWhere()
+
+	/**
+	 * An unpublished case says so.
+	 *
+	 * @return void
+	 */
+	public function testAnUnpublishedCaseSaysSo(): void {
+		$checklist = $this->byId(
+			checklist: $this->readiness(documents: [], tasks: [])->checklist(caseId: 'case-1', case: [])
+		);
+
+		$this->assertSame(expected: ['id' => 'publication', 'met' => false], actual: $checklist['publication']);
+	}//end testAnUnpublishedCaseSaysSo()
 
 	public function testAnOpenCaseIsNotReadyAndNothingIsAssumed(): void {
 		$checklist = $this->byId(

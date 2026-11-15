@@ -75,7 +75,7 @@ final class RenamedLayoutIdsTest extends TestCase {
 	 * @return void
 	 */
 	public function testEveryIdReferenceFollowsTheRename(): void {
-		$out = RenamedLayoutIds::rewrite(value: self::storedDelta());
+		$out = (new RenamedLayoutIds())->rewrite(value: self::storedDelta());
 		$deadlines = $out['pages'][0]['config'];
 
 		self::assertSame('TermijnDashboard', $out['pages'][0]['id'], 'A page id that was not renamed stays.');
@@ -103,11 +103,11 @@ final class RenamedLayoutIdsTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheRewriteIsIdempotent(): void {
-		$once = RenamedLayoutIds::rewrite(value: self::storedDelta());
+		$once = (new RenamedLayoutIds())->rewrite(value: self::storedDelta());
 
-		self::assertSame($once, RenamedLayoutIds::rewrite(value: $once));
+		self::assertSame($once, (new RenamedLayoutIds())->rewrite(value: $once));
 		$untouched = ['pages' => [['id' => 'Cases', 'config' => ['title' => 'td-running is a word here']]]];
-		self::assertSame($untouched, RenamedLayoutIds::rewrite(value: $untouched));
+		self::assertSame($untouched, (new RenamedLayoutIds())->rewrite(value: $untouched));
 	}//end testTheRewriteIsIdempotent()
 
 	/**

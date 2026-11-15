@@ -105,7 +105,7 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = nul
 				NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnChoiceCards: true,
-				BeschikkingComposerDialog: true,
+				GenerateDocumentDialog: true,
 				NcNoteCard: {
 					props: ['type', 'heading', 'showAlert'],
 					template: '<div :data-type="type" :data-heading="heading" :data-alert="String(showAlert)"><slot /></div>',

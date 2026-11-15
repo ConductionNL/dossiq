@@ -5,8 +5,9 @@
   Adding a location to a case (board DqZaakLocatie).
 
   The address comes from the PDOK Locatieserver, so only a BAG address can be
-  saved: a typed string has no address designation and would put a pin
-  nowhere a later lookup can find. The map shows the chosen address with the
+  saved while the search answers. When the Locatieserver does not answer, the
+  search turns into fields to type the address in, and that address is saved
+  as a manual one (no BAG check, no pin) so the case can go on. The map shows the chosen address with the
   map layers the organisation configured; the BAG and the cadastre/WOZ cards
   show what those registers say about it, read through dossiq's own BRK and
   WOZ adapters. Saving writes one `case-location` on the case.
@@ -17,12 +18,16 @@
 	<CnDialog
 		:name="t('dossiq', 'Add location')"
 		:eyebrow="eyebrow"
-		width="wizard"
+		width="confirm"
 		data-testid="case-location-dialog"
+		v-bind="noticeProps"
 		@closing="$emit('close')">
 		<div class="case-location-dialog">
 			<CnAddressSearch
 				:inputLabel="t('dossiq', 'Search address')"
+				manualFallback
+				:unavailableTitle="t('dossiq', 'Address search is not available right now')"
+				:unavailableText="t('dossiq', 'The link with the PDOK Locatieserver does not answer. Type the address yourself; the BAG details follow later.')"
 				data-testid="case-location-search"
 				@select="onSelect" />
 			<p class="case-location-dialog__hint">
@@ -82,9 +87,7 @@
 				</section>
 			</div>
 
-			<NcNoteCard v-if="error" type="error" data-testid="case-location-error">
-				{{ error }}
-			</NcNoteCard>
+			<DialogNotice :notice="notice" data-testid="case-location-error" />
 		</div>
 
 		<template #actions>
@@ -114,12 +117,15 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
+import DialogNotice from '../components/dialog/DialogNotice.vue'
 import { lookupParcel } from '../services/brkApi.js'
 import { caseLocationRecord, parcelOf, saveCaseLocation } from '../services/caseLocationApi.js'
 import { fetchCaseSummary } from '../services/caseSummary.js'
 import { lookupWozValueByNummeraanduiding } from '../services/wozApi.js'
+import { dialogNoticeProps } from '../utils/dialogNotice.js'
+import { locationSaveRefusal } from '../utils/locationSaveRefusal.js'
+import { mapLayerDefinition } from '../utils/mapLayers.js'
 
 /** The centre of the Netherlands, before an address is chosen. */
 const DEFAULT_CENTER = [52.13, 5.29]
@@ -131,10 +137,10 @@ export default {
 		CnAddressSearch,
 		CnDialog,
 		CnMapWidget,
+		DialogNotice,
 		MapMarkerOutline,
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcNoteCard,
 	},
 
 	props: {
@@ -151,7 +157,7 @@ export default {
 		return {
 			/** What the address search emitted for the chosen address, or null. */
 			chosen: null,
-			/** The configured WMS/WFS layers, `{ id, title, type, url, layerName, isDefault }`. */
+			/** The configured WMS, WFS and ArcGIS layers, `{ id, title, type, url, layerName, isDefault }`. */
 			layers: [],
 			/** The ids of the layers drawn on the map. */
 			shown: [],
@@ -160,13 +166,19 @@ export default {
 			/** The cadastral parcel for the address, or null. */
 			parcel: null,
 			saving: false,
-			error: '',
+			/** The refusal of the last save, as a dialog notice, or null. */
+			notice: null,
 			/** The case, for the eyebrow. */
 			kase: null,
 		}
 	},
 
 	computed: {
+		/** @spec openspec/specs/bag-location-save-validation/spec.md */
+		noticeProps() {
+			return dialogNoticeProps(this.notice)
+		},
+
 		/**
 		 * @return {string} The case id, from the prop or the route.
 		 *
@@ -229,11 +241,8 @@ export default {
 		activeLayers() {
 			return this.layers
 				.filter((layer) => this.shown.includes(layer.id))
-				.map((layer) => ({
-					type: String(layer.type).toLowerCase() === 'wfs' ? 'wfs' : 'wms',
-					url: layer.url,
-					options: { layers: layer.layerName, format: 'image/png', transparent: true },
-				}))
+				.map(mapLayerDefinition)
+				.filter((definition) => definition !== null)
 		},
 
 		/**
@@ -329,7 +338,7 @@ export default {
 		 */
 		async onSelect(chosen) {
 			this.chosen = chosen
-			this.error = ''
+			this.notice = null
 			this.woz = null
 			this.parcel = null
 			const designation = chosen?.result?.nummeraanduiding_id
@@ -352,7 +361,7 @@ export default {
 				return
 			}
 			this.saving = true
-			this.error = ''
+			this.notice = null
 			try {
 				const saved = await saveCaseLocation(caseLocationRecord(this.targetCaseId, this.chosen))
 				showSuccess(t('dossiq', 'Location added to the case.'))
@@ -360,7 +369,7 @@ export default {
 				this.$emit('saved', saved)
 				this.$emit('close')
 			} catch (error) {
-				this.error = error?.response?.data?.message || t('dossiq', 'The location could not be saved.')
+				this.notice = locationSaveRefusal(error?.response?.data)
 			} finally {
 				this.saving = false
 			}
@@ -396,10 +405,10 @@ export default {
 	overflow: hidden;
 }
 
-/* The map takes the row; the layer list beside it is 200px. */
+/* The map takes the row; the layer list beside it is 170px. */
 .case-location-dialog__map-row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 200px;
+	grid-template-columns: minmax(0, 1fr) 170px;
 	gap: 12px;
 }
 
@@ -447,8 +456,8 @@ export default {
 }
 
 .case-location-dialog__facts {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	display: flex;
+	flex-direction: column;
 	gap: 12px;
 }
 
@@ -496,8 +505,7 @@ export default {
 }
 
 @media (max-width: 600px) {
-	.case-location-dialog__map-row,
-	.case-location-dialog__facts {
+	.case-location-dialog__map-row {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }

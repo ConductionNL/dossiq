@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Status\DerivedStatusEvaluator;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\Dossiq\Service\Transitions\TransitionDestination;
 use OCA\Dossiq\Service\Transitions\TransitionPreconditions;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCP\IL10N;
@@ -49,10 +50,18 @@ use ReflectionMethod;
  *
  * @covers \OCA\Dossiq\Service\Support\TranslatedText
  * @covers \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
+ * @uses \OCA\Dossiq\Service\ProcessMining\DwellWindow
+ * @uses \OCA\Dossiq\Service\ProcessMining\CaseDwell
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusVisit
  * @covers \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder
  * @covers \OCA\Dossiq\Service\Intake\RequestCatalogue
  * @covers \OCA\Dossiq\Service\Transitions\CaseStatusStore
  * @covers \OCA\Dossiq\Service\Transitions\TransitionPreconditions
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\Ai\CaseTypeAiFeatures
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusLabels
  */
 class TranslatableNamesForAnEnglishReaderTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -130,7 +139,7 @@ class TranslatableNamesForAnEnglishReaderTest extends TestCase {
 		);
 
 		self::assertSame('We are assessing your request.', $store->lookupStatusDescription(statusTypeId: 'st-1'));
-		self::assertSame('Written view', (new ReflectionMethod($preconditions, 'obligationReason'))->invoke($preconditions, [], 'case-1', 'st-2', false));
+		self::assertSame('Written view', (new ReflectionMethod($preconditions, 'obligationReason'))->invoke($preconditions, [], new TransitionDestination(case: [], caseId: 'case-1', toStatus: 'st-2', toIsClosing: false)));
 	}//end testAStatusDescriptionAndAnObligationTitleAreInEnglish()
 
 	/**

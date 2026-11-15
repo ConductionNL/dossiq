@@ -56,6 +56,14 @@ describe('the Linked side card on the case page', () => {
 		])
 	})
 
+	it('names the finance leaf "fees and payments" in its own words, as the board writes the line', () => {
+		for (const leaves of [linked.content.leaves, fullCase.widgets.find((widget) => widget.id === 'case-linked').content.leaves]) {
+			expect(leaves).toContainEqual({ id: 'shillinq-financial-documents-panel', noun: 'fees and payments' })
+		}
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).translations
+		expect(nl['fees and payments']).toBe('leges en betalingen')
+	})
+
 	// The noun stays blank: the board's nothing-linked line names only leges, contract and projects.
 	it('reads "Vraag in pipelinq" from the pipelinq request that points at this case, as configuration', () => {
 		const requests = linked.content.leaves.find(

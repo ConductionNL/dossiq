@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Reporting;
 
+use OCA\Dossiq\Service\Reporting\ProcessingTimeSteps;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\Reporting\ProcessingTimeCalculator;
 use OCA\Dossiq\Service\Reporting\ProcessingTimeReportService;
@@ -97,9 +98,11 @@ class ProcessingTimeReportServiceTest extends TestCase {
 
 		return new ProcessingTimeReportService(
 			loader: $this->loader,
-			calculator: new ProcessingTimeCalculator(),
-			rows: new ProcessingTimeRows(),
-			publisher: $this->publisher,
+			steps: new ProcessingTimeSteps(
+				calculator: new ProcessingTimeCalculator(),
+				rows: new ProcessingTimeRows(),
+				publisher: $this->publisher,
+			),
 			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
 			periods: new ReportPeriod(),
 			l10n: $l10n,

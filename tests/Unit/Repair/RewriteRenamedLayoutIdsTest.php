@@ -28,6 +28,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * @covers \OCA\Dossiq\Repair\RewriteRenamedLayoutIds
@@ -145,8 +146,6 @@ final class RewriteRenamedLayoutIdsTest extends TestCase {
 			 * @param bool                 $_multitenancy Ignored.
 			 *
 			 * @return array<int, array<string, mixed>> The arrangements.
-			 *
-			 * @SuppressWarnings(PHPMD.UnusedFormalParameter) OpenRegister's signature.
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
 				if ($this->missing === true || $register !== 'buildiq' || $schema !== 'applicationVersion') {
@@ -165,10 +164,12 @@ final class RewriteRenamedLayoutIdsTest extends TestCase {
 			 * @param int|string           $schema   The schema.
 			 *
 			 * @return array<string, mixed> The stored arrangement.
-			 *
-			 * @SuppressWarnings(PHPMD.UnusedFormalParameter) OpenRegister's signature.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				foreach ($this->rows as $index => $row) {
 					if ($row['@self']['id'] === $objectId) {
 						$this->rows[$index] = array_merge($row, $data);

@@ -30,6 +30,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Controller\DocumentRedactionController
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler
  */
 class DocumentRedactionControllerTest extends TestCase {
 
@@ -79,7 +81,8 @@ class DocumentRedactionControllerTest extends TestCase {
 			caseAccess: $access,
 			uploads: new DossierUploadHandler(
 				fileService: $this->createMock(\OCA\Dossiq\Service\ZaakdossierService::class),
-				caseAccessGuard: $access
+				caseAccessGuard: $access,
+				quotaGate: $this->createMock(\OCA\Dossiq\Service\QuotaGate::class)
 			),
 			userSession: $session,
 			l10n: new SourceL10n(),

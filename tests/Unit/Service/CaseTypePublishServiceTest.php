@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks;
 use DateTime;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
@@ -51,6 +52,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class CaseTypePublishServiceTest extends TestCase {
 
@@ -140,7 +143,9 @@ class CaseTypePublishServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->caseTypes[$id] ?? []);
 			}
 
@@ -179,7 +184,9 @@ class CaseTypePublishServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if ($this->saveFails === true) {
 					throw new RuntimeException('unwritable');
 				}
@@ -211,11 +218,13 @@ class CaseTypePublishServiceTest extends TestCase {
 			checks: new PublicationChecks(
 				caseTypeResolver: new CaseTypeResolver(store: $store),
 				store: $store,
-				acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+				declarations: new CaseTypeDeclarationChecks(
+					acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+					admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+					remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
+					handling: new CaseTypeHandling(),
+				),
 				unreadTriggers: new UnreadTriggerService(l10n: new SourceL10n()),
-				admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
-				remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
-				handling: new CaseTypeHandling(),
 				reachability: new CaseTypeReachability(),
 				senders: $this->createMock(originalClassName: SenderIdentity::class),
 			),

@@ -1,7 +1,7 @@
 # woo-publication-via-opencatalogi Specification
 
 ## Purpose
-TBD - created by archiving change woo-publication-via-opencatalogi. Update Purpose after archive.
+Publish Woo decisions through OpenCatalogi, building the publication from the case and disclosing only redacted documents.
 
 ## Requirements
 

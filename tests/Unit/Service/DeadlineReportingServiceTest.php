@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\Reporting\AnnualPayoutStatement;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -34,8 +35,13 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
  * @uses \OCA\Dossiq\Service\Termijn\TermDashboardFigures
+ * @uses \OCA\Dossiq\Service\Reporting\AnnualPayoutStatement
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Money\PayoutReader
+ * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class DeadlineReportingServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -331,6 +337,18 @@ class DeadlineReportingServiceTest extends TestCase {
 	}
 
 	/**
+	 * A case-type filter that matches no row leaves every counter at zero.
+	 *
+	 * @return void
+	 */
+	public function testKpiFilteredToAnotherCaseTypeCountsNothing(): void {
+		$k = $this->service->getTermijnKpi(filters: ['caseType' => 'not-a-type']);
+
+		self::assertSame(0, $k['totalZaken']);
+		self::assertSame(0, $k['overrunCount']);
+	}//end testKpiFilteredToAnotherCaseTypeCountsNothing()
+
+	/**
 	 * @return void
 	 */
 	public function testKpiSummary(): void {
@@ -484,6 +502,50 @@ class DeadlineReportingServiceTest extends TestCase {
 	}
 
 	/**
+	 * The annual statement's rows, warnings and summary, and the empty answer
+	 * when the payouts cannot be read.
+	 *
+	 * @return void
+	 */
+	public function testTheAnnualStatementKeepsItsWholeShape(): void {
+		$this->objects->seed('dwangsomUitbetaling', ['id' => 'u-1', 'reference' => 'REF-1', 'amount' => 1250, 'actualPaymentDate' => '2026-02-01', 'status' => 'paid', 'legalBasis' => 'Awb 4:17', 'iban' => 'NL01']);
+		$this->objects->seed('dwangsomUitbetaling', ['id' => 'u-2', 'reference' => 'REF-2', 'amount' => 99, 'actualPaymentDate' => '2026-03-01', 'betalingsreferentie' => 'ERP-2']);
+
+		$report = $this->service->generateDwangsomAuditReport(2026);
+
+		self::assertSame(['year', 'jaar', 'rows', 'summary', 'warnings'], array_keys($report));
+		self::assertSame([2026, 2026], [$report['year'], $report['jaar']]);
+		self::assertSame(
+			['reference' => 'REF-1', 'bedragCents' => 1250, 'actualPaymentDate' => '2026-02-01', 'betalingsreferentie' => '', 'status' => 'paid', 'legalBasis' => 'Awb 4:17', 'iban' => 'NL01'],
+			array_slice($report['rows'][0], 0, 7)
+		);
+		self::assertSame(['count' => 2, 'totalCents' => 1349, 'totalEuros' => 13.49, 'warningCount' => 1], $report['summary']);
+		self::assertSame(['Missing betalingsreferentie for REF-1'], $report['warnings']);
+
+		$empty = ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
+		$broken = $this->createMock(SettingsService::class);
+		$broken->method('getObjectService')->willReturn(
+			new class {
+				/**
+				 * @param mixed ...$arguments Anything.
+				 *
+				 * @return array<int, mixed> Never.
+				 */
+				public function searchObjectsBySlug(mixed ...$arguments): array {
+					throw new \RuntimeException('down');
+				}
+			}
+		);
+		$broken->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($key === 'register' ? 'dossiq' : ($key === 'payout_schema' ? 'payouts' : '')));
+		self::assertSame($empty, (new DeadlineReportingService($broken))->generateDwangsomAuditReport(2026));
+
+		$unset = $this->createMock(SettingsService::class);
+		$unset->method('getObjectService')->willReturn($this->objects);
+		$unset->method('getConfigValue')->willReturn('');
+		self::assertSame($empty, (new DeadlineReportingService($unset))->generateDwangsomAuditReport(2026));
+	}//end testTheAnnualStatementKeepsItsWholeShape()
+
+	/**
 	 * @return void
 	 */
 	public function testDwangsomAuditReportFiltersByYear(): void {
@@ -531,7 +593,10 @@ class DeadlineReportingServiceTest extends TestCase {
 				$event->answer([['payableId' => 'payable-1', 'reference' => 'DWS-1', 'correlationId' => 'calc-1', 'amount' => 357.0, 'state' => 'paid', 'paidOn' => '2026-04-20', 'bankReference' => 'ERP-1', 'payee' => ['name' => 'J', 'iban' => 'NL91ABNA0417164300']]]);
 			}
 		);
-		$service = new DeadlineReportingService(settingsService: $this->settings, payouts: new PayoutReader(dispatcher: $dispatcher));
+		$service = new DeadlineReportingService(
+			settingsService: $this->settings,
+			statements: new AnnualPayoutStatement(settingsService: $this->settings, payouts: new PayoutReader(dispatcher: $dispatcher))
+		);
 
 		$report = $service->generateDwangsomAuditReport(2026);
 

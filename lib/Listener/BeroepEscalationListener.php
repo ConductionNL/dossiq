@@ -35,7 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ObjectUpdatePayload;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -54,6 +55,7 @@ use Throwable;
  */
 class BeroepEscalationListener implements IEventListener {
 
+	use ObjectUpdatePayload;
 	use SearchesObjects;
 
 	/**
@@ -88,11 +90,11 @@ class BeroepEscalationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema slug bridge
+	 * @param SettingsServiceInterface $settingsService Schema slug bridge
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -104,7 +106,7 @@ class BeroepEscalationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatedEvent === false
@@ -132,64 +134,124 @@ class BeroepEscalationListener implements IEventListener {
 	 * @return void
 	 */
 	private function deriveDwingendStatus(Event $event): void {
-		$object = $this->extractObject(event: $event);
-		if ($object === null) {
+		$appeal = $this->appealWithObjection(event: $event);
+		if ($appeal === null) {
 			return;
+		}
+
+		$run = $this->objectionRun(appeal: $appeal);
+		if ($run === null) {
+			return;
+		}
+
+		$this->syncMarker(run: $run);
+	}//end deriveDwingendStatus()
+
+	/**
+	 * The beroep the event carries, when it names its source bezwaar.
+	 *
+	 * @param Event $event The dispatched event
+	 *
+	 * @return array<string, mixed>|null The beroep payload, or null.
+	 */
+	private function appealWithObjection(Event $event): ?array {
+		$object = $this->updatedObject(event: $event);
+		if ($object === null) {
+			return null;
 		}
 
 		if ($this->isAppealSchema(object: $object) === false) {
-			return;
+			return null;
 		}
 
-		$sourceObjectionId = (string)($object['sourceObjection'] ?? '');
-		if ($sourceObjectionId === '') {
-			return;
+		if ((string)($object['sourceObjection'] ?? '') === '') {
+			return null;
 		}
 
+		return $object;
+	}//end appealWithObjection()
+
+	/**
+	 * The run over the beroep, or null without an object service or a configured bezwaar schema.
+	 *
+	 * @param array<string, mixed> $appeal The beroep payload
+	 *
+	 * @return DwingendStatusRun|null
+	 */
+	private function objectionRun(array $appeal): ?DwingendStatusRun {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return;
+			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue(
-			key: 'register'
-		);
-		$objectionSchema = $this->settingsService->getConfigValue(
-			key: 'bezwaar_schema'
-		);
-		if ($register === '' || $objectionSchema === '') {
-			return;
+		$run = new DwingendStatusRun();
+		$run->appeal = $appeal;
+		$run->objectService = $objectService;
+		$run->register = $this->settingsService->getConfigValue(key: 'register');
+		$run->objectionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
+		if ($run->register === '' || $run->objectionSchema === '') {
+			return null;
 		}
 
-		$objection = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $objectionSchema,
-			id: $sourceObjectionId
-		);
+		return $run;
+	}//end objectionRun()
+
+	/**
+	 * Derive the marker for the source bezwaar and write it when it differs from the stored one.
+	 *
+	 * @param DwingendStatusRun $run The run
+	 *
+	 * @return void
+	 */
+	private function syncMarker(DwingendStatusRun $run): void {
+		$objection = $this->sourceObjection(run: $run);
 		if ($objection === null) {
 			return;
 		}
 
-		$dwingend = $this->shouldFlagDwingend(
-			appeal: $object,
-			objection: $objection,
-		);
+		$dwingend = $this->shouldFlagDwingend(appeal: $run->appeal, objection: $objection);
 
 		// No-op when the derived marker already matches.
-		$current = (bool)($objection['dwingendStatus'] ?? false);
-		if ($current === $dwingend) {
+		if ((bool)($objection['dwingendStatus'] ?? false) === $dwingend) {
 			return;
 		}
 
+		$this->writeMarker(run: $run, dwingend: $dwingend);
+	}//end syncMarker()
+
+	/**
+	 * The source bezwaar the beroep names, or null when it is not found.
+	 *
+	 * @param DwingendStatusRun $run The run
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function sourceObjection(DwingendStatusRun $run): ?array {
+		return $this->findObjectAsArray(
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->objectionSchema,
+			id: (string)$run->appeal['sourceObjection']
+		);
+	}//end sourceObjection()
+
+	/**
+	 * Write the derived marker onto the source bezwaar.
+	 *
+	 * @param DwingendStatusRun $run      The run
+	 * @param bool              $dwingend The derived marker
+	 *
+	 * @return void
+	 */
+	private function writeMarker(DwingendStatusRun $run, bool $dwingend): void {
 		$this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $objectionSchema,
-			id: (string)$sourceObjectionId,
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->objectionSchema,
+			id: (string)$run->appeal['sourceObjection'],
 			changes: ['dwingendStatus' => $dwingend]
 		);
-	}//end deriveDwingendStatus()
+	}//end writeMarker()
 
 	/**
 	 * Decide whether the source bezwaar should carry dwingendStatus = true.
@@ -272,74 +334,6 @@ class BeroepEscalationListener implements IEventListener {
 	 * @return bool
 	 */
 	private function isAppealSchema(array $object): bool {
-		$schemaSlug = $this->settingsService->getConfigValue(
-			key: 'beroep_schema'
-		);
-		if ($schemaSlug === '') {
-			return false;
-		}
-
-		$candidate = (string)(
-			$object['@self']['schema'] ?? ($object['@self']['schemaSlug'] ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
-		);
-
-		return $candidate !== '' && (
-			$candidate === $schemaSlug
-			|| str_ends_with($candidate, '/' . $schemaSlug)
-		);
-	}//end isBeroepSchema()
-
-	/**
-	 * Extract the new object payload from an event.
-	 *
-	 * @param Event $event Event instance
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function extractObject(Event $event): ?array {
-		foreach (['getNewObject', 'getObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$value = $event->{$method}();
-			$array = $this->normalise(value: $value);
-			if ($array !== null) {
-				return $array;
-			}
-		}
-
-		return null;
-	}//end extractObject()
-
-	/**
-	 * Normalise a getter return value to an associative array.
-	 *
-	 * @param mixed $value The raw value
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-		}
-
-		return null;
-	}//end normalise()
+		return $this->matchesConfiguredSchema(candidate: $this->schemaNamedAnywhere(object: $object), schemaKey: 'beroep_schema');
+	}//end isAppealSchema()
 }//end class

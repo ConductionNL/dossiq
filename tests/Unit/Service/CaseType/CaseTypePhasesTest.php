@@ -38,6 +38,11 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the phases a case type page shows.
  *
  * @covers \OCA\Dossiq\Service\CaseType\CaseTypePhases
+ * @uses \OCA\Dossiq\Service\CaseType\AlwaysAvailableActDeclaration
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Task\TaskDeclaration
  */
 class CaseTypePhasesTest extends TestCase {
 
@@ -237,4 +242,48 @@ class CaseTypePhasesTest extends TestCase {
 		self::assertSame(expected: ['', 'Automatisch, bericht aan de aanvrager'], actual: array_column($result['phases'][0]['tasks'], 'description'));
 		self::assertSame(expected: ['Vergunningverlener', ''], actual: array_column($result['phases'][1]['tasks'], 'roleName'));
 	}//end testATaskNamesItsRoleAndKeepsItsDescription()
+	/**
+	 * A phase is identified and ordered by its EARLIEST status, whatever order
+	 * the statuses arrive in; a status with no id belongs to no phase.
+	 *
+	 * @return void
+	 */
+	public function testAPhaseTakesItsEarliestStatusWhateverTheWireOrder(): void {
+		$statuses = [
+			['name' => 'Zonder id', 'order' => 0, 'phase' => 'Spook'],
+			['id' => 'beh', 'name' => 'In behandeling', 'order' => 3, 'phase' => 'Beoordeling'],
+			['id' => 'aanv', 'name' => 'Aanvullende gegevens gevraagd', 'order' => 2, 'phase' => 'Ontvangst'],
+			['id' => 'ontv', 'name' => 'Ontvangen', 'order' => 1, 'phase' => 'ontvangst'],
+		];
+		$template = ['steps' => [
+			['id' => 't1', 'title' => 'Volledigheid toetsen', 'status' => 'ontv', 'order' => 1, 'routingRule' => 'r-in', 'assigneeRole' => 'r-in'],
+		]];
+		$result = $this->phases(
+			caseType: ['id' => 'ct'],
+			statuses: $statuses,
+			template: $template,
+			roles: [['id' => 'r-in', 'name' => 'Intaker']]
+		)->phasesFor(caseTypeId: 'ct');
+
+		$this->assertSame(['Ontvangst', 'Beoordeling'], array_column($result['phases'], 'name'));
+		$this->assertSame(['ontv', 'beh'], array_column($result['phases'], 'id'));
+		$this->assertSame([1, 3], array_column($result['phases'], 'order'));
+		$this->assertSame(['aanv', 'ontv'], $result['phases'][0]['statusIds']);
+		// A routing rule that is not an object routes by the step's own assignee role.
+		$this->assertSame('r-in', $result['phases'][0]['tasks'][0]['roleTypeId']);
+		$this->assertSame('Intaker', $result['phases'][0]['tasks'][0]['roleName']);
+	}//end testAPhaseTakesItsEarliestStatusWhateverTheWireOrder()
+
+	/**
+	 * A template whose steps are not a list runs no task, rather than failing.
+	 *
+	 * @return void
+	 */
+	public function testATemplateWithoutAStepListRunsNoTask(): void {
+		$result = $this->phases(caseType: ['id' => 'ct'], statuses: $this->statuses(), template: ['steps' => 'broken'])->phasesFor(caseTypeId: 'ct');
+
+		$this->assertSame(0, $result['taskCount']);
+		$this->assertSame([[], []], array_column($result['phases'], 'tasks'));
+		$this->assertSame([], $result['unplaced']);
+	}//end testATemplateWithoutAStepListRunsNoTask()
 }//end class

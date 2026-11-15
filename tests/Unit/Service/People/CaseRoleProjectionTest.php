@@ -16,6 +16,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A person linked to a case becomes a role record on that case.
@@ -99,7 +102,9 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (isset($this->rows[$id]) === false) {
 					throw new RuntimeException('not found: ' . $id);
 				}
@@ -152,7 +157,10 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$uuid = ($uuid ?? ('new-' . count($this->saves)));
 				$this->saves[] = ['schema' => $schema, 'uuid' => $uuid, 'object' => $object];
 				$this->rows[$uuid] = ($object + ['id' => $uuid, '@schema' => $schema]);
@@ -169,7 +177,10 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return void
 			 */
-			public function deleteObject(string $uuid, string|int|null $register = null, string|int|null $schema = null): void {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): void {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$this->deleted[] = $uuid;
 			}
 		};
@@ -428,8 +439,10 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
-				return $this->inner->find($id, $register, $schema);
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
+				return $this->inner->find($id, $options);
 			}
 
 			/**
@@ -455,8 +468,11 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return object The saved entity.
 			 */
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): object {
-				$this->inner->saveObject($object, $register, $schema, $uuid);
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				$this->inner->saveObject($object, $options);
 
 				return new class {
 					/**
@@ -479,8 +495,11 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return void
 			 */
-			public function deleteObject(string $uuid, string|int|null $register = null, string|int|null $schema = null): void {
-				$this->inner->deleteObject($uuid, $register, $schema);
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): void {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
+				$this->inner->deleteObject($deletion);
 			}
 		};
 

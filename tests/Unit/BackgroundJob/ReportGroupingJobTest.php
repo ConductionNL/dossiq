@@ -44,6 +44,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ReportGroupingJobTest extends TestCase {
 	use MakesBackgroundServiceAccount;

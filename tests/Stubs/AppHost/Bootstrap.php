@@ -32,15 +32,33 @@ if (class_exists(Bootstrap::class) === false) {
 	class Bootstrap {
 
 		/**
+		 * The adoptions registered, so a test can read what a leaf handed over.
+		 *
+		 * @var LeafAdoption[]
+		 */
+		public static array $adoptions = [];
+
+		/**
 		 * Register the AppHost generics for a leaf app. No-op in the stub.
 		 *
-		 * @param IRegistrationContext $context The leaf registration context.
-		 * @param string $appId The leaf app id.
-		 * @param array<string, mixed> $options Bootstrap options.
+		 * @param IRegistrationContext     $context  The leaf registration context.
+		 * @param string|LeafAdoption|null $appId    The leaf app id, or its adoption.
+		 * @param array<string, mixed>     $options  The bootstrap options when an app id is given.
+		 * @param LeafAdoption|null        $adoption The leaf app id and its bootstrap options.
 		 *
 		 * @return void
 		 */
-		public static function register(IRegistrationContext $context, string $appId, array $options = []): void {
+		public static function register(
+			IRegistrationContext $context,
+			string|LeafAdoption|null $appId = null,
+			array $options = [],
+			?LeafAdoption $adoption = null,
+		): void {
+			if ($adoption === null && $appId instanceof LeafAdoption) {
+				$adoption = $appId;
+			}
+
+			self::$adoptions[] = ($adoption ?? new LeafAdoption(appId: (string) $appId, options: $options));
 		}//end register()
 	}//end class
 }//end if

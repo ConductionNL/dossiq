@@ -1,37 +1,27 @@
 <?php
 
 /**
- * OpenRegister DecisionChangeRequestedEvent stub.
+ * OpenRegister DecisionChangeRequestedEvent
  *
- * Declaration-only mirror of OpenRegister's vetoable event (openregister#4583,
- * reviewer-owns-their-decisions): `DecisionOwnership` dispatches it when somebody
- * other than the decider asks to change a decision under
- * `x-openregister-review {ownership: decider}`, so the app that owns the subject
- * can allow() or refuse() the change. `CaseDecisionAccessListener` listens to it
- * and is analysed and tested without the openregister runtime present.
+ * Asked before someone other than the decider changes a decider-owned
+ * decision, so the app that owns the subject can answer who may: a case's
+ * reviewer access, a team's coordinator, a procedure's supervisor group.
  *
- * The constructor takes the decision and the policy as plain objects: the real
- * `OCA\OpenRegister\Db\Decision` and `Service\Decision\ReviewPolicy` are not
- * stubbed because dossiq reads neither. Every getter dossiq calls is mirrored.
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * NOT psr-4 autoloadable, like the stubs beside it: tests/bootstrap.php
- * includes it only when the real class is absent.
- *
- * @category Tests
+ * @category Event
  * @package  OCA\OpenRegister\Event
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * SPDX-License-Identifier: EUPL-1.2
- * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * @version GIT: <git-id>
  *
- * @link https://conduction.nl
+ * @link https://OpenRegister.app
  *
- * @spec exclude A declaration-only mirror of another app's event contract, not
- * behaviour of this one; the dossiq side it lets the analysers see is specified
- * in openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md.
+ * @spec openspec/changes/reviewer-owns-their-decisions/specs/decisions/spec.md#requirement-the-app-that-owns-the-subject-may-answer-who-supervises-req-dec-002
  */
 
 declare(strict_types=1);
@@ -39,82 +29,83 @@ declare(strict_types=1);
 namespace OCA\OpenRegister\Event;
 
 use OCA\OpenRegister\Db\Decision;
-use OCA\OpenRegister\Service\Decision\ReviewPolicy;
-use OCP\EventDispatcher\Event;
+use OCA\OpenRegister\Kernel\Contracts\ReviewPolicyInterface;
 
 /**
- * Somebody other than the decider asks to change a decision.
+ * A vetoable question: may this user change this decision?
+ *
+ * OpenRegister answers first from the declared policy (a member of a
+ * supervisor group may). A listener may then allow or refuse. It is never
+ * dispatched for the decider themselves or for an administrator, who always
+ * may, and never under `open` ownership.
+ *
+ * @spec openspec/changes/reviewer-owns-their-decisions/specs/decisions/spec.md#requirement-the-app-that-owns-the-subject-may-answer-who-supervises-req-dec-002
  */
-class DecisionChangeRequestedEvent extends Event {
+class DecisionChangeRequestedEvent extends AbstractDecisionRequestEvent {
 
 	/**
-	 * Why the owning app refused, or null.
+	 * Why a listener refused, when it did.
 	 *
 	 * @var string|null
 	 */
 	private ?string $reason = null;
 
 	/**
+	 * Whether a listener has refused: a refusal is sticky.
+	 *
+	 * @var bool
+	 */
+	private bool $refused = false;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Decision               $decision The current decision.
-	 * @param string               $actorId  The user who wants to change it.
-	 * @param ReviewPolicy           $policy   The review policy that applies.
-	 * @param array<string, mixed> $subject  subjectType, subjectId, fileId, objectId, register, schema, objectUuid.
-	 * @param bool                 $allowed  The answer before any listener: a supervisor of the policy.
+	 * @param Decision              $decision The decision someone wants to change.
+	 * @param string                $actorId  The user who wants to change it.
+	 * @param ReviewPolicyInterface $policy   The policy that applies.
+	 * @param array<string, mixed>  $subject  What the decision is on: subjectType,
+	 *                                        subjectId and, when known, register,
+	 *                                        schema, objectUuid and fileId.
+	 * @param bool                  $allowed  OpenRegister's own answer from the policy.
+	 *
+	 * @spec openspec/changes/reviewer-owns-their-decisions/specs/decisions/spec.md#requirement-the-app-that-owns-the-subject-may-answer-who-supervises-req-dec-002
 	 */
 	public function __construct(
 		private readonly Decision $decision,
-		private readonly string $actorId,
-		private readonly ReviewPolicy $policy,
-		private readonly array $subject,
+		string $actorId,
+		ReviewPolicyInterface $policy,
+		array $subject,
 		private bool $allowed,
 	) {
-		parent::__construct();
+		parent::__construct(actorId: $actorId, policy: $policy, subject: $subject);
 	}//end __construct()
 
 	/**
-	 * The current decision.
+	 * The decision someone wants to change.
 	 *
-	 * @return object
+	 * @return Decision The decision.
+	 *
+	 * @spec openspec/changes/reviewer-owns-their-decisions/specs/decisions/spec.md#requirement-the-app-that-owns-the-subject-may-answer-who-supervises-req-dec-002
 	 */
 	public function getDecision(): Decision {
 		return $this->decision;
 	}//end getDecision()
 
 	/**
-	 * The user who wants to change it.
+	 * Let the change through, unless a listener has already refused it.
 	 *
-	 * @return string
-	 */
-	public function getActorId(): string {
-		return $this->actorId;
-	}//end getActorId()
-
-	/**
-	 * The policy that applies.
-	 *
-	 * @return object
-	 */
-	public function getPolicy(): ReviewPolicy {
-		return $this->policy;
-	}//end getPolicy()
-
-	/**
-	 * What the decision is on.
-	 *
-	 * @return array<string, mixed>
-	 */
-	public function getSubject(): array {
-		return $this->subject;
-	}//end getSubject()
-
-	/**
-	 * Let the change through.
+	 * A refusal is a veto and stays: with two apps listening, the order they
+	 * are registered in must not turn one app's refusal into the other's allow.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/reviewer-owns-their-decisions/specs/decisions/spec.md#requirement-the-app-that-owns-the-subject-may-answer-who-supervises-req-dec-002
 	 */
 	public function allow(): void {
+		if ($this->refused === true) {
+			return;
+		}
+
 		$this->allowed = true;
 		$this->reason = null;
 	}//end allow()
@@ -122,28 +113,35 @@ class DecisionChangeRequestedEvent extends Event {
 	/**
 	 * Refuse the change.
 	 *
-	 * @param string $reason Why.
+	 * @param string $reason Why, for the log; the caller is told only who decided.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/reviewer-owns-their-decisions/specs/decisions/spec.md#requirement-the-app-that-owns-the-subject-may-answer-who-supervises-req-dec-002
 	 */
 	public function refuse(string $reason): void {
+		$this->refused = true;
 		$this->allowed = false;
 		$this->reason = $reason;
 	}//end refuse()
 
 	/**
-	 * Whether the change may go through.
+	 * The answer after every listener has had its say.
 	 *
-	 * @return bool
+	 * @return bool True when the change may go through.
+	 *
+	 * @spec openspec/changes/reviewer-owns-their-decisions/specs/decisions/spec.md#requirement-the-app-that-owns-the-subject-may-answer-who-supervises-req-dec-002
 	 */
 	public function isAllowed(): bool {
 		return $this->allowed;
 	}//end isAllowed()
 
 	/**
-	 * Why it was refused, or null.
+	 * Why a listener refused.
 	 *
-	 * @return string|null
+	 * @return string|null The reason, or null.
+	 *
+	 * @spec openspec/changes/reviewer-owns-their-decisions/specs/decisions/spec.md#requirement-the-app-that-owns-the-subject-may-answer-who-supervises-req-dec-002
 	 */
 	public function getReason(): ?string {
 		return $this->reason;

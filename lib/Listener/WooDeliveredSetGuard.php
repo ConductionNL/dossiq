@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Woo\WooDeliveredSetWriter;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetWriterInterface;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
@@ -55,6 +55,16 @@ class WooDeliveredSetGuard implements IEventListener {
 	private const ASSESSMENT_SLUG = 'wooDocumentAssessment';
 
 	/**
+	 * The delivered set schema: its config key and its slug.
+	 */
+	private const SET_SCHEMA = [WooDeliveredSetWriterInterface::CONFIG_KEY, WooDeliveredSetWriterInterface::SCHEMA_SLUG];
+
+	/**
+	 * The assessment schema: its config key and its slug.
+	 */
+	private const ASSESSMENT_SCHEMA = ['woo_assessment_schema', self::ASSESSMENT_SLUG];
+
+	/**
 	 * The data keys of a set; anything else (`@self`, `id`) is metadata.
 	 */
 	private const SET_KEYS = ['case', 'decision', 'status', 'deliveredAt', 'deliveredBy', 'supersedes', 'publication', 'items', 'setHash'];
@@ -62,14 +72,14 @@ class WooDeliveredSetGuard implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService       $settings The configured schemas.
-	 * @param WooDeliveredSetWriter $sets     Reads the frozen sets of a case.
+	 * @param SettingsServiceInterface       $settings The configured schemas.
+	 * @param WooDeliveredSetWriterInterface $sets     Reads the frozen sets of a case.
 	 * @param IL10N                 $l10n     The refusal sentence.
 	 * @param LoggerInterface       $logger   Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
-		private readonly WooDeliveredSetWriter $sets,
+		private readonly SettingsServiceInterface $settings,
+		private readonly WooDeliveredSetWriterInterface $sets,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -90,34 +100,77 @@ class WooDeliveredSetGuard implements IEventListener {
 		}
 
 		[$old, $new] = $this->objectsOf(event: $event);
-		$current = ($old ?? $new);
-		if ($current === null) {
-			return;
-		}
-
-		$deliveredAt = null;
-		if ($this->isSchema(object: $current, configKey: WooDeliveredSetWriter::CONFIG_KEY, slug: WooDeliveredSetWriter::SCHEMA_SLUG) === true) {
-			$deliveredAt = $this->frozenSetRefusal(old: ($old ?? []), new: $new);
-		} else if ($this->isSchema(object: $current, configKey: 'woo_assessment_schema', slug: self::ASSESSMENT_SLUG) === true) {
-			$deliveredAt = $this->deliveredAssessmentRefusal(assessment: $current);
-		}
-
+		$deliveredAt = $this->deliveredAt(old: $old, new: $new);
 		if ($deliveredAt === null) {
 			return;
 		}
 
-		$sentence = $this->l10n->t(
-			'This was delivered for publication on %1$s, so it cannot be changed. Publish again to deliver a new set.',
-			[substr($deliveredAt, 0, 10)]
-		);
-		if ($deliveredAt === '') {
-			$sentence = $this->l10n->t('Whether this was delivered for publication could not be checked, so it cannot be changed now. Try again later.');
-		}
-
-		$event->setErrors(['error' => 'woo-delivered-set-frozen', 'message' => $sentence]);
+		$event->setErrors(['error' => 'woo-delivered-set-frozen', 'message' => $this->refusalSentence(deliveredAt: $deliveredAt)]);
 		$event->stopPropagation();
 		$this->logger->info('Dossiq: refused a write to a delivered Woo set or its assessments (REQ-WDS-002)');
 	}//end handle()
+
+	/**
+	 * When the delivered set this write touches was delivered, or null when the write may go ahead.
+	 *
+	 * An empty string means the delivery could not be checked.
+	 *
+	 * @param array<string, mixed>|null $old The stored object.
+	 * @param array<string, mixed>|null $new The object as the write leaves it.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function deliveredAt(?array $old, ?array $new): ?string {
+		$current = ($old ?? $new);
+		if ($current === null) {
+			return null;
+		}
+
+		if ($this->isSchema(object: $current, schema: self::SET_SCHEMA) === true) {
+			return $this->frozenSetRefusal(old: ($old ?? []), new: $new);
+		}
+
+		return $this->assessmentDeliveredAt(object: $current);
+	}//end deliveredAt()
+
+	/**
+	 * When the delivered set an assessment belongs to was delivered, or null for anything that is not an assessment.
+	 *
+	 * @param array<string, mixed> $object The object written.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function assessmentDeliveredAt(array $object): ?string {
+		if ($this->isSchema(object: $object, schema: self::ASSESSMENT_SCHEMA) === false) {
+			return null;
+		}
+
+		return $this->deliveredAssessmentRefusal(assessment: $object);
+	}//end assessmentDeliveredAt()
+
+	/**
+	 * The sentence a refused write reads: delivered on a day, or the delivery could not be checked.
+	 *
+	 * @param string $deliveredAt When the set was delivered; empty when that could not be checked.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function refusalSentence(string $deliveredAt): string {
+		if ($deliveredAt === '') {
+			return $this->l10n->t('Whether this was delivered for publication could not be checked, so it cannot be changed now. Try again later.');
+		}
+
+		return $this->l10n->t(
+			'This was delivered for publication on %1$s, so it cannot be changed. Publish again to deliver a new set.',
+			[substr($deliveredAt, 0, 10)]
+		);
+	}//end refusalSentence()
 
 	/**
 	 * The stored object and, for an update, the new one.
@@ -147,7 +200,7 @@ class WooDeliveredSetGuard implements IEventListener {
 	 * @return string|null
 	 */
 	private function frozenSetRefusal(array $old, ?array $new): ?string {
-		if ((string)($old['status'] ?? '') !== WooDeliveredSetWriter::STATUS_FROZEN) {
+		if ((string)($old['status'] ?? '') !== WooDeliveredSetWriterInterface::STATUS_FROZEN) {
 			return null;
 		}
 
@@ -238,13 +291,13 @@ class WooDeliveredSetGuard implements IEventListener {
 	/**
 	 * Whether an object's `@self.schema` is the slug or the configured schema.
 	 *
-	 * @param array<string, mixed> $object    The serialised object.
-	 * @param string               $configKey The config key.
-	 * @param string               $slug      The slug.
+	 * @param array<string, mixed>        $object The serialised object.
+	 * @param array{0: string, 1: string} $schema The schema's config key and its slug.
 	 *
 	 * @return bool
 	 */
-	private function isSchema(array $object, string $configKey, string $slug): bool {
+	private function isSchema(array $object, array $schema): bool {
+		[$configKey, $slug] = $schema;
 		$self = ($object['@self'] ?? []);
 		$candidate = '';
 		if (is_array($self) === true && is_scalar(($self['schema'] ?? null)) === true) {

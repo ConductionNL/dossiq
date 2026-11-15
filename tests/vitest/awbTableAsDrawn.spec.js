@@ -20,7 +20,7 @@ describe('the AWB deadline definitions table as the board draws it', () => {
 
 	it('heads the actions column with a visible label', () => {
 		expect(sfc).not.toMatch(/<span class="hidden-visually">\{\{ t\('dossiq', 'Actions'\) \}\}<\/span>/)
-		expect(sfc).toMatch(/<th scope="col">\s*\{\{ t\('dossiq', 'Actions'\) \}\}\s*<\/th>/)
+		expect(sfc).toMatch(/<th v-if="!summary" scope="col">\s*\{\{ t\('dossiq', 'Actions'\) \}\}\s*<\/th>/)
 	})
 
 	it('adds no space above the tab content', () => {

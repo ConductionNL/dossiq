@@ -36,11 +36,15 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * ObjectService stub matching the named-arg signatures used by ZaakdossierService.
@@ -76,7 +80,7 @@ interface DossierObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function find(string $id, string $register, string $schema): array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array;
 
 	/**
 	 * Save an object.
@@ -88,7 +92,7 @@ interface DossierObjectServiceStub {
 	 *
 	 * @return object
 	 */
-	public function saveObject(array $object, string $register, string $schema, string $uuid = ''): object;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object;
 
 	/**
 	 * Delete an object.
@@ -99,7 +103,7 @@ interface DossierObjectServiceStub {
 	 *
 	 * @return void
 	 */
-	public function deleteObject(string $uuid, string $register, string $schema): void;
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): void;
 }//end interface
 
 /**
@@ -112,7 +116,11 @@ interface DossierObjectServiceStub {
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentStatusMove
+ * @uses \OCA\Dossiq\Service\Zaakdossier\StoredDocument
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class ZaakdossierServiceTest extends TestCase {
 
@@ -244,6 +252,7 @@ class ZaakdossierServiceTest extends TestCase {
 				people: $this->createMock(originalClassName: PersonLinkReader::class),
 				settingsService: $this->settings,
 				store: new DocumentRecordStore(settingsService: $this->settings),
+				labels: new DocumentListingLabels(settingsService: $this->settings),
 			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
@@ -323,7 +332,10 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$captured = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$captured[$schema] = $object;
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
 			}
@@ -597,7 +609,10 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$captured = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$captured[$schema] = $object;
 
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
@@ -699,7 +714,10 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$captured = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$captured = $object;
 
 				return $this->savedObject('inf-1');
@@ -731,7 +749,10 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$writes = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$writes) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$writes) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$writes[] = ['schema' => $schema, 'uuid' => $uuid, 'object' => $object];
 
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
@@ -776,7 +797,10 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$schemas = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$schemas) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$schemas) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$schemas[] = $schema;
 
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');

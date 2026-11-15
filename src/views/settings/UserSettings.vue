@@ -116,7 +116,7 @@ export default {
 		 * The daily digest: on or off, the hour, and who decided it.
 		 *
 		 * @return {Array<object>} The fields.
-		 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+		 * @spec openspec/specs/my-work/spec.md
 		 */
 		workDigestFields() {
 			return workDigestFields(this.t.bind(this))

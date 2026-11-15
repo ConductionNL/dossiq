@@ -37,6 +37,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\DecisionDocument\DecisionLetter
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class DecisionLetterTest extends TestCase {
 

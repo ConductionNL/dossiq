@@ -105,4 +105,71 @@ class CaseNextStatusTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->service(rows: ['fail' => []])->forCase(caseId: 'case-1');
 	}//end testAnUnreadableRegisterIsNotNotFound()
+
+	/**
+	 * A case without a case type or a current status has no next status.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutTypeOrStatusHasNoNextStatus(): void {
+		$statuses = [['id' => 's1', 'order' => 1, 'name' => 'Ontvangen'], ['id' => 's2', 'order' => 2, 'name' => 'Afgehandeld']];
+
+		$this->assertSame([], $this->service(['case' => [['id' => 'c1', 'status' => 's1']], 'statusType' => $statuses])->forCase(caseId: 'c1'));
+		$this->assertSame([], $this->service(['case' => [['id' => 'c1', 'caseType' => 'ct']], 'statusType' => $statuses])->forCase(caseId: 'c1'));
+		// A reference that is neither a uuid nor a row with an id is no reference.
+		$this->assertSame(
+			[],
+			$this->service(['case' => [['id' => 'c1', 'caseType' => 'ct', 'status' => ['id' => ['nested']]]], 'statusType' => $statuses])->forCase(caseId: 'c1')
+		);
+	}//end testACaseWithoutTypeOrStatusHasNoNextStatus()
+
+	/**
+	 * A plain-string next name is trimmed; a status referenced through `@self` is found.
+	 *
+	 * @return void
+	 */
+	public function testAPlainNameAndASelfReference(): void {
+		$service = $this->service([
+			'case' => [['id' => 'c1', 'caseType' => ['@self' => ['id' => 'ct']], 'status' => ['@self' => ['id' => 's1']]]],
+			'statusType' => [['id' => 's1', 'order' => 1, 'name' => 'Ontvangen'], ['id' => 's2', 'order' => 2, 'name' => '  In behandeling ']],
+		]);
+
+		$this->assertSame(['name' => 'In behandeling', 'number' => 2], $service->forCase(caseId: 'c1'));
+	}//end testAPlainNameAndASelfReference()
+
+	/**
+	 * A language-tagged name with nothing in the user's language, Dutch or English is an empty name.
+	 *
+	 * @return void
+	 */
+	public function testANameWithNoUsableLanguageIsEmpty(): void {
+		$service = $this->service([
+			'case' => [['id' => 'c1', 'caseType' => 'ct', 'status' => 's1']],
+			'statusType' => [['id' => 's1', 'order' => 1, 'name' => 'Ontvangen'], ['id' => 's2', 'order' => 2, 'name' => ['nl' => '  ', 'de' => 'Entscheidung']]],
+		]);
+
+		$this->assertSame(['name' => '', 'number' => 2], $service->forCase(caseId: 'c1'));
+	}//end testANameWithNoUsableLanguageIsEmpty()
+
+	/**
+	 * Without OpenRegister, or without a configured register, nothing is read and the case gives no answer.
+	 *
+	 * @return void
+	 */
+	public function testWithoutARegisterNothingIsRead(): void {
+		$l10n = $this->createMock(IL10N::class);
+
+		$noService = $this->createMock(SettingsService::class);
+		$noService->method('getObjectService')->willReturn(null);
+		$noService->method('getConfigValue')->willReturn('dossiq');
+		$this->assertNull((new CaseNextStatus($noService, $l10n))->forCase(caseId: 'c1'));
+
+		$objects = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjectsBySlug', 'searchObjects'])->getMock();
+		$objects->expects($this->never())->method('searchObjectsBySlug');
+		$objects->expects($this->never())->method('searchObjects');
+		$noRegister = $this->createMock(SettingsService::class);
+		$noRegister->method('getObjectService')->willReturn($objects);
+		$noRegister->method('getConfigValue')->willReturn('');
+		$this->assertNull((new CaseNextStatus($noRegister, $l10n))->forCase(caseId: 'c1'));
+	}//end testWithoutARegisterNothingIsRead()
 }//end class

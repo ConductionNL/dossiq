@@ -55,7 +55,7 @@ describe('archiving from the lifecycle menu', () => {
 	})
 
 	it('is configured on the menu action: Archiveren opens the case-archive dialog', () => {
-		expect(headerAction('case-lifecycle-menu').props).toEqual({ actDialogs: { archive: 'case-archive' } })
+		expect(headerAction('case-lifecycle-menu').props).toEqual({ actDialogs: { archive: 'case-archive', objection: 'remedy-lodge' } })
 		expect(headerAction('case-archive').target).toBe('CnActionDialog')
 	})
 

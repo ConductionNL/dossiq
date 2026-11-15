@@ -40,13 +40,19 @@ namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Service\Task\TaskAnswer;
+use OCA\OpenRegister\Service\Task\TaskFormCompletion;
 use Psr\Container\ContainerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Service\Task\FormCompletionRequest;
+use OCA\OpenRegister\Db\Task;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\EngineTaskGateway
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskPayload
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskRow
  */
 class EngineTaskGatewayTest extends TestCase {
 
@@ -231,6 +237,88 @@ class EngineTaskGatewayTest extends TestCase {
 	}//end testDropsAnUndecodableChecklistRatherThanFailingTheCreate()
 
 	/**
+	 * The whole payload, key order included, for a task that carries everything.
+	 *
+	 * @return void
+	 */
+	public function testTheFullPayloadInItsOrder(): void {
+		$gateway = new EngineTaskGateway($this->settings('0'), $this->container(null), new NullLogger());
+
+		$payload = $gateway->toEnginePayload(
+			task: [
+				'checklist'       => [['id' => 'a']],
+				'metadata'        => ['form' => 'x'],
+				'candidateUsers'  => ['k' => 'anne'],
+				'candidateGroups' => ['team-a', 'team-b'],
+				'assigneeGroup'   => ' team-toezicht ',
+				'flowNode'        => 'node-2',
+				'priority'        => ' high ',
+				'dueDate'         => '2026-11-02',
+				'description'     => 'Vraag op',
+				'onceKey'         => ' once-1 ',
+				'uuid'            => 'row-1',
+				'status'          => 'active',
+				'title'           => 'Meetrapport',
+			],
+			caseId: 'case-9'
+		);
+
+		$this->assertSame(
+			[
+				'title'           => 'Meetrapport',
+				'appId'           => 'dossiq',
+				'state'           => 'active',
+				'key'             => 'once-1',
+				'objectUuid'      => 'case-9',
+				'description'     => 'Vraag op',
+				'dueAt'           => '2026-11-02',
+				'priority'        => 'high',
+				'nodeId'          => 'node-2',
+				'candidateGroups' => ['team-a', 'team-b'],
+				'candidateUsers'  => ['anne'],
+				'metadata'        => ['form' => 'x'],
+				'checklist'       => [['id' => 'a']],
+			],
+			$payload
+		);
+
+		$bare = $gateway->toEnginePayload(task: ['id' => 'row-2', 'checklist' => [], 'metadata' => [], 'candidateUsers' => []], caseId: '');
+		$this->assertSame(
+			['title' => '', 'appId' => 'dossiq', 'state' => 'available', 'key' => EngineTaskGateway::sourceKey(registerTaskId: 'row-2')],
+			$bare
+		);
+	}//end testTheFullPayloadInItsOrder()
+
+	/**
+	 * A blank id, a missing task and an unreadable engine each read as no task; only the last records why.
+	 *
+	 * @return void
+	 */
+	public function testFindAnswersNullForEveryMiss(): void {
+		$service = new class {
+			/**
+			 * @param string $id The task id.
+			 *
+			 * @return object|null The task.
+			 */
+			public function get(string $id): ?object {
+				if ($id === 'boom') {
+					throw new \RuntimeException('engine down');
+				}
+
+				return null;
+			}
+		};
+		$gateway = $this->gatewayWith(service: $service);
+
+		$this->assertNull($gateway->find(taskId: '  '));
+		$this->assertNull($gateway->find(taskId: 'gone'));
+		$this->assertSame('', $gateway->lastError());
+		$this->assertNull($gateway->find(taskId: ' boom '));
+		$this->assertSame('engine down', $gateway->lastError());
+	}//end testFindAnswersNullForEveryMiss()
+
+	/**
 	 * An UNREACHABLE engine means nothing is written and nothing is resolved.
 	 *
 	 * 🔴 THIS TEST USED TO PIN THE `task_engine_write` FLAG, AND THE FLAG IS
@@ -382,10 +470,15 @@ class EngineTaskGatewayTest extends TestCase {
 	 * @return void
 	 */
 	public function testNamesTheClassWhenOpenRegisterIsPresentButTheServiceIsNot(): void {
-		// Installed, but the container hands back nothing and the class is
-		// absent from this test runtime (OpenRegister is not autoloadable in
-		// dossiq's unit suite), which is exactly the rename shape.
-		$gateway = new EngineTaskGateway($this->settings('1', true, null), $this->container(null), new NullLogger());
+		// Installed, but the class is absent, which is exactly the rename shape.
+		$gateway = new class ($this->settings('1', true, null), $this->container(null), new NullLogger()) extends EngineTaskGateway {
+			/**
+			 * @return boolean The class is absent.
+			 */
+			protected function taskServiceExists(): bool {
+				return false;
+			}
+		};
 
 		$this->assertFalse($gateway->isEnabled());
 
@@ -558,4 +651,62 @@ class EngineTaskGatewayTest extends TestCase {
 		$this->assertSame(expected: [], actual: $task['candidateUsers']);
 		$this->assertSame(expected: '', actual: $task['flowRun']);
 	}//end testFindReadsTheEntitysMagicColumns()
+
+	/**
+	 * A cancel goes to the engine's cancel verb with the reason and actor,
+	 * and an engine refusal keeps the engine's own reason.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 */
+	public function testCancelAsksTheEngineAndKeepsItsRefusal(): void {
+		$engine = new class {
+			/**
+			 * @var array<int, mixed>
+			 */
+			public array $calls = [];
+
+			/**
+			 * @param string      $uuid   The task.
+			 * @param string|null $reason Why.
+			 * @param string|null $actor  Who.
+			 *
+			 * @return void
+			 */
+			public function cancel(string $uuid, ?string $reason, ?string $actor): void {
+				$this->calls[] = [$uuid, $reason, $actor];
+				if ($uuid === 'locked') {
+					throw new \RuntimeException('Only the requester may cancel this task.');
+				}
+			}
+		};
+
+		$gateway = $this->gatewayWith(service: $engine);
+
+		$this->assertTrue($gateway->cancel(taskId: 'task-1', reason: 'Dubbel', actor: 'anouk'));
+		$this->assertSame(expected: [['task-1', 'Dubbel', 'anouk']], actual: $engine->calls);
+		$this->assertFalse($gateway->cancel(taskId: 'locked', reason: null, actor: 'anouk'));
+		$this->assertSame(expected: 'Only the requester may cancel this task.', actual: $gateway->lastError());
+		$this->assertFalse($this->gatewayWith(service: null)->cancel(taskId: 'task-1', reason: null, actor: 'anouk'));
+	}//end testCancelAsksTheEngineAndKeepsItsRefusal()
+
+	/**
+	 * complete() hands OpenRegister's form completion a TaskAnswer carrying the outcome.
+	 *
+	 * @return void
+	 */
+	public function testCompleteHandsTheEngineATaskAnswer(): void {
+		$completion = $this->getMockBuilder(TaskFormCompletion::class)->onlyMethods(['complete'])->getMock();
+		$completion->expects($this->once())
+			->method('complete')
+			->with(
+				$this->callback(static fn (FormCompletionRequest $request): bool => $request->uuid === 'task-1' && $request->answer->outcome === 'approved' && $request->data === ['verslag' => 'klaar']),
+				'behandelaar'
+			)
+			->willReturn(new Task());
+		$gateway = new EngineTaskGateway($this->settings('1'), $this->container($completion), new NullLogger());
+
+		$this->assertTrue($gateway->complete(taskId: 'task-1', data: ['verslag' => 'klaar'], outcome: 'approved', actor: 'behandelaar'));
+	}//end testCompleteHandsTheEngineATaskAnswer()
 }//end class

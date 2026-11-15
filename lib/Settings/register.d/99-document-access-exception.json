@@ -11,6 +11,7 @@
       "description": "Only these people and groups see this document, besides the case's handler and administrators. A reason is required. Set and removed through the document's Who can see this card.",
       "properties": {
        "users": {
+        "description": "The people who may see the document.",
         "type": "array",
         "title": "People",
         "items": {
@@ -19,6 +20,7 @@
         }
        },
        "groups": {
+        "description": "The groups whose members may see the document.",
         "type": "array",
         "title": "Groups",
         "items": {
@@ -27,16 +29,19 @@
         }
        },
        "reason": {
+        "description": "Why only these people and groups may see the document.",
         "type": "string",
         "title": "Reason",
         "maxLength": 1024
        },
        "setBy": {
+        "description": "Who set the exception.",
         "type": "string",
         "title": "Set by",
         "maxLength": 255
        },
        "setAt": {
+        "description": "When the exception was set.",
         "type": "string",
         "format": "date-time",
         "title": "Set at"
@@ -63,6 +68,8 @@
        "type": "object",
        "properties": {
         "action": {
+         "title": "Action",
+         "description": "What happened: set, change or remove.",
          "type": "string",
          "enum": [
           "set",
@@ -71,20 +78,28 @@
          ]
         },
         "by": {
+         "title": "By",
+         "description": "Who made the change.",
          "type": "string",
          "maxLength": 255
         },
         "at": {
+         "title": "At",
+         "description": "When the change was made.",
          "type": "string",
          "format": "date-time"
         },
         "old": {
+         "title": "Before",
          "description": "The exception before, absent when there was none."
         },
         "new": {
+         "title": "After",
          "description": "The exception after, absent when it was removed."
         },
         "reason": {
+         "title": "Reason",
+         "description": "Why the change was made.",
          "type": "string",
          "maxLength": 1024
         }

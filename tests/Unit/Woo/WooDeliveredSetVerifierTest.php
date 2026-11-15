@@ -30,6 +30,8 @@ use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCP\Files\IRootFolder;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 
 /**
  * REQ-WDS-003 on the verifier, over a set the real writer wrote.
@@ -127,7 +129,7 @@ class WooDeliveredSetVerifierTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnreadableFileIsMissingNotMatch(): void {
-		$this->store->deleteObject(register: 'dossiq', schema: 'document', uuid: 'doc-1');
+		$this->store->deleteObject(new ObjectDeletion(uuid: 'doc-1', target: new ObjectFindTarget(register: 'dossiq', schema: 'document')));
 
 		$result = $this->verifier->verify(set: $this->set);
 
@@ -135,4 +137,58 @@ class WooDeliveredSetVerifierTest extends TestCase {
 		$this->assertSame('missing', $result['items'][0]['status']);
 		$this->assertSame('', $result['items'][0]['actual']);
 	}//end testAnUnreadableFileIsMissingNotMatch()
+
+	/**
+	 * Content that is not valid base64 is missing, never a match.
+	 *
+	 * @return void
+	 */
+	public function testContentThatIsNotBase64IsMissing(): void {
+		$this->store->seed(schema: 'document', uuid: 'doc-1', row: ['fileName' => 'brief.pdf', 'content' => '!!not base64!!']);
+
+		$result = $this->verifier->verify(set: $this->set);
+
+		$this->assertFalse($result['verified']);
+		$this->assertSame('missing', $result['items'][0]['status']);
+	}//end testContentThatIsNotBase64IsMissing()
+
+	/**
+	 * An item without a delivered reference is missing and the set does not verify.
+	 *
+	 * @return void
+	 */
+	public function testAnItemWithoutAReferenceIsMissing(): void {
+		$set = $this->set;
+		$set['items'][] = ['deliveredRef' => '', 'sha256' => hash('sha256', 'x')];
+
+		$result = $this->verifier->verify(set: $set);
+
+		$this->assertFalse($result['verified']);
+		$this->assertSame(['deliveredRef' => '', 'expected' => hash('sha256', 'x'), 'actual' => '', 'status' => 'missing'], $result['items'][2]);
+	}//end testAnItemWithoutAReferenceIsMissing()
+
+	/**
+	 * A tampered set hash fails verification even when every item matches.
+	 *
+	 * @return void
+	 */
+	public function testATamperedSetHashFailsEvenWhenItemsMatch(): void {
+		$set = $this->set;
+		$set['setHash'] = str_repeat('0', 64);
+
+		$result = $this->verifier->verify(set: $set);
+
+		$this->assertSame(['match', 'match'], array_column($result['items'], 'status'));
+		$this->assertFalse($result['verified']);
+	}//end testATamperedSetHashFailsEvenWhenItemsMatch()
+
+	/**
+	 * Finding a set needs an id; an unknown id is null.
+	 *
+	 * @return void
+	 */
+	public function testFindingWithoutAnIdOrAnUnknownIdIsNull(): void {
+		$this->assertNull($this->verifier->find(setId: ''));
+		$this->assertNull($this->verifier->find(setId: 'no-such-set'));
+	}//end testFindingWithoutAnIdOrAnUnknownIdIsNull()
 }//end class

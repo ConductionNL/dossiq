@@ -9,7 +9,7 @@
  * `kind: 'handler'` entry is still declared there, which is what the manifest
  * resolves against.
  *
- * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import axios from '@nextcloud/axios'
@@ -41,7 +41,7 @@ import { announceCasesChanged } from './casesChanged.js'
  * @param {{actionId: string, item: object}} scope The row the action was used on.
  * @return {Promise<void>}
  *
- * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export async function claimCase({ item }) {
 	const caseId = String(item?.id ?? item?.['@self']?.id ?? '')

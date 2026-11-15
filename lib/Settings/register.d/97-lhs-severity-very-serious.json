@@ -10,6 +10,8 @@
         "version": "1.2.0",
         "properties": {
           "severity": {
+            "title": "Severity",
+            "description": "Severity of the violation (LHS ernst axis)",
             "enum": [
               "zeer_ernstig"
             ],

@@ -34,6 +34,8 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Starter\ContentTemplateService
  *
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class TemplateLibraryKindTest extends TestCase {
 

@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\PersonReachabilityInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\TrustedRevealRead;
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/changes/contact-reachability/specs/party-pages/spec.md#requirement-a-contact-says-how-the-person-can-be-reached
  */
-class PersonReachability {
+class PersonReachability implements PersonReachabilityInterface {
 
 	use SearchesObjects;
 
@@ -182,8 +183,6 @@ class PersonReachability {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @throws Throwable When the register cannot be read.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Whether the read needs the BSN is the one thing that differs.
 	 */
 	private function rows(string $schema, array $filters, bool $trusted): array {
 		$objectService = $this->settingsService->getObjectService();

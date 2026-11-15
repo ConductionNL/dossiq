@@ -38,7 +38,8 @@ class ZuiddrechtWooStartableFlowsTest extends TestCase {
 	 */
 	public function testTheWooCaseTypeListsTheThreeFlows(): void {
 		$set   = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
-		$flows = array_column($set['flows'], 'data', 'key');
+		// The bezwaar flow runs on the objection case, not on a Woo request.
+		$flows = array_diff_key(array_column($set['flows'], 'data', 'key'), ['flow-bezwaar' => true]);
 
 		$this->assertSame(
 			expected: ['Zienswijze derde vragen', 'Documenten opvragen bij een afdeling', 'Verdaging aankondigen'],

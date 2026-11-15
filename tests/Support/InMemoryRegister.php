@@ -31,6 +31,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCP\AppFramework\Db\DoesNotExistException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * An in-memory stand-in for OpenRegister's ObjectService.
  */
@@ -75,6 +80,13 @@ class InMemoryRegister {
 	 * @var bool
 	 */
 	public bool $pages = false;
+
+	/**
+	 * Schemas the register does not hold: a search on one throws, as an unresolvable slug does in OpenRegister.
+	 *
+	 * @var list<string>
+	 */
+	public array $missingSchemas = [];
 
 	/**
 	 * Schemas whose saves fail, as an OpenRegister write that throws.
@@ -142,13 +154,14 @@ class InMemoryRegister {
 	 */
 	public function find(
 		int|string $id,
-		mixed $_extend = null,
-		bool $files = false,
-		int|string $register = '',
-		int|string $schema = '',
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): ?array {
+		$_extend = $options?->extend;
+		$files = $options?->files ?? false;
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		if ($_rbac === false) {
 			$this->unscopedReads[] = (string)$schema . '/' . (string)$id;
 		}
@@ -181,6 +194,10 @@ class InMemoryRegister {
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		if (in_array($schema, $this->missingSchemas, true) === true) {
+			throw new DoesNotExistException('No schema '.$schema.' in this register');
+		}
+
 		$matches = [];
 		if ($_rbac === true && in_array($schema, $this->hiddenFromCaller, true) === true) {
 			return $matches;
@@ -213,12 +230,13 @@ class InMemoryRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		if (in_array((string)$schema, $this->refusedSchemas, true) === true) {
 			throw new \RuntimeException('Save refused for ' . (string)$schema);
 		}
@@ -244,7 +262,10 @@ class InMemoryRegister {
 	 *
 	 * @return bool True when a row was removed.
 	 */
-	public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+		$register = $deletion->target->register ?? '';
+		$schema = $deletion->target->schema ?? '';
+		$uuid = $deletion->uuid ?? '';
 		if (isset($this->rows[(string)$schema][$uuid]) === false) {
 			return false;
 		}
@@ -277,7 +298,13 @@ class InMemoryRegister {
 				continue;
 			}
 
-			if (($row[$key] ?? null) !== $value) {
+			// A list against a scalar property is "any of", as OpenRegister matches it.
+			$anyOf = (is_array($value) === true && array_is_list($value) === true && is_array($row[$key] ?? null) === false);
+			if ($anyOf === true && in_array(($row[$key] ?? null), $value, true) === false) {
+				return false;
+			}
+
+			if ($anyOf === false && ($row[$key] ?? null) !== $value) {
 				return false;
 			}
 		}

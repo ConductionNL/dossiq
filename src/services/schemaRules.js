@@ -247,15 +247,96 @@ function firstSentence(text) {
  * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-lists-rules-as-rows
  */
 export function ruleRows(rules, properties = {}, kinds = {}) {
-	return (Array.isArray(rules) ? rules : []).map((rule) => {
-		const key = String(rule?.key ?? '')
-		const label = String(rule?.label || key || rule?.id || '')
-		const prop = (properties && properties[key]) || {}
-		const kindText = String(kinds?.[rule?.kind]?.description || rule?.kind || '')
-		const opaque = UUID.test(label)
-		const title = typeof prop.title === 'string' && prop.title !== '' ? prop.title : (opaque ? kindText : wordsOf(label))
-		const line = firstSentence(prop.description) || (opaque ? '' : kindText)
-		const pill = rule?.kind === 'calculation' ? 'calculated' : (rule?.enabled === false ? 'off' : 'on')
-		return { id: String(rule?.id ?? ''), title, line, pill }
-	})
+	return (Array.isArray(rules) ? rules : []).map((rule) => ruleRow(rule, { properties, kinds }))
+}
+
+/**
+ * One rule as a row.
+ *
+ * @param {object} rule The inventory row.
+ * @param {{properties: object, kinds: object}} vocabulary The schema properties by key and the vocabulary by kind.
+ * @return {{id: string, title: string, line: string, pill: string}} The row.
+ */
+function ruleRow(rule, vocabulary) {
+	const key = String(rule?.key ?? '')
+	const prop = propertyOf(vocabulary.properties, key)
+	const fallback = fallbackText(ruleLabel(rule, key), kindTextOf(rule, vocabulary.kinds))
+	return {
+		id: String(rule?.id ?? ''),
+		title: propertyTitle(prop) || fallback.title,
+		line: firstSentence(prop.description) || fallback.line,
+		pill: rulePill(rule),
+	}
+}
+
+/**
+ * What a rule is called: its label, else its key, else its id.
+ *
+ * @param {object} rule The inventory row.
+ * @param {string} key Its key.
+ * @return {string} The label.
+ */
+function ruleLabel(rule, key) {
+	return String(rule?.label || key || rule?.id || '')
+}
+
+/**
+ * The schema property a rule writes.
+ *
+ * @param {object|null} properties The schema properties by key.
+ * @param {string} key The rule's key.
+ * @return {object} The property, or an empty one.
+ */
+function propertyOf(properties, key) {
+	return (properties && properties[key]) || {}
+}
+
+/**
+ * The description of a rule's kind, else the kind itself.
+ *
+ * @param {object} rule The inventory row.
+ * @param {object|null} kinds The vocabulary by kind.
+ * @return {string} The text.
+ */
+function kindTextOf(rule, kinds) {
+	return String(kinds?.[rule?.kind]?.description || rule?.kind || '')
+}
+
+/**
+ * A property's own title, or '' when it has none.
+ *
+ * @param {object} prop The property.
+ * @return {string} The title.
+ */
+function propertyTitle(prop) {
+	return typeof prop.title === 'string' && prop.title !== '' ? prop.title : ''
+}
+
+/**
+ * The title and line of a rule whose property says nothing: a rule named by
+ * an id is titled by its kind and has no line; any other is titled by its
+ * label in words and lined by its kind.
+ *
+ * @param {string} label The rule's label.
+ * @param {string} kindText The kind's text.
+ * @return {{title: string, line: string}} The fallback.
+ */
+function fallbackText(label, kindText) {
+	if (UUID.test(label)) {
+		return { title: kindText, line: '' }
+	}
+	return { title: wordsOf(label), line: kindText }
+}
+
+/**
+ * The pill of a rule: calculated, off or on.
+ *
+ * @param {object} rule The inventory row.
+ * @return {string} The pill.
+ */
+function rulePill(rule) {
+	if (rule?.kind === 'calculation') {
+		return 'calculated'
+	}
+	return rule?.enabled === false ? 'off' : 'on'
 }

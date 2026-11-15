@@ -28,11 +28,11 @@ Every sociaal-domein zaak MUST declare its special-category data scope via an em
 ### Requirement: Wijkteam-only access control with data-driven guards
 Access to zaak content MUST be enforced at query time by comparing `zaak.wijkteam` to the requesting user, not by role alone, with a `tweedeBehandelaarId` override and an FG-audit metadata-only mode.
 
-#### Scenario: Out-of-team query returns metadata only and is logged
+#### Scenario: Out-of-team query returns only that the case exists and is logged
 - **GIVEN** a zaak has `wijkteam = wijkteam-zuid` and `toegangsBeperking = alleen-behandelaar-en-wijkteam`
 - **WHEN** a staff member from `wijkteam-noord` queries the zaak
 - **THEN** the query layer checks `user.wijkteam` against `zaak.wijkteam`
-- **AND** on no match it returns only `zaakNumber`, `status`, `behandelaarId`, `aanvraagDatum`, and `deadlineDate`
+- **AND** on no match it returns only that a case exists, its domain and the contact person to ask, as board DqSociaalDomein shows it ("Alleen dat hij bestaat"); `zaakNumber`, `status`, `behandelaarId`, `aanvraagDatum` and `deadlineDate` are blocked
 - **AND** content fields (`ondersteuningsvraag`, `indicatiestelling`, `gezinsplan`, `vermogenstoets`, etc.) are blocked
 - **AND** the attempt is logged with `resultaat = geweigerd-geen-toegang`
 
@@ -285,3 +285,30 @@ SHALL refuse, not answer "nothing exists".
 - **GIVEN** a reader in dossiq-sociaal-domein and not in dossiq-sensitive
 - **WHEN** they read a case with a subject BSN and a sensitive answer
 - **THEN** neither SHALL be in what they read, and the ordinary answers SHALL be
+
+### Requirement: An internal move whose consent rule cannot be read is refused (REQ-CST-01a)
+
+A move of a case between teams of one organisation SHALL be refused when its case or its case type cannot be read. The refusal SHALL have the rule `consent-unchecked` and the sentence "De toestemming kon niet worden gecontroleerd, dus de zaak is niet overgedragen" (en "Consent could not be checked, so the case was not handed on."), as board DqOverdragen draws it in the move dialog This covers an empty case id, and a case or case type that is not found. It also covers a read that fails, and a store, register or case or case-type schema that is not configured. A case without a case type SHALL be refused the same way, because its rule cannot be checked.
+
+#### Scenario: The case type cannot be read
+@e2e exclude unit; CaseTransferConsentGateGoldenTest
+
+- **GIVEN** a case whose case type cannot be read because the store fails
+- **WHEN** the case moves from one team to another in the same organisation
+- **THEN** the move SHALL be refused with the rule `consent-unchecked`
+- **AND** the refusal SHALL say "Consent could not be checked, so the case was not handed on."
+
+#### Scenario: The case schema is not configured
+@e2e exclude unit; CaseTransferConsentGateGoldenTest
+
+- **GIVEN** no `case_schema` is configured
+- **WHEN** a case moves from one team to another in the same organisation
+- **THEN** the move SHALL be refused the same way
+
+#### Scenario: A case without a case type is refused
+@e2e exclude unit; CaseTransferConsentGateGoldenTest
+
+- **GIVEN** a case with no case type
+- **WHEN** the case moves from one team to another in the same organisation
+- **THEN** the move SHALL be refused with the rule `consent-unchecked`
+- **AND** consent SHALL count as needed for that case

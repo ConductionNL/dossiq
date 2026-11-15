@@ -6,8 +6,10 @@
  * Every procedure-named URL the UI called moved to a generic address. The old
  * address stays as an alias, so a bookmarked call, an external report reader
  * or a payment provider configured with it keeps working. Each alias routes to
- * its own `<method>LegacyPath()` delegate, because AppHost Routes::standard()
- * rejects a duplicate route name and ignores `postfix`.
+ * its own delegate, because AppHost Routes::standard() rejects a duplicate
+ * route name and ignores `postfix`: `<method>LegacyPath()` on the same
+ * controller, or `<method>()` on a separate `...LegacyPathController` that
+ * holds the controller.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\AppInfo
@@ -107,6 +109,33 @@ class RenamedRouteAliasesTest extends TestCase {
 	}//end target()
 
 	/**
+	 * Whether a route name is a delegate of a route: `<method>LegacyPath` on the
+	 * same controller, or `<method>` on a `...LegacyPath` controller.
+	 *
+	 * @param string|null $aliasName The route name the old URL routes to.
+	 * @param string      $routeName The `controller#method` route name.
+	 *
+	 * @return bool True when it is.
+	 */
+	private static function isAliasOf(?string $aliasName, string $routeName): bool {
+		[, $method] = explode('#', $routeName);
+		return $aliasName === $routeName . 'LegacyPath'
+			|| preg_match('/^\\w+LegacyPath#' . preg_quote($method, '/') . '$/', (string)$aliasName) === 1;
+	}//end isAliasOf()
+
+	/**
+	 * The delegate the old URL routes to.
+	 *
+	 * @param string $verb   The verb.
+	 * @param string $oldUrl The procedure-named URL.
+	 *
+	 * @return array{0: class-string, 1: string} The class and the method.
+	 */
+	private function aliasTarget(string $verb, string $oldUrl): array {
+		return $this->target(routeName: (string)($this->routesByAddress()[$verb . ' ' . $oldUrl] ?? ''));
+	}//end aliasTarget()
+
+	/**
 	 * The new URL routes to the method, the old URL to its delegate.
 	 *
 	 * @param string $route  The new route name.
@@ -121,22 +150,25 @@ class RenamedRouteAliasesTest extends TestCase {
 		$routes = $this->routesByAddress();
 
 		self::assertSame($route, ($routes[$verb . ' ' . $newUrl] ?? null), $verb . ' ' . $newUrl . ' must route to ' . $route);
-		self::assertSame($route . 'LegacyPath', ($routes[$verb . ' ' . $oldUrl] ?? null), $verb . ' ' . $oldUrl . ' must stay routed');
+		self::assertTrue(self::isAliasOf(aliasName: ($routes[$verb . ' ' . $oldUrl] ?? null), routeName: $route), $verb . ' ' . $oldUrl . ' must stay routed');
 	}//end testBothUrlsAreRouted()
 
 	/**
 	 * The delegate carries the same auth posture as the method it calls, so
 	 * the old URL is neither looser nor stricter than the new one.
 	 *
-	 * @param string $route The new route name.
+	 * @param string $route  The new route name.
+	 * @param string $verb   The verb.
+	 * @param string $newUrl The generic URL.
+	 * @param string $oldUrl The procedure-named URL.
 	 *
 	 * @return void
 	 */
 	#[DataProvider('renamedRoutes')]
-	public function testTheAliasHasTheSameAuthPosture(string $route): void {
+	public function testTheAliasHasTheSameAuthPosture(string $route, string $verb, string $newUrl, string $oldUrl): void {
 		[$class, $method] = $this->target(routeName: $route);
 		$original = new ReflectionMethod($class, $method);
-		$alias = new ReflectionMethod($class, $method . 'LegacyPath');
+		$alias = new ReflectionMethod(...$this->aliasTarget(verb: $verb, oldUrl: $oldUrl));
 
 		$attributes = static fn (ReflectionMethod $m): array => array_map(
 			static fn ($a): string => $a->getName() . json_encode($a->getArguments()),
@@ -180,6 +212,12 @@ class RenamedRouteAliasesTest extends TestCase {
 			->with(...array_values($args))
 			->willReturn($response);
 
-		self::assertSame($response, $controller->{$method . 'LegacyPath'}(...$args));
+		[$aliasClass, $aliasMethod] = $this->aliasTarget(verb: $verb, oldUrl: $oldUrl);
+		$alias = $controller;
+		if ($aliasClass !== $class) {
+			$alias = new $aliasClass('dossiq', $this->createMock(\OCP\IRequest::class), $controller);
+		}
+
+		self::assertSame($response, $alias->{$aliasMethod}(...$args));
 	}//end testTheAliasCallsTheSameMethod()
 }//end class

@@ -36,6 +36,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\BrkController
  *
  * @uses \OCA\Dossiq\Service\External\Brk\BrkLookupResult
+ * @uses \OCA\Dossiq\Controller\Support\SignedIn
  */
 class BrkControllerTest extends TestCase {
 

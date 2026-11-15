@@ -98,6 +98,66 @@ class ZuiddrechtProcessAnalysisHistoryTest extends TestCase {
 	}//end testTheBezwaarReturnsToAssessmentAfterTheAdvice()
 
 	/**
+	 * The statuses the register ships per case type identifier, by name.
+	 *
+	 * @return array<string, array<string, array<string, mixed>>>
+	 */
+	private function registerStatuses(): array {
+		$file     = __DIR__.'/../../../lib/Settings/dossiq_register.json';
+		$register = json_decode((string)file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
+		$statuses = [];
+		foreach ($register['components']['objects'] as $object) {
+			if (($object['@self']['schema'] ?? '') === 'caseType' && isset($object['identifier']) === true) {
+				$statuses[$object['identifier']] ??= [];
+			}
+
+			if (($object['@self']['schema'] ?? '') === 'statusType') {
+				$statuses[substr((string)$object['caseType'], 5)][$object['name']] = $object;
+			}
+		}
+
+		return $statuses;
+	}//end registerStatuses()
+
+	/**
+	 * A status lookup on a case type the register ships names a status that case type has.
+	 *
+	 * @return void
+	 */
+	public function testStatusLookupsNameStatusesTheRegisterShips(): void {
+		$shipped = $this->registerStatuses();
+		foreach ($this->cases() as $key => $case) {
+			$identifier = $case['lookups']['caseType']['where']['identifier'];
+			if (isset($shipped[$identifier]) === false) {
+				continue;
+			}
+
+			foreach ($case['lookups'] as $name => $lookup) {
+				if ($lookup['schema'] !== 'statusType') {
+					continue;
+				}
+
+				$this->assertArrayHasKey(key: $lookup['where']['name'], array: $shipped[$identifier], message: $key.' '.$name);
+			}
+		}
+	}//end testStatusLookupsNameStatusesTheRegisterShips()
+
+	/**
+	 * The complaint spends 13 days in a status of phase Beoordeling, the only phase the board fills for it.
+	 *
+	 * @return void
+	 */
+	public function testTheComplaintSpendsThirteenDaysInAssessment(): void {
+		$case    = $this->cases()['procesanalyse-klacht-afhandeling-melding'];
+		$history = $case['data']['statusHistory'];
+		$name    = $case['lookups'][trim(substr($history[0]['status'], 9), '}')]['where']['name'];
+
+		$this->assertCount(expectedCount: 2, haystack: $history);
+		$this->assertSame(expected: 'Beoordeling', actual: $this->registerStatuses()['klacht-behandeling'][$name]['phase'] ?? null);
+		$this->assertSame(expected: 13, actual: $this->day(placeholder: $history[1]['enteredAt']) - $this->day(placeholder: $history[0]['enteredAt']));
+	}//end testTheComplaintSpendsThirteenDaysInAssessment()
+
+	/**
 	 * The re-integration spends 21 days In uitvoering, a visit that ended.
 	 *
 	 * @return void

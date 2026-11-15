@@ -37,6 +37,8 @@ use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The generic ZGW handlers sort a store failure into 404, 403 and 503.
@@ -44,6 +46,9 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\ZgwService
  * @covers \OCA\Dossiq\Service\Zgw\StoreFailureAnswer
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
+ * @uses \OCA\Dossiq\Service\Zgw\ResourceRoute
+ * @uses \OCA\Dossiq\Service\Zgw\ResourceWrite
+ * @uses \OCA\Dossiq\Service\Zgw\RuleFlags
  *
  * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
  */
@@ -92,11 +97,14 @@ final class ZgwServiceStoreFailureTest extends TestCase {
 			) {
 			}//end __construct()
 
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->find)($id);
 			}//end find()
 
-			public function deleteObject(string $uuid): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
 				if ($this->delete !== null) {
 					($this->delete)($uuid);
 				}

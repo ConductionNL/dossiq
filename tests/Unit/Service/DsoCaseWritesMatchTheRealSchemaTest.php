@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
@@ -47,6 +48,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * DsoCaseService writes the shape the case schema accepts.
@@ -163,7 +165,9 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 			}
 		);
 		$this->objectService->method('patchObject')->willReturnCallback(
-			function (string $objectId, array $data): ObjectEntityInterface {
+			function (ObjectPatch $patch): ObjectEntityInterface {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->writes[] = ['method' => 'patchObject', 'data' => $data];
 				return $this->entity(row: (['id' => $objectId] + $data));
 			}
@@ -212,6 +216,11 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 			$available['intakeCases'] = new DsoIntakeCasePayload(
 				caseTypes: new CaseTypeReferenceResolver(store: new CaseTypeStore(settingsService: $settings)),
 				journal: $available['journal']
+			);
+			$available['steps'] = new DsoCaseSteps(
+				notifier: $available['notifier'],
+				intakeCases: $available['intakeCases'],
+				journal: $available['journal'],
 			);
 		}
 

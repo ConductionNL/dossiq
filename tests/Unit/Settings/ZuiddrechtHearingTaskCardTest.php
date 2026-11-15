@@ -64,4 +64,20 @@ class ZuiddrechtHearingTaskCardTest extends TestCase {
 	public function testTheCardHasNoDescription(): void {
 		$this->assertSame(expected: '', actual: $this->hearing()['description']);
 	}//end testTheCardHasNoDescription()
+
+	/**
+	 * The task was created when its run was (5 okt 16:20 on the board's 7 okt), before Pieter claimed it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/hearing-task-carries-its-creation-moment/specs/example-set-zuiddrecht-data/spec.md#requirement-the-hearing-task-carries-the-moment-its-run-created-it
+	 */
+	public function testTheTaskWasCreatedWithItsRun(): void {
+		$set  = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$runs = array_column($set['flows'][array_search('flow-bezwaar', array_column($set['flows'], 'key'), true)]['data']['runs'] ?? [], 'created', 'key');
+
+		$this->assertSame(expected: '{{datetime:-2 16:20}}', actual: $this->hearing()['createdAt']);
+		$this->assertSame(expected: $runs['hoorzitting-havenstraat'] ?? null, actual: $this->hearing()['createdAt']);
+		$this->assertSame(expected: '{{datetime:-1 09:05}}', actual: $this->hearing()['claimedAt']);
+	}//end testTheTaskWasCreatedWithItsRun()
 }//end class

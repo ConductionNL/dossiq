@@ -111,10 +111,10 @@ describe('the dossiq copies are gone', () => {
 describe('the banner row', () => {
 	const stack = find(fullCase, 'case-banner-stack')
 
-	it('is one size-to-content row of three strips, above the panels', () => {
+	it('is one size-to-content row of five strips, above the panels', () => {
 		expect(stack.type).toBe('sections')
 		expect(stack.content.dividers).toBe(false)
-		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-status-declaration', 'case-attention'])
+		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-claim-banner', 'case-status-declaration', 'case-attention', 'case-special-categories'])
 		const row = fullCase.config.layout.find((cell) => cell.widgetId === 'case-banner-stack')
 		const panels = fullCase.config.layout.find((cell) => cell.widgetId === 'case-panels')
 		expect(row.sizeToContent).toBe(true)
@@ -239,10 +239,10 @@ describe('the family plan', () => {
 		expect(goals.content.endpointSource.url).toBe('/apps/dossiq/api/cases/@objectId/family-plan')
 	})
 
-	it('puts each intervention under its goal, the loose ones apart, the late ones flagged in words, and fails closed', () => {
+	it('puts each intervention under its goal, the loose ones apart, the late ones marked in words, and fails closed', () => {
 		const goals = plan.content.sections[1].widget.content
 		expect(goals).toMatchObject({ groupsPath: 'goals', itemsPath: 'interventions', itemGroupField: 'goal', ungroupedTitle: 'Not tied to a goal', columns: 1 })
-		expect(goals.itemFlag).toEqual({ field: 'overdue', label: 'Overdue' })
+		expect(goals.itemPill).toMatchObject({ overdueWhen: { field: 'overdue', op: 'eq', value: true }, overdueLabel: 'Late' })
 		expect(goals.groupLines).toContain('Met when: {metWhen}')
 		expect(goals.errorText).toBe('The family plan could not be read.')
 	})

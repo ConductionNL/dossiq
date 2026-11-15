@@ -30,6 +30,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The deadline, last activity and urgency profile of a case, asked of the class itself.
@@ -41,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/changes/method-decomposition/tasks.md
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class QueueCaseFactsTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -109,7 +111,9 @@ class QueueCaseFactsTest extends TestCase {
 				return $this->rows;
 			}//end searchObjectsBySlug()
 
-			public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $schema, $id];
 				if ($this->found instanceof \Throwable) {
 					throw $this->found;

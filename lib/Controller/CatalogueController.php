@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Catalogue\ObjectTypeCatalogue;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ObjectTypeCatalogueInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -49,15 +49,15 @@ class CatalogueController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest            $request     The current HTTP request.
-	 * @param ObjectTypeCatalogue $objectTypes The object type list.
+	 * @param ObjectTypeCatalogueInterface $objectTypes The object type list.
 	 * @param LoggerInterface     $logger      Logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ObjectTypeCatalogue $objectTypes,
+		private readonly ObjectTypeCatalogueInterface $objectTypes,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

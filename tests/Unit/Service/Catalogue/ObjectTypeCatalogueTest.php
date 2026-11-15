@@ -90,6 +90,8 @@ final class ObjectTypeCatalogueTest extends TestCase {
 				'cases'      => 2,
 				'schema'     => 'Bomenregister',
 				'schemaLine' => 'Bomenregister · 5 objects',
+				'schemaName' => 'Bomenregister',
+				'propertyLine' => '9 properties',
 				'properties' => 9,
 				'objects'    => 5,
 				'views'      => ['map', 'table'],
@@ -222,6 +224,8 @@ final class ObjectTypeCatalogueTest extends TestCase {
 			'cases'      => $cases,
 			'schema'     => '',
 			'schemaLine' => '',
+			'schemaName' => 'No schema: the links point to no register',
+			'propertyLine' => '',
 			'properties' => null,
 			'objects'    => null,
 			'views'      => [],
@@ -261,6 +265,7 @@ final class ObjectTypeCatalogueTest extends TestCase {
 		$resolver->method('namesSchema')->willReturnCallback(static fn (string $objectUrl): bool => ObjectTypeSchemaResolver::schemaNamedIn(objectUrl: $objectUrl) !== '');
 
 		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
 		$l10n->method('n')->willReturnCallback(
 			static function (string $singular, string $plural, int $count): string {
 				$text = $plural;

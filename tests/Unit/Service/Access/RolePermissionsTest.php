@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Role permissions from group membership.
+ *
+ * @covers \OCA\Dossiq\Service\Access\RolePermissions
  */
 final class RolePermissionsTest extends TestCase {
 

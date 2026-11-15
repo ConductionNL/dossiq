@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar;
 use OCA\Dossiq\Listener\CaseTeamAccessListener;
 use OCA\Dossiq\Service\Access\CaseTeamAccessProjector;
 use OCA\Dossiq\Service\SettingsService;
@@ -39,7 +39,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseTeamAccessListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar
  *
  * @spec openspec/specs/case-access-control/spec.md
  */
