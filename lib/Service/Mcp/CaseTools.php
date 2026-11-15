@@ -141,13 +141,28 @@ class CaseTools implements CaseToolsInterface {
 			return $this->error(code: 'transition_required', message: 'Name the transition to make.');
 		}
 
+		return $this->transitioned(
+			user: $user,
+			move: ['caseId' => $caseId, 'transitionId' => $transitionId, 'comment' => $comment, 'resultTypeId' => $resultTypeId]
+		);
+	}//end transitionCase()
+
+	/**
+	 * Make the transition as the user, translating a blocked or refused move into an error envelope.
+	 *
+	 * @param IUser                 $user The user the move is made as.
+	 * @param array<string, string> $move The `caseId`, `transitionId`, `comment` and `resultTypeId` as the tool received them.
+	 *
+	 * @return array<string, mixed> The engine's answer, or an error envelope.
+	 */
+	private function transitioned(IUser $user, array $move): array {
 		try {
 			return $this->transitions->execute(
-				caseId: $caseId,
-				transitionId: $transitionId,
-				comment: $this->orNull(value: $comment),
+				caseId: $move['caseId'],
+				transitionId: $move['transitionId'],
+				comment: $this->orNull(value: $move['comment']),
 				userId: $user->getUID(),
-				resultTypeId: $this->orNull(value: $resultTypeId),
+				resultTypeId: $this->orNull(value: $move['resultTypeId']),
 			);
 		} catch (GuardFailedException $e) {
 			return [
@@ -158,7 +173,7 @@ class CaseTools implements CaseToolsInterface {
 		} catch (RefusedException | RuntimeException $e) {
 			return $this->refusal(e: $e);
 		}
-	}//end transitionCase()
+	}//end transitioned()
 
 	/**
 	 * Hand a case to another handler.
@@ -237,22 +252,21 @@ class CaseTools implements CaseToolsInterface {
 			return $this->error(code: 'task_not_found', message: 'That task could not be found on a case.');
 		}
 
-		return $this->completeAsMutator(task: $task, caseId: $caseId, outcome: $outcome);
+		return $this->completeAsMutator(task: $task, outcome: $outcome);
 	}//end completeTask()
 
 	/**
 	 * Complete a task on a case as the caller, when they may change the case.
 	 *
-	 * @param array<string, mixed> $task    The task.
-	 * @param string               $caseId  The case it is on.
+	 * @param array<string, mixed> $task    The task, on the case its `objectUuid` names.
 	 * @param string               $outcome The outcome to complete with, `done` when blank.
 	 *
 	 * @return array<string, mixed> The completed task, or an error envelope.
 	 *
 	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
 	 */
-	private function completeAsMutator(array $task, string $caseId, string $outcome): array {
-		$user = $this->mutator(caseId: $caseId);
+	private function completeAsMutator(array $task, string $outcome): array {
+		$user = $this->mutator(caseId: (string)($task['objectUuid'] ?? ''));
 		if (is_array($user) === true) {
 			return $user;
 		}

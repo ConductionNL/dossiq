@@ -142,15 +142,9 @@ class RecipientAllowlist {
 			return false;
 		}
 
-		if ($this->isOpen(entries: $entries) === true) {
-			return true;
-		}
-
-		if (in_array($address, $caseContacts, true) === true) {
-			return true;
-		}
-
-		return $this->matchesEntry(address: $address, entries: $entries);
+		return $this->isOpen(entries: $entries) === true
+			|| in_array($address, $caseContacts, true) === true
+			|| $this->matchesEntry(address: $address, entries: $entries) === true;
 	}//end permits()
 
 	/**

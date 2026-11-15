@@ -147,6 +147,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -161,16 +162,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/**
-		 * The case being split. Absent when the manifest opened the dialog: an
-		 * `open-modal` action carries no object context, so the route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogFromRoute],
 
 	emits: ['close'],
 
@@ -194,11 +186,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/specs/case-management/spec.md */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * Whether the case type allows something but this case holds none of
 		 * it. A DIFFERENT FACT from a case type that forbids dividing

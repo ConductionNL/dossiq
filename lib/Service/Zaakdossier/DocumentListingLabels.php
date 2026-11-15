@@ -145,7 +145,7 @@ class DocumentListingLabels {
 			$name = trim((string)($row['description'] ?? ''));
 			$self = (array)($row['@self'] ?? []);
 			$references = [(string)($row['id'] ?? ($self['id'] ?? '')), (string)($self['slug'] ?? ''), $name];
-			$names = $this->withReferences(names: $names, references: $references, name: $name);
+			$names = $this->withReferences(names: $names, listing: ['references' => $references, 'name' => $name]);
 		}
 
 		return $names;
@@ -154,13 +154,13 @@ class DocumentListingLabels {
 	/**
 	 * The names with each unclaimed, non-empty reference pointing at this name.
 	 *
-	 * @param array<string, string> $names      Reference to name so far.
-	 * @param array<int, string>    $references The type's references.
-	 * @param string                $name       The type's name.
+	 * @param array<string, string>                               $names   Reference to name so far.
+	 * @param array{references: array<int, string>, name: string} $listing `references` the type's references; `name` the type's name.
 	 *
 	 * @return array<string, string> Reference to name.
 	 */
-	private function withReferences(array $names, array $references, string $name): array {
+	private function withReferences(array $names, array $listing): array {
+		[$references, $name] = [$listing['references'], $listing['name']];
 		foreach ($references as $reference) {
 			if ($name !== '' && $reference !== '' && isset($names[$reference]) === false) {
 				$names[$reference] = $name;

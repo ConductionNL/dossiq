@@ -105,25 +105,41 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			throw new RuntimeException(implode(' ', $violations));
 		}
 
+		return $this->completeRun(
+			start: new InspectionRunStart(caseId: $caseId, template: $template, payload: $payload, actor: $actor),
+			answers: $answers
+		);
+	}//end submit()
+
+	/**
+	 * Create the inspection task and complete it with the answers.
+	 *
+	 * @param InspectionRunStart               $start   The case, the template snapshot, the submitted payload and the actor.
+	 * @param array<int, array<string, mixed>> $answers The answers, read from the payload and checked.
+	 *
+	 * @return array<string, mixed> The run, as {@see runsForCase()} answers one.
+	 *
+	 * @throws RuntimeException When the OpenRegister task layer is not available.
+	 */
+	private function completeRun(InspectionRunStart $start, array $answers): array {
 		$tasks = $this->settingsService->getOpenRegisterClass(class: self::TASK_SERVICE);
 		if ($tasks === null) {
 			throw new RuntimeException('The OpenRegister task layer is not available');
 		}
 
-		$start = new InspectionRunStart(caseId: $caseId, template: $template, payload: $payload, actor: $actor);
-		$task = $tasks->create(data: $this->taskData(start: $start), actor: $actor);
+		$task = $tasks->create(data: $this->taskData(start: $start), actor: $start->actor);
 		$completed = $tasks->complete(
 			uuid: (string)$task->getUuid(),
-			outcome: $this->answers->outcome(snapshot: $template, answers: $answers),
+			outcome: $this->answers->outcome(snapshot: $start->template, answers: $answers),
 			resultText: null,
-			comment: $this->stringOrNull(value: ($payload['remarks'] ?? null)),
-			actor: $actor,
+			comment: $this->stringOrNull(value: ($start->payload['remarks'] ?? null)),
+			actor: $start->actor,
 			responses: $answers,
 			evidence: $this->answers->evidence(answers: $answers),
 		);
 
 		return $this->asRun(task: $completed->jsonSerialize());
-	}//end submit()
+	}//end completeRun()
 
 	/**
 	 * Every run on a case, newest last.

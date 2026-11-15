@@ -363,7 +363,7 @@ class ShippedConfigurationService implements ShippedConfigurationServiceInterfac
 			return ['state' => self::STATE_LOCAL, 'set' => '', 'setVersion' => ''];
 		}
 
-		$untouched = $this->untouchedSinceStamp(row: $row, object: $object, shippedKeys: $shippedKeys);
+		$untouched = $this->untouchedSinceStamp(row: $row, seen: ['object' => $object, 'shippedKeys' => $shippedKeys]);
 
 		return [
 			'state' => $this->stateFor(untouched: $untouched),
@@ -418,8 +418,10 @@ class ShippedConfigurationService implements ShippedConfigurationServiceInterfac
 		$seeded = (string)($row['setVersion'] ?? '');
 		$untouched = $this->untouchedSinceStamp(
 			row: $row,
-			object: (new ShippedRowShape())->asWritten(object: $object, objectsKey: $objectsKey),
-			shippedKeys: [],
+			seen: [
+				'object' => (new ShippedRowShape())->asWritten(object: $object, objectsKey: $objectsKey),
+				'shippedKeys' => [],
+			]
 		);
 
 		return [
@@ -600,13 +602,14 @@ class ShippedConfigurationService implements ShippedConfigurationServiceInterfac
 	 * Whether a shipped object is untouched since its ledger stamp, as
 	 * {@see ShippedFingerprint::untouched()} decides it.
 	 *
-	 * @param array<string, mixed> $row         The ledger row.
-	 * @param array<string, mixed> $object      The object as it stands now, with its `@self`.
-	 * @param array<int, string>   $shippedKeys The keys a package ships for it, or none.
+	 * @param array<string, mixed>                                                 $row  The ledger row.
+	 * @param array{object: array<string, mixed>, shippedKeys: array<int, string>} $seen `object` the object as it stands now, with its `@self`;
+	 *                                                                                   `shippedKeys` the keys a package ships for it, or none.
 	 *
 	 * @return boolean True when untouched.
 	 */
-	private function untouchedSinceStamp(array $row, array $object, array $shippedKeys): bool {
+	private function untouchedSinceStamp(array $row, array $seen): bool {
+		[$object, $shippedKeys] = [$seen['object'], $seen['shippedKeys']];
 		$fingerprint = (string)($row['fingerprint'] ?? '');
 		// A ledger row from before `shippedFingerprint` was recorded was
 		// stamped with the shipped row itself.

@@ -70,6 +70,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseFieldRoleProjectorInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
+use OCA\Dossiq\Service\Support\ReadsMergedRegisterConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -80,6 +81,8 @@ use Throwable;
  * @spec openspec/specs/security-hardening/spec.md
  */
 class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
+
+	use ReadsMergedRegisterConfig;
 
 	/**
 	 * The schema the rules are published onto.
@@ -201,30 +204,6 @@ class CaseFieldRoleProjector implements CaseFieldRoleProjectorInterface {
 
 		return $this->declaredBlocks(properties: $properties);
 	}//end registerBase()
-
-	/**
-	 * The shipped register JSON with its fragments merged in.
-	 *
-	 * @return array<string, mixed>|null Null when the file is missing or not a JSON object.
-	 */
-	private function mergedRegisterConfig(): array|null {
-		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
-		if (file_exists($configPath) === false) {
-			return null;
-		}
-
-		$configData = json_decode((string)file_get_contents($configPath), true);
-		if (json_last_error() !== JSON_ERROR_NONE || is_array($configData) === false) {
-			return null;
-		}
-
-		[$configData] = $this->fragments->merge(
-			base: $configData,
-			fragmentDir: __DIR__ . '/../../Settings/register.d'
-		);
-
-		return $configData;
-	}//end mergedRegisterConfig()
 
 	/**
 	 * The non-empty authorization block of every case property that declares one.

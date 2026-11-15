@@ -70,7 +70,7 @@ class PortalPages {
 				'id' => $id,
 				'label' => ($labels[$id] ?? (string)($collection['label'] ?? $id)),
 				'group' => $group,
-				'blocks' => $this->blocksFor(collection: $collection, actions: $actions, id: $id),
+				'blocks' => $this->blocksFor(collection: $collection, actions: $actions),
 			];
 		}
 
@@ -100,11 +100,11 @@ class PortalPages {
 	 *
 	 * @param array<string, mixed>             $collection The collection.
 	 * @param array<int, array<string, mixed>> $actions    The audience's actions.
-	 * @param string                           $id         The collection id.
 	 *
 	 * @return array<int, array<string, string>> The blocks.
 	 */
-	private function blocksFor(array $collection, array $actions, string $id): array {
+	private function blocksFor(array $collection, array $actions): array {
+		$id = (string)$collection['id'];
 		$blocks = $this->createBlocks(collection: $collection, actions: $actions);
 		$blocks[] = ['type' => 'collection', 'collection' => $id];
 		$blocks[] = ['type' => 'detail', 'collection' => $id];
@@ -160,7 +160,21 @@ class PortalPages {
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
 	public function forResident(array $collections, array $actions, string $group, array $labels = []): array {
-		$portal = new ResidentPortal(collections: $collections, actions: $actions, group: $group, labels: $labels);
+		return $this->residentPages(portal: new ResidentPortal(collections: $collections, actions: $actions, group: $group, labels: $labels));
+	}//end forResident()
+
+	/**
+	 * The overview, the case page, the two list pages and the start pages.
+	 *
+	 * @param ResidentPortal $portal The citizen collections and actions, the page group and the label per page id.
+	 *
+	 * @return array<int, array<string, mixed>> The pages.
+	 */
+	private function residentPages(ResidentPortal $portal): array {
+		$collections = $portal->collections;
+		$actions = $portal->actions;
+		$group = $portal->group;
+		$labels = $portal->labels;
 		$listPages = $this->residentListPages(portal: $portal);
 		$startPages = $this->startPages(portal: $portal, offered: $this->offeredActions(pages: $listPages));
 
@@ -174,7 +188,7 @@ class PortalPages {
 			// renders the rest below it.
 			'home' => true,
 			'menu' => false,
-			'blocks' => $this->residentOverviewBlocks(collections: $collections, labels: $labels, startPages: $startPages),
+			'blocks' => $this->residentOverviewBlocks(portal: $portal, startPages: $startPages),
 		];
 
 		$pages[] = [
@@ -193,7 +207,7 @@ class PortalPages {
 		];
 
 		return array_merge($pages, $listPages, $startPages);
-	}//end forResident()
+	}//end residentPages()
 
 	/**
 	 * The two list pages that stay as they were: the messages and the requests.
@@ -324,9 +338,9 @@ class PortalPages {
 	 * The overview's blocks: what the resident still has to do, their running
 	 * cases and the newest messages.
 	 *
-	 * @param array<int, array<string, mixed>> $collections The citizen collections.
-	 * @param array<string, string>            $labels      The label per page id, and `lopendeZaken` for the running cases.
-	 * @param array<int, array<string, mixed>> $startPages  The start pages, each a tile after what the resident still has to do.
+	 * @param ResidentPortal                   $portal     The citizen collections, and the label per page id
+	 *                                                     and `lopendeZaken` for the running cases.
+	 * @param array<int, array<string, mixed>> $startPages The start pages, each a tile after what the resident still has to do.
 	 *
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
@@ -337,7 +351,9 @@ class PortalPages {
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
-	private function residentOverviewBlocks(array $collections, array $labels = [], array $startPages = []): array {
+	private function residentOverviewBlocks(ResidentPortal $portal, array $startPages = []): array {
+		$collections = $portal->collections;
+		$labels = $portal->labels;
 		// THE OVERVIEW OPENS WITH THE TIME OF DAY AND THE RESIDENT'S FIRST NAME
 		// ("Goedemiddag, Sanne"), as the Zuiddrecht design draws it. Portaliq's
 		// `greeting` block says that itself and takes the place of the plain

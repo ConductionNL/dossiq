@@ -117,6 +117,17 @@ class PortalSubmissionLedger implements PortalSubmissionLedgerInterface {
 	 */
 	public function claim(string $scope, string $subjectRef, string $key): array {
 		$entry = $this->entry(scope: $scope, subjectRef: $subjectRef, key: $key);
+		return $this->claimEntryOrRead(entry: $entry);
+	}//end claim()
+
+	/**
+	 * Claim the ledger entry, or read the answer or the processing mark another send left on it.
+	 *
+	 * @param string $entry The ledger entry's cache key.
+	 *
+	 * @return array{state: string, answer?: array<string, mixed>} `claimed`, `answered` with the answer, or `processing`.
+	 */
+	private function claimEntryOrRead(string $entry): array {
 		if ($this->claimEntry(entry: $entry) === true) {
 			return ['state' => 'claimed'];
 		}
@@ -136,7 +147,7 @@ class PortalSubmissionLedger implements PortalSubmissionLedgerInterface {
 		}
 
 		return ['state' => 'processing'];
-	}//end claim()
+	}//end claimEntryOrRead()
 
 	/**
 	 * Claim an entry: at once on an `IMemcache`, else read-then-write.

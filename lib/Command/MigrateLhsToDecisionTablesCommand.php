@@ -92,9 +92,7 @@ class MigrateLhsToDecisionTablesCommand extends Command {
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		$console = new MigrationConsole();
-		$console->userManager = $this->userManager;
-		$console->output = $output;
+		$console = (new MigrationConsole())->writingTo(output: $output, users: $this->userManager);
 		$console->command = 'dossiq:lhs:migrate-to-decision-tables';
 		$console->dryRunNote = ' (dry run, nothing was written)';
 		$console->rowSeparator = ': ';

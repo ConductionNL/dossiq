@@ -68,7 +68,8 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { dsoErrorOf, forwardCase } from '../services/dsoCaseApi.js'
+import { dsoCaseDialog } from '../mixins/dsoCaseDialog.js'
+import { forwardCase } from '../services/dsoCaseApi.js'
 
 export default {
 	name: 'DsoForwardDialog',
@@ -80,86 +81,18 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [dsoCaseDialog('reason', forwardCase)],
 
 	emits: ['close', 'done'],
 
-	data() {
-		return {
-			authority: '',
-			reason: '',
-			busy: false,
-			error: '',
-			sent: null,
-		}
-	},
-
-	computed: {
-		/** @spec openspec/changes/vth-cases-run-end-to-end */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-			return String(this.$route?.params?.id ?? '')
-		},
-
-		/** @spec openspec/changes/vth-cases-run-end-to-end */
-		canSend() {
-			return this.busy === false
-				&& this.targetCaseId !== ''
-				&& this.authority.trim() !== ''
-				&& this.reason.trim() !== ''
-		},
-	},
-
 	methods: {
 		t,
-
-		/**
-		 * Send the forward through the DSO route and show that it went.
-		 *
-		 * @return {Promise<void>}
-		 * @spec openspec/changes/vth-cases-run-end-to-end
-		 */
-		async send() {
-			if (!this.canSend) {
-				return
-			}
-			this.busy = true
-			this.error = ''
-			try {
-				const authority = this.authority.trim()
-				await forwardCase(this.targetCaseId, authority, this.reason.trim())
-				this.sent = authority
-				this.$emit('done', { authority })
-			} catch (error) {
-				this.error = dsoErrorOf(error)
-			} finally {
-				this.busy = false
-			}
-		},
 	},
 }
 </script>
 
-<style scoped>
-.dso-dialog {
-	display: flex;
-	flex-direction: column;
-	gap: calc(var(--default-grid-baseline, 4px) * 3);
-}
+<style scoped lang="scss">
+@use './_dsoDialog.scss' as dso;
 
-.dso-dialog__error {
-	color: var(--color-error-text);
-}
+@include dso.dso-dialog;
 </style>

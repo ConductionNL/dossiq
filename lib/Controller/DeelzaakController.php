@@ -72,13 +72,9 @@ class DeelzaakController extends Controller {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function list(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->readRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return new JSONResponse(
@@ -100,16 +96,12 @@ class DeelzaakController extends Controller {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function parent(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
 		// Authorised on the CHILD case the caller names, not on the parent it
 		// resolves to: the parent is the answer, so guarding on it would be
 		// circular and would still let an unrelated caller walk the hierarchy.
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->readRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$parent = $this->deelzaakService->getParentCase(childCaseUuid: $caseId);
@@ -247,6 +239,26 @@ class DeelzaakController extends Controller {
 
 		return [$parent, $child, $object];
 	}//end createParams()
+
+	/**
+	 * Refuse a caller who is not signed in or may not read the case.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may read the case.
+	 */
+	private function readRefusal(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end readRefusal()
 
 	/**
 	 * Whether the caller may read the parent a sub-case would hang off.

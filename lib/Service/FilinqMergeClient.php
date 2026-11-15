@@ -79,11 +79,23 @@ class FilinqMergeClient implements FilinqMergeClientInterface {
 		}
 
 		$inputs = array_map(static fn (int $fileId): array => ['fileId' => $fileId, 'label' => ''], $fileIds);
+
+		return (array)$service->merge($inputs, self::optionsNamed(name: $name), ['register' => 'dossiq', 'schema' => 'case', 'id' => $caseId]);
+	}//end merge()
+
+	/**
+	 * Filinq's merge options: the merged document's name, when one is given.
+	 *
+	 * @param string $name The merged document's name, or ''.
+	 *
+	 * @return array<string, string> The options.
+	 */
+	private static function optionsNamed(string $name): array {
 		$options = [];
 		if (trim(string: $name) !== '') {
 			$options['name'] = $name;
 		}
 
-		return (array)$service->merge($inputs, $options, ['register' => 'dossiq', 'schema' => 'case', 'id' => $caseId]);
-	}//end merge()
+		return $options;
+	}//end optionsNamed()
 }//end class

@@ -110,7 +110,7 @@ class RecordCaseMapping {
 
 		return [
 			'case' => $run->case,
-			'term' => $this->term(declaration: (array)($import['term'] ?? []), record: $record, state: $termState),
+			'term' => ['state' => $termState] + $this->term(declaration: (array)($import['term'] ?? []), record: $record),
 			'result' => trim((string)($declared['result'] ?? '')),
 		];
 	}//end map()
@@ -194,7 +194,7 @@ class RecordCaseMapping {
 	 * @throws InvalidArgumentException When a required value is empty or outside its list.
 	 */
 	private function mapField(RecordMappingRun $run, array $field): void {
-		$value = $this->valueOf(field: $field, record: $run->record, recordId: $run->recordId);
+		$value = $this->valueOf(field: $field, run: $run);
 		if ($value === null) {
 			return;
 		}
@@ -279,15 +279,13 @@ class RecordCaseMapping {
 	 *
 	 * @param array<string, mixed> $declaration Source field names: endDate, extensions, extensionReason, closedOn.
 	 * @param array<string, mixed> $record      The source record.
-	 * @param string               $state       The state the status declares.
 	 *
-	 * @return array{state: string, endDate: string, extensions: int, extensionReason: string, closedOn: string}
+	 * @return array{endDate: string, extensions: int, extensionReason: string, closedOn: string}
 	 */
-	private function term(array $declaration, array $record, string $state): array {
+	private function term(array $declaration, array $record): array {
 		$field = static fn (string $key): mixed => ($record[(string)($declaration[$key] ?? '')] ?? null);
 
 		return [
-			'state' => $state,
 			'endDate' => (string)$this->dates->toCalendarDateOrNull(value: $field('endDate')),
 			'extensions' => max(0, (int)$field('extensions')),
 			'extensionReason' => trim((string)$field('extensionReason')),
@@ -298,15 +296,15 @@ class RecordCaseMapping {
 	/**
 	 * One declared field's value, read and shaped.
 	 *
-	 * @param array<string, mixed> $field    The field declaration.
-	 * @param array<string, mixed> $record   The source record.
-	 * @param string               $recordId The record's uuid.
+	 * @param array<string, mixed> $field The field declaration.
+	 * @param RecordMappingRun     $run   The source record and its uuid.
 	 *
 	 * @return mixed The value, or null when there is nothing to write.
 	 *
 	 * @throws InvalidArgumentException When a required value is empty or outside its list.
 	 */
-	private function valueOf(array $field, array $record, string $recordId): mixed {
+	private function valueOf(array $field, RecordMappingRun $run): mixed {
+		$record = $run->record;
 		if (array_key_exists('value', $field) === true) {
 			return $field['value'];
 		}
@@ -314,7 +312,7 @@ class RecordCaseMapping {
 		$from = (string)($field['from'] ?? '');
 		$raw = ($record[$from] ?? $this->read(case: $record, path: $from));
 		if ($from === self::RECORD_ID) {
-			$raw = $recordId;
+			$raw = $run->recordId;
 		}
 
 		$value = $this->shaped(field: $field, raw: $raw);
@@ -351,7 +349,7 @@ class RecordCaseMapping {
 			return $this->listed(field: $field, text: $text);
 		}
 
-		return $this->typed(field: $field, shape: $shape, text: $text);
+		return $this->typed(field: $field, text: $text);
 	}//end shaped()
 
 	/**
@@ -373,18 +371,17 @@ class RecordCaseMapping {
 	/**
 	 * A text value in the shape its declaration asks for.
 	 *
-	 * @param array<string, mixed> $field The field declaration.
-	 * @param string $shape The declared shape.
-	 * @param string $text The raw value as text.
+	 * @param array<string, mixed> $field The field declaration, with its shape (`as`, text when absent).
+	 * @param string               $text  The raw value as text.
 	 *
 	 * @return mixed The value, or null when empty or unreadable.
 	 */
-	private function typed(array $field, string $shape, string $text): mixed {
+	private function typed(array $field, string $text): mixed {
 		if ($text === '') {
 			return null;
 		}
 
-		return match ($shape) {
+		return match ((string)($field['as'] ?? 'text')) {
 			'date' => $this->dates->toCalendarDateOrNull(value: $text),
 			'dateTime' => $this->dates->tryParse(value: $text)?->format(DateTimeInterface::ATOM),
 			'integer' => (int)$text,

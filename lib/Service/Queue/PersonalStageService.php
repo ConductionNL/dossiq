@@ -155,22 +155,45 @@ class PersonalStageService implements PersonalStageServiceInterface {
 	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function set(string $userId, string $caseId, string $stage): string {
+		$stage = self::clipped(stage: $stage);
+
+		$this->store(userId: $userId, stages: self::withStage(stages: $this->all(userId: $userId), entry: ['caseId' => $caseId, 'stage' => $stage]));
+
+		return $stage;
+	}//end set()
+
+	/**
+	 * The stage trimmed and cut to the longest a stage may be.
+	 *
+	 * @param string $stage The stage as given.
+	 *
+	 * @return string The stage as stored.
+	 */
+	private static function clipped(string $stage): string {
 		$stage = trim($stage);
 		if (mb_strlen($stage) > self::MAX_LENGTH) {
 			$stage = mb_substr($stage, 0, self::MAX_LENGTH);
 		}
 
-		$stages = self::withStage(stages: $this->all(userId: $userId), entry: ['caseId' => $caseId, 'stage' => $stage]);
+		return $stage;
+	}//end clipped()
 
+	/**
+	 * Store the reader's stages.
+	 *
+	 * @param string                $userId The reader.
+	 * @param array<string, string> $stages The stages, by case.
+	 *
+	 * @return void
+	 */
+	private function store(string $userId, array $stages): void {
 		$this->userConfig->setValueString(
 			$userId,
 			AppIdentity::APP_ID,
 			self::PREF_STAGES,
 			json_encode($stages, JSON_THROW_ON_ERROR)
 		);
-
-		return $stage;
-	}//end set()
+	}//end store()
 
 	/**
 	 * The stages with this case's stage moved to the end, or dropped when cleared, keeping the newest ones.

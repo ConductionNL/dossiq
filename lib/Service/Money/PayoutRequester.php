@@ -89,7 +89,7 @@ class PayoutRequester {
 		$event = new PayableRaisedEvent(...$arguments);
 		$this->dispatcher->dispatchTyped($event);
 
-		return self::answer(handled: $event->isHandled(), result: $event->getResult(), error: $event->getError());
+		return self::answer(handled: $event->isHandled(), reply: ['result' => $event->getResult(), 'error' => $event->getError()]);
 	}//end request()
 
 	/**
@@ -175,21 +175,21 @@ class PayoutRequester {
 		);
 		$this->dispatcher->dispatchTyped($event);
 
-		return self::answer(handled: $event->isHandled(), result: $event->getResult(), error: $event->getError());
+		return self::answer(handled: $event->isHandled(), reply: ['result' => $event->getResult(), 'error' => $event->getError()]);
 	}//end cancel()
 
 	/**
 	 * Read a command's answer.
 	 *
-	 * @param bool                      $handled Whether a listener accepted it.
-	 * @param array<string, mixed>|null $result  The answer.
-	 * @param string|null               $error   The refusal.
+	 * @param bool                                                         $handled Whether a listener accepted it.
+	 * @param array{result: array<string, mixed>|null, error: string|null} $reply   `result` the answer; `error` the refusal.
 	 *
 	 * @return array{payableId: string, state: string}|null The payable, or null when nobody answered.
 	 *
 	 * @throws RuntimeException When the command was refused.
 	 */
-	private static function answer(bool $handled, ?array $result, ?string $error): ?array {
+	private static function answer(bool $handled, array $reply): ?array {
+		[$result, $error] = [$reply['result'], $reply['error']];
 		if ($handled === true && $result !== null) {
 			return [
 				'payableId' => (string)($result['payableId'] ?? ''),

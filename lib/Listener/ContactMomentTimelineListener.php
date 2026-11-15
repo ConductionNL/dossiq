@@ -48,6 +48,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Listener\Support\CreatedCaseRecord;
+use OCA\Dossiq\Listener\Support\ReadsPayloadIdentifier;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -59,6 +60,7 @@ use OCP\EventDispatcher\IEventListener;
  * @spec openspec/specs/portal-contribution/spec.md
  */
 class ContactMomentTimelineListener implements IEventListener {
+	use ReadsPayloadIdentifier;
 
 	/**
 	 * The schema whose creates this listener answers to.
@@ -162,22 +164,6 @@ class ContactMomentTimelineListener implements IEventListener {
 
 		return $summary;
 	}//end message()
-
-	/**
-	 * The contactmoment's own id, so the full log is one hop away.
-	 *
-	 * @param array<string, mixed> $payload The stored record.
-	 *
-	 * @return string The id, or ''.
-	 */
-	private function identifier(array $payload): string {
-		$fromSelf = (string)($payload['@self']['id'] ?? '');
-		if ($fromSelf !== '') {
-			return $fromSelf;
-		}
-
-		return (string)($payload['id'] ?? '');
-	}//end identifier()
 
 	/**
 	 * The further cases the same contact belongs on.

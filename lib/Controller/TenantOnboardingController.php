@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Controller\Support\AnswersFlaggedRefusals;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\OnboardingStepGuideInterface;
 use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
@@ -40,6 +41,8 @@ use OCP\IUserSession;
  * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 class TenantOnboardingController extends Controller {
+	use AnswersFlaggedRefusals;
+
 	/**
 	 * Constructor.
 	 *
@@ -90,7 +93,7 @@ class TenantOnboardingController extends Controller {
 	public function complete(string $tenantId, string $step): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		try {

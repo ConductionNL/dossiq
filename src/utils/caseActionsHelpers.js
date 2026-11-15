@@ -24,6 +24,8 @@
  * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 
+import { translate as t } from '@nextcloud/l10n'
+
 /**
  * The title a copy is proposed under.
  *
@@ -75,6 +77,17 @@ const CASE_ACTION_REFUSALS = new Map([
 export function caseActionRefusal(error, translate) {
 	const sentence = CASE_ACTION_REFUSALS.get(String(error?.code ?? ''))
 	return sentence ? sentence(translate) : translate('This did not work. Try again.')
+}
+
+/**
+ * The sentence for a failed case-actions request, translated.
+ *
+ * @param {object} err The axios error.
+ * @return {string} The message.
+ * @spec openspec/specs/case-management/spec.md
+ */
+export function caseActionRefusalOf(err) {
+	return caseActionRefusal(err?.response?.data ?? {}, (s) => t('dossiq', s))
 }
 
 /**
