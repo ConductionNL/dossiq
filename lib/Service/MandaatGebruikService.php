@@ -160,7 +160,7 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 			return $rows;
 		}
 
-		return $this->filterByDateRange(rows: $rows, from: $from, until: $until);
+		return $this->filterByDateRange(rows: $rows, range: [$from, $until]);
 	}//end getDecisionByMandaat()
 
 	/**
@@ -195,13 +195,13 @@ class MandaatGebruikService implements MandaatGebruikServiceInterface {
 	 *
 	 * A null bound is not applied, so a row is dropped only by a bound that is actually set.
 	 *
-	 * @param array<int, array<string, mixed>> $rows The mandate-usage rows.
-	 * @param DateTimeImmutable|null $from From (inclusive).
-	 * @param DateTimeImmutable|null $until Until (inclusive).
+	 * @param array<int, array<string, mixed>>                          $rows  The mandate-usage rows.
+	 * @param array{0: DateTimeImmutable|null, 1: DateTimeImmutable|null} $range From and until (both inclusive).
 	 *
 	 * @return array<int, array<string, mixed>> The rows within the range.
 	 */
-	private function filterByDateRange(array $rows, ?DateTimeImmutable $from, ?DateTimeImmutable $until): array {
+	private function filterByDateRange(array $rows, array $range): array {
+		[$from, $until] = $range;
 		$out = [];
 		foreach ($rows as $row) {
 			$when = substr((string)($row['moment'] ?? ''), 0, 10);
