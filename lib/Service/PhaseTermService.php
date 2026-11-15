@@ -119,34 +119,29 @@ class PhaseTermService implements PhaseTermServiceInterface {
 			return null;
 		}
 
-		return $this->startPhaseClock(caseId: $caseId, statusTypeId: $statusTypeId, days: $days, moment: $moment);
+		return $this->startPhaseClock(clock: ['case' => $caseId, 'phase' => $statusTypeId, 'days' => $days], moment: $moment);
 	}//end enterPhase()
 
 	/**
 	 * Start a phase's clock on a case.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $statusTypeId The phase being entered.
-	 * @param int $days The phase's term in days.
-	 * @param DateTimeImmutable $moment When the move happened.
+	 * @param array{case: string, phase: string, days: int} $clock  The case UUID, the phase being entered and its term in days.
+	 * @param DateTimeImmutable                            $moment When the move happened.
 	 *
 	 * @return array<string, mixed>|null The started phase term.
 	 *
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
-	private function startPhaseClock(string $caseId, string $statusTypeId, int $days, DateTimeImmutable $moment): ?array {
+	private function startPhaseClock(array $clock, DateTimeImmutable $moment): ?array {
 		$instance = $this->terms->bindLeadTime(
-			caseId: $caseId,
+			caseId: $clock['case'],
 			kind: TermKind::PHASE,
-			days: $days,
+			days: $clock['days'],
 			start: $moment,
-			extra: ['statusType' => $statusTypeId],
+			extra: ['statusType' => $clock['phase']],
 		);
 
-		$this->logger->info(
-			'Dossiq phase term: a phase clock started',
-			['case' => $caseId, 'phase' => $statusTypeId, 'days' => $days]
-		);
+		$this->logger->info('Dossiq phase term: a phase clock started', $clock);
 
 		return $instance;
 	}//end startPhaseClock()
