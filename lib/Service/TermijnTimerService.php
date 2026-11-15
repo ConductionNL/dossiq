@@ -507,19 +507,43 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 			return false;
 		}
 
+		return $this->extend(
+			engine: $engine,
+			extension: ['timerId' => $timerId, 'days' => $days, 'rationale' => $rationale, 'supervisor' => $supervisor]
+		);
+	}//end extendBeslistermijn()
+
+	/**
+	 * Extend the engine timer, through the supervisor override when asked; a refusal is logged.
+	 *
+	 * @param object                                                               $engine    The engine timer service.
+	 * @param array{timerId: string, days: int, rationale: string, supervisor: bool} $extension The timer, how many days the
+	 *                                                                                        deadline moves, the motivering
+	 *                                                                                        and whether it is the override.
+	 *
+	 * @return bool True when the engine extended the timer.
+	 */
+	private function extend(object $engine, array $extension): bool {
+		$timerId = $extension['timerId'];
 		try {
-			if ($supervisor === true) {
-				$engine->extendWithOverride(uuid: $timerId, amount: $days, unit: 'calendarDays', rationale: $rationale, actor: 'supervisor');
+			if ($extension['supervisor'] === true) {
+				$engine->extendWithOverride(
+					uuid: $timerId,
+					amount: $extension['days'],
+					unit: 'calendarDays',
+					rationale: $extension['rationale'],
+					actor: 'supervisor'
+				);
 				return true;
 			}
 
-			$engine->extend(uuid: $timerId, amount: $days, unit: 'calendarDays', rationale: $rationale, actor: null);
+			$engine->extend(uuid: $timerId, amount: $extension['days'], unit: 'calendarDays', rationale: $extension['rationale'], actor: null);
 			return true;
 		} catch (\Throwable $e) {
 			$this->logFailure(operation: 'extend', timerId: $timerId, error: $e);
 			return false;
 		}
-	}//end extendBeslistermijn()
+	}//end extend()
 
 	/**
 	 * Cancel every open timer of an instance, in the operation that made
