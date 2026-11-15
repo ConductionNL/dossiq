@@ -140,24 +140,10 @@ class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 			throw new RuntimeException('already_raised');
 		}
 
-		$moment = (new DateTimeImmutable())->format('c');
-		$history = $this->history(case: $case);
-		$history[] = [
-			'act' => 'raised',
-			'reason' => $reason,
-			'actor' => $userId,
-			'moment' => $moment,
-		];
-
-		$changes = [
-			'needsAttention' => true,
-			'attentionFlag' => [
-				'reason' => $reason,
-				'raisedBy' => $userId,
-				'raisedAt' => $moment,
-			],
-			'attentionFlagHistory' => $history,
-		];
+		$changes = $this->raisedChanges(
+			case: $case,
+			act: ['act' => 'raised', 'reason' => $reason, 'actor' => $userId, 'moment' => (new DateTimeImmutable())->format('c')]
+		);
 
 		$this->write(caseId: $caseId, changes: $changes);
 
@@ -191,24 +177,54 @@ class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 			throw new RuntimeException('not_raised');
 		}
 
-		$history = $this->history(case: $case);
-		$history[] = [
-			'act' => 'cleared',
-			'reason' => $reason,
-			'actor' => $userId,
-			'moment' => (new DateTimeImmutable())->format('c'),
-		];
-
 		$changes = [
 			'needsAttention' => false,
 			'attentionFlag' => null,
-			'attentionFlagHistory' => $history,
+			'attentionFlagHistory' => $this->historyWith(
+				case: $case,
+				act: ['act' => 'cleared', 'reason' => $reason, 'actor' => $userId, 'moment' => (new DateTimeImmutable())->format('c')]
+			),
 		];
 
 		$this->write(caseId: $caseId, changes: $changes);
 
 		return $this->describe(caseId: $caseId, case: array_merge($case, $changes));
 	}//end clear()
+
+	/**
+	 * The changes that raise the flag, with the raising act appended to the history.
+	 *
+	 * @param array<string, mixed>                                            $case The case as read.
+	 * @param array{act: string, reason: string, actor: string, moment: string} $act  The raising act.
+	 *
+	 * @return array<string, mixed> The case fields to write.
+	 */
+	private function raisedChanges(array $case, array $act): array {
+		return [
+			'needsAttention' => true,
+			'attentionFlag' => [
+				'reason' => $act['reason'],
+				'raisedBy' => $act['actor'],
+				'raisedAt' => $act['moment'],
+			],
+			'attentionFlagHistory' => $this->historyWith(case: $case, act: $act),
+		];
+	}//end raisedChanges()
+
+	/**
+	 * The case's flag history with one more act at the end.
+	 *
+	 * @param array<string, mixed>                                            $case The case as read.
+	 * @param array{act: string, reason: string, actor: string, moment: string} $act  The act.
+	 *
+	 * @return array<int, array<string, mixed>> The history.
+	 */
+	private function historyWith(array $case, array $act): array {
+		$history = $this->history(case: $case);
+		$history[] = $act;
+
+		return $history;
+	}//end historyWith()
 
 	/**
 	 * The reason both acts require, or the refusal that names what is missing.
