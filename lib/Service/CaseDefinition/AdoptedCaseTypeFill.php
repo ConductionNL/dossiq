@@ -27,6 +27,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -218,9 +220,10 @@ class AdoptedCaseTypeFill {
 		// An administrator's install, which passes the access check as PackageWriter's writes do.
 		$objectService->saveObject(
 			$this->withoutMetadata(row: (array)$entry['row']),
-			register: (string)$entry['register'],
-			schema: (string)$entry['schema'],
-			uuid: (string)$entry['id'],
+			new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: (string)$entry['register'], schema: (string)$entry['schema']),
+				uuid: (string)$entry['id']
+			),
 			_rbac: false
 		);
 	}//end saveFilled()

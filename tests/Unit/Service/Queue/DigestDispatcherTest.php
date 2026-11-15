@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Queue\DigestDispatcher;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Queue\DigestDispatcher
@@ -78,7 +79,10 @@ class DigestDispatcherTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid];
 
 				return $this->answer;

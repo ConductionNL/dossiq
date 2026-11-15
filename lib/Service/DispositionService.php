@@ -27,6 +27,8 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DispositionServiceInterface;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -133,7 +135,10 @@ class DispositionService implements DispositionServiceInterface {
 
 		$data = $this->withComplaint(data: $data, filing: $filing);
 
-		$disposition = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		$disposition = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 
 		$this->logger->info(
 			'Disposition submitted for complaint ' . $filing['complaintId'] . ' with oordeel: ' . $data['opinion'],

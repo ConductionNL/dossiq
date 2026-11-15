@@ -23,6 +23,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * Open cases filed while their case type had no handling block get its team.
@@ -136,7 +137,11 @@ class AssignOpenCasesTheirCaseTypeTeamTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved row.
 			 */
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if (in_array($objectId, $this->test->failingWrites, true) === true) {
 					throw new \RuntimeException('writing ' . $objectId . ' failed');
 				}

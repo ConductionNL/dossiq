@@ -36,6 +36,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * What each save to a configured schema answers and logs.
@@ -133,7 +134,10 @@ final class ConfiguredSchemaSaveTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, mixed $register, mixed $schema, ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->recordSave([$object, $register, $schema, $uuid]);
 				if ($this->answer instanceof \Throwable) {
 					throw $this->answer;

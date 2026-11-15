@@ -42,6 +42,8 @@ use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Fake "saved object" — implements the jsonSerialize()/getUuid() shape the
@@ -84,6 +86,7 @@ final class CtfFakeObjectService {
 	 * @return array<string, mixed>|null
 	 */
 	public function find($id, ...$args) {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		return $this->store[(string)$id] ?? null;
 	}//end find()
 
@@ -92,7 +95,10 @@ final class CtfFakeObjectService {
 	 *
 	 * @return CtfFakeTransferObject
 	 */
-	public function saveObject(array $object, int $register, int $schema, ?string $uuid = null) {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true) {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$id = $object['id'] ?? $uuid ?? ('transfer-' . $this->autoId++);
 		$object['id'] = $id;
 		$this->store[(string)$id] = $object;

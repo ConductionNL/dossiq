@@ -24,6 +24,7 @@ use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Repair\MoveTenantQuotaLimitsOntoOrganisation
@@ -69,7 +70,10 @@ class MoveTenantQuotaLimitsOntoOrganisationTest extends TestCase {
 			 * @param array<string, mixed> $object
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->recordSave(row: $object + ['@uuid' => $uuid]);
 				return $object;
 			}

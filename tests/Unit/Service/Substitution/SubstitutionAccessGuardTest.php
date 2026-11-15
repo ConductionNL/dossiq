@@ -31,6 +31,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Ownership, involvement and coordinator rights, and the visible listing.
@@ -104,7 +105,9 @@ final class SubstitutionAccessGuardTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->test->calls[] = ['find', ['id' => $id, 'register' => $register, 'schema' => $schema]];
 				if (is_array($this->rows) === true) {
 					foreach ($this->rows as $row) {

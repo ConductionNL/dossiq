@@ -41,6 +41,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Service\Relation\ParentInheritance;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for SubCaseDeriver.
@@ -164,7 +166,9 @@ class SubCaseDeriverTest extends TestCase {
 				 *
 				 * @return object|null
 				 */
-				public function find(string $id, $register = null, $schema = null): ?object {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?object {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					return ($id === 'parent') ? $this->entity : null;
 				}//end find()
 
@@ -177,7 +181,9 @@ class SubCaseDeriverTest extends TestCase {
 				 *
 				 * @return object
 				 */
-				public function saveObject(array $object, $register = null, $schema = null): object {
+				public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
 					$this->saved = $object;
 
 					return new class($object) {

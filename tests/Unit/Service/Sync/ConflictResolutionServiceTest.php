@@ -35,6 +35,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * An object as OpenRegister returns it: data through jsonSerialize, metadata through __call.
@@ -117,7 +119,9 @@ class ConflictObjectServiceDouble {
 	 *
 	 * @return ConflictObjectDouble The object.
 	 */
-	public function find(string $id, string|int|null $register = null, string|int|null $schema = null): ConflictObjectDouble {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ConflictObjectDouble {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		if (isset($this->objects[(string)$schema][$id]) === false) {
 			throw new RuntimeException('not found');
 		}
@@ -135,7 +139,11 @@ class ConflictObjectServiceDouble {
 	 *
 	 * @return ConflictObjectDouble The stored object.
 	 */
-	public function patchObject(string $objectId, array $data, string|int|null $register = null, string|int|null $schema = null): ConflictObjectDouble {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): ConflictObjectDouble {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		if (in_array((string)$schema, $this->failingSchemas, true) === true) {
 			throw new RuntimeException('write refused');
 		}

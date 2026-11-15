@@ -32,6 +32,9 @@ use OCA\Dossiq\Review\PagesSeen;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Object service stub for WOO decision tests (OpenRegister object-first signature).
@@ -48,7 +51,7 @@ interface WOODecisionObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null);
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true);
 
 	/**
 	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
@@ -387,11 +390,11 @@ class WOODecisionServiceTest extends TestCase {
 
 		$this->assertSame(
 			expected: [$decisionOf['case-new']],
-			actual: $store->find(id: 'case-new', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+			actual: $store->find(id: 'case-new', options: new ObjectFindOptions(register: 'dossiq', schema: 'case'))['decisions'] ?? null,
 		);
 		$this->assertSame(
 			expected: ['decision-before', $decisionOf['case-earlier']],
-			actual: $store->find(id: 'case-earlier', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+			actual: $store->find(id: 'case-earlier', options: new ObjectFindOptions(register: 'dossiq', schema: 'case'))['decisions'] ?? null,
 		);
 	}//end testTheRecordedDecisionIsListedOnItsCase()
 
@@ -452,8 +455,12 @@ class WOODecisionServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = ''): ?array {
-				return $this->store->find(id: $id, register: $register, schema: $schema);
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
+				return $this->store->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 			}
 
 			/**
@@ -475,8 +482,11 @@ class WOODecisionServiceTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): mixed {
-				$row = $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
+				$row = $this->store->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 				if ($schema !== 'decision') {
 					return $row;
 				}

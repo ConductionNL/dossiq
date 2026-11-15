@@ -35,6 +35,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use stdClass;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Tests for LifecycleCaseTypeRules and DossierDocumentStore.
@@ -84,7 +85,9 @@ final class LifecycleCaseTypeRulesTest extends TestCase {
 			 *
 			 * @return array<string,mixed>|null
 			 */
-			public function find(string $id, int|string $register, int|string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->finds[] = $register . '/' . $schema . '/' . $id;
 				return ($this->rows[$id] ?? null);
 			}
@@ -227,7 +230,9 @@ final class LifecycleCaseTypeRulesTest extends TestCase {
 			 *
 			 * @return array<string,mixed>
 			 */
-			public function find(string $id, int|string $register, int|string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->finds[] = $register . '/' . $schema . '/' . $id;
 				return ['finishingRole' => 'behandelaar'];
 			}
@@ -255,7 +260,9 @@ final class LifecycleCaseTypeRulesTest extends TestCase {
 			 *
 			 * @return array<string,mixed>
 			 */
-			public function find(string $id, int|string $register, int|string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new RuntimeException('register unavailable');
 			}
 		};

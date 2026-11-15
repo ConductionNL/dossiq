@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * Both decisions write, log and answer the same way.
@@ -169,7 +170,11 @@ class DispositionDecisionGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The configured answer.
 			 */
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): ?array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->calls[] = [$objectId, $data, $register, $schema];
 
 				return $this->answer;

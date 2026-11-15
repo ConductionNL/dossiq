@@ -40,6 +40,9 @@ namespace OCA\Dossiq\Service\Relation;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -121,7 +124,7 @@ class CaseRelationStore {
 		}
 
 		try {
-			$obj = $objectService->find($uuid, register: $register, schema: $schema);
+			$obj = $objectService->find($uuid, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseRelationService: ' . self::OBJECT_NAMES[$schemaKey] . ' lookup failed',
@@ -200,8 +203,7 @@ class CaseRelationStore {
 		try {
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(

@@ -34,6 +34,8 @@ use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -213,8 +215,7 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 
 		$saved = $sent['objectService']->saveObject(
 			object: $messageData,
-			register: (int)$register,
-			schema: (int)$schema,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema))
 		);
 
 		$this->journal->recordSend(caseId: $letter['caseId'], subject: $letter['subject'], result: $sent['result'], messageData: $messageData);
@@ -332,7 +333,7 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 
 		$data = $this->withStatus(data: $data, stamp: $stamp);
 
-		$objectService->saveObject(object: $data, register: $register, schema: $schema);
+		$objectService->saveObject(object: $data, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema)));
 
 		$this->journal->recordStatus(
 			data: $data,

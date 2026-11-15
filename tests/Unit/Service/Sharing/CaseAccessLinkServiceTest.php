@@ -44,6 +44,8 @@ use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Fake of OpenRegister's AccessLinkService.
@@ -179,6 +181,7 @@ final class CalFakeObjectService {
 	 * @return array<string, mixed>|null
 	 */
 	public function find($id, ...$args) {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		unset($args);
 		return ($this->objects[(string)$id] ?? null);
 	}//end find()
@@ -188,7 +191,10 @@ final class CalFakeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, int $register, int $schema, ?string $uuid = null): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		unset($register, $schema);
 		$id = ($object['id'] ?? $uuid ?? ('share-' . $this->autoId++));
 		$object['id'] = $id;

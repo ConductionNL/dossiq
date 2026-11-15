@@ -21,6 +21,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Sharing\CaseAccessPolicy
@@ -198,7 +199,11 @@ class CaseAccessPolicyTest extends TestCase {
 			/**
 			 * @return array|null
 			 */
-			public function find(string $id, array $_extend = [], bool $files = false, int|string|null $register = null, int|string|null $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->found[] = [$id, $register, $schema];
 				if ($this->findFails !== null) {
 					throw $this->findFails;

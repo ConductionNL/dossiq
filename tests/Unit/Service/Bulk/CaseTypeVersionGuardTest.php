@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * A selection spanning two versions of one case type is refused; anything else passes.
@@ -72,7 +73,9 @@ class CaseTypeVersionGuardTest extends TestCase {
 			 *
 			 * @return mixed The row.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$store = ($schema === 'case') ? $this->cases : $this->caseTypes;
 				if (array_key_exists($id, $store) === false) {
 					throw new RuntimeException('not found: ' . $id);

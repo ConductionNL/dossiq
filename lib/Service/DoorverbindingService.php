@@ -33,6 +33,9 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DoorverbindingServiceInterface;
 use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -136,7 +139,10 @@ class DoorverbindingService implements DoorverbindingServiceInterface {
 		[$objectService, $register, $schema] = $target;
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to initiate doorverbinding: ' . $e->getMessage(),
@@ -255,7 +261,7 @@ class DoorverbindingService implements DoorverbindingServiceInterface {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		try {
-			$record = $objectService->find($doorverbindingId, register: $register, schema: $schema);
+			$record = $objectService->find($doorverbindingId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			throw new RuntimeException('Doorverbinding not found');
 		}

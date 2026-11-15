@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The first-response outcome when the store is missing, unconfigured or failing.
@@ -105,7 +106,11 @@ final class FirstResponseOutcomeStoreTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, int|string|null $register = null, int|string|null $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->test->calls[] = ['patch', ['id' => $objectId, 'data' => $data, 'register' => $register, 'schema' => $schema]];
 				if ($this->rows instanceof RuntimeException) {
 					throw $this->rows;

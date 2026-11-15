@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * A configured schema is searched in the configured register; an unconfigured one has no rows.
@@ -48,6 +49,7 @@ final class ConfiguredSchemaRowsTest extends TestCase {
 			}
 
 			public function find(string $id, ...$scope): array {
+				$scope = LegacyObjectArgs::flatten(args: $scope);
 				$this->calls[] = ['find' => $id] + $scope;
 				return ['id' => $id];
 			}

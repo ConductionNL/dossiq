@@ -25,6 +25,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Repair\ArmTermijnEngineTimers
@@ -165,12 +166,16 @@ class ArmTermijnEngineTimersBranchesTest extends TestCase {
 			 *
 			 * @return \OCA\Dossiq\Tests\Unit\Service\FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): \OCA\Dossiq\Tests\Unit\Service\FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): \OCA\Dossiq\Tests\Unit\Service\FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ((string)$id === 'broken') {
 					throw new RuntimeException('lookup refused');
 				}
 
-				return parent::find($id, $_extend, $files, $register, $schema);
+				return parent::find($id, $options);
 			}
 		};
 		$definition = $store->seed('deadlineDefinition', ['name' => 'Beslistermijn', 'days' => 56]);

@@ -33,6 +33,8 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * A store whose find and delete answers each test sets.
@@ -56,6 +58,7 @@ final class ZrcDestroyStore {
 	}
 
 	public function find(int|string $id, mixed ...$args): mixed {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		if ($this->found instanceof \Throwable) {
 			throw $this->found;
 		}
@@ -63,7 +66,8 @@ final class ZrcDestroyStore {
 		return $this->found;
 	}
 
-	public function deleteObject(string $uuid): void {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): void {
+		$uuid = $deletion->uuid;
 		if ($this->deleteThrows !== null) {
 			throw $this->deleteThrows;
 		}

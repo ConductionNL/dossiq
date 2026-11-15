@@ -33,6 +33,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A store answering what it is told to, and recording what it was given.
@@ -76,7 +78,9 @@ class ScriptedObligationStore {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, int|string $register = '', int|string $schema = ''): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		return $this->found;
 	}
 
@@ -102,7 +106,9 @@ class ScriptedObligationStore {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object = [], int|string $register = '', int|string $schema = ''): mixed {
+	public function saveObject(array $object = [], ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
 		$this->writes[] = $object;
 
 		return $this->saved;

@@ -29,6 +29,8 @@ use OCA\Dossiq\Service\Permit\PermitPlateChange;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The paths of PermitPlateChange the main test does not take.
@@ -86,7 +88,9 @@ class PermitPlateChangeEdgesTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				if (isset($this->store[$schema][$id]) === false) {
 					throw new DoesNotExistException('none');
 				}
@@ -124,7 +128,10 @@ class PermitPlateChangeEdgesTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->saved[] = ['schema' => $schema, 'object' => $object];
 				if ($this->saveAnswer instanceof \Throwable) {
 					throw $this->saveAnswer;

@@ -39,6 +39,10 @@ use OCA\Dossiq\Service\Zgw\ZgwOutboundMapping;
 use OCA\Dossiq\Service\Zgw\ZgwParentStateResolver;
 use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
 use OCA\OpenRegister\Db\Mapping;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -1358,9 +1362,11 @@ class ZgwService implements ZgwServiceInterface {
 
 		// `_directFields` reach the payload unmapped, so a create drops the keys that name a stored object.
 		$object = $this->objectService->saveObject(
-			register: $write->mapping['sourceRegister'],
-			schema: $write->mapping['sourceSchema'],
-			object: array_diff_key($englishData, CallerIdentity::KEYS)
+			object: array_diff_key($englishData, CallerIdentity::KEYS),
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $write->mapping['sourceRegister'],
+					schema: $write->mapping['sourceSchema']
+				))
 		);
 
 		return $this->createdResponse(write: $write, object: $object);
@@ -1445,9 +1451,11 @@ class ZgwService implements ZgwServiceInterface {
 	private function findShown(ResourceRoute $route, array $mappingConfig): mixed {
 		try {
 			$object = $this->objectService->find(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				id: $route->uuid
+				id: $route->uuid,
+				options: new ObjectFindOptions(
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				)
 			);
 		} catch (\Throwable $e) {
 			return $this->storeFailureResponse(error: $e, operation: 'ZGW show', object: $route->objectLabel());
@@ -1635,10 +1643,14 @@ class ZgwService implements ZgwServiceInterface {
 	 */
 	private function storeUpdated(ResourceWrite $write, array $data): JSONResponse {
 		$object = $this->objectService->saveObject(
-			register: $write->mapping['sourceRegister'],
-			schema: $write->mapping['sourceSchema'],
 			object: $data,
-			uuid: $write->route->uuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+						register: $write->mapping['sourceRegister'],
+						schema: $write->mapping['sourceSchema']
+					),
+				uuid: $write->route->uuid
+			)
 		);
 
 		return $this->updatedResponse(write: $write, object: $object);
@@ -1741,8 +1753,10 @@ class ZgwService implements ZgwServiceInterface {
 	private function findSerialized(string $uuid, array $mappingConfig): ?array {
 		$existingObj = $this->objectService->find(
 			$uuid,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
+			new ObjectFindOptions(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			)
 		);
 		if ($existingObj === null) {
 			return null;
@@ -1875,7 +1889,7 @@ class ZgwService implements ZgwServiceInterface {
 				return $this->ruleRefusal(ruleResult: $ruleResult);
 			}
 
-			$this->objectService->deleteObject(uuid: $route->uuid);
+			$this->objectService->deleteObject(new ObjectDeletion(uuid: $route->uuid));
 		} catch (\Throwable $e) {
 			return $this->storeFailureResponse(error: $e, operation: 'ZGW delete', object: $route->objectLabel());
 		}//end try
