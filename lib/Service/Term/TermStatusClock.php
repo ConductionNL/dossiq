@@ -118,7 +118,21 @@ class TermStatusClock implements TermStatusClockInterface {
 			return self::UNCHANGED;
 		}
 
-		$inside = in_array($statusId, $running, true);
+		return $this->stopOrStart(instance: $instance, inside: in_array($statusId, $running, true));
+	}//end reconcile()
+
+	/**
+	 * Stop a running clock outside its statuses, or start a stopped one inside them.
+	 *
+	 * @param array<string, mixed> $instance The case's term instance.
+	 * @param bool                 $inside   Whether the case's status is one the clock runs in.
+	 *
+	 * @return string What changed.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$inside` is the status test's answer, compared with the clock's
+	 *  own state; it does not switch the method between two jobs.
+	 */
+	private function stopOrStart(array $instance, bool $inside): string {
 		$stopped = (($instance['clockStoppedByStatus'] ?? false) === true);
 
 		if ($inside === false && $stopped === false) {
@@ -130,7 +144,7 @@ class TermStatusClock implements TermStatusClockInterface {
 		}
 
 		return self::UNCHANGED;
-	}//end reconcile()
+	}//end stopOrStart()
 
 	/**
 	 * Stop the clock, and write down that this is why.
