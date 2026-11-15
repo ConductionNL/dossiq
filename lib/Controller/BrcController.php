@@ -127,7 +127,7 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		return $this->jwtRefusal() ?? $this->listOf(resource: $resource);
+		return $this->requireValidJwt() ?? $this->listOf(resource: $resource);
 	}//end index()
 
 	/**
@@ -164,7 +164,7 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
-		$refusal = $this->writeRefusal(scope: 'besluiten.aanmaken');
+		$refusal = $this->requireWriteScope(scope: 'besluiten.aanmaken');
 		if ($refusal !== null) {
 			return $refusal;
 		}
@@ -198,7 +198,7 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		return $this->jwtRefusal() ?? $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->requireValidJwt() ?? $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 	}//end show()
 
 	/**
@@ -263,7 +263,7 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$refusal = $this->writeRefusal(scope: 'besluiten.verwijderen');
+		$refusal = $this->requireWriteScope(scope: 'besluiten.verwijderen');
 		if ($refusal !== null) {
 			return $refusal;
 		}
@@ -302,7 +302,7 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -346,9 +346,9 @@ class BrcController extends ZgwController {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
 	 */
-	private function writeRefusal(string $scope): ?JSONResponse {
+	private function requireWriteScope(string $scope): ?JSONResponse {
 		return $this->scopedWriteRefusal(component: 'brc', scope: $scope);
-	}//end writeRefusal()
+	}//end requireWriteScope()
 
 	/**
 	 * The write refusal for an update or patch, else a 405 for a besluitinformatieobject, else null.
@@ -360,7 +360,7 @@ class BrcController extends ZgwController {
 	 * @return JSONResponse|null The refusal, or null when the update may go ahead.
 	 */
 	private function updateRefusal(string $resource): ?JSONResponse {
-		$refusal = $this->writeRefusal(scope: 'besluiten.bijwerken');
+		$refusal = $this->requireWriteScope(scope: 'besluiten.bijwerken');
 		if ($refusal !== null || $resource !== 'besluitinformatieobjecten') {
 			return $refusal;
 		}

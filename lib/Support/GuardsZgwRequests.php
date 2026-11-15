@@ -45,9 +45,9 @@ trait GuardsZgwRequests {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the token is valid.
 	 */
-	private function jwtRefusal(): ?JSONResponse {
+	private function requireValidJwt(): ?JSONResponse {
 		return $this->zgwService->validateJwtAuth($this->request);
-	}//end jwtRefusal()
+	}//end requireValidJwt()
 
 	/**
 	 * The JWT refusal, else the refusal for a consumer without the scope, else null.
@@ -61,7 +61,7 @@ trait GuardsZgwRequests {
 	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
 	 */
 	private function scopedWriteRefusal(string $component, string $scope): ?JSONResponse {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -82,7 +82,7 @@ trait GuardsZgwRequests {
 	 * @return JSONResponse
 	 */
 	private function audittrailList(string $resource, string $uuid): JSONResponse {
-		return $this->jwtRefusal() ?? $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->requireValidJwt() ?? $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
 	}//end audittrailList()
 
 	/**
@@ -95,7 +95,7 @@ trait GuardsZgwRequests {
 	 * @return JSONResponse
 	 */
 	private function audittrailEntry(string $resource, string $uuid, string $auditUuid): JSONResponse {
-		return $this->jwtRefusal() ?? $this->zgwService->handleAudittrailShow(
+		return $this->requireValidJwt() ?? $this->zgwService->handleAudittrailShow(
 			$this->request,
 			self::ZGW_API,
 			$resource,

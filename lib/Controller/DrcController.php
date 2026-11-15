@@ -125,7 +125,7 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		return $this->jwtRefusal() ?? $this->listOf(resource: $resource);
+		return $this->requireValidJwt() ?? $this->listOf(resource: $resource);
 	}//end index()
 
 	/**
@@ -599,7 +599,7 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		return $this->jwtRefusal() ?? $this->shownResource(resource: $resource, uuid: $uuid);
+		return $this->requireValidJwt() ?? $this->shownResource(resource: $resource, uuid: $uuid);
 	}//end show()
 
 	/**
@@ -1374,7 +1374,7 @@ class DrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -1965,7 +1965,7 @@ class DrcController extends ZgwController {
 	 * @return object The object service, or the JSONResponse that refuses the request.
 	 */
 	private function authorisedObjectService(): object {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}

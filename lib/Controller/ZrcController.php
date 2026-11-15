@@ -129,7 +129,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		return $this->jwtRefusal() ?? $this->listOf(resource: $resource);
+		return $this->requireValidJwt() ?? $this->listOf(resource: $resource);
 	}//end index()
 
 	/**
@@ -345,7 +345,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null
 	 */
 	private function createRefusal(string $resource): ?JSONResponse {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -584,7 +584,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null
 	 */
 	private function showRefusal(string $resource, string $uuid): ?JSONResponse {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -634,7 +634,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null The refusal, or null when the update may go on
 	 */
 	private function updateRefusal(string $resource, bool $isPatch): ?JSONResponse {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -768,7 +768,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -989,7 +989,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function zaakbesluitenIndex(string $zaakUuid): JSONResponse {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}

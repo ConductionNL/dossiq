@@ -128,7 +128,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		return $this->jwtRefusal() ?? $this->listOf(resource: $resource);
+		return $this->requireValidJwt() ?? $this->listOf(resource: $resource);
 	}//end index()
 
 	/**
@@ -198,7 +198,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
-		$refusal = $this->writeRefusal();
+		$refusal = $this->requireWriteScope();
 		if ($refusal !== null) {
 			return $refusal;
 		}
@@ -249,7 +249,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		return $this->jwtRefusal() ?? $this->shownResource(resource: $resource, uuid: $uuid);
+		return $this->requireValidJwt() ?? $this->shownResource(resource: $resource, uuid: $uuid);
 	}//end show()
 
 	/**
@@ -313,7 +313,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
-		return $this->writeRefusal() ?? $this->updated(resource: $resource, uuid: $uuid, isPatch: false);
+		return $this->requireWriteScope() ?? $this->updated(resource: $resource, uuid: $uuid, isPatch: false);
 	}//end update()
 
 	/**
@@ -334,7 +334,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
-		return $this->writeRefusal() ?? $this->updated(resource: $resource, uuid: $uuid, isPatch: true);
+		return $this->requireWriteScope() ?? $this->updated(resource: $resource, uuid: $uuid, isPatch: true);
 	}//end patch()
 
 	/**
@@ -379,7 +379,7 @@ class ZtcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$refusal = $this->writeRefusal();
+		$refusal = $this->requireWriteScope();
 		if ($refusal !== null) {
 			return $refusal;
 		}
@@ -426,9 +426,9 @@ class ZtcController extends ZgwController {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
 	 */
-	private function writeRefusal(): ?JSONResponse {
+	private function requireWriteScope(): ?JSONResponse {
 		return $this->scopedWriteRefusal(component: 'ztc', scope: 'catalogi.schrijven');
-	}//end writeRefusal()
+	}//end requireWriteScope()
 
 	/**
 	 * A successful zaaktype or besluittype answer with its cross-references enriched and invalid URLs filtered; any other answer as it is.

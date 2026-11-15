@@ -86,7 +86,7 @@ class NrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		return $this->jwtRefusal() ?? $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
+		return $this->requireValidJwt() ?? $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 	}//end index()
 
 	/**
@@ -104,7 +104,7 @@ class NrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
-		return $this->writeRefusal() ?? $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
+		return $this->requireWriteScope() ?? $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
 	}//end create()
 
 	/**
@@ -123,7 +123,7 @@ class NrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		return $this->jwtRefusal() ?? $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->requireValidJwt() ?? $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 	}//end show()
 
 	/**
@@ -142,7 +142,7 @@ class NrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
-		return $this->writeRefusal() ?? $this->zgwService->handleUpdate(
+		return $this->requireWriteScope() ?? $this->zgwService->handleUpdate(
 			$this->request,
 			self::ZGW_API,
 			$resource,
@@ -167,7 +167,7 @@ class NrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
-		return $this->writeRefusal() ?? $this->zgwService->handleUpdate(
+		return $this->requireWriteScope() ?? $this->zgwService->handleUpdate(
 			$this->request,
 			self::ZGW_API,
 			$resource,
@@ -192,7 +192,7 @@ class NrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		return $this->writeRefusal() ?? $this->zgwService->handleDestroy(
+		return $this->requireWriteScope() ?? $this->zgwService->handleDestroy(
 			$this->request,
 			self::ZGW_API,
 			$resource,
@@ -219,7 +219,7 @@ class NrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function notificatieCreate(): JSONResponse {
-		$authError = $this->jwtRefusal();
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -277,7 +277,7 @@ class NrcController extends ZgwController {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
 	 */
-	private function writeRefusal(): ?JSONResponse {
+	private function requireWriteScope(): ?JSONResponse {
 		return $this->scopedWriteRefusal(component: 'nrc', scope: 'notificaties.publiceren');
-	}//end writeRefusal()
+	}//end requireWriteScope()
 }//end class
