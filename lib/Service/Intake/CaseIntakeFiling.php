@@ -111,11 +111,11 @@ class CaseIntakeFiling {
 
 		$caseType = $this->publishedCaseType(type: $type);
 
-		[$objectService, $register, $schema] = $this->storage();
+		$storage = $this->storage();
 
 		$payload = $this->payload(caseTypeId: (string)($caseType['id'] ?? ''), subject: $subject, person: $person, messages: $messages);
 
-		$saved = $this->save(objectService: $objectService, payload: $payload, register: $register, schema: $schema);
+		$saved = $this->save(storage: $storage, payload: $payload);
 
 		return $this->asArray(value: $saved);
 	}//end file()
@@ -168,10 +168,8 @@ class CaseIntakeFiling {
 	/**
 	 * Save the case through the create path.
 	 *
-	 * @param object                $objectService The ObjectService.
-	 * @param array<string, string> $payload       The case payload.
-	 * @param string                $register      The register.
-	 * @param string                $schema        The case schema.
+	 * @param array{0: object, 1: string, 2: string} $storage The ObjectService, the register and the case schema.
+	 * @param array<string, string>                  $payload The case payload.
 	 *
 	 * @return mixed What the create path answered.
 	 *
@@ -179,7 +177,8 @@ class CaseIntakeFiling {
 	 *
 	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-intake-tool-creates-through-the-existing-path
 	 */
-	private function save(object $objectService, array $payload, string $register, string $schema): mixed {
+	private function save(array $storage, array $payload): mixed {
+		[$objectService, $register, $schema] = $storage;
 		try {
 			$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
 		} catch (Throwable $e) {
