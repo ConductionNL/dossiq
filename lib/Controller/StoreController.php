@@ -47,6 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsStringParams;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ConfiguredRegistryServiceInterface;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
@@ -76,6 +77,8 @@ use Throwable;
  *   write seam), and the canonical publish route has to be answered here.
  */
 class StoreController extends Controller {
+	use ReadsStringParams;
+
 	/**
 	 * Kebab-case slug pattern for a remote store item.
 	 */
@@ -235,22 +238,6 @@ class StoreController extends Controller {
 			statusCode: Http::STATUS_OK
 		);
 	}//end searchFailed()
-
-	/**
-	 * A request parameter when it is a string, else null.
-	 *
-	 * @param string $name The parameter.
-	 *
-	 * @return string|null
-	 */
-	private function stringParam(string $name): ?string {
-		$value = $this->request->getParam($name);
-		if (is_string($value) === false) {
-			return null;
-		}
-
-		return $value;
-	}//end stringParam()
 
 	/**
 	 * Install one store item into this instance.

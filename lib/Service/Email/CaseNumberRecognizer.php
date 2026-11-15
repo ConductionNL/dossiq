@@ -243,7 +243,21 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function resolveCases(array $candidates, object $objectService, string $register, string $schema, IUser $owner): array {
-		$scope = new CaseSearchScope(objectService: $objectService, register: $register, schema: $schema, owner: $owner);
+		return $this->resolvedCases(
+			candidates: $candidates,
+			scope: new CaseSearchScope(objectService: $objectService, register: $register, schema: $schema, owner: $owner)
+		);
+	}//end resolveCases()
+
+	/**
+	 * The cases the candidate identifiers name within the scope, each case once.
+	 *
+	 * @param array<int, string> $candidates The candidate identifiers.
+	 * @param CaseSearchScope    $scope      Where to look, and whose read it is.
+	 *
+	 * @return array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> The cases.
+	 */
+	private function resolvedCases(array $candidates, CaseSearchScope $scope): array {
 		$cases = [];
 		foreach ($candidates as $identifier) {
 			$case = $this->resolveCase(identifier: $identifier, scope: $scope);
@@ -253,7 +267,7 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 		}
 
 		return array_values($cases);
-	}//end resolveCases()
+	}//end resolvedCases()
 
 	/**
 	 * Resolve one identifier to exactly one case the owner may read, or nothing.

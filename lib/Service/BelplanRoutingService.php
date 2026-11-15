@@ -115,7 +115,7 @@ class BelplanRoutingService implements BelplanRoutingServiceInterface {
 		if (empty($available) === true || (int)($available[0]['currentQueueLength'] ?? 0) > $overflow['wachtrij']) {
 			// All busy or queue too long → overflow to generalist with escalatie.
 			$waitTime = $this->estimateWait(specialists: $specialists);
-			return self::overflowRoute(vaardigheid: $vaardigheid, waitTime: $waitTime, fallbackRol: $overflow['fallbackRol']);
+			return self::overflowRoute(vaardigheid: $vaardigheid, overflow: ['waitTime' => $waitTime, 'fallbackRol' => $overflow['fallbackRol']]);
 		}
 
 		return self::chosenRoute(chosen: $available[0], vaardigheid: $vaardigheid);
@@ -148,21 +148,20 @@ class BelplanRoutingService implements BelplanRoutingServiceInterface {
 	/**
 	 * The route of a call that overflows to a generalist, with escalatie.
 	 *
-	 * @param string      $vaardigheid The resolved vaardigheid.
-	 * @param int         $waitTime    The estimated wait.
-	 * @param string|null $fallbackRol The overflow's fallback role.
+	 * @param string                                        $vaardigheid The resolved vaardigheid.
+	 * @param array{waitTime: int, fallbackRol: string|null} $overflow    The estimated wait and the overflow's fallback role.
 	 *
 	 * @return array{destinationSpecialistId: ?string, vaardigheid: string, escalatieFlag: bool, estimatedWaitTime: int, fallbackRol: ?string}
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
-	private static function overflowRoute(string $vaardigheid, int $waitTime, ?string $fallbackRol): array {
+	private static function overflowRoute(string $vaardigheid, array $overflow): array {
 		return [
 			'destinationSpecialistId' => null,
 			'vaardigheid' => $vaardigheid,
 			'escalatieFlag' => true,
-			'estimatedWaitTime' => $waitTime,
-			'fallbackRol' => $fallbackRol,
+			'estimatedWaitTime' => $overflow['waitTime'],
+			'fallbackRol' => $overflow['fallbackRol'],
 		];
 	}//end overflowRoute()
 

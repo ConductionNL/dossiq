@@ -70,7 +70,23 @@ class LegalHoldApplier {
 		bool $includeDeleted,
 		OutputInterface $output,
 	): int {
-		$run = new HoldRun(objectMapper: $objectMapper, legalHoldService: $legalHoldService, apply: $apply, includeDeleted: $includeDeleted);
+		return $this->holdAll(
+			run: new HoldRun(objectMapper: $objectMapper, legalHoldService: $legalHoldService, apply: $apply, includeDeleted: $includeDeleted),
+			report: ['candidates' => $candidates, 'output' => $output]
+		);
+	}//end reportAndApply()
+
+	/**
+	 * Hold each candidate, write a line per case and the summary, and answer the command's exit code.
+	 *
+	 * @param HoldRun              $run    The mapper, the hold service and the apply and include-deleted switches.
+	 * @param array<string, mixed> $report The candidates (`candidates`, meta by case id) and the console output (`output`).
+	 *
+	 * @return int The exit code.
+	 */
+	private function holdAll(HoldRun $run, array $report): int {
+		$candidates = $report['candidates'];
+		$output = $report['output'];
 		$tally = ['held' => 0, 'already' => 0, 'unresolved' => 0];
 
 		$output->writeln('');
@@ -87,7 +103,7 @@ class LegalHoldApplier {
 		}
 
 		return Command::SUCCESS;
-	}//end reportAndApply()
+	}//end holdAll()
 
 	/**
 	 * Report one candidate, and hold it when applying.

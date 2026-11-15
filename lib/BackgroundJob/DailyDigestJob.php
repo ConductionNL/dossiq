@@ -147,14 +147,12 @@ class DailyDigestJob extends TimedJob {
 	 */
 	private function sendDigests(IUser $account): int {
 		$now = new DateTimeImmutable();
-		$hour = (int)$now->format('G');
-		$today = $now->format('Y-m-d');
 		$sent = 0;
 
 		$this->users->callForSeenUsers(
-			function (IUser $user) use ($account, $now, $hour, $today, &$sent): ?bool {
+			function (IUser $user) use ($account, $now, &$sent): ?bool {
 				if ($user->getUID() !== $account->getUID()) {
-					$sent += $this->sendOne(user: $user, now: $now, hour: $hour, today: $today);
+					$sent += $this->sendOne(user: $user, now: $now);
 				}
 
 				// `callForSeenUsers` types its callback as returning bool|null
@@ -171,18 +169,17 @@ class DailyDigestJob extends TimedJob {
 	/**
 	 * One person's digest, if they are due one and have something waiting.
 	 *
-	 * @param IUser             $user   The person.
-	 * @param DateTimeImmutable $now    The moment the run started.
-	 * @param integer           $hour   The hour the run is in.
-	 * @param string            $today  Today, `Y-m-d`.
+	 * @param IUser             $user The person.
+	 * @param DateTimeImmutable $now  The moment the run started; its hour and day decide whether a digest is due.
 	 *
 	 * @return integer 1 when a digest was sent, 0 otherwise.
 	 *
 	 * @spec openspec/specs/my-work/spec.md
 	 */
-	private function sendOne(IUser $user, DateTimeImmutable $now, int $hour, string $today): int {
+	private function sendOne(IUser $user, DateTimeImmutable $now): int {
+		$today = $now->format('Y-m-d');
 		$userId = $user->getUID();
-		if ($this->settings->isDue(userId: $userId, hour: $hour, today: $today) === false) {
+		if ($this->settings->isDue(userId: $userId, hour: (int)$now->format('G'), today: $today) === false) {
 			return 0;
 		}
 

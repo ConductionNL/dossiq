@@ -58,7 +58,7 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 	 */
 	public function rulesStatussenCreate(array $body): array {
 		// Zrc-016: Validate statustype belongs to zaak's zaaktype.
-		return $this->typedSubResource(body: $body, fieldName: 'statustype', typeSchemaKey: 'status_type_schema');
+		return $this->typedSubResource(body: $body, type: ['field' => 'statustype', 'schemaKey' => 'status_type_schema']);
 	}//end rulesStatussenCreate()
 
 	/**
@@ -77,7 +77,7 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 	 */
 	public function rulesResultatenCreate(array $body): array {
 		// Zrc-020: Validate resultaattype belongs to zaak's zaaktype.
-		return $this->typedSubResource(body: $body, fieldName: 'resultaattype', typeSchemaKey: 'result_type_schema');
+		return $this->typedSubResource(body: $body, type: ['field' => 'resultaattype', 'schemaKey' => 'result_type_schema']);
 	}//end rulesResultatenCreate()
 
 	/**
@@ -96,7 +96,7 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 	 */
 	public function rulesRollenCreate(array $body): array {
 		// Zrc-019: Validate roltype belongs to zaak's zaaktype.
-		return $this->typedSubResource(body: $body, fieldName: 'roltype', typeSchemaKey: 'role_type_schema');
+		return $this->typedSubResource(body: $body, type: ['field' => 'roltype', 'schemaKey' => 'role_type_schema']);
 	}//end rulesRollenCreate()
 
 	/**
@@ -115,28 +115,22 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 	 */
 	public function rulesZaakeigenschappenCreate(array $body): array {
 		// Zrc-018: Validate eigenschap belongs to zaak's zaaktype.
-		return $this->typedSubResource(body: $body, fieldName: 'eigenschap', typeSchemaKey: 'property_definition_schema');
+		return $this->typedSubResource(body: $body, type: ['field' => 'eigenschap', 'schemaKey' => 'property_definition_schema']);
 	}//end rulesZaakeigenschappenCreate()
 
 	/**
 	 * Validate that the sub-resource's type belongs to the zaak's zaaktype, then the body.
 	 *
-	 * @param array<string, mixed> $body          The request body.
-	 * @param string               $fieldName     The field holding the type URL.
-	 * @param string               $typeSchemaKey The settings key of the type's schema.
+	 * @param array<string, mixed>                $body The request body.
+	 * @param array{field: string, schemaKey: string} $type The field holding the type URL, and the settings key of the type's schema.
 	 *
 	 * @return array The rule result.
 	 */
-	private function typedSubResource(array $body, string $fieldName, string $typeSchemaKey): array {
-		$typeUrl = $body[$fieldName] ?? '';
+	private function typedSubResource(array $body, array $type): array {
+		$typeUrl = $body[$type['field']] ?? '';
 		$caseUrl = $body['case'] ?? '';
 		if ($typeUrl !== '' && $caseUrl !== '') {
-			$error = $this->validateSubResourceType(
-				caseUrl: $caseUrl,
-				typeUrl: $typeUrl,
-				fieldName: $fieldName,
-				typeSchemaKey: $typeSchemaKey
-			);
+			$error = $this->validateSubResourceType(caseUrl: $caseUrl, type: $type + ['url' => $typeUrl]);
 			if ($error !== null) {
 				return $error;
 			}
@@ -151,46 +145,42 @@ class ZrcSubResourceRules extends ZgwRulesBase {
 	 * Checks that the type object the URL points at references the zaak's zaaktype. An unknown
 	 * type is refused like a mismatching one; an unresolvable zaak or zaaktype skips the check.
 	 *
-	 * @param string $caseUrl The zaak URL
-	 * @param string $typeUrl The sub-resource type URL (statustype, roltype, etc.)
-	 * @param string $fieldName The field name for error reporting
-	 * @param string $typeSchemaKey Settings key for the type's schema
+	 * @param string                                             $caseUrl The zaak URL
+	 * @param array{field: string, schemaKey: string, url: string} $type    The field name for error reporting, the settings key
+	 *                                                                      for the type's schema and the sub-resource type URL
+	 *                                                                      (statustype, roltype, etc.)
 	 *
 	 * @return array|null Validation error, or null if valid
 	 */
-	private function validateSubResourceType(
-		string $caseUrl,
-		string $typeUrl,
-		string $fieldName,
-		string $typeSchemaKey,
-	): ?array {
+	private function validateSubResourceType(string $caseUrl, array $type): ?array {
 		$zaaktypeUuid = $this->getCaseTypeUuidOfCase(caseUrl: $caseUrl);
 		if ($zaaktypeUuid === null) {
 			return null;
 		}
 
-		return $this->typeMismatch(typeUrl: $typeUrl, fieldName: $fieldName, typeSchemaKey: $typeSchemaKey, zaaktypeUuid: $zaaktypeUuid);
+		return $this->typeMismatch(type: $type, zaaktypeUuid: $zaaktypeUuid);
 	}//end validateSubResourceType()
 
 	/**
 	 * The error when the type object the URL points at does not reference the zaaktype.
 	 *
-	 * @param string $typeUrl       The sub-resource type URL (statustype, roltype, etc.)
-	 * @param string $fieldName     The field name for error reporting
-	 * @param string $typeSchemaKey Settings key for the type's schema
-	 * @param string $zaaktypeUuid  The zaak's zaaktype uuid
+	 * @param array{field: string, schemaKey: string, url: string} $type         The field name for error reporting, the settings
+	 *                                                                           key for the type's schema and the sub-resource
+	 *                                                                           type URL (statustype, roltype, etc.)
+	 * @param string                                             $zaaktypeUuid The zaak's zaaktype uuid
 	 *
 	 * @return array|null Validation error, or null if valid or the type URL holds no uuid
 	 */
-	private function typeMismatch(string $typeUrl, string $fieldName, string $typeSchemaKey, string $zaaktypeUuid): array|null {
+	private function typeMismatch(array $type, string $zaaktypeUuid): array|null {
+		$fieldName = $type['field'];
 		// Extract UUID from the provided type URL.
-		$typeUuid = $this->extractUuid(url: $typeUrl);
+		$typeUuid = $this->extractUuid(url: $type['url']);
 		if ($typeUuid === null) {
 			return null;
 		}
 
 		// Look up the type object and verify its caseType references this zaaktype.
-		$typeData = $this->findBySchemaKey(uuid: $typeUuid, schemaKey: $typeSchemaKey);
+		$typeData = $this->findBySchemaKey(uuid: $typeUuid, schemaKey: $type['schemaKey']);
 		if ($typeData !== null && $this->extractUuid(url: (string)($typeData['caseType'] ?? '')) === $zaaktypeUuid) {
 			return null;
 		}

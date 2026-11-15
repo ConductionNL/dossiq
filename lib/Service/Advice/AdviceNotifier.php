@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Advice;
 use DateTime;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Notification\IManager as INotificationManager;
+use OCP\Notification\INotification;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -79,19 +80,9 @@ class AdviceNotifier {
 		string $message = '',
 	): void {
 		try {
-			$notification = $this->notificationManager->createNotification();
-			$notification
-				->setApp(AppIdentity::APP_ID)
-				->setUser($userId)
-				->setDateTime(new DateTime())
-				->setObject('advice', $objectId)
-				->setSubject($subject, ['object' => $objectId]);
-
-			if ($message !== '') {
-				$notification->setMessage('plain', ['message' => $message]);
-			}
-
-			$this->notificationManager->notify($notification);
+			$this->notificationManager->notify(
+				$this->notificationFor(userId: $userId, about: ['subject' => $subject, 'objectId' => $objectId, 'message' => $message])
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to send advice notification: ' . $e->getMessage(),
@@ -99,6 +90,30 @@ class AdviceNotifier {
 			);
 		}
 	}//end sendUserNotification()
+
+	/**
+	 * The advice notification for a user, with its message when there is one.
+	 *
+	 * @param string                                                  $userId Recipient user UID.
+	 * @param array{subject: string, objectId: string, message: string} $about  The subject key, the object UUID and the message.
+	 *
+	 * @return INotification The notification, not yet sent.
+	 */
+	private function notificationFor(string $userId, array $about): INotification {
+		$notification = $this->notificationManager->createNotification();
+		$notification
+			->setApp(AppIdentity::APP_ID)
+			->setUser($userId)
+			->setDateTime(new DateTime())
+			->setObject('advice', $about['objectId'])
+			->setSubject($about['subject'], ['object' => $about['objectId']]);
+
+		if ($about['message'] !== '') {
+			$notification->setMessage('plain', ['message' => $about['message']]);
+		}
+
+		return $notification;
+	}//end notificationFor()
 
 	/**
 	 * Fire the notification that matches a status transition.
@@ -127,14 +142,26 @@ class AdviceNotifier {
 		}
 
 		if ($to === 'received' && $callerId !== '') {
-			$this->sendUserNotification(
-				userId: $callerId,
-				subject: 'advies_ontvangen',
-				objectId: $adviceId,
-				message: $summary
-			);
+			$this->notifyReceived(callerId: $callerId, advice: ['id' => $adviceId, 'summary' => $summary]);
 		}
 	}//end fireTransitionNotification()
+
+	/**
+	 * Tell the caller their requested advice was received.
+	 *
+	 * @param string                           $callerId Who asked for the advice.
+	 * @param array{id: string, summary: string} $advice   The advice id, and its conclusion and text.
+	 *
+	 * @return void
+	 */
+	private function notifyReceived(string $callerId, array $advice): void {
+		$this->sendUserNotification(
+			userId: $callerId,
+			subject: 'advies_ontvangen',
+			objectId: $advice['id'],
+			message: $advice['summary']
+		);
+	}//end notifyReceived()
 
 	/**
 	 * Tell the advisor an advice was requested of them, when the advice names one.

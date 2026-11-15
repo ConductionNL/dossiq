@@ -17,7 +17,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CommunicationChannelInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RepairSchema;
-use OCA\Dossiq\Repair\Support\RepairSchemas;
+use OCA\Dossiq\Repair\Support\RunsOnce;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -45,6 +45,7 @@ use Throwable;
  */
 class NormaliseCommunicationChannelValues implements IRepairStep {
 	use RunsUnderSystemIdentity;
+	use RunsOnce;
 
 	/**
 	 * The app-config key that records the step has run.
@@ -55,6 +56,20 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 	 * The value the key holds once the step ran; bump it to run the step again.
 	 */
 	public const DONE_VERSION = '1';
+
+	/**
+	 * The schema config key this step walks.
+	 *
+	 * @var string
+	 */
+	private const TARGET_SCHEMA_KEY = 'case_schema';
+
+	/**
+	 * What the upgrade output says when the schema is unavailable.
+	 *
+	 * @var string
+	 */
+	private const UNAVAILABLE_NOTE = 'Dossiq communication channels: OpenRegister or the case schema is unavailable; nothing converted.';
 
 	/**
 	 * How many cases one page holds.
@@ -96,22 +111,7 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 	 * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
-			return;
-		}
-
-		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'case_schema');
-		if ($target === null) {
-			$output->info('Dossiq communication channels: OpenRegister or the case schema is unavailable; nothing converted.');
-			return;
-		}
-
-		$this->withSystemIdentity(
-			objectService: $target->objectService,
-			work: function () use ($target, $output): void {
-				$this->convert(target: $target, output: $output);
-			}
-		);
+		$this->onceOnSchema(output: $output, work: fn (RepairSchema $target) => $this->convert(target: $target, output: $output));
 	}//end run()
 
 	/**

@@ -137,16 +137,32 @@ class DeadlinePauseService implements DeadlinePauseServiceInterface {
 		$run->durationDays = $durationDays;
 		$run->rationale = $rationale;
 		$run->documentLink = $documentLink;
-		$this->assertSuspensionAllowed(instance: $run->instance, durationDays: $durationDays);
+
+		return $this->pause(run: $run, pauseReason: $pauseReason);
+	}//end registerPauze()
+
+	/**
+	 * Pause the instance the run names, when its case type allows it, and record the event.
+	 *
+	 * @param PauseRegistrationRun $run         The instance, the duration, the rationale and the document link.
+	 * @param string               $pauseReason The declared suspension reason key, or ''.
+	 *
+	 * @return array<string, mixed> The updated instance.
+	 *
+	 * @throws RefusedException When the case type forbids the suspension, forbids it this
+	 *         long, or does not declare the reason named.
+	 */
+	private function pause(PauseRegistrationRun $run, string $pauseReason): array {
+		$this->assertSuspensionAllowed(instance: $run->instance, durationDays: $run->durationDays);
 		$run->reason = $this->resolveReason(instance: $run->instance, key: $pauseReason);
 		$run->now = new DateTimeImmutable();
 
 		$patch = $this->suspendOnTheEngine(run: $run, patch: $this->pausePatch(run: $run));
-		$updated = $this->termService->updateTermijnInstance($termInstanceId, $patch);
+		$updated = $this->termService->updateTermijnInstance($run->termInstanceId, $patch);
 		$this->recordPauseEvent(run: $run);
 
 		return $updated ?? $run->instance;
-	}//end registerPauze()
+	}//end pause()
 
 	/**
 	 * The instance a pause can be registered on.
@@ -330,20 +346,34 @@ class DeadlinePauseService implements DeadlinePauseServiceInterface {
 			return $reason;
 		}
 
+		return $this->declaredRationale(caseId: $caseId, picked: ['key' => $pauseReason, 'reason' => $reason]);
+	}//end suspendRationale()
+
+	/**
+	 * The rationale for a picked reason the case type declares: the handler's text, else the reason's name.
+	 *
+	 * @param string                             $caseId Case UUID
+	 * @param array{key: string, reason: string} $picked The picked reason key, and the handler's text
+	 *
+	 * @return string The rationale.
+	 *
+	 * @throws RuntimeException `pause_reason_not_declared` for a key the case type does not declare.
+	 */
+	private function declaredRationale(string $caseId, array $picked): string {
 		foreach ($this->offeredReasons(caseId: $caseId) as $declared) {
-			if ($declared['key'] !== $pauseReason) {
+			if ($declared['key'] !== $picked['key']) {
 				continue;
 			}
 
-			if (trim($reason) === '') {
+			if (trim($picked['reason']) === '') {
 				return $declared['name'];
 			}
 
-			return $reason;
+			return $picked['reason'];
 		}
 
 		throw new RuntimeException('pause_reason_not_declared');
-	}//end suspendRationale()
+	}//end declaredRationale()
 
 	/**
 	 * Refuse a suspension the case type does not allow, or does not allow this
@@ -530,18 +560,31 @@ class DeadlinePauseService implements DeadlinePauseServiceInterface {
 		$this->timerService?->resumeBeslistermijn(instance: $instance, reason: self::EXPIRED_RESUME_REASON);
 		$updated = $this->termService->updateTermijnInstance($termInstanceId, (['endDateCurrent' => $newEnd] + self::RESUME_CLEARS));
 
+		$this->recordExpiredResume(termInstanceId: $termInstanceId, event: ['moment' => $moment, 'notice' => (['endDate' => $newEnd] + $notice)]);
+
+		return $updated ?? $instance;
+	}//end resumeAfterExpiry()
+
+	/**
+	 * Record that the term resumed because its pause ran out.
+	 *
+	 * @param string                                                        $termInstanceId Instance id.
+	 * @param array{moment: DateTimeImmutable, notice: array<string, string>} $event          When the pause ran out, and who
+	 *                                                                                       to tell with the new end date.
+	 *
+	 * @return void
+	 */
+	private function recordExpiredResume(string $termInstanceId, array $event): void {
 		$this->termService->recordEvent(
 			termInstanceId: $termInstanceId,
 			type: 'hervat',
 			basis: 'AWB 4:15',
 			rationale: self::EXPIRED_RESUME_REASON,
 			daysImpact: 0,
-			moment: $moment,
-			notice: (['endDate' => $newEnd] + $notice),
+			moment: $event['moment'],
+			notice: $event['notice'],
 		);
-
-		return $updated ?? $instance;
-	}//end resumeAfterExpiry()
+	}//end recordExpiredResume()
 
 	/**
 	 * The instance a resume applies to.

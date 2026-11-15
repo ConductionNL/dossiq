@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Kernel\Contracts\CaseMatchSuggestionInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -41,6 +42,7 @@ use Psr\Log\LoggerInterface;
  */
 class CaseMatchSuggestion implements CaseMatchSuggestionInterface {
 	use SearchesObjects;
+	use ReadsConfiguredSource;
 
 	/**
 	 * A reference as people quote it: a year, a dash and a running number ("2026-0079").
@@ -150,7 +152,7 @@ class CaseMatchSuggestion implements CaseMatchSuggestionInterface {
 	 * @return array{case: string, identifier: string, title: string, matchedOn: string}|null The case, or null.
 	 */
 	private function lookUp(string $reference): ?array {
-		$target = $this->caseTarget();
+		$target = $this->configuredSource(schemaKey: 'case_schema');
 		if ($target === null) {
 			return null;
 		}
@@ -165,22 +167,6 @@ class CaseMatchSuggestion implements CaseMatchSuggestionInterface {
 
 		return null;
 	}//end lookUp()
-
-	/**
-	 * The object service, register and case schema, or null when one is missing.
-	 *
-	 * @return array{0: object, 1: string, 2: string}|null The target.
-	 */
-	private function caseTarget(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return null;
-		}
-
-		return [$objectService, $register, $schema];
-	}//end caseTarget()
 
 	/**
 	 * The open cases whose field holds the reference, at most one; none when the read fails.

@@ -104,13 +104,25 @@ class FamilyPlanAccess implements FamilyPlanAccessInterface {
 			return $status;
 		}
 
-		$record = $this->store->read(schema: $recordSchema, id: $recordId);
+		return $this->recordWrite(schema: $recordSchema, id: $recordId);
+	}//end planWrite()
+
+	/**
+	 * The status a write to a record answers: the check of its case, or OK when the record is not found.
+	 *
+	 * @param string $schema The record's schema.
+	 * @param string $id     The record's id.
+	 *
+	 * @return int The HTTP status.
+	 */
+	private function recordWrite(string $schema, string $id): int {
+		$record = $this->store->read(schema: $schema, id: $id);
 		if ($record === null) {
 			return Http::STATUS_OK;
 		}
 
 		return $this->caseCheck(write: true, caseId: $this->caseOf(record: $record));
-	}//end planWrite()
+	}//end recordWrite()
 
 	/**
 	 * The status an intervention's goal answers before the intervention is

@@ -58,6 +58,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Service\Support\CollectsUniqueNames;
 use OCA\Dossiq\Service\Support\OrdersRuleBlocks;
 
 /**
@@ -67,6 +68,7 @@ use OCA\Dossiq\Service\Support\OrdersRuleBlocks;
  */
 class FieldRoleRuleDeclaration {
 	use OrdersRuleBlocks;
+	use CollectsUniqueNames;
 
 	/**
 	 * The property the rules are declared under, on the case type.
@@ -443,18 +445,8 @@ class FieldRoleRuleDeclaration {
 			return [];
 		}
 
-		$names = [];
-		foreach ($value as $entry) {
-			if (is_array($entry) === true || is_object($entry) === true) {
-				continue;
-			}
-
-			$name = trim((string)$entry);
-			if ($name !== '' && in_array($name, $names, true) === false) {
-				$names[] = $name;
-			}
-		}
-
-		return $names;
+		return $this->uniqueNames(
+			entries: array_filter($value, static fn (mixed $entry): bool => is_array($entry) === false && is_object($entry) === false)
+		);
 	}//end names()
 }//end class
