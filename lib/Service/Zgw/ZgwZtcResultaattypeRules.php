@@ -136,19 +136,21 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		$body = self::withGenericDescription(body: $body, rtoData: $rtoData);
 		$body = self::withArchiveFields(body: $body, selectielijstData: $selectielijstData);
 
-		return $this->validateEnriched(body: $body, selectielijstData: $selectielijstData, errors: $errors);
+		return $this->validateEnriched(body: $body, selectielijstData: $selectielijstData);
 	}//end rulesResultaattypenCreate()
 
 	/**
 	 * Validate an enriched resultaattype body: its procestype and its archive procedure.
 	 *
+	 * The references it was enriched from were all fetched without an error.
+	 *
 	 * @param array      $body              The enriched body.
 	 * @param array|null $selectielijstData The selectielijstklasse, null when none was fetched.
-	 * @param array      $errors            The reference errors so far.
 	 *
 	 * @return array The rule result.
 	 */
-	private function validateEnriched(array $body, ?array $selectielijstData, array $errors): array {
+	private function validateEnriched(array $body, ?array $selectielijstData): array {
+		$errors = [];
 		// Ztc-002e: Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype.
 		$procestypeError = $this->procestypeError(body: $body, selectielijstData: $selectielijstData);
 		if ($procestypeError !== null) {
