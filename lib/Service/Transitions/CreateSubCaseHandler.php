@@ -73,7 +73,8 @@ class CreateSubCaseHandler implements ActionHandlerInterface, CreateSubCaseHandl
 
 			[$register, $caseSchema] = $target;
 
-			$subCase = $this->subCaseRecord(actionConfig: $actionConfig, case: $case, transitionContext: $transitionContext);
+			$subCase = ['title' => (string)($actionConfig['title'] ?? sprintf('Deelzaak na %s', $transitionContext['transitionLabel'] ?? ''))]
+				+ $this->subCaseRecord(actionConfig: $actionConfig, case: $case);
 
 			// On the flow path the engine's RegistryStepDispatcher already runs
 			// this handler inside `ObjectService::runAs()` as the run's acting
@@ -110,20 +111,18 @@ class CreateSubCaseHandler implements ActionHandlerInterface, CreateSubCaseHandl
 	}//end caseTarget()
 
 	/**
-	 * The sub-case to create under the parent.
+	 * The sub-case to create under the parent, after its title.
 	 *
 	 * @param array<string, mixed> $actionConfig Action configuration
 	 * @param array<string, mixed> $case Parent case object
-	 * @param array<string, mixed> $transitionContext Transition context
 	 *
 	 * @return array<string, string> The sub-case record.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function subCaseRecord(array $actionConfig, array $case, array $transitionContext): array {
+	private function subCaseRecord(array $actionConfig, array $case): array {
 		$parentId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
 		$subCase = [
-			'title' => (string)($actionConfig['title'] ?? sprintf('Deelzaak na %s', $transitionContext['transitionLabel'] ?? '')),
 			'caseType' => (string)($actionConfig['caseType'] ?? ''),
 			'hoofdzaak' => $parentId,
 		];
