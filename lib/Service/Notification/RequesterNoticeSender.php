@@ -167,17 +167,28 @@ class RequesterNoticeSender {
 		$delivery->attemptedAt = (new DateTimeImmutable())->format('c');
 		$delivery->notice = $this->noticeOf(delivery: $delivery, rendered: $rendered);
 
+		return $this->deliver(delivery: $delivery);
+	}//end send()
+
+	/**
+	 * Try the channels, record the outcome on the case and log it.
+	 *
+	 * @param NoticeDelivery $delivery The delivery, its notice built.
+	 *
+	 * @return array<string, mixed> The delivery result, with the `record` it appended.
+	 */
+	private function deliver(NoticeDelivery $delivery): array {
 		$this->tryChannels(delivery: $delivery);
 
 		$result = $this->result(delivery: $delivery);
 		$result['record'] = $this->recordOn(
-			case: $case,
-			record: $this->noticeRecord(result: $result, extras: (array)($options['recordExtras'] ?? []))
+			case: $delivery->case,
+			record: $this->noticeRecord(result: $result, extras: (array)($delivery->options['recordExtras'] ?? []))
 		);
 		$this->logOutcome(result: $result);
 
 		return $result;
-	}//end send()
+	}//end deliver()
 
 	/**
 	 * The notice as the channels send it.
