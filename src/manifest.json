@@ -5838,6 +5838,275 @@
 						}
 					},
 					{
+						"id": "case-tender-panel",
+						"type": "sections",
+						"title": "Tender",
+						"subtitle": "Lots, questions, bids, evaluation and award",
+						"visibleWhen": {
+							"field": "@context.caseType.tenderChain",
+							"op": "eq",
+							"value": true
+						},
+						"_note": "tenders-run-on-the-tender-case-type 3.1, board DqAanbesteding: a tender worked on its case page (REQ-TND-CASE-01). A panel of the page grid, as the family plan is, shown on a case type that sets tenderChain (the aanbesteding package does): its lots as sub-cases, the questions and published answers, the bids, the evaluation ranked by the formula's total and the award dates. Not a tab: the tab strip holds the fifteen tabs of the handler's work and nothing domain-specific. Its panels are inline widget definitions, as in the other section panels. The simple profile places the same widgets as tabs and Overview cards.",
+						"content": {
+							"sections": [
+								{
+									"label": "Lots",
+									"widget": {
+										"id": "case-tender-lots",
+										"type": "object-list",
+										"title": "Lots",
+										"subtitle": "Each lot is a sub-case with bids and an award of its own",
+										"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-TND-005 and board DqAanbesteding: the lots of a tender are its sub-cases (case.parentCase), so the list reads the cases that hang under this one and every row opens that lot's own case page. Shown on a case type that sets tenderChain.",
+										"content": {
+											"register": "dossiq",
+											"schema": "case",
+											"filter": {
+												"parentCase": "@objectId"
+											},
+											"sort": {
+												"field": "title",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "title",
+													"label": "Lot"
+												},
+												{
+													"key": "status",
+													"label": "Status",
+													"formatter": "statusTypeName",
+													"widget": "badge",
+													"widgetProps": {
+														"resolve": {
+															"register": "dossiq",
+															"schema": "statusType",
+															"colorField": "colour"
+														}
+													}
+												},
+												{
+													"key": "assignee",
+													"label": "Handler",
+													"widget": "avatar",
+													"widgetProps": {
+														"user": true
+													}
+												}
+											],
+											"rowRoute": "CaseDetail",
+											"emptyText": "This tender has no lots"
+										}
+									}
+								},
+								{
+									"label": "Questions and answers",
+									"widget": {
+										"id": "case-tender-questions",
+										"type": "object-list",
+										"title": "Questions and answers",
+										"subtitle": "The questions bidders asked and the answers in the memorandum of information",
+										"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-TND-006: the tenderQuestion records of this tender (tenderQuestion.tender), oldest first, with the answer and when it was published. A question reaches the list through the tender's question round; publishing an answer is a header action (task 3.2).",
+										"content": {
+											"register": "dossiq",
+											"schema": "tenderQuestion",
+											"allowCreate": false,
+											"filter": {
+												"tender": "@objectId"
+											},
+											"sort": {
+												"field": "submittedAt",
+												"dir": "asc"
+											},
+											"limit": 50,
+											"columns": [
+												{
+													"key": "submittedAt",
+													"label": "Asked",
+													"format": "date"
+												},
+												{
+													"key": "question",
+													"label": "Question",
+													"sortable": false
+												},
+												{
+													"key": "answer",
+													"label": "Answer",
+													"sortable": false
+												},
+												{
+													"key": "publishedAt",
+													"label": "Published",
+													"format": "date"
+												},
+												{
+													"key": "state",
+													"label": "Status",
+													"widget": "badge"
+												}
+											],
+											"emptyText": "No questions asked yet"
+										}
+									}
+								},
+								{
+									"label": "Bids",
+									"widget": {
+										"id": "case-tender-bid-list",
+										"type": "object-list",
+										"title": "Bids",
+										"subtitle": "The bids received on this tender and on its lots",
+										"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-TND-007: the bid records of this tender (bid.tender), in the order they came in, with the bidder, the price and where the bid stands in its lifecycle. A late bid reads inadmissible: its lifecycle goes from received straight there. Registering a bid is a header action (task 3.2), so the list offers no create.",
+										"content": {
+											"register": "dossiq",
+											"schema": "bid",
+											"allowCreate": false,
+											"filter": {
+												"tender": "@objectId"
+											},
+											"sort": {
+												"field": "submittedAt",
+												"dir": "asc"
+											},
+											"limit": 50,
+											"columns": [
+												{
+													"key": "supplier",
+													"label": "Bidder",
+													"widget": "fkResolve",
+													"widgetProps": {
+														"register": "dossiq",
+														"schema": "supplier",
+														"labelField": "legalName"
+													}
+												},
+												{
+													"key": "lot",
+													"label": "Lot",
+													"widget": "fkResolve",
+													"widgetProps": {
+														"register": "dossiq",
+														"schema": "case",
+														"labelField": "title"
+													}
+												},
+												{
+													"key": "submittedAt",
+													"label": "Received",
+													"format": "date-time"
+												},
+												{
+													"key": "priceAmount",
+													"label": "Price",
+													"formatter": "currency"
+												},
+												{
+													"key": "state",
+													"label": "Status",
+													"widget": "badge"
+												}
+											],
+											"emptyText": "No bids received yet"
+										}
+									}
+								},
+								{
+									"label": "Evaluation",
+									"widget": {
+										"id": "case-tender-ranking",
+										"type": "object-list",
+										"title": "Evaluation",
+										"subtitle": "Every bid with the total its scoring formula gives, highest first",
+										"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-EVA-001 and REQ-EVA-003, board DqAanbesteding Beoordeling: the evaluation records of this tender (evaluation.tender) ranked by weightedTotal, the total the configured scoring formula gives, highest first, so the first row is the bid the award goes to.",
+										"content": {
+											"register": "dossiq",
+											"schema": "evaluation",
+											"allowCreate": false,
+											"filter": {
+												"tender": "@objectId"
+											},
+											"sort": {
+												"field": "weightedTotal",
+												"dir": "desc"
+											},
+											"limit": 50,
+											"columns": [
+												{
+													"key": "bid",
+													"label": "Bid",
+													"widget": "fkResolve",
+													"widgetProps": {
+														"register": "dossiq",
+														"schema": "bid",
+														"labelField": "submissionRef"
+													}
+												},
+												{
+													"key": "evaluator",
+													"label": "Evaluated by"
+												},
+												{
+													"key": "weightedTotal",
+													"label": "Total"
+												},
+												{
+													"key": "state",
+													"label": "Status",
+													"widget": "badge"
+												}
+											],
+											"footnote": "The total is what the tender's scoring formula gives for the criterion scores.",
+											"emptyText": "No bid has been evaluated yet"
+										}
+									}
+								},
+								{
+									"label": "Award",
+									"widget": {
+										"id": "case-tender-award",
+										"type": "facts",
+										"title": "Award",
+										"subtitle": "The award decision and the standstill period after it",
+										"_note": "tenders-run-on-the-tender-case-type 3.1, REQ-EVA-002 and REQ-EVA-005: the dates the award hangs on, read off the case: the closing date, the day the award decision went to all bidders (gunningsdatum) and the end of the standstill period (opschortendeTermijnEinde). The flow refuses Definitief gunnen before that day and then raises the award decision with decidiq (raiseDecision, task 3.3), which shows under Decisions.",
+										"content": {
+											"columns": 2,
+											"fields": [
+												{
+													"label": "Questions until",
+													"path": "vragenTermijnEinde",
+													"format": "date-long",
+													"emptyValue": "Not set"
+												},
+												{
+													"label": "Bids closed",
+													"path": "sluiting",
+													"format": "date-long",
+													"emptyValue": "Not set"
+												},
+												{
+													"label": "Award decision sent",
+													"path": "gunningsdatum",
+													"format": "date-long",
+													"emptyValue": "Not sent yet"
+												},
+												{
+													"label": "Standstill period ends",
+													"path": "opschortendeTermijnEinde",
+													"format": "date-long",
+													"emptyValue": "Starts with the award decision"
+												}
+											],
+											"footnote": "The award becomes final only once the standstill period has ended."
+										}
+									}
+								}
+							]
+						}
+					},
+					{
 						"id": "case-consents",
 						"type": "object-list",
 						"title": "Consents",
@@ -6066,6 +6335,15 @@
 						"gridY": 31,
 						"gridWidth": 12,
 						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "case-tender",
+						"widgetId": "case-tender-panel",
+						"gridX": 0,
+						"gridY": 35,
+						"gridWidth": 12,
+						"gridHeight": 8,
 						"showTitle": true
 					}
 				],

@@ -574,6 +574,8 @@ describe('the tabs', () => {
 		// overview-cards-per-case-type: the settlement of a grant case, a card of the Overview tab.
 		added.push('case-settlement')
 		added.push('case-overview-sections')
+		// tenders-run-on-the-tender-case-type: the lots and questions tabs, and the evaluation and award cards of Overview.
+		added.push('case-tender-lots', 'case-tender-questions', 'case-tender-ranking', 'case-tender-award')
 		// notice-of-default-from-the-case: the case's notices of default, a card of the Fees tab.
 		added.push('case-notices-of-default')
 		expect(others(simple)).toEqual(others(original))
@@ -819,6 +821,8 @@ describe('the header and the side column', () => {
 			'case-objection-decision',
 			'case-social-indications',
 			'case-social-meetings',
+			'case-tender-lots',
+			'case-tender-questions',
 			'case-tender-bids',
 			'case-grant-decisions',
 			'case-grant-advances',
