@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Controller\Support\RefusesAnonymousCallers;
 use OCA\Dossiq\Kernel\Contracts\AccrualNoticeServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
@@ -47,6 +48,8 @@ use Throwable;
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 class AccrualNoticeController extends Controller {
+	use RefusesAnonymousCallers;
+
 
 	use SearchesObjects;
 
@@ -72,20 +75,6 @@ class AccrualNoticeController extends Controller {
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
-
-	/**
-	 * Per-object authorization guard.
-	 *
-	 * @return JSONResponse|null
-	 */
-	private function ensureAuthenticated(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
-	}//end ensureAuthenticated()
 
 	/**
 	 * Register a notice of default.
