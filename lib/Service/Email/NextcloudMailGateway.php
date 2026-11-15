@@ -242,47 +242,28 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function source(int $accountId, string $mailbox, int $uid): string {
-		$answer = $this->askMailManager(
-			accountId: $accountId,
-			call: [
-				'method' => 'getSource',
-				'run' => static fn (object $manager, object $account): mixed => $manager->getSource($account, $mailbox, $uid),
-				'failure' => ['Dossiq: reading a message source failed', ['account' => $accountId, 'uid' => $uid]],
-			]
-		);
-		if ($answer['answered'] === false || is_string($answer['value']) === false) {
+		$account = $this->account(accountId: $accountId);
+		$manager = $this->service(name: self::MAIL_MANAGER);
+		if ($account === null || $manager === null || method_exists($manager, 'getSource') === false) {
 			return '';
 		}
 
-		return $answer['value'];
-	}//end source()
-
-	/**
-	 * Call one method of the Mail app's manager for an account, when both are there and the manager has it.
-	 *
-	 * A call that throws is logged as a warning, with the failure's own message and context and the error.
-	 *
-	 * @param integer              $accountId The account.
-	 * @param array<string, mixed> $call      The manager `method`, the `run` that calls it with the manager and the
-	 *                                        account, and the `failure` log line as [message, context].
-	 *
-	 * @return array{answered: bool, value: mixed} Whether the manager answered, and what.
-	 */
-	private function askMailManager(int $accountId, array $call): array {
-		$account = $this->account(accountId: $accountId);
-		$manager = $this->service(name: self::MAIL_MANAGER);
-		if ($account === null || $manager === null || method_exists($manager, $call['method']) === false) {
-			return ['answered' => false, 'value' => null];
-		}
-
 		try {
-			return ['answered' => true, 'value' => ($call['run'])($manager, $account)];
+			$source = $manager->getSource($account, $mailbox, $uid);
 		} catch (Throwable $e) {
-			[$message, $context] = $call['failure'];
-			$this->logger->warning($message, $context + ['error' => $e->getMessage()]);
-			return ['answered' => false, 'value' => null];
+			$this->logger->warning(
+				'Dossiq: reading a message source failed',
+				['account' => $accountId, 'uid' => $uid, 'error' => $e->getMessage()]
+			);
+			return '';
 		}
-	}//end askMailManager()
+
+		if (is_string($source) === false) {
+			return '';
+		}
+
+		return $source;
+	}//end source()
 
 	/**
 	 * Whether this account holds a message with that id.
@@ -368,14 +349,23 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return false;
 		}
 
-		return $this->askMailManager(
-			accountId: $accountId,
-			call: [
-				'method' => 'moveMessage',
-				'run' => static fn (object $manager, object $account): mixed => $manager->moveMessage($account, $mailbox, $uid, $account, $target),
-				'failure' => ['Dossiq: moving a message between folders failed', ['account' => $accountId, 'uid' => $uid, 'target' => $target]],
-			]
-		)['answered'];
+		$account = $this->account(accountId: $accountId);
+		$manager = $this->service(name: self::MAIL_MANAGER);
+		if ($account === null || $manager === null || method_exists($manager, 'moveMessage') === false) {
+			return false;
+		}
+
+		try {
+			$manager->moveMessage($account, $mailbox, $uid, $account, $target);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: moving a message between folders failed',
+				['account' => $accountId, 'uid' => $uid, 'target' => $target, 'error' => $e->getMessage()]
+			);
+			return false;
+		}
+
+		return true;
 	}//end moveMessage()
 
 	/**
@@ -545,19 +535,21 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function attachments(int $accountId, string $mailbox, int $uid): array {
-		$answer = $this->askMailManager(
-			accountId: $accountId,
-			call: [
-				'method' => 'getMailAttachments',
-				'run' => static fn (object $manager, object $account): mixed => $manager->getMailAttachments($account, $mailbox, $uid),
-				'failure' => ['Dossiq: reading attachments failed', ['account' => $accountId, 'uid' => $uid]],
-			]
-		);
-		if ($answer['answered'] === false) {
+		$account = $this->account(accountId: $accountId);
+		$manager = $this->service(name: self::MAIL_MANAGER);
+		if ($account === null || $manager === null || method_exists($manager, 'getMailAttachments') === false) {
 			return [];
 		}
 
-		return self::attachmentRows(found: $answer['value']);
+		try {
+			$found = $manager->getMailAttachments($account, $mailbox, $uid);
+		} catch (Throwable $e) {
+			$context = ['account' => $accountId, 'uid' => $uid, 'error' => $e->getMessage()];
+			$this->logger->warning('Dossiq: reading attachments failed', $context);
+			return [];
+		}
+
+		return self::attachmentRows(found: $found);
 	}//end attachments()
 
 	/**
