@@ -132,7 +132,7 @@ class AdviceService implements AdviceServiceInterface {
 
 		$this->guard->assertTransitionAuthorized(advice: $current, to: $to);
 
-		return $this->applyTransition(adviceId: $adviceId, to: $to, current: $current, payload: $payload);
+		return $this->applyTransition(adviceId: $adviceId, move: ['current' => $current, 'update' => $this->adviceUpdate(to: $to, payload: $payload)]);
 	}//end transitionStatus()
 
 	/**
@@ -145,9 +145,8 @@ class AdviceService implements AdviceServiceInterface {
 	 * `assertAdviceTransitionAuthorized()`.
 	 *
 	 * @param string $adviceId The advice UUID.
-	 * @param string $to Target status.
-	 * @param array<string, mixed> $current The current advice record (pre-update).
-	 * @param array<string, mixed> $payload Extra fields (adviesDocument, etc.).
+	 * @param array{current: array<string, mixed>, update: array<string, mixed>} $move The current advice record
+	 *        (pre-update), and the update with its target `status` (adviceUpdate()).
 	 *
 	 * @return array<string, mixed> Updated advice record.
 	 *
@@ -155,7 +154,30 @@ class AdviceService implements AdviceServiceInterface {
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	private function applyTransition(string $adviceId, string $to, array $current, array $payload = []): array {
+	private function applyTransition(string $adviceId, array $move): array {
+		['current' => $current, 'update' => $update] = $move;
+		$advice = $this->repository->save(update: $update, adviceId: $adviceId);
+
+		$this->notifier->fireTransitionNotification(
+			to: $update['status'],
+			current: $current,
+			adviceId: $adviceId,
+			callerId: $this->getUserId(),
+			summary: $this->summaryOf(update: $update),
+		);
+
+		return $advice;
+	}//end applyTransition()
+
+	/**
+	 * The update a transition writes: its status, and on receipt the moment, the document and the outcome.
+	 *
+	 * @param string               $to      Target status.
+	 * @param array<string, mixed> $payload Extra fields (adviesDocument, etc.).
+	 *
+	 * @return array<string, mixed> The update.
+	 */
+	private function adviceUpdate(string $to, array $payload): array {
 		$update = ['status' => $to];
 
 		if ($to === 'received') {
@@ -168,18 +190,8 @@ class AdviceService implements AdviceServiceInterface {
 			$update = array_merge($update, $this->outcomeOf(payload: $payload));
 		}
 
-		$advice = $this->repository->save(update: $update, adviceId: $adviceId);
-
-		$this->notifier->fireTransitionNotification(
-			to: $to,
-			current: $current,
-			adviceId: $adviceId,
-			callerId: $this->getUserId(),
-			summary: $this->summaryOf(update: $update),
-		);
-
-		return $advice;
-	}//end applyTransition()
+		return $update;
+	}//end adviceUpdate()
 
 	/**
 	 * The outcome a received advice carries: conclusion, text and the conditions ticked.
@@ -390,7 +402,7 @@ class AdviceService implements AdviceServiceInterface {
 				throw new RuntimeException('Advice request not accessible');
 			}
 
-			return $this->applyTransition(adviceId: $adviceId, to: 'expired', current: $current);
+			return $this->applyTransition(adviceId: $adviceId, move: ['current' => $current, 'update' => $this->adviceUpdate(to: 'expired', payload: [])]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to expire advice: ' . $e->getMessage(),
@@ -438,13 +450,13 @@ class AdviceService implements AdviceServiceInterface {
 
 		$register = $this->settingsService->getConfigValue('register');
 
-		$payload = $this->advicePayload(caseId: $caseId, data: $data, requestedBy: $requestedBy);
+		$payload = $this->advicePayload(data: $data, request: ['case' => $caseId, 'requestedBy' => $requestedBy]);
 
-		$savedRecord = $this->savedAdvice(objectService: $objectService, register: $register, payload: $payload);
+		$advice = ['objectService' => $objectService, 'register' => $register, 'data' => $data, 'payload' => $payload];
+		$savedRecord = $this->savedAdvice(advice: $advice);
+		$advice['saved'] = $savedRecord;
 
-		$this->delegateAdviceDecision(
-			advice: ['objectService' => $objectService, 'register' => $register, 'data' => $data, 'payload' => $payload, 'saved' => $savedRecord]
-		);
+		$this->delegateAdviceDecision(advice: $advice);
 
 		$this->notifyAdviseurUnlessExternal(payload: $payload, savedRecord: $savedRecord);
 
@@ -495,9 +507,8 @@ class AdviceService implements AdviceServiceInterface {
 	/**
 	 * The adviceRequest payload, with the deadline parsed.
 	 *
-	 * @param string               $caseId      UUID of the case
-	 * @param array<string, mixed> $data        Advice request data (adviseur, deadline, vraag, etc.)
-	 * @param string               $requestedBy User UID of the requester
+	 * @param array<string, mixed>                     $data    Advice request data (adviseur, deadline, vraag, etc.)
+	 * @param array{case: string, requestedBy: string} $request UUID of the case, and the user UID of the requester
 	 *
 	 * @return array<string, mixed> The payload.
 	 *
@@ -505,7 +516,7 @@ class AdviceService implements AdviceServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
 	 */
-	private function advicePayload(string $caseId, array $data, string $requestedBy): array {
+	private function advicePayload(array $data, array $request): array {
 		// The deadline used to be stored verbatim, so 31-01-2028 became an
 		// advice request nobody could act on and nobody was told about. It is
 		// parsed here, and an unreadable value refuses the write.
@@ -522,8 +533,8 @@ class AdviceService implements AdviceServiceInterface {
 		// The adviesAanvraag schema is the one the list, the transitions and
 		// the reminders read (AdviceRepository), so a request is written there.
 		return [
-			'case' => $caseId,
-			'requestedBy' => $requestedBy,
+			'case' => $request['case'],
+			'requestedBy' => $request['requestedBy'],
 			'advisor' => (string)($data['advisor'] ?? ''),
 			'type' => $type,
 			'subject' => (string)($data['subject'] ?? ''),
@@ -536,19 +547,18 @@ class AdviceService implements AdviceServiceInterface {
 	/**
 	 * Save the adviceRequest payload and answer the stored record.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param string               $register      The register id.
-	 * @param array<string, mixed> $payload       The adviceRequest payload.
+	 * @param array{objectService: object, register: string, data: array, payload: array} $advice The OpenRegister ObjectService,
+	 *        the register id, the request data and the adviceRequest payload.
 	 *
 	 * @return array<string, mixed> The stored record, or [] when the save answered no array.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
 	 */
-	private function savedAdvice(object $objectService, string $register, array $payload): array {
-		$saved = $objectService->saveObject(
-			register: $register,
+	private function savedAdvice(array $advice): array {
+		$saved = $advice['objectService']->saveObject(
+			register: $advice['register'],
 			schema: $this->adviceSchema(),
-			object: $payload
+			object: $advice['payload']
 		);
 
 		$savedRecord = [];

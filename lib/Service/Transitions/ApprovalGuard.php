@@ -84,6 +84,17 @@ class ApprovalGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true);
 		}
 
+		return $this->refused(verdict: $verdict);
+	}//end evaluate()
+
+	/**
+	 * The refusal for a verdict that does not allow the act, with the approval named.
+	 *
+	 * @param array<string, mixed> $verdict The gate's verdict.
+	 *
+	 * @return GuardResult The refusal.
+	 */
+	private function refused(array $verdict): GuardResult {
 		return new GuardResult(
 			passed: false,
 			failureMessage: (string)$verdict['sentence'],
@@ -94,5 +105,5 @@ class ApprovalGuard implements GuardEvaluatorInterface {
 				'approvers' => (array)$verdict['approvers'],
 			],
 		);
-	}//end evaluate()
+	}//end refused()
 }//end class

@@ -40,6 +40,28 @@ use Psr\Log\LoggerInterface;
  */
 class ZrcCaseFieldRules extends ZgwRulesBase {
 	/**
+	 * Zrc-012 for the opschorting gegevensgroep: body key => [field name, reason, null-only], and the detail.
+	 */
+	private const OPSCHORTING = [
+		'required' => [
+			'indicatie' => ['opschorting.indicatie', 'Indicatie is vereist bij opschorting.', true],
+			'reason'    => ['opschorting.reden', 'Reden is vereist bij opschorting.', false],
+		],
+		'detail' => 'Opschorting vereist indicatie en reden.',
+	];
+
+	/**
+	 * Zrc-012 for the verlenging gegevensgroep: body key => [field name, reason, null-only], and the detail.
+	 */
+	private const VERLENGING = [
+		'required' => [
+			'reason' => ['verlenging.reden', 'Reden is vereist bij verlenging.', false],
+			'duur'   => ['verlenging.duur', 'Duur is vereist bij verlenging.', false],
+		],
+		'detail' => 'Verlenging vereist reden en duur.',
+	];
+
+	/**
 	 * The rules that read another object (hoofdzaak, products).
 	 *
 	 * @var ZrcCaseRelationRules
@@ -142,14 +164,7 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	 * @return array|null The refusal, or null when acceptable
 	 */
 	private function checkOpschorting(array $body): ?array {
-		return $this->checkGegevensgroep(
-			group: $body['suspension'] ?? null,
-			required: [
-				'indicatie' => ['opschorting.indicatie', 'Indicatie is vereist bij opschorting.', true],
-				'reason'    => ['opschorting.reden', 'Reden is vereist bij opschorting.', false],
-			],
-			detail: 'Opschorting vereist indicatie en reden.'
-		);
+		return $this->checkGegevensgroep(group: $body['suspension'] ?? null, rule: self::OPSCHORTING);
 	}//end checkOpschorting()
 
 	/**
@@ -160,14 +175,7 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	 * @return array|null The refusal, or null when acceptable
 	 */
 	private function checkVerlenging(array $body): ?array {
-		return $this->checkGegevensgroep(
-			group: $body['verlenging'] ?? null,
-			required: [
-				'reason' => ['verlenging.reden', 'Reden is vereist bij verlenging.', false],
-				'duur'   => ['verlenging.duur', 'Duur is vereist bij verlenging.', false],
-			],
-			detail: 'Verlenging vereist reden en duur.'
-		);
+		return $this->checkGegevensgroep(group: $body['verlenging'] ?? null, rule: self::VERLENGING);
 	}//end checkVerlenging()
 
 	/**
@@ -287,13 +295,14 @@ class ZrcCaseFieldRules extends ZgwRulesBase {
 	/**
 	 * Zrc-012: a gegevensgroep (opschorting, verlenging) needs all of its required fields.
 	 *
-	 * @param mixed $group The gegevensgroep from the body; anything but an array is skipped
-	 * @param array<string, array{0: string, 1: string, 2: bool}> $required Body key => [field name, reason, null-only]
-	 * @param string $detail The error detail
+	 * @param mixed                $group The gegevensgroep from the body; anything but an array is skipped
+	 * @param array<string, mixed> $rule  The `required` fields (body key => [field name, reason, null-only])
+	 *                                    and the error `detail`
 	 *
 	 * @return array|null The refusal listing every missing field, or null when acceptable
 	 */
-	private function checkGegevensgroep(mixed $group, array $required, string $detail): ?array {
+	private function checkGegevensgroep(mixed $group, array $rule): ?array {
+		['required' => $required, 'detail' => $detail] = $rule;
 		if (is_array($group) === false) {
 			return null;
 		}

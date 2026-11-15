@@ -98,17 +98,15 @@ class EndOfDayService implements EndOfDayServiceInterface {
 		$queue = $this->queue->forPerson(userId: $userId, now: $now);
 		$candidates = $this->casesAndTasks(items: $queue['items']);
 
-		[$open, $recorded, $untouched] = $this->partitionByToday(candidates: $candidates, userId: $userId, now: $now);
-
-		$opened = (count($open) + count($recorded));
-		$cases = count(array_filter([...$open, ...$recorded], static fn (array $row): bool => $row['subjectType'] === 'case'));
+		$day = new ReaderDay(userId: $userId, today: $now->format('Y-m-d'), zone: $now->getTimezone());
+		[$open, $recorded, $untouched] = $this->partitionByToday(candidates: $candidates, day: $day);
 
 		return [
 			'open' => $open,
 			'recorded' => $recorded,
 			'tomorrow' => $this->tomorrowFirst(rows: $untouched, now: $now),
-			'opened' => $opened,
-			'figures' => $this->figures(opened: $opened, cases: $cases, recordedCount: count($recorded)),
+			'opened' => (count($open) + count($recorded)),
+			'figures' => $this->figures(open: $open, recorded: $recorded),
 			'unavailable' => $queue['unavailable'],
 			'unavailableText' => $this->unavailableText(unavailable: $queue['unavailable']),
 		];
@@ -136,16 +134,14 @@ class EndOfDayService implements EndOfDayServiceInterface {
 	 * Split the candidates into opened today, recorded today and untouched rows.
 	 *
 	 * @param array<int, array<string, mixed>> $candidates The cases and tasks.
-	 * @param string                           $userId     The reader.
-	 * @param DateTimeImmutable                $now        Now, in the reader's time zone.
+	 * @param ReaderDay                        $day        The reader and today, in the reader's time zone.
 	 *
 	 * @return array{0: array<int, array<string, mixed>>, 1: array<int, array<string, mixed>>, 2: array<int, array<string, mixed>>}
 	 *         The open rows, the recorded rows (newest first) and the untouched rows.
 	 *
 	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
 	 */
-	private function partitionByToday(array $candidates, string $userId, DateTimeImmutable $now): array {
-		$day = new ReaderDay(userId: $userId, today: $now->format('Y-m-d'), zone: $now->getTimezone());
+	private function partitionByToday(array $candidates, ReaderDay $day): array {
 		$open = [];
 		$recorded = [];
 		$untouched = [];
@@ -174,15 +170,18 @@ class EndOfDayService implements EndOfDayServiceInterface {
 	/**
 	 * The day's two figures: what was opened, and how many notes were recorded.
 	 *
-	 * @param int $opened        How many items were opened today.
-	 * @param int $cases         How many of those are cases.
-	 * @param int $recordedCount How many notes were recorded.
+	 * @param array<int, array<string, mixed>> $open     The rows opened today.
+	 * @param array<int, array<string, mixed>> $recorded The rows a note was recorded on today.
 	 *
 	 * @return array<int, array<string, mixed>> The figures.
 	 *
 	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
 	 */
-	private function figures(int $opened, int $cases, int $recordedCount): array {
+	private function figures(array $open, array $recorded): array {
+		$opened = (count($open) + count($recorded));
+		$cases = count(array_filter([...$open, ...$recorded], static fn (array $row): bool => $row['subjectType'] === 'case'));
+		$recordedCount = count($recorded);
+
 		return [
 			[
 				'label' => $this->l10n->t('Opened'),

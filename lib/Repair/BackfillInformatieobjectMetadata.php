@@ -178,7 +178,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 				continue;
 			}
 
-			$result = $this->backfillFolderNode(target: $target, node: $node, existing: $existing);
+			$result = $this->backfillFolderNode(target: $target, folder: ['node' => $node, 'existing' => $existing]);
 			$created += $result['created'];
 			$skipped += $result['skipped'];
 			$existing = $result['existing'];
@@ -193,13 +193,13 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 * Files whose name is already registered are counted as skipped; `_part_` upload fragments are
 	 * ignored entirely. A per-file failure is logged and does not abort the folder.
 	 *
-	 * @param InformatieobjectTarget $target   The object service, register and informatieobject schema.
-	 * @param Folder                 $node     The case folder to walk.
-	 * @param array<int, string>     $existing Filenames already registered.
+	 * @param InformatieobjectTarget                          $target The object service, register and informatieobject schema.
+	 * @param array{node: Folder, existing: array<int, string>} $folder The case folder to walk, and the filenames already registered.
 	 *
 	 * @return array{created: int, skipped: int, existing: array<int, string>} Counts plus the grown filename list.
 	 */
-	private function backfillFolderNode(InformatieobjectTarget $target, Folder $node, array $existing): array {
+	private function backfillFolderNode(InformatieobjectTarget $target, array $folder): array {
+		['node' => $node, 'existing' => $existing] = $folder;
 		$created = 0;
 		$skipped = 0;
 
@@ -217,7 +217,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			}
 
 			try {
-				$this->backfillFile(target: $target, folderUuid: $node->getName(), file: $file);
+				$this->backfillFile(target: $target, stored: [$node->getName(), $file]);
 				$existing[] = $fileName;
 				$created++;
 			} catch (\Throwable $e) {
@@ -253,13 +253,13 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	/**
 	 * Create an informatieobject (+ join when possible) for one existing file.
 	 *
-	 * @param InformatieobjectTarget $target     The object service, register and informatieobject schema.
-	 * @param string                 $folderUuid The storing folder UUID (used as the link key).
-	 * @param File                   $file       The Nextcloud file node.
+	 * @param InformatieobjectTarget  $target The object service, register and informatieobject schema.
+	 * @param array{0: string, 1: File} $stored The storing folder UUID (used as the link key), and the Nextcloud file node.
 	 *
 	 * @return void
 	 */
-	private function backfillFile(InformatieobjectTarget $target, string $folderUuid, File $file): void {
+	private function backfillFile(InformatieobjectTarget $target, array $stored): void {
+		[$folderUuid, $file] = $stored;
 		$informatieobject = $this->informatieobjectFor(file: $file);
 
 		$saved = $target->objectService->saveObject(object: $informatieobject, register: $target->register, schema: $target->schema);

@@ -530,10 +530,10 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 			$history = json_decode($history, true);
 		}
 
-		$holder = trim((string)($case['assignee'] ?? ''));
+		$origin = ['caseId' => $caseId, 'holder' => trim((string)($case['assignee'] ?? ''))];
 		$records = [];
 		foreach ((array)$history as $entry) {
-			$record = $this->recordOf(entry: $entry, caseId: $caseId, holder: $holder);
+			$record = $this->recordOf(entry: $entry, origin: $origin);
 			if ($record !== null) {
 				$records[] = $record;
 			}
@@ -545,13 +545,12 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 	/**
 	 * One status history entry as a process record, null when it names no status or moment.
 	 *
-	 * @param mixed  $entry  The history entry.
-	 * @param string $caseId The case uuid.
-	 * @param string $holder The case's assignee, the actor when the entry names none.
+	 * @param mixed                                 $entry  The history entry.
+	 * @param array{caseId: string, holder: string} $origin The case uuid, and the case's assignee (the actor when the entry names none).
 	 *
 	 * @return array{case: string, statusType: string, createdAt: string, actor: string}|null
 	 */
-	private function recordOf(mixed $entry, string $caseId, string $holder): ?array {
+	private function recordOf(mixed $entry, array $origin): ?array {
 		if (is_array($entry) === false) {
 			return null;
 		}
@@ -562,7 +561,12 @@ class ProcessMiningService implements ProcessMiningServiceInterface {
 			return null;
 		}
 
-		return ['case' => $caseId, 'statusType' => $status, 'createdAt' => $moment, 'actor' => $this->actorOf(entry: $entry, holder: $holder)];
+		return [
+			'case' => $origin['caseId'],
+			'statusType' => $status,
+			'createdAt' => $moment,
+			'actor' => $this->actorOf(entry: $entry, holder: $origin['holder']),
+		];
 	}//end recordOf()
 
 	/**

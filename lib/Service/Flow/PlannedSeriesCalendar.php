@@ -156,6 +156,22 @@ class PlannedSeriesCalendar {
 			return null;
 		}
 
+		return $this->steppedAfter(series: ['recurrence' => $recurrence, 'anchor' => $anchor, 'step' => $step], from: $from);
+	}//end nextOccurrence()
+
+	/**
+	 * The first occurrence of a stepping series after the moment, looking a bounded number of steps ahead.
+	 *
+	 * @param array{recurrence: string, anchor: DateTimeImmutable, step: int} $series The recurrence token, the first
+	 *                                                                        occurrence and the months per step.
+	 * @param DateTimeImmutable                                              $from   The moment to look forward from,
+	 *                                                                        exclusive.
+	 *
+	 * @return DateTimeImmutable|null The occurrence, or null when none falls inside the look-ahead.
+	 */
+	private function steppedAfter(array $series, DateTimeImmutable $from): ?DateTimeImmutable {
+		['recurrence' => $recurrence, 'anchor' => $anchor, 'step' => $step] = $series;
+		$after = $from->format('Y-m-d');
 		$anchorMonths = (((int)$anchor->format('Y') * 12) + (int)$anchor->format('n'));
 		$fromMonths = (((int)$from->format('Y') * 12) + (int)$from->format('n'));
 		$first = max(0, intdiv(($fromMonths - $anchorMonths), $step));
@@ -168,7 +184,7 @@ class PlannedSeriesCalendar {
 		}
 
 		return null;
-	}//end nextOccurrence()
+	}//end steppedAfter()
 
 	/**
 	 * The occurrence at a given step from the anchor.
@@ -321,6 +337,18 @@ class PlannedSeriesCalendar {
 			return $this->dateOfCron(cron: $cron);
 		}
 
+		return $this->nextOnSeries(series: $series, from: $from);
+	}//end nextDate()
+
+	/**
+	 * The next date of an anchored series, `Y-m-d`, or '' when it has none left.
+	 *
+	 * @param array{recurrence: string, anchor: string, until: string, count: int} $series The series.
+	 * @param DateTimeImmutable|null                                               $from   The moment to measure from.
+	 *
+	 * @return string The date.
+	 */
+	private function nextOnSeries(array $series, ?DateTimeImmutable $from): string {
 		$moment = $from;
 		if ($moment === null) {
 			$moment = new DateTimeImmutable('today');
@@ -340,5 +368,5 @@ class PlannedSeriesCalendar {
 		}
 
 		return $next->format('Y-m-d');
-	}//end nextDate()
+	}//end nextOnSeries()
 }//end class

@@ -182,7 +182,10 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			return false;
 		}
 
-		return $this->chase(instance: $fresh, reason: $reason, moment: $moment);
+		$step = $this->stepFor(instance: $fresh, reason: $reason);
+		$step->moment = $moment;
+
+		return $this->chase(step: $step);
 	}//end chaseIfDue()
 
 	/**
@@ -208,7 +211,10 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			return false;
 		}
 
-		return $this->escalate(instance: $fresh, reason: $reason, moment: $moment);
+		$step = $this->stepFor(instance: $fresh, reason: $reason);
+		$step->moment = $moment;
+
+		return $this->escalate(step: $step);
 	}//end escalateIfDue()
 
 	/**
@@ -239,7 +245,8 @@ class PauseChaseService implements PauseChaseServiceInterface {
 	}//end contextFor()
 
 	/**
-	 * The still-paused row with its reason in force, or null when it names no reason or case.
+	 * The still-paused row with its reason in force, or null when it names no reason or case,
+	 * or when the case type does not chase it.
 	 *
 	 * @param array<string, mixed> $fresh The row as it stands now.
 	 *
@@ -252,19 +259,6 @@ class PauseChaseService implements PauseChaseServiceInterface {
 			return null;
 		}
 
-		return $this->contextOnCase(fresh: $fresh, key: $key, caseId: $caseId);
-	}//end contextOfPaused()
-
-	/**
-	 * The still-paused row with the case type's reason for its key, or null when the case type does not chase it.
-	 *
-	 * @param array<string, mixed> $fresh  The row as it stands now.
-	 * @param string               $key    The pause reason key.
-	 * @param string               $caseId The case the row belongs to.
-	 *
-	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The fresh row and its reason.
-	 */
-	private function contextOnCase(array $fresh, string $key, string $caseId): array|null {
 		// ONE READ of the case type answers both questions: which reasons it
 		// declares, and whether it sends this message at all. Reading it twice
 		// would let the two answers come from different rows.
@@ -283,32 +277,28 @@ class PauseChaseService implements PauseChaseServiceInterface {
 		}//end foreach
 
 		return null;
-	}//end contextOnCase()
+	}//end contextOfPaused()
 
 	/**
 	 * Send one reminder and write down that it went.
 	 *
-	 * @param array<string, mixed> $instance The fresh, still-paused row.
-	 * @param array<string, mixed> $reason   The normalised reason in force.
-	 * @param DateTimeImmutable    $moment   When this is happening.
+	 * @param PauseStep $step The fresh, still-paused row with the normalised reason in force and the moment.
 	 *
 	 * @return bool True when the reminder went out.
 	 */
-	private function chase(array $instance, array $reason, DateTimeImmutable $moment): bool {
-		$step = $this->stepFor(instance: $instance, reason: $reason);
-		$step->moment = $moment;
+	private function chase(PauseStep $step): bool {
 		$step->recipient = $this->recipientFor(caseId: $step->caseId);
 		if ($step->recipient === '') {
 			$this->warnNoRecipient(step: $step);
 			return false;
 		}
 
-		$step->number = ($this->chase->schedule->sent(instance: $instance) + 1);
+		$step->number = ($this->chase->schedule->sent(instance: $step->instance) + 1);
 		if ($this->sendReminder(step: $step) === false) {
 			return false;
 		}
 
-		$this->recordChased(step: $step, reason: $reason);
+		$this->recordChased(step: $step, reason: $step->reason);
 
 		return true;
 	}//end chase()
@@ -429,21 +419,18 @@ class PauseChaseService implements PauseChaseServiceInterface {
 	/**
 	 * Record that the reminders ran out without an answer.
 	 *
-	 * @param array<string, mixed> $instance The fresh, still-paused row.
-	 * @param array<string, mixed> $reason   The normalised reason in force.
-	 * @param DateTimeImmutable    $moment   When this is happening.
+	 * @param PauseStep $step The fresh, still-paused row with the normalised reason in force and the moment.
 	 *
 	 * @return bool True when the escalation was recorded.
 	 */
-	private function escalate(array $instance, array $reason, DateTimeImmutable $moment): bool {
-		$step = $this->stepFor(instance: $instance, reason: $reason);
-		$step->moment = $moment;
+	private function escalate(PauseStep $step): bool {
+		$reason = $step->reason;
 		$step->event = self::EVENT_ESCALATED;
-		$step->sentence = $this->escalatedSentence(reason: $reason, sent: $this->chase->schedule->sent(instance: $instance));
+		$step->sentence = $this->escalatedSentence(reason: $reason, sent: $this->chase->schedule->sent(instance: $step->instance));
 
 		$this->termService->updateTermijnInstance(
 			$step->instanceId,
-			['chaseEscalatedAt' => $moment->format('c')]
+			['chaseEscalatedAt' => $step->moment->format('c')]
 		);
 
 		$this->recordStep(step: $step);

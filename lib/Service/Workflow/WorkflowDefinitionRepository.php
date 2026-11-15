@@ -92,6 +92,17 @@ class WorkflowDefinitionRepository {
 	private const JSON_STRING_PROPERTIES = ['steps', 'transitions', 'nodePositions'];
 
 	/**
+	 * The message logged when a single-object read of a schema throws.
+	 *
+	 * @var array<string, string>
+	 */
+	private const READ_FAILURES = [
+		self::SCHEMA_DEFINITION => 'Dossiq: failed to load workflow definition',
+		self::SCHEMA_CASE_TYPE => 'Dossiq: failed to load case type for its default route',
+		self::SCHEMA_CASE => 'Dossiq: failed to load case for definition lookup',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings/config + ObjectService bridge.
@@ -162,11 +173,7 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function findById(string $id): ?array {
-		return $this->findOne(
-			schemaKey: self::SCHEMA_DEFINITION,
-			uuid: $id,
-			failure: 'Dossiq: failed to load workflow definition'
-		);
+		return $this->findOne(schemaKey: self::SCHEMA_DEFINITION, uuid: $id);
 	}//end findById()
 
 	/**
@@ -177,13 +184,12 @@ class WorkflowDefinitionRepository {
 	 * schema and a different log line, and they were three copies of them until
 	 * a fourth was nearly added. One copy, three callers.
 	 *
-	 * @param string $schemaKey The schema configuration key.
+	 * @param string $schemaKey The schema configuration key, one of READ_FAILURES' keys.
 	 * @param string $uuid The object UUID.
-	 * @param string $failure The message logged when the read throws.
 	 *
 	 * @return array<string, mixed>|null The row, or null.
 	 */
-	private function findOne(string $schemaKey, string $uuid, string $failure): ?array {
+	private function findOne(string $schemaKey, string $uuid): ?array {
 		if ($uuid === '') {
 			return null;
 		}
@@ -201,7 +207,7 @@ class WorkflowDefinitionRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				$failure,
+				self::READ_FAILURES[$schemaKey],
 				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -224,11 +230,7 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-variants/spec.md
 	 */
 	public function findCaseType(string $caseTypeId): ?array {
-		return $this->findOne(
-			schemaKey: self::SCHEMA_CASE_TYPE,
-			uuid: $caseTypeId,
-			failure: 'Dossiq: failed to load case type for its default route'
-		);
+		return $this->findOne(schemaKey: self::SCHEMA_CASE_TYPE, uuid: $caseTypeId);
 	}//end findCaseType()
 
 	/**
@@ -383,7 +385,7 @@ class WorkflowDefinitionRepository {
 				return $this->createDefinition(context: $context, payload: $payload);
 			}
 
-			$written = $this->updateDefinition(context: $context, uuid: $uuid, payload: $payload);
+			$written = $this->updateDefinition(context: $context, update: ['uuid' => $uuid, 'payload' => $payload]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to save workflow definition',
@@ -399,14 +401,14 @@ class WorkflowDefinitionRepository {
 	 * Merge the changed properties onto a stored definition and write it.
 	 *
 	 * @param array{objectService: object, register: string, schema: string} $context The store context.
-	 * @param string $uuid The row to update.
-	 * @param array<string, mixed> $payload The properties to write.
+	 * @param array{uuid: string, payload: array<string, mixed>} $update The row to update, and the properties to write.
 	 *
 	 * @return mixed What the object service wrote, or null when the stored row is unreadable.
 	 *
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
-	private function updateDefinition(array $context, string $uuid, array $payload): mixed {
+	private function updateDefinition(array $context, array $update): mixed {
+		['uuid' => $uuid, 'payload' => $payload] = $update;
 		$merged = $this->mergeOntoStored(
 			context: $context,
 			uuid: $uuid,
@@ -471,6 +473,26 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	private function mergeOntoStored(array $context, string $uuid, array $payload, array $jsonProperties = []): ?array {
+		$current = $this->storedRow(context: $context, uuid: $uuid);
+		if ($current === null) {
+			return null;
+		}
+
+		unset($current['@self'], $current['id']);
+
+		$merged = array_merge($current, $payload);
+		return $this->encodeJsonProperties(merged: $merged, jsonProperties: $jsonProperties);
+	}//end mergeOntoStored()
+
+	/**
+	 * The row as it is stored, or null (logged) when it cannot be read.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $context The store context.
+	 * @param string $uuid The row being updated.
+	 *
+	 * @return array<string, mixed>|null The stored row, or null when it is unreadable.
+	 */
+	private function storedRow(array $context, string $uuid): ?array {
 		try {
 			$current = $this->normalize(
 				row: $context['objectService']->find(
@@ -492,14 +514,10 @@ class WorkflowDefinitionRepository {
 				'Dossiq: refusing to update a row that cannot be read',
 				['app' => AppIdentity::APP_ID, 'uuid' => $uuid]
 			);
-			return null;
 		}
 
-		unset($current['@self'], $current['id']);
-
-		$merged = array_merge($current, $payload);
-		return $this->encodeJsonProperties(merged: $merged, jsonProperties: $jsonProperties);
-	}//end mergeOntoStored()
+		return $current;
+	}//end storedRow()
 
 	/**
 	 * Encode the array-valued JSON-string properties back to strings.
@@ -577,11 +595,7 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function findCase(string $caseId): ?array {
-		return $this->findOne(
-			schemaKey: self::SCHEMA_CASE,
-			uuid: $caseId,
-			failure: 'Dossiq: failed to load case for definition lookup'
-		);
+		return $this->findOne(schemaKey: self::SCHEMA_CASE, uuid: $caseId);
 	}//end findCase()
 
 	/**

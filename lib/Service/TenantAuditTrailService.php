@@ -326,7 +326,7 @@ class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 		$rowFilter = $this->rowFilterEvidence();
 
 		return [
-			...$this->queryAndAuditControls(rowFilter: $rowFilter, isolationStatus: $isolationStatus, auditStatus: $auditStatus),
+			...$this->queryAndAuditControls(evidence: ['rowFilter' => $rowFilter, 'isolationStatus' => $isolationStatus, 'auditStatus' => $auditStatus]),
 			...$this->secretAndLeakControls(rowFilter: $rowFilter, isolationStatus: $isolationStatus),
 			...$this->supplyChainControls(),
 		];
@@ -379,21 +379,20 @@ class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 	/**
 	 * The tenant-scoped-query and audit-logging controls.
 	 *
-	 * @param string $rowFilter       The row filter evidence line.
-	 * @param string $isolationStatus The live row filter status.
-	 * @param string $auditStatus     The live audit sink status.
+	 * @param array{rowFilter: string, isolationStatus: string, auditStatus: string} $evidence The row filter evidence
+	 *        line, the live row filter status and the live audit sink status.
 	 *
 	 * @return array<int, array{key:string, description:string, evidence:string, status:string}>
 	 *
 	 * @spec openspec/specs/tenant-compliance/spec.md
 	 */
-	private function queryAndAuditControls(string $rowFilter, string $isolationStatus, string $auditStatus): array {
+	private function queryAndAuditControls(array $evidence): array {
 		return [
 			[
 				'key' => 'tenant_scoped_queries',
 				'description' => 'Every object query is filtered to the active organisation',
-				'evidence' => $rowFilter,
-				'status' => $isolationStatus,
+				'evidence' => $evidence['rowFilter'],
+				'status' => $evidence['isolationStatus'],
 			],
 			[
 				'key' => 'audit_logged_mutations',
@@ -401,7 +400,7 @@ class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 				'evidence' => 'TenantAuditTrailService::emit -> AuditTrailMapper::recordObjectEvent '
 					. '(probed live); MandateValidationMiddleware::logDecision; '
 					. 'OrganisationStatusChangeListener on OpenRegister\'s OrganisationUpdatedEvent',
-				'status' => $auditStatus,
+				'status' => $evidence['auditStatus'],
 			],
 		];
 	}//end queryAndAuditControls()

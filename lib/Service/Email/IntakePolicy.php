@@ -141,20 +141,19 @@ class IntakePolicy implements IntakePolicyInterface {
 			return self::DEFAULT_POLICY;
 		}
 
-		return $this->readPolicy(objectService: $objectService, register: $register, schema: $schema, caseTypeId: $caseTypeId);
+		return $this->readPolicy(store: [$objectService, $register, $schema], caseTypeId: $caseTypeId);
 	}//end forCaseType()
 
 	/**
 	 * Read the case type and return its normalised intake policy.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $schema        The case type schema.
-	 * @param string $caseTypeId    The case type uuid.
+	 * @param array{0: object, 1: string, 2: string} $store      OpenRegister's object service, the dossiq register and the case type schema.
+	 * @param string                                $caseTypeId The case type uuid.
 	 *
 	 * @return string The policy, or the default when the case type cannot be read.
 	 */
-	private function readPolicy(object $objectService, string $register, string $schema, string $caseTypeId): string {
+	private function readPolicy(array $store, string $caseTypeId): string {
+		[$objectService, $register, $schema] = $store;
 		try {
 			$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId);
 		} catch (Throwable $e) {

@@ -189,6 +189,18 @@ class ZaakdossierDownloadController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		return $this->readableDownload(user: $user, objectId: $objectId);
+	}//end downloadFile()
+
+	/**
+	 * The document's file for a user cleared to read it.
+	 *
+	 * @param IUser  $user     The signed-in user.
+	 * @param string $objectId The informatieobject UUID.
+	 *
+	 * @return DataDownloadResponse|JSONResponse
+	 */
+	private function readableDownload(IUser $user, string $objectId): DataDownloadResponse|JSONResponse {
 		// Per-object clearance gate before any content is read (OWASP A01:2021).
 		$doc = $this->reader->loadReadable(user: $user, infoObjectId: $objectId);
 		if ($doc instanceof JSONResponse) {
@@ -203,7 +215,7 @@ class ZaakdossierDownloadController extends Controller {
 
 		$mime = (string)($doc['format'] ?? 'application/octet-stream');
 		return new DataDownloadResponse($content, $fileName, $mime);
-	}//end downloadFile()
+	}//end readableDownload()
 
 	/**
 	 * ZGW DRC-compatible download with HTTP Range support.

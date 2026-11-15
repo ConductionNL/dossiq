@@ -74,8 +74,9 @@ class LinkedDocumentsReader implements LinkedDocumentsReaderInterface {
 		);
 
 		$items = [];
+		$case = ['id' => $caseId, 'folder' => $caseFolder];
 		foreach ($joins as $join) {
-			$item = $this->itemFor(recordId: trim((string)($join['informatieobject'] ?? '')), caseId: $caseId, caseFolder: $caseFolder);
+			$item = $this->itemFor(recordId: trim((string)($join['informatieobject'] ?? '')), case: $case);
 			if ($item !== null) {
 				$items[] = $item;
 			}
@@ -88,24 +89,23 @@ class LinkedDocumentsReader implements LinkedDocumentsReaderInterface {
 	 * One linked row, or null when the record's file is in this case's folder or has no file.
 	 *
 	 * @param string $recordId The record uuid.
-	 * @param string $caseId This case.
-	 * @param Folder|null $caseFolder This case's folder, when it has one.
+	 * @param array{id: string, folder: Folder|null} $case This case, and its folder when it has one.
 	 *
 	 * @return array<string, mixed>|null The item.
 	 */
-	private function itemFor(string $recordId, string $caseId, ?Folder $caseFolder): ?array {
+	private function itemFor(string $recordId, array $case): ?array {
+		['id' => $caseId, 'folder' => $caseFolder] = $case;
 		$found = $this->recordWithFile(recordId: $recordId);
 		if ($found === null) {
 			return null;
 		}
 
-		[$record, $fileId] = $found;
-		if ($this->inCaseFolder(caseFolder: $caseFolder, fileId: $fileId) === true) {
+		if ($this->inCaseFolder(caseFolder: $caseFolder, fileId: $found[1]) === true) {
 			return null;
 		}
 
 		$owner = $this->owningCase(recordId: $recordId, notCaseId: $caseId);
-		$item = $this->itemOf(recordId: $recordId, record: $record, fileId: $fileId);
+		$item = $this->itemOf(recordId: $recordId, found: $found);
 
 		return $this->withOwnerNote(item: $item, owner: $owner);
 	}//end itemFor()
@@ -147,12 +147,12 @@ class LinkedDocumentsReader implements LinkedDocumentsReaderInterface {
 	 * The linked row for a record and its file.
 	 *
 	 * @param string $recordId The record uuid.
-	 * @param array<string, mixed> $record The record.
-	 * @param int $fileId The record's file id.
+	 * @param array{0: array<string, mixed>, 1: int} $found The record, and its file id.
 	 *
 	 * @return array<string, mixed> The item, with no note.
 	 */
-	private function itemOf(string $recordId, array $record, int $fileId): array {
+	private function itemOf(string $recordId, array $found): array {
+		[$record, $fileId] = $found;
 		return [
 			'id' => $recordId,
 			'name' => (string)($record['fileName'] ?? ($record['title'] ?? $recordId)),

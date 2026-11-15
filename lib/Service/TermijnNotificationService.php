@@ -118,29 +118,45 @@ class TermijnNotificationService implements TermijnNotificationServiceInterface 
 
 		$this->refuseUnknownTemplate(type: $type);
 
-		// The case type decides which of these go out, and CaseTypeHandling is
-		// the one reader of that decision. An empty $caseType is a caller that
-		// has not resolved one, and it queues as it always did: silently
-		// dropping a statutory message because a parameter was not threaded
-		// through would be the worst possible reading of "not configured".
-		if ($caseType !== [] && (new CaseTypeHandling())->sends(caseType: $caseType, message: $type) === false) {
-			$this->logger->info(
-				'TermijnNotification not sent: the case type does not send it',
-				['type' => $type, 'instance' => $termInstanceId]
-			);
+		$job = [
+			'type' => $type,
+			'termijnInstanceId' => $termInstanceId,
+			'recipientUserId' => $recipientUserId,
+			'context' => $context,
+		];
+		if ($this->caseTypeWithholds(job: $job, caseType: $caseType) === true) {
 			return false;
 		}
 
-		$this->enqueue(
-			job: [
-				'type' => $type,
-				'termijnInstanceId' => $termInstanceId,
-				'recipientUserId' => $recipientUserId,
-				'context' => $context,
-			]
-		);
+		$this->enqueue(job: $job);
 		return true;
 	}//end queueTermijnNotification()
+
+	/**
+	 * Whether the case type does not send this job's message, logged when so.
+	 *
+	 * The case type decides which of these go out, and CaseTypeHandling is
+	 * the one reader of that decision. An empty $caseType is a caller that
+	 * has not resolved one, and it queues as it always did: silently
+	 * dropping a statutory message because a parameter was not threaded
+	 * through would be the worst possible reading of "not configured".
+	 *
+	 * @param array{type: string, termijnInstanceId: string, recipientUserId: string, context: array} $job      The dispatch job's arguments.
+	 * @param array<string, mixed>                                                                    $caseType The case type, or [].
+	 *
+	 * @return bool True when the message is not to be queued.
+	 */
+	private function caseTypeWithholds(array $job, array $caseType): bool {
+		if ($caseType === [] || (new CaseTypeHandling())->sends(caseType: $caseType, message: $job['type']) === true) {
+			return false;
+		}
+
+		$this->logger->info(
+			'TermijnNotification not sent: the case type does not send it',
+			['type' => $job['type'], 'instance' => $job['termijnInstanceId']]
+		);
+		return true;
+	}//end caseTypeWithholds()
 
 	/**
 	 * Add the dispatch job and log that it was queued.

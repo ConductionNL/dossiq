@@ -247,7 +247,7 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 		}
 
 		foreach ($rewrite->changes as $change) {
-			$this->report(change: $change, label: $rewrite->label(), output: $run->output);
+			$this->report(change: $change + ['flow' => $rewrite->label()], output: $run->output);
 		}
 
 		// A flow whose only retired steps could not be carried over has
@@ -328,13 +328,14 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 	/**
 	 * Say what happened to one step, in the output and in the log.
 	 *
-	 * @param array{step: string, type: string, outcome: string, replacement: string|null, reason: string, orphaned: bool} $change The change row.
-	 * @param string  $label  The flow's name and uuid.
-	 * @param IOutput $output Output sink.
+	 * @param array<string, mixed> $change The change row (step, type, outcome, replacement, reason, orphaned),
+	 *                                     with the flow's name and uuid as `flow`.
+	 * @param IOutput              $output Output sink.
 	 *
 	 * @return void
 	 */
-	private function report(array $change, string $label, IOutput $output): void {
+	private function report(array $change, IOutput $output): void {
+		$label = $change['flow'];
 		$context = ['app' => AppIdentity::APP_ID, 'flow' => $label, 'step' => $change['step'], 'type' => $change['type']];
 
 		if ($change['outcome'] === 'unmappable') {

@@ -123,11 +123,27 @@ class ZgwRuleLookups {
 			return null;
 		}
 
+		return $this->firstIdBy(where: ['register' => $register, 'schema' => $schema], match: [$field => $value]);
+	}//end findObjectByField()
+
+	/**
+	 * The id of the first object carrying one field value. A search that fails throws.
+	 *
+	 * @param array{register: string, schema: string} $where The OpenRegister register and schema IDs.
+	 * @param array<string, string>                   $match The one field to search by and its value.
+	 *
+	 * @return string|null The object UUID, or null when none carries it.
+	 *
+	 * @throws LookupNotCompleted When the search fails.
+	 */
+	private function firstIdBy(array $where, array $match): ?string {
+		$field = (string)array_key_first($match);
+		$value = $match[$field];
 		try {
 			$query = $this->objectService->buildSearchQuery(
 				requestParams: [$field => $value, '_limit' => 1],
-				register: $register,
-				schema: $schema
+				register: $where['register'],
+				schema: $where['schema']
 			);
 			$result = $this->objectService->searchObjectsPaginated(query: $query);
 
@@ -135,7 +151,7 @@ class ZgwRuleLookups {
 		} catch (\Throwable $e) {
 			throw new LookupNotCompleted(lookup: "reference {$field} \"{$value}\"", cause: $e);
 		}//end try
-	}//end findObjectByField()
+	}//end firstIdBy()
 
 	/**
 	 * The UUID of the first hit of a search, or null when there is none.
@@ -372,6 +388,24 @@ class ZgwRuleLookups {
 			return false;
 		}
 
+		return $this->pairMatches(
+			scope: $scope,
+			pair: ['field1Search' => $field1Search, 'field1Value' => $field1Value, 'field2Search' => $field2Search, 'field2Value' => $field2Value]
+		);
+	}//end fieldPairExists()
+
+	/**
+	 * Whether a hit on the first field also carries the second field's value.
+	 *
+	 * @param array{register: int|string, schema: int|string} $scope The mapped register and schema.
+	 * @param array{field1Search: string, field1Value: string, field2Search: string, field2Value: string} $pair The
+	 *        two OpenRegister fields and the values searched for.
+	 *
+	 * @return bool True if a combination exists
+	 *
+	 * @throws LookupNotCompleted When the search fails.
+	 */
+	private function pairMatches(array $scope, array $pair): bool {
 		try {
 			// Build query directly to avoid buildSearchQuery's underscore-splitting
 			// which breaks camelCase field names like sourceOrganisation.
@@ -383,7 +417,7 @@ class ZgwRuleLookups {
 					'register' => (int)$scope['register'],
 					'schema' => (int)$scope['schema'],
 				],
-				$field1Search => $field1Value,
+				$pair['field1Search'] => $pair['field1Value'],
 			];
 
 			$result = $this->objectService->searchObjectsPaginated(
@@ -400,14 +434,14 @@ class ZgwRuleLookups {
 			// count it as a match (conservative: assume coercion happened).
 			$matches = array_filter(
 				($result['results'] ?? []),
-				fn (mixed $obj): bool => $this->storedValueMatches(row: $obj, field: $field2Search, value: $field2Value)
+				fn (mixed $obj): bool => $this->storedValueMatches(row: $obj, wanted: [$pair['field2Search'] => $pair['field2Value']])
 			);
 
 			return (count($matches) > 0);
 		} catch (\Throwable $e) {
-			throw new LookupNotCompleted(lookup: "uniqueness of {$field1Search} \"{$field1Value}\"", cause: $e);
+			throw new LookupNotCompleted(lookup: "uniqueness of {$pair['field1Search']} \"{$pair['field1Value']}\"", cause: $e);
 		}//end try
-	}//end fieldPairExists()
+	}//end pairMatches()
 
 	/**
 	 * Whether one hit carries the same second-field value (uniqueness check).
@@ -418,12 +452,13 @@ class ZgwRuleLookups {
 	 * coercion happened), and no second value matches every hit.
 	 *
 	 * @param mixed $row The hit, an array or an entity.
-	 * @param string $field The OpenRegister field of the second value.
-	 * @param string $value The second value.
+	 * @param array<string, string> $wanted The OpenRegister field of the second value, and the second value.
 	 *
 	 * @return bool
 	 */
-	private function storedValueMatches(mixed $row, string $field, string $value): bool {
+	private function storedValueMatches(mixed $row, array $wanted): bool {
+		$field = (string)array_key_first($wanted);
+		$value = $wanted[$field];
 		$storedStr = (string)($this->rowData(row: $row)[$field] ?? null);
 
 		return ($value === '')

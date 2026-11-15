@@ -108,7 +108,7 @@ class OutstandingDocuments {
 
 		$assessments = $this->assessmentRows(scope: $scope, assessmentSchema: $assessmentSchema);
 
-		return $this->outstandingResult(scope: $scope, allDocs: $allDocs, assessments: $assessments);
+		return $this->outstandingResult(scope: $scope, read: ['allDocs' => $allDocs, 'assessments' => $assessments]);
 	}//end forCaseIn()
 
 	/**
@@ -133,14 +133,15 @@ class OutstandingDocuments {
 	 * The outstanding documents: neither assessed nor excluded.
 	 *
 	 * @param CaseDocumentScope                $scope       The object service, register and case
-	 * @param array<string, mixed>             $allDocs     The case's documents
-	 * @param array<int, array<string, mixed>> $assessments The case's assessments
+	 * @param array<string, array>             $read        The case's documents (`allDocs`) and its assessments
+	 *                                                      (`assessments`)
 	 *
 	 * @return array<string, mixed> Array with 'count' and 'documents' list of unassessed doc IDs
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 */
-	private function outstandingResult(CaseDocumentScope $scope, array $allDocs, array $assessments): array {
+	private function outstandingResult(CaseDocumentScope $scope, array $read): array {
+		['allDocs' => $allDocs, 'assessments' => $assessments] = $read;
 		$excludedDocIds = $this->excludedDocIds(scope: $scope, assessments: $assessments);
 		$assessedDocIds = $this->refsOf(assessments: $assessments, field: 'documentRef');
 

@@ -247,6 +247,18 @@ class WooCollectionController extends Controller {
 			return new JSONResponse(['error' => 'forbidden', 'message' => $this->l10n->t('You do not have access to this case.')], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->attempt(step: $step, user: $user);
+	}//end run()
+
+	/**
+	 * Run a step for the caller, answering a refusal or an unreachable register as JSON.
+	 *
+	 * @param callable(IUser): JSONResponse $step The step.
+	 * @param IUser                         $user The caller.
+	 *
+	 * @return JSONResponse The step's answer, or the refusal.
+	 */
+	private function attempt(callable $step, IUser $user): JSONResponse {
 		try {
 			return $step($user);
 		} catch (WooCorpusRefused $refused) {
@@ -256,7 +268,7 @@ class WooCollectionController extends Controller {
 			$message = $this->l10n->t('OpenRegister is not available.');
 			return new JSONResponse(['error' => 'unavailable', 'message' => $message], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
-	}//end run()
+	}//end attempt()
 
 	/**
 	 * The sentence for a refusal.

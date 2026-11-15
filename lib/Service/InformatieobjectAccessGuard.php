@@ -134,7 +134,7 @@ class InformatieobjectAccessGuard {
 			return $clearance;
 		}
 
-		return $this->highestGroupClearance(user: $user, groupMap: $groupMap, clearance: $clearance);
+		return $this->highestGroupClearance(user: $user, levels: ['groupMap' => $groupMap, 'clearance' => $clearance]);
 	}//end getUserClearanceOrdinal()
 
 	/**
@@ -155,12 +155,13 @@ class InformatieobjectAccessGuard {
 	 * The highest clearance among the user's mapped groups and the one given.
 	 *
 	 * @param IUser                 $user      The user whose clearance is resolved.
-	 * @param array<string, string> $groupMap  Group id to clearance level.
-	 * @param int                   $clearance The clearance so far.
+	 * @param array{groupMap: array<string, string>, clearance: int} $levels Group id to clearance level, and the
+	 *                                                                      clearance so far.
 	 *
 	 * @return int Clearance ordinal.
 	 */
-	private function highestGroupClearance(IUser $user, array $groupMap, int $clearance): int {
+	private function highestGroupClearance(IUser $user, array $levels): int {
+		['groupMap' => $groupMap, 'clearance' => $clearance] = $levels;
 		$userGroups = $this->groupManager->getUserGroupIds($user);
 		foreach ($userGroups as $groupId) {
 			if (isset($groupMap[$groupId]) === false) {

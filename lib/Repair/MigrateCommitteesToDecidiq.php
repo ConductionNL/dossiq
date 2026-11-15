@@ -173,7 +173,7 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 				$committees = $this->readCommittees(run: $run);
 
 				foreach ($committees as $committee) {
-					$this->migrateOne(run: $run, committee: $committee, counts: $counts);
+					$counts[$this->migrateOne(run: $run, committee: $committee)]++;
 				}
 			}
 		);
@@ -230,20 +230,17 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 	 *
 	 * @param CommitteeMigrationRun $run       Where the committees live and where the migration reports.
 	 * @param array<string, mixed>  $committee The committee row.
-	 * @param array<string, int>    $counts    Running tallies, by reference.
 	 *
-	 * @return void
+	 * @return string The tally it counts in: `migrated`, `skipped` or `failed`.
 	 */
-	private function migrateOne(CommitteeMigrationRun $run, array $committee, array &$counts): void {
+	private function migrateOne(CommitteeMigrationRun $run, array $committee): string {
 		$id = (string)($committee['id'] ?? ($committee['@self']['id'] ?? ''));
 		if ($id === '') {
-			$counts['failed']++;
-			return;
+			return 'failed';
 		}
 
 		if (trim((string)($committee['governanceBodyId'] ?? '')) !== '') {
-			$counts['skipped']++;
-			return;
+			return 'skipped';
 		}
 
 		try {
@@ -252,14 +249,13 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 			// One committee that cannot be raised must not abandon the rest.
 			// It is counted and named, so the summary line reports a partial
 			// run as partial rather than as a clean one.
-			$counts['failed']++;
 			$run->output->warning('Dossiq: could not migrate committee ' . $id . ': ' . $e->getMessage());
 			$this->logger->warning(
 				'MigrateCommitteesToDecidiq: committee failed',
 				['committee' => $id, 'error' => $e->getMessage()]
 			);
 
-			return;
+			return 'failed';
 		}
 
 		try {
@@ -274,13 +270,12 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 			// the summary is honest, and harmless to retry: the other side
 			// resolves on (sourceApp, externalReference) and will match the
 			// body it already has rather than minting a second.
-			$counts['failed']++;
 			$run->output->warning('Dossiq: raised a body for committee ' . $id . ' but could not record it: ' . $e->getMessage());
 
-			return;
+			return 'failed';
 		}
 
-		$counts['migrated']++;
+		return 'migrated';
 
 	}//end migrateOne()
 

@@ -142,12 +142,13 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		// works to, and it is bound beside the statutory term rather than as it.
 		$plannedDefinition = $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context);
 
+		$created = new CreatedCase(identity: $identity, payload: $payload);
 		try {
 			// The term counts from receipt, not from the moment this row was
 			// written (REQ-OTE-02). Null only when no intake reader is wired,
 			// which is the old behaviour: the term starts now.
-			$this->createTerm(identity: $identity, payload: $payload, resolution: $resolution);
-			$this->bindTheOtherClocks(identity: $identity, payload: $payload, plannedDefinition: $plannedDefinition);
+			$this->createTerm(created: $created, resolution: $resolution);
+			$this->bindTheOtherClocks(created: $created, plannedDefinition: $plannedDefinition);
 		} catch (NoTermijnDefinitieException $e) {
 			// NOT debug. A case that matched no definition at all has no
 			// statutory clock running, which is exactly the state that hid a
@@ -160,7 +161,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			// has no TermijnDefinitie and a refusal here is the ordinary path
 			// rather than the broken one. The other clocks still bind, and the
 			// fixed date still becomes the statutory term.
-			$this->bindTheOtherClocks(identity: $identity, payload: $payload, plannedDefinition: $plannedDefinition);
+			$this->bindTheOtherClocks(created: $created, plannedDefinition: $plannedDefinition);
 		} catch (\Throwable $e) {
 			$this->logBindFailure(identity: $identity, error: $e);
 		}//end try
@@ -169,19 +170,18 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	/**
 	 * Create the case's term instance, counting from receipt when an intake reader is wired.
 	 *
-	 * @param NewCaseIdentity           $identity   The case id and case type slug.
-	 * @param array<string, mixed>      $payload    The case payload.
+	 * @param CreatedCase               $created    The case id and case type slug, and the case payload.
 	 * @param array<string, mixed>|null $resolution The resolved term, if any.
 	 *
 	 * @return void
 	 *
 	 * @throws NoTermijnDefinitieException When no definition matches the case.
 	 */
-	private function createTerm(NewCaseIdentity $identity, array $payload, ?array $resolution): void {
+	private function createTerm(CreatedCase $created, ?array $resolution): void {
 		$this->termService->createTermijnInstance(
-			$identity->caseId,
-			$identity->caseType,
-			$this->intake?->termStartFor(case: $payload),
+			$created->identity->caseId,
+			$created->identity->caseType,
+			$this->intake?->termStartFor(case: $created->payload),
 			$resolution
 		);
 	}//end createTerm()
@@ -304,9 +304,9 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * created, and the warning is what says the case is carrying fewer clocks
 	 * than its type declares.
 	 *
-	 * @param NewCaseIdentity $identity The case UUID, and the case type as the case carries it.
-	 * @param array<string, mixed> $payload The created case. Its clocks start where the
-	 *        statutory term starts, so the three clocks of one case count from one day.
+	 * @param CreatedCase $created The case UUID, the case type as the case carries it, and the
+	 *        created case. Its clocks start where the statutory term starts, so the three
+	 *        clocks of one case count from one day.
 	 * @param array<string, mixed>|null $plannedDefinition The `planned` definition that resolved
 	 *        for the case, bound when the case type declares no planned lead time of its own.
 	 *
@@ -316,13 +316,14 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
-	private function bindTheOtherClocks(NewCaseIdentity $identity, array $payload, ?array $plannedDefinition = null): void {
+	private function bindTheOtherClocks(CreatedCase $created, ?array $plannedDefinition = null): void {
 		if ($this->caseTerms === null) {
 			return;
 		}
 
-		$caseId = $identity->caseId;
-		$caseTypeRef = $identity->caseTypeRef;
+		$payload = $created->payload;
+		$caseId = $created->identity->caseId;
+		$caseTypeRef = $created->identity->caseTypeRef;
 
 		try {
 			$this->caseTerms->bindForCase(

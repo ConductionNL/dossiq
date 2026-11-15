@@ -179,7 +179,7 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		$coordinated = $this->seats->casesCoordinatedBy(uid: $fromUser);
 		$drafts = $this->draftsOf(uid: $fromUser);
 
-		$batch = $this->releaseCaseload(fromUser: $fromUser, toUser: $toUser, actor: $actor);
+		$batch = $this->releaseCaseload(handover: ['fromUser' => $fromUser, 'toUser' => $toUser, 'actor' => $actor]);
 		$batchId = self::batchIdOf(batch: $batch);
 		$now = (new DateTimeImmutable())->format('c');
 
@@ -196,7 +196,7 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 		// report, at /api/bulk-jobs/{id}/members.
 		$this->recordOnCases(cases: (array)($batch['caseIds'] ?? []), act: $act);
 
-		$result = self::handoverResult(batch: $batch, seatsMoved: $seatsMoved, drafts: $drafts);
+		$result = self::handoverResult(batch: $batch, moved: ['seats' => $seatsMoved, 'drafts' => $drafts]);
 		return $this->loggedHandover(result: $result, act: $act);
 	}//end execute()
 
@@ -219,9 +219,9 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	 *
 	 * The handover's batch id is the job's, read from the batch.
 	 *
-	 * @param array<string, mixed>             $batch      The batch the reassignment service answered.
-	 * @param int                              $seatsMoved How many coordinator seats moved.
-	 * @param array<int, array<string, mixed>> $drafts     The drafts the leaver holds.
+	 * @param array<string, mixed>                                      $batch The batch the reassignment service answered.
+	 * @param array{seats: int, drafts: array<int, array<string, mixed>>} $moved How many coordinator seats moved, and the
+	 *                                                                           drafts the leaver holds.
 	 *
 	 * @return array{batchId: string, job: array<string, mixed>, succeeded: int, failed: int,
 	 *               coordinatorSeats: int, drafts: array<int, array<string, mixed>>,
@@ -230,14 +230,14 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
-	private static function handoverResult(array $batch, int $seatsMoved, array $drafts): array {
+	private static function handoverResult(array $batch, array $moved): array {
 		return [
 			'batchId' => self::batchIdOf(batch: $batch),
 			'job' => (array)($batch['job'] ?? []),
 			'succeeded' => count((array)($batch['caseIds'] ?? [])),
 			'failed' => 0,
-			'coordinatorSeats' => $seatsMoved,
-			'drafts' => $drafts,
+			'coordinatorSeats' => $moved['seats'],
+			'drafts' => $moved['drafts'],
 			'tasks' => (array)($batch['tasks'] ?? []),
 		];
 	}//end handoverResult()
@@ -270,16 +270,16 @@ class LeaverHandoverService implements LeaverHandoverServiceInterface {
 	/**
 	 * Commit the bulk job that moves the leaver's cases to the successor.
 	 *
-	 * @param string $fromUser The person who is leaving.
-	 * @param string $toUser   The person receiving the work.
-	 * @param string $actor    The administrator running the act.
+	 * @param array{fromUser: string, toUser: string, actor: string} $handover The person who is leaving, the person
+	 *                                                                     receiving the work and the administrator running the act.
 	 *
 	 * @return array{job: array<string, mixed>, tasks: array<int, array<string, mixed>>, caseIds: array<int, string>}
 	 *         The batch the reassignment service answered.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
-	private function releaseCaseload(string $fromUser, string $toUser, string $actor): array {
+	private function releaseCaseload(array $handover): array {
+		['fromUser' => $fromUser, 'toUser' => $toUser, 'actor' => $actor] = $handover;
 		// The cases move as one bulk job, committed here rather than rehearsed:
 		// a leaver handover is an act somebody already decided, not a proposal
 		// waiting for a coordinator to read it. The job walks them in the

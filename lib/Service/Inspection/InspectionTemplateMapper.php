@@ -85,7 +85,7 @@ class InspectionTemplateMapper {
 		$items = [];
 		foreach ($this->listOf(value: ($checklist['items'] ?? [])) as $index => $item) {
 			$label = (string)($item['label'] ?? '');
-			$items[] = $this->item(item: $item, id: $label, label: $label, order: $index);
+			$items[] = $this->item(item: $item, placement: ['id' => $label, 'label' => $label, 'order' => $index]);
 		}
 
 		$status = (string)($checklist['status'] ?? 'draft');
@@ -94,14 +94,13 @@ class InspectionTemplateMapper {
 		}
 
 		return $this->template(
-			source: $checklist,
 			identity: new TemplateIdentity(
 				name: (string)($checklist['name'] ?? ''),
 				caseType: (string)($checklist['caseType'] ?? ''),
 				status: $status,
 				legacyRef: 'inspectieChecklist/' . $this->idOf(object: $checklist)
 			),
-			items: $items
+			body: ['version' => ($checklist['version'] ?? 1), 'items' => $items]
 		);
 	}//end fromStackA()
 
@@ -168,9 +167,7 @@ class InspectionTemplateMapper {
 
 		return $this->item(
 			item: $item,
-			id: $id,
-			label: (string)($item['question'] ?? $item['label'] ?? ''),
-			order: $index
+			placement: ['id' => $id, 'label' => (string)($item['question'] ?? $item['label'] ?? ''), 'order' => $index]
 		);
 	}//end stackCItem()
 
@@ -189,14 +186,13 @@ class InspectionTemplateMapper {
 		}
 
 		return $this->template(
-			source: $checklist,
 			identity: new TemplateIdentity(
 				name: (string)($checklist['name'] ?? ''),
 				caseType: (string)($checklist['caseTypeRef'] ?? $checklist['caseType'] ?? ''),
 				status: $status,
 				legacyRef: 'inspectionChecklist/' . $this->idOf(object: $checklist)
 			),
-			items: $items
+			body: ['version' => ($checklist['version'] ?? 1), 'items' => $items]
 		);
 	}//end stackCTemplate()
 
@@ -270,19 +266,17 @@ class InspectionTemplateMapper {
 	 *
 	 * The response type is read from the source item's older `type`.
 	 *
-	 * @param array<string, mixed> $item  The source item.
-	 * @param string               $id    Its answer key.
-	 * @param string               $label Its question.
-	 * @param integer              $order Its position.
+	 * @param array<string, mixed>                          $item      The source item.
+	 * @param array{id: string, label: string, order: int} $placement Its answer key, its question and its position.
 	 *
 	 * @return array<string, mixed> The item.
 	 */
-	private function item(array $item, string $id, string $label, int $order): array {
+	private function item(array $item, array $placement): array {
 		$type = (string)($item['type'] ?? '');
 		$out = [
-			'id' => $id,
-			'order' => (int)($item['order'] ?? ($order + 1)),
-			'label' => $label,
+			'id' => $placement['id'],
+			'order' => (int)($item['order'] ?? ($placement['order'] + 1)),
+			'label' => $placement['label'],
 			'responseType' => $this->responseType(type: $type),
 			'required' => (($item['required'] ?? false) === true),
 			'photoRequired' => $this->photoGate(value: ($item['photoRequired'] ?? $item['fotoRequired'] ?? false)),
@@ -359,20 +353,20 @@ class InspectionTemplateMapper {
 	/**
 	 * A template around one section of items.
 	 *
-	 * @param array<string, mixed>             $source   The source object.
-	 * @param TemplateIdentity                 $identity Its name, case type, status and source reference.
-	 * @param array<int, array<string, mixed>> $items    The items.
+	 * @param TemplateIdentity                                   $identity Its name, case type, status and source reference.
+	 * @param array{version: mixed, items: array<int, array<string, mixed>>} $body     The source object's version, and the items.
 	 *
 	 * @return array<string, mixed> The template.
 	 */
-	private function template(array $source, TemplateIdentity $identity, array $items): array {
+	private function template(TemplateIdentity $identity, array $body): array {
+		$items = $body['items'];
 		$name = $identity->name;
 		$status = $identity->status;
 		$caseType = $identity->caseType;
 		$legacyRef = $identity->legacyRef;
 		$template = [
 			'name' => $name,
-			'version' => max(1, (int)($source['version'] ?? 1)),
+			'version' => max(1, (int)$body['version']),
 			'status' => $status,
 			'active' => ($status === 'active'),
 			'sections' => [['order' => 1, 'name' => $name, 'items' => $items]],

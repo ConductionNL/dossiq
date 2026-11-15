@@ -154,18 +154,30 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 
 		$this->assertNotHeldBy(holder: $holder, requestedBy: $requestedBy);
 
-		$record = $this->storeRequest(
+		return $this->storeAndLog(
 			case: $case,
 			ask: new TakeoverAsk(caseId: $caseId, requestedBy: $requestedBy, holder: $holder, unit: $unit, reason: $reason),
 		);
+	}//end request()
+
+	/**
+	 * Store the request and log that the case was asked for.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 * @param TakeoverAsk          $ask  Who asks, who holds it, in which unit, and why.
+	 *
+	 * @return array<string, mixed> The stored request.
+	 */
+	private function storeAndLog(array $case, TakeoverAsk $ask): array {
+		$record = $this->storeRequest(case: $case, ask: $ask);
 
 		$this->logger->info(
 			'Dossiq takeover: a case was asked for',
-			['caseId' => $caseId, 'requestedBy' => $requestedBy, 'holder' => $holder, 'unit' => $unit],
+			['caseId' => $ask->caseId, 'requestedBy' => $ask->requestedBy, 'holder' => $ask->holder, 'unit' => $ask->unit],
 		);
 
 		return $record;
-	}//end request()
+	}//end storeAndLog()
 
 	/**
 	 * Refuse a request without a reason.
@@ -282,7 +294,18 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function accept(string $takeoverId, string $acceptedBy, string $caseId): array {
-		$record = $this->requireOpenRequest(takeoverId: $takeoverId, caseId: $caseId);
+		return $this->acceptOpen(record: $this->requireOpenRequest(takeoverId: $takeoverId, caseId: $caseId), acceptedBy: $acceptedBy);
+	}//end accept()
+
+	/**
+	 * Move the case to the one who asked, give it to them, and record the request as accepted.
+	 *
+	 * @param array<string, mixed> $record     The open request.
+	 * @param string               $acceptedBy Who answered.
+	 *
+	 * @return array<string, mixed> The request, accepted.
+	 */
+	private function acceptOpen(array $record, string $acceptedBy): array {
 		$caseId = trim((string)($record['caseId'] ?? ''));
 		$asker = trim((string)($record['requestedBy'] ?? ''));
 		$unit = trim((string)($record['holdingUnit'] ?? ''));
@@ -303,7 +326,7 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 		$record['answeredAt'] = (new DateTimeImmutable())->format('c');
 
 		return $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
-	}//end accept()
+	}//end acceptOpen()
 
 	/**
 	 * The holder refuses: the case stays, and the reason is on the record.
@@ -329,9 +352,24 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 			);
 		}
 
-		$record = $this->requireOpenRequest(takeoverId: $takeoverId, caseId: $caseId);
+		return $this->refuseOpen(
+			record: $this->requireOpenRequest(takeoverId: $takeoverId, caseId: $caseId),
+			answer: ['reason' => $reason, 'refusedBy' => $refusedBy]
+		);
+	}//end refuse()
+
+	/**
+	 * Record the open request as refused, with the holder's reason.
+	 *
+	 * @param array<string, mixed>                    $record The open request.
+	 * @param array{reason: string, refusedBy: string} $answer Why the holder is keeping the case, and who answered.
+	 *
+	 * @return array<string, mixed> The request, refused.
+	 */
+	private function refuseOpen(array $record, array $answer): array {
+		$refusedBy = $answer['refusedBy'];
 		$record['status'] = 'refused';
-		$record['refusalReason'] = $reason;
+		$record['refusalReason'] = $answer['reason'];
 		$record['answeredBy'] = trim($refusedBy);
 		$record['answeredAt'] = (new DateTimeImmutable())->format('c');
 
@@ -341,7 +379,7 @@ class CaseTakeoverRequest implements CaseTakeoverRequestInterface {
 		);
 
 		return $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
-	}//end refuse()
+	}//end refuseOpen()
 
 	/**
 	 * Move every unanswered request past its period to the holding unit.

@@ -255,7 +255,7 @@ class ConflictOfInterestService {
 			return ['conflict' => true, 'reason' => 'self'];
 		}
 
-		return $this->detectRelationConflict(userBsn: $userBsn, applicantBsn: $applicantBsn, caseId: $caseId);
+		return $this->detectRelationConflict(bsns: [$userBsn, $applicantBsn], caseId: $caseId);
 	}//end checkConflict()
 
 	/**
@@ -263,15 +263,15 @@ class ConflictOfInterestService {
 	 *
 	 * Both identities are already resolved server-side by the caller.
 	 *
-	 * @param string $userBsn The case worker's BSN (in memory only).
-	 * @param string $applicantBsn The applicant's BSN (in memory only).
-	 * @param string $caseId Case id (audit correlation).
+	 * @param array{0: string, 1: string} $bsns   The case worker's and the applicant's BSN (in memory only).
+	 * @param string                      $caseId Case id (audit correlation).
 	 *
 	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	private function detectRelationConflict(string $userBsn, string $applicantBsn, string $caseId): array {
+	private function detectRelationConflict(array $bsns, string $caseId): array {
+		[$userBsn, $applicantBsn] = $bsns;
 		if ($this->relationshipLookup !== null) {
 			try {
 				$relation = ($this->relationshipLookup)($userBsn, $applicantBsn);
@@ -288,7 +288,7 @@ class ConflictOfInterestService {
 			}
 		}
 
-		return $this->relationFromRegistry(userBsn: $userBsn, applicantBsn: $applicantBsn, caseId: $caseId);
+		return $this->relationFromRegistry(bsns: $bsns, caseId: $caseId);
 	}//end detectRelationConflict()
 
 	/**
@@ -309,15 +309,15 @@ class ConflictOfInterestService {
 	 *
 	 * Per AVG art. 9 no BSN is logged, and numbers are compared as hashes.
 	 *
-	 * @param string $userBsn The case worker's BSN (in memory only).
-	 * @param string $applicantBsn The applicant's BSN (in memory only).
-	 * @param string $caseId Case id (audit correlation).
+	 * @param array{0: string, 1: string} $bsns   The case worker's and the applicant's BSN (in memory only).
+	 * @param string                      $caseId Case id (audit correlation).
 	 *
 	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
 	 *
 	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
 	 */
-	private function relationFromRegistry(string $userBsn, string $applicantBsn, string $caseId): array {
+	private function relationFromRegistry(array $bsns, string $caseId): array {
+		[$userBsn, $applicantBsn] = $bsns;
 		$answer = $this->readRelations(userBsn: $userBsn);
 
 		if ($answer['available'] === false) {

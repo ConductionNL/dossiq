@@ -194,14 +194,15 @@ class WooDossierReturn {
 			return false;
 		}
 
-		$items = $this->itemsWith(collection: $collection, publicationId: $publicationId, title: $title);
+		$items = $this->itemsWith(collection: $collection, entry: ['publication' => $publicationId, 'note' => $title]);
 		if ($items === null) {
 			return true;
 		}
 
+		$collection['items'] = $items;
 		$this->runAsSystemIfAvailable(
 			objectService: $target['objectService'],
-			operation: fn (): mixed => $this->writeItems(target: $target, collection: $collection, items: $items)
+			operation: fn (): mixed => $this->writeItems(target: $target, collection: $collection)
 		);
 
 		return true;
@@ -253,16 +254,15 @@ class WooDossierReturn {
 	/**
 	 * The collection's items with the publication added, or null when it already holds it.
 	 *
-	 * @param array<string, mixed> $collection    The collection as it was read.
-	 * @param string               $publicationId The publication uuid.
-	 * @param string               $title         What the item's note says.
+	 * @param array<string, mixed>                     $collection The collection as it was read.
+	 * @param array{publication: string, note: string} $entry      The publication uuid, and what the item's note says.
 	 *
 	 * @return array<int, array<string, mixed>>|null The items to write, or null when nothing changes.
 	 */
-	private function itemsWith(array $collection, string $publicationId, string $title): ?array {
+	private function itemsWith(array $collection, array $entry): ?array {
 		$items = array_values(array_filter((array)($collection['items'] ?? []), 'is_array'));
 		foreach ($items as $item) {
-			if ((string)($item['publication'] ?? '') === $publicationId) {
+			if ((string)($item['publication'] ?? '') === $entry['publication']) {
 				return null;
 			}
 		}
@@ -273,8 +273,8 @@ class WooDossierReturn {
 		// refuses the null, and the decision never reached the dossier).
 		$items[] = [
 			'id' => $this->uuid(),
-			'publication' => $publicationId,
-			'note' => $title,
+			'publication' => $entry['publication'],
+			'note' => $entry['note'],
 			'addedAt' => date('c'),
 			'addedBy' => self::ADDED_BY,
 		];
@@ -305,17 +305,17 @@ class WooDossierReturn {
 	 *
 	 * @param array{objectService: object, register: string, schema: string, id: string} $target     The object service and the
 	 *                                                                                           collection's register, schema and uuid.
-	 * @param array<string, mixed>                                                       $collection The collection as it was read.
-	 * @param array<int, array<string, mixed>>                                           $items      Its items, with the publication.
+	 * @param array<string, mixed>                                                       $collection The collection as it was read, with its items
+	 *                                                                                           now holding the publication.
 	 *
 	 * @return mixed What OpenRegister answered.
 	 */
-	private function writeItems(array $target, array $collection, array $items): mixed {
+	private function writeItems(array $target, array $collection): mixed {
 		$objectService = $target['objectService'];
 		if (method_exists($objectService, 'patchObject') === true) {
 			return $objectService->patchObject(
 				objectId: $target['id'],
-				data: ['items' => $items],
+				data: ['items' => $collection['items']],
 				register: $target['register'],
 				schema: $target['schema'],
 				_rbac: false,
@@ -325,7 +325,6 @@ class WooDossierReturn {
 
 		$data = $collection;
 		unset($data['@self'], $data['id']);
-		$data['items'] = $items;
 
 		return $objectService->saveObject(
 			object: $data,

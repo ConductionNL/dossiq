@@ -317,7 +317,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 		$placed = 0;
 		foreach ($rows as $row) {
 			$caseId = (string)($row['caseId'] ?? '');
-			if ($caseId !== '' && $this->placeHoldOnCase(legalHold: $tools['legalHold'], objectMapper: $tools['objectMapper'], caseId: $caseId) === true) {
+			if ($caseId !== '' && $this->placeHoldOnCase(tools: $tools, caseId: $caseId) === true) {
 				$placed++;
 			}
 		}
@@ -328,15 +328,15 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	/**
 	 * Place an OR legal hold on a single case (idempotent, fail-safe).
 	 *
-	 * @param object $legalHold OpenRegister LegalHoldService.
-	 * @param object $objectMapper OpenRegister object mapper.
+	 * @param array<string, mixed> $tools OpenRegister's LegalHoldService (`legalHold`) and object mapper (`objectMapper`).
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return bool True when a new hold was placed.
 	 */
-	private function placeHoldOnCase(object $legalHold, object $objectMapper, string $caseId): bool {
+	private function placeHoldOnCase(array $tools, string $caseId): bool {
+		$legalHold = $tools['legalHold'];
 		try {
-			$caseObject = $objectMapper->findByUuid($caseId);
+			$caseObject = $tools['objectMapper']->findByUuid($caseId);
 			if ($caseObject === null || (bool)$legalHold->hasActiveHold($caseObject) === true) {
 				return false;
 			}
@@ -369,7 +369,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			return 0;
 		}
 
-		$proofs = $this->readProofs(objectService: $objectService, register: $register, proofSchema: $proofSchema);
+		$proofs = $this->readProofs(objectService: $objectService, where: ['register' => $register, 'schema' => $proofSchema]);
 		if ($proofs === null) {
 			return 0;
 		}
@@ -383,18 +383,17 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	/**
 	 * Read the proof-of-transfer records.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      Register slug or id.
-	 * @param string $proofSchema   The proof schema.
+	 * @param object                                 $objectService OpenRegister's object service.
+	 * @param array{register: string, schema: string} $where         Register slug or id, and the proof schema.
 	 *
 	 * @return array<int, array<string, mixed>>|null The records, or null when they could not be read.
 	 */
-	private function readProofs(object $objectService, string $register, string $proofSchema): ?array {
+	private function readProofs(object $objectService, array $where): ?array {
 		try {
 			$proofs = $this->searchObjectsAsArrays(
 				objectService: $objectService,
-				register: $register,
-				schema: $proofSchema
+				register: $where['register'],
+				schema: $where['schema']
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning('Archival migration: could not read proof records', ['error' => $e->getMessage()]);

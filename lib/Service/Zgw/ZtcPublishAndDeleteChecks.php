@@ -269,7 +269,7 @@ class ZtcPublishAndDeleteChecks {
 				return self::DELETABLE;
 			}
 
-			$finalSlugs = $this->loadFinalStatusSlugs(objectService: $this->lookups->objectService(), register: $register, caseTypeId: $caseTypeId);
+			$finalSlugs = $this->loadFinalStatusSlugs(register: $register, caseTypeId: $caseTypeId);
 		} catch (\Throwable $e) {
 			// The cases or their final statuses could not be read. Refuse: the type may be in use.
 			$this->results->logNotVerified(rule: self::DELETE_CHECK, object: 'case type ' . $caseTypeId, cause: $e->getMessage());
@@ -334,7 +334,6 @@ class ZtcPublishAndDeleteChecks {
 	/**
 	 * Load the ids of the final statusTypes of a case type. An unreadable list throws.
 	 *
-	 * @param object $objectService The OpenRegister object service.
 	 * @param string $register Register slug.
 	 * @param string $caseTypeId Case type id.
 	 *
@@ -342,7 +341,8 @@ class ZtcPublishAndDeleteChecks {
 	 *
 	 * @throws \Throwable When the status types cannot be read.
 	 */
-	private function loadFinalStatusSlugs(object $objectService, string $register, string $caseTypeId): array {
+	private function loadFinalStatusSlugs(string $register, string $caseTypeId): array {
+		$objectService = $this->lookups->objectService();
 		$statusSchema = (string)$this->settingsService->getConfigValue(key: 'status_type_schema');
 		$finalStatusTypes = $this->searchObjectsAsArrays(
 			objectService: $objectService,

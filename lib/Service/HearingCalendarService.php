@@ -155,9 +155,10 @@ class HearingCalendarService {
 		$organiser = $this->userSession->getUser();
 		$attendees = $this->resolveParticipants(participants: $hearing->participants);
 
-		$ics = $this->buildEvent(hearing: $hearing, organiser: $organiser, attendees: $attendees);
+		$parties = [$organiser, $attendees];
+		$ics = $this->buildEvent(hearing: $hearing, parties: $parties);
 
-		return [$ics, $organiser, $attendees];
+		return [$ics, ...$parties];
 	}//end hearingEvent()
 
 	/**
@@ -249,14 +250,13 @@ class HearingCalendarService {
 	 * Serialise the hearing as one VEVENT.
 	 *
 	 * @param PlannedHearing $hearing The hearing data, its start and the participants as stored.
-	 * @param IUser|null $organiser The account scheduling the hearing.
-	 * @param array<int, array{uid: string, email: string, name: string}> $attendees Addressable attendees.
+	 * @param array{0: IUser|null, 1: array<int, array<string, string>>} $parties The organiser and the addressable attendees.
 	 *
 	 * @return string The event as ICS.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
-	private function buildEvent(PlannedHearing $hearing, ?IUser $organiser, array $attendees): string {
+	private function buildEvent(PlannedHearing $hearing, array $parties): string {
 		$data = $hearing->data;
 		$start = $hearing->start;
 		$builder = $this->calendarManager->createEventBuilder();
@@ -270,7 +270,7 @@ class HearingCalendarService {
 			$builder->setLocation($location);
 		}
 
-		$this->withParties(builder: $builder, organiser: $organiser, attendees: $attendees);
+		$this->withParties(builder: $builder, parties: $parties);
 
 		return $builder->toIcs();
 	}//end buildEvent()
@@ -278,13 +278,13 @@ class HearingCalendarService {
 	/**
 	 * Put the organiser, when they have an address, and the attendees on the event.
 	 *
-	 * @param ICalendarEventBuilder                                       $builder   The event being built.
-	 * @param IUser|null                                                  $organiser The organiser.
-	 * @param array<int, array{uid: string, email: string, name: string}> $attendees Addressable attendees.
+	 * @param ICalendarEventBuilder $builder The event being built.
+	 * @param array{0: IUser|null, 1: array<int, array<string, string>>} $parties The organiser and the addressable attendees.
 	 *
 	 * @return void
 	 */
-	private function withParties(ICalendarEventBuilder $builder, ?IUser $organiser, array $attendees): void {
+	private function withParties(ICalendarEventBuilder $builder, array $parties): void {
+		[$organiser, $attendees] = $parties;
 		if ($organiser !== null && (string)$organiser->getEMailAddress() !== '') {
 			$builder->setOrganizer(
 				(string)$organiser->getEMailAddress(),

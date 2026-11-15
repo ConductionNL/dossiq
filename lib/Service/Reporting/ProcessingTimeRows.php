@@ -87,6 +87,19 @@ class ProcessingTimeRows {
 		// Counted between calendar dates in one zone, so a reference day at
 		// the tenant's midnight does not lose a day against a UTC start date.
 		$scan->today = new DateTimeImmutable($today->format('Y-m-d'));
+
+		return $this->rowsAtRisk(scan: $scan, open: $open);
+	}//end atRisk()
+
+	/**
+	 * The at-risk row of every open record the scan lists, least time left first.
+	 *
+	 * @param AtRiskScan                       $scan The scan.
+	 * @param array<int, array<string, mixed>> $open The open records.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function rowsAtRisk(AtRiskScan $scan, array $open): array {
 		$rows = [];
 		foreach ($open as $record) {
 			$measure = $this->measure(scan: $scan, record: $record);
@@ -101,7 +114,7 @@ class ProcessingTimeRows {
 		);
 
 		return $rows;
-	}//end atRisk()
+	}//end rowsAtRisk()
 
 	/**
 	 * Measure an open record against its type's target, or null when it has no target or start.
@@ -124,7 +137,7 @@ class ProcessingTimeRows {
 		$measure->typeId  = $typeId;
 		$measure->target  = $target;
 		$measure->elapsed = $this->days->signed(from: new DateTimeImmutable($start), to: $scan->today);
-		$term = $this->runningTerm(record: $record, start: $start, target: (int)$target);
+		$term = $this->runningTerm(measure: $measure);
 		$measure->remaining   = ($term - $measure->elapsed);
 		$measure->percentUsed = ($measure->elapsed / max(1, $term));
 
@@ -168,7 +181,7 @@ class ProcessingTimeRows {
 			'percentUsed'        => $shownUsed,
 			'percentUsedDisplay' => (int)round($shownUsed * 100),
 			'isOverdue'          => ($measure->remaining < 0),
-			'severity'           => $this->severity(remaining: $measure->remaining, percentUsed: $measure->percentUsed, threshold: $scan->threshold),
+			'severity'           => $this->severity(scan: $scan, measure: $measure),
 		];
 	}//end riskRow()
 
@@ -323,16 +336,16 @@ class ProcessingTimeRows {
 	 * norm the type was given. Measuring a case against the target alone put a
 	 * Woo request four days from its deadline in the "on track" half (r33).
 	 *
-	 * @param array<string, mixed> $record The open record.
-	 * @param string               $start  Its start date.
-	 * @param int                  $target Its type's target days.
+	 * @param RiskMeasure $measure The open record, with a start date, and its type's target days.
 	 *
 	 * @return int The term in days.
 	 *
 	 * @spec openspec/specs/at-risk-reads-the-running-term/spec.md#requirement-at-risk-reads-the-cases-running-term
 	 */
-	private function runningTerm(array $record, string $start, int $target): int {
-		$deadline = ($record['deadline'] ?? null);
+	private function runningTerm(RiskMeasure $measure): int {
+		$start    = (string)$measure->record['startDate'];
+		$target   = (int)$measure->target;
+		$deadline = ($measure->record['deadline'] ?? null);
 		if (is_string($deadline) === false || $deadline === '') {
 			return $target;
 		}
@@ -348,13 +361,13 @@ class ProcessingTimeRows {
 	/**
 	 * The severity band of one open record.
 	 *
-	 * @param int   $remaining   Days left until the target.
-	 * @param float $percentUsed Share of the target used.
-	 * @param float $threshold   Remaining share at or below which a record is at risk.
+	 * @param AtRiskScan  $scan    The scan, with the remaining share at or below which a record is at risk.
+	 * @param RiskMeasure $measure The days left until the target and the share of the target used.
 	 *
 	 * @return string One of overdue, critical, warning, ok.
 	 */
-	private function severity(int $remaining, float $percentUsed, float $threshold): string {
+	private function severity(AtRiskScan $scan, RiskMeasure $measure): string {
+		$remaining = $measure->remaining;
 		if ($remaining < 0) {
 			return 'overdue';
 		}
@@ -363,7 +376,7 @@ class ProcessingTimeRows {
 			return 'critical';
 		}
 
-		if ($remaining <= self::WARNING_DAYS || (1 - $percentUsed) <= min($threshold, 0.25)) {
+		if ($remaining <= self::WARNING_DAYS || (1 - $measure->percentUsed) <= min($scan->threshold, 0.25)) {
 			return 'warning';
 		}
 

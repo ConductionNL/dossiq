@@ -96,11 +96,36 @@ class DocumentSetNumberer {
 	 * @spec openspec/specs/numbered-document-series/spec.md
 	 */
 	public function filename(int $sequence, int $width, string $title, string $source, string $defaultExtension = 'pdf'): string {
+		$slug = $this->slugOf(title: $title);
+
+		return sprintf('%0' . $width . 'd-%s.%s', $sequence, $slug, $this->extensionOf(source: $source, defaultExtension: $defaultExtension));
+	}//end filename()
+
+	/**
+	 * The title as a file name slug, `document` when nothing of it is left.
+	 *
+	 * @param string $title The document's title.
+	 *
+	 * @return string The slug.
+	 */
+	private function slugOf(string $title): string {
 		$slug = trim((preg_replace('/[^a-z0-9]+/', '-', strtolower($title)) ?? ''), '-');
 		if ($slug === '') {
 			$slug = 'document';
 		}
 
+		return $slug;
+	}//end slugOf()
+
+	/**
+	 * The extension the source carries, or the default when it carries none.
+	 *
+	 * @param string $source           The document's source URI or path.
+	 * @param string $defaultExtension The extension when the source carries none.
+	 *
+	 * @return string The extension.
+	 */
+	private function extensionOf(string $source, string $defaultExtension): string {
 		$extension = '';
 		if ($source !== '') {
 			$path = (string)(parse_url($source, PHP_URL_PATH) ?? $source);
@@ -111,8 +136,8 @@ class DocumentSetNumberer {
 			$extension = $defaultExtension;
 		}
 
-		return sprintf('%0' . $width . 'd-%s.%s', $sequence, $slug, $extension);
-	}//end filename()
+		return $extension;
+	}//end extensionOf()
 
 	/**
 	 * Sort by the order keys, stably, missing values last.
@@ -137,8 +162,7 @@ class DocumentSetNumberer {
 			function (array $left, array $right) use ($keys): int {
 				foreach ($keys as $key) {
 					$compared = $this->compare(
-						left: ($left['document'][$key['field']] ?? null),
-						right: ($right['document'][$key['field']] ?? null),
+						pair: [($left['document'][$key['field']] ?? null), ($right['document'][$key['field']] ?? null)],
 						descending: $key['direction'] === 'desc',
 					);
 					if ($compared !== 0) {
@@ -156,13 +180,13 @@ class DocumentSetNumberer {
 	/**
 	 * Compare two order values; a missing value sorts last in either direction.
 	 *
-	 * @param mixed $left The left value.
-	 * @param mixed $right The right value.
+	 * @param array{0: mixed, 1: mixed} $pair The left value and the right value.
 	 * @param bool $descending Whether the key sorts descending.
 	 *
 	 * @return int Negative, zero or positive.
 	 */
-	private function compare(mixed $left, mixed $right, bool $descending): int {
+	private function compare(array $pair, bool $descending): int {
+		[$left, $right] = $pair;
 		$leftMissing = ($left === null || $left === '');
 		$rightMissing = ($right === null || $right === '');
 		if ($leftMissing === true || $rightMissing === true) {
@@ -208,9 +232,7 @@ class DocumentSetNumberer {
 	 * @return array<int, int> Sequence per position.
 	 */
 	private function keep(array $ordered, string $field): array {
-		[$sequences, $taken] = $this->storedSequences(ordered: $ordered, field: $field);
-
-		return $this->numberTheRest(ordered: $ordered, sequences: $sequences, taken: $taken);
+		return $this->numberTheRest(ordered: $ordered, stored: $this->storedSequences(ordered: $ordered, field: $field));
 	}//end keep()
 
 	/**
@@ -251,13 +273,13 @@ class DocumentSetNumberer {
 	/**
 	 * Give every position without a kept number the next number after the highest, in order.
 	 *
-	 * @param array<int, array<string, mixed>> $ordered   The documents, in order.
-	 * @param array<int, int>                  $sequences Sequence per kept position.
-	 * @param array<int, bool>                 $taken     The taken numbers.
+	 * @param array<int, array<string, mixed>>               $ordered The documents, in order.
+	 * @param array{0: array<int, int>, 1: array<int, bool>} $stored  Sequence per kept position, and the taken numbers.
 	 *
 	 * @return array<int, int> Sequence per position.
 	 */
-	private function numberTheRest(array $ordered, array $sequences, array $taken): array {
+	private function numberTheRest(array $ordered, array $stored): array {
+		[$sequences, $taken] = $stored;
 		$next = 1;
 		if ($taken !== []) {
 			$next = (max(array_keys($taken)) + 1);

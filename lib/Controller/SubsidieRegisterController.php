@@ -116,7 +116,7 @@ class SubsidieRegisterController extends Controller {
 	private function feedEntries(object $objectService, array $config): array {
 		$entries = [];
 		foreach ($this->grantedDecisions(objectService: $objectService, config: $config) as $decision) {
-			$entry = $this->feedEntryOf(objectService: $objectService, config: $config, decision: $decision);
+			$entry = $this->feedEntryOf(config: ['objectService' => $objectService] + $config, decision: $decision);
 			if ($entry !== null) {
 				$entries[] = $entry;
 			}
@@ -151,13 +151,13 @@ class SubsidieRegisterController extends Controller {
 	/**
 	 * The feed entry of one beschikking with its aanvraag and regeling, or null when it names no aanvraag.
 	 *
-	 * @param object $objectService The ObjectService.
-	 * @param array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string} $config The feed configuration.
+	 * @param array<string, mixed> $config The feed configuration, with the ObjectService as `objectService`.
 	 * @param mixed $decision The beschikking.
 	 *
 	 * @return array|null The feed entry.
 	 */
-	private function feedEntryOf(object $objectService, array $config, mixed $decision): ?array {
+	private function feedEntryOf(array $config, mixed $decision): ?array {
+		$objectService = $config['objectService'];
 		$register = $config['register'];
 		$requestSchema = $config['aanvraagSchema'];
 		$regelingSchema = $config['regelingSchema'];
@@ -168,11 +168,11 @@ class SubsidieRegisterController extends Controller {
 			return null;
 		}
 
-		$request = $this->safeFind(objectService: $objectService, register: $register, schema: $requestSchema, id: $requestId);
+		$request = $this->safeFind(objectService: $objectService, where: ['register' => $register, 'schema' => $requestSchema, 'id' => $requestId]);
 		$regeling = [];
 		$regelingId = (string)($request['subsidyScheme'] ?? '');
 		if ($regelingId !== '') {
-			$regeling = $this->safeFind(objectService: $objectService, register: $register, schema: $regelingSchema, id: $regelingId);
+			$regeling = $this->safeFind(objectService: $objectService, where: ['register' => $register, 'schema' => $regelingSchema, 'id' => $regelingId]);
 		}
 
 		return $this->exporter->toFeedEntry($request, $regeling, $decision);
@@ -207,15 +207,13 @@ class SubsidieRegisterController extends Controller {
 	 * Find an object defensively, returning an empty array on any failure.
 	 *
 	 * @param object $objectService The ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema The schema id.
-	 * @param string $id The object id.
+	 * @param array{register: string, schema: string, id: string} $where The register id, the schema id and the object id.
 	 *
 	 * @return array<string, mixed> The object or an empty array.
 	 */
-	private function safeFind(object $objectService, string $register, string $schema, string $id): array {
+	private function safeFind(object $objectService, array $where): array {
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($where['id'], register: $where['register'], schema: $where['schema']);
 			return $this->toArray(value: $found);
 		} catch (Throwable $e) {
 			return [];

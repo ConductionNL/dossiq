@@ -79,7 +79,8 @@ class OnboardingStepGuide implements OnboardingStepGuideInterface {
 		foreach (TenantOnboardingService::STEPS as $step) {
 			$row = ($byStep[$step] ?? ['step' => $step, 'status' => 'pending']);
 			$isNext = ($nextFound === false && $this->isDone(row: $row) === false);
-			$ordered[] = $this->guided(row: $row, isNext: $isNext, waiting: $nextFound);
+			$row['isNext'] = $isNext;
+			$ordered[] = $this->guided(row: $row, waiting: $nextFound);
 			$nextFound = ($nextFound || $isNext);
 		}
 
@@ -102,18 +103,16 @@ class OnboardingStepGuide implements OnboardingStepGuideInterface {
 	/**
 	 * One step with its flag, note and action.
 	 *
-	 * @param array<string, mixed> $row     The step.
-	 * @param bool                 $isNext  Whether it is the first step not done.
+	 * @param array<string, mixed> $row     The step, with its `isNext` flag set: whether it is the first step not done.
 	 * @param bool                 $waiting Whether an earlier step is still open.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function guided(array $row, bool $isNext, bool $waiting): array {
-		$row['isNext'] = $isNext;
+	private function guided(array $row, bool $waiting): array {
 		$row['note'] = $this->noteFor(row: $row, waiting: $waiting);
 		$row['action'] = null;
 		$section = (self::SECTIONS[(string)$row['step']] ?? '');
-		if ($isNext === true && $section !== '') {
+		if ($row['isNext'] === true && $section !== '') {
 			$row['action'] = [
 				'label' => $this->actionLabel(step: (string)$row['step']),
 				'href' => $this->urls->linkToRoute('settings.AdminSettings.index', ['section' => $section]),

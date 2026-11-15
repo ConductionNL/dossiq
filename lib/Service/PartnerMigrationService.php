@@ -146,7 +146,7 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 			return $summary;
 		}
 
-		return $this->migrateRows(summary: $summary, mapper: $mapper, rows: $rows);
+		return $this->migrateRows(mapper: $mapper, rows: $rows);
 	}//end migrate()
 
 	/**
@@ -185,13 +185,13 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 	/**
 	 * Migrate each partner row and tally the outcomes.
 	 *
-	 * @param array<string, mixed> $summary The empty summary.
 	 * @param object               $mapper  OpenRegister's organisation mapper.
 	 * @param array<int, mixed>    $rows    The partnerOrganization rows.
 	 *
 	 * @return array<string, mixed> The outcome tally.
 	 */
-	private function migrateRows(array $summary, object $mapper, array $rows): array {
+	private function migrateRows(object $mapper, array $rows): array {
+		$summary = self::EMPTY_SUMMARY;
 		$summary['total'] = count($rows);
 		foreach ($rows as $row) {
 			$summary = self::tally(summary: $summary, result: $this->migrateOne(mapper: $mapper, row: $this->toRow(value: $row)));
@@ -325,7 +325,7 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 		$slug = $partner->slug;
 		$existing = OrganisationLookup::byUuid(mapper: $mapper, uuid: $partnerUuid);
 		if ($existing !== null) {
-			return $this->migrationResult(created: false, partnerUuid: $partnerUuid, organisationUuid: (string)$existing->getUuid());
+			return ['created' => false, 'partnerUuid' => $partnerUuid, 'organisationUuid' => (string)$existing->getUuid()];
 		}
 
 		$saved = $mapper->insert($this->buildOrganisation(partner: $partner));
@@ -335,27 +335,8 @@ class PartnerMigrationService implements PartnerMigrationServiceInterface {
 			['partner' => $partnerUuid, 'organisation' => (string)$saved->getUuid(), 'slug' => $slug],
 		);
 
-		return $this->migrationResult(created: true, partnerUuid: $partnerUuid, organisationUuid: (string)$saved->getUuid());
+		return ['created' => true, 'partnerUuid' => $partnerUuid, 'organisationUuid' => (string)$saved->getUuid()];
 	}//end migratePartner()
-
-	/**
-	 * The result of migrating one partner.
-	 *
-	 * @param bool   $created          Whether the Organisation was created.
-	 * @param string $partnerUuid      The partner's uuid.
-	 * @param string $organisationUuid The Organisation's uuid.
-	 *
-	 * @return array{created:bool, partnerUuid:string, organisationUuid:string} Result.
-	 *
-	 * @spec openspec/specs/partner-organisations/spec.md
-	 */
-	private function migrationResult(bool $created, string $partnerUuid, string $organisationUuid): array {
-		return [
-			'created' => $created,
-			'partnerUuid' => $partnerUuid,
-			'organisationUuid' => $organisationUuid,
-		];
-	}//end migrationResult()
 
 	/**
 	 * Build an Organisation from a partner row.

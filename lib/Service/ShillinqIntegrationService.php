@@ -109,31 +109,44 @@ class ShillinqIntegrationService {
 	public function buildInvoicePayload(string $tenantId, string $month, array $events): array {
 		$lines = [];
 		foreach ($events as $event) {
-			// 🔴 NO LINE IS PRICED BY DEFAULT. `quantity ?? 1` and
-			// `unitPrice ?? 0` were two different guesses about the same event,
-			// so the payload and TenantBillingService::aggregate() answered
-			// different amounts for one month. An event that cannot be priced
-			// throws here, and runInvoicing() already refuses before this.
-			$quantity = ($event['quantity'] ?? null);
-			$unitPrice = ($event['unitPrice'] ?? null);
-			if (is_numeric($quantity) === false || is_numeric($unitPrice) === false) {
-				throw new InvalidArgumentException(
-					'A usage event carries no readable quantity or unit price, so no invoice line was built for it.'
-				);
-			}
-
-			$lines[] = [
-				'description' => (string)($event['eventType'] ?? 'usage'),
-				'quantity' => (float)$quantity,
-				'unitPrice' => (float)$unitPrice,
-				'currency' => (string)($event['currency'] ?? 'EUR'),
-				'occurredAt' => (string)($event['occurredAt'] ?? ''),
-				'sourceId' => (string)($event['id'] ?? ($event['uuid'] ?? '')),
-			];
+			$lines[] = self::invoiceLine(event: $event);
 		}
 
 		return ['tenantId' => $tenantId, 'period' => $month, 'lines' => $lines];
 	}//end buildInvoicePayload()
+
+	/**
+	 * The invoice line of one usage event.
+	 *
+	 * @param mixed $event The usage event, as the caller passed it.
+	 *
+	 * @return array<string, mixed> The line.
+	 *
+	 * @throws InvalidArgumentException When the event carries no readable quantity or unit price.
+	 */
+	private static function invoiceLine(mixed $event): array {
+		// 🔴 NO LINE IS PRICED BY DEFAULT. `quantity ?? 1` and
+		// `unitPrice ?? 0` were two different guesses about the same event,
+		// so the payload and TenantBillingService::aggregate() answered
+		// different amounts for one month. An event that cannot be priced
+		// throws here, and runInvoicing() already refuses before this.
+		$quantity = ($event['quantity'] ?? null);
+		$unitPrice = ($event['unitPrice'] ?? null);
+		if (is_numeric($quantity) === false || is_numeric($unitPrice) === false) {
+			throw new InvalidArgumentException(
+				'A usage event carries no readable quantity or unit price, so no invoice line was built for it.'
+			);
+		}
+
+		return [
+			'description' => (string)($event['eventType'] ?? 'usage'),
+			'quantity' => (float)$quantity,
+			'unitPrice' => (float)$unitPrice,
+			'currency' => (string)($event['currency'] ?? 'EUR'),
+			'occurredAt' => (string)($event['occurredAt'] ?? ''),
+			'sourceId' => (string)($event['id'] ?? ($event['uuid'] ?? '')),
+		];
+	}//end invoiceLine()
 
 	/**
 	 * Ask shillinq to draft the month's invoice.

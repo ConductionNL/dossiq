@@ -300,6 +300,18 @@ class WorkingDayRoll {
 			return $start->modify('+' . $days . ' days');
 		}
 
+		return $this->workingDayEnd(start: $start, days: $days);
+	}//end endAfter()
+
+	/**
+	 * The end of a term of working days on the organisation's calendar.
+	 *
+	 * @param DateTimeImmutable $start When the term starts.
+	 * @param int               $days  How many working days it runs.
+	 *
+	 * @return DateTimeImmutable|null The end, or null when the calendar is unavailable or refuses.
+	 */
+	private function workingDayEnd(DateTimeImmutable $start, int $days): ?DateTimeImmutable {
 		if ($this->isAvailable() === false) {
 			return null;
 		}
@@ -319,7 +331,7 @@ class WorkingDayRoll {
 
 			return null;
 		}
-	}//end endAfter()
+	}//end workingDayEnd()
 
 	/**
 	 * The end date N days after a start, falling back to calendar days.
@@ -374,6 +386,18 @@ class WorkingDayRoll {
 			return $this->days->between(from: $from, to: $to);
 		}
 
+		return $this->workingDaysBetween(from: $from, to: $to);
+	}//end daysBetween()
+
+	/**
+	 * The working days between two moments on the organisation's calendar.
+	 *
+	 * @param DateTimeImmutable $from The first moment.
+	 * @param DateTimeImmutable $to   The second moment.
+	 *
+	 * @return int|null The working days, or null when the calendar is unavailable or refuses.
+	 */
+	private function workingDaysBetween(DateTimeImmutable $from, DateTimeImmutable $to): ?int {
 		if ($this->isAvailable() === false) {
 			return null;
 		}
@@ -393,7 +417,7 @@ class WorkingDayRoll {
 
 			return null;
 		}
-	}//end daysBetween()
+	}//end workingDaysBetween()
 
 	/**
 	 * The first working moment at or after this one, or null.

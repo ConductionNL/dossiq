@@ -85,7 +85,18 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getFrequencyByDimension(string $dimension, string $dateFrom, string $dateTo): array {
-		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
+		return $this->frequencyOf(complaints: $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo), dimension: $dimension);
+	}//end getFrequencyByDimension()
+
+	/**
+	 * Count the complaints per value of the dimension, most frequent first.
+	 *
+	 * @param array<int, array<string, mixed>> $complaints The complaints in the range
+	 * @param string                           $dimension  The grouping dimension
+	 *
+	 * @return array<string, int> Count per dimension value
+	 */
+	private function frequencyOf(array $complaints, string $dimension): array {
 		$frequency = [];
 
 		foreach ($complaints as $complaint) {
@@ -109,7 +120,7 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 
 		arsort($frequency);
 		return $frequency;
-	}//end getFrequencyByDimension()
+	}//end frequencyOf()
 
 	/**
 	 * Get monthly complaint trend for a date range.
@@ -238,8 +249,7 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 		$previous = $this->getFrequencyByDimension(dimension: 'category', dateFrom: $prevFrom, dateTo: $prevTo);
 
 		$systemicIssues = $this->flagIncreases(
-			current: $current,
-			previous: $previous,
+			counts: ['current' => $current, 'previous' => $previous],
 			labels: ['quarter' => 'Q' . $quarter . ' ' . $year, 'previousQuarter' => 'Q' . $prevQuarter . ' ' . $prevYear],
 		);
 
@@ -260,13 +270,8 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 		$today = date('Y-m-d');
 
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $sixMonthsAgo, dateTo: $today);
-		[$employeeCounts, $employeeDetails] = $this->tallyEmployees(complaints: $complaints);
 
-		return $this->employeeAlerts(
-			employeeCounts: $employeeCounts,
-			employeeDetails: $employeeDetails,
-			periods: [$sixMonthsAgo, $today],
-		);
+		return $this->employeeAlerts(tally: $this->tallyEmployees(complaints: $complaints), periods: [$sixMonthsAgo, $today]);
 	}//end checkEmployeeThresholdAlerts()
 
 	/**
@@ -293,15 +298,16 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 	/**
 	 * The categories whose count rose more than the systemic-issue threshold.
 	 *
-	 * @param array<string, int> $current       Complaint counts per category this quarter
-	 * @param array<string, int> $previous      Complaint counts per category last quarter
+	 * @param array{current: array<string, int>, previous: array<string, int>} $counts Complaint counts per category
+	 *                                                                         this quarter and last quarter
 	 * @param array{quarter: string, previousQuarter: string} $labels Labels of this quarter, e.g. "Q2 2026", and of the previous one
 	 *
 	 * @return array<int, array<string, mixed>> Systemic-issue records for flagged categories
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
-	private function flagIncreases(array $current, array $previous, array $labels): array {
+	private function flagIncreases(array $counts, array $labels): array {
+		['current' => $current, 'previous' => $previous] = $counts;
 		$systemicIssues = [];
 
 		foreach ($current as $category => $currentCount) {
@@ -378,15 +384,17 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 	/**
 	 * The anonymized alerts for employees at or over the threshold, logging each.
 	 *
-	 * @param array<string, int>                          $employeeCounts  Complaint count per employee
-	 * @param array<string, list<array<string, mixed>>>   $employeeDetails Category and date per complaint, per employee
-	 * @param array{0: string, 1: string}                 $periods         The period start and end
+	 * @param array{0: array<string, int>, 1: array<string, list<array<string, mixed>>>} $tally   Complaint count per
+	 *                                                                                           employee, and category
+	 *                                                                                           and date per complaint
+	 * @param array{0: string, 1: string}                                               $periods The period start and end
 	 *
 	 * @return array<int, array<string, mixed>> Anonymized alert records (employee reference redacted)
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
-	private function employeeAlerts(array $employeeCounts, array $employeeDetails, array $periods): array {
+	private function employeeAlerts(array $tally, array $periods): array {
+		[$employeeCounts, $employeeDetails] = $tally;
 		$alerts = [];
 		foreach ($employeeCounts as $employee => $count) {
 			if ($count < self::EMPLOYEE_ALERT_THRESHOLD) {

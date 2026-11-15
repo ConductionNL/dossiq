@@ -77,10 +77,8 @@ class ZtcTypeNameResolver implements ZtcTypeNameResolverInterface {
 			return;
 		}
 
-		[$objectService, $iotMapping] = $lookup;
-
 		try {
-			$iotUuid = $this->findIotUuidByOmschrijving(objectService: $objectService, iotMapping: $iotMapping, omschrijving: $iotValue);
+			$iotUuid = $this->findIotUuidByOmschrijving(lookup: $lookup, omschrijving: $iotValue);
 			if ($iotUuid !== '') {
 				$this->zgwService->updateCachedBodyField('informatieobjecttype', $iotUuid);
 			}
@@ -134,13 +132,13 @@ class ZtcTypeNameResolver implements ZtcTypeNameResolverInterface {
 	/**
 	 * The uuid of the informatieobjecttype with this omschrijving, by name and else by full text.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array $iotMapping The informatieobjecttypen mapping.
-	 * @param string $omschrijving The omschrijving.
+	 * @param array{0: object, 1: array} $lookup       The OpenRegister ObjectService and the informatieobjecttypen mapping.
+	 * @param string                    $omschrijving The omschrijving.
 	 *
 	 * @return string The uuid, or '' when nothing matches.
 	 */
-	private function findIotUuidByOmschrijving(object $objectService, array $iotMapping, string $omschrijving): string {
+	private function findIotUuidByOmschrijving(array $lookup, string $omschrijving): string {
+		[$objectService, $iotMapping] = $lookup;
 		$result = ['total' => 0];
 		foreach ([['name' => $omschrijving, '_limit' => 1], ['_search' => $omschrijving, '_limit' => 1]] as $params) {
 			$query = $objectService->buildSearchQuery(

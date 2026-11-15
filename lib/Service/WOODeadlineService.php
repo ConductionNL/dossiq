@@ -277,25 +277,19 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 
 		$daysRemaining = $this->signedDaysUntil(deadline: $resolved['deadline']);
 
-		$isOverdue = ($daysRemaining < 0);
+		$warning = [
+			'caseId' => $caseId,
+			'daysRemaining' => $daysRemaining,
+			'isOverdue' => ($daysRemaining < 0),
+		];
 		$warned = false;
 
-		if ($daysRemaining === self::WARNING_THRESHOLD_DAYS || $isOverdue === true) {
-			$this->sendDeadlineNotification(
-				userId: $handler,
-				caseId: $caseId,
-				daysRemaining: $daysRemaining,
-				isOverdue: $isOverdue,
-			);
+		if ($daysRemaining === self::WARNING_THRESHOLD_DAYS || $warning['isOverdue'] === true) {
+			$this->sendDeadlineNotification(userId: $handler, warning: $warning);
 			$warned = true;
 		}
 
-		return [
-			'caseId' => $caseId,
-			'daysRemaining' => $daysRemaining,
-			'isOverdue' => $isOverdue,
-			'warned' => $warned,
-		];
+		return $warning + ['warned' => $warned];
 	}//end checkAndWarn()
 
 	/**
@@ -381,26 +375,24 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	/**
 	 * Send a deadline notification to the behandelaar.
 	 *
-	 * @param string $userId The user to notify
-	 * @param string $caseId The case UUID
-	 * @param int $daysRemaining Days remaining (negative if overdue)
-	 * @param bool $isOverdue Whether the deadline has passed
+	 * @param string                                                     $userId  The user to notify
+	 * @param array{caseId: string, daysRemaining: int, isOverdue: bool} $warning The case UUID, the days remaining
+	 *                                                                            (negative if overdue) and whether
+	 *                                                                            the deadline has passed
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
 	 */
-	private function sendDeadlineNotification(string $userId, string $caseId, int $daysRemaining, bool $isOverdue): void {
+	private function sendDeadlineNotification(string $userId, array $warning): void {
 		try {
-			$subject = $this->deadlineSubject(isOverdue: $isOverdue);
-
-			$notification = $this->deadlineNotification(userId: $userId, caseId: $caseId, subject: $subject, daysRemaining: $daysRemaining);
+			$notification = $this->deadlineNotification(userId: $userId, warning: $warning);
 
 			$this->notificationManager->notify($notification);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Failed to send WOO deadline notification: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID, 'caseId' => $caseId],
+				['app' => AppIdentity::APP_ID, 'caseId' => $warning['caseId']],
 			);
 		}//end try
 	}//end sendDeadlineNotification()
@@ -426,16 +418,19 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	/**
 	 * The deadline notification for the behandelaar.
 	 *
-	 * @param string $userId The user to notify
-	 * @param string $caseId The case UUID
-	 * @param string $subject The notification subject
-	 * @param int $daysRemaining Days remaining (negative if overdue)
+	 * @param string                                                     $userId  The user to notify
+	 * @param array{caseId: string, daysRemaining: int, isOverdue: bool} $warning The case UUID, the days remaining
+	 *                                                                            (negative if overdue) and whether
+	 *                                                                            the deadline has passed
 	 *
 	 * @return INotification The notification.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
 	 */
-	private function deadlineNotification(string $userId, string $caseId, string $subject, int $daysRemaining): INotification {
+	private function deadlineNotification(string $userId, array $warning): INotification {
+		$subject = $this->deadlineSubject(isOverdue: $warning['isOverdue']);
+		$caseId = $warning['caseId'];
+
 		$notification = $this->notificationManager->createNotification();
 		$notification->setApp(AppIdentity::APP_ID)
 			->setUser($userId)
@@ -443,7 +438,7 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 			->setObject('woo_deadline', $caseId)
 			->setSubject(
 				$subject,
-				['caseId' => $caseId, 'daysRemaining' => $daysRemaining]
+				['caseId' => $caseId, 'daysRemaining' => $warning['daysRemaining']]
 			);
 
 		return $notification;

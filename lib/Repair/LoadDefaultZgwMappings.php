@@ -523,7 +523,7 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 
 		$result = $this->createMissingKanalen(objectService: $objectService, channelMapping: $channelMapping);
 
-		$this->reportKanalen(output: $output, created: $result['created'], refused: $result['refused']);
+		$this->reportKanalen(output: $output, result: $result);
 	}//end createDefaultKanalen()
 
 	/**
@@ -582,6 +582,7 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 	 */
 	private function createMissingKanalen(object $objectService, array $channelMapping): array {
 		$defaults = $this->getDefaultKanalen();
+		$store = [$objectService, $channelMapping['sourceRegister'], $channelMapping['sourceSchema']];
 		$created = 0;
 		$refused = [];
 
@@ -598,13 +599,9 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 		// takes the other three with it and the count names what is missing.
 		$this->withSystemIdentity(
 			objectService: $objectService,
-			work: function () use ($objectService, $channelMapping, $defaults, &$created, &$refused): void {
+			work: function () use ($store, $defaults, &$created, &$refused): void {
 				foreach ($defaults as $channel) {
-					$outcome = $this->createKanaal(
-						objectService: $objectService,
-						channelMapping: $channelMapping,
-						channel: $channel
-					);
+					$outcome = $this->createKanaal(store: $store, channel: $channel);
 					if ($outcome === 'created') {
 						$created++;
 					} else if ($outcome === 'refused') {
@@ -620,19 +617,19 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 	/**
 	 * Create one default channel unless it already exists.
 	 *
-	 * @param object               $objectService  OpenRegister's ObjectService
-	 * @param array<string, mixed> $channelMapping The kanaal mapping
-	 * @param array<string, mixed> $channel        The default channel data
+	 * @param array{0: object, 1: mixed, 2: mixed} $store   OpenRegister's ObjectService and the kanaal mapping's register and schema
+	 * @param array<string, mixed>                $channel The default channel data
 	 *
 	 * @return string 'created', 'exists' or 'refused'
 	 */
-	private function createKanaal(object $objectService, array $channelMapping, array $channel): string {
+	private function createKanaal(array $store, array $channel): string {
+		[$objectService, $register, $schema] = $store;
 		try {
 			// Check if kanaal already exists.
 			$query = $objectService->buildSearchQuery(
 				requestParams: ['name' => $channel['name']],
-				register: $channelMapping['sourceRegister'],
-				schema: $channelMapping['sourceSchema']
+				register: $register,
+				schema: $schema
 			);
 			$existing = $objectService->searchObjectsPaginated(query: $query);
 			if (($existing['total'] ?? 0) > 0) {
@@ -640,8 +637,8 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 			}
 
 			$objectService->saveObject(
-				register: $channelMapping['sourceRegister'],
-				schema: $channelMapping['sourceSchema'],
+				register: $register,
+				schema: $schema,
 				object: $channel
 			);
 			return 'created';
@@ -657,13 +654,14 @@ class LoadDefaultZgwMappings implements IRepairStep, LoadDefaultZgwMappingsInter
 	/**
 	 * Report how many default channels were created and which were refused.
 	 *
-	 * @param IOutput      $output  The output interface for progress reporting
-	 * @param int          $created Number of channels created
-	 * @param list<string> $refused Names of refused channels
+	 * @param IOutput                                    $output The output interface for progress reporting
+	 * @param array{created: int, refused: list<string>} $result Number of channels created and names of refused channels
 	 *
 	 * @return void
 	 */
-	private function reportKanalen(IOutput $output, int $created, array $refused): void {
+	private function reportKanalen(IOutput $output, array $result): void {
+		$created = $result['created'];
+		$refused = $result['refused'];
 		if ($refused !== []) {
 			$output->warning(
 				sprintf(

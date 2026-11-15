@@ -82,7 +82,7 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true);
 		}
 
-		$completed = $this->completedTitles(statusTypeId: $statusTypeId, case: $case, actor: $userId);
+		$completed = $this->completedTitles(case: $case, actor: $userId);
 
 		return $this->resultFor(required: $required, completed: $completed, statusTypeId: $statusTypeId);
 	}//end evaluate()
@@ -156,17 +156,16 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 	 * threaded through for that read: the engine answers nothing at all to a
 	 * blank identity.
 	 *
-	 * @param string               $statusTypeId The status the case is in.
-	 * @param array<string, mixed> $case         The case.
-	 * @param string               $actor        The acting identity the engine read is made as.
+	 * @param array<string, mixed> $case  The case, in the status whose tasks are read.
+	 * @param string               $actor The acting identity the engine read is made as.
 	 *
 	 * @return array<int, string> The completed titles.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function completedTitles(string $statusTypeId, array $case, string $actor): array {
+	private function completedTitles(array $case, string $actor): array {
 		$titles = [];
-		foreach ($this->checklist->tasksFor(statusTypeId: $statusTypeId, case: $case, actor: $actor) as $task) {
+		foreach ($this->checklist->tasksFor(statusTypeId: (string)($case['status'] ?? ''), case: $case, actor: $actor) as $task) {
 			if (strtolower(trim((string)($task['status'] ?? ''))) !== self::COMPLETED) {
 				continue;
 			}

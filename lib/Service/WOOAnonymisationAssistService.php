@@ -176,7 +176,10 @@ class WOOAnonymisationAssistService implements WOOAnonymisationAssistServiceInte
 	private function pendingProposalFor(SpanProposalRequest $request, string $text): array {
 		$startTime = microtime(true);
 		$ruleSpans = $this->aiService->detectDeterministicPiiSpans(text: $text);
-		$proposal = $this->buildProposal(ruleSpans: $ruleSpans, text: $text, context: $this->documentContext(documentRef: $request->documentRef));
+		$proposal = $this->buildProposal(
+			ruleSpans: $ruleSpans,
+			ask: ['text' => $text, 'context' => $this->documentContext(documentRef: $request->documentRef)]
+		);
 		$request->responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
 		$request->textLength = strlen($text);
 		$request->ruleSpanCount = count($ruleSpans);
@@ -474,8 +477,7 @@ class WOOAnonymisationAssistService implements WOOAnonymisationAssistServiceInte
 
 		return $this->buildProposal(
 			ruleSpans: $this->aiService->detectDeterministicPiiSpans(text: $text),
-			text: $text,
-			context: ['app' => AppIdentity::APP_ID, 'objectType' => 'document', 'objectRef' => $documentRef]
+			ask: ['text' => $text, 'context' => ['app' => AppIdentity::APP_ID, 'objectType' => 'document', 'objectRef' => $documentRef]]
 		);
 	}//end spansFor()
 
@@ -505,13 +507,13 @@ class WOOAnonymisationAssistService implements WOOAnonymisationAssistServiceInte
 	 * layered on top when available, fail-closed to rules-only on any
 	 * Hermiq failure.
 	 *
-	 * @param array<int, array<string, mixed>> $ruleSpans The deterministic rule-detected spans.
-	 * @param string $text The document text (forwarded to Hermiq).
-	 * @param array<string, mixed> $context `{app, objectType, objectRef}`.
+	 * @param array<int, array<string, mixed>>                   $ruleSpans The deterministic rule-detected spans.
+	 * @param array{text: string, context: array<string, mixed>} $ask       The document text (forwarded to Hermiq), and
+	 *                                                                      `{app, objectType, objectRef}`.
 	 *
 	 * @return array<string, mixed> `{spans, source, llmAvailable, llmError?}`.
 	 */
-	private function buildProposal(array $ruleSpans, string $text, array $context): array {
+	private function buildProposal(array $ruleSpans, array $ask): array {
 		$taggedRuleSpans = $this->taggedAsRules(spans: $ruleSpans);
 
 		if ($this->hermiqClient->isAvailable() === false) {
@@ -519,7 +521,7 @@ class WOOAnonymisationAssistService implements WOOAnonymisationAssistServiceInte
 		}
 
 		try {
-			$llmResult = $this->hermiqClient->detectPii(text: $text, context: $context);
+			$llmResult = $this->hermiqClient->detectPii(text: $ask['text'], context: $ask['context']);
 		} catch (HermiqAssistantException $e) {
 			return $this->rulesOnlyFallback(taggedRuleSpans: $taggedRuleSpans, e: $e);
 		}

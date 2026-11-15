@@ -119,34 +119,29 @@ class PhaseTermService implements PhaseTermServiceInterface {
 			return null;
 		}
 
-		return $this->startPhaseClock(caseId: $caseId, statusTypeId: $statusTypeId, days: $days, moment: $moment);
+		return $this->startPhaseClock(clock: ['case' => $caseId, 'phase' => $statusTypeId, 'days' => $days], moment: $moment);
 	}//end enterPhase()
 
 	/**
 	 * Start a phase's clock on a case.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $statusTypeId The phase being entered.
-	 * @param int $days The phase's term in days.
-	 * @param DateTimeImmutable $moment When the move happened.
+	 * @param array{case: string, phase: string, days: int} $clock  The case UUID, the phase being entered and its term in days.
+	 * @param DateTimeImmutable                            $moment When the move happened.
 	 *
 	 * @return array<string, mixed>|null The started phase term.
 	 *
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
-	private function startPhaseClock(string $caseId, string $statusTypeId, int $days, DateTimeImmutable $moment): ?array {
+	private function startPhaseClock(array $clock, DateTimeImmutable $moment): ?array {
 		$instance = $this->terms->bindLeadTime(
-			caseId: $caseId,
+			caseId: $clock['case'],
 			kind: TermKind::PHASE,
-			days: $days,
+			days: $clock['days'],
 			start: $moment,
-			extra: ['statusType' => $statusTypeId],
+			extra: ['statusType' => $clock['phase']],
 		);
 
-		$this->logger->info(
-			'Dossiq phase term: a phase clock started',
-			['case' => $caseId, 'phase' => $statusTypeId, 'days' => $days]
-		);
+		$this->logger->info('Dossiq phase term: a phase clock started', $clock);
 
 		return $instance;
 	}//end startPhaseClock()
@@ -280,7 +275,7 @@ class PhaseTermService implements PhaseTermServiceInterface {
 		$shares = array_map(static fn (array $phase): float => (float)$phase['share'], $phases);
 		$position = $this->positionOf(phases: $phases, statusTypeId: $statusTypeId);
 
-		$spent = $this->spentPerPhase(caseId: $caseId, phases: $phases, upTo: $position);
+		$spent = $this->spentPerPhase(caseId: $caseId, finished: array_slice($phases, 0, $position));
 		$plan = $this->splitter->recompute(termDays: $chainTermDays, shares: $shares, consumed: $spent);
 
 		return [
@@ -318,12 +313,11 @@ class PhaseTermService implements PhaseTermServiceInterface {
 	 * reading that leaves its days to the phases ahead.
 	 *
 	 * @param string $caseId The case UUID.
-	 * @param array<int, array<string, mixed>> $phases The phases, in order.
-	 * @param int $upTo How many phases are behind the case.
+	 * @param array<int, array<string, mixed>> $finished The phases behind the case, in order.
 	 *
 	 * @return array<int, int> Days spent, one per finished phase.
 	 */
-	private function spentPerPhase(string $caseId, array $phases, int $upTo): array {
+	private function spentPerPhase(string $caseId, array $finished): array {
 		$byPhase = [];
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
 			if (TermKind::ofInstance($row) !== TermKind::PHASE) {
@@ -341,10 +335,10 @@ class PhaseTermService implements PhaseTermServiceInterface {
 		}//end foreach
 
 		$spent = [];
-		for ($index = 0; $index < $upTo; $index++) {
-			$phaseId = (string)($phases[$index]['id'] ?? '');
+		foreach ($finished as $phase) {
+			$phaseId = (string)($phase['id'] ?? '');
 			$spent[] = (int)($byPhase[$phaseId] ?? 0);
-		}//end for
+		}//end foreach
 
 		return $spent;
 	}//end spentPerPhase()

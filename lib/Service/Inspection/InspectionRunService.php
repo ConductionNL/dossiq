@@ -178,12 +178,11 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
 	 */
 	public function asRun(array $task): array {
-		$responses = $this->arrayOrEmpty(value: ($task['responses'] ?? []));
 		$metadata = $this->arrayOrEmpty(value: ($task['metadata'] ?? []));
 
 		$moment = (string)($task['completedAt'] ?? $metadata['legacyCompletedAt'] ?? $task['created'] ?? '');
 
-		return $this->runHead(task: $task, moment: $moment) + $this->runFindings(task: $task, responses: $responses, metadata: $metadata);
+		return $this->runHead(task: $task, moment: $moment) + $this->runFindings(task: $task, metadata: $metadata);
 	}//end asRun()
 
 	/**
@@ -229,15 +228,15 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	/**
 	 * The run's answers, remarks, location, photos and state.
 	 *
-	 * @param array<string, mixed> $task      The serialised task.
-	 * @param array<mixed>         $responses The answers.
-	 * @param array<string, mixed> $metadata  The task metadata.
+	 * @param array<string, mixed> $task     The serialised task, with its answers.
+	 * @param array<string, mixed> $metadata The task metadata.
 	 *
 	 * @return array<string, mixed> The trailing fields of the run.
 	 *
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
 	 */
-	private function runFindings(array $task, array $responses, array $metadata): array {
+	private function runFindings(array $task, array $metadata): array {
+		$responses = $this->arrayOrEmpty(value: ($task['responses'] ?? []));
 		return [
 			'failedItems' => $this->answers->failedCount(answers: $responses),
 			'items' => array_map(fn (array $answer): array => $this->answers->forPanel(answer: $answer), array_values(array_filter($responses, 'is_array'))),
@@ -344,26 +343,26 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
-		$template = $this->templateById(objects: $objects, register: $register, templateId: $templateId);
+		$store = [$objects, $register];
+		$template = $this->templateById(store: $store, templateId: $templateId);
 		if ($template !== null) {
 			return $template;
 		}
 
-		return $this->templateFoldedFrom(objects: $objects, register: $register, templateId: $templateId);
+		return $this->templateFoldedFrom(store: $store, templateId: $templateId);
 	}//end template()
 
 	/**
 	 * The template with this uuid, or null when it is not a template uuid.
 	 *
-	 * @param object $objects    OpenRegister's object service.
-	 * @param string $register   The register id.
-	 * @param string $templateId The template uuid, or an older checklist uuid.
+	 * @param array{0: object, 1: string} $store      OpenRegister's object service and the register id.
+	 * @param string                      $templateId The template uuid, or an older checklist uuid.
 	 *
 	 * @return array<string, mixed>|null The template.
 	 */
-	private function templateById(object $objects, string $register, string $templateId): ?array {
+	private function templateById(array $store, string $templateId): ?array {
 		try {
-			$template = $this->findObjectAsArray(objectService: $objects, register: $register, schema: InspectionTemplateMapper::SCHEMA, id: $templateId);
+			$template = $this->findObjectAsArray(objectService: $store[0], register: $store[1], schema: InspectionTemplateMapper::SCHEMA, id: $templateId);
 		} catch (Throwable) {
 			// Not a template uuid; the older-checklist lookup below decides.
 			$template = null;
@@ -375,19 +374,18 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	/**
 	 * The template folded from an older checklist with this uuid.
 	 *
-	 * @param object $objects    OpenRegister's object service.
-	 * @param string $register   The register id.
-	 * @param string $templateId The older checklist uuid.
+	 * @param array{0: object, 1: string} $store      OpenRegister's object service and the register id.
+	 * @param string                      $templateId The older checklist uuid.
 	 *
 	 * @return array<string, mixed> The template.
 	 *
 	 * @throws RuntimeException When nothing answers to it.
 	 */
-	private function templateFoldedFrom(object $objects, string $register, string $templateId): array {
+	private function templateFoldedFrom(array $store, string $templateId): array {
 		foreach (['inspectieChecklist/', 'inspectionChecklist/'] as $prefix) {
 			$found = $this->searchObjectsAsArrays(
-				objectService: $objects,
-				register: $register,
+				objectService: $store[0],
+				register: $store[1],
 				schema: InspectionTemplateMapper::SCHEMA,
 				filters: ['legacyRef' => $prefix . $templateId, '_limit' => 1]
 			);

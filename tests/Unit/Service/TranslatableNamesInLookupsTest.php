@@ -136,8 +136,7 @@ class TranslatableNamesInLookupsTest extends TestCase {
 		$matches = (new ReflectionMethod($rules, 'caseTypeListsDecisionType'))->invoke(
 			$rules,
 			'ct-1',
-			'00000000-0000-4000-a000-000000000099',
-			['name' => ['nl' => 'Omgevingsvergunning verleend']]
+			['uuid' => '00000000-0000-4000-a000-000000000099', 'data' => ['name' => ['nl' => 'Omgevingsvergunning verleend']]]
 		);
 
 		self::assertTrue($matches);

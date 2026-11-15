@@ -325,6 +325,25 @@ class AssistantController extends Controller {
 	 * @return JSONResponse
 	 */
 	private function mapFailure(int $statusCode, string $message, ?string $errorCode): JSONResponse {
+		$this->logFailure(statusCode: $statusCode, message: $message);
+
+		$data = ['error' => $this->errorTypeOf(statusCode: $statusCode), 'message' => $message];
+		if ($errorCode !== null) {
+			$data['errorCode'] = $errorCode;
+		}
+
+		return new JSONResponse($data, $statusCode);
+	}//end mapFailure()
+
+	/**
+	 * Log a failure at the level its status deserves: a client 4xx as a warning, a 5xx as an error.
+	 *
+	 * @param int    $statusCode The HTTP status.
+	 * @param string $message    The detail message.
+	 *
+	 * @return void
+	 */
+	private function logFailure(int $statusCode, string $message): void {
 		$level = 'error';
 		if ($statusCode < 500) {
 			// Client 4xx is expected user/caller error, not a server fault.
@@ -336,8 +355,17 @@ class AssistantController extends Controller {
 			'[AssistantController] Message not processed: ' . $message,
 			['statusCode' => $statusCode]
 		);
+	}//end logFailure()
 
-		$errorType = match ($statusCode) {
+	/**
+	 * The translated error a status answers with.
+	 *
+	 * @param int $statusCode The HTTP status.
+	 *
+	 * @return string The error.
+	 */
+	private function errorTypeOf(int $statusCode): string {
+		return match ($statusCode) {
 			400 => $this->l10n->t('Invalid request'),
 			401 => $this->l10n->t('Authentication required'),
 			403 => $this->l10n->t('Access denied'),
@@ -345,12 +373,5 @@ class AssistantController extends Controller {
 			422 => $this->l10n->t('Message blocked by the organisation\'s guardrail policy'),
 			default => $this->l10n->t('The case assistant is currently unavailable'),
 		};
-
-		$data = ['error' => $errorType, 'message' => $message];
-		if ($errorCode !== null) {
-			$data['errorCode'] = $errorCode;
-		}
-
-		return new JSONResponse($data, $statusCode);
-	}//end mapFailure()
+	}//end errorTypeOf()
 }//end class

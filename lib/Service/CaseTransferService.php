@@ -106,20 +106,31 @@ class CaseTransferService implements CaseTransferServiceInterface {
 		string $initiatedBy = '',
 		?string $remoteCloudId = null,
 	): array {
+		return $this->initiate(
+			request: [
+				'caseId' => $caseId,
+				'sourceOrganization' => $sourceOrganization,
+				'targetOrganization' => $targetOrganization,
+				'reason' => $reason,
+				'requestedDate' => $requestedDate,
+				'initiatedBy' => $initiatedBy,
+				'remoteCloudId' => $remoteCloudId,
+			]
+		);
+	}//end initiateTransfer()
+
+	/**
+	 * Initiate one transfer, once OpenRegister is there and consent allows the hand-off.
+	 *
+	 * @param array<string, mixed> $request The transfer being initiated.
+	 *
+	 * @return array The created (or existing, when idempotent) transfer request data
+	 */
+	private function initiate(array $request): array {
 		$objectService = $this->gateway->objectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];
 		}
-
-		$request = [
-			'caseId' => $caseId,
-			'sourceOrganization' => $sourceOrganization,
-			'targetOrganization' => $targetOrganization,
-			'reason' => $reason,
-			'requestedDate' => $requestedDate,
-			'initiatedBy' => $initiatedBy,
-			'remoteCloudId' => $remoteCloudId,
-		];
 
 		// 🔴 THE CONSENT IS A PRECONDITION, NOT A WARNING (D-5). It runs before
 		// the idempotency lookup on purpose: a refused hand-off must not leave
@@ -131,7 +142,7 @@ class CaseTransferService implements CaseTransferServiceInterface {
 		}
 
 		return $this->createTransfer(store: $this->store(objectService: $objectService), request: $request);
-	}//end initiateTransfer()
+	}//end initiate()
 
 	/**
 	 * Why consent stops this hand-off, or null when it may go ahead.
@@ -638,19 +649,31 @@ class CaseTransferService implements CaseTransferServiceInterface {
 			doorzending: $doorzending,
 		);
 
-		// One door, one chain. The internal handover moves the case on
-		// initiate — the receiving team owns it before anybody accepts — so
-		// the holding opens here rather than on the answer.
-		$this->custody->move(
-			caseId: $caseId,
-			organisationUnit: $targetTeam,
-			handler: '',
-			reason: $reason,
-			movedBy: $initiatedBy,
-		);
+		$this->openTeamHolding(handover: ['caseId' => $caseId, 'targetTeam' => $targetTeam, 'reason' => $reason, 'initiatedBy' => $initiatedBy]);
 
 		return $record;
 	}//end handToTeam()
+
+	/**
+	 * Open the receiving team's holding of the case.
+	 *
+	 * One door, one chain. The internal handover moves the case on
+	 * initiate — the receiving team owns it before anybody accepts — so
+	 * the holding opens here rather than on the answer.
+	 *
+	 * @param array<string, string> $handover The case, the receiving team, why it moves and who handed it on.
+	 *
+	 * @return void
+	 */
+	private function openTeamHolding(array $handover): void {
+		$this->custody->move(
+			caseId: $handover['caseId'],
+			organisationUnit: $handover['targetTeam'],
+			handler: '',
+			reason: $handover['reason'],
+			movedBy: $handover['initiatedBy'],
+		);
+	}//end openTeamHolding()
 
 	/**
 	 * Accept a handover on the receiving team's behalf.

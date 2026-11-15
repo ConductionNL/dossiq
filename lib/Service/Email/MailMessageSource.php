@@ -203,7 +203,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 	 */
 	public function listMessagesSince(int $accountId, int $sinceId, int $limit): array {
 		try {
-			$result = $this->messagesSinceQuery(accountId: $accountId, sinceId: $sinceId, limit: $limit)->executeQuery();
+			$result = $this->messagesSinceQuery(accountId: $accountId, page: ['sinceId' => $sinceId, 'limit' => $limit])->executeQuery();
 			$messages = $this->messageRows(result: $result);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: listing Mail messages failed: ' . $e->getMessage());
@@ -217,14 +217,14 @@ class MailMessageSource implements MailMessageSourceInterface {
 	 * The query for an account's messages after a cursor, oldest first, capped.
 	 *
 	 * @param int $accountId The Mail account id.
-	 * @param int $sinceId   The last processed message id.
-	 * @param int $limit     The most messages to return.
+	 * @param array{sinceId: int, limit: int} $page The last processed message id and the most messages to return.
 	 *
 	 * @return IQueryBuilder The query.
 	 *
 	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
-	private function messagesSinceQuery(int $accountId, int $sinceId, int $limit): IQueryBuilder {
+	private function messagesSinceQuery(int $accountId, array $page): IQueryBuilder {
+		['sinceId' => $sinceId, 'limit' => $limit] = $page;
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('m.id', 'm.uid', 'm.subject', 'm.preview_text')
 			->from('mail_messages', 'm')
@@ -398,7 +398,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 		}
 
 		try {
-			$qb = $this->intakeFolderQuery(accountId: $accountId, mailbox: $mailbox, sinceId: $sinceId, limit: $limit);
+			$qb = $this->intakeFolderQuery(folder: ['accountId' => $accountId, 'mailbox' => $mailbox], page: ['sinceId' => $sinceId, 'limit' => $limit]);
 
 			$result = $qb->executeQuery();
 			$messages = $this->messagesOf(result: $result, mailbox: $mailbox);
@@ -415,16 +415,16 @@ class MailMessageSource implements MailMessageSourceInterface {
 	/**
 	 * The query for the messages after an id in one folder of one account, oldest first.
 	 *
-	 * @param int    $accountId The Mail account id.
-	 * @param string $mailbox   The folder name.
-	 * @param int    $sinceId   The last processed message id.
-	 * @param int    $limit     The most messages to return.
+	 * @param array{accountId: int, mailbox: string} $folder The Mail account id and the folder name.
+	 * @param array{sinceId: int, limit: int}        $page   The last processed message id and the most messages to return.
 	 *
 	 * @return IQueryBuilder The query.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function intakeFolderQuery(int $accountId, string $mailbox, int $sinceId, int $limit): IQueryBuilder {
+	private function intakeFolderQuery(array $folder, array $page): IQueryBuilder {
+		['accountId' => $accountId, 'mailbox' => $mailbox] = $folder;
+		['sinceId' => $sinceId, 'limit' => $limit] = $page;
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('m.id', 'm.uid', 'm.message_id', 'm.subject', 'm.sent_at', 'mb.name')
 			->from('mail_messages', 'm')

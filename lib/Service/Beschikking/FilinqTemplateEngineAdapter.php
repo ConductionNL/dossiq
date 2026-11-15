@@ -148,10 +148,10 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		$engine = $this->engines->engineFor(caseId: $caseId, templateId: $templateId);
 
 		try {
-			$options = $this->renderOptions(context: $context, user: $user, caseId: $caseId, engine: $engine);
+			$options = $this->renderOptions(context: $context, job: ['user' => $user, 'caseId' => $caseId, 'engine' => $engine]);
 			$result = $documentService->generateDocument($templateId, $this->buildDataRefs(caseId: $caseId), $options);
 		} catch (Throwable $e) {
-			throw $this->renderFailure(engine: $engine, templateId: $templateId, e: $e);
+			throw $this->renderFailure(job: ['engine' => $engine, 'templateId' => $templateId], e: $e);
 		}
 
 		return $this->toComposition(result: (array)$result, templateId: $templateId);
@@ -203,23 +203,22 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * The options filinq's generateDocument() receives for a beschikking render.
 	 *
 	 * @param array<string, mixed> $context The zaakdata + beschikking context.
-	 * @param IUser $user The acting user.
-	 * @param string $caseId The case id.
-	 * @param string $engine The engine the case type names for the template.
+	 * @param array{user: IUser, caseId: string, engine: string} $job The acting user, the case id and the engine
+	 *                                                                the case type names for the template.
 	 *
 	 * @return array<string, mixed> The render options.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	private function renderOptions(array $context, IUser $user, string $caseId, string $engine): array {
+	private function renderOptions(array $context, array $job): array {
 		return [
 			'format' => 'pdf',
 			'adHocData' => $context,
-			'userId' => $user->getUID(),
-			'caseId' => $caseId,
-			'filename' => $this->buildFilename(caseId: $caseId),
+			'userId' => $job['user']->getUID(),
+			'caseId' => $job['caseId'],
+			'filename' => $this->buildFilename(caseId: $job['caseId']),
 			'output' => ['mode' => 'both'],
-			'engine' => $engine,
+			'engine' => $job['engine'],
 		];
 	}//end renderOptions()
 
@@ -228,8 +227,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 *
 	 * A vendor render names the vendor; a filinq render carries filinq's message.
 	 *
-	 * @param string $engine The engine the render went to.
-	 * @param string $templateId The filinq template UUID.
+	 * @param array{engine: string, templateId: string} $job The engine the render went to and the filinq template UUID.
 	 * @param Throwable $e The render failure.
 	 *
 	 * @return RuntimeException The exception to throw.
@@ -237,7 +235,8 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
 	 */
-	private function renderFailure(string $engine, string $templateId, Throwable $e): RuntimeException {
+	private function renderFailure(array $job, Throwable $e): RuntimeException {
+		['engine' => $engine, 'templateId' => $templateId] = $job;
 		$vendor = DecisionTemplateEngine::vendorSlugOf(engine: $engine);
 		if ($vendor !== null) {
 			$this->logger->error(
@@ -308,7 +307,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 
 		return [
 			'templateId' => $templateId,
-			'version' => $this->effectiveVersion(templateId: $templateId, effectiveDate: $effectiveDate, template: $template),
+			'version' => $this->effectiveVersion(asked: ['templateId' => $templateId, 'effectiveDate' => $effectiveDate], template: $template),
 			'effectiveDate' => $effectiveDate,
 		];
 	}//end resolveVersion()
@@ -340,8 +339,8 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	/**
 	 * The version in force on the date, else the template's own version.
 	 *
-	 * @param string $templateId The filinq template UUID.
-	 * @param string $effectiveDate The ISO date the beschikking is effective.
+	 * @param array{templateId: string, effectiveDate: string} $asked The filinq template UUID and the ISO date the
+	 *                                                               beschikking is effective.
 	 * @param array<string, mixed> $template The template as filinq returns it.
 	 *
 	 * @return string The resolved version.
@@ -350,7 +349,8 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	private function effectiveVersion(string $templateId, string $effectiveDate, array $template): string {
+	private function effectiveVersion(array $asked, array $template): string {
+		['templateId' => $templateId, 'effectiveDate' => $effectiveDate] = $asked;
 		$version = $this->versionInForce(templateId: $templateId, effectiveDate: $effectiveDate);
 		if ($version === null) {
 			$version = $this->templateOwnVersion(template: $template);

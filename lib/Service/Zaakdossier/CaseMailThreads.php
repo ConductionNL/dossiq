@@ -107,10 +107,9 @@ class CaseMailThreads {
 			return 'mail-' . substr(hash('sha256', 'id:' . $headers->rootId()), 0, 32);
 		}
 
-		$threadId = array_shift($linked);
-		$this->join(collected: $collected, from: $linked, into: $threadId);
+		$this->join(collected: $collected, linked: $linked);
 
-		return $threadId;
+		return $linked[0];
 	}//end threadId()
 
 	/**
@@ -150,18 +149,21 @@ class CaseMailThreads {
 	}//end linkedThreads()
 
 	/**
-	 * Move the collected mails of other conversations into one.
+	 * Move the collected mails of the other linked conversations into the first.
 	 *
 	 * Only a mail whose provenance sits on its own record is moved; a document
 	 * linked from another case keeps its join as it is.
 	 *
 	 * @param array<string, array{threadId: string, messageId: string, parentIds: list<string>, sentAt: string}> $collected The case's collected mails.
-	 * @param list<string>                                                                                      $from      The conversations to join.
-	 * @param string                                                                                            $into      The conversation they join.
+	 * @param non-empty-list<string>                                                                            $linked    The linked conversations:
+	 *                                                                                                                     the one they join, then the
+	 *                                                                                                                     ones to join into it.
 	 *
 	 * @return void
 	 */
-	private function join(array $collected, array $from, string $into): void {
+	private function join(array $collected, array $linked): void {
+		$into = $linked[0];
+		$from = array_slice($linked, 1);
 		if ($from === []) {
 			return;
 		}

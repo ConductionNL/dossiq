@@ -365,8 +365,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 
 		return $this->isCaseTypeRelatedToDecisionType(
 			caseTypeUuid: $this->extractUuid(url: $caseCaseType),
-			btUuid: (string)$this->extractUuid(url: $decisionTypeUrl),
-			btData: $btData
+			decisionType: ['uuid' => (string)$this->extractUuid(url: $decisionTypeUrl), 'data' => $btData]
 		);
 	}//end relationHolds()
 
@@ -410,12 +409,12 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 * Brc-007: whether the besluittype lists the zaaktype, or else the zaaktype lists the besluittype.
 	 *
 	 * @param string|null $caseTypeUuid The zaak's zaaktype uuid
-	 * @param string $btUuid The besluittype uuid
-	 * @param array $btData The besluittype
+	 * @param array{uuid: string, data: array} $decisionType The besluittype uuid and the besluittype
 	 *
 	 * @return bool True when either side lists the other
 	 */
-	private function isCaseTypeRelatedToDecisionType(?string $caseTypeUuid, string $btUuid, array $btData): bool {
+	private function isCaseTypeRelatedToDecisionType(?string $caseTypeUuid, array $decisionType): bool {
+		$btData = $decisionType['data'];
 		// Check direction 1: BT.caseTypes contains the zaaktype UUID.
 		foreach ($this->decodeList(value: $btData['caseTypes'] ?? []) as $ct) {
 			$ctUuid = $this->extractUuid(url: (string)$ct);
@@ -425,19 +424,19 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}
 
 		// Check direction 2: ZT.decisionTypes contains the BT omschrijving or UUID.
-		return $this->caseTypeListsDecisionType(caseTypeUuid: $caseTypeUuid, btUuid: $btUuid, btData: $btData);
+		return $this->caseTypeListsDecisionType(caseTypeUuid: $caseTypeUuid, decisionType: $decisionType);
 	}//end isCaseTypeRelatedToDecisionType()
 
 	/**
 	 * Brc-007, direction 2: whether the zaaktype lists the besluittype by uuid or omschrijving.
 	 *
 	 * @param string|null $caseTypeUuid The zaak's zaaktype uuid
-	 * @param string $btUuid The besluittype uuid
-	 * @param array $btData The besluittype
+	 * @param array{uuid: string, data: array} $decisionType The besluittype uuid and the besluittype
 	 *
 	 * @return bool True when the zaaktype lists the besluittype
 	 */
-	private function caseTypeListsDecisionType(?string $caseTypeUuid, string $btUuid, array $btData): bool {
+	private function caseTypeListsDecisionType(?string $caseTypeUuid, array $decisionType): bool {
+		['uuid' => $btUuid, 'data' => $btData] = $decisionType;
 		$ztData = $this->findBySchemaKey(uuid: $caseTypeUuid, schemaKey: 'case_type_schema');
 		if ($ztData === null) {
 			return false;

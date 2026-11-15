@@ -167,32 +167,30 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 	 */
 	private function mapTargets(array $target, IOutput $output): void {
 		foreach (self::TARGET_CONFIG_KEYS as $key) {
-			$schema = (string)$this->settingsService->getConfigValue($key);
-			if ($schema === '') {
+			$mapping = $this->mappingFor(target: $target, key: $key);
+			if ($mapping->schema === '') {
 				continue;
 			}
 
-			$mapping = $this->mappingFor(target: $target, key: $key, schema: $schema);
 			$mapping->tally = $this->tallyAsSystem(mapping: $mapping);
 			$this->reportTally(output: $output, mapping: $mapping);
 		}
 	}//end mapTargets()
 
 	/**
-	 * A fresh mapping of one target schema.
+	 * A fresh mapping of one target schema; its schema is '' when the key configures none.
 	 *
 	 * @param array{0: object, 1: string, 2: array<int, string>} $target The object service, register and settled codes.
 	 * @param string                                             $key    The schema's config key.
-	 * @param string                                             $schema The schema.
 	 *
 	 * @return RefusalGroundMapping The mapping.
 	 */
-	private function mappingFor(array $target, string $key, string $schema): RefusalGroundMapping {
+	private function mappingFor(array $target, string $key): RefusalGroundMapping {
 		[$objectService, $register, $settled] = $target;
 
 		$mapping = new RefusalGroundMapping(objectService: $objectService, register: $register);
 		$mapping->configKey = $key;
-		$mapping->schema = $schema;
+		$mapping->schema = (string)$this->settingsService->getConfigValue($key);
 		$mapping->settled = $settled;
 
 		return $mapping;

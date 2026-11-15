@@ -352,7 +352,7 @@ class MilestoneService implements MilestoneServiceInterface {
 			return false;
 		}
 
-		$this->deleteRecords(objectService: $objectService, register: $register, schema: $schema, records: $records);
+		$this->deleteRecords(store: [$objectService, $register, $schema], records: $records);
 
 		$message = 'Milestone reversed: ' . $definitionId . ' on case ' . $caseId . ' by ' . $userId . ' reason: ' . $reason;
 		$this->logger->info($message, ['app' => AppIdentity::APP_ID]);
@@ -379,14 +379,13 @@ class MilestoneService implements MilestoneServiceInterface {
 	/**
 	 * Delete the given milestone records.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param string $register The register id
-	 * @param string $schema The milestone record schema id
-	 * @param array<int, array<string, mixed>> $records The milestone records to delete
+	 * @param array{0: object, 1: string, 2: string} $store   The OpenRegister ObjectService, the register id and the milestone record schema id
+	 * @param array<int, array<string, mixed>>      $records The milestone records to delete
 	 *
 	 * @return void
 	 */
-	private function deleteRecords(object $objectService, string $register, string $schema, array $records): void {
+	private function deleteRecords(array $store, array $records): void {
+		[$objectService, $register, $schema] = $store;
 		// Delete the milestone record.
 		foreach ($records as $record) {
 			$recordId = $record['id'] ?? $record['uuid'] ?? '';

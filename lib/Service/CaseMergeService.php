@@ -264,9 +264,13 @@ class CaseMergeService implements CaseMergeServiceInterface {
 	public function requestMerge(string $mergedId, string $survivorId, string $reason, string $actor): array {
 		$merger = $this->settingsService->getOpenRegisterClass(class: self::MERGE_SERVICE_CLASS);
 
-		$refusal = $this->mergeRefusal(mergedId: $mergedId, survivorId: $survivorId, merger: $merger);
+		$refusal = $this->mergeRefusal(mergedId: $mergedId, survivorId: $survivorId);
 		if ($refusal !== '') {
 			return ['refused' => $refusal];
+		}
+
+		if ($this->canExecuteMerge(merger: $merger) === false) {
+			return ['refused' => 'platform-unavailable'];
 		}
 
 		try {
@@ -289,15 +293,16 @@ class CaseMergeService implements CaseMergeServiceInterface {
 	 * Every refusal is a slug rather than a sentence, because the caller turns
 	 * it into the one a handler reads and the timeline stores the slug.
 	 *
+	 * The platform's merge service is checked by the caller, after these.
+	 *
 	 * @param string $mergedId   The case being merged away.
 	 * @param string $survivorId The case it would merge into.
-	 * @param mixed  $merger     OpenRegister's merge service, or null when it is absent.
 	 *
 	 * @return string The refusal slug, or ''.
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
-	private function mergeRefusal(string $mergedId, string $survivorId, mixed $merger): string {
+	private function mergeRefusal(string $mergedId, string $survivorId): string {
 		if ($mergedId === '' || $survivorId === '' || $mergedId === $survivorId) {
 			return 'same-case';
 		}
@@ -315,10 +320,6 @@ class CaseMergeService implements CaseMergeServiceInterface {
 
 		if ($this->store->referencedId(value: ($survivor['mergedInto'] ?? null)) !== '') {
 			return 'survivor-already-merged';
-		}
-
-		if ($this->canExecuteMerge(merger: $merger) === false) {
-			return 'platform-unavailable';
 		}
 
 		return '';

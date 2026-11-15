@@ -117,7 +117,7 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 			return [];
 		}
 
-		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: $caseTypeId);
+		return $this->search(schemaKey: $schemaKey, filter: ['caseType' => $caseTypeId]);
 	}//end rowsOfType()
 
 	/**
@@ -200,8 +200,7 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 
 		return $this->search(
 			schemaKey: 'case_type_schema',
-			filterKey: 'identifier',
-			filterValue: $identifier
+			filter: ['identifier' => $identifier]
 		);
 	}//end versionsWithIdentifier()
 
@@ -271,7 +270,7 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 	 * @spec openspec/specs/property-definition-management/spec.md
 	 */
 	public function sharedRows(string $schemaKey): array {
-		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: 'IS NULL');
+		return $this->search(schemaKey: $schemaKey, filter: ['caseType' => 'IS NULL']);
 	}//end sharedRows()
 
 	/**
@@ -331,13 +330,13 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 	 * filter and would read `filter[identifier]` as the empty set, which
 	 * presents as a case type with no versions rather than as an error.
 	 *
-	 * @param string $schemaKey   The settings key naming the schema.
-	 * @param string $filterKey   The property to narrow on.
-	 * @param string $filterValue The value, or `IS NULL` for rows carrying none.
+	 * @param string                $schemaKey The settings key naming the schema.
+	 * @param array<string, string> $filter    The one property to narrow on, with its value
+	 *                                         or `IS NULL` for rows carrying none.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function search(string $schemaKey, string $filterKey, string $filterValue): array {
+	private function search(string $schemaKey, array $filter): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
@@ -348,11 +347,7 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 
 		try {
 			$found = $objectService->searchObjects(
-				[
-					'@self' => ['register' => $register, 'schema' => $schema],
-					$filterKey => $filterValue,
-					'_limit' => 200,
-				]
+				['@self' => ['register' => $register, 'schema' => $schema]] + $filter + ['_limit' => 200]
 			);
 		} catch (Throwable $e) {
 			return [];

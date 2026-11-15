@@ -150,7 +150,7 @@ class PortalCaseMessages {
 
 		$messages = $this->messagesOf(scope: $scope, messageSchema: $messageSchema);
 
-		return $this->residentEntries(messages: $messages, caseId: $caseId, resident: $resident);
+		return $this->residentEntries(messages: $messages, between: ['caseId' => $caseId, 'resident' => $resident]);
 	}//end entries()
 
 	/**
@@ -173,13 +173,13 @@ class PortalCaseMessages {
 	/**
 	 * The case's messages between the resident and the handler, newest first, in the inbox's words.
 	 *
-	 * @param array<int, array<string, mixed>> $messages The stored messages.
-	 * @param string $caseId The case.
-	 * @param string $resident The case's resident.
+	 * @param array<int, array<string, mixed>>       $messages The stored messages.
+	 * @param array{caseId: string, resident: string} $between  The case, and the case's resident.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function residentEntries(array $messages, string $caseId, string $resident): array {
+	private function residentEntries(array $messages, array $between): array {
+		['caseId' => $caseId, 'resident' => $resident] = $between;
 		$entries = [];
 		foreach ($messages as $message) {
 			if (($message['caseId'] ?? null) !== $caseId || $this->isTheResidents(message: $message, resident: $resident) === false) {

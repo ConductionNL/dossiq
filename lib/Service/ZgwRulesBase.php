@@ -51,6 +51,16 @@ abstract class ZgwRulesBase {
 	use SearchesObjects;
 
 	/**
+	 * The sentence of each URL error, around the field name.
+	 *
+	 * @var array<string, string>
+	 */
+	private const URL_ERRORS = [
+		'bad-url' => 'De %s URL is ongeldig.',
+		'invalid-resource' => 'De %s URL wijst niet naar een geldig object.',
+	];
+
+	/**
 	 * Ordered vertrouwelijkheidaanduiding severity levels (zrc-006).
 	 *
 	 * Used for consumer authorization filtering: a zaak's level must be
@@ -271,8 +281,20 @@ abstract class ZgwRulesBase {
 			return $this->badTypeUrlError(fieldName: $fieldName);
 		}
 
+		return $this->storedTypeError(type: ['uuid' => $extractedUuid, 'schemaKey' => $schemaKey], fieldName: $fieldName);
+	}//end validateTypeUrl()
+
+	/**
+	 * The error for a type that the store does not hold or holds as a draft, or null when it is published.
+	 *
+	 * @param array{uuid: string, schemaKey: string} $type      The type's UUID and the settings key for its schema
+	 * @param string                                 $fieldName The field name for error reporting
+	 *
+	 * @return array|null Validation error, or null if valid
+	 */
+	private function storedTypeError(array $type, string $fieldName): ?array {
 		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
+		$schema = $this->settingsService->getConfigValue(key: $type['schemaKey']);
 
 		if (empty($register) === true || empty($schema) === true) {
 			return null;
@@ -280,7 +302,7 @@ abstract class ZgwRulesBase {
 
 		try {
 			$typeObject = $this->objectService->find(
-				id: $extractedUuid,
+				id: $type['uuid'],
 				register: $register,
 				schema: $schema
 			);
@@ -289,7 +311,7 @@ abstract class ZgwRulesBase {
 		}
 
 		return $this->draftTypeError(typeObject: $typeObject, fieldName: $fieldName);
-	}//end validateTypeUrl()
+	}//end storedTypeError()
 
 	/**
 	 * The error for a type URL that is malformed or names no type.
@@ -443,17 +465,13 @@ abstract class ZgwRulesBase {
 	 */
 	protected function validateExternalUrl(string $url, string $fieldName): ?array {
 		if ($this->isValidUrl(url: $url) === false) {
-			return $this->urlError(fieldName: $fieldName, code: 'bad-url', message: "De {$fieldName} URL is ongeldig.");
+			return $this->urlError(fieldName: $fieldName, code: 'bad-url');
 		}
 
 		$lastSegment = $this->lastPathSegment(url: $url);
 
 		if ($this->fieldValidator->isUuid($lastSegment) === false) {
-			return $this->urlError(
-				fieldName: $fieldName,
-				code: 'invalid-resource',
-				message: "De {$fieldName} URL wijst niet naar een geldig object."
-			);
+			return $this->urlError(fieldName: $fieldName, code: 'invalid-resource');
 		}
 
 		return null;
@@ -463,14 +481,14 @@ abstract class ZgwRulesBase {
 	 * The validation error for a URL field, with the same sentence as detail and reason.
 	 *
 	 * @param string $fieldName The field name for error reporting
-	 * @param string $code The error code
-	 * @param string $message The sentence
+	 * @param string $code The error code, one of URL_ERRORS' keys
 	 *
 	 * @return array Validation error
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function urlError(string $fieldName, string $code, string $message): array {
+	private function urlError(string $fieldName, string $code): array {
+		$message = sprintf(self::URL_ERRORS[$code], $fieldName);
 		return $this->error(
 			status: 400,
 			detail: $message,
@@ -741,6 +759,17 @@ abstract class ZgwRulesBase {
 			return null;
 		}
 
+		return $this->notUniqueError(errorField: $errorField);
+	}//end checkFieldUniqueness()
+
+	/**
+	 * The validation error for a field combination that already exists.
+	 *
+	 * @param string $errorField Field name for error reporting
+	 *
+	 * @return array Validation error
+	 */
+	private function notUniqueError(string $errorField): array {
 		return $this->error(
 			status: 400,
 			detail: 'De combinatie is niet uniek.',
@@ -752,5 +781,5 @@ abstract class ZgwRulesBase {
 				),
 			]
 		);
-	}//end checkFieldUniqueness()
+	}//end notUniqueError()
 }//end class

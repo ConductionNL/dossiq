@@ -159,6 +159,20 @@ class ChannelIntake implements ChannelIntakeInterface {
 			externalId: $externalId
 		);
 
+		return $this->openOnce(routed: $routed);
+	}//end caseFor()
+
+	/**
+	 * Open the case of a message once: a message that cannot be recognised is refused, a second delivery answers the first case.
+	 *
+	 * @param RoutedMessage $routed The message, the rule's mapped payload, its channel and its own id.
+	 *
+	 * @return string The case id, or '' when none was opened.
+	 */
+	private function openOnce(RoutedMessage $routed): string {
+		$channel = $routed->channel;
+		$externalId = $routed->externalId;
+
 		// A message with no channel or no id of its own cannot be recognised
 		// on a second delivery. Opening a case for it means accepting that a
 		// retry opens another one, so it is refused instead, in writing.
@@ -177,7 +191,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 		}
 
 		return $this->openCase(routed: $routed);
-	}//end caseFor()
+	}//end openOnce()
 
 	/**
 	 * The answer for a message this intake cannot or need not open a case for.
@@ -277,7 +291,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if ($this->registerMissing(objectService: $objectService, register: $register, caseSchema: $caseSchema, caseTypeId: $caseTypeId) === true) {
+		if ($this->registerMissing(store: [$objectService, $register, $caseSchema], caseTypeId: $caseTypeId) === true) {
 			return '';
 		}
 
@@ -306,16 +320,16 @@ class ChannelIntake implements ChannelIntakeInterface {
 	/**
 	 * Whether the register is unconfigured, logging a warning when it is.
 	 *
-	 * @param object|null $objectService OpenRegister's ObjectService, or null.
-	 * @param string      $register      The configured register.
-	 * @param string      $caseSchema    The configured case schema.
-	 * @param string      $caseTypeId    The case type, for the log line.
+	 * @param array{0: object|null, 1: string, 2: string} $store      OpenRegister's ObjectService (or null), the
+	 *                                                         configured register and the configured case schema.
+	 * @param string                                       $caseTypeId The case type, for the log line.
 	 *
 	 * @return bool True when no case can be written.
 	 *
 	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
-	private function registerMissing(?object $objectService, string $register, string $caseSchema, string $caseTypeId): bool {
+	private function registerMissing(array $store, string $caseTypeId): bool {
+		[$objectService, $register, $caseSchema] = $store;
 		if ($objectService === null || $register === '' || $caseSchema === '') {
 			$this->logger->warning(
 				'ChannelIntake: the register is not configured, so a routed message opened no case',
