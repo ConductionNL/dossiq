@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Support\MapsZgwRows;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -43,6 +44,8 @@ use OCP\IRequest;
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class ZtcPublishController extends ZgwController {
+	use MapsZgwRows;
+
 	/**
 	 * The ZGW API identifier for the Catalogi register.
 	 *
@@ -168,12 +171,7 @@ class ZtcPublishController extends ZgwController {
 	 * @return JSONResponse
 	 */
 	private function publishFailure(\Throwable $e): JSONResponse {
-		$this->zgwService->getLogger()->error(
-			'ZTC publish error: ' . $e->getMessage(),
-			['exception' => $e]
-		);
-
-		return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
+		return $this->loggedFailure(logPrefix: 'ZTC publish error: ', e: $e);
 	}//end publishFailure()
 
 	/**

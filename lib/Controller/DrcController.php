@@ -2377,15 +2377,7 @@ class DrcController extends ZgwController {
 		try {
 			return $this->updateEio(run: $run);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'DRC update error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->loggedFailure(logPrefix: 'DRC update error: ', e: $e);
 		}
 	}//end updateEioOrRefuse()
 
