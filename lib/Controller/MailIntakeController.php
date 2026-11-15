@@ -314,22 +314,34 @@ class MailIntakeController extends Controller {
 			actorId: $this->callerId(),
 			results: $this->resultsOf(entry: $entry)
 		);
+		return $this->bounced(result: $result, forward: ['entryId' => $entryId, 'address' => $address, 'reason' => $reason]);
+	}//end bounce()
+
+	/**
+	 * Log a sent bounce on its entry and answer it, or answer that it failed.
+	 *
+	 * @param array<string, mixed>                                $result  What the bounce answered.
+	 * @param array{entryId: string, address: string, reason: string} $forward The entry, the address it went to and why.
+	 *
+	 * @return JSONResponse Whether it was sent.
+	 */
+	private function bounced(array $result, array $forward): JSONResponse {
 		if ($result['sent'] === false) {
 			return new JSONResponse(['message' => 'bounce_failed'], Http::STATUS_BAD_REQUEST);
 		}
 
 		$this->log->amend(
-			entryId: $entryId,
+			entryId: $forward['entryId'],
 			changes: [
 				'outcome' => IntakeLogInterface::OUTCOME_FORWARDED,
-				'forwardedTo' => InboundMessage::addressIn(value: $address),
+				'forwardedTo' => InboundMessage::addressIn(value: $forward['address']),
 				'forwardedBy' => $this->callerId(),
-				'forwardedReason' => $reason,
+				'forwardedReason' => $forward['reason'],
 			]
 		);
 
 		return new JSONResponse(['sent' => true, 'entryId' => $result['entryId']]);
-	}//end bounce()
+	}//end bounced()
 
 	/**
 	 * File a message in another folder of the same account.
@@ -356,21 +368,33 @@ class MailIntakeController extends Controller {
 			actorId: $this->callerId(),
 			results: $this->resultsOf(entry: $entry)
 		);
+		return $this->moved(result: $result, filed: ['entryId' => $entryId, 'target' => $target]);
+	}//end move()
+
+	/**
+	 * Log a confirmed move on its entry and answer it, or answer that it failed.
+	 *
+	 * @param array<string, mixed>                   $result What the move answered.
+	 * @param array{entryId: string, target: string} $filed  The entry, and the folder it went to.
+	 *
+	 * @return JSONResponse Whether the mail server confirmed it.
+	 */
+	private function moved(array $result, array $filed): JSONResponse {
 		if ($result['moved'] === false) {
 			return new JSONResponse(['message' => 'move_failed'], Http::STATUS_BAD_REQUEST);
 		}
 
 		$this->log->amend(
-			entryId: $entryId,
+			entryId: $filed['entryId'],
 			changes: [
 				'outcome' => IntakeLogInterface::OUTCOME_MOVED,
-				'movedTo' => $target,
+				'movedTo' => $filed['target'],
 				'movedBy' => $this->callerId(),
 			]
 		);
 
 		return new JSONResponse(['moved' => true, 'entryId' => $result['entryId']]);
-	}//end move()
+	}//end moved()
 
 	/**
 	 * File a logged message on a case a handler picked.
