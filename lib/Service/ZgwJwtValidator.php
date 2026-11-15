@@ -241,14 +241,9 @@ class ZgwJwtValidator implements ZgwJwtValidatorInterface {
 			throw new ZgwAuthValidationException(message: 'Unsupported token algorithm');
 		}
 
-		$verified = $this->verifyHmac(
-			headerB64: $token['headerB64'],
-			payloadB64: $token['payloadB64'],
-			signature: $this->base64urlDecode(data: $token['signatureB64']),
-			secret: $authConf['publicKey'] ?? '',
-			algorithm: $algorithm
-		);
-		if ($verified === false) {
+		$signature = $this->base64urlDecode(data: $token['signatureB64']);
+		$expected = hash_hmac(self::HMAC_MAP[$algorithm], $token['headerB64'] . '.' . $token['payloadB64'], $authConf['publicKey'] ?? '', true);
+		if (hash_equals($expected, $signature) === false) {
 			throw new ZgwAuthValidationException(message: 'The token does not match the shared secret');
 		}
 	}//end verifySignature()
@@ -322,31 +317,4 @@ class ZgwJwtValidator implements ZgwJwtValidatorInterface {
 	private function base64urlDecode(string $data): string {
 		return (string)base64_decode(string: strtr($data, '-_', '+/'));
 	}//end base64urlDecode()
-
-	/**
-	 * Verify an HMAC JWT signature.
-	 *
-	 * @param string $headerB64 The base64url-encoded header
-	 * @param string $payloadB64 The base64url-encoded payload
-	 * @param string $signature The raw signature bytes
-	 * @param string $secret The HMAC shared secret
-	 * @param string $algorithm The JWT algorithm (HS256, HS384, HS512)
-	 *
-	 * @return bool True if the signature is valid
-	 */
-	private function verifyHmac(
-		string $headerB64,
-		string $payloadB64,
-		string $signature,
-		string $secret,
-		string $algorithm,
-	): bool {
-		$hashAlg = self::HMAC_MAP[$algorithm] ?? null;
-		if ($hashAlg === null) {
-			return false;
-		}
-
-		$expected = hash_hmac($hashAlg, $headerB64 . '.' . $payloadB64, $secret, true);
-		return hash_equals($expected, $signature);
-	}//end verifyHmac()
 }//end class

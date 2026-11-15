@@ -741,6 +741,17 @@ abstract class ZgwRulesBase {
 			return null;
 		}
 
+		return $this->notUniqueError(errorField: $errorField);
+	}//end checkFieldUniqueness()
+
+	/**
+	 * The validation error for a field combination that already exists.
+	 *
+	 * @param string $errorField Field name for error reporting
+	 *
+	 * @return array Validation error
+	 */
+	private function notUniqueError(string $errorField): array {
 		return $this->error(
 			status: 400,
 			detail: 'De combinatie is niet uniek.',
@@ -752,5 +763,5 @@ abstract class ZgwRulesBase {
 				),
 			]
 		);
-	}//end checkFieldUniqueness()
+	}//end notUniqueError()
 }//end class

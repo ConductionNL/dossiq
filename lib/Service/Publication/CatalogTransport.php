@@ -84,16 +84,10 @@ class CatalogTransport {
 				send: fn (): string => $this->sendPublicationToOpenCatalogi(payload: $payload, disclosable: $disclosable, existingId: $existingId),
 			);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'WooPublicationService::publish failed',
-				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
+			return $this->notDelivered(
+				error: $e,
+				context: ['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()]
 			);
-			$reason = 'opencatalogi_api_error';
-			if ($e->getMessage() === WooCaseLedger::SET_NOT_WRITTEN) {
-				$reason = 'delivered_set_not_written';
-			}
-
-			return ['reason' => $reason];
 		}
 
 		$this->logger->info(
@@ -103,6 +97,24 @@ class CatalogTransport {
 
 		return $delivered;
 	}//end deliver()
+
+	/**
+	 * Log a failed delivery and say why it failed.
+	 *
+	 * @param Throwable            $error   What the delivery threw.
+	 * @param array<string, mixed> $context The log context.
+	 *
+	 * @return array{reason: string} Why the publication was not delivered.
+	 */
+	private function notDelivered(Throwable $error, array $context): array {
+		$this->logger->error('WooPublicationService::publish failed', $context);
+		$reason = 'opencatalogi_api_error';
+		if ($error->getMessage() === WooCaseLedger::SET_NOT_WRITTEN) {
+			$reason = 'delivered_set_not_written';
+		}
+
+		return ['reason' => $reason];
+	}//end notDelivered()
 
 	/**
 	 * End public read access to a publication.
