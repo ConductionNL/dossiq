@@ -94,7 +94,7 @@ class MoveAction implements MoveActionInterface {
 		$moved = $this->moveOnServer(message: $message, target: $target);
 		$move = new MailMove(target: $target, note: $note, actorId: $actorId);
 		$reason = $this->recordedReason(move: $move, moved: $moved);
-		$entryId = $this->recordMove(message: $message, note: $note, results: $results, reason: $reason);
+		$entryId = $this->recordMove(message: $message, entry: ['note' => $note, 'results' => $results, 'reason' => $reason]);
 		$this->amendMove(entryId: $entryId, move: $move);
 
 		return ['moved' => $moved, 'entryId' => $entryId];
@@ -130,17 +130,18 @@ class MoveAction implements MoveActionInterface {
 	/**
 	 * Record the move in the intake log.
 	 *
-	 * @param InboundMessage        $message The message.
-	 * @param string                $note    Why, as the handler wrote it.
-	 * @param array<string, string> $results The four authentication results.
-	 * @param string                $reason  The recorded reason.
+	 * @param InboundMessage                                                       $message The message.
+	 * @param array{note: string, results: array<string, string>, reason: string} $entry   Why, as the handler wrote
+	 *                                                                                     it; the four authentication
+	 *                                                                                     results; the recorded reason.
 	 *
 	 * @return string The log entry id, or '' when nothing was recorded.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function recordMove(InboundMessage $message, string $note, array $results, string $reason): string {
-		$recorded = $results;
+	private function recordMove(InboundMessage $message, array $entry): string {
+		['note' => $note, 'reason' => $reason] = $entry;
+		$recorded = $entry['results'];
 		if ($recorded === []) {
 			$recorded = AuthenticationVerdict::unknown();
 		}

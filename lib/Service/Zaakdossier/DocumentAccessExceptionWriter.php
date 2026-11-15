@@ -128,7 +128,7 @@ class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInte
 			entry: ['action' => self::actionFor(old: $old), 'by' => $user->getUID(), 'at' => $now, 'old' => $old, 'new' => $new, 'reason' => $new['reason']]
 		);
 
-		$this->saveOrRestore(record: $record, fileId: $fileId, old: $old);
+		$this->saveOrRestore(record: $record, file: ['id' => $fileId, 'old' => $old]);
 
 		return $new;
 	}//end set()
@@ -160,7 +160,7 @@ class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInte
 			entry: ['action' => 'remove', 'by' => $user->getUID(), 'at' => $at, 'old' => $old, 'new' => null, 'reason' => trim($reason)]
 		);
 
-		$this->saveOrRestore(record: $record, fileId: $fileId, old: $old);
+		$this->saveOrRestore(record: $record, file: ['id' => $fileId, 'old' => $old]);
 
 		return true;
 	}//end remove()
@@ -229,14 +229,14 @@ class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInte
 	 * Save the record; when that fails, put the file back the way the old exception had it.
 	 *
 	 * @param array<string, mixed>      $record The record to save.
-	 * @param int                       $fileId The file, 0 when none.
-	 * @param array<string, mixed>|null $old    The exception before.
+	 * @param array{id: int, old: array<string, mixed>|null} $file The file (0 when none), and the exception before.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When the save fails.
 	 */
-	private function saveOrRestore(array $record, int $fileId, ?array $old): void {
+	private function saveOrRestore(array $record, array $file): void {
+		['id' => $fileId, 'old' => $old] = $file;
 		try {
 			$this->readers->save(record: $record);
 		} catch (Throwable $e) {
