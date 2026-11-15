@@ -232,8 +232,24 @@ class DecisionAdviceService {
 			throw new DecisionAdviceRefusal('Over dit advies is al besloten', Http::STATUS_CONFLICT);
 		}
 
+		return $this->saveDecision(advice: $advice, decision: ['outcome' => $outcome, 'reason' => $reason, 'userId' => $userId]);
+	}//end decide()
+
+	/**
+	 * Record the chosen outcome on the advice; a deviation from the recommendation needs a reason.
+	 *
+	 * @param array<string, mixed>                                $advice   The stored advice.
+	 * @param array{outcome: string, reason: string, userId: string} $decision The chosen outcome (trimmed), why it
+	 *                                                                     deviates, and who decides.
+	 *
+	 * @return array<string, mixed> The saved advice.
+	 *
+	 * @throws DecisionAdviceRefusal When a deviation carries no reason.
+	 */
+	private function saveDecision(array $advice, array $decision): array {
+		$outcome = $decision['outcome'];
 		$accepted = ($outcome === (string)($advice['recommendation'] ?? ''));
-		$reason = trim($reason);
+		$reason = trim($decision['reason']);
 		if ($accepted === false && $reason === '') {
 			throw new DecisionAdviceRefusal(self::REASON_REQUIRED, Http::STATUS_BAD_REQUEST);
 		}
@@ -245,12 +261,12 @@ class DecisionAdviceService {
 					'outcome' => $outcome,
 					'accepted' => $accepted,
 					'reason' => $reason,
-					'decidedBy' => $userId,
+					'decidedBy' => $decision['userId'],
 					'decidedAt' => $this->now(),
 				]
 			)
 		);
-	}//end decide()
+	}//end saveDecision()
 
 	/**
 	 * The decision table the case's type names.

@@ -117,19 +117,23 @@ class CasePlanReview implements CasePlanReviewInterface {
 		$this->refuseWithoutReviewer(reviewedBy: $reviewedBy);
 		$written = $this->writtenChanges(changes: $changes);
 
-		return $this->store->write(
-			schema: self::SCHEMA,
-			object: $this->withReview(
-				plan: $plan,
-				review: [
-					'reviewedBy' => trim($reviewedBy),
-					'reviewDate' => $onDate,
-					'changes' => $written,
-					'nextReviewDate' => $nextReviewDate,
-				]
-			)
+		return $this->writeReview(
+			plan: $plan,
+			review: ['reviewedBy' => trim($reviewedBy), 'reviewDate' => $onDate, 'changes' => $written, 'nextReviewDate' => $nextReviewDate]
 		);
 	}//end record()
+
+	/**
+	 * Write the plan with the review on it.
+	 *
+	 * @param array<string, mixed> $plan   The plan under review.
+	 * @param array<string, mixed> $review Who reviewed it, the day, what changed and the next review date.
+	 *
+	 * @return array<string, mixed> The stored plan.
+	 */
+	private function writeReview(array $plan, array $review): array {
+		return $this->store->write(schema: self::SCHEMA, object: $this->withReview(plan: $plan, review: $review));
+	}//end writeReview()
 
 	/**
 	 * The family plan under review, or a refusal when it is not there.
