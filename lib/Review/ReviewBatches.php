@@ -153,22 +153,48 @@ class ReviewBatches implements ReviewBatchesInterface {
 		$name = trim($name);
 		$this->validate(caseId: $caseId, name: $name, assignee: $assignee, documents: $documents);
 
-		$batch = $this->save(batch: ['case' => $caseId, 'name' => $name, 'documents' => $documents, 'filter' => $filter,
-			'assignee' => $assignee, 'status' => 'open']);
-		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
+		$fields = ['case' => $caseId, 'name' => $name, 'documents' => $documents];
+		$fields += ['filter' => $filter, 'assignee' => $assignee, 'status' => 'open'];
+		$batch = $this->save(batch: $fields);
+		$this->stampReviews(caseId: $caseId, batchId: $this->batchIdOf(batch: $batch), documents: $documents);
+		$assigned = $this->assign(batch: $batch, by: ['userId' => $userId] + $fields);
 
-		$this->stampReviews(caseId: $caseId, batchId: $batchId, documents: $documents);
+		$progress = ['assessed' => 0, 'total' => count($documents)];
+		return ['batch' => $assigned['batch'], 'taskCreated' => $assigned['taskId'] !== '', 'progress' => $progress, 'access' => $assigned['access']];
+	}//end create()
 
-		$taskId = $this->handTask(
-			assignment: ['caseId' => $caseId, 'batchId' => $batchId, 'name' => $name, 'assignee' => $assignee, 'count' => count($documents)],
-			userId: $userId,
-		);
+	/**
+	 * The id of a stored batch.
+	 *
+	 * @param array<string, mixed> $batch The stored batch.
+	 *
+	 * @return string The batch id.
+	 */
+	private function batchIdOf(array $batch): string {
+		return (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
+	}//end batchIdOf()
+
+	/**
+	 * Give a stored batch's reviewer a task, write the task on the batch and reconcile the case's reviewer access.
+	 *
+	 * @param array<string, mixed> $batch The stored batch.
+	 * @param array<string, mixed> $by    The batch as written (case, name, documents, assignee) and the creating userId.
+	 *
+	 * @return array{batch: array<string, mixed>, taskId: string, access: array{status: string, granted: int, revoked: int, refused: int}}
+	 *
+	 * @throws RefusedException When the batch cannot be written.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function assign(array $batch, array $by): array {
+		$batchId = $this->batchIdOf(batch: $batch);
+		$assignment = ['caseId' => $by['case'], 'batchId' => $batchId, 'name' => $by['name']];
+		$assignment += ['assignee' => $by['assignee'], 'count' => count($by['documents'])];
+		$taskId = $this->handTask(assignment: $assignment, userId: $by['userId']);
 		$batch = $this->withTask(batch: $batch, taskId: $taskId);
 
-		$access = $this->reconcile(caseId: $caseId, batchId: $batchId);
-
-		return ['batch' => $batch, 'taskCreated' => $taskId !== '', 'progress' => ['assessed' => 0, 'total' => count($documents)], 'access' => $access];
-	}//end create()
+		return ['batch' => $batch, 'taskId' => $taskId, 'access' => $this->reconcile(caseId: $by['case'], batchId: $batchId)];
+	}//end assign()
 
 	/**
 	 * Write a batch on each of its documents' reviews, with the depth that applies to the document.
@@ -261,29 +287,10 @@ class ReviewBatches implements ReviewBatchesInterface {
 	 */
 	public function createSampleBatch(string $caseId, string $sampleId, string $assignee, array $documents, string $userId): array {
 		$name = $this->l10n->t('Recall sample of %d documents', [count($documents)]);
-		$batch = $this->save(
-			batch: [
-				'case' => $caseId,
-				'name' => $name,
-				'documents' => $documents,
-				'filter' => ['recallSample' => $sampleId],
-				'assignee' => $assignee,
-				'status' => 'open',
-			]
-		);
-		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
-		$taskId = $this->handTask(
-			assignment: ['caseId' => $caseId, 'batchId' => $batchId, 'name' => $name, 'assignee' => $assignee, 'count' => count($documents)],
-			userId: $userId,
-		);
-		if ($taskId !== '') {
-			$batch['task'] = $taskId;
-			$batch = $this->save(batch: $batch);
-		}
+		$fields = ['case' => $caseId, 'name' => $name, 'documents' => $documents];
+		$fields += ['filter' => ['recallSample' => $sampleId], 'assignee' => $assignee, 'status' => 'open'];
 
-		$this->reconcile(caseId: $caseId, batchId: $batchId);
-
-		return $batch;
+		return $this->assign(batch: $this->save(batch: $fields), by: ['userId' => $userId] + $fields)['batch'];
 	}//end createSampleBatch()
 
 	/**
