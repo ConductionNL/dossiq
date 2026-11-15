@@ -34,9 +34,8 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Kernel\Contracts\CaseDeadlineMirrorInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ReadsSavedEntity;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -48,6 +47,8 @@ use OCP\EventDispatcher\IEventListener;
  * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
  */
 class TermInstanceMovesCaseDeadlineListener implements IEventListener {
+	use ReadsSavedEntity;
+
 	/**
 	 * Constructor.
 	 *
@@ -70,15 +71,7 @@ class TermInstanceMovesCaseDeadlineListener implements IEventListener {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function handle(Event $event): void {
-		$entity = null;
-		if ($event instanceof ObjectCreatedEvent === true) {
-			$entity = $event->getObject();
-		}
-
-		if ($event instanceof ObjectUpdatedEvent === true) {
-			$entity = $event->getNewObject();
-		}
-
+		$entity = $this->savedEntity(event: $event);
 		if ($entity === null || $this->isTermInstance(entity: $entity) === false) {
 			return;
 		}
