@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use Closure;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\DecisionLetterInterface;
@@ -365,31 +366,13 @@ class WOOAssessmentController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function publishDecision(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
 		// Without a decision id the service uses the case's one Woo decision
 		// (design D-1), so a header action that knows only the case can publish.
-		$decisionId = (string)$this->request->getParam('decisionId', '');
-
-		try {
-			// The handler decides; dossiq writes the publication, which the
-			// handler holds no create on in OpenCatalogi.
-			$result = $this->handlerActs->run(
-				caseId: $id,
-				user: $user,
-				stepField: 'wooPublicationStatus',
-				stepIn: ['ready', 'published'],
-				operation: fn (): array => $this->publicationService->publish(caseId: $id, decisionId: $decisionId),
-			);
-			return $this->publicationResponse(result: $result);
-		} catch (RefusedException $e) {
-			return $this->handlerRefusal(e: $e);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->publicationAct(
+			caseId: $id,
+			stepIn: ['ready', 'published'],
+			operation: fn (string $decisionId): array => $this->publicationService->publish(caseId: $id, decisionId: $decisionId),
+		);
 	}//end publishDecision()
 
 	/**
@@ -405,6 +388,23 @@ class WOOAssessmentController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function withdrawPublication(string $id): JSONResponse {
+		return $this->publicationAct(
+			caseId: $id,
+			stepIn: ['published'],
+			operation: fn (string $decisionId): array => $this->publicationService->withdraw(decisionId: $decisionId, caseId: $id),
+		);
+	}//end withdrawPublication()
+
+	/**
+	 * Run a publication act as the case's handler, at the given publication steps.
+	 *
+	 * @param string        $caseId    The case UUID.
+	 * @param array<string> $stepIn    The publication steps the act may run at.
+	 * @param Closure       $operation The act, given the requested decision id.
+	 *
+	 * @return JSONResponse
+	 */
+	private function publicationAct(string $caseId, array $stepIn, Closure $operation): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -413,12 +413,14 @@ class WOOAssessmentController extends Controller {
 		$decisionId = (string)$this->request->getParam('decisionId', '');
 
 		try {
+			// The handler decides; dossiq writes the publication, which the
+			// handler holds no create on in OpenCatalogi.
 			$result = $this->handlerActs->run(
-				caseId: $id,
+				caseId: $caseId,
 				user: $user,
 				stepField: 'wooPublicationStatus',
-				stepIn: ['published'],
-				operation: fn (): array => $this->publicationService->withdraw(decisionId: $decisionId, caseId: $id),
+				stepIn: $stepIn,
+				operation: fn (): array => $operation($decisionId),
 			);
 			return $this->publicationResponse(result: $result);
 		} catch (RefusedException $e) {
@@ -426,7 +428,7 @@ class WOOAssessmentController extends Controller {
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
-	}//end withdrawPublication()
+	}//end publicationAct()
 
 	/**
 	 * Request an LLM-assisted redaction-span proposal for a document
