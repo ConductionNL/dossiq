@@ -104,10 +104,7 @@ class CaseAssigneeWriter implements CaseAssigneeWriterInterface {
 		$schema = (string)$this->settingsService->getConfigValue('case_schema');
 
 		$written = $this->reassignItem(
-			objectService: $objectService,
-			schema: $schema,
-			id: $item['id'],
-			item: $item['case'],
+			target: new ReassignedItem(objectService: $objectService, schema: $schema, id: $item['id'], item: $item['case']),
 			batch: $batch,
 		);
 
