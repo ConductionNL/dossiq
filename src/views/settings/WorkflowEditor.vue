@@ -100,6 +100,7 @@ import WorkflowTransitionArrow from './components/WorkflowTransitionArrow.vue'
 import WorkflowValidationBanner from './components/WorkflowValidationBanner.vue'
 import { objectStoreAccess } from '../../mixins/objectStore.js'
 import { useWorkflowStore } from '../../store/modules/workflow.js'
+import { caseTypeRows } from '../../utils/caseTypeRows.js'
 
 export default {
 	name: 'WorkflowEditor',
@@ -239,18 +240,18 @@ export default {
 				})) || []
 
 			// Load role types
-			this.roleTypes =
-				(await this.objectStore.fetchCollection('roleType', {
-					caseType: this.caseTypeId,
-					_limit: 100,
-				})) || []
+			this.roleTypes = await caseTypeRows(
+				this.objectStore,
+				'roleType',
+				this.caseTypeId,
+			)
 
 			// Load document types
-			this.documentTypes =
-				(await this.objectStore.fetchCollection('documentType', {
-					caseType: this.caseTypeId,
-					_limit: 100,
-				})) || []
+			this.documentTypes = await caseTypeRows(
+				this.objectStore,
+				'documentType',
+				this.caseTypeId,
+			)
 
 			// Load or create workflow template
 			if (this.templateId) {
