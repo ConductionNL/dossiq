@@ -12,7 +12,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -92,6 +92,42 @@ export async function validateSubCase({ parentCaseUuid, childCaseTypeId }) {
 }
 
 /**
+ * Create a sub-case as a derivation of its parent.
+ *
+ * NOT an ordinary case save with `parentCase` filled in, which is what this
+ * replaces. A derive is what makes the child take the confidentiality and the
+ * handler its parent carries, because `case.parentCase` declares that
+ * inheritance and OpenRegister applies it. A plain save creates the hierarchy
+ * and inherits nothing, with nothing on screen saying so.
+ *
+ * `inheritanceApplied: false` means the case was created and carries its
+ * parent, but nothing was inherited and no provenance was recorded.
+ *
+ * @param {object} params Creation params.
+ * @param {string} params.parentCaseUuid Parent UUID.
+ * @param {string} params.childCaseTypeId Child caseType id or slug.
+ * @param {object} params.object The sub-case as the form filled it in.
+ * @return {Promise<{ok: boolean, reason?: string, object?: object, inherited?: object, inheritanceApplied?: boolean}>}
+ *
+ * @spec openspec/specs/deelzaak-support/spec.md
+ */
+export async function createSubCase({ parentCaseUuid, childCaseTypeId, object }) {
+	try {
+		const { data } = await axios.post(base(''), {
+			parentCaseUuid,
+			childCaseTypeId,
+			object,
+		})
+		return data
+	} catch (err) {
+		if (err?.response?.data) {
+			return err.response.data
+		}
+		return { ok: false, reason: 'unknown_error' }
+	}
+}
+
+/**
  * Unlink every sub-case of the given parent.
  *
  * ⚠️ Returns the whole result, not a bare count. The endpoint used to answer
@@ -111,7 +147,7 @@ export async function validateSubCase({ parentCaseUuid, childCaseTypeId }) {
  *
  * @param {string} parentCaseUuid Parent UUID.
  * @return {Promise<{unlinked: number, failed: number, total: number, complete: boolean}>} The unlink outcome.
- * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-deletion-protection
+ * @spec openspec/specs/case-management/spec.md#requirement-a-held-case-cannot-be-deleted-and-you-are-told-why-req-cm-35
  */
 export async function unlinkSubCases(parentCaseUuid) {
 	const { data } = await axios.post(

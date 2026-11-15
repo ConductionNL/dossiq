@@ -288,5 +288,5 @@ paths:
 # Cross-cutting error responses
 # - 401 Bearer JWT missing or invalid (SupplierAuthMiddleware)
 # - 403 mandate denied or scope mismatch (SupplierScopeService)
-# - 404 cross-tenant/supplier lookup (search_path scoped query returns empty)
+# - 404 cross-tenant/supplier lookup (OpenRegister organisation row filter returns no row)
 # - 429 rate limit (SupplierAuthMiddleware bumpAndCheckRateLimit at 100 req/min/IP)

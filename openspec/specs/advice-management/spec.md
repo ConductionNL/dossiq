@@ -26,7 +26,13 @@ owns the `adviesAanvraag` model and the CROSS-CASE advice queue by design. dossi
 keeps the per-case view and the detail route. A dossiq-side list over a model
 dossiq no longer owns is the duplication that change set out to remove.
 
+#### Scenario: An advice link still opens, and there is no advice index
 @e2e exclude The per-case surface is covered by the besluitvorming leaf specs; the cross-case queue is decidesk's and is not a dossiq surface to test.
+
+- **GIVEN** a link to `/advice/:id` for an existing advice request
+- **WHEN** a user opens it
+- **THEN** the advice detail SHALL open
+- **AND** dossiq SHALL offer no `/advice` index page of its own
 
 **ADDED Requirements**
 
@@ -147,3 +153,19 @@ The system SHALL provide a form for creating advice requests from the case dashb
 - **THEN** the reminder SHALL be dispatched only once
 
 <!-- END retrofit-2026-05-24-advice-management -->
+
+### Requirement: An advice request keeps its kind, subject and outcome
+
+An advice request SHALL be stored in the advice request schema the list reads, with its kind (`intern`/`extern`),
+subject and question. An external advisor is an organisation and SHALL NOT be notified as a user. A received advice
+SHALL keep its conclusion, text and the conditions checked, and the notification SHALL carry the summary.
+
+#### Scenario: External advice
+
+- **WHEN** a handler asks the Veiligheidsregio for advice
+- **THEN** the request is stored with type `extern` and nobody is notified as its advisor
+
+#### Scenario: Received with conditions
+
+- **WHEN** the advice is received as positive with conditions
+- **THEN** the request keeps the conclusion, the text and the conditions

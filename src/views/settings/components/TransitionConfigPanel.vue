@@ -1,7 +1,7 @@
 <template>
 	<div class="transition-config-panel">
 		<div class="transition-config-panel__header">
-			<h4>{{ t('dossiq', 'Transition Configuration') }}</h4>
+			<h4>{{ t('dossiq', 'Transition configuration') }}</h4>
 			<NcButton
 				type="tertiary"
 				:aria-label="t('dossiq', 'Close transition configuration')"
@@ -25,6 +25,33 @@
 					class="transition-config-panel__input"
 					:placeholder="t('dossiq', 'e.g. Goedkeuren, Afwijzen')"
 					@input="emitUpdate" />
+			</div>
+
+			<!-- Explanation, read at the moment of choosing -->
+			<div class="transition-config-panel__field">
+				<label for="transition-config-panel-explanation">{{
+					t('dossiq', 'Explanation')
+				}}</label>
+				<textarea
+					id="transition-config-panel-explanation"
+					v-model="localTransition.explanation"
+					class="transition-config-panel__input"
+					rows="2"
+					:placeholder="
+						t(
+							'dossiq',
+							'What a handler should know before taking this step',
+						)
+					"
+					@input="emitUpdate" />
+				<p class="transition-config-panel__hint">
+					{{
+						t(
+							'dossiq',
+							'Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.',
+						)
+					}}
+				</p>
 			</div>
 
 			<!-- Allowed Roles -->
@@ -146,9 +173,10 @@
 						<option value="createSubCase">
 							{{ t('dossiq', 'Create sub-case') }}
 						</option>
-						<option value="webhook">
-							{{ t('dossiq', 'Call webhook') }}
-						</option>
+						<!-- No "Call webhook": dossiq no longer calls a URL itself
+							(flow-nodes-to-their-owners). Integriq owns outbound
+							calls, through a configured source. An action saved
+							earlier still shows its URL below. -->
 						<option value="setField">
 							{{ t('dossiq', 'Set field value') }}
 						</option>
@@ -281,6 +309,7 @@
 <script>
 import { NcButton } from '@nextcloud/vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import { parseJsonList } from './workflowConfigParsing.js'
 
 export default {
 	name: 'TransitionConfigPanel',
@@ -339,15 +368,7 @@ export default {
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		parseGuards(guards) {
-			if (!guards) return []
-			if (typeof guards === 'string') {
-				try {
-					return JSON.parse(guards)
-				} catch {
-					return []
-				}
-			}
-			return [...guards]
+			return parseJsonList(guards)
 		},
 
 		/**
@@ -355,15 +376,7 @@ export default {
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		parseActions(actions) {
-			if (!actions) return []
-			if (typeof actions === 'string') {
-				try {
-					return JSON.parse(actions)
-				} catch {
-					return []
-				}
-			}
-			return [...actions]
+			return parseJsonList(actions)
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
@@ -477,6 +490,12 @@ export default {
 	font-weight: 600;
 	margin-bottom: 4px;
 	color: var(--color-text-maxcontrast);
+}
+
+.transition-config-panel__hint {
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
+	margin: 4px 0 0;
 }
 
 .transition-config-panel__input {

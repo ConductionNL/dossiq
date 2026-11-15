@@ -33,6 +33,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * ObjectService stub for the DRC create path.
@@ -51,7 +52,7 @@ interface DrcStampObjectServiceStub {
 	 *
 	 * @return mixed The saved object row.
 	 */
-	public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -177,7 +178,10 @@ class DrcFileIdStampContractTest extends TestCase {
 
 		$objectService = $this->createMock(DrcStampObjectServiceStub::class);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (string $register, string $schema, array $object, ?string $uuid = null) use ($stored): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use ($stored): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = $object;
 				return $stored;
 			}
@@ -292,6 +296,11 @@ class DrcFileIdStampContractTest extends TestCase {
 		$response = $this->controller->create(resource: 'enkelvoudiginformatieobjecten');
 
 		$this->assertInstanceOf(JSONResponse::class, $response);
+		$this->assertLessThan(
+			expected: 400,
+			actual: $response->getStatus(),
+			message: 'An unresolvable file id must not turn a written document into an error response.'
+		);
 		$this->assertNull($this->stampedObject(), 'nothing to stamp, so nothing is stamped');
 	}//end testAnUnresolvableFileIdDoesNotFailTheCreate()
 }//end class

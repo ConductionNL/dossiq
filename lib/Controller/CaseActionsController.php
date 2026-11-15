@@ -3,23 +3,24 @@
 /**
  * Dossiq Case Actions Controller.
  *
- * Three things a handler can do TO a case from its own page, beside moving it
+ * The things a handler can do TO a case from its own page, beside moving it
  * through its lifecycle:
  *
  *  - POST /api/case/{caseId}/copy            (body {title?, documents?})
  *  - GET  /api/case/{caseId}/startable-flows
- *  - POST /api/case/{caseId}/plan            (body {caseType, date, title})
+ *  - POST /api/case/{caseId}/plan            (body {caseType, date, title, recurrence?, until?, count?})
  *  - GET  /api/case/{caseId}/planned
+ *  - POST /api/case/{caseId}/planned/{flowId}/stop
  *
  * Every method is `#[NoAdminRequired]` and every method guards the case first.
- * Without the per-case guard these would be four ways for any signed-in user
+ * Without the per-case guard these would be five ways for any signed-in user
  * to act on any case by its uuid, which is the IDOR shape ADR-005 rule 3 names.
  * The guard runs BEFORE the work, so a refused caller never learns whether the
  * case exists.
  *
- * The two reads guard on READ access and the two writes on MUTATION access,
+ * The two reads guard on READ access and the three writes on MUTATION access,
  * deliberately: listing what you could start is not starting it, but planning
- * a follow-up and copying a case both create records.
+ * a follow-up, stopping a series and copying a case all change the record.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -40,9 +41,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseCopyService;
-use OCA\Dossiq\Service\Flow\CaseFlowActions;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseCopyServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseFlowActionsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -72,6 +73,7 @@ class CaseActionsController extends Controller {
 		'flows_unavailable' => Http::STATUS_SERVICE_UNAVAILABLE,
 		'copy_failed' => Http::STATUS_INTERNAL_SERVER_ERROR,
 		'plan_failed' => Http::STATUS_INTERNAL_SERVER_ERROR,
+		'stop_failed' => Http::STATUS_INTERNAL_SERVER_ERROR,
 	];
 
 	/**
@@ -79,18 +81,18 @@ class CaseActionsController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The HTTP request.
-	 * @param CaseCopyService $copyService Copies a case.
-	 * @param CaseFlowActions $flowActions Starts a flow and plans a follow-up.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseCopyServiceInterface $copyService Copies a case.
+	 * @param CaseFlowActionsInterface $flowActions Starts a flow and plans a follow-up.
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseCopyService $copyService,
-		private readonly CaseFlowActions $flowActions,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseCopyServiceInterface $copyService,
+		private readonly CaseFlowActionsInterface $flowActions,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -140,7 +142,7 @@ class CaseActionsController extends Controller {
 	}//end startableFlows()
 
 	/**
-	 * Plan a follow-up case for a later date.
+	 * Plan a follow-up case for a later date, once or as a series.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
@@ -153,6 +155,9 @@ class CaseActionsController extends Controller {
 		$caseType = (string)$this->request->getParam('caseType', '');
 		$date = (string)$this->request->getParam('date', '');
 		$title = (string)$this->request->getParam('title', '');
+		$recurrence = (string)$this->request->getParam('recurrence', '');
+		$until = (string)$this->request->getParam('until', '');
+		$count = (int)$this->request->getParam('count', 0);
 
 		return $this->guarded(
 			caseId: $caseId,
@@ -162,13 +167,42 @@ class CaseActionsController extends Controller {
 				caseTypeId: $caseType,
 				date: $date,
 				title: $title,
-				uid: $this->currentUid()
+				uid: $this->currentUid(),
+				recurrence: $recurrence,
+				until: $until,
+				count: $count
 			),
 		);
 	}//end plan()
 
 	/**
-	 * The follow-ups planned for this case that have not been created yet.
+	 * Stop a series, leaving the cases it has already opened alone.
+	 *
+	 * A write, so it guards on mutation access: stopping a series is a decision
+	 * about future cases, not a read of a list.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $flowId The series flow's uuid.
+	 *
+	 * @return JSONResponse The stopped series.
+	 *
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 */
+	#[NoAdminRequired]
+	public function stopSeries(string $caseId, string $flowId): JSONResponse {
+		return $this->guarded(
+			caseId: $caseId,
+			write: true,
+			run: fn (): array => $this->flowActions->stopSeries(
+				caseId: $caseId,
+				flowId: $flowId,
+				uid: $this->currentUid()
+			),
+		);
+	}//end stopSeries()
+
+	/**
+	 * The follow-ups planned for this case that are still to come.
 	 *
 	 * @param string $caseId The case UUID.
 	 *

@@ -32,15 +32,18 @@ import {
 	adoptableCaseTypes,
 	cleanupRunObjects,
 	createObject,
+	ensureTeam,
 	getRequestToken,
 	listObjects,
 	objectId,
 	REGISTER,
+	removeTeams,
 	RUN_PREFIX,
 	seedCase,
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
+import { chooseLens } from './helpers/lens.ts'
 import {
 	clickHeaderAction,
 	dismissSupportDialog,
@@ -53,6 +56,7 @@ const FORM_FIELDS = [
 	'name',
 	'roleType',
 	'participant',
+	'representedParty',
 	'delegate',
 	'delegateUntil',
 	'description',
@@ -261,17 +265,15 @@ test.describe('Case detail — the Parties tab', () => {
 				caseType: caseTypeId,
 				genericRole: 'advisor',
 			}),
-			createObject(api, token, 'organisatieRol', {
-				roleName: `${RUN_PREFIX} Team Permits`,
-				roleType: 'ambtelijk',
-				department: 'Ruimte',
-				team: 'Permits',
-			}),
+			// A team is a Nextcloud group (one-team-model), not a register row.
+			ensureTeam(api, token, 'Team Permits'),
 		])
 		handlerTypeId = objectId(handlerType)
 		advisorTypeId = objectId(advisorType)
-		teamId = objectId(team)
-		teamName = String(team.roleName)
+		teamId = team.id
+		// The Team column shows the group id itself, so that is the text the
+		// row is asserted to carry.
+		teamName = team.id
 
 		const seeded = await Promise.all([
 			seedCase(api, token, {
@@ -345,7 +347,8 @@ test.describe('Case detail — the Parties tab', () => {
 		// cannot be removed by a user; they carry the family prefix, so
 		// global-setup's residue sweep takes them before the next run rather
 		// than this teardown failing on a 403 it was never going to win.
-		await cleanupRunObjects(api, token, ['role', 'roleType', 'organisatieRol'])
+		await cleanupRunObjects(api, token, ['role', 'roleType'])
+		await removeTeams(api)
 		await api.dispose()
 	})
 
@@ -549,20 +552,234 @@ test.describe('Case detail — the Parties tab', () => {
 		).toHaveCount(1, { timeout: 20_000 })
 	})
 
+	// --- The party model, beyond the role rows above (openregister#3761). ---
+	//
+	// A `role` row is dossiq's own record of a seat on the case. A PARTY is
+	// OpenRegister's, and it is the half a role row cannot carry: a melder
+	// with no Nextcloud account, a gemachtigde acting for the applicant, and
+	// the indicators any of them hold. The Roles section reads that model.
+	//
+	// 🔴 NOT YET RUN. There is no Playwright runner on the build host, so both
+	// tests below are written and tagged rather than observed. Each one names
+	// what would break it, so the citation can be checked the first time the
+	// suite runs on an instance whose OpenRegister carries the party model.
+	// An instance whose OpenRegister does not answer the parties route skips
+	// rather than fails: the route 404s there, and a red on an older
+	// OpenRegister would say this app is broken when it is not.
+
+	// @e2e openspec/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
+	// @e2e roles-decisions::a-representative-on-a-permit-case
+	//
+	// BREAKS IF: `CaseRoleVocabulary::sync()` stops appending the generic
+	// party roles, or the case schema stops carrying `partyKinds`. Both are
+	// read straight off the listing this asserts, so neither can be lost
+	// without this failing.
+	test('every case type offers the representative role and the three party kinds', async ({
+		request,
+	}) => {
+		const listing = await request.get(
+			`/apps/openregister/api/objects/${REGISTER}/case/${partiesCaseId}/parties`,
+			{ headers: { requesttoken: token } },
+		)
+		test.skip(
+			listing.status() === 404,
+			'this OpenRegister carries no party model yet',
+		)
+		expect(listing.ok()).toBe(true)
+
+		const body = await listing.json()
+		const roles = (body.roles ?? []).map((role: { key: string }) => role.key)
+		const kinds = (body.kinds ?? []).map((kind: { key: string }) => kind.key)
+
+		// The role row 5.8 is about, offered whatever the case type declares.
+		expect(roles).toContain('gemachtigde')
+		expect(roles).toContain('aanvrager')
+		// The seats this instance declares are still there, in front of them.
+		expect(roles.length).toBeGreaterThan(2)
+		expect(kinds).toEqual(
+			expect.arrayContaining(['person', 'organisation', 'address']),
+		)
+	})
+
+	// @e2e openspec/specs/roles-decisions/spec.md#the-primary-party-is-first
+	// @e2e roles-decisions::the-primary-party-is-first
+	//
+	// BREAKS IF: the Roles section stops rendering, or `rolesInOrder` stops
+	// putting the primary party first. The assertion names the party rather
+	// than counting rows, because an ordering that quietly stops working looks
+	// exactly like an applicant who happens to sort second.
+	test('the Roles section renders, and says so rather than showing an empty case', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${partiesCaseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const strip = page.locator('.cn-tabs-widget')
+		await strip.getByRole('tab', { name: 'People', exact: true }).click()
+
+		const roles = page.locator('[data-testid="cn-object-parties"]')
+		await expect(roles).toBeVisible({ timeout: 20_000 })
+
+		// This case has role rows and no PARTY links, so the honest answer is
+		// the empty state. What must never appear is the empty state beside a
+		// party: that is the ordering bug and the failed-read bug at once.
+		const parties = roles.locator('[data-testid="cn-object-parties-party"]')
+		const count = await parties.count()
+		if (count === 0) {
+			await expect(roles).toContainText(
+				/(No parties on this case yet|Nog geen betrokkenen bij deze zaak)/,
+			)
+			return
+		}
+
+		// A case that does have parties: the first one carries the primary
+		// badge, and it is the first party in the first role group.
+		await expect(
+			parties.first().locator('[data-testid="cn-object-parties-primary"]'),
+		).toHaveCount(1)
+	})
+
+	// --- The generic Gemachtigde role type, row 5.8. ---
+	//
+	// 🔴 NOT YET RUN, for the same reason the two tests above are not: there is
+	// no Playwright runner on the build host. Each one names what would break
+	// it, so the citation can be checked the first time the suite runs.
+
+	// @e2e openspec/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
+	// @e2e roles-decisions::a-representative-on-a-permit-case
+	//
+	// BREAKS IF: SeedGemachtigdeRoleType stops writing the row, or writes it
+	// with a `caseType`. The seeded case type in this spec declares a handler
+	// and an advisor and NO representative, so a row that names any case type
+	// leaves this list without one. Asserted on the stored rows rather than on
+	// the picker, because a form-field registry entry is not mounted by
+	// nextcloud-vue 3.2.0 yet: what the picker will offer is exactly this list.
+	test('a case type that declares no representative is still offered Gemachtigde', async () => {
+		const rows = await listObjects(api, 'roleType', { _limit: '200' })
+
+		const generic = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.genericRole ?? '') === 'gemachtigde'
+				&& String(row.caseType ?? '') === '',
+		)
+		expect(
+			generic.length,
+			'the seed must leave exactly one role type that names no case type',
+		).toBe(1)
+
+		// The list this case type's Add party form offers: its own seats, then
+		// the generic ones. The representative is in it, and it is not one of
+		// this case type's own rows.
+		const own = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.caseType ?? '') === caseTypeId,
+		)
+		expect(
+			own.some(
+				(row: Record<string, unknown>) =>
+					String(row.genericRole ?? '') === 'gemachtigde',
+			),
+			'the seeded case type must declare no representative of its own',
+		).toBe(false)
+	})
+
+	// @e2e openspec/specs/roles-decisions/spec.md#bezwaar-keeps-one-gemachtigde
+	// @e2e roles-decisions::bezwaar-keeps-one-gemachtigde
+	//
+	// BREAKS IF: `offeredRoleTypes` stops skipping a generic row whose key the
+	// case type already claims. The seeded row below IS that case: a role type
+	// of this case type keyed `gemachtigde`. Two entries called Gemachtigde,
+	// with nothing on screen to tell them apart, is the failure a handler meets.
+	test('a case type declaring its own Gemachtigde is offered it once', async () => {
+		const own = await createObject(api, token, 'roleType', {
+			name: `${RUN_PREFIX} Gemachtigde eigen`,
+			description: 'Throwaway role type seeded by case-parties.spec.',
+			caseType: caseTypeId,
+			genericRole: 'gemachtigde',
+		})
+		expect(
+			objectId(own),
+			'the own role type must have been created',
+		).toBeTruthy()
+
+		// The offer, computed the way the Role field's CnResourceSelect `scope`
+		// does: this case type's own rows, then the generic rows whose key
+		// nobody claimed. The rule is unit-tested in the library's
+		// tests/components/CnResourceSelectScope.spec.js;
+		// what this asserts is that the instance's real rows exercise it, which
+		// a unit test on invented rows cannot say.
+		const rows = await listObjects(api, 'roleType', { _limit: '200' })
+		const mine = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.caseType ?? '') === caseTypeId,
+		)
+		const claimed = new Set(
+			mine
+				.map((row: Record<string, unknown>) => String(row.genericRole ?? ''))
+				.filter((key: string) => key !== ''),
+		)
+		const generic = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.caseType ?? '') === ''
+				&& !claimed.has(String(row.genericRole ?? '')),
+		)
+
+		const representatives = [...mine, ...generic].filter(
+			(row: Record<string, unknown>) =>
+				String(row.genericRole ?? '') === 'gemachtigde',
+		)
+		expect(representatives).toHaveLength(1)
+		// The type's own row wins: it is the one its routing rules point at.
+		expect(objectId(representatives[0])).toBe(objectId(own))
+	})
+
+	// @e2e openspec/specs/roles-decisions/spec.md#represented-party-is-visible
+	// @e2e roles-decisions::represented-party-is-visible
+	//
+	// BREAKS IF: `role.representedParty` stops being stored (the schema version
+	// did not move, so OpenRegister fast-skipped it and drops the property in
+	// silence), or `representedByMap` starts reading `delegateFrom` again. The
+	// read-back is over the API rather than off the page, because a dropped
+	// property renders exactly like a party who represents nobody.
+	test('a representative names the party they act for, and it is not the delegation window', async () => {
+		const representativeName = `${RUN_PREFIX} gemachtigde role`
+		const created = await createObject(api, token, 'role', {
+			name: representativeName,
+			roleType: advisorTypeId,
+			case: partiesCaseId,
+			participant: `${RUN_PREFIX}-representative`,
+			representedParty: HANDLER_PARTICIPANT,
+		})
+
+		const stored = await showObject(api, 'role', objectId(created))
+		expect(
+			String(stored.representedParty ?? ''),
+			'OpenRegister must have kept representedParty. An empty value here means the role schema version did not move and the property was dropped without a word.',
+		).toBe(HANDLER_PARTICIPANT)
+		// The delegation window is untouched: it is a date, and it is what this
+		// change deliberately did NOT reuse.
+		expect(String(stored.delegateFrom ?? '')).toBe('')
+	})
+
 	// The team half of the change. Nested inside the same describe on purpose:
 	// `beforeAll` runs per describe, so a sibling block would start with no API
 	// context and no seeded rows at all.
 	test.describe('the team on a case and on a task', () => {
 		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
 		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
+		// @e2e openspec/specs/case-access-control/spec.md#the-cases-team-is-stored-as-a-group-id
+		// @e2e case-access-control::the-cases-team-is-stored-as-a-group-id
 		//
 		// MUTATION CHECK, NOT YET RUN (the permission is pending), so this
 		// citation is unverified. Each line names the break and the assertion
 		// that must redden; restore after.
 		//   src/manifest.json `case-core` include: drop "assignedGroup"
 		//     -> "the Data panel offers a Team field"
-		//   src/manifest.json Cases Team column: key "assignedGroup.roleName" -> "assignedGroup.x"
-		//     -> "the Team column must show the team picked on the case page, by name"
+		//   src/manifest.json Cases Team column: key "assignedGroup" -> "assignedGroup.x"
+		//     -> "the Team column must show the team picked on the case page"
 		test('a team picked on the case page is stored and shows in the Team column', async ({
 			page,
 		}) => {
@@ -595,22 +812,13 @@ test.describe('Case detail — the Parties tab', () => {
 			const editor = core.locator('.cn-object-data-widget__editor')
 			await expect(editor).toBeVisible({ timeout: 15_000 })
 
-			await editor.getByRole('combobox').first().click()
-			// The options are the `organisatieRol` rows. They are matched on the
-			// team's name OR its uuid: `organisatieRol` declares no name field,
-			// so OpenRegister names each row by its uuid and the picker lists
-			// uuids (reported with this change). The scenario's THENs are about
-			// what is STORED and what the index shows, and those are asserted
-			// below either way.
-			await page
-				.getByRole('option')
-				.filter({ hasText: new RegExp(`${teamName}|${teamId}`) })
-				.first()
-				.click({ timeout: 30_000 })
-			// Choosing the option IS the save: a relation field commits on
-			// selection and closes its editor, so there is no confirm button to
-			// press. Whether it saved is read off the stored case below, which
-			// is also what fails if a later widget version starts to need one.
+			// The team is a Nextcloud group id. nextcloud-vue's inline editor
+			// has no group picker yet (the create and edit dialogs do), so the
+			// Data panel edits the id as text and Enter commits it. What was
+			// STORED and what the index shows are asserted below either way.
+			const input = editor.locator('input').first()
+			await input.fill(teamId)
+			await input.press('Enter')
 
 			// The stored reference, not the rendered label.
 			await expect
@@ -647,7 +855,7 @@ test.describe('Case detail — the Parties tab', () => {
 			await expect(row).toHaveCount(1, { timeout: 30_000 })
 			await expect(
 				row,
-				'the Team column must show the team picked on the case page, by name',
+				'the Team column must show the team picked on the case page',
 			).toContainText(teamName, { timeout: 20_000 })
 		})
 
@@ -674,9 +882,8 @@ test.describe('Case detail — the Parties tab', () => {
 				hasText: `${RUN_PREFIX} Parties team`,
 			})
 			await expect(row).toHaveCount(1, { timeout: 30_000 })
-			// The NAME, not the uuid: the column reads `assignedGroup.roleName`
-			// off the reference OpenRegister expanded through `extend`. A bare
-			// $ref column renders the raw uuid, which looks like data.
+			// The group id: since one-team-model the column reads
+			// `assignedGroup` itself, which holds the Nextcloud group.
 			await expect(row).toContainText(teamName, { timeout: 20_000 })
 			await expect(row).toContainText(currentUser)
 			await expect(
@@ -818,11 +1025,9 @@ test.describe('Case detail — the Parties tab', () => {
 			// on this instance with the bucket above present in the response,
 			// and re-checked 2026-09-12: nextcloud-vue#1110 fixes it upstream
 			// but the newest published version is 2.48.2, which this app pins
-			// and which still binds `resolvedSidebar.facets`. Two more
-			// presentation defects sit behind it: `organisatieRol` declares no
-			// name field, so OpenRegister labels the bucket with a shortened
-			// uuid rather than Team Permits, and the Team cell on the case
-			// page renders that uuid too.
+			// and which still binds `resolvedSidebar.facets`. Since
+			// one-team-model the bucket key is the group id, so the uuid label
+			// that used to sit behind it is gone.
 			//
 			// So the scenario's "lists Team Permits" half is still NOT proven
 			// on screen, and cannot be until dossiq takes a nextcloud-vue that
@@ -873,7 +1078,7 @@ test.describe('Case detail — the Parties tab', () => {
 
 			const chips = page.locator('.cn-quick-filter-bar')
 			await expect(chips).toBeVisible({ timeout: 20_000 })
-			await chips.getByRole('tab', { name: /Mine|Van mij/ }).click()
+			await chooseLens(page, /^(Mine|Van mij)$/)
 
 			await expect(colleague).toHaveCount(0, { timeout: 30_000 })
 			await expect(mine).toHaveCount(1)

@@ -16,6 +16,12 @@
  * written, with no surrounding transaction, so a listener there cannot stop
  * the mutation it objects to.
  *
+ * `ObjectDeletingEvent` is NOT the delete path a caller normally takes. It is
+ * dispatched only for a permanent delete; the ordinary DELETE, and the
+ * referential-integrity cascade, both soft-delete by stamping the deletion
+ * metadata on the entity and saving it, which dispatches
+ * `ObjectUpdatingEvent`. Both shapes are handled here.
+ *
  * @category Listener
  * @package  OCA\Dossiq\Listener
  *
@@ -37,8 +43,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\StateMachineService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StateMachineServiceInterface;
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -66,13 +73,13 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema slug bridge.
-	 * @param StateMachineService $stateMachine Owns the REQ-BES-008 rule.
+	 * @param SettingsServiceInterface $settingsService Schema slug bridge.
+	 * @param StateMachineServiceInterface $stateMachine Owns the REQ-BES-008 rule.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly StateMachineService $stateMachine,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly StateMachineServiceInterface $stateMachine,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -99,11 +106,21 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	}//end handle()
 
 	/**
-	 * Refuse an update that changes content on a frozen beschikking.
+	 * Refuse an update that changes content on a frozen beschikking, or that
+	 * soft-deletes one.
 	 *
 	 * The STORED state decides which fields may move. The incoming payload is
 	 * consulted only for what it wants to change, never for what the status
 	 * is: a payload claiming `draft` over a row that is `sent` is refused.
+	 *
+	 * A soft delete reaches this method, not `inspectDelete()`. OpenRegister
+	 * dispatches `ObjectDeletingEvent` only on a PERMANENT delete
+	 * (`DeleteObject::delete()` with `permanent: true`); the ordinary DELETE
+	 * the generic object API serves stamps the deletion metadata on the entity
+	 * and persists it through `ObjectEntityMapper::update()`, so it arrives
+	 * here as an update that moves no content field at all. The cascade path
+	 * (`DeleteObject::batchCascadeSoftDelete()`) has the same shape. Checking
+	 * only the content diff therefore let a signed besluit be deleted.
 	 *
 	 * @param ObjectUpdatingEvent $event The pre-persist, stoppable event.
 	 *
@@ -116,21 +133,90 @@ class BeschikkingImmutabilityListener implements IEventListener {
 		}
 
 		$incoming = $this->payload(object: $event->getNewObject());
+		if ($this->mayWrite(stored: $stored, incoming: $incoming) === false) {
+			$this->reject(event: $event, uuid: (string)$event->getOldObject()?->getUuid());
+		}
+	}//end inspectUpdate()
+
+	/**
+	 * Whether the update may be written over the stored beschikking.
+	 *
+	 * @param array<string, mixed>      $stored   The stored beschikking.
+	 * @param array<string, mixed>|null $incoming The incoming payload, null when it cannot be read.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function mayWrite(array $stored, ?array $incoming): bool {
 		if ($incoming === null) {
-			return;
+			// Fail CLOSED. A payload that cannot be read cannot be cleared
+			// either, so a frozen beschikking refuses the write it is unable
+			// to inspect rather than waving it through.
+			return $this->stateMachine->isImmutable(status: (string)($stored['currentStatus'] ?? '')) === false;
+		}
+
+		if ($this->isSoftDelete(stored: $stored, incoming: $incoming) === true) {
+			return $this->passes(assertion: fn () => $this->stateMachine->assertDeletable(stored: $stored));
 		}
 
 		$changed = $this->changedContentFields(stored: $stored, incoming: $incoming);
 		if ($changed === []) {
-			return;
+			return true;
 		}
 
+		return $this->passes(assertion: fn () => $this->stateMachine->assertMutable(stored: $stored, changed: $changed));
+	}//end mayWrite()
+
+	/**
+	 * Whether a state machine assertion holds.
+	 *
+	 * @param callable(): mixed $assertion Throws a RuntimeException when it does not hold.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function passes(callable $assertion): bool {
 		try {
-			$this->stateMachine->assertMutable(stored: $stored, changed: $changed);
+			$assertion();
+			return true;
 		} catch (RuntimeException $rejection) {
-			$this->reject(event: $event, uuid: (string)$event->getOldObject()?->getUuid());
+			return false;
 		}
-	}//end inspectUpdate()
+	}//end passes()
+
+	/**
+	 * Whether this update is the deletion marker being stamped on the row.
+	 *
+	 * @param array<string, mixed> $stored The state in the database.
+	 * @param array<string, mixed> $incoming The state being written.
+	 *
+	 * @return bool True when the write turns a live row into a deleted one.
+	 */
+	private function isSoftDelete(array $stored, array $incoming): bool {
+		return $this->isMarkedDeleted(object: $stored) === false
+			&& $this->isMarkedDeleted(object: $incoming) === true;
+	}//end isSoftDelete()
+
+	/**
+	 * Whether a payload carries OpenRegister's deletion metadata.
+	 *
+	 * The marker lives in `@self.deleted`, which `ObjectEntity::jsonSerialize()`
+	 * builds from `setDeleted()`. The bare `deleted` fallback covers a payload
+	 * handed over without the `@self` envelope.
+	 *
+	 * @param array<string, mixed> $object Object payload (incl. `@self`).
+	 *
+	 * @return bool True when the object is marked deleted.
+	 */
+	private function isMarkedDeleted(array $object): bool {
+		if (isset($object['@self']) === true && is_array($object['@self']) === true) {
+			return empty($object['@self']['deleted']) === false;
+		}
+
+		return empty($object['deleted']) === false;
+	}//end isMarkedDeleted()
 
 	/**
 	 * Refuse a delete on a frozen beschikking.
@@ -163,7 +249,7 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	private function reject(ObjectUpdatingEvent|ObjectDeletingEvent $event, string $uuid): void {
 		$event->setErrors(
 			[
-				'message' => StateMachineService::IMMUTABLE_MESSAGE,
+				'message' => StateMachineServiceInterface::IMMUTABLE_MESSAGE,
 				'code' => self::ERROR_CODE,
 			]
 		);
@@ -188,7 +274,8 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	 */
 	private function changedContentFields(array $stored, array $incoming): array {
 		$changed = [];
-		foreach (StateMachineService::CONTENT_FIELDS as $field) {
+		$guarded = array_merge(StateMachineServiceInterface::CONTENT_FIELDS, StateMachineServiceInterface::WRITE_ONCE_FIELDS);
+		foreach ($guarded as $field) {
 			if (array_key_exists($field, $incoming) === false) {
 				continue;
 			}
@@ -233,16 +320,6 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	 * @return bool True when this is a beschikking.
 	 */
 	private function isBeschikkingSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('beschikking_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('beschikking_schema'));
 	}//end isBeschikkingSchema()
 }//end class

@@ -21,8 +21,10 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\AppHost\Controller;
 
+use OCA\OpenRegister\AppHost\Service\PublicPageResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\AppFramework\Services\IInitialState;
 use OCP\IRequest;
 
 if (class_exists(GenericDashboardController::class) === false) {
@@ -34,10 +36,17 @@ if (class_exists(GenericDashboardController::class) === false) {
 		/**
 		 * Constructor.
 		 *
-		 * @param string $appName The leaf app id.
-		 * @param IRequest $request HTTP request.
+		 * @param string                  $appName      The leaf app id.
+		 * @param IRequest                $request      HTTP request.
+		 * @param PublicPageResolver|null $publicPages  Resolves a public page, when one is registered.
+		 * @param IInitialState|null      $initialState Provides the leaf's initial state.
 		 */
-		public function __construct(string $appName, IRequest $request) {
+		public function __construct(
+			string $appName,
+			IRequest $request,
+			private readonly ?PublicPageResolver $publicPages = null,
+			private readonly ?IInitialState $initialState = null,
+		) {
 			parent::__construct(appName: $appName, request: $request);
 		}//end __construct()
 

@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseNumberServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -31,35 +32,44 @@ use Throwable;
 /**
  * Gives a case its number when OpenRegister has not.
  *
- * THE NUMBER IS DECLARED, NOT COMPUTED — AND THAT IS WHY THIS EXISTS.
- * `case.identifier` carries an `x-openregister-calculations` entry using the
- * `sequence` operator, so on an OpenRegister that ships that operator this
- * service never writes anything: it reads the case back, finds the number
- * already there, and returns. On an OpenRegister that predates it, the same
- * declaration evaluates to nothing and every case is filed without a number —
- * which is the state the change set out to end, and which no gate can see,
- * because a schema declaration naming an operator the engine does not know
- * fails at evaluation time, in the register, not at import.
+ * THE NUMBER IS DECLARED, NOT COMPUTED, AND THAT IS WHY THIS EXISTS.
+ * `case.identifier` carries `x-openregister-generated` (sequence `case`,
+ * format `{year}-{seq:4}`, `resetOn: year`), so on an OpenRegister that reads
+ * that annotation this service never writes anything: it reads the case back,
+ * finds the number already there, and returns. On an OpenRegister that
+ * predates the annotation, an unknown `x-` key on a property is simply not
+ * read, every case is filed without a number, and no gate in dossiq can see
+ * it, because the silence is in the register rather than at import.
+ *
+ * That version boundary MOVED with this change and the hedge moved with it.
+ * The service was written against an engine whose `x-openregister-calculations`
+ * did not know the `sequence` operator; the calculation entry is gone
+ * (openregister#3785 supersedes it) and the boundary is now the annotation.
  *
  * So this is a BACKFILL, not a second numbering scheme. It fills only an empty
- * `identifier` and it produces exactly the shape the calculation produces,
- * `YYYY-NNNN` off the case's start year. When the two ever run against the
- * same case, the calculation wins by arriving first.
+ * `identifier` and produces the same shape the annotation renders,
+ * `YYYY-NNNN`, off the case's start year. Where the two disagree is the year:
+ * the annotation renders the FILING year and this backfill reads the start
+ * date, because it has no counter of its own and has to scope its MAX to
+ * something the case carries. A case whose start date sits in a different year
+ * from its creation is the only case where the two differ, and only on an
+ * instance old enough to need the backfill at all.
  *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseNumberService {
+class CaseNumberService implements CaseNumberServiceInterface {
 
 	use SearchesObjects;
 
 	/**
 	 * How wide the sequence half of a case number is.
 	 *
-	 * Four digits, matching `pad: 4` in the schema's calculation. A year that
-	 * runs past 9999 cases keeps counting rather than wrapping — a number that
-	 * repeats is worse than a number that is five digits long.
+	 * Four digits, matching `{seq:4}` in the schema's generated-identifier
+	 * format. A year that runs past 9999 cases keeps counting rather than
+	 * wrapping, which is what `{seq:n}` does too: a number that repeats is
+	 * worse than a number that is five digits long.
 	 */
 	private const PAD = 4;
 
@@ -159,51 +169,98 @@ class CaseNumberService {
 			return '';
 		}
 
+		$scope = $this->caseScope();
+		if ($scope === null) {
+			return '';
+		}
+
+		return $this->numberCase(scope: $scope, case: $case);
+	}//end assign()
+
+	/**
+	 * The object service, register and case schema, or null when OpenRegister
+	 * or either setting is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function caseScope(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return '';
+			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 		if ($register === '' || $schema === '') {
-			return '';
+			return null;
 		}
 
+		return [$objectService, $register, $schema];
+	}//end caseScope()
+
+	/**
+	 * Give the case the next number of its year and store it.
+	 *
+	 * A case without a number is readable, editable and closable. It is worth
+	 * a warning and not worth losing the case over, so the failure is loud and
+	 * the creation stands.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $scope The object service, register and case schema.
+	 * @param array<string, mixed>                   $case  The case, with an id and without a number.
+	 *
+	 * @return string The number, or '' when it could not be given.
+	 */
+	private function numberCase(array $scope, array $case): string {
+		$caseId = trim((string)($case['id'] ?? ($case['uuid'] ?? '')));
 		$year = $this->yearOf(case: $case);
 
 		try {
-			$number = $this->nextNumber(
-				year: $year,
-				identifiers: $this->identifiersInUse(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-				)
-			);
-
-			$case['identifier'] = $number;
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $case,
-				uuid: $caseId,
-			);
+			$case['identifier'] = $this->nextNumberIn(scope: $scope, year: $year);
+			$this->storeNumbered(scope: $scope, case: $case);
 		} catch (Throwable $e) {
-			// A case without a number is readable, editable and closable. It is
-			// worth a warning and not worth losing the case over, so the
-			// failure is loud and the creation stands.
 			$this->logger->warning(
 				'Dossiq: could not give case ' . $caseId . ' a number: ' . $e->getMessage(),
 				['case' => $caseId, 'year' => $year]
 			);
 
 			return '';
-		}//end try
+		}
 
-		return $number;
-	}//end assign()
+		return $case['identifier'];
+	}//end numberCase()
+
+	/**
+	 * The next free number of a year, from the identifiers the register holds.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $scope The object service, register and case schema.
+	 * @param int                                    $year  The case's year.
+	 *
+	 * @return string
+	 */
+	private function nextNumberIn(array $scope, int $year): string {
+		return $this->nextNumber(
+			year: $year,
+			identifiers: $this->identifiersInUse(scope: $scope)
+		);
+	}//end nextNumberIn()
+
+	/**
+	 * Store the numbered case.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $scope The object service, register and case schema.
+	 * @param array<string, mixed>                   $case  The case, with its number.
+	 *
+	 * @return void
+	 */
+	private function storeNumbered(array $scope, array $case): void {
+		$this->saveObjectAsArray(
+			objectService: $scope[0],
+			register: $scope[1],
+			schema: $scope[2],
+			object: $case,
+			uuid: trim((string)($case['id'] ?? ($case['uuid'] ?? ''))),
+		);
+	}//end storeNumbered()
 
 	/**
 	 * Every identifier the register currently holds.
@@ -216,21 +273,15 @@ class CaseNumberService {
 	 * number. A filter that silently does the WRONG thing would yield a
 	 * duplicate.
 	 *
-	 * @param object     $objectService The OpenRegister ObjectService.
-	 * @param int|string $register      Register id or slug.
-	 * @param int|string $schema        Schema id or slug.
+	 * @param array{0: object, 1: string, 2: string} $scope The OpenRegister ObjectService, register and case schema.
 	 *
 	 * @return array<string> The identifiers in use.
 	 */
-	private function identifiersInUse(
-		object $objectService,
-		int|string $register,
-		int|string $schema,
-	): array {
+	private function identifiersInUse(array $scope): array {
 		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $scope[0],
+			register: $scope[1],
+			schema: $scope[2],
 			filters: ['_limit' => 10000]
 		);
 

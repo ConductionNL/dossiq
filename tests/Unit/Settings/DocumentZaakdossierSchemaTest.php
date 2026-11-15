@@ -142,12 +142,15 @@ class DocumentZaakdossierSchemaTest extends TestCase {
 	 *
 	 * 1.1.0 added `keywords` and `direction`. 1.2.0 gave `status` and
 	 * `direction` the `x-enum-labels` asserted below, so a reader sees Draft
-	 * and Incoming rather than the stored codes.
+	 * and Incoming rather than the stored codes. 1.2.1 took it out of unified
+	 * search (`searchable: false`, unified-search-opens-every-hit-in-dossiq).
+	 * 1.3.0 added `integrity`, the outcome of the last re-check of the file
+	 * (document-integrity-check).
 	 *
 	 * @return void
 	 */
 	public function testTheSchemaVersionMovesWithEverySchemaChange(): void {
-		self::assertSame('1.2.0', $this->informatieobject()['version']);
+		self::assertSame('1.3.0', $this->informatieobject()['version']);
 	}//end testTheSchemaVersionMovesWithEverySchemaChange()
 
 	/**

@@ -24,19 +24,35 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Email\OutboundMailPolicy;
+use OCA\Dossiq\Service\Email\OutboundMailRules;
+use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
-use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\Email\CaseMailOptOut;
+use OCA\Dossiq\Service\Email\IntakeAccount;
+use OCA\Dossiq\Service\Email\MailGatewayInterface;
+use OCA\Dossiq\Service\Email\MailTransportPolicy;
+use OCA\Dossiq\Service\Email\OutboundCaseMail;
+use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
+use OCA\Dossiq\Service\Email\SenderIdentity;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\SettingsService;
-use OCP\Files\IRootFolder;
+use OCA\Dossiq\Service\OptOutGate;
+use OCA\Dossiq\Tests\Support\FakeIntegriqOptOuts;
+use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
+use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
-use OCP\IUserSession;
+use OCP\IL10N;
 use OCP\Mail\IMailer;
-use OCP\Mail\IMessage;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Security-focused unit tests for CaseEmailService.
@@ -44,11 +60,24 @@ use Psr\Log\LoggerInterface;
  * Covers C4 (IDOR + file-disclosure), H6 (XSS + reserved-domain), L1 (log-injection).
  *
  * @covers \OCA\Dossiq\Service\CaseEmailService
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailRules
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailPolicy
  *
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
- * @uses \OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver
+ * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
+ * @uses \OCA\Dossiq\Service\Email\SenderIdentity
+ * @uses \OCA\Dossiq\Service\Email\IntakeAccount
+ * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Email\CaseEmailRepository
  * @uses \OCA\Dossiq\Service\Email\RecipientAllowlist
+ * @uses \OCA\Dossiq\Exception\RecipientOptedOutException
+ * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
+ * @uses \OCA\Dossiq\Service\OptOutGate
+ * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\CaseMailSend
+ * @uses \OCA\Dossiq\Service\Email\SentCaseMail
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class CaseEmailServiceTest extends TestCase {
 
@@ -60,11 +89,32 @@ class CaseEmailServiceTest extends TestCase {
 	private SettingsService $settingsService;
 
 	/**
-	 * The mocked mailer.
+	 * The mocked Nextcloud Mail gateway: case mail leaves through its account (decision 165).
 	 *
-	 * @var IMailer|\PHPUnit\Framework\MockObject\MockObject
+	 * @var MailGatewayInterface|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private IMailer $mailer;
+	private MailGatewayInterface $mailer;
+
+	/**
+	 * Every message handed to the Mail account.
+	 *
+	 * @var array<int, array{accountId: int, message: array<string, mixed>}>
+	 */
+	private array $sentMessages = [];
+
+	/**
+	 * The Mail accounts the gateway answers.
+	 *
+	 * @var array<int, array{id: int, name: string, email: string}>
+	 */
+	private array $accounts = [];
+
+	/**
+	 * The state the next send answers.
+	 *
+	 * @var string
+	 */
+	private string $sendState = OutboundState::SENT;
 
 	/**
 	 * The mocked app config.
@@ -81,20 +131,6 @@ class CaseEmailServiceTest extends TestCase {
 	private LoggerInterface $logger;
 
 	/**
-	 * The mocked root folder.
-	 *
-	 * @var IRootFolder|\PHPUnit\Framework\MockObject\MockObject
-	 */
-	private IRootFolder $rootFolder;
-
-	/**
-	 * The mocked user session.
-	 *
-	 * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
-	 */
-	private IUserSession $userSession;
-
-	/**
 	 * The service under test.
 	 *
 	 * @var CaseEmailService
@@ -102,30 +138,66 @@ class CaseEmailServiceTest extends TestCase {
 	private CaseEmailService $service;
 
 	/**
+	 * The dispatcher the opt-out question travels through.
+	 *
+	 * @var InMemoryEventDispatcher
+	 */
+	private InMemoryEventDispatcher $dispatcher;
+
+	/**
+	 * integriq's opt-out list, answering on that dispatcher.
+	 *
+	 * @var FakeIntegriqOptOuts
+	 */
+	private FakeIntegriqOptOuts $optOuts;
+
+	/**
+	 * How many sent-mail records were written.
+	 *
+	 * @var int
+	 */
+	private int $sentRecords = 0;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
+		$this->dispatcher = new InMemoryEventDispatcher();
+		$this->optOuts = FakeIntegriqOptOuts::on($this->dispatcher);
+		$this->sentRecords = 0;
 		$this->settingsService = $this->createMock(SettingsService::class);
-		$this->mailer = $this->createMock(IMailer::class);
+		$this->sentMessages = [];
+		$this->accounts = [];
+		$this->sendState = OutboundState::SENT;
+		$this->mailer = $this->createMock(MailGatewayInterface::class);
+		$this->mailer->method('accounts')->willReturnCallback(fn (): array => $this->accounts);
+		// Registered first, so its answer wins over a later expects() that only counts.
+		$this->mailer->method('sendMessage')->willReturnCallback(
+			function (int $accountId, array $message): array {
+				$this->sentMessages[] = ['accountId' => $accountId, 'message' => $message];
+
+				return ['state' => $this->sendState, 'outboxId' => count($this->sentMessages)];
+			}
+		);
 		$this->appConfig = $this->createMock(IAppConfig::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
-		$this->rootFolder = $this->createMock(IRootFolder::class);
-		$this->userSession = $this->createMock(IUserSession::class);
 
 		// The repository and contact directory are real collaborators, not mocks:
 		// every assertion below is about behaviour they inherited verbatim from
 		// CaseEmailService, and the repository is still driven entirely by the
 		// mocked SettingsService (getObjectService() === null ⇒ no case data).
 		$this->service = new CaseEmailService(
-			$this->mailer,
-			$this->appConfig,
-			$this->logger,
-			new CaseEmailRepository($this->settingsService),
-			new CaseContactDirectory(),
-			new CaseEmailAttachmentResolver($this->rootFolder, $this->userSession, $this->logger),
-			new RecipientAllowlist($this->appConfig),
+			logger: $this->logger,
+			repository: new CaseEmailRepository(settingsService: $this->settingsService),
+			contactDirectory: new CaseContactDirectory(),
+			sending: new OutboundMailRules(
+				outbound: $this->outbound(),
+				allowlist: new RecipientAllowlist(appConfig: $this->appConfig),
+				optOut: new CaseMailOptOut(gate: $this->gate(), l10n: $this->l10n(), unsubscribeHeaders: new UnsubscribeHeaders(new NullLogger())),
+			),
+			timeline: $this->createMock(originalClassName: CaseTimeline::class),
 		);
 
 	}//end setUp()
@@ -138,7 +210,7 @@ class CaseEmailServiceTest extends TestCase {
 	 * reads as "not found" and sendEmail() throws before it ever reaches the
 	 * guard. These tests are about the guard.
 	 *
-	 * @param string $fromAddress The configured envelope from-address
+	 * @param string $fromAddress The address of the Mail account the case mail leaves from
 	 * @param string $allowlist The configured allow-list value
 	 * @param array<string, mixed> $caseRecord The raw case record OR returns
 	 *
@@ -148,13 +220,16 @@ class CaseEmailServiceTest extends TestCase {
 		string $fromAddress,
 		string $allowlist,
 		array $caseRecord = ['identifier' => '2026-0001', 'title' => 'Dakkapel'],
+		?CaseTimeline $timeline = null,
+		?array $template = null,
 	): CaseEmailService {
+		$this->accounts = [['id' => 7, 'name' => 'Zaken', 'email' => $fromAddress]];
 		$this->appConfig
 			->method('getValueString')
 			->willReturnCallback(
-				static function (string $app, string $key, string $default = '') use ($fromAddress, $allowlist): string {
+				static function (string $app, string $key, string $default = '') use ($allowlist): string {
 					return match ($key) {
-						'email_from_address' => $fromAddress,
+						IntakeAccount::ACCOUNT_KEY => '7',
 						'email_recipient_allowlist' => $allowlist,
 						default => $default,
 					};
@@ -163,16 +238,25 @@ class CaseEmailServiceTest extends TestCase {
 
 		$repository = $this->createMock(CaseEmailRepository::class);
 		$repository->method('loadCaseRecord')->willReturn($caseRecord);
-		$repository->method('recordSentEmail')->willReturn('msg-test');
+		$repository->method('recordSentEmail')->willReturnCallback(
+			function () {
+				$this->sentRecords++;
+				return 'msg-test';
+			}
+		);
+		$repository->method('findTemplate')->willReturn($template);
+		$repository->method('loadCaseVariables')->willReturn([]);
 
 		return new CaseEmailService(
-			$this->mailer,
-			$this->appConfig,
-			$this->logger,
-			$repository,
-			new CaseContactDirectory(),
-			new CaseEmailAttachmentResolver($this->rootFolder, $this->userSession, $this->logger),
-			new RecipientAllowlist($this->appConfig),
+			logger: $this->logger,
+			repository: $repository,
+			contactDirectory: new CaseContactDirectory(),
+			sending: new OutboundMailRules(
+				outbound: $this->outbound(),
+				allowlist: new RecipientAllowlist(appConfig: $this->appConfig),
+				optOut: new CaseMailOptOut(gate: $this->gate(), l10n: $this->l10n(), unsubscribeHeaders: new UnsubscribeHeaders(new NullLogger())),
+			),
+			timeline: ($timeline ?? $this->createMock(originalClassName: CaseTimeline::class)),
 		);
 	}//end serviceWithCase()
 
@@ -194,13 +278,10 @@ class CaseEmailServiceTest extends TestCase {
 			allowlist: '@gemeente.nl, team@partner.nl',
 		);
 
-		// The mailer is fully stubbed, NOT constrained to never(): a guard that
-		// wrongly passes must then reach a working send() and fail this test on
-		// the missing exception. A never() expectation here would be swallowed by
-		// dispatchMessage()'s catch and reported as 'email_send_failed', which
-		// hides which assertion actually broke. The never() case is asserted by
+		// The Mail account is fully stubbed, NOT constrained to never(): a guard
+		// that wrongly passes must then reach a working send and fail this test
+		// on the missing exception. The never() case is asserted by
 		// testUnconfiguredAllowlistRejectsAForeignDomain.
-		$this->mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
 
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessage('Ontvanger staat niet op de lijst');
@@ -226,8 +307,7 @@ class CaseEmailServiceTest extends TestCase {
 			allowlist: '@gemeente.nl, team@partner.nl',
 		);
 
-		$this->mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
-		$this->mailer->expects($this->once())->method('send');
+		$this->mailer->expects($this->once())->method('sendMessage');
 
 		$result = $service->sendEmail(
 			caseId: 'case-1',
@@ -238,6 +318,130 @@ class CaseEmailServiceTest extends TestCase {
 
 		$this->assertSame('TEAM@partner.nl', $result['to']);
 	}//end testSendEmailAllowsRecipientOnConfiguredAllowlist()
+
+	/**
+	 * A malformed recipient is refused before the allow-list is read, and nothing leaves.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedRecipientIsRefusedAndNothingIsSent(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '*',
+		);
+
+		$this->mailer->expects($this->never())->method('sendMessage');
+
+		try {
+			$service->sendEmail(caseId: 'case-1', to: 'geen-adres', subject: 'Hallo', body: 'Tekst');
+			$this->fail('A malformed recipient must be refused.');
+		} catch (\RuntimeException $e) {
+			$this->assertSame('Ongeldig e-mailadres opgegeven.', $e->getMessage());
+		}
+
+		$this->assertSame(0, $this->sentRecords);
+	}//end testAMalformedRecipientIsRefusedAndNothingIsSent()
+
+	/**
+	 * A sent mail answers its whole result: the stored id, both addresses, the subject and the state.
+	 *
+	 * @return void
+	 */
+	public function testASentMailAnswersItsWholeResult(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '@gemeente.nl',
+		);
+
+		$result = $service->sendEmail(caseId: 'case-1', to: 'burger@gemeente.nl', subject: 'Hallo', body: 'Tekst');
+
+		$this->assertSame(['messageId', 'to', 'from', 'subject', 'state', 'sentAt'], array_keys($result));
+		$this->assertSame('msg-test', $result['messageId']);
+		$this->assertSame('burger@gemeente.nl', $result['to']);
+		$this->assertSame('zaken@gemeente.nl', $result['from']);
+		$this->assertSame('Hallo', $result['subject']);
+		$this->assertSame(1, $this->sentRecords);
+	}//end testASentMailAnswersItsWholeResult()
+
+	/**
+	 * A sent mail puts a PUBLIC line on the case's timeline, carrying the
+	 * recipient, the subject and the id of the document it was recorded as.
+	 *
+	 * Public because the recipient already holds this message: withholding
+	 * its line from the timeline the portal reads would hide it only from the
+	 * person who has it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	public function testASentMailReachesTheTimelineAsAPublicEntry(): void {
+		$seen = [];
+		$timeline = $this->createMock(CaseTimeline::class);
+		$timeline->method('record')->willReturnCallback(
+			static function (
+				string $caseId,
+				string $kind,
+				string $message,
+				array $fields = [],
+				string $visibility = 'internal',
+				array $relatedCaseIds = [],
+			) use (&$seen): string {
+				$seen = compact('caseId', 'kind', 'fields', 'visibility');
+
+				return 'entry-1';
+			}
+		);
+
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '@gemeente.nl, team@partner.nl',
+			timeline: $timeline,
+		);
+
+
+		$service->sendEmail(
+			caseId: 'case-1',
+			to: 'team@partner.nl',
+			subject: 'Hallo',
+			body: 'Tekst',
+		);
+
+		$this->assertSame('case-1', $seen['caseId']);
+		$this->assertSame('mail-uitgaand', $seen['kind']);
+		$this->assertSame('public', $seen['visibility']);
+		$this->assertSame('team@partner.nl', $seen['fields']['recipient']);
+		$this->assertSame('Hallo', $seen['fields']['subject']);
+		$this->assertSame('msg-test', $seen['fields']['documentId']);
+	}//end testASentMailReachesTheTimelineAsAPublicEntry()
+
+	/**
+	 * A mail the allow-list refuses never reaches the timeline either: the
+	 * entry records a message that was SENT, and nothing was.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	public function testARefusedMailWritesNoTimelineEntry(): void {
+		$timeline = $this->createMock(CaseTimeline::class);
+		$timeline->expects($this->never())->method('record');
+
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '@gemeente.nl',
+			timeline: $timeline,
+		);
+
+		$this->expectException(\RuntimeException::class);
+
+		$service->sendEmail(
+			caseId: 'case-1',
+			to: 'someone@elsewhere.example',
+			subject: 'Hallo',
+			body: 'Tekst',
+		);
+	}//end testARefusedMailWritesNoTimelineEntry()
 
 	/**
 	 * H4: an unconfigured allow-list defaults to the from-address's own domain.
@@ -256,8 +460,7 @@ class CaseEmailServiceTest extends TestCase {
 			allowlist: '',
 		);
 
-		$this->mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
-		$this->mailer->expects($this->once())->method('send');
+		$this->mailer->expects($this->once())->method('sendMessage');
 
 		$result = $service->sendEmail(
 			caseId: 'case-1',
@@ -282,8 +485,7 @@ class CaseEmailServiceTest extends TestCase {
 			allowlist: '',
 		);
 
-		$this->mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
-		$this->mailer->expects($this->never())->method('send');
+		$this->mailer->expects($this->never())->method('sendMessage');
 
 		$this->expectException(\RuntimeException::class);
 
@@ -308,8 +510,7 @@ class CaseEmailServiceTest extends TestCase {
 			allowlist: '*',
 		);
 
-		$this->mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
-		$this->mailer->expects($this->once())->method('send');
+		$this->mailer->expects($this->once())->method('sendMessage');
 
 		$result = $service->sendEmail(
 			caseId: 'case-1',
@@ -342,8 +543,7 @@ class CaseEmailServiceTest extends TestCase {
 			],
 		);
 
-		$this->mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
-		$this->mailer->expects($this->once())->method('send');
+		$this->mailer->expects($this->once())->method('sendMessage');
 
 		$result = $service->sendEmail(
 			caseId: 'case-1',
@@ -356,54 +556,77 @@ class CaseEmailServiceTest extends TestCase {
 	}//end testCaseContactIsAllowedEvenOffDomain()
 
 	/**
-	 * H6: sendEmail throws when from-address is empty.
+	 * No Mail account picked: the send is refused as unavailable, and nothing goes out.
+	 *
+	 * Replaces the old "from-address not configured" refusal: the sender is now
+	 * the account, so a missing account is the configuration error.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
-	public function testSendEmailThrowsWhenFromAddressEmpty(): void {
-		$this->appConfig
-			->method('getValueString')
-			->willReturnCallback(
-				function (string $app, string $key, string $default = '') {
-					if ($key === 'email_from_address') {
-						return '';
-					}
+	public function testNoPickedAccountRefusesAsUnavailable(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
+		// The account the instance points at is gone from Nextcloud Mail.
+		$this->accounts = [['id' => 9, 'name' => 'Ander', 'email' => 'ander@gemeente.nl']];
+		$this->mailer->expects($this->never())->method('sendMessage');
 
-					return $default;
-				}
-			);
+		try {
+			$service->sendEmail('case-1', 'burger@example.nl', 'Subject', 'Body');
+			$this->fail('A send with no usable account must be refused.');
+		} catch (RefusedException $e) {
+			$this->assertSame('mail-account-unavailable', $e->getRule());
+			$this->assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+		}
 
-		$this->expectException(\RuntimeException::class);
-		$this->expectExceptionMessageMatches('/geconfigureerd/i');
-
-		$this->service->sendEmail('case-uuid', 'to@example.com', 'Subject', 'Body');
-
-	}//end testSendEmailThrowsWhenFromAddressEmpty()
+		$this->assertSame(0, $this->sentRecords);
+	}//end testNoPickedAccountRefusesAsUnavailable()
 
 	/**
-	 * H6: sendEmail throws when from-address is the reserved example.nl domain.
+	 * A case mail leaves from the picked account, and the sender reported is that account's address.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
-	public function testSendEmailThrowsWhenFromAddressIsReservedDomain(): void {
-		$this->appConfig
-			->method('getValueString')
-			->willReturnCallback(
-				function (string $app, string $key, string $default = '') {
-					if ($key === 'email_from_address') {
-						return 'noreply@example.nl';
-					}
+	public function testACaseMailLeavesThroughThePickedAccount(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
 
-					return $default;
-				}
-			);
+		$result = $service->sendEmail('case-1', 'burger@example.nl', 'Uw zaak', '<p>Tekst</p>', ['Documenten/brief.pdf']);
 
-		$this->expectException(\RuntimeException::class);
-		$this->expectExceptionMessageMatches('/geconfigureerd/i');
+		$this->assertSame(7, $this->sentMessages[0]['accountId']);
+		$this->assertSame(['Documenten/brief.pdf'], $this->lastSent()['attachments']);
+		$this->assertSame('zaken@gemeente.nl', $result['from']);
+		$this->assertSame(OutboundState::SENT, $result['state']);
+	}//end testACaseMailLeavesThroughThePickedAccount()
 
-		$this->service->sendEmail('case-uuid', 'to@example.com', 'Subject', 'Body');
+	/**
+	 * A message the account took but could not send stays visible on the case as queued.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	public function testAQueuedMessageIsRecordedOnTheCaseAsQueued(): void {
+		$seen = [];
+		$timeline = $this->createMock(CaseTimeline::class);
+		$timeline->method('record')->willReturnCallback(
+			static function (string $caseId, string $kind, string $message, array $fields = []) use (&$seen): string {
+				$seen = $fields;
 
-	}//end testSendEmailThrowsWhenFromAddressIsReservedDomain()
+				return 'entry-1';
+			}
+		);
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*', timeline: $timeline);
+		$this->sendState = OutboundState::QUEUED;
+
+		$result = $service->sendEmail('case-1', 'burger@example.nl', 'Uw zaak', 'Tekst');
+
+		$this->assertSame(OutboundState::QUEUED, $result['state']);
+		$this->assertSame(OutboundState::QUEUED, $seen['delivery']);
+		$this->assertSame('zaken@gemeente.nl', $seen['sender']);
+		$this->assertSame(1, $this->sentRecords);
+	}//end testAQueuedMessageIsRecordedOnTheCaseAsQueued()
 
 	/**
 	 * C4 IDOR: sendEmail throws when case is not found (access denied).
@@ -484,4 +707,202 @@ class CaseEmailServiceTest extends TestCase {
 		$this->assertStringContainsString('Henk', $result);
 
 	}//end testResolveVariablesLeavesUnresolvedUnchanged()
+
+	/**
+	 * The opt-out gate, asking through the test dispatcher with the check on.
+	 *
+	 * @return OptOutGate The gate.
+	 */
+	private function gate(): OptOutGate {
+		$gateConfig = $this->createMock(IAppConfig::class);
+		$gateConfig->method('getValueString')->willReturnArgument(2);
+
+		return new OptOutGate($this->dispatcher, $gateConfig, new NullLogger());
+	}//end gate()
+
+	/**
+	 * A translator that formats like Nextcloud's: vsprintf on the source text.
+	 *
+	 * @return IL10N The translator.
+	 */
+	private function l10n(): IL10N {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, $parameters = []): string => vsprintf($text, (array)$parameters)
+		);
+
+		return $l10n;
+	}//end l10n()
+
+	/**
+	 * The outbound path over the mocked gateway, with the default account picked.
+	 *
+	 * @return OutboundCaseMail The real outbound path.
+	 */
+	private function outbound(): OutboundCaseMail {
+		$caseTypes = $this->createMock(CaseTypeResolver::class);
+		$caseTypes->method('effectiveCaseType')->willReturn([]);
+		$store = $this->createMock(CaseTypeStore::class);
+		$store->method('referenceId')->willReturnCallback(static fn ($value): string => trim((string)$value));
+
+		return new OutboundCaseMail(
+			gateway: $this->mailer,
+			transport: new OutboundMailPolicy(
+				identity: new SenderIdentity(
+					gateway: $this->mailer,
+					intakeAccount: new IntakeAccount(appConfig: $this->appConfig),
+					caseTypes: $caseTypes,
+					store: $store
+				),
+				policy: new MailTransportPolicy(appConfig: $this->appConfig),
+				optOut: new CaseMailOptOut(gate: $this->gate(), l10n: $this->l10n(), unsubscribeHeaders: new UnsubscribeHeaders(new NullLogger())),
+			),
+			mailer: $this->createMock(originalClassName: IMailer::class),
+			appConfig: $this->appConfig,
+			logger: new NullLogger()
+		);
+	}//end outbound()
+
+	/**
+	 * The last message handed to the Mail account.
+	 *
+	 * @return array<string, mixed> The payload.
+	 */
+	private function lastSent(): array {
+		$this->assertNotSame([], $this->sentMessages, 'nothing was handed to the Mail account');
+
+		return $this->sentMessages[array_key_last($this->sentMessages)]['message'];
+	}//end lastSent()
+
+	/**
+	 * A recipient who stopped this case gets no mail and no sent record (REQ-COO-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 */
+	public function testARecipientWhoStoppedThisCaseGetsNoMailAndNoSentRecord(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
+		$this->optOuts->optOut('burger@example.nl', 'case-1');
+		$this->mailer->expects($this->never())->method('sendMessage');
+
+		try {
+			$service->sendEmail(caseId: 'case-1', to: 'burger@example.nl', subject: 'Uw zaak', body: '<p>Tekst</p>');
+			$this->fail('An opted-out recipient must not be mailed.');
+		} catch (RecipientOptedOutException $e) {
+			$this->assertSame('opted-out', $e->getReasonCode());
+		}
+
+		$this->assertSame(0, $this->sentRecords);
+		$this->assertSame('case-1', $this->optOuts->log[0]['caseRef']);
+		$this->assertSame('case-update', $this->optOuts->log[0]['category']);
+	}//end testARecipientWhoStoppedThisCaseGetsNoMailAndNoSentRecord()
+
+	/**
+	 * A case-update carries integriq's link in the body (REQ-COO-003).
+	 *
+	 * Case mail leaves through the Mail account, which builds its own headers,
+	 * so the link travels in the body only (decision 165). The RFC 8058
+	 * headers stay on term notices and service mail, which keep IMailer.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
+	 */
+	public function testACaseUpdateCarriesTheLinkInTheBody(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
+		$this->optOuts->optOut('burger@example.nl', 'case-1');
+				$this->mailer->expects($this->once())->method('sendMessage');
+
+		$service->sendEmail(caseId: 'case-2', to: 'burger@example.nl', subject: 'Uw zaak', body: '<p>Tekst</p>');
+
+		$url = 'https://nc.example/index.php/apps/integriq/unsubscribe/tok-' . md5('burger@example.nl|case-2');
+		$sent = $this->lastSent();
+		$this->assertStringContainsString('href="' . $url . '"', $sent['html']);
+		$this->assertStringContainsString($url, $sent['plain']);
+		$this->assertSame(['burger@example.nl'], $sent['to']);
+		$this->assertSame(1, $this->sentRecords);
+	}//end testACaseUpdateCarriesTheLinkInTheBody()
+
+	/**
+	 * A besluit reaches an instance-wide opt-out, without a link (REQ-COO-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-a-handler-can-send-a-besluit-that-is-always-delivered-req-coo-002
+	 */
+	public function testABesluitReachesAnOptedOutRecipientWithoutALink(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
+		$this->optOuts->optOut('burger@example.nl');
+				$this->mailer->expects($this->once())->method('sendMessage');
+
+		$service->sendEmail(
+			caseId: 'case-1',
+			to: 'burger@example.nl',
+			subject: 'Besluit',
+			body: '<p>Besluit</p>',
+			category: 'besluit',
+		);
+
+		$this->assertSame('<p>Besluit</p>', $this->lastSent()['html']);
+		$this->assertTrue($this->optOuts->log[0]['overridden']);
+	}//end testABesluitReachesAnOptedOutRecipientWithoutALink()
+
+	/**
+	 * An unknown category is refused before anything is asked or sent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-a-handler-can-send-a-besluit-that-is-always-delivered-req-coo-002
+	 */
+	public function testAnUnknownCategoryIsRefused(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
+		$this->mailer->expects($this->never())->method('sendMessage');
+
+		$this->expectException(\InvalidArgumentException::class);
+
+		$service->sendEmail(caseId: 'case-1', to: 'burger@example.nl', subject: 'S', body: 'B', category: 'marketing');
+	}//end testAnUnknownCategoryIsRefused()
+
+	/**
+	 * A template's messageCategory decides; a besluit template reaches an opt-out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-a-handler-can-send-a-besluit-that-is-always-delivered-req-coo-002
+	 */
+	public function testATemplateMarkedBesluitIsSentToAnOptedOutRecipient(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '*',
+			template: ['subjectPattern' => 'Besluit', 'body' => 'Uw besluit', 'messageCategory' => 'besluit'],
+		);
+		$this->optOuts->optOut('burger@example.nl');
+		$this->mailer->expects($this->once())->method('sendMessage');
+
+		$service->sendFromTemplate(caseId: 'case-1', templateId: 'tpl-1', to: 'burger@example.nl');
+
+		$this->assertSame('besluit', $this->optOuts->log[0]['category']);
+	}//end testATemplateMarkedBesluitIsSentToAnOptedOutRecipient()
+
+	/**
+	 * A template without a category is a case-update and respects the opt-out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 */
+	public function testATemplateWithoutACategoryRespectsTheOptOut(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '*',
+			template: ['subjectPattern' => 'Stand', 'body' => 'Uw zaak loopt', 'messageCategory' => 'nonsense'],
+		);
+		$this->optOuts->optOut('burger@example.nl');
+		$this->mailer->expects($this->never())->method('sendMessage');
+
+		$this->expectException(RecipientOptedOutException::class);
+
+		$service->sendFromTemplate(caseId: 'case-1', templateId: 'tpl-1', to: 'burger@example.nl');
+	}//end testATemplateWithoutACategoryRespectsTheOptOut()
 }//end class

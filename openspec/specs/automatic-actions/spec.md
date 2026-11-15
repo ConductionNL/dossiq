@@ -136,15 +136,21 @@ This requirement named `NotificatieService::sendEmail()` until 2026-09-09. That 
 - **WHEN** the handler runs outside dry-run
 - **THEN** it SHALL refuse with `missing_template_field:<path>` BEFORE the first write, and the dossier SHALL be unchanged
 
-### REQ-005: ScheduleReminderHandler SHALL defer execution via a Nextcloud BackgroundJob
+### REQ-005: The reminder action SHALL NOT be offered
 
-`ScheduleReminderHandler` (type `scheduleReminder`) SHALL accept `{type: 'scheduleReminder', triggerAt: <ISO8601>, action: <ActionConfig>}` and register a deferred-execution BackgroundJob (the deferred reminder job class is owned by status-transition-engine and is referenced by FQCN). When the BackgroundJob fires, the wrapped `action` SHALL be re-dispatched through `ActionRegistry` for normal execution. The handler SHALL return an `ActionResult.success: true` immediately upon scheduling, regardless of the wrapped action's eventual outcome.
+Dossiq SHALL NOT register a `scheduleReminder` action handler or flow node. The former handler queued a background job class that never existed, so no reminder ever fired. A stored `automaticAction` of that type SHALL be kept as data, reported by the upgrade repair step, and skipped by the flow migration.
 
-#### Scenario: Schedule a reminder for 24h later
-- **WHEN** `ScheduleReminderHandler::handle({type: 'scheduleReminder', triggerAt: '<24h from now>', action: {type: 'sendEmail', ...}}, $case, $ctx)` runs
-- **THEN** a deferred BackgroundJob SHALL be registered in Nextcloud's job queue
-- **AND** the immediate `ActionResult` SHALL be `success: true`
-- **AND** when the job fires later, `ActionRegistry::get('sendEmail')->handle(...)` SHALL execute with the original case payload
+#### Scenario: A stored reminder action is reported, not run
+- **GIVEN** a stored `automaticAction` whose `type` is `scheduleReminder`
+- **WHEN** the upgrade repair step runs
+- **THEN** it SHALL log a warning naming the action
+- **AND** the stored object SHALL be unchanged
+
+#### Scenario: A stored flow step of the retired node is removed and named
+- **GIVEN** a stored flow owned by dossiq with a `dossiq.action.scheduleReminder` step
+- **WHEN** the upgrade repair step runs
+- **THEN** the step and its edges SHALL be removed from the flow
+- **AND** a warning SHALL name the flow and the step
 
 Notes
 - `lib/Service/Transitions/SendEmailHandler.php` (separate file) is a parallel implementation for the status-transition-engine framework and is NOT part of this cluster.

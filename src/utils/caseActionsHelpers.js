@@ -15,6 +15,7 @@
  *    client's job;
  *  - whether a plan is complete enough to send, which decides whether the
  *    confirm button is enabled rather than whether the POST fails;
+ *  - what a follow-up may repeat as, and when a repeating one stops;
  *  - what the earliest date a follow-up may be planned for is, because a
  *    follow-up in the past is a case that appears immediately and reads as a
  *    bug.
@@ -45,6 +46,20 @@ export function proposedCopyTitle(title) {
 	return `Copy of ${source}`
 }
 
+// The sentence per case-actions refusal code. Each entry calls translate()
+// on a literal key, so the string extraction reads every one.
+const CASE_ACTION_REFUSALS = new Map([
+	['case_not_found', (translate) => translate('This case could not be read.')],
+	['storage_unavailable', (translate) => translate('The case store is not available right now.')],
+	['flows_unavailable', (translate) => translate('The case store is not available right now.')],
+	['invalid_date', (translate) => translate('Pick a date for the follow-up.')],
+	['copy_failed', (translate) => translate('The copy could not be created.')],
+	['plan_failed', (translate) => translate('The follow-up could not be planned.')],
+	['invalid_recurrence', (translate) => translate('Pick how often the follow-up comes back.')],
+	['invalid_end', (translate) => translate('Give the series an end date or a number, not both.')],
+	['stop_failed', (translate) => translate('The series could not be stopped.')],
+])
+
 /**
  * Turn a refusal from the case-actions endpoints into a sentence.
  *
@@ -58,22 +73,8 @@ export function proposedCopyTitle(title) {
  * @spec openspec/specs/case-management/spec.md
  */
 export function caseActionRefusal(error, translate) {
-	const code = String(error?.code ?? '')
-	switch (code) {
-		case 'case_not_found':
-			return translate('This case could not be read.')
-		case 'storage_unavailable':
-		case 'flows_unavailable':
-			return translate('The case store is not available right now.')
-		case 'invalid_date':
-			return translate('Pick a date for the follow-up.')
-		case 'copy_failed':
-			return translate('The copy could not be created.')
-		case 'plan_failed':
-			return translate('The follow-up could not be planned.')
-		default:
-			return translate('This did not work. Try again.')
-	}
+	const sentence = CASE_ACTION_REFUSALS.get(String(error?.code ?? ''))
+	return sentence ? sentence(translate) : translate('This did not work. Try again.')
 }
 
 /**
@@ -94,51 +95,96 @@ export function earliestFollowUpDate(now = new Date()) {
 }
 
 /**
- * Whether a planned follow-up is complete enough to send.
+ * The recurrences a follow-up may carry, in the order the form offers them.
  *
- * @param {object} plan The form state, `{caseType, date, title}`.
- * @param {string} earliest The earliest allowed date, as `YYYY-MM-DD`.
- * @return {boolean} True when every field is present and the date is not past.
+ * The ids match the server's tokens exactly. A recurrence the server does not
+ * know is refused rather than treated as `none`, so a drifting list here is a
+ * refusal a handler sees, not a series that quietly never repeats.
+ *
+ * @param {(key: string) => string} translate The bound t(), taking one string.
+ * @return {Array<{id: string, label: string}>} The options.
  * @spec openspec/specs/workflow-definition-engine/spec.md
  */
-export function isPlanComplete(plan, earliest) {
-	const caseType = String(plan?.caseType ?? '').trim()
-	const date = String(plan?.date ?? '').trim()
-	const title = String(plan?.title ?? '').trim()
-	if (caseType === '' || date === '' || title === '') {
-		return false
-	}
-	return date >= String(earliest ?? '')
+export function recurrenceOptions(translate) {
+	return [
+		{ id: 'none', label: translate('Once') },
+		{ id: 'monthly', label: translate('Every month') },
+		{ id: 'quarterly', label: translate('Every quarter') },
+		{ id: 'halfYearly', label: translate('Every half year') },
+		{ id: 'yearly', label: translate('Every year') },
+	]
 }
 
 /**
- * The rows the Related cases tab shows for the follow-ups still to come.
+ * How a series may end, in the order the form offers them.
  *
- * The label carries the date, because "Controle" on its own says nothing
- * about when it will exist and that is the only thing a planned row adds
- * over an ordinary related case.
- *
- * @param {Array} rows The `planned` endpoint's results.
  * @param {(key: string) => string} translate The bound t(), taking one string.
- * @return {Array<{key: string, label: string, date: string}>} The rows.
+ * @return {Array<{id: string, label: string}>} The options.
  * @spec openspec/specs/workflow-definition-engine/spec.md
  */
-export function plannedRows(rows, translate) {
-	if (Array.isArray(rows) === false) {
-		return []
+export function endOptions(translate) {
+	return [
+		{ id: 'open', label: translate('Until you stop it') },
+		{ id: 'until', label: translate('On a date') },
+		{ id: 'count', label: translate('After a number of cases') },
+	]
+}
+
+/**
+ * Whether a planned follow-up is complete enough to send.
+ *
+ * The end is checked as well as the start. A series asked to end on a date
+ * BEFORE its first occurrence has no occurrences at all, and a count of zero
+ * is a series that never runs: both save without complaint and then do
+ * nothing, which is the failure this change exists to end.
+ *
+ * @param {object} plan The form state, `{caseType, date, title, recurrence, end, until, count}`.
+ * @param {string} earliest The earliest allowed date, as `YYYY-MM-DD`.
+ * @return {boolean} True when every field is present and the dates agree.
+ * @spec openspec/specs/workflow-definition-engine/spec.md
+ */
+export function isPlanComplete(plan, earliest) {
+	const read = plan || {}
+	const date = String(read.date ?? '').trim()
+	if (hasPlanBasics(read) === false || date < String(earliest ?? '')) {
+		return false
 	}
-	return rows
-		.filter((row) => row && String(row.id ?? '') !== '')
-		.map((row) => {
-			const title = String(row.title ?? '').trim()
-			const date = String(row.date ?? '').trim()
-			return {
-				key: String(row.id),
-				date,
-				label:
-					date === ''
-						? title
-						: `${title}, ${translate('planned for {date}').replace('{date}', date)}`,
-			}
-		})
+
+	const recurrence = String(read.recurrence ?? 'none')
+	if (recurrence === 'none') {
+		return true
+	}
+
+	return seriesEndIsComplete(read, date)
+}
+
+/**
+ * Whether a plan names its case type, its date and its title.
+ *
+ * @param {object} plan The plan.
+ * @return {boolean} True when none of the three is blank.
+ */
+function hasPlanBasics(plan) {
+	return [plan.caseType, plan.date, plan.title]
+		.every((value) => String(value ?? '').trim() !== '')
+}
+
+/**
+ * Whether a recurring plan's end is complete: an until date on or after the
+ * first date, a count of at least one, or an open end.
+ *
+ * @param {object} plan The plan.
+ * @param {string} date The plan's first date.
+ * @return {boolean} True when the end is complete.
+ */
+function seriesEndIsComplete(plan, date) {
+	const end = String(plan.end ?? 'open')
+	if (end === 'until') {
+		const until = String(plan.until ?? '').trim()
+		return until !== '' && until >= date
+	}
+	if (end === 'count') {
+		return Number(plan.count ?? 0) >= 1
+	}
+	return true
 }

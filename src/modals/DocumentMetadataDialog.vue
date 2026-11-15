@@ -65,6 +65,39 @@
 				:clearable="false" />
 
 			<NcSelect
+				v-if="allowed.sender"
+				v-model="sender"
+				data-testid="document-sender"
+				:inputLabel="t('dossiq', 'Sender')"
+				:placeholder="senderPlaceholder"
+				:options="partyOptions"
+				label="label"
+				:disabled="partyOptions.length === 0" />
+
+			<NcSelect
+				v-if="allowed.recipients"
+				v-model="recipients"
+				data-testid="document-recipients"
+				:inputLabel="t('dossiq', 'Recipients')"
+				:placeholder="recipientsPlaceholder"
+				:options="partyOptions"
+				label="label"
+				:disabled="partyOptions.length === 0"
+				multiple />
+
+			<p
+				v-if="partyOptions.length === 0"
+				class="dossier-metadata-dialog__missing"
+				data-testid="document-no-parties">
+				{{
+					t(
+						'dossiq',
+						'Add a party on the People tab to say who this document is from or to.',
+					)
+				}}
+			</p>
+
+			<NcSelect
 				v-model="selectedClassification"
 				:inputLabel="t('dossiq', 'Confidentiality')"
 				:options="classificationOptions"
@@ -93,6 +126,41 @@
 				:label="t('dossiq', 'Description')"
 				:placeholder="t('dossiq', 'Optional description')" />
 
+			<dl
+				v-if="isEdit"
+				class="dossier-metadata-dialog__integrity"
+				data-testid="document-integrity">
+				<dt>{{ t('dossiq', 'Scan') }}</dt>
+				<dd data-testid="document-scan-verdict">{{ scanLabel }}</dd>
+				<dt>{{ t('dossiq', 'Checksum') }}</dt>
+				<dd data-testid="document-hash">{{ hashLabel }}</dd>
+			</dl>
+
+			<section
+				v-if="isEdit && recordId"
+				class="dossier-metadata-dialog__approval"
+				data-testid="document-approval-chain">
+				<h3>{{ t('dossiq', 'Approval chain') }}</h3>
+				<!--
+				  approval-chain-on-the-document REQ-BVL-004. decidiq holds the
+				  route; dossiq shows its leaf here, on the DOCUMENT record,
+				  because the leaf takes a register, a schema and an object id
+				  and a file is not an object. The section is beside the
+				  metadata the same person maintains, which is why it is here
+				  rather than on a tab of its own.
+				-->
+				<CnIntegrationWidget
+					only="decidiq-approval-chain"
+					surface="detail-page"
+					leafSurface="sidebar-tab"
+					register="dossiq"
+					schema="informatieobject"
+					:objectId="recordId"
+					:objectLabel="title"
+					appName="Decidiq"
+					appIcon="CheckDecagramOutline" />
+			</section>
+
 			<div class="dossier-metadata-dialog__actions">
 				<NcButton @click="$emit('close')">
 					{{ t('dossiq', 'Cancel') }}
@@ -110,6 +178,7 @@
 </template>
 
 <script>
+import { CnIntegrationWidget } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
@@ -122,11 +191,20 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { fetchCaseParties } from '../services/caseParties.js'
+import {
+	allowedFor,
+	partyOptions as buildPartyOptions,
+	identifiersOf,
+	selectedOptions,
+} from '../services/documentCorrespondents.js'
+import { scanVerdictLabel } from '../services/scanVerdict.js'
 import {
 	classificationOptions as buildClassificationOptions,
 	DEFAULT_DIRECTION,
 	DOCUMENT_DIRECTIONS,
 } from '../utils/dossierHelpers.js'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * Upload metadata dialog. Collects the required informatieobjecttype and
@@ -137,18 +215,19 @@ import {
  * Self-sufficient (documents-on-the-case task 2.2, the CnObjectListWidget
  * swap): opened as a manifest `open-modal` `dropZone`/upload action, which
  * hands it the dropped/picked `File[]` as `props.files` and resolves no
- * other tokens — so, like BeschikkingComposerDialog, this dialog owns
+ * other tokens — so, like GenerateDocumentDialog, this dialog owns
  * fetching the type catalog and performing the upload itself, rather than
  * relying on a parent tab component to do it and pass the results down as
  * props. `caseId` is read the same defensive way: the prop when it does not
  * still hold the unresolved `@objectId` token, the route otherwise.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
  * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export default {
 	name: 'DocumentMetadataDialog',
 	components: {
+		CnIntegrationWidget,
 		NcButton,
 		NcModal,
 		NcProgressBar,
@@ -196,21 +275,77 @@ export default {
 			title: '',
 			description: '',
 			types: [],
+			/** The parties listing, or null when OpenRegister could not answer. */
+			parties: null,
+			/** The picked sender, as the picker's own option object. */
+			sender: null,
+			/** The picked addressees, as the picker's own option objects. */
+			recipients: [],
 			uploading: false,
 			progress: {},
 			errors: {},
 			// Edit mode: the record the file already has, or null.
 			record: null,
 			recordMissing: false,
+			// What files_antivirus recorded for this file, or null until the
+			// read lands. Never defaulted to a clean verdict.
+			scanVerdict: null,
 		}
 	},
 
 	computed: {
 		/**
+		 * The informatieobject this dialog is editing, by id.
+		 *
+		 * Empty while the record is still being resolved, and for a file that
+		 * has no informatieobject behind it at all. The approval section is
+		 * hidden in both cases rather than rendered against an empty id, which
+		 * the leaf would answer with a timeline of nothing: an empty timeline
+		 * reads as "nobody has approved anything", and that is a claim about
+		 * the document that nobody made.
+		 *
+		 * @return {string} The record id, or an empty string.
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
+		 */
+		recordId() {
+			return String(this.record?.id || this.record?.['@self']?.id || '')
+		},
+
+		/**
+		 * What the scanner recorded about this file, as a sentence.
+		 *
+		 * @return {string} The verdict.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		scanLabel() {
+			return scanVerdictLabel(this.scanVerdict)
+		},
+
+		/**
+		 * The checksum of the file content, or a sentence saying there is none.
+		 *
+		 * The hash sits beside the verdict because the two answer one
+		 * question together: whether this is the file it says it is, and
+		 * whether anyone has checked it.
+		 *
+		 * @return {string} The hash, with its algorithm, or a sentence.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		hashLabel() {
+			const integrity = this.record?.integrity || {}
+			const value = String(integrity.value || '')
+			if (value === '') {
+				return t('dossiq', 'Not recorded')
+			}
+			const algorithm = String(integrity.algorithm || 'sha256')
+			return `${algorithm}: ${value}`
+		},
+
+		/**
 		 * Dropdown options for the document type catalog.
 		 *
 		 * @return {Array} The type options.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		typeOptions() {
 			return this.types.map((type) => ({
@@ -226,7 +361,7 @@ export default {
 		 * with the bulk confidentiality-change dialog.
 		 *
 		 * @return {Array} The classification options.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		classificationOptions() {
 			return buildClassificationOptions(this.t.bind(this))
@@ -237,17 +372,13 @@ export default {
 		 *
 		 * An `open-modal` action's `props` are forwarded verbatim, so a prop
 		 * still holding an `@` token is not a case id — the route is (mirrors
-		 * BeschikkingComposerDialog.resolvedCaseId).
+		 * GenerateDocumentDialog.resolvedCaseId).
 		 *
 		 * @return {string} The case id, or empty string.
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
-				return fromProp
-			}
-			return (this.$route && this.$route.params && this.$route.params.id) || ''
+			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**
@@ -294,10 +425,58 @@ export default {
 		},
 
 		/**
+		 * The parties of the case, each offered once.
+		 *
+		 * @return {Array} The picker options.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		partyOptions() {
+			return buildPartyOptions(this.parties)
+		},
+
+		/**
+		 * Which correspondent fields this direction lets a document carry.
+		 *
+		 * The server drops the contradiction either way; this stops offering
+		 * it, so nobody picks a sender on a letter that went out and watches
+		 * it disappear on save.
+		 *
+		 * @return {object} `{sender, recipients}`.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		allowed() {
+			return allowedFor(this.selectedDirection)
+		},
+
+		/**
+		 * What the empty sender picker says.
+		 *
+		 * @return {string} The placeholder.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		senderPlaceholder() {
+			return this.partyOptions.length === 0
+				? this.t('dossiq', 'No parties on this case yet')
+				: this.t('dossiq', 'Pick the party this document came from')
+		},
+
+		/**
+		 * What the empty addressees picker says.
+		 *
+		 * @return {string} The placeholder.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		recipientsPlaceholder() {
+			return this.partyOptions.length === 0
+				? this.t('dossiq', 'No parties on this case yet')
+				: this.t('dossiq', 'Pick the parties this document went to')
+		},
+
+		/**
 		 * Whether the required fields are filled.
 		 *
 		 * @return {boolean} True when type and classification are selected.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		canSubmit() {
 			return this.selectedType !== '' && this.selectedClassification !== ''
@@ -320,7 +499,7 @@ export default {
 		 * When the type changes, default the classification from the type.
 		 *
 		 * @param {string} newType The newly selected type id.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		selectedType(newType) {
 			const match = this.typeOptions.find((option) => option.id === newType)
@@ -333,7 +512,7 @@ export default {
 		 * Pre-fill the title from the first filename when files change.
 		 *
 		 * @param {Array} files The new file list.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		files(files) {
 			if (files.length === 1 && this.title === '') {
@@ -355,8 +534,10 @@ export default {
 	 */
 	created() {
 		this.fetchTypes()
+		this.loadParties()
 		if (this.isEdit) {
 			this.loadRecord()
+			this.loadScanVerdict()
 		}
 	},
 
@@ -365,7 +546,7 @@ export default {
 		 * Fetch the informatieobjecttype catalog for the type picker.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T06
 		 */
 		async fetchTypes() {
 			try {
@@ -377,6 +558,43 @@ export default {
 			} catch {
 				this.types = []
 			}
+		},
+
+		/**
+		 * Read the parties of the case, which are the whole vocabulary the
+		 * two correspondent pickers offer.
+		 *
+		 * The SAME listing the People tab renders (openregister#3761), so a
+		 * party picked here and a party shown there cannot drift apart. A
+		 * failed read leaves the pickers empty and the dialog says so; it does
+		 * not fall back to a free-text field, because a typed name is exactly
+		 * what this change removes.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async loadParties() {
+			this.parties = await fetchCaseParties(this.resolvedCaseId)
+			this.applyStoredCorrespondents()
+		},
+
+		/**
+		 * Show the correspondents the record already stores, once both the
+		 * record and the parties have arrived.
+		 *
+		 * Both reads are in flight at once and either may land first, so this
+		 * runs from both rather than from whichever one happens to be slower.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		applyStoredCorrespondents() {
+			if (this.record === null) {
+				return
+			}
+			const options = this.partyOptions
+			this.sender = selectedOptions(this.record.sender, options)[0] || null
+			this.recipients = selectedOptions(this.record.recipients, options)
 		},
 
 		/**
@@ -427,8 +645,36 @@ export default {
 					: []
 				this.title = String(record.title || '')
 				this.description = String(record.description || '')
+				this.applyStoredCorrespondents()
 			} catch {
 				this.recordMissing = true
+			}
+		},
+
+		/**
+		 * Read what the virus scanner recorded for this file.
+		 *
+		 * A read that fails leaves the verdict null, and null reads Not
+		 * scanned. It never reads clean, because an unanswered question is
+		 * not a cleared file (company ADR-102).
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async loadScanVerdict() {
+			this.scanVerdict = null
+			if (!this.fileId) {
+				return
+			}
+			try {
+				const url = generateUrl(
+					`/apps/dossiq/api/files/${encodeURIComponent(this.fileId)}/scan`,
+				)
+				const { data } = await axios.get(url)
+				this.scanVerdict = data ?? null
+			} catch {
+				// No scanner, no permission, no answer. All three read the
+				// same, and none of them reads clean.
 			}
 		},
 
@@ -488,6 +734,16 @@ export default {
 				keywords: this.normalisedKeywords,
 				title: this.title,
 				description: this.description,
+				// Identifiers, never labels. The picker hands back its option
+				// object, and posting that would store a display name nothing
+				// can filter on.
+				sender: this.allowed.sender
+					? identifiersOf(this.sender)[0] || ''
+					: '',
+
+				recipients: this.allowed.recipients
+					? identifiersOf(this.recipients)
+					: [],
 			}
 			this.uploading = true
 			this.progress = {}
@@ -587,6 +843,20 @@ export default {
 	flex-direction: column;
 	gap: 4px;
 	padding: 4px 0;
+}
+
+.dossier-metadata-dialog__integrity {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 4px 12px;
+	margin-top: 12px;
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
+}
+
+.dossier-metadata-dialog__integrity dd {
+	margin: 0;
+	overflow-wrap: anywhere;
 }
 
 .dossier-metadata-dialog__actions {

@@ -1,0 +1,207 @@
+<?php
+
+/**
+ * Dossiq Move Action
+ *
+ * Filing a message in another folder of the same account, through Nextcloud
+ * Mail, and recording that we did (design D-4).
+ *
+ * A move is a MAILBOX act, not a case act. It does not create a case, it does
+ * not close one, and it does not tell the sender anything. It is what a handler
+ * does to hand a case's correspondence to another team's folder, and it is
+ * separate from {@see BounceAction} because sending a document to another
+ * administrative body and tidying a folder are different things with different
+ * legal weight.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Email
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Email;
+
+use OCA\Dossiq\Kernel\Contracts\MoveActionInterface;
+use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
+use Psr\Log\LoggerInterface;
+
+/**
+ * Files a message in another folder, and records it.
+ *
+ * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
+ *  constructors and value-object factories (`InboundMessage::fromRow()`,
+ *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
+ *  state and exist so a caller cannot build a half-built value.
+ */
+class MoveAction implements MoveActionInterface {
+
+	/**
+	 * The name the intake log records against a move.
+	 */
+	public const NAME = 'move';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param MailGatewayInterface $gateway The mail gateway.
+	 * @param IntakeLog            $log     The intake log.
+	 * @param LoggerInterface      $logger  Logger.
+	 */
+	public function __construct(
+		private readonly MailGatewayInterface $gateway,
+		private readonly IntakeLog $log,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * File one message in another folder of the same account.
+	 *
+	 * @param InboundMessage        $message The message.
+	 * @param string                $target  The folder it goes to.
+	 * @param string                $note    Why, as the handler wrote it.
+	 * @param string                $actorId Who moved it, or '' for the pipeline.
+	 * @param array<string, string> $results The four authentication results.
+	 *
+	 * @return array{moved: bool, entryId: string} What happened, and the log entry.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	public function move(
+		InboundMessage $message,
+		string $target,
+		string $note = '',
+		string $actorId = '',
+		array $results = [],
+	): array {
+		$moved = $this->moveOnServer(message: $message, target: $target);
+		$move = new MailMove(target: $target, note: $note, actorId: $actorId);
+		$reason = $this->recordedReason(move: $move, moved: $moved);
+		$entryId = $this->recordMove(message: $message, entry: ['note' => $note, 'results' => $results, 'reason' => $reason]);
+		$this->amendMove(entryId: $entryId, move: $move);
+
+		return ['moved' => $moved, 'entryId' => $entryId];
+	}//end move()
+
+	/**
+	 * Ask the mail server to move the message, warning when it does not confirm.
+	 *
+	 * @param InboundMessage $message The message.
+	 * @param string         $target  The folder it goes to.
+	 *
+	 * @return boolean Whether the mail server confirmed the move.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function moveOnServer(InboundMessage $message, string $target): bool {
+		$moved = $this->gateway->moveMessage(
+			$message->accountId,
+			$message->mailbox,
+			$message->uid,
+			$target
+		);
+		if ($moved === false) {
+			$this->logger->warning(
+				'Dossiq: a message could not be filed in {target}',
+				['target' => $target, 'messageId' => $message->messageId]
+			);
+		}
+
+		return $moved;
+	}//end moveOnServer()
+
+	/**
+	 * Record the move in the intake log.
+	 *
+	 * @param InboundMessage                                                       $message The message.
+	 * @param array{note: string, results: array<string, string>, reason: string} $entry   Why, as the handler wrote
+	 *                                                                                     it; the four authentication
+	 *                                                                                     results; the recorded reason.
+	 *
+	 * @return string The log entry id, or '' when nothing was recorded.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function recordMove(InboundMessage $message, array $entry): string {
+		['note' => $note, 'reason' => $reason] = $entry;
+		$recorded = $entry['results'];
+		if ($recorded === []) {
+			$recorded = AuthenticationVerdict::unknown();
+		}
+
+		return $this->log->record(
+			message: $message,
+			verdict: FilterVerdict::accept(filterName: self::NAME, reason: $note),
+			results: $recorded,
+			outcome: IntakeLog::OUTCOME_MOVED,
+			reason: $reason
+		);
+	}//end recordMove()
+
+	/**
+	 * Note the target folder and the mover on the log entry.
+	 *
+	 * @param string   $entryId The log entry id, or '' when nothing was recorded.
+	 * @param MailMove $move    The folder and who moved it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function amendMove(string $entryId, MailMove $move): void {
+		if ($entryId !== '') {
+			$this->log->amend(
+				entryId: $entryId,
+				changes: [
+					'movedTo' => $move->target,
+					'movedBy' => $move->actorId,
+					'mailbox' => $move->target,
+				]
+			);
+		}
+	}//end amendMove()
+
+	/**
+	 * What the log says about this move.
+	 *
+	 * @param MailMove $move  The folder, the handler's note and who moved it.
+	 * @param boolean  $moved Whether the mail server confirmed it.
+	 *
+	 * @return string The recorded reason.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function recordedReason(MailMove $move, bool $moved): string {
+		$target = $move->target;
+		$note = $move->note;
+		$actorId = $move->actorId;
+		$who = 'the intake pipeline';
+		if ($actorId !== '') {
+			$who = $actorId;
+		}
+
+		if ($moved === false) {
+			return 'A move to ' . $target . ' was asked for by ' . $who
+				. ' and the mail server did not confirm it. Note: ' . $note;
+		}
+
+		return 'Filed in ' . $target . ' by ' . $who . '. Note: ' . $note;
+	}//end recordedReason()
+}//end class

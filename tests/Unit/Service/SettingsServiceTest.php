@@ -32,11 +32,17 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the SettingsService class.
  *
  * @covers \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Exception\RefusedException
  *
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
+ * @uses \OCA\Dossiq\Service\Settings\ConfigurationImport
+ * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
+ * @uses \OCA\Dossiq\Service\Settings\RegisterStorageDeclaration
+ * @uses \OCA\Dossiq\Woo\WooReportSwitches
+ * @uses \OCA\Dossiq\Service\Settings\RenamedSettingKeys
  */
 class SettingsServiceTest extends TestCase {
 
@@ -190,6 +196,31 @@ class SettingsServiceTest extends TestCase {
 	}//end testGetFileServiceReturnsNullWhenTheContainerCannotResolveIt()
 
 	/**
+	 * The Kadaster and WOZ API keys are written and never read back: an admin
+	 * read and a non-admin read both say only whether one is stored.
+	 *
+	 * @return void
+	 */
+	public function testTheKadasterAndWozApiKeysAreNeverReadBack(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturnCallback(
+				static fn (string $app, string $key, string $default): string => match ($key) {
+					'integration.brk.apiKey' => 'secret-brk-key',
+					default => '',
+				}
+			);
+
+		foreach ([$this->service->getSettings(), $this->service->getPublicSettings()] as $read) {
+			$this->assertArrayNotHasKey(key: 'integration.brk.apiKey', array: $read);
+			$this->assertArrayNotHasKey(key: 'integration.woz.apiKey', array: $read);
+			$this->assertTrue(condition: $read['integration.brk.apiKeySet']);
+			$this->assertFalse(condition: $read['integration.woz.apiKeySet']);
+			$this->assertNotContains(needle: 'secret-brk-key', haystack: $read);
+		}
+	}//end testTheKadasterAndWozApiKeysAreNeverReadBack()
+
+	/**
 	 * Test that getSettings returns all config keys with their values.
 	 *
 	 * @return void
@@ -221,7 +252,7 @@ class SettingsServiceTest extends TestCase {
 		$this->assertArrayHasKey('result_schema', $settings);
 		$this->assertArrayHasKey('decision_schema', $settings);
 		$this->assertArrayHasKey('case_type_schema', $settings);
-		$this->assertArrayHasKey('default_case_type', $settings);
+		$this->assertArrayNotHasKey('default_case_type', $settings);
 
 		$this->assertSame('42', $settings['register']);
 		$this->assertSame('101', $settings['case_schema']);
@@ -264,6 +295,29 @@ class SettingsServiceTest extends TestCase {
 		$this->service->updateSettings($data);
 
 	}//end testUpdateSettingsOnlyUpdatesRecognizedKeys()
+
+	/**
+	 * A renamed money key reads its legacy key until the repair carried it, and only then (REQ-DQM-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 */
+	public function testARenamedMoneyKeyFallsBackToItsLegacyKey(): void {
+		$stored = ['dwangsom_uitbetaling_schema' => '42'];
+		$this->appConfig->method('hasKey')->willReturnCallback(static function (string $app, string $key) use (&$stored): bool {
+			return array_key_exists($key, $stored);
+		});
+		$this->appConfig->method('getValueString')->willReturnCallback(static function (string $app, string $key, string $default = '') use (&$stored): string {
+			return ($stored[$key] ?? $default);
+		});
+
+		$this->assertSame(expected: '42', actual: $this->service->getConfigValue('payout_schema'));
+
+		$stored['payout_schema'] = '';
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('payout_schema'), message: 'A current key an admin cleared is not overridden by the legacy one.');
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('case_schema'), message: 'A key with no legacy name reads only itself.');
+	}//end testARenamedMoneyKeyFallsBackToItsLegacyKey()
 
 	/**
 	 * Test that getConfigValue delegates to appConfig correctly.
@@ -384,6 +438,194 @@ class SettingsServiceTest extends TestCase {
 		$this->assertStringNotContainsString('+', $captured['version']);
 	}//end testLoadConfigurationImportsMergedConfigUnderItsOwnVersion()
 
+	/**
+	 * An import that raises an `\Error` is REPORTED, not escaped.
+	 *
+	 * 🔴 THE BUG THIS CLOSES. A declaration OpenRegister's entity setters
+	 * refuse arrives as a `TypeError`, which extends `\Error` and not
+	 * `\Exception`. The catch here used to be `catch (\Exception)`, so the
+	 * TypeError left the service, left the controller, and the caller read
+	 * HTTP 500 with a Nextcloud error page. Measured 2026-09-19 on a live
+	 * instance: `Schema::setSearchable(): Argument #1 ($searchable) must be
+	 * of type bool, array given`, and `POST /api/settings/load` answered 500.
+	 *
+	 * The cost of the 500 is not the status code. The e2e seed reads it as
+	 * "this app's own loader is unavailable" and falls back to OpenRegister's
+	 * importer, which cannot merge `register.d`, so every schema declared in
+	 * a fragment is absent and no `*_schema` app-config key is ever written.
+	 *
+	 * The assertion is on what the CALLER receives, because that is the thing
+	 * that was wrong.
+	 *
+	 * @return void
+	 */
+	public function testLoadConfigurationReportsAnErrorRatherThanLettingItEscape(): void {
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$this->appManager->method('isInstalled')->willReturn(true);
+
+		$configurationService = $this->createMock(DossiqConfigurationServiceStub::class);
+		$configurationService->expects($this->once())
+			->method('importFromApp')
+			->willThrowException(
+				new \TypeError(
+					'OCA\OpenRegister\Db\Schema::setSearchable(): Argument #1 '
+					. '($searchable) must be of type bool, array given'
+				)
+			);
+
+		$this->container->method('get')->willReturnCallback(
+			static function (string $class) use ($configurationService) {
+				if ($class === 'OCA\OpenRegister\Service\ConfigurationService') {
+					return $configurationService;
+				}
+
+				throw new \RuntimeException('not resolvable in this test: ' . $class);
+			}
+		);
+
+		$result = $this->service->loadConfiguration();
+
+		$this->assertFalse($result['success']);
+		$this->assertStringContainsString('Import failed', $result['message']);
+		$this->assertStringContainsString('setSearchable', $result['message']);
+	}//end testLoadConfigurationReportsAnErrorRatherThanLettingItEscape()
+
+	/**
+	 * An unreachable ConfigurationService is answered, and a success names the mapped count.
+	 *
+	 * @return void
+	 */
+	public function testLoadConfigurationAnswersAnUnreachableServiceAndCountsTheMapping(): void {
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$this->appManager->method('isInstalled')->willReturn(true);
+
+		$configurationService = $this->createMock(DossiqConfigurationServiceStub::class);
+		$configurationService->method('importFromApp')->willReturn(['registers' => [], 'schemas' => []]);
+		$reachable = false;
+		$this->container->method('get')->willReturnCallback(
+			static function (string $class) use ($configurationService, &$reachable) {
+				if ($class === 'OCA\OpenRegister\Service\ConfigurationService' && $reachable === true) {
+					return $configurationService;
+				}
+
+				throw new \RuntimeException('not resolvable: ' . $class);
+			}
+		);
+
+		$this->assertSame(
+			['success' => false, 'message' => 'Could not access ConfigurationService: not resolvable: OCA\OpenRegister\Service\ConfigurationService'],
+			$this->service->loadConfiguration()
+		);
+
+		$reachable = true;
+		$result    = $this->service->loadConfiguration(force: true);
+		$this->assertSame(['success', 'message', 'version', 'configured', 'result'], array_keys($result));
+		$this->assertSame('Configuration imported and auto-configured (' . $result['configured'] . ' schemas mapped)', $result['message']);
+		$this->assertSame(['registers' => [], 'schemas' => []], $result['result']);
+	}//end testLoadConfigurationAnswersAnUnreachableServiceAndCountsTheMapping()
+
+
+	/**
+	 * Both Woo review reports are off on a fresh install, and their keys round-trip.
+	 *
+	 * Fails today: the three keys are not in the allowlist, so getSettings()
+	 * does not report them and a save drops them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	public function testBothWooReportsAreOffOnAFreshInstall(): void {
+		$this->appConfig->method('getValueString')->willReturn('');
+
+		$settings = $this->service->getSettings();
+
+		$this->assertArrayHasKey('reviewerThroughputReport', $settings);
+		$this->assertArrayHasKey('collectionPartiesReport', $settings);
+		$this->assertArrayHasKey('reviewerThroughputReaders', $settings);
+		$this->assertSame('', $settings['reviewerThroughputReport']);
+		$this->assertSame('', $settings['collectionPartiesReport']);
+
+		$switches = new \OCA\Dossiq\Woo\WooReportSwitches(
+			$this->appConfig,
+			$this->createMock(\OCP\IGroupManager::class)
+		);
+		$this->assertFalse($switches->isOn(\OCA\Dossiq\Woo\WooReportSwitches::THROUGHPUT));
+		$this->assertFalse($switches->isOn(\OCA\Dossiq\Woo\WooReportSwitches::PARTIES));
+	}//end testBothWooReportsAreOffOnAFreshInstall()
+
+	/**
+	 * Switching the throughput report on without an existing reader group is refused, and nothing is written.
+	 *
+	 * Fails today: updateSettings() writes any allowlisted key without a check.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	public function testThroughputNeedsAReaderGroup(): void {
+		$groupManager = $this->createMock(\OCP\IGroupManager::class);
+		$groupManager->method('groupExists')->willReturnMap([['woo-leiding', true], ['nobody', false]]);
+		$this->container->method('get')->willReturnCallback(
+			static function (string $id) use ($groupManager): object {
+				if ($id === \OCP\IGroupManager::class) {
+					return $groupManager;
+				}
+
+				throw new \RuntimeException('not wired: ' . $id);
+			}
+		);
+		$this->appConfig->method('getValueString')->willReturn('');
+		$this->appConfig->expects($this->never())->method('setValueString');
+
+		$saves = [
+			['reviewerThroughputReport' => 'true'],
+			['reviewerThroughputReport' => 'true', 'reviewerThroughputReaders' => 'nobody'],
+			// A client that still posts the earlier keys is checked the same way.
+			['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'nobody'],
+		];
+		foreach ($saves as $save) {
+			try {
+				$this->service->updateSettings($save);
+				$this->fail('The throughput report went on without an existing reader group');
+			} catch (\OCA\Dossiq\Exception\RefusedException $e) {
+				$this->assertSame('woo-throughput-needs-reader-group', $e->getRule());
+				$this->assertSame(422, $e->getStatus());
+				$this->assertStringContainsString('reader group', $e->getSentence());
+			}
+		}
+	}//end testThroughputNeedsAReaderGroup()
+
+	/**
+	 * With an existing reader group the throughput report goes on, and both keys are written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	public function testThroughputGoesOnWithAnExistingReaderGroup(): void {
+		$groupManager = $this->createMock(\OCP\IGroupManager::class);
+		$groupManager->method('groupExists')->with('woo-leiding')->willReturn(true);
+		$this->container->method('get')->willReturn($groupManager);
+		$this->appConfig->method('getValueString')->willReturn('');
+		$written = [];
+		$this->appConfig->method('setValueString')->willReturnCallback(
+			static function (string $app, string $key, string $value) use (&$written): bool {
+				$written[$key] = $value;
+				return true;
+			}
+		);
+
+		$this->service->updateSettings(['reviewerThroughputReport' => 'true', 'reviewerThroughputReaders' => 'woo-leiding']);
+
+		$this->assertSame(['reviewerThroughputReport' => 'true', 'reviewerThroughputReaders' => 'woo-leiding'], $written);
+
+		// The earlier keys still save, and land under the current keys too.
+		$written = [];
+		$this->service->updateSettings(['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding']);
+		$this->assertSame('true', $written['reviewerThroughputReport']);
+		$this->assertSame('woo-leiding', $written['reviewerThroughputReaders']);
+	}//end testThroughputGoesOnWithAnExistingReaderGroup()
 }//end class
 
 /**

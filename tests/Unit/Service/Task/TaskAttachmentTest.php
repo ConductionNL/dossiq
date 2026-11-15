@@ -1,0 +1,299 @@
+<?php
+
+/**
+ * A file uploaded in a task form binds to the task until it is completed.
+ *
+ * The three states are a sequence, and only the middle one is visible in a
+ * browser: an open task with a file that is NOT among the case's documents
+ * looks exactly like a case with no document, which is also what a broken
+ * upload looks like. So the hold, the release and the publication are pinned
+ * here, on the store rather than on the screen.
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Service\Task
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Service\Task;
+
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\TaskAttachmentService;
+use OCP\AppFramework\Db\DoesNotExistException;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
+use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
+/**
+ * @covers \OCA\Dossiq\Service\Task\TaskAttachmentService
+ * @uses \OCA\Dossiq\Service\Task\CaseTask
+ */
+class TaskAttachmentTest extends TestCase {
+
+	/**
+	 * The store every test in this file runs against.
+	 *
+	 * @var object
+	 */
+	private object $store;
+
+	/**
+	 * A case with no held files, and an object service that remembers writes.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->store = new class {
+			/**
+			 * The stored case.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public array $case = ['id' => 'case-9', 'title' => 'Bezwaar Jansen'];
+
+			/**
+			 * Every object created, in order.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $created = [];
+
+			/**
+			 * Whether the case is gone from the store.
+			 *
+			 * @var bool
+			 */
+			public bool $missing = false;
+
+			/**
+			 * @param string $objectId The case.
+			 * @param array<string, mixed> $data The changes.
+			 * @param mixed $register The register.
+			 * @param mixed $schema The schema.
+			 *
+			 * @return array<string, mixed> The stored case.
+			 */
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
+				$this->case = array_merge($this->case, $data);
+
+				return $this->case;
+			}
+
+			/**
+			 * @param array<string, mixed> $object The object.
+			 * @param mixed $register The register.
+			 * @param mixed $schema The schema.
+			 * @param string|null $uuid The uuid.
+			 *
+			 * @return array<string, mixed> The object.
+			 */
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				$this->created[] = $object;
+
+				return $object;
+			}
+
+			/**
+			 * @param string $id The object id.
+			 * @param mixed $register The register.
+			 * @param mixed $schema The schema.
+			 *
+			 * @return array<string, mixed> The case.
+			 */
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
+				if ($this->missing === true) {
+					throw new DoesNotExistException('gone');
+				}
+
+				return $this->case;
+			}
+		};
+	}
+
+	/**
+	 * A held file waits with the task and is not a document on the case.
+	 *
+	 * @return void
+	 */
+	public function testAHeldFileIsNotYetACaseDocument(): void {
+		$service = $this->service();
+
+		$held = $service->bind(
+			caseId: 'case-9',
+			taskId: 'task-1',
+			file: ['file' => 'file-7', 'title' => 'Verslag hoorzitting.pdf'],
+			uploader: 'hbakker'
+		);
+
+		$this->assertCount(expectedCount: 1, haystack: $held);
+		$this->assertSame(expected: 'file-7', actual: $held[0]['file']);
+		$this->assertSame(expected: 'hbakker', actual: $held[0]['uploadedBy']);
+		// The whole point: no caseDocument was written, so the case's
+		// documents do not contain it and no reader had to learn to filter.
+		$this->assertSame(expected: [], actual: $this->store->created);
+	}
+
+	/**
+	 * A file is removed while the task is open.
+	 *
+	 * @return void
+	 */
+	public function testAFileIsRemovedWhileTheTaskIsOpen(): void {
+		$service = $this->service();
+		$service->bind(caseId: 'case-9', taskId: 'task-1', file: ['file' => 'file-7'], uploader: 'hbakker');
+		$service->bind(caseId: 'case-9', taskId: 'task-1', file: ['file' => 'file-8'], uploader: 'hbakker');
+
+		$left = $service->release(caseId: 'case-9', taskId: 'task-1', fileId: 'file-7');
+
+		$this->assertCount(expectedCount: 1, haystack: $left);
+		$this->assertSame(expected: 'file-8', actual: $left[0]['file']);
+	}
+
+	/**
+	 * Completing the task publishes its files to the case, naming the task.
+	 *
+	 * @return void
+	 */
+	public function testCompletingPublishesTheFileAndRecordsTheTask(): void {
+		$service = $this->service();
+		$service->bind(
+			caseId: 'case-9',
+			taskId: 'task-1',
+			file: ['file' => 'file-7', 'title' => 'Verslag hoorzitting.pdf'],
+			uploader: 'hbakker'
+		);
+		// A second task's file, which this completion must leave alone.
+		$service->bind(caseId: 'case-9', taskId: 'task-2', file: ['file' => 'file-9'], uploader: 'hbakker');
+
+		$published = $service->publish(caseId: 'case-9', taskId: 'task-1');
+
+		$this->assertSame(expected: 1, actual: $published);
+		$this->assertCount(expectedCount: 1, haystack: $this->store->created);
+		$this->assertSame(expected: 'case-9', actual: $this->store->created[0]['case']);
+		$this->assertSame(expected: 'file-7', actual: $this->store->created[0]['document']);
+		// 🔑 WHICH TASK PRODUCED IT. Without this the document is on the case
+		// and the trail back to the work that produced it is gone.
+		$this->assertSame(expected: 'task-1', actual: $this->store->created[0]['sourceTask']);
+
+		// The published file leaves the hold; the other task's does not.
+		$this->assertSame(
+			expected: ['file-9'],
+			actual: array_column($this->store->case[TaskAttachmentService::HOLD], 'file')
+		);
+	}
+
+	/**
+	 * Publishing a task that held nothing writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testATaskThatHeldNothingPublishesNothing(): void {
+		$this->assertSame(expected: 0, actual: $this->service()->publish(caseId: 'case-9', taskId: 'task-1'));
+		$this->assertSame(expected: [], actual: $this->store->created);
+	}
+
+	/**
+	 * A hold that came back as a JSON string is still read.
+	 *
+	 * A store that round-trips an array property through a text column hands
+	 * back the JSON, and reading only the array shape is how a file is lost.
+	 *
+	 * @return void
+	 */
+	public function testAHoldStoredAsJsonIsStillRead(): void {
+		$this->store->case[TaskAttachmentService::HOLD] = json_encode(
+			[['task' => 'task-1', 'file' => 'file-7', 'title' => 'Verslag.pdf']]
+		);
+
+		$this->assertSame(expected: 1, actual: $this->service()->publish(caseId: 'case-9', taskId: 'task-1'));
+		$this->assertSame(expected: 'file-7', actual: $this->store->created[0]['document']);
+	}
+
+	/**
+	 * A bind without a task or without a file is refused and writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnIncompleteBindIsRefusedBeforeTheCaseIsTouched(): void {
+		$before = $this->store->case;
+
+		try {
+			$this->service()->bind(caseId: 'case-9', taskId: '  ', file: ['file' => 'file-7'], uploader: 'hbakker');
+			$this->fail(message: 'A bind without a task must be refused.');
+		} catch (RuntimeException $e) {
+			$this->assertSame(expected: 'task_attachment_incomplete', actual: $e->getMessage());
+		}
+
+		$this->expectExceptionMessage('task_attachment_incomplete');
+		try {
+			$this->service()->bind(caseId: 'case-9', taskId: 'task-1', file: ['title' => 'Verslag.pdf'], uploader: 'hbakker');
+		} finally {
+			$this->assertSame(expected: $before, actual: $this->store->case);
+		}
+	}
+
+	/**
+	 * A case the store no longer has is refused by name, not answered as empty.
+	 *
+	 * @return void
+	 */
+	public function testAMissingCaseIsRefusedByName(): void {
+		$this->store->missing = true;
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('case_not_found');
+
+		$this->service()->release(caseId: 'case-9', taskId: 'task-1', fileId: 'file-7');
+	}
+
+	/**
+	 * A hold that is neither a list nor JSON holds nothing, and its non-entries are skipped.
+	 *
+	 * @return void
+	 */
+	public function testAHoldOfNeitherListNorJsonHoldsNothing(): void {
+		$service = $this->service();
+
+		$this->assertSame(expected: [], actual: $service->heldFor(case: [TaskAttachmentService::HOLD => 42], taskId: 'task-1'));
+		$this->assertSame(
+			expected: [['task' => 'task-1', 'file' => 'file-7']],
+			actual: $service->heldFor(case: [TaskAttachmentService::HOLD => ['junk', ['task' => 'task-1', 'file' => 'file-7'], ['task' => 'task-2']]], taskId: 'task-1')
+		);
+	}
+
+	/**
+	 * The service over the fake store.
+	 *
+	 * @return TaskAttachmentService The service.
+	 */
+	private function service(): TaskAttachmentService {
+		$settings = $this->getMockBuilder(className: SettingsService::class)->disableOriginalConstructor()->getMock();
+		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+
+		return new TaskAttachmentService(settings: $settings, logger: new NullLogger());
+	}
+}//end class

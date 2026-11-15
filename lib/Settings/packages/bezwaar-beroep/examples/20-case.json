@@ -1,0 +1,39 @@
+{
+  "schema": "case_schema",
+  "rows": [
+    {
+      "id": "b081ad8b-807e-5d5c-afcd-7fa5884428df",
+      "title": "Bezwaar last onder dwangsom Molenweg 3",
+      "description": "De eigenaar van de schuur aan de Molenweg 3 maakt bezwaar tegen de last onder dwangsom.",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "status": "b3c1a000-0000-4000-a000-0000000b2a06",
+      "intakeChannel": "post",
+      "communicationChannel": "post",
+      "confidentiality": "zaakvertrouwelijk",
+      "startDate": "{{date:-25}}",
+      "receivedAt": "{{datetime:-25 09:30}}",
+      "currentStatusEnteredAt": "{{datetime:-11 16:00}}",
+      "statusHistory": [
+        {
+          "status": "b3c1a000-0000-4000-a000-0000000b2a01",
+          "enteredAt": "{{datetime:-25 09:30}}"
+        },
+        {
+          "status": "b3c1a000-0000-4000-a000-0000000b2a02",
+          "enteredAt": "{{datetime:-23 11:00}}"
+        },
+        {
+          "status": "b3c1a000-0000-4000-a000-0000000b2a05",
+          "enteredAt": "{{datetime:-16 12:00}}"
+        },
+        {
+          "status": "b3c1a000-0000-4000-a000-0000000b2a06",
+          "enteredAt": "{{datetime:-11 16:00}}"
+        }
+      ],
+      "tags": [
+        "voorbeeld"
+      ]
+    }
+  ]
+}

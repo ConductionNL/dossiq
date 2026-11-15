@@ -45,6 +45,25 @@
 			</template>
 
 			<template v-else>
+				<!--
+					A warning does not refuse publication. It says out loud that
+					this case type stops confirming receipt, because a statutory
+					duty that comes off quietly is how one ships unperformed.
+				-->
+				<template v-if="warnings.length > 0">
+					<p class="case-type-publish__explainer">
+						{{
+							t('dossiq', 'You can publish this, but read this first.')
+						}}
+					</p>
+					<ul
+						class="case-type-publish__warnings"
+						data-testid="case-type-publish-warnings">
+						<li v-for="warning in warnings" :key="warning">
+							{{ warning }}
+						</li>
+					</ul>
+				</template>
 				<p class="case-type-publish__explainer">
 					{{
 						t(
@@ -93,6 +112,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import { caseTypeRefusalMessages } from '../utils/caseTypeDialogs.js'
 import { publishRefusalMessage } from '../utils/caseTypePublish.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -121,6 +141,7 @@ export default {
 		return {
 			loading: true,
 			findings: [],
+			warnings: [],
 			changeNote: '',
 			error: '',
 		}
@@ -130,25 +151,12 @@ export default {
 		/**
 		 * The sentences a refusal can carry, already translated.
 		 *
-		 * Built here, in literal t() calls, and handed to the helper: a string
-		 * that lives in the helper and passes through a translate callback is
-		 * invisible to `tests/l10n/check-l10n.js`, which extracts by finding a
-		 * literal inside a `t()` call for this app.
-		 *
 		 * @return {object} The messages.
 		 *
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		refusalMessages() {
-			return {
-				signIn: t('dossiq', 'Sign in again and retry.'),
-				forbidden: t('dossiq', 'Your account may not do this.'),
-				missing: t('dossiq', 'This case type no longer exists.'),
-				generic: t(
-					'dossiq',
-					'That did not work. Try again, or ask an administrator.',
-				),
-			}
+			return caseTypeRefusalMessages()
 		},
 
 		/**
@@ -202,11 +210,13 @@ export default {
 					),
 				)
 				this.findings = Array.isArray(data?.findings) ? data.findings : []
+				this.warnings = Array.isArray(data?.warnings) ? data.warnings : []
 				this.error = ''
 			} catch (e) {
 				// A validation that cannot run is not a validation that passed:
 				// the dialog says so and offers no Publish button.
 				this.findings = []
+				this.warnings = []
 				this.error = publishRefusalMessage(e, this.refusalMessages)
 			} finally {
 				this.loading = false
@@ -253,6 +263,12 @@ export default {
 	flex-direction: column;
 	gap: 8px;
 	padding: 0 12px 12px;
+}
+
+.case-type-publish__warnings {
+	margin: 0 0 12px 0;
+	padding-inline-start: 20px;
+	color: var(--color-warning-text, var(--color-main-text));
 }
 
 .case-type-publish__findings {

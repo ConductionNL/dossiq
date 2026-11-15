@@ -19,25 +19,17 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent;
-use OCA\Dossiq\Flow\DossiqCallWebhookNode;
-use OCA\Dossiq\Flow\DossiqCreateDocumentNode;
 use OCA\Dossiq\Flow\DossiqFlowNodeListener;
-use OCA\Dossiq\Flow\DossiqMergeTemplateNode;
-use OCA\Dossiq\Flow\DossiqNotifyRoleNode;
-use OCA\Dossiq\Flow\DossiqScheduleReminderNode;
-use OCA\Dossiq\Flow\DossiqSendEmailNode;
-use OCA\Dossiq\Flow\DossiqTxSendEmailNode;
 use OCA\Dossiq\Flow\DossiqTxCreateTaskNode;
 use OCA\Dossiq\Flow\DossiqTxCreateSubCaseNode;
-use OCA\Dossiq\Flow\DossiqTxWebhookNode;
 use OCA\Dossiq\Flow\DossiqAskPersonNode;
 use OCA\Dossiq\Flow\DossiqEnsureCommitteeNode;
-use OCA\Dossiq\Flow\DossiqRequestDecisionNode;
-use OCA\Dossiq\Flow\DossiqTxSetFieldNode;
 use OCA\Dossiq\Flow\DossiqTxSetStatusNode;
-use OCA\Dossiq\Flow\DossiqTxNotifyNode;
 use OCA\Dossiq\Flow\DossiqTxBesluitvormingPublishNode;
-use OCA\Dossiq\Flow\DossiqTxEvaluateDecisionNode;
+use OCA\Dossiq\Flow\DossiqTxSendMessageNode;
+use OCA\Dossiq\Flow\DossiqTxSetCaseAnswerNode;
+use OCA\Dossiq\Flow\DossiqTxRaiseDecisionNode;
+use OCA\Dossiq\Flow\DossiqTxSuspendTermNode;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
@@ -46,7 +38,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Proves dossiq actually contributes all six case actions.
+ * Proves dossiq actually contributes every case action it still owns.
  *
  * A node class that exists but is never registered is invisible to the flow
  * editor — and looks identical to one that works, right up until somebody tries
@@ -62,24 +54,16 @@ class DossiqFlowNodeListenerTest extends TestCase {
      * @var array<class-string, string>
      */
     private const EXPECTED_IDS = [
-        DossiqTxSendEmailNode::class => 'dossiq.sendEmail',
         DossiqTxCreateTaskNode::class => 'dossiq.createTask',
         DossiqTxCreateSubCaseNode::class => 'dossiq.createSubCase',
-        DossiqTxWebhookNode::class => 'dossiq.webhook',
-        DossiqTxSetFieldNode::class => 'dossiq.setField',
         DossiqTxSetStatusNode::class => 'dossiq.setStatus',
         DossiqAskPersonNode::class => 'dossiq.askPerson',
-        DossiqRequestDecisionNode::class => 'dossiq.requestDecision',
         DossiqEnsureCommitteeNode::class => 'dossiq.ensureCommittee',
-        DossiqTxNotifyNode::class => 'dossiq.notify',
         DossiqTxBesluitvormingPublishNode::class => 'dossiq.besluitvormingPublish',
-        DossiqTxEvaluateDecisionNode::class => 'dossiq.evaluateDecision',
-        DossiqSendEmailNode::class => 'dossiq.action.sendEmail',
-        DossiqNotifyRoleNode::class => 'dossiq.action.notifyRole',
-        DossiqCallWebhookNode::class => 'dossiq.action.callWebhook',
-        DossiqCreateDocumentNode::class => 'dossiq.action.createDocument',
-        DossiqMergeTemplateNode::class => 'dossiq.action.mergeTemplate',
-        DossiqScheduleReminderNode::class => 'dossiq.action.scheduleReminder',
+        DossiqTxSuspendTermNode::class => 'dossiq.suspendTerm',
+        DossiqTxRaiseDecisionNode::class => 'dossiq.raiseDecision',
+        DossiqTxSendMessageNode::class => 'dossiq.sendMessage',
+        DossiqTxSetCaseAnswerNode::class => 'dossiq.setCaseAnswer',
     ];
 
 
@@ -93,16 +77,21 @@ class DossiqFlowNodeListenerTest extends TestCase {
      * registers is invisible to the flow editor and looks identical to one that
      * works.
      *
-     * @param string[] $failing Class names the container should refuse to build.
+     * @param string[] $failing  Class names the container should refuse to build.
+     * @param string[] $notNodes Class names the container answers with something that is no flow node.
      *
      * @return DossiqFlowNodeListener The listener under test.
      */
-    private function listener(array $failing=[]): DossiqFlowNodeListener {
+    private function listener(array $failing=[], array $notNodes=[]): DossiqFlowNodeListener {
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willReturnCallback(
-            function (string $class) use ($failing): IFlowNode {
+            function (string $class) use ($failing, $notNodes): object {
                 if (in_array($class, $failing, true) === true) {
                     throw new RuntimeException('cannot construct ' . $class);
+                }
+
+                if (in_array($class, $notNodes, true) === true) {
+                    return new \stdClass();
                 }
 
                 $node = $this->createMock(IFlowNode::class);
@@ -191,7 +180,7 @@ class DossiqFlowNodeListenerTest extends TestCase {
      */
     public function testOneUnbuildableNodeDoesNotCostTheRest(): void {
         $registry = $this->registry();
-        $this->listener(failing: [DossiqTxSetFieldNode::class])->handle(new RegisterFlowNodesEvent($registry));
+        $this->listener(failing: [DossiqTxCreateTaskNode::class])->handle(new RegisterFlowNodesEvent($registry));
 
         $ids = array_keys($registry->all());
 
@@ -200,11 +189,50 @@ class DossiqFlowNodeListenerTest extends TestCase {
         // somebody adds or retires a node, and this one did — it was 17
         // against a catalogue that had grown to 18.
         $this->assertCount((count(self::EXPECTED_IDS) - 1), $ids);
-        $this->assertNotContains('dossiq.setField', $ids);
-        $this->assertContains('dossiq.sendEmail', $ids);
-        $this->assertContains('dossiq.action.sendEmail', $ids);
+        $this->assertNotContains('dossiq.createTask', $ids);
+        $this->assertContains('dossiq.setStatus', $ids);
 
     }//end testOneUnbuildableNodeDoesNotCostTheRest()
 
+
+    /**
+     * The nodes whose owners now provide them are not offered any more.
+     *
+     * A stored flow that still names one is rewritten by the repair step; the
+     * catalogue itself must not offer a second copy of another app's node.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+     */
+    public function testNodesOwnedElsewhereAreNotOffered(): void {
+        $registry = $this->registry();
+        $this->listener()->handle(new RegisterFlowNodesEvent($registry));
+
+        $ids = array_keys($registry->all());
+        foreach (['dossiq.sendEmail', 'dossiq.webhook', 'dossiq.notify', 'dossiq.setField', 'dossiq.evaluateDecision', 'dossiq.requestDecision', 'dossiq.action.sendEmail', 'dossiq.action.notifyRole', 'dossiq.action.callWebhook', 'dossiq.action.createDocument', 'dossiq.action.mergeTemplate'] as $retired) {
+            $this->assertNotContains($retired, $ids);
+        }
+
+    }//end testOneUnbuildableNodeDoesNotCostTheRest()
+
+
+
+    /**
+     * Whatever the container answers that is not a flow node is not offered.
+     *
+     * @return void
+     */
+    public function testSomethingThatIsNotAFlowNodeIsNotRegistered(): void {
+        $registry = $this->registry();
+        $this->listener(notNodes: [DossiqTxSetStatusNode::class])->handle(new RegisterFlowNodesEvent($registry));
+
+        $ids = array_keys($registry->all());
+
+        $this->assertCount((count(self::EXPECTED_IDS) - 1), $ids);
+        $this->assertNotContains('dossiq.setStatus', $ids);
+        $this->assertContains('dossiq.createTask', $ids);
+
+    }//end testSomethingThatIsNotAFlowNodeIsNotRegistered()
 
 }//end class

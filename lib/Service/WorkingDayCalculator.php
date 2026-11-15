@@ -17,13 +17,24 @@
  * the computus here means nothing in lib/ depends on ext-calendar, which is why
  * composer.json does not require it. WorkingDayCalculatorTest holds that line.
  *
- * NOT IMPLEMENTED HERE, deliberately: the Algemene termijnenwet end-date roll.
- * Article 1 Awt extends a term that ends on a Saturday, Sunday or generally
- * recognised holiday to the next following ordinary day. This class computes
- * working days; it does not roll a statutory end date, and no caller does
- * either. That is a real gap, it needs the recognised-holiday list confirmed by
- * someone qualified to read Awt art. 3 against our case types, and it is a
- * separate change.
+ * 🔴 THE LIST BELOW IS THE FALLBACK, AND SINCE 2026-09-19 THAT IS TRUE OF
+ * EVERY CALLER RATHER THAN OF ONE. The authority is the calendar the
+ * organisation administers in OpenRegister: which weekdays it works, which
+ * days it is closed, and the hours it is open. This class asks that calendar
+ * through {@see WorkingDayRoll} and answers from its own list only when no
+ * calendar is answering, which it says once in the log.
+ *
+ * Until then the header already claimed as much and it was only true of the
+ * statutory roll. Thirteen other callers, a complaint deadline and a KCC
+ * callback among them, went on asking this list: an administered closure day
+ * counted as an ordinary working day for all of them, and every one of them
+ * produced a date nobody could tell from a correct one.
+ *
+ * The Algemene termijnenwet art. 1 end-date roll lives here as
+ * nextWorkingDay(), and a statutory term reaches the engine's own businessDays
+ * walk through {@see TermijnTimerService::rollTermEnd()} instead. See
+ * docs/research/date-arithmetic-audit-2026-09-14.md for which files compute a
+ * statutory term and which do not.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -48,6 +59,9 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Weekend, holiday and working-day arithmetic for the Dutch calendar.
@@ -101,28 +115,93 @@ class WorkingDayCalculator {
 	private array $holidayCache = [];
 
 	/**
-	 * Determine whether a date falls on a Saturday or Sunday.
+	 * Whether the degradation has already been said once.
+	 *
+	 * Once, not per call. A chase schedule asks this class a hundred times in
+	 * one sweep, and a warning per question buries the one line that matters
+	 * under a hundred copies of itself.
+	 *
+	 * @var boolean
+	 */
+	private bool $degradationLogged = false;
+
+	/**
+	 * The longest run of non-working days a search crosses before it says the
+	 * calendar has no working day at all.
+	 *
+	 * @var int
+	 */
+	private const MAX_NON_WORKING_RUN = 366;
+
+	/**
+	 * Constructor.
+	 *
+	 * Both arguments default to null so the arithmetic stays constructible
+	 * without a container, which a dozen unit tests rely on and which is also
+	 * what an instance without OpenRegister gets.
+	 *
+	 * @param WorkingDayRoll|null  $administered The reader of the calendar the organisation administers.
+	 * @param LoggerInterface|null $logger       Where the fall back to the built-in list is said out loud.
+	 */
+	public function __construct(
+		private readonly ?WorkingDayRoll $administered = null,
+		private readonly ?LoggerInterface $logger = null,
+	) {
+	}//end __construct()
+
+	/**
+	 * Determine whether a date falls on a day outside the working week.
+	 *
+	 * The working week is CONFIGURATION when a calendar answers: an
+	 * organisation that works Tuesday to Saturday says so on the calendar, and
+	 * this returns true for its Monday. Saturday and Sunday are the fallback,
+	 * not the definition.
 	 *
 	 * @param DateTimeInterface $date The date to inspect.
 	 *
-	 * @return bool True when the date is a Saturday or a Sunday.
+	 * @return bool True when the date falls outside the working week.
 	 *
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
 	public function isWeekend(DateTimeInterface $date): bool {
+		$weekdays = $this->administered?->workingWeekdays();
+		if ($weekdays !== null) {
+			return (in_array((int)$date->format('N'), $weekdays, true) === false);
+		}
+
 		return ((int)$date->format('N') >= 6);
 	}//end isWeekend()
 
 	/**
-	 * Determine whether a date is a Dutch national holiday.
+	 * Determine whether a date is a day the organisation is closed for a
+	 * holiday.
+	 *
+	 * 🔴 THE LIST IS THE ADMINISTRATOR'S WHEN THERE IS ONE. Which days an
+	 * organisation does not work is one fact, and it is administered on the
+	 * working calendar in OpenRegister. A holiday is then a day inside the
+	 * working week that the calendar nevertheless refuses, which is exactly
+	 * what a closure is. The list below answers only when no calendar does.
 	 *
 	 * @param DateTimeInterface $date The date to inspect.
 	 *
-	 * @return bool True when the date is a recognised national holiday.
+	 * @return bool True when the date is a closure day.
 	 *
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
 	public function isHoliday(DateTimeInterface $date): bool {
+		$works = $this->administered?->worksOn(moment: $date);
+		if ($works !== null) {
+			if ($this->isWeekend(date: $date) === true) {
+				// A Sunday is not a holiday, and saying it is would make a
+				// surface report Koningsdag and an ordinary Sunday as the
+				// same kind of closed.
+				return false;
+			}
+
+			return ($works === false);
+		}
+
+		$this->sayItDegraded();
 		$year = (int)$date->format('Y');
 		return in_array($date->format('Y-m-d'), $this->holidays(year: $year), true);
 	}//end isHoliday()
@@ -130,8 +209,9 @@ class WorkingDayCalculator {
 	/**
 	 * Determine whether a date is a working day.
 	 *
-	 * A working day is a date that is neither a weekend day nor a Dutch
-	 * national holiday.
+	 * A working day is a date that is neither outside the working week nor a
+	 * closure day, and both of those are the administered calendar's answers
+	 * when one is answering.
 	 *
 	 * @param DateTimeInterface $date The date to inspect.
 	 *
@@ -140,12 +220,51 @@ class WorkingDayCalculator {
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
 	public function isWorkingDay(DateTimeInterface $date): bool {
+		$works = $this->administered?->worksOn(moment: $date);
+		if ($works !== null) {
+			return $works;
+		}
+
+		$this->sayItDegraded();
 		if ($this->isWeekend(date: $date) === true) {
 			return false;
 		}
 
-		return ($this->isHoliday(date: $date) === false);
+		return (in_array($date->format('Y-m-d'), $this->holidays(year: (int)$date->format('Y')), true) === false);
 	}//end isWorkingDay()
+
+	/**
+	 * Which calendar this instance is actually answering from.
+	 *
+	 * Asked so a surface can SAY which it is. A date computed from the
+	 * administered calendar and one computed from the built-in list are both
+	 * plausible dates, and nothing on the page distinguishes them.
+	 *
+	 * @return bool True when the organisation's administered calendar is
+	 *              answering, false when the built-in Dutch list is.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function readsAdministeredCalendar(): bool {
+		return ($this->administered?->isAvailable() === true);
+	}//end readsAdministeredCalendar()
+
+	/**
+	 * Note, once, that the built-in list answered instead of the calendar.
+	 *
+	 * @return void
+	 */
+	private function sayItDegraded(): void {
+		if ($this->degradationLogged === true) {
+			return;
+		}
+
+		$this->degradationLogged = true;
+		$this->logger?->info(
+			'Dossiq working days: no administered calendar is answering, so the built-in Dutch national list decided. '
+			. 'Which days this organisation does not work is configuration, and this instance has none.'
+		);
+	}//end sayItDegraded()
 
 	/**
 	 * Add a number of working days to a date.
@@ -160,21 +279,51 @@ class WorkingDayCalculator {
 	 *
 	 * @return DateTimeImmutable The resulting date-time.
 	 *
+	 * @throws RuntimeException When the calendar has no working day in a year.
+	 *
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
 	public function addWorkingDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
 		$result = $start;
-		$remaining = max(0, $days);
-
-		while ($remaining > 0) {
-			$result = $result->modify('+1 day');
-			if ($this->isWorkingDay(date: $result) === true) {
-				$remaining--;
-			}
+		for ($remaining = max(0, $days); $remaining > 0; $remaining--) {
+			$result = $this->nextWorkingDay(date: $result->modify('+1 day'));
 		}
 
 		return $result;
 	}//end addWorkingDays()
+
+	/**
+	 * The first working day on or after a date.
+	 *
+	 * This is the Algemene termijnenwet art. 1 roll computed on dossiq's own
+	 * holiday list, and it is a FALLBACK. The engine calendar is the authority
+	 * whenever OpenRegister is installed; {@see TermijnTimerService::rollTermEnd()}
+	 * reaches this method only when the engine cannot answer, and logs that it
+	 * did. A date that already falls on a working day is returned unchanged, so
+	 * the roll never lengthens a term that does not need it.
+	 *
+	 * @param DateTimeImmutable $date The computed end date.
+	 *
+	 * @return DateTimeImmutable The first working day on or after the date.
+	 *
+	 * @throws RuntimeException When the calendar has no working day in a year.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function nextWorkingDay(DateTimeImmutable $date): DateTimeImmutable {
+		$cursor = $date;
+		for ($step = 0; $this->isWorkingDay(date: $cursor) === false; $step++) {
+			if ($step >= self::MAX_NON_WORKING_RUN) {
+				throw new RuntimeException(
+					'The calendar has no working day in the '.self::MAX_NON_WORKING_RUN.' days from '.$date->format('Y-m-d').'.'
+				);
+			}
+
+			$cursor = $cursor->modify('+1 day');
+		}
+
+		return $cursor;
+	}//end nextWorkingDay()
 
 	/**
 	 * Count the working days in an inclusive date range.
@@ -247,25 +396,23 @@ class WorkingDayCalculator {
 	 * @return DateTimeImmutable Easter Sunday, at midnight in the default zone.
 	 *
 	 * @spec openspec/specs/milestone-tracking/spec.md
-	 *
-	 * @SuppressWarnings(PHPMD.ShortVariable)
 	 */
 	public function easterSunday(int $year): DateTimeImmutable {
-		$a = ($year % 19);
-		$b = intdiv($year, 100);
-		$c = ($year % 100);
-		$d = intdiv($b, 4);
-		$e = ($b % 4);
-		$f = intdiv(($b + 8), 25);
-		$g = intdiv((($b - $f) + 1), 3);
-		$h = ((((19 * $a) + $b - $d - $g) + 15) % 30);
-		$i = intdiv($c, 4);
-		$k = ($c % 4);
-		$l = (((32 + (2 * $e) + (2 * $i)) - $h - $k) % 7);
-		$m = intdiv(($a + (11 * $h) + (22 * $l)), 451);
+		$goldenNumber    = ($year % 19);
+		$century         = intdiv($year, 100);
+		$yearInCentury   = ($year % 100);
+		$leapCenturies   = intdiv($century, 4);
+		$centuryRest     = ($century % 4);
+		$lunarCorrection = intdiv(($century + 8), 25);
+		$moonCorrection  = intdiv((($century - $lunarCorrection) + 1), 3);
+		$epact           = ((((19 * $goldenNumber) + $century - $leapCenturies - $moonCorrection) + 15) % 30);
+		$leapYears       = intdiv($yearInCentury, 4);
+		$yearRest        = ($yearInCentury % 4);
+		$weekdayOffset   = (((32 + (2 * $centuryRest) + (2 * $leapYears)) - $epact - $yearRest) % 7);
+		$lateCorrection  = intdiv(($goldenNumber + (11 * $epact) + (22 * $weekdayOffset)), 451);
 
-		$month = intdiv((($h + $l) - (7 * $m) + 114), 31);
-		$day = (((($h + $l) - (7 * $m) + 114) % 31) + 1);
+		$month = intdiv((($epact + $weekdayOffset) - (7 * $lateCorrection) + 114), 31);
+		$day   = (((($epact + $weekdayOffset) - (7 * $lateCorrection) + 114) % 31) + 1);
 
 		return (new DateTimeImmutable())->setDate($year, $month, $day)->setTime(0, 0);
 	}//end easterSunday()

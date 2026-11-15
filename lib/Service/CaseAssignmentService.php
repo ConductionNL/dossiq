@@ -1,0 +1,296 @@
+<?php
+
+/**
+ * Dossiq Case Assignment Service.
+ *
+ * Claim and release: the two gestures that put a case in someone's hands, or
+ * give it back to the queue.
+ *
+ * WHY THE RULE LIVES HERE AND NOT IN THE BROWSER. The case page can hide a
+ * button, and the queue can filter its rows, but neither can settle a race:
+ * two handlers looking at the same unclaimed case both see Claim. So the rule
+ * is read-compare-write against the STORED case, and a claim on a case that
+ * already has a handler is refused with a code the controller turns into a
+ * 409. The page's gate is a courtesy; this is the decision.
+ *
+ * The read and the write both run as the signed-in user, so OpenRegister's own
+ * RBAC answers "may this person touch this case" (ADR-022, ADR-023). Nothing
+ * here duplicates that check; what it adds is the one thing OpenRegister
+ * cannot know, which is that a case with a handler is not free to take.
+ *
+ * Nothing is recorded beyond the field change: the audit trail on the case
+ * already carries who changed `assignee`, when, and from what.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @spec openspec/specs/case-management/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service;
+
+use DateTime;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAssignmentServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
+use OCA\Dossiq\Service\Support\CaseReadAndPatch;
+use OCP\Notification\IManager;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
+
+/**
+ * Who holds a case, and the two gestures that change that.
+ *
+ * @spec openspec/specs/case-management/spec.md
+ */
+class CaseAssignmentService implements CaseAssignmentServiceInterface {
+
+	/**
+	 * Reads and patches the case, naming this service in its warnings.
+	 *
+	 * @var CaseReadAndPatch
+	 */
+	private readonly CaseReadAndPatch $cases;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService     The settings service (OpenRegister access).
+	 * @param LoggerInterface $logger              The logger.
+	 * @param IManager|null   $notificationManager Tells the receiving handler about a reassignment.
+	 */
+	public function __construct(
+		SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+		private readonly ?IManager $notificationManager = null,
+	) {
+		$this->cases = new CaseReadAndPatch(
+			settingsService: $settingsService,
+			logger: $logger,
+			owner: 'CaseAssignmentService',
+			act: 'assignment'
+		);
+	}//end __construct()
+
+	/**
+	 * Who holds this case, and what this user may do about it.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $userId The signed-in user.
+	 *
+	 * @return array{caseId: string, assignee: string, mine: bool, claimable: bool, releasable: bool} The assignment.
+	 *
+	 * @throws RuntimeException With code `case_not_found` when the case does not resolve for this user.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function state(string $caseId, string $userId): array {
+		return $this->describe(caseId: $caseId, userId: $userId, assignee: $this->readAssignee(caseId: $caseId));
+	}//end state()
+
+	/**
+	 * Take this case.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $userId The signed-in user, who becomes the assignee.
+	 *
+	 * @return array{caseId: string, assignee: string, mine: bool, claimable: bool, releasable: bool} The new assignment.
+	 *
+	 * @throws RuntimeException With code `case_not_found`, `already_yours` or `already_assigned`.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function claim(string $caseId, string $userId): array {
+		$assignee = $this->readAssignee(caseId: $caseId);
+		if ($assignee === $userId) {
+			throw new RuntimeException('already_yours');
+		}
+
+		if ($assignee !== '') {
+			throw new RuntimeException('already_assigned');
+		}
+
+		$this->write(caseId: $caseId, assignee: $userId, extra: ['routingNote' => null]);
+
+		return $this->describe(caseId: $caseId, userId: $userId, assignee: $userId);
+	}//end claim()
+
+	/**
+	 * Give this case back to the queue.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $userId The signed-in user, who must be the assignee.
+	 *
+	 * @return array{caseId: string, assignee: string, mine: bool, claimable: bool, releasable: bool} The new assignment.
+	 *
+	 * @throws RuntimeException With code `case_not_found`, `not_assigned` or `not_yours`.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function release(string $caseId, string $userId): array {
+		$assignee = $this->readAssignee(caseId: $caseId);
+		if ($assignee === '') {
+			throw new RuntimeException('not_assigned');
+		}
+
+		if ($assignee !== $userId) {
+			throw new RuntimeException('not_yours');
+		}
+
+		$this->write(caseId: $caseId, assignee: null);
+
+		return $this->describe(caseId: $caseId, userId: $userId, assignee: '');
+	}//end release()
+
+	/**
+	 * Hand one case to another handler.
+	 *
+	 * The single-case form of a caseload release. Who may do it is the
+	 * caller's check (a coordinator, as for the bulk release); this method
+	 * only refuses a move that is no move, writes `assignee` and nothing else,
+	 * and tells the receiving handler with the same notification the bulk
+	 * release sends. The case's audit trail carries who changed it and from what.
+	 *
+	 * @param string $caseId  The case UUID.
+	 * @param string $toUser  The receiving handler.
+	 * @param string $actorId Who ordered it.
+	 *
+	 * @return array{caseId: string, assignee: string, previousAssignee: string, mine: bool, claimable: bool, releasable: bool} The new assignment.
+	 *
+	 * @throws RuntimeException With code `receiver_required`, `case_not_found`, `already_assigned` or `assignment_write_failed`.
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-206-human-approval-of-ai-writes-is-hermiqs-policy
+	 */
+	public function reassign(string $caseId, string $toUser, string $actorId): array {
+		$toUser = trim($toUser);
+		if ($toUser === '') {
+			throw new RuntimeException('receiver_required');
+		}
+
+		$previous = $this->readAssignee(caseId: $caseId);
+		if ($previous === $toUser) {
+			// Not a move. Writing it would stamp an audit entry saying the
+			// case went from somebody to themselves.
+			throw new RuntimeException('already_assigned');
+		}
+
+		$this->write(caseId: $caseId, assignee: $toUser);
+		$move = ['caseId' => $caseId, 'from' => $previous, 'to' => $toUser];
+		$this->notifyReceiver(move: $move);
+
+		$this->logger->info(
+			'Dossiq CaseAssignmentService: case reassigned',
+			['app' => AppIdentity::APP_ID, ...$move, 'actor' => $actorId]
+		);
+
+		return (['previousAssignee' => $previous] + $this->describe(caseId: $caseId, userId: $actorId, assignee: $toUser));
+	}//end reassign()
+
+	/**
+	 * Tell the receiving handler a case was handed to them.
+	 *
+	 * The `cases_reassigned` subject the bulk release already sends, with a
+	 * count of one. A failed notification never undoes the move.
+	 *
+	 * @param array{caseId: string, from: string, to: string} $move The case UUID, the previous handler (or empty) and the receiving one.
+	 *
+	 * @return void
+	 */
+	private function notifyReceiver(array $move): void {
+		if ($this->notificationManager === null) {
+			return;
+		}
+
+		try {
+			$notification = $this->notificationManager->createNotification();
+			$notification->setApp(AppIdentity::APP_ID)
+				->setUser($move['to'])
+				->setDateTime(new DateTime())
+				->setObject('case', $move['caseId'])
+				->setSubject(NotifierInterface::SUBJECT_CASES_REASSIGNED, ['fromUser' => $move['from'], 'count' => 1]);
+			$this->notificationManager->notify($notification);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq CaseAssignmentService: reassignment notification failed: ' . $e->getMessage(),
+				['app' => AppIdentity::APP_ID, 'caseId' => $move['caseId'], 'toUser' => $move['to']]
+			);
+		}
+	}//end notifyReceiver()
+
+	/**
+	 * Shape one answer, so the three gestures cannot describe the same case
+	 * differently.
+	 *
+	 * @param string $caseId   The case UUID.
+	 * @param string $userId   The signed-in user.
+	 * @param string $assignee The handler on the case, empty when nobody holds it.
+	 *
+	 * @return array{caseId: string, assignee: string, mine: bool, claimable: bool, releasable: bool} The assignment.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function describe(string $caseId, string $userId, string $assignee): array {
+		return [
+			'caseId' => $caseId,
+			'assignee' => $assignee,
+			'mine' => ($assignee !== '' && $assignee === $userId),
+			'claimable' => ($assignee === ''),
+			'releasable' => ($assignee !== '' && $assignee === $userId),
+		];
+	}//end describe()
+
+	/**
+	 * Read the handler off the stored case.
+	 *
+	 * The read runs as the signed-in user, so a case OpenRegister will not show
+	 * this person does not resolve, and `case_not_found` is the answer for both
+	 * a missing case and a refused read. That is deliberate: a 404 that only
+	 * appears for cases you may not see is an existence oracle.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return string The assignee, or an empty string when nobody holds the case.
+	 *
+	 * @throws RuntimeException With code `case_not_found`.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function readAssignee(string $caseId): string {
+		return trim((string)($this->cases->read(caseId: $caseId)['assignee'] ?? ''));
+	}//end readAssignee()
+
+	/**
+	 * Write the handler onto the stored case, and nothing else.
+	 *
+	 * A partial write, never a saved snapshot: the case is worked on by more
+	 * writers than this one, and saving a whole read-back object would put
+	 * every other property back as it stood a moment ago.
+	 *
+	 * @param string      $caseId   The case UUID.
+	 * @param string|null $assignee The new handler, or null to clear the field.
+	 * @param array<string, mixed> $extra    Other fields of the same write.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException With code `assignment_write_failed`.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function write(string $caseId, ?string $assignee, array $extra = []): void {
+		$this->cases->patch(caseId: $caseId, changes: ['assignee' => $assignee] + $extra);
+	}//end write()
+}//end class

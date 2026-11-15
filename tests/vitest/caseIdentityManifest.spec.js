@@ -61,7 +61,7 @@ function iconIsRegistered(name) {
  * One widget of the CaseDetail page, wherever it lives.
  *
  * Through the shared helper rather than a `find` over `config.widgets`: a
- * widget that moves INTO a tab becomes a section of a `case-sections` group
+ * widget that moves INTO a tab becomes a section of a `sections` group
  * and disappears from the top level, so a top-level lookup returns undefined
  * and every assertion below reads as "the widget was deleted". `case-core`
  * made that move when the Data tab gained the locations map.
@@ -142,6 +142,14 @@ describe('CaseDetail: terms and archive', () => {
 		expect(terms.content.include).toEqual([
 			'statutoryTerm',
 			'legalBasis',
+			// fees-and-payments-on-the-case (#2930): what is owed, when that
+			// was last read from shillinq, and the contract it was read
+			// against. The three sit beside the older indication rather than
+			// replacing it, because the indication is what the case TYPE says
+			// and these are what the case itself owes.
+			'paymentState',
+			'paymentStateCheckedAt',
+			'contract',
 			'paymentIndication',
 			'lastPaymentDate',
 		])
@@ -214,8 +222,9 @@ describe('CaseDetail: terms and archive', () => {
 		}
 	})
 
-	it('registers its icon, and takes a cell of its own', () => {
-		expect(iconIsRegistered(widget('case-terms').icon)).toBe(true)
+	it('draws no title icon, and takes a cell of its own', () => {
+		// The boards draw no icon on a card title.
+		expect(widget('case-terms').icon).toBeUndefined()
 
 		const cell = caseDetail().config.layout.find(
 			(entry) => entry.widgetId === 'case-terms',
@@ -232,19 +241,13 @@ describe('CaseDetail: terms and archive', () => {
 })
 
 describe('the English demo seed', () => {
-	const seed = JSON.parse(
-		fs.readFileSync(
-			path.join(
-				ROOT,
-				'lib',
-				'Settings',
-				'register.d',
-				'46-demo-cases-english.json',
-			),
-			'utf8',
-		),
+	// The case types ship in the register; the cases are optional example data.
+	const readSettings = (...parts) => JSON.parse(
+		fs.readFileSync(path.join(ROOT, 'lib', 'Settings', ...parts), 'utf8'),
 	)
-	const demoCases = seed.components.objects.filter(
+	const seed = readSettings('register.d', '46-demo-cases-english.json')
+	const examples = readSettings('demo.d', '46-english-cases.json')
+	const demoCases = examples.components.objects.filter(
 		(entry) => entry['@self'].schema === 'case',
 	)
 	const caseTypes = Object.fromEntries(
@@ -257,8 +260,11 @@ describe('the English demo seed', () => {
 		expect(demoCases.length).toBeGreaterThan(0)
 		for (const demo of demoCases) {
 			expect(demo.identifier, demo['@self'].slug).toMatch(/^\d{4}-\d{4}$/)
-			// The year half is the start year, as `year(startDate)` gives it.
-			expect(demo.identifier.slice(0, 4)).toBe(demo.startDate.slice(0, 4))
+			// A supplied number is kept and pushes the counter past it, so
+			// these rows are a floor for the register's own counter rather
+			// than something it will ever overwrite. The start date is a
+			// load-time token, so the year half no longer follows it.
+			expect(demo.startDate, demo['@self'].slug).toMatch(/^@today([+-]\d+d)?$/)
 		}
 	})
 
@@ -276,7 +282,7 @@ describe('the English demo seed', () => {
 		// page tell the truth only until the next save.
 		for (const demo of demoCases.filter((entry) => entry.statutoryTerm)) {
 			expect(demo.statutoryTerm, demo['@self'].slug).toBe(
-				caseTypes[demo.caseType].processingDeadline,
+				caseTypes[String(demo.caseType).replace(/^@ref:caseType:/, '')].processingDeadline,
 			)
 		}
 	})

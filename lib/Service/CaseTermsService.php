@@ -1,0 +1,744 @@
+<?php
+
+/**
+ * Dossiq CaseTermsService.
+ *
+ * The four clocks on a case: bound, read, and reported apart.
+ *
+ * A gemeente runs four clocks and dossiq ran one. This service binds the three
+ * the case type declares beside the statutory term, reads all four back with
+ * the kind on each, and computes the progress and the days left at read time.
+ *
+ * 🔴 IT COMPUTES DATES AND THEREFORE REACHES THE CALENDAR (REQ-TERM-060).
+ * Every end date it decides is rolled through
+ * {@see TermijnTimerService::rollTermEndFor()}, so the organisation's own
+ * working calendar decides the day a term lands on and this app never holds a
+ * second holiday list. The statutory path inside {@see TermijnService} is
+ * deliberately NOT touched here: it is allowlisted to
+ * `terms-on-the-engine-calendar`, and moving it would take another lane's task.
+ *
+ * Nothing it computes is stored. A progress percentage is wrong the moment a
+ * term moves, and terms move on every pause, extension and calendar change, so
+ * the figure is derived on every read from the bound terms.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/termijn-binding/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service;
+
+use DateInterval;
+use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
+use OCA\Dossiq\Service\Term\CaseTermSources;
+use OCA\Dossiq\Service\Term\DayCount;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
+use OCA\Dossiq\Service\Termijn\TermMoveHistory;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use Psr\Log\LoggerInterface;
+
+/**
+ * Binding, reading and reporting the four clocks on a case.
+ *
+ * @spec openspec/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
+ * constants and four pure predicates over an array, with no state, no I/O and
+ * nothing to inject. Making it an instance would add a constructor dependency
+ * to every class that names a kind, to hide a `::` behind a `->`.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ */
+class CaseTermsService implements CaseTermsServiceInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseTermSources $sources The term instances, the term declarations and the term timers.
+	 * @param LoggerInterface $logger Logger.
+	 * @param TermMoveHistory|null $moves The record of every move a term made, and
+	 *        why. Optional so a container that cannot build it leaves the binding
+	 *        exactly as it was.
+	 * @param WorkingDayRoll|null $calendar The administered calendar, which counts the
+	 *        planned end and the internal target in working days (REQ-OTE-04). Optional
+	 *        so a build without it counts calendar days and says so in the log.
+	 * @param DayCount $days Counts the days between two moments.
+	 */
+	public function __construct(
+		private readonly CaseTermSources $sources,
+		private readonly LoggerInterface $logger,
+		private readonly ?TermMoveHistory $moves = null,
+		private readonly ?WorkingDayRoll $calendar = null,
+		private readonly DayCount $days = new DayCount(),
+	) {
+	}//end __construct()
+
+	/**
+	 * Bind everything the case type declares beside the statutory term.
+	 *
+	 * Called after the statutory term is bound, so a case type declaring a
+	 * fixed closing date has its statutory end moved onto that date and a case
+	 * type declaring none is left alone. The planned end and the internal
+	 * target are their own instances, never fields on the case.
+	 *
+	 * A clock that is declared nowhere is not bound. That is not a silent
+	 * failure: `termsForCase()` answers with the clocks that exist, and a case
+	 * showing one clock is a case whose type declares one.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $caseTypeId The case type UUID.
+	 * @param DateTimeImmutable|null $start When the clocks start (default now).
+	 * @param string $plannedStart The planned start date, `Y-m-d`, when the case carries one.
+	 * @param array<string, mixed>|null $plannedDefinition The `planned` term definition that
+	 *        resolved for the case, as {@see \OCA\Dossiq\Service\Term\TermResolution} answers
+	 *        it. Used only when the case type declares no `plannedLeadTime` of its own.
+	 *
+	 * @return array<int, array<string, mixed>> The instances this call created or moved.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	public function bindForCase(
+		string $caseId,
+		string $caseTypeId,
+		?DateTimeImmutable $start = null,
+		string $plannedStart = '',
+		?array $plannedDefinition = null,
+	): array {
+		if ($caseId === '' || $caseTypeId === '') {
+			return [];
+		}
+
+		$binding = new CaseTermBinding(caseId: $caseId, start: ($start ?? new DateTimeImmutable()));
+		$binding->declared = $this->sources->declarations->forCaseType(caseTypeId: $caseTypeId);
+		$binding->plannedStart = $plannedStart;
+		$binding->plannedDefinition = $plannedDefinition;
+
+		$bound = [
+			$this->bindStatutory(binding: $binding),
+			$this->bindPlanned(binding: $binding),
+			$this->bindInternalTarget(binding: $binding),
+		];
+
+		return array_values(array_filter($bound, static fn (?array $instance): bool => $instance !== null));
+	}//end bindForCase()
+
+	/**
+	 * Bind the planned end: the case type's own lead time, else the service norm a planned definition declares.
+	 *
+	 * @param CaseTermBinding $binding The case's clocks.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when neither declares one.
+	 */
+	private function bindPlanned(CaseTermBinding $binding): ?array {
+		$plannedExtra = [];
+		if ($binding->plannedStart !== '') {
+			$plannedExtra = ['plannedStartDate' => $binding->plannedStart];
+		}
+
+		// TermDefinitions::plannedClock() says which of the two wins.
+		$plannedClock = TermDefinitions::plannedClock(
+			declaredDays: $binding->declared['plannedLeadTimeDays'],
+			definition: $binding->plannedDefinition
+		);
+
+		return $this->bindLeadTime(
+			caseId: $binding->caseId,
+			kind: TermKind::PLANNED,
+			days: $plannedClock['days'],
+			start: $binding->start,
+			extra: array_merge($plannedExtra, $plannedClock['extra']),
+			mode: $plannedClock['mode'],
+		);
+	}//end bindPlanned()
+
+	/**
+	 * Bind the internal target, in working days.
+	 *
+	 * @param CaseTermBinding $binding The case's clocks.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when none is declared.
+	 */
+	private function bindInternalTarget(CaseTermBinding $binding): ?array {
+		return $this->bindLeadTime(
+			caseId: $binding->caseId,
+			kind: TermKind::INTERNAL,
+			days: $binding->declared['internalTargetDays'],
+			start: $binding->start,
+			mode: WorkingDayRoll::MODE_WORKING_DAYS,
+		);
+	}//end bindInternalTarget()
+
+	/**
+	 * Put the statutory term on the case type's fixed closing date (REQ-TERM-064).
+	 *
+	 * A subsidy round closes on a date, not so many days after each
+	 * application. When the case type declares one, every case of that type
+	 * ends on that day, whenever it came in, and everything downstream reads a
+	 * bound end date without caring which form produced it.
+	 *
+	 * A date already past binds an expired term VISIBLY rather than refusing
+	 * the case. A late application to a closed round is a real case with a real
+	 * answer, and refusing to create it would lose the application.
+	 *
+	 * @param CaseTermBinding $binding The case, its type's declarations and when the clock starts.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when no fixed date is declared.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function bindStatutory(CaseTermBinding $binding): ?array {
+		$fixed = (string)$binding->declared['fixedEndDate'];
+		if ($fixed === '') {
+			return null;
+		}
+
+		$end = $this->sources->timers->rollTermEndFor(date: new DateTimeImmutable($fixed))->format('Y-m-d');
+		$existing = $this->sources->termService->getTermijnInstanceForZaak(caseId: $binding->caseId);
+
+		if ($existing !== null && TermKind::ofInstance($existing) === TermKind::STATUTORY) {
+			return $this->restateStatutoryEnd(existing: $existing, end: $end);
+		}
+
+		return $this->saveStatutory(binding: $binding, end: $end);
+	}//end bindStatutory()
+
+	/**
+	 * Move an existing statutory term to the fixed closing date.
+	 *
+	 * @param array<string, mixed> $existing The case's statutory instance.
+	 * @param string $end The end date, as `Y-m-d`.
+	 *
+	 * @return array<string, mixed>|null The instance.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function restateStatutoryEnd(array $existing, string $end): ?array {
+		return $this->sources->termService->updateTermijnInstance(
+			termInstanceId: (string)($existing['id'] ?? ''),
+			patch: [
+				'kind' => TermKind::STATUTORY,
+				'endDateCalculated' => $end,
+				'endDateCurrent' => $end,
+			]
+		);
+	}//end restateStatutoryEnd()
+
+	/**
+	 * Save a new statutory term ending on the fixed closing date.
+	 *
+	 * @param CaseTermBinding $binding The case and when the clock starts.
+	 * @param string $end The end date, as `Y-m-d`.
+	 *
+	 * @return array<string, mixed>|null The instance.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function saveStatutory(CaseTermBinding $binding, string $end): ?array {
+		return $this->sources->termService->saveTermInstance(
+			instance: $this->runningInstance(
+				clock: ['case' => $binding->caseId, 'kind' => TermKind::STATUTORY, 'start' => $binding->start, 'end' => $end]
+			)
+		);
+	}//end saveStatutory()
+
+	/**
+	 * A new running term instance, as the term service saves it.
+	 *
+	 * @param array{case: string, kind: string, start: DateTimeImmutable, end: string} $clock The case, the kind,
+	 *        when it starts and the end date as `Y-m-d`.
+	 *
+	 * @return array<string, mixed> The instance.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function runningInstance(array $clock): array {
+		return [
+			'case' => $clock['case'],
+			'kind' => $clock['kind'],
+			'startDate' => $clock['start']->format('Y-m-d\TH:i:sP'),
+			'endDateCalculated' => $clock['end'],
+			'endDateCurrent' => $clock['end'],
+			'status' => 'lopend',
+			'countExtensions' => 0,
+			'notificatiesVerstuurd' => [],
+		];
+	}//end runningInstance()
+
+	/**
+	 * Bind one lead-time clock, on the administered calendar.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $kind The kind this clock carries.
+	 * @param int $days The declared lead time in days, 0 when undeclared.
+	 * @param DateTimeImmutable $start When it starts.
+	 * @param array<string, mixed> $extra Extra fields to write on the instance.
+	 * @param string $mode Which days it counts: `calendarDays` (the default, what a phase
+	 *        term and a remedy declare) or `workingDays` (the planned end and the internal
+	 *        target, whose schema says so).
+	 *
+	 * @return array<string, mixed>|null The instance, or null when nothing is declared.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	public function bindLeadTime(
+		string $caseId,
+		string $kind,
+		int $days,
+		DateTimeImmutable $start,
+		array $extra = [],
+		string $mode = WorkingDayRoll::MODE_CALENDAR_DAYS,
+	): ?array {
+		if ($days <= 0 || TermKind::isKnown($kind) === false) {
+			return null;
+		}
+
+		$end = $this->endAfter(start: $start, days: $days, mode: $mode);
+
+		$clock = ['case' => $caseId, 'kind' => $kind, 'start' => $start, 'end' => $end];
+
+		return $this->sources->termService->saveTermInstance(instance: array_merge($this->runningInstance(clock: $clock), $extra));
+	}//end bindLeadTime()
+
+	/**
+	 * The day a clock of N days starting here ends on.
+	 *
+	 * The count is case data and stays here, as REQ-TOT-002 requires; only the
+	 * day it lands on is decided by the calendar the organisation administers.
+	 *
+	 * @param DateTimeImmutable $start When the clock starts.
+	 * @param int $days How many days it runs.
+	 * @param string $mode `calendarDays` (the default) or `workingDays`.
+	 *
+	 * @return string The end date as `Y-m-d`.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 */
+	public function endAfter(
+		DateTimeImmutable $start,
+		int $days,
+		string $mode = WorkingDayRoll::MODE_CALENDAR_DAYS,
+	): string {
+		// WORKING DAYS ARE THE ADMINISTERED CALENDAR'S (REQ-OTE-04). The planned
+		// end and the internal target say "working days" in their schema and
+		// were counted in calendar days, which gave a ten working day target
+		// four days less than declared. When the calendar does not answer, the
+		// roll counts calendar days and says so in the log.
+		$days = max(0, $days);
+		$raw = $this->calendar?->endAfterOrCalendarDays(start: $start, days: $days, mode: $mode)
+			?? $start->add(new DateInterval('P' . $days . 'D'));
+
+		return $this->sources->timers->rollTermEndFor(date: $raw)->format('Y-m-d');
+	}//end endAfter()
+
+	/**
+	 * Every clock on a case, each naming its kind (REQ-TERM-060).
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param DateTimeImmutable|null $now The moment to judge against (default now).
+	 *
+	 * @return array<int, array{id: string, kind: string, startDate: string, endDate: string,
+	 *               status: string, statusType: string, plannedStartDate: string,
+	 *               daysLeft: int, overdue: bool, citizenVisible: bool,
+	 *               pauseReason: string, pauseWaitingOn: string, chasesSent: int}>
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	public function termsForCase(string $caseId, ?DateTimeImmutable $now = null): array {
+		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);
+
+		$terms = [];
+		foreach ($this->sources->termService->instancesForCase(caseId: $caseId) as $row) {
+			$kind = TermKind::ofInstance($row);
+			$end = (string)($row['endDateCurrent'] ?? ($row['endDateCalculated'] ?? ''));
+			$daysLeft = $this->daysLeft(end: $end, today: $today);
+
+			$terms[] = [
+				'id' => (string)($row['id'] ?? ($row['uuid'] ?? '')),
+				'kind' => $kind,
+				'startDate' => (string)($row['startDate'] ?? ''),
+				'endDate' => $end,
+				'status' => (string)($row['status'] ?? ''),
+				'statusType' => (string)($row['statusType'] ?? ''),
+				'plannedStartDate' => (string)($row['plannedStartDate'] ?? ''),
+				'daysLeft' => $daysLeft,
+				'overdue' => ($end !== '' && $daysLeft < 0 && $this->isRunning(row: $row) === true),
+				'citizenVisible' => TermKind::isCitizenVisible($kind),
+				// A suspended clock reads differently from a stopped one: the
+				// panel has to say WHY it stopped and what has been tried since,
+				// or a handler looking at a case that has sat still for nine
+				// days cannot tell a reminder is already overdue.
+				'pauseReason' => (string)($row['pauseReason'] ?? ''),
+				'pauseWaitingOn' => (string)($row['pauseWaitingOn'] ?? ''),
+				'chasesSent' => max(0, (int)($row['chasesSent'] ?? 0)),
+				// WHY THIS DATE IS NOT THE DATE IT WAS. A deadline that
+				// quietly became another deadline is the thing a handler
+				// cannot see and an applicant will argue about, so every move
+				// the engine recorded travels with the term rather than
+				// waiting for somebody to go and look for it.
+				'moves' => ($this->moves?->movesFor(instance: $row) ?? []),
+			];
+		}//end foreach
+
+		return $terms;
+	}//end termsForCase()
+
+	/**
+	 * How far the case has got, and how long it has left (REQ-TERM-068).
+	 *
+	 * Progress is the phases completed and the term consumed, halved together:
+	 * a case two phases into four with half its term gone reads fifty. Neither
+	 * half is stored, and the same call is what a list column will read when
+	 * the library offers one, so the list and the case page cannot disagree.
+	 *
+	 * Days left is counted against the statutory term, because that is the one
+	 * a handler is judged on. The planned end and the internal target carry
+	 * their own counts in `termsForCase()`.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $caseTypeId The case type UUID.
+	 * @param string $statusTypeId The phase the case is in now.
+	 * @param DateTimeImmutable|null $now The moment to judge against (default now).
+	 *
+	 * @return array{progress: int, daysLeft: int, phasesDone: int, phasesTotal: int,
+	 *               termConsumed: int, phaseOverdue: bool, plannedOverdue: bool,
+	 *               statutoryOverdue: bool}
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function progressFor(
+		string $caseId,
+		string $caseTypeId,
+		string $statusTypeId = '',
+		?DateTimeImmutable $now = null,
+	): array {
+		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);
+		$terms = $this->termsForCase(caseId: $caseId, now: $today);
+		$phases = $this->sources->declarations->phasesOf(caseTypeId: $caseTypeId);
+
+		return $this->progressOf(terms: $terms, reading: ['phases' => $phases, 'statusTypeId' => $statusTypeId, 'today' => $today]);
+	}//end progressFor()
+
+	/**
+	 * The progress figures of a case's terms and phases.
+	 *
+	 * @param array<int, array<string, mixed>> $terms The case's terms.
+	 * @param array{phases: array<int, mixed>, statusTypeId: string, today: DateTimeImmutable} $reading The case type's
+	 *        phases, the phase the case is in now and the day to judge against.
+	 *
+	 * @return array{progress: int, daysLeft: int, phasesDone: int, phasesTotal: int,
+	 *               termConsumed: int, phaseOverdue: bool, plannedOverdue: bool,
+	 *               statutoryOverdue: bool}
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function progressOf(array $terms, array $reading): array {
+		['phases' => $phases, 'statusTypeId' => $statusTypeId, 'today' => $today] = $reading;
+		$statutory = $this->firstOfKind(terms: $terms, kind: TermKind::STATUTORY);
+		$consumed = $this->consumedPercent(term: $statutory, today: $today);
+		$done = $this->phasesDone(phases: $phases, statusTypeId: $statusTypeId);
+		$total = count($phases);
+
+		$byPhases = $this->progressByPhases(phases: ['done' => $done, 'total' => $total], consumed: $consumed);
+
+		return [
+			'progress' => max(0, min(100, (int)round(((($byPhases + $consumed) / 2))))),
+			'daysLeft' => $this->daysLeftOf(statutory: $statutory),
+			'phasesDone' => $done,
+			'phasesTotal' => $total,
+			'termConsumed' => $consumed,
+		] + $this->overdueFlags(terms: $terms);
+	}//end progressOf()
+
+	/**
+	 * The share of phases done, as a percentage, or the term consumed without phases.
+	 *
+	 * @param array{done: int, total: int} $phases The phases done and the phases declared.
+	 * @param int $consumed The share of the statutory term consumed.
+	 *
+	 * @return int The percentage.
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function progressByPhases(array $phases, int $consumed): int {
+		$byPhases = $consumed;
+		if ($phases['total'] > 0) {
+			$byPhases = (int)round((($phases['done'] / $phases['total']) * 100));
+		}
+
+		return $byPhases;
+	}//end progressByPhases()
+
+	/**
+	 * The days left on the statutory term.
+	 *
+	 * @param array<string, mixed>|null $statutory The statutory term, or null.
+	 *
+	 * @return int The days left.
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function daysLeftOf(?array $statutory): int {
+		// A case with no statutory term reads zero days left rather than
+		// nothing. There is no honest number here, and a null would have to be
+		// rendered as something anyway.
+		$daysLeft = 0;
+		if ($statutory !== null) {
+			$daysLeft = (int)($statutory['daysLeft'] ?? 0);
+		}
+
+		return $daysLeft;
+	}//end daysLeftOf()
+
+	/**
+	 * Whether any phase, planned or statutory term is overdue.
+	 *
+	 * @param array<int, array<string, mixed>> $terms The case's terms.
+	 *
+	 * @return array{phaseOverdue: bool, plannedOverdue: bool, statutoryOverdue: bool}
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function overdueFlags(array $terms): array {
+		return [
+			'phaseOverdue' => $this->anyOverdue(terms: $terms, kind: TermKind::PHASE),
+			'plannedOverdue' => $this->anyOverdue(terms: $terms, kind: TermKind::PLANNED),
+			'statutoryOverdue' => $this->anyOverdue(terms: $terms, kind: TermKind::STATUTORY),
+		];
+	}//end overdueFlags()
+
+	/**
+	 * Everything the case page needs about the clocks, in one read.
+	 *
+	 * The case names its own type and its own phase, so a caller holding a case
+	 * id does not have to find either first. This is what the Terms panel reads
+	 * and what a list column will read, so the two cannot disagree about a
+	 * number neither of them stores.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param DateTimeImmutable|null $now The moment to judge against (default now).
+	 *
+	 * @return array{case: string, terms: array<int, array<string, mixed>>,
+	 *               progress: array<string, mixed>}
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function overviewFor(string $caseId, ?DateTimeImmutable $now = null): array {
+		$context = $this->sources->declarations->caseContext(caseId: $caseId);
+
+		return [
+			'case' => $caseId,
+			'terms' => $this->termsForCase(caseId: $caseId, now: $now),
+			'progress' => $this->progressFor(
+				caseId: $caseId,
+				caseTypeId: $context['caseType'],
+				statusTypeId: $context['status'],
+				now: $now
+			),
+		];
+	}//end overviewFor()
+
+	/**
+	 * The clocks a citizen-facing surface may render (REQ-TERM-063).
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param DateTimeImmutable|null $now The moment to judge against.
+	 *
+	 * @return array<int, array<string, mixed>> The statutory term, and nothing else.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	public function citizenTermsFor(string $caseId, ?DateTimeImmutable $now = null): array {
+		return TermKind::citizenVisible($this->termsForCase(caseId: $caseId, now: $now));
+	}//end citizenTermsFor()
+
+	/**
+	 * How far one term instance has run and how long it has left, counted the
+	 * way the case page counts it (REQ-TERM-068).
+	 *
+	 * @param array<string, mixed> $instance The term instance row.
+	 * @param DateTimeImmutable|null $now The moment to judge against (default now).
+	 *
+	 * @return array{endDate: string, progressPercent: int, daysLeft: int}
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+	 */
+	public function standingOf(array $instance, ?DateTimeImmutable $now = null): array {
+		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);
+		$end = (string)($instance['endDateCurrent'] ?? ($instance['endDateCalculated'] ?? ''));
+		$term = ['startDate' => (string)($instance['startDate'] ?? ''), 'endDate' => $end];
+
+		return [
+			'endDate' => $end,
+			'progressPercent' => $this->consumedPercent(term: $term, today: $today),
+			'daysLeft' => $this->daysLeft(end: $end, today: $today),
+		];
+	}//end standingOf()
+
+	/**
+	 * How much of a term has been consumed, as a percentage.
+	 *
+	 * @param array<string, mixed>|null $term One shaped term from `termsForCase()`.
+	 * @param DateTimeImmutable $today The day to judge against.
+	 *
+	 * @return int 0 to 100, and 0 when there is no term to read.
+	 */
+	private function consumedPercent(?array $term, DateTimeImmutable $today): int {
+		if ($term === null) {
+			return 0;
+		}
+
+		$start = $this->dayOf(value: (string)($term['startDate'] ?? ''));
+		$end = $this->dayOf(value: (string)($term['endDate'] ?? ''));
+		if ($start === null || $end === null) {
+			return 0;
+		}
+
+		$span = $this->days->between(from: $start, to: $end);
+		if ($span <= 0) {
+			return 100;
+		}
+
+		$gone = $this->days->between(from: $start, to: $today);
+		if ($today < $start) {
+			return 0;
+		}
+
+		return max(0, min(100, (int)round(((($gone / $span)) * 100))));
+	}//end consumedPercent()
+
+	/**
+	 * How many declared phases the case has left behind.
+	 *
+	 * @param array<int, array<string, mixed>> $phases The phases, in order.
+	 * @param string $statusTypeId The phase the case is in now.
+	 *
+	 * @return int The count of phases before this one.
+	 */
+	private function phasesDone(array $phases, string $statusTypeId): int {
+		if ($statusTypeId === '') {
+			return 0;
+		}
+
+		foreach ($phases as $index => $phase) {
+			if ((string)($phase['id'] ?? '') === $statusTypeId) {
+				return $index;
+			}
+		}//end foreach
+
+		return 0;
+	}//end phasesDone()
+
+	/**
+	 * The first term of a kind, or null.
+	 *
+	 * @param array<int, array<string, mixed>> $terms The shaped terms.
+	 * @param string $kind The kind to look for.
+	 *
+	 * @return array<string, mixed>|null The term.
+	 */
+	private function firstOfKind(array $terms, string $kind): ?array {
+		foreach ($terms as $term) {
+			if (($term['kind'] ?? '') === $kind) {
+				return $term;
+			}
+		}//end foreach
+
+		return null;
+	}//end firstOfKind()
+
+	/**
+	 * Whether any running clock of a kind is past its end.
+	 *
+	 * @param array<int, array<string, mixed>> $terms The shaped terms.
+	 * @param string $kind The kind to look at.
+	 *
+	 * @return bool True when at least one is overdue.
+	 */
+	private function anyOverdue(array $terms, string $kind): bool {
+		foreach ($terms as $term) {
+			if (($term['kind'] ?? '') === $kind && ($term['overdue'] ?? false) === true) {
+				return true;
+			}
+		}//end foreach
+
+		return false;
+	}//end anyOverdue()
+
+	/**
+	 * Days between today and an end date, negative once it has passed.
+	 *
+	 * @param string $end The end date, `Y-m-d`.
+	 * @param DateTimeImmutable $today The day to count from.
+	 *
+	 * @return int The count, 0 when there is no readable end.
+	 */
+	private function daysLeft(string $end, DateTimeImmutable $today): int {
+		$endDay = $this->dayOf(value: $end);
+		if ($endDay === null) {
+			return 0;
+		}
+
+		return $this->days->signed(from: $today, to: $endDay);
+	}//end daysLeft()
+
+	/**
+	 * Whether a clock is still running.
+	 *
+	 * A completed or withdrawn term is not overdue, however far past its end
+	 * the day is: it was answered.
+	 *
+	 * @param array<string, mixed> $row The instance row.
+	 *
+	 * @return bool True when the clock is still ticking.
+	 */
+	private function isRunning(array $row): bool {
+		return in_array((string)($row['status'] ?? 'lopend'), ['lopend', 'verlengd', 'paused', 'exceeded'], true);
+	}//end isRunning()
+
+	/**
+	 * A date string as a day, or null when it does not read as one.
+	 *
+	 * @param string $value The raw value.
+	 *
+	 * @return DateTimeImmutable|null The day at midnight.
+	 */
+	private function dayOf(string $value): ?DateTimeImmutable {
+		if ($value === '') {
+			return null;
+		}
+
+		// `date_create_immutable()` answers FALSE where the constructor throws,
+		// so a stored value nobody can parse is a value this reads as absent
+		// rather than an exception this swallows. The distinction matters: a
+		// catch that returns null cannot tell a malformed date from a store
+		// that fell over, and this one only ever sees the first.
+		$parsed = date_create_immutable($value);
+		if ($parsed === false) {
+			$this->logger->warning(
+				'Dossiq terms: a term instance carries a date nothing can read, so it is treated as unset',
+				['value' => $value]
+			);
+
+			return null;
+		}
+
+		return $parsed->setTime(0, 0);
+	}//end dayOf()
+}//end class

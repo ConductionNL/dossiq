@@ -35,18 +35,19 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { openCasePanel } from './helpers/case-panels.ts'
+import { openCasePanel, openCaseTab } from './helpers/case-panels.ts'
 import {
 	adoptableCaseTypes,
 	getRequestToken,
 	objectId,
 	REGISTER,
 	seedCase,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 
 /**
- * The NINE tabs the strip holds, in order.
+ * The THIRTEEN tabs the strip holds, in order.
  *
  * These are exact strings and not locale alternatives, unlike almost every
  * other title this spec matches. A tab label is not translated: it is read
@@ -66,17 +67,21 @@ import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 // 2026-09-12). The hours card fills the fourth cell of the row.
 const TILE = { number: 0, type: 1, deadline: 2 } as const
 
+/** REQ-CDV-16: the five tabs on the strip, English or Dutch; a tab may carry its count. */
 const TAB_LABELS = [
-	'Data',
-	'Files',
-	'Notes',
-	'People',
-	'Communication',
-	'Email',
-	'Work',
-	'Decisions',
-	'Related',
+	/^(Overview|Overzicht)\b/,
+	/^(Files|Bestanden)\b/,
+	/^Contact\b/,
+	/^(Tasks|Taken)\b/,
+	/^(Case history|Historie)\b/,
 ]
+
+const OVERVIEW = /^(Overview|Overzicht)\b/
+const PEOPLE = /^(People|Betrokkenen)\b/
+const CONTACT = /^Contact\b/
+const TASKS = /^(Tasks|Taken)\b/
+const RELATED = /^(Related|Gerelateerd)\b/
+
 
 /**
  * The panels that were folded INTO a tab, and the section each one is now.
@@ -85,16 +90,16 @@ const TAB_LABELS = [
  * of assertion that can be satisfied by deleting things. These are what make
  * the difference between a small strip and four missing features.
  */
-const FOLDED_SECTIONS: Array<[string, string, 'registry' | 'integration']> = [
-	['Data', 'case-section-case-core', 'registry'],
-	['Data', 'case-section-case-location-map', 'registry'],
-	['People', 'case-section-case-roles', 'registry'],
-	['Communication', 'case-section-case-communication', 'registry'],
-	['Work', 'case-section-case-tasks', 'registry'],
-	['Work', 'case-section-case-calendar', 'integration'],
-	['Related', 'case-section-case-related', 'registry'],
-	['Related', 'case-section-case-sub-cases', 'registry'],
-	['Related', 'case-section-case-objects', 'registry'],
+const FOLDED_SECTIONS: Array<[RegExp, string, 'registry' | 'integration']> = [
+	[OVERVIEW, 'case-section-case-core', 'registry'],
+	[OVERVIEW, 'case-section-case-location-map', 'registry'],
+	[PEOPLE, 'case-section-case-roles', 'registry'],
+	[CONTACT, 'case-section-case-communication', 'registry'],
+	[TASKS, 'case-section-case-tasks', 'registry'],
+	[TASKS, 'case-section-case-calendar', 'integration'],
+	[RELATED, 'case-section-case-related', 'registry'],
+	[RELATED, 'case-section-case-sub-cases', 'registry'],
+	[RELATED, 'case-section-case-objects', 'registry'],
 ]
 
 /**
@@ -157,6 +162,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 	let caseId = ''
 	let caseTypeTitle = ''
+	let caseTypeUsesTheCaseLayer = false
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		const api = await playwright.request.newContext({ baseURL })
@@ -184,6 +190,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
 		).toBeTruthy()
 		caseTypeTitle = String(chosen.title ?? chosen.name ?? '')
+		caseTypeUsesTheCaseLayer = chosen.handlingModel === 'cmmn'
 
 		const seeded = await seedCase(api, token, {
 			title: `E2E KPI case ${Date.now().toString(36)}`,
@@ -200,13 +207,18 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	// left dangling either, which is the point.
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-progress-tile-is-gone
+	// @e2e openspec/specs/retire-cmmn-caseplanstate/spec.md#a-bpmn-case-is-untouched
 	test('the identity row headlines the case, and the KPI tiles are gone', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
 		const milestoneCalls: string[] = []
 		const failures: Array<{ status: number; url: string }> = []
+		const planCalls: string[] = []
 		page.on('response', (r) => {
+			if (/\/apps\/openregister\/api\/cases\//.test(r.url())) {
+				planCalls.push(`${r.status()} ${r.url()}`)
+			}
 			if (r.url().includes('milestones/progress')) {
 				milestoneCalls.push(`${r.status()} ${r.url()}`)
 			}
@@ -306,16 +318,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const ABSENT_APPS = /\/apps\/(hermiq|humaniq)\//
 		const OWN = /\/apps\/dossiq\/|\/objects\/dossiq\//
 		const serverErrors = failures.filter((f) => f.status >= 500)
-		// The CMMN panel probes whether this case is CMMN-managed and is answered
-		// 409 for a BPMN-managed one. That is the app saying "no", not failing,
-		// and it is a dossiq URL — so it has to be excluded HERE, not only from
-		// the console list, or this assertion fails on correct behaviour.
+		// No allowance for a 409: the local case engine and its probe routes are
+		// gone, so nothing dossiq owns has a reason to answer one on this page.
 		const ownClientErrors = failures.filter(
-			(f) =>
-				f.status >= 400
-				&& f.status < 500
-				&& OWN.test(f.url)
-				&& !(f.status === 409 || /cmmn-plan/.test(f.url)),
+			(f) => f.status >= 400 && f.status < 500 && OWN.test(f.url),
 		)
 		expect(
 			serverErrors,
@@ -345,13 +351,19 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			)
 		}
 
-		// The CMMN panel probes whether this case is CMMN-managed and gets a 409
-		// for a BPMN-managed one, which is the app answering "no" rather than
-		// failing.
-		const unexpected = errors.filter(
-			(e) => !/\b409\b|cmmn-plan|Failed to load resource/.test(e),
-		)
+		const unexpected = errors.filter((e) => !/Failed to load resource/.test(e))
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
+
+		// A BPMN case is untouched by the case layer: a type without
+		// `handlingModel: cmmn` makes the page ask OpenRegister for no plan.
+		// The adopted type is whatever this instance ships, so the claim is
+		// made only when it is a BPMN one.
+		if (!caseTypeUsesTheCaseLayer) {
+			expect(
+				planCalls,
+				'a BPMN case page asks OpenRegister for no case plan',
+			).toEqual([])
+		}
 	})
 
 	test('the identity row carries no heading and no actions menu', async ({
@@ -557,15 +569,12 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-nine-tabs-and-no-more
-	test('the strip holds exactly nine tabs, in order, and no more', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-five-tabs-and-meer
+	test('the strip holds exactly five tabs, in order, and More', async ({
 		page,
 	}) => {
-		// THE NUMBER IS THE FEATURE. The strip grew from ten tabs to fourteen
-		// over one programme while the app menu held at four, because the menu
-		// had a stated ceiling and the strip had nothing counting it. This is
-		// the thing that counts it, and it has to be an exact count: asserting
-		// that nine named tabs are PRESENT would pass on a strip of twelve.
+		// An exact count: asserting that five named tabs are present would
+		// pass on a strip of twelve.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -578,7 +587,8 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const labels = (await strip.getByRole('tab').allInnerTexts()).map((l) =>
 			l.trim(),
 		)
-		expect(labels).toEqual(TAB_LABELS)
+		labels.forEach((label, index) => expect(label).toMatch(TAB_LABELS[index]))
+		await expect(strip.locator('.cn-tabs__more')).toBeVisible()
 
 		for (const label of RETIRED_TAB_LABELS) {
 			await expect(strip.getByRole('tab', { name: label })).toHaveCount(0)
@@ -608,7 +618,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
 		for (const [tabLabel, testid, kind] of FOLDED_SECTIONS) {
-			await strip.getByRole('tab', { name: tabLabel, exact: true }).click()
+			await openCaseTab(page, tabLabel)
 			const panel = strip.locator(
 				'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
 			)
@@ -723,7 +733,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		page,
 	}) => {
 		// A control nested in role="tablist" is announced as one of the tabs, so
-		// a reader counting nine tabs would hear ten.
+		// a reader counting thirteen tabs would hear fourteen.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -904,5 +914,48 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(panel.locator('.cn-sidebar-tab__composer').first()).toBeVisible(
 			{ timeout: 15_000 },
 		)
+	})
+
+	// @e2e openspec/specs/realtime-updates-ui/spec.md#a-colleagues-change-appears
+	// @e2e realtime-updates-ui::a-colleagues-change-appears
+	test('a change made in another session appears without a reload', async ({
+		page,
+		playwright,
+		baseURL,
+	}) => {
+		// Gap register row 2.20. The subscription is pinned against a store
+		// double in `tests/vitest/caseLiveUpdates.spec.js`; what only a live
+		// instance can show is whether an event ever ARRIVES. Three things have
+		// to line up for that and none of them is dossiq: notify_push has to be
+		// running, OpenRegister has to emit for the object, and the transport
+		// has to reach this browser. Where it does not, the plugin falls back
+		// to its own object poll, which is slower than this test can wait for
+		// on a `php -S` runner.
+		//
+		// So the WAIT is generous and the failure is NAMED rather than left as
+		// a bare timeout: a title that never changes here means the page is not
+		// subscribed, or nothing is delivering, and those are worth telling
+		// apart in the report.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// The SECOND session: a separate request context, which is what makes
+		// this a colleague's change rather than this page's own write.
+		const colleague = await playwright.request.newContext({ baseURL })
+		const token = await getRequestToken(colleague)
+		const renamed = `E2E live update ${Date.now().toString(36)}`
+		await updateObject(colleague, token, 'case', caseId, { title: renamed })
+		await colleague.dispose()
+
+		// No reload, no navigation, no click. Anything that refetches by hand
+		// would pass on a page that is not subscribed at all, which is the one
+		// result this test must not be able to produce.
+		await expect(
+			page.locator('.cn-detail-page'),
+			'the case page did not pick up a change made in another session: either it is not subscribed, or no live event reached this browser and the plugin poll had not yet fired',
+		).toContainText(renamed, { timeout: 90_000 })
 	})
 })

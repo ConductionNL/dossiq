@@ -132,6 +132,20 @@ class TransferShareBroker {
 			return null;
 		}
 
+		return $this->grantOf(share: $share, transferId: $transferId);
+	}//end resolveTransferShare()
+
+	/**
+	 * The grant a share carries, when it may accept this exact transfer.
+	 *
+	 * @param object $share The OR FederatedShare
+	 * @param string $transferId The candidate transfer UUID
+	 *
+	 * @return array{sharedWith: string, organisation: ?string}|null The resolved grant, or null when invalid
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#a-read-only-case-share-token-cannot-accept-a-transfer
+	 */
+	private function grantOf(object $share, string $transferId): ?array {
 		if ($share->getDirection() !== 'outgoing') {
 			return null;
 		}
@@ -153,7 +167,7 @@ class TransferShareBroker {
 			'sharedWith' => (string)$share->getSharedWith(),
 			'organisation' => $share->getOrganisation(),
 		];
-	}//end resolveTransferShare()
+	}//end grantOf()
 
 	/**
 	 * Extract the trailing uuid from a canonical object uri (or return it

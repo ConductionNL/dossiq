@@ -30,16 +30,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\UnmatchedMailIntakeInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -49,9 +55,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
-class UnmatchedMailIntake {
+class UnmatchedMailIntake implements UnmatchedMailIntakeInterface {
 
 	/**
 	 * The app-config key naming the case type an unmatched mail becomes.
@@ -84,7 +90,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return boolean True when a fallback case type is configured.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function isConfigured(): bool {
 		return ($this->fallbackCaseTypeId() !== '');
@@ -95,11 +101,11 @@ class UnmatchedMailIntake {
 	 *
 	 * @return string The case type id, or '' when the instance names none.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function fallbackCaseTypeId(): string {
 		return trim(
-			$this->appConfig->getValueString(Application::APP_ID, self::FALLBACK_CASE_TYPE_KEY, '')
+			$this->appConfig->getValueString(AppIdentity::APP_ID, self::FALLBACK_CASE_TYPE_KEY, '')
 		);
 	}//end fallbackCaseTypeId()
 
@@ -110,7 +116,7 @@ class UnmatchedMailIntake {
 	 *
 	 * @return string|null The new case's id, or `null` when nothing was created.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function caseFor(array $message): ?string {
 		$caseTypeId = $this->fallbackCaseTypeId();
@@ -118,6 +124,32 @@ class UnmatchedMailIntake {
 			return null;
 		}
 
+		$store = $this->caseStore(caseTypeId: $caseTypeId);
+		if ($store === null) {
+			return null;
+		}
+
+		$caseId = $this->file(store: $store, payload: $this->payloadFor(message: $message, caseTypeId: $caseTypeId));
+		if ($caseId === null) {
+			return null;
+		}
+
+		$this->logger->info(
+			'UnmatchedMailIntake: filed an unmatched mail as case {case}',
+			['case' => $caseId, 'caseType' => $caseTypeId]
+		);
+
+		return $caseId;
+	}//end caseFor()
+
+	/**
+	 * Where the case is written, or null when the register is not configured.
+	 *
+	 * @param string $caseTypeId The fallback case type.
+	 *
+	 * @return array{objectService: object, register: string, schema: string, caseType: string}|null The store.
+	 */
+	private function caseStore(string $caseTypeId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
@@ -130,6 +162,18 @@ class UnmatchedMailIntake {
 			return null;
 		}
 
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $caseSchema, 'caseType' => $caseTypeId];
+	}//end caseStore()
+
+	/**
+	 * The case a mail becomes.
+	 *
+	 * @param array<string, mixed> $message    The normalised message row.
+	 * @param string               $caseTypeId The fallback case type.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function payloadFor(array $message, string $caseTypeId): array {
 		$payload = [
 			'title' => $this->titleFor(message: $message),
 			'description' => $this->descriptionFor(message: $message),
@@ -139,16 +183,42 @@ class UnmatchedMailIntake {
 			'assignee' => $this->assigneeFor(caseTypeId: $caseTypeId),
 		];
 
+		// 🔴 THE SENDER IS THE ONLY ADDRESS THIS CASE WILL EVER HAVE, so it is
+		// written as a field rather than left in the description. Awb 4:3a owes
+		// this sender a confirmation of receipt, and until this line the
+		// address existed only inside a prose sentence no code could read:
+		// `AcknowledgementService` would refuse every mail-filed case for
+		// having nowhere to send to. `initiatorSourceId` is the schema's own
+		// place for "the initiator's reference in its source", and for a
+		// message that arrived by mail that reference is the address it came
+		// from.
+		$sender = $this->senderAddress(message: $message);
+		if ($sender !== '') {
+			$payload['initiatorSourceId'] = $sender;
+			$payload['initiatorType'] = 'contact';
+		}
+
+		return $payload;
+	}//end payloadFor()
+
+	/**
+	 * Write the case and answer its id, or null when it was not written or answered no id.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, caseType: string} $store   Where the case is written.
+	 * @param array<string, mixed>                                                               $payload The case.
+	 *
+	 * @return string|null The new case's id.
+	 */
+	private function file(array $store, array $payload): ?string {
 		try {
-			$created = $objectService->saveObject(
+			$created = $store['objectService']->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $caseSchema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store['register'], schema: $store['schema']))
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'UnmatchedMailIntake: could not file the mail as a case',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+				['caseType' => $store['caseType'], 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -157,18 +227,40 @@ class UnmatchedMailIntake {
 		if ($caseId === '') {
 			$this->logger->error(
 				'UnmatchedMailIntake: the case was written but answered no id, so the mail cannot be linked to it',
-				['caseType' => $caseTypeId]
+				['caseType' => $store['caseType']]
 			);
 			return null;
 		}
 
-		$this->logger->info(
-			'UnmatchedMailIntake: filed an unmatched mail as case {case}',
-			['case' => $caseId, 'caseType' => $caseTypeId]
-		);
-
 		return $caseId;
-	}//end caseFor()
+	}//end file()
+
+	/**
+	 * The address this mail came from, when it is one.
+	 *
+	 * @param array<string, mixed> $message The normalised message row.
+	 *
+	 * @return string The lowercased address, or '' when the row names none.
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	private function senderAddress(array $message): string {
+		$from = trim((string)($message['from'] ?? ''));
+		if ($from === '') {
+			return '';
+		}
+
+		// A From header is often `Naam <adres@example.nl>`. Take the address.
+		if (preg_match('/<([^>]+)>/', $from, $matches) === 1) {
+			$from = trim($matches[1]);
+		}
+
+		if (filter_var($from, FILTER_VALIDATE_EMAIL) === false) {
+			return '';
+		}
+
+		return strtolower($from);
+	}//end senderAddress()
 
 	/**
 	 * The title the case takes from the mail.
@@ -226,15 +318,14 @@ class UnmatchedMailIntake {
 	 * @return string The principal, or '' when the type names none.
 	 */
 	private function assigneeFor(string $caseTypeId): string {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$source = $this->caseTypeSource();
+		if ($source === null) {
 			return '';
 		}
 
+		[$objectService, $register, $schema] = $source;
 		try {
-			$caseType = $objectService->find($caseTypeId, register: $register, schema: $schema);
+			$caseType = $objectService->find($caseTypeId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'UnmatchedMailIntake: could not read the fallback case type',
@@ -243,14 +334,45 @@ class UnmatchedMailIntake {
 			return '';
 		}
 
-		$row = $this->normaliseObjectRow(row: $caseType);
+		return $this->defaultAssigneeOf(row: $this->normaliseObjectRow(row: $caseType));
+	}//end assigneeFor()
 
+	/**
+	 * The object service, register and case type schema, when all are configured.
+	 *
+	 * @return array{0: object, 1: mixed, 2: mixed}|null Null when one is missing.
+	 */
+	private function caseTypeSource(): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_type_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseTypeSource()
+
+	/**
+	 * The principal a case type assigns new cases to.
+	 *
+	 * @param array<string, mixed> $row The case type.
+	 *
+	 * @return string The principal, or '' when the type names none.
+	 */
+	private function defaultAssigneeOf(array $row): string {
+		// Through CaseTypeHandling, so the block an administrator filled in on
+		// the case type wins and `defaultAssignee` is the fallback for a type
+		// nobody has migrated. Reading the raw property here is how one of the
+		// three readers of this value kept answering the old one.
 		return $this->assignees->resolve(
-			primary: $this->assignees->referenceId(value: ($row['defaultAssignee'] ?? '')),
+			primary: $this->assignees->referenceId(
+				value: (new CaseTypeHandling())->defaultHandler(caseType: $row)
+			),
 			fallback: '',
 			case: []
 		);
-	}//end assigneeFor()
+	}//end defaultAssigneeOf()
 
 	/**
 	 * Normalise one store answer into a plain row.
@@ -260,14 +382,6 @@ class UnmatchedMailIntake {
 	 * @return array<string, mixed> The row.
 	 */
 	private function normaliseObjectRow(mixed $row): array {
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$row = $row->jsonSerialize();
-		}
-
-		if (is_array($row) === false) {
-			return [];
-		}
-
-		return $row;
+		return SerialisedResult::arrayOf(value: $row);
 	}//end normaliseObjectRow()
 }//end class

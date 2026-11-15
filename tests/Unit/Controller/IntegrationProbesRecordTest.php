@@ -1,14 +1,15 @@
 <?php
 
 /**
- * The probes and saves that write an integration card.
+ * The probes and saves that report a connection to integriq.
  *
  * A connection test the admin runs and a settings form the admin saves are the
- * only two things that know whether a connection works. If they do not write
- * their outcome, the Integrations page shows the seed forever and is worse
- * than no page at all — it looks like an answer. Every test here asserts that
- * the write happens with the outcome the caller actually had, not that the
- * caller returned the right JSON.
+ * only two things dossiq knows about whether a connection works. Since
+ * adopt-connection-registry the Integrations page lists integriq's rows, and
+ * integriq only learns what dossiq tells it. If these callers stop reporting,
+ * the page keeps showing an old status and looks like an answer. Every test
+ * here asserts that the report happens with the outcome the caller actually
+ * had, not that the caller returned the right JSON.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Controller
@@ -33,20 +34,13 @@ use OCA\Dossiq\Controller\EmailTemplateController;
 use OCA\Dossiq\Controller\SettingsController;
 use OCA\Dossiq\Controller\StufController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Email\MailGatewayInterface;
+use OCA\Dossiq\Service\Email\SenderBlocklist;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Stuf\CircuitBreakerService;
-use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
-use OCA\Dossiq\Service\Stuf\StufMessageHandler;
-use OCA\Dossiq\Service\Stuf\StufMessageParser;
-use OCA\Dossiq\Service\Stuf\StufAdapterService;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use OCA\Dossiq\Service\Stuf\StufServices;
-use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
-use OCA\Dossiq\Service\Stuf\StufVaultService;
-use OCA\Dossiq\Service\StufFieldMappingService;
-use OCA\Dossiq\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IL10N;
@@ -61,22 +55,10 @@ use OCP\App\IAppManager;
 /**
  * The probe and save side of pluggable-integration-registry.
  *
- * StufServices is an immutable BUNDLE of eight collaborators with public
- * readonly promoted properties, so it cannot be a mock here the way it is in
- * StufControllerContractTest: `endpoints()` reads `$this->stuf->register` and
- * `->circuitBreaker`, and a mock leaves a readonly promoted property
- * uninitialised, which throws before the assertion. It is therefore built for
- * real, and declared below so PHPUnit does not count it as untested code a
- * test executed. Without that line six PHPUnit cells go red while the summary
- * still prints OK: the exit code is 1 under failOnRisky, and the word OK is
- * on the line above it.
- *
  * @covers \OCA\Dossiq\Controller\EmailTemplateController
  * @covers \OCA\Dossiq\Controller\SettingsController
  * @covers \OCA\Dossiq\Controller\StufController
- *
- * @uses \OCA\Dossiq\Service\Stuf\StufServices
- */
+ * */
 class IntegrationProbesRecordTest extends TestCase {
 
 	/**
@@ -104,40 +86,60 @@ class IntegrationProbesRecordTest extends TestCase {
 	}//end setUp()
 
 	/**
-	 * An unconfigured mailbox records Not configured, not Error.
+	 * A mailbox nothing can be read from records Not configured, not Error.
 	 *
-	 * "No host saved" is not a broken connection, and calling it one would put
-	 * a red card on the page of a fresh install.
+	 * "The Mail app is not installed" is not a broken connection, and calling
+	 * it one would put a red card on the page of a fresh install.
 	 *
 	 * @return void
 	 */
-	public function testUnconfiguredMailboxRecordsUnconfigured(): void {
+	public function testAMailboxWithoutTheMailAppRecordsUnconfigured(): void {
 		$this->templateService->expects($this->once())
 			->method('recordMailboxStatus')
 			->with('unconfigured', $this->anything());
 
-		$controller = $this->emailController(host: '');
-		$response = $controller->testImap();
+		$response = $this->emailController(mailAvailable: false)->mailAccounts();
 
-		$this->assertFalse($response->getData()['ok']);
-	}//end testUnconfiguredMailboxRecordsUnconfigured()
+		$this->assertFalse($response->getData()['available']);
+		$this->assertSame([], $response->getData()['accounts']);
+	}//end testAMailboxWithoutTheMailAppRecordsUnconfigured()
 
 	/**
-	 * A mailbox host that does not answer records Error with the failure text.
+	 * Mail installed with no account is also Not configured.
+	 *
+	 * An installed app with nothing to read is exactly as unusable as an
+	 * absent one, and the difference is not one an administrator can act on
+	 * from a red card.
 	 *
 	 * @return void
 	 */
-	public function testFailedMailboxTestRecordsError(): void {
+	public function testAMailAppWithNoAccountRecordsUnconfigured(): void {
 		$this->templateService->expects($this->once())
 			->method('recordMailboxStatus')
-			->with('error', $this->isType('string'));
+			->with('unconfigured', $this->anything());
 
-		// Port 0 on an unroutable host: fsockopen fails without a network.
-		$controller = $this->emailController(host: '192.0.2.1', port: '9');
-		$response = $controller->testImap();
+		$response = $this->emailController(accounts: [])->mailAccounts();
 
-		$this->assertFalse($response->getData()['ok']);
-	}//end testFailedMailboxTestRecordsError()
+		$this->assertSame([], $response->getData()['accounts']);
+	}//end testAMailAppWithNoAccountRecordsUnconfigured()
+
+	/**
+	 * An account intake can read records Configured, and is offered.
+	 *
+	 * @return void
+	 */
+	public function testAnAccountIntakeCanReadRecordsConfigured(): void {
+		$this->templateService->expects($this->once())
+			->method('recordMailboxStatus')
+			->with('configured', $this->isType('string'));
+
+		$response = $this->emailController(
+			accounts: [['id' => 7, 'name' => 'Postbus Zaken', 'email' => 'zaken@gemeente.nl']]
+		)->mailAccounts();
+
+		$this->assertTrue($response->getData()['available']);
+		$this->assertCount(1, $response->getData()['accounts']);
+	}//end testAnAccountIntakeCanReadRecordsConfigured()
 
 	/**
 	 * The signed-out caller is rejected before anything is recorded.
@@ -147,16 +149,15 @@ class IntegrationProbesRecordTest extends TestCase {
 	public function testSignedOutCallerRecordsNothing(): void {
 		$this->templateService->expects($this->never())->method('recordMailboxStatus');
 
-		$controller = $this->emailController(host: 'mail.example.org', signedIn: false);
-		$controller->testImap();
+		$this->emailController(signedIn: false)->mailAccounts();
 	}//end testSignedOutCallerRecordsNothing()
 
 	/**
-	 * An endpoint list with an open circuit records Error and names it.
+	 * An endpoint without an integriq source records Error and names it: it cannot send.
 	 *
 	 * @return void
 	 */
-	public function testAnOpenCircuitRecordsErrorNamingTheEndpoint(): void {
+	public function testAnUnlinkedEndpointRecordsErrorNamingIt(): void {
 		$this->recorder->expects($this->once())
 			->method('record')
 			->with(
@@ -166,11 +167,10 @@ class IntegrationProbesRecordTest extends TestCase {
 			);
 
 		$controller = $this->stufController(
-			endpoints: [['id' => 'e1', 'name' => 'Gemeente Zuid']],
-			breakerState: 'open'
+			endpoints: [['id' => 'e1', 'name' => 'Gemeente Zuid']]
 		);
 		$controller->endpoints();
-	}//end testAnOpenCircuitRecordsErrorNamingTheEndpoint()
+	}//end testAnUnlinkedEndpointRecordsErrorNamingIt()
 
 	/**
 	 * A healthy endpoint list records Configured.
@@ -183,8 +183,7 @@ class IntegrationProbesRecordTest extends TestCase {
 			->with('stuf', 'configured', $this->stringContains('Gemeente Zuid'));
 
 		$controller = $this->stufController(
-			endpoints: [['id' => 'e1', 'name' => 'Gemeente Zuid']],
-			breakerState: 'closed'
+			endpoints: [['id' => 'e1', 'name' => 'Gemeente Zuid', 'integriqSource' => 'src-1']]
 		);
 		$controller->endpoints();
 	}//end testHealthyEndpointsRecordConfigured()
@@ -202,7 +201,7 @@ class IntegrationProbesRecordTest extends TestCase {
 			->method('record')
 			->with('stuf', 'unconfigured', $this->anything());
 
-		$controller = $this->stufController(endpoints: [], breakerState: 'closed');
+		$controller = $this->stufController(endpoints: []);
 		$controller->endpoints();
 	}//end testNoEndpointsRecordsUnconfigured()
 
@@ -217,7 +216,7 @@ class IntegrationProbesRecordTest extends TestCase {
 		$this->recorder->expects($this->once())
 			->method('recordFromSave')
 			->with($payload)
-			->willReturn(['kcc' => 'configured']);
+			->willReturn(['kcc']);
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('has')->willReturn(true);
@@ -291,17 +290,23 @@ class IntegrationProbesRecordTest extends TestCase {
 	}//end settingsController()
 
 	/**
-	 * Build an EmailTemplateController whose IMAP config is what we say.
+	 * Build an EmailTemplateController over the accounts Nextcloud Mail holds.
 	 *
-	 * @param string $host The saved IMAP host.
-	 * @param string $port The saved IMAP port.
-	 * @param bool $signedIn Whether a user is signed in.
+	 * 🔴 THERE IS NO HOST TO DIAL ANY MORE. This helper used to name an IMAP
+	 * host and port, because the probe it feeds opened a socket to whatever an
+	 * administrator had typed. Nextcloud Mail holds the account now, so what
+	 * the card reports is whether Mail is installed and whether it has an
+	 * account intake can read.
 	 *
-	 * @return EmailTemplateController
+	 * @param bool  $mailAvailable Whether the Mail app answers at all.
+	 * @param array $accounts      The accounts it offers.
+	 * @param bool  $signedIn      Whether a user is signed in.
+	 *
+	 * @return EmailTemplateController The controller.
 	 */
 	private function emailController(
-		string $host,
-		string $port = '993',
+		bool $mailAvailable = true,
+		array $accounts = [],
 		bool $signedIn = true,
 	): EmailTemplateController {
 		$userSession = $this->createMock(IUserSession::class);
@@ -309,35 +314,31 @@ class IntegrationProbesRecordTest extends TestCase {
 			$signedIn === true ? $this->createMock(IUser::class) : null
 		);
 
-		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturnCallback(
-			static fn (string $app, string $key, string $default = ''): string => match ($key) {
-				'email_imap_host' => $host,
-				'email_imap_port' => $port,
-				default => $default,
-			}
-		);
+		$gateway = $this->createMock(MailGatewayInterface::class);
+		$gateway->method('isAvailable')->willReturn($mailAvailable);
+		$gateway->method('accounts')->willReturn($accounts);
 
 		return new EmailTemplateController(
 			request: $this->createMock(IRequest::class),
 			templateService: $this->templateService,
 			settingsService: $this->createMock(SettingsService::class),
-			appConfig: $appConfig,
+			appConfig: $this->createMock(IAppConfig::class),
 			userSession: $userSession,
 			groupManager: $this->createMock(IGroupManager::class),
 			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
+			mailGateway: $gateway,
+			blocklist: $this->createMock(SenderBlocklist::class),
 		);
 	}//end emailController()
 
 	/**
-	 * Build a StufController over a stubbed register and circuit breaker.
+	 * Build a StufController over a stubbed register.
 	 *
 	 * @param array<int, array<string, mixed>> $endpoints The endpoint rows.
-	 * @param string $breakerState The circuit-breaker state for each endpoint.
 	 *
 	 * @return StufController
 	 */
-	private function stufController(array $endpoints, string $breakerState): StufController {
+	private function stufController(array $endpoints): StufController {
 		$register = $this->createMock(StufRegisterAccess::class);
 		$register->method('findAll')->willReturnCallback(
 			static function (string $schema, array $filters = [], int $limit = 0) use ($endpoints): array {
@@ -345,28 +346,10 @@ class IntegrationProbesRecordTest extends TestCase {
 			}
 		);
 
-		$breaker = $this->createMock(CircuitBreakerService::class);
-		$breaker->method('snapshot')->willReturn(
-			['state' => $breakerState, 'failureCount' => 0, 'openedAt' => null]
-		);
-
-		$services = new StufServices(
-			mappingService: $this->createMock(StufFieldMappingService::class),
-			messageBuilder: $this->createMock(StufMessageBuilder::class),
-			adapter: $this->createMock(StufAdapterService::class),
-			register: $register,
-			messageHandler: $this->createMock(StufMessageHandler::class),
-			parser: $this->createMock(StufMessageParser::class),
-			vault: $this->createMock(StufVaultService::class),
-			circuitBreaker: $breaker,
-		);
-
 		return new StufController(
-			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
-			stuf: $services,
-			dispatcher: $this->createMock(StufSoapRequestDispatcher::class),
-			inspector: $this->createMock(StufEnvelopeInspector::class),
+			register: $register,
+			bridge: $this->createMock(StufIntegriqBridge::class),
 			l10n: $this->createMock(IL10N::class),
 			logger: $this->createMock(LoggerInterface::class),
 			integrationStatus: $this->recorder,

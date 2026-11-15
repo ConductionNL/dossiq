@@ -31,6 +31,11 @@ class CaseFlowSeedIndexTest extends TestCase {
 	 */
 	private array $seen = [];
 
+	/**
+	 * @var array<int, array{rbac: bool, multitenancy: bool}> The access flags each search carried.
+	 */
+	private array $flags = [];
+
 	private const SCHEMAS = [
 		'register' => 'dossiq',
 		'caseType' => 'case_type',
@@ -53,19 +58,22 @@ class CaseFlowSeedIndexTest extends TestCase {
 	 */
 	private function index(mixed $answer, bool $throws = false, bool $noStore = false): CaseFlowSeedIndex {
 		$this->seen = [];
+		$this->flags = [];
 
 		$objectService = null;
 		if ($noStore === false) {
-			$objectService = new class($answer, $throws, $this->seen) {
+			$objectService = new class($answer, $throws, $this->seen, $this->flags) {
 				public function __construct(
 					private mixed $answer,
 					private bool $throws,
 					public array &$seen,
+					public array &$flags,
 				) {
 				}
 
-				public function searchObjects(array $query): mixed {
+				public function searchObjects(array $query, bool $_rbac = true, bool $_multitenancy = true): mixed {
 					$this->seen[] = $query;
+					$this->flags[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 
 					if ($this->throws === true) {
 						throw new RuntimeException('unreadable');
@@ -107,6 +115,22 @@ class CaseFlowSeedIndexTest extends TestCase {
 		$this->assertSame('Bouwvergunning', $query['title']);
 	}//end testTheLookupIsScopedToTheRegisterSchemaAndTitle()
 
+	/**
+	 * The slug lookup is scoped in the metadata, where OpenRegister keeps the slug.
+	 *
+	 * @spec openspec/specs/case-type-seed-data/spec.md
+	 */
+	public function testACaseTypeIsLookedUpBySlugInTheMetadata(): void {
+		$index = $this->index([['id' => 'ct-1', 'title' => ['nl' => 'Bouwvergunning']]]);
+
+		$found = $index->caseTypeBySlug(schemas: self::SCHEMAS, slug: 'bouwvergunning');
+
+		$this->assertSame('ct-1', $found['id']);
+		$query = $this->seen[0];
+		$this->assertSame(['register' => 'dossiq', 'schema' => 'case_type', 'slug' => 'bouwvergunning'], $query['@self']);
+		$this->assertArrayNotHasKey('title', $query, 'A translatable title is no key to look up by.');
+	}//end testACaseTypeIsLookedUpBySlugInTheMetadata()
+
 	public function testAnAbsentCaseTypeIsNull(): void {
 		$this->assertNull($this->index([])->caseTypeByTitle(schemas: self::SCHEMAS, title: 'Nope'));
 	}//end testAnAbsentCaseTypeIsNull()
@@ -140,10 +164,31 @@ class CaseFlowSeedIndexTest extends TestCase {
 	 * is exactly why the seed catches per object and reports rather than
 	 * treating a failed read as licence to write.
 	 */
-	public function testAnUnreadableStoreIsNotFatal(): void {
-		$this->assertNull($this->index([], throws: true)->caseTypeByTitle(schemas: self::SCHEMAS, title: 'X'));
-		$this->assertSame([], $this->index([], throws: true)->caseTitlesFor(schemas: self::SCHEMAS, caseTypeId: 'ct-1'));
-	}//end testAnUnreadableStoreIsNotFatal()
+	/**
+	 * @return void
+	 */
+	public function testAnUnreadableStoreThrowsRatherThanReadingAsEmpty(): void {
+		$this->expectException(exception: RuntimeException::class);
+		$this->index(answer: [], throws: true)->caseTypeByTitle(schemas: self::SCHEMAS, title: 'X');
+	}//end testAnUnreadableStoreThrowsRatherThanReadingAsEmpty()
+
+	/**
+	 * @return void
+	 */
+	public function testAnUnreadableStoreThrowsForTheCaseTitlesToo(): void {
+		$this->expectException(exception: RuntimeException::class);
+		$this->index(answer: [], throws: true)->caseTitlesFor(schemas: self::SCHEMAS, caseTypeId: 'ct-1');
+	}//end testAnUnreadableStoreThrowsForTheCaseTitlesToo()
+
+	/**
+	 * @return void
+	 */
+	public function testTheLookupReadsTheRegisterUnscopedByTheCallersTenancy(): void {
+		// A repair run has no user to scope the read to.
+		$this->index(answer: [])->caseTypeByTitle(schemas: self::SCHEMAS, title: 'Bouwvergunning');
+
+		$this->assertSame(expected: ['rbac' => false, 'multitenancy' => false], actual: $this->flags[0]);
+	}//end testTheLookupReadsTheRegisterUnscopedByTheCallersTenancy()
 
 	public function testWithNoObjectServiceNothingIsFound(): void {
 		$this->assertNull($this->index([], noStore: true)->caseTypeByTitle(schemas: self::SCHEMAS, title: 'X'));

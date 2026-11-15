@@ -3,9 +3,11 @@
 /**
  * Dossiq integration-status service.
  *
- * Writes what a probe or a save learned about one outside connection onto the
- * matching `dossiqIntegration` object, so the Integrations page under the gear
- * shows the connection's real state instead of a form and nothing else.
+ * Tells integriq's connection registry what a probe or a save learned about one
+ * of dossiq's outside connections. Integriq owns the rows the Integrations page
+ * lists and works out each status itself (hydra change connection-registry,
+ * design D4). Dossiq only reports what it alone can observe, and asks for a
+ * fresh resolve after a save.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -28,27 +30,45 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntegrationStatusServiceInterface;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use DateTimeImmutable;
-use DateTimeInterface;
+use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+use OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar;
+use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Records the outcome of a probe or a settings save on an integration row.
+ * Sends connection reports and refresh requests to integriq.
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class IntegrationStatusService {
-
-	use SearchesObjects;
+class IntegrationStatusService implements IntegrationStatusServiceInterface {
 
 	/**
-	 * The connection keys the seed ships. A key outside this set is a caller's
-	 * typo, not a new connection: adding one means adding a seed row too.
+	 * Integriq's report event (ADR-041). Named by string so dossiq stays
+	 * installable without integriq: the class is only there when integriq is.
+	 *
+	 * @var string
+	 */
+	public const STATUS_EVENT = 'OCA\Integriq\Event\ConnectionStatusReportedEvent';
+
+	/**
+	 * Integriq's refresh event. Same reason for the string as above.
+	 *
+	 * @var string
+	 */
+	public const REFRESH_EVENT = 'OCA\Integriq\Event\ConnectionRefreshRequestedEvent';
+
+	/**
+	 * The connection keys `lib/Settings/connections.json` declares. A key
+	 * outside this set is a caller's typo, not a new connection: adding one
+	 * means declaring it in that file too. A unit test keeps the two equal.
 	 *
 	 * @var array<int, string>
 	 */
@@ -61,28 +81,33 @@ class IntegrationStatusService {
 		'store',
 		'financial',
 		'brp',
+		'kadaster',
 		'kvk',
 		'pdok',
 		'berichtenbox',
 		'templates',
+		'smartdocuments',
+		'xential',
 	];
 
 	/**
-	 * The five states a card may show. A caller handing anything else is
-	 * refused rather than silently written, because a status nothing can read
-	 * is worse on the page than no status at all.
+	 * The six states the registry accepts. Anything else is refused here, so
+	 * a typo never travels to integriq only to be dropped with a warning there.
 	 *
-	 * `simulated` is the one that says the quiet part. A seam that resolves to
-	 * a mock adapter WORKS: the compose dialog opens, the send succeeds, a
-	 * message id comes back. It is `configured` in every way a reader can see
-	 * and in none that matter, which is exactly the claim this page exists to
-	 * stop the app from making. `unavailable` would be wrong for it, because
-	 * the seam is available; it just is not real.
+	 * `simulated` says the quiet part. A seam bound to a mock adapter WORKS:
+	 * the send succeeds and a message id comes back, and nothing leaves the
+	 * instance. `unavailable` would be wrong for it, because the seam is
+	 * available; it just is not real.
+	 *
+	 * `limited` means the connection works in part (contract D4, hydra#673).
+	 * No dossiq caller reports it yet; the service accepts it because the
+	 * contract does.
 	 *
 	 * @var array<int, string>
 	 */
 	public const STATUSES = [
 		'configured',
+		'limited',
 		'unconfigured',
 		'unavailable',
 		'simulated',
@@ -90,13 +115,13 @@ class IntegrationStatusService {
 	];
 
 	/**
-	 * App-config keys that must all be non-empty for a connection to count as
-	 * configured after a plain settings save (design D3).
+	 * App-config keys per connection whose save asks integriq to resolve that
+	 * connection again. Each list is the connection's `requiredConfig` plus its
+	 * `adapter.configKey` and `switch.configKey` in `lib/Settings/connections.json`;
+	 * a unit test keeps the two equal.
 	 *
-	 * Only connections WITHOUT a probe appear here. StUF and the mailbox are
-	 * absent on purpose: they are probed, and a probe outranks a saved form.
-	 * `brp` and `kvk` are absent because nothing saves them yet, and `pdok`
-	 * because no admin section writes its keys.
+	 * StUF, the mailbox and the store are absent on purpose: dossiq probes them
+	 * and reports the outcome, and a saved form says less than a probe does.
 	 *
 	 * @var array<string, array<int, string>>
 	 */
@@ -104,185 +129,270 @@ class IntegrationStatusService {
 		'zgw' => ['register', 'case_schema'],
 		'kcc' => ['identification_method'],
 		'dmn' => ['decision_table_schema'],
-		'financial' => ['dwangsom_callback_secret'],
-		'berichtenbox' => ['berichtenbox_adapter'],
+		'financial' => [MoneyConfigKeys::PAYOUT_CALLBACK_SECRET_KEY],
+		'kadaster' => ['integration.brk.mode'],
+		'berichtenbox' => ['digital_post_source', 'berichtenbox_adapter'],
 		'templates' => ['beschikking_template_adapter'],
-	];
-
-	/**
-	 * What an UNFILLED section means, for the connections where it does not
-	 * mean "not checked yet".
-	 *
-	 * Every other row starts life not knowing anything about itself, and
-	 * `unconfigured` says so. The two adapter seams are different: an empty
-	 * `berichtenbox_adapter` is not an absence of knowledge, it is a mock
-	 * adapter running, which the app knows for certain because it is the app
-	 * that binds it. Writing `unconfigured` there would understate a working
-	 * channel that sends nothing.
-	 *
-	 * @var array<string, array{0: string, 1: string}>
-	 */
-	public const SAVE_UNFILLED_STATE = [
-		'berichtenbox' => ['simulated', 'A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.'],
-		'templates' => [
-			'simulated',
-			'A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to '
-			. FilinqTemplateEngineAdapter::class . ' to render through Filinq.',
-		],
 	];
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves OpenRegister + config.
-	 * @param IAppConfig $appConfig Reads the saved section values.
-	 * @param LoggerInterface $logger Records what could not be written.
+	 * @param IEventDispatcher $eventDispatcher Sends the integriq events (ADR-041).
+	 * @param LoggerInterface $logger Records what could not be sent.
+	 * @param TemplateAdapterChoice|null $templateChoice The template seam's own rule, for the templates card.
+	 * @param IAppConfig|null $appConfig Reads the template adapter key, for the templates card.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly IAppConfig $appConfig,
+		private readonly IEventDispatcher $eventDispatcher,
 		private readonly LoggerInterface $logger,
+		private readonly ?TemplateAdapterChoice $templateChoice = null,
+		private readonly ?IAppConfig $appConfig = null,
 	) {
 	}//end __construct()
 
 	/**
-	 * Record a connection's status.
+	 * What the Document templates card should read: Live or Simulated.
+	 *
+	 * THE CARD ASKS THE SEAM'S QUESTION. An empty `beschikking_template_adapter`
+	 * binds filinq's adapter when filinq is enabled and the mock otherwise
+	 * ({@see TemplateAdapterChoice}), so an empty
+	 * key no longer means a mock. integriq cannot see whether filinq is
+	 * enabled, so dossiq reports the answer rather than leaving it to the
+	 * declaration's `simulatedValues`.
+	 *
+	 * @return array{status: string, message: string}|null The status and its words, or null without the readers.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function templatesStatus(): ?array {
+		if ($this->templateChoice === null || $this->appConfig === null) {
+			return null;
+		}
+
+		$named = trim($this->appConfig->getValueString(AppIdentity::APP_ID, SubstitutableAdapterRegistrar::TEMPLATE_CONFIG_KEY, ''));
+		$adapter = $this->templateChoice->adapterFor(named: $named);
+
+		if ($adapter === MockTemplateEngineAdapter::class) {
+			$message = 'Filinq is not installed. A mock adapter answers here and no template reaches Filinq.';
+			if ($named !== '') {
+				$message = 'beschikking_template_adapter names the mock. No template reaches Filinq. Clear it to render through Filinq.';
+			}
+
+			return ['status' => 'simulated', 'message' => $message];
+		}
+
+		if ($adapter === FilinqTemplateEngineAdapter::class) {
+			return ['status' => 'configured', 'message' => 'Filinq renders the templates.'];
+		}
+
+		return ['status' => 'configured', 'message' => $adapter . ' renders the templates.'];
+	}//end templatesStatus()
+
+	/**
+	 * Report the Document templates card to integriq.
+	 *
+	 * @return bool True when the report was sent.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function recordTemplates(): bool {
+		$status = $this->templatesStatus();
+		if ($status === null) {
+			return false;
+		}
+
+		return $this->record(key: 'templates', status: $status['status'], message: $status['message']);
+	}//end recordTemplates()
+
+	/**
+	 * Report a connection's status to integriq.
 	 *
 	 * Never throws: this runs beside a probe whose own answer is the thing the
-	 * caller returns, and a page that cannot be updated must not turn a
-	 * successful connection test into a 500.
+	 * caller returns, and a report that cannot be delivered must not turn a
+	 * successful connection test into a 500. Without integriq nothing is sent
+	 * and nothing is logged, because a missing optional app is not a fault.
 	 *
 	 * @param string $key One of {@see self::KEYS}.
 	 * @param string $status One of {@see self::STATUSES}.
-	 * @param string $message What the probe or save reported.
+	 * @param string $message What the probe reported.
 	 *
-	 * @return bool True when the row was written.
+	 * @return bool True when the report was sent.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function record(string $key, string $status, string $message = ''): bool {
+		if ($this->isKnownReport(key: $key, status: $status) === false) {
+			return false;
+		}
+
+		$eventClass = $this->resolveEventClass(eventClass: self::STATUS_EVENT);
+		if ($eventClass === null) {
+			return false;
+		}
+
+		return $this->sendStatus(eventClass: $eventClass, report: ['key' => $key, 'status' => $status, 'message' => $message]);
+	}//end record()
+
+	/**
+	 * Whether the key and status are known, logging the one that is not.
+	 *
+	 * @param string $key    The connection key.
+	 * @param string $status The connection status.
+	 *
+	 * @return bool True when both are known.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function isKnownReport(string $key, string $status): bool {
 		if (in_array($key, self::KEYS, true) === false) {
-			$this->logger->warning(
-				'Dossiq: refusing to record an unknown integration key',
-				['key' => $key]
-			);
+			$this->logger->warning('Dossiq: refusing to report an unknown connection key', ['key' => $key]);
 			return false;
 		}
 
 		if (in_array($status, self::STATUSES, true) === false) {
-			$this->logger->warning(
-				'Dossiq: refusing to record an unknown integration status',
-				['key' => $key, 'status' => $status]
-			);
+			$this->logger->warning('Dossiq: refusing to report an unknown connection status', ['key' => $key, 'status' => $status]);
 			return false;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return false;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('dossiq_integration_schema');
-		if ($register === '' || $schema === '') {
-			return false;
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['key' => $key, '_limit' => 1]
-			);
-
-			$row = ($rows[0] ?? null);
-			if (is_array($row) === false) {
-				$this->logger->warning(
-					'Dossiq: no dossiqIntegration row for key',
-					['key' => $key]
-				);
-				return false;
-			}
-
-			$uuid = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
-			if ($uuid === '') {
-				return false;
-			}
-
-			// PUT-semantic: `saveObject()` replaces the object, so the whole
-			// row goes back with the three fields moved. Sending only the
-			// three would blank the title the page renders.
-			$row['status'] = $status;
-			$row['statusMessage'] = $message;
-			$row['checkedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-			unset($row['@self']);
-
-			$objectService->saveObject(
-				object: $row,
-				register: $register,
-				schema: $schema,
-				uuid: $uuid
-			);
-			return true;
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not record an integration status',
-				['key' => $key, 'exception' => $e->getMessage()]
-			);
-			return false;
-		}
-	}//end record()
+		return true;
+	}//end isKnownReport()
 
 	/**
-	 * Record every connection whose section the given save touched.
+	 * Send one connection status event.
 	 *
-	 * A save that names none of a connection's required keys leaves that
-	 * connection's row alone — saving the KCC form must not restate what the
-	 * ZGW card says.
+	 * @param string                                           $eventClass The resolved status event class.
+	 * @param array{key: string, status: string, message: string} $report     The connection key, its status and what the probe reported.
+	 *
+	 * @return bool True when the report was sent.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function sendStatus(string $eventClass, array $report): bool {
+		return $this->send(
+			key: $report['key'],
+			build: static fn (): object => new $eventClass(
+				app: AppIdentity::APP_ID,
+				key: $report['key'],
+				status: $report['status'],
+				message: $report['message'],
+			)
+		);
+	}//end sendStatus()
+
+	/**
+	 * Ask integriq to resolve every connection whose settings the save touched.
+	 *
+	 * A save that names none of a connection's keys leaves that connection
+	 * alone: saving the KCC form must not ask integriq about ZGW. Integriq
+	 * reads the saved values itself and decides the status (design D6).
 	 *
 	 * @param array<string, mixed> $saved The payload the settings save carried.
 	 *
-	 * @return array<string, string> The statuses written, keyed by connection.
+	 * @return array<int, string> The connection keys a refresh was sent for.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function recordFromSave(array $saved): array {
-		$written = [];
-		foreach (self::SAVE_REQUIRED_KEYS as $key => $requiredKeys) {
-			$touched = array_intersect($requiredKeys, array_keys($saved));
-			if ($touched === []) {
-				continue;
-			}
-
-			[$status, $message] = (self::SAVE_UNFILLED_STATE[$key] ?? ['unconfigured', 'Not checked yet']);
-			if ($this->allFilled(keys: $requiredKeys) === true) {
-				$status = 'configured';
-				$message = 'Saved in the admin settings';
-			}
-
-			if ($this->record(key: $key, status: $status, message: $message) === true) {
-				$written[$key] = $status;
-			}
+		$eventClass = $this->resolveEventClass(eventClass: self::REFRESH_EVENT);
+		if ($eventClass === null) {
+			return [];
 		}
 
-		return $written;
+		$refreshed = $this->refreshedKeys(eventClass: $eventClass, saved: $saved);
+
+		// The templates card is the one row integriq cannot resolve from the
+		// saved value alone: an empty key reads Live or Simulated depending on
+		// whether filinq is enabled. So the save also reports what the seam binds.
+		if (in_array('templates', $refreshed, true) === true) {
+			$this->recordTemplates();
+		}
+
+		return $refreshed;
 	}//end recordFromSave()
 
 	/**
-	 * Whether every named app-config key holds a non-empty value.
+	 * Send a refresh for every integration key the save touched.
 	 *
-	 * @param array<int, string> $keys The app-config keys a section requires.
+	 * @param string               $eventClass The refresh event class.
+	 * @param array<string, mixed> $saved      The saved settings.
 	 *
-	 * @return bool
+	 * @return array<int, string> The keys whose refresh was sent.
 	 */
-	private function allFilled(array $keys): bool {
-		foreach ($keys as $key) {
-			if (trim($this->appConfig->getValueString(Application::APP_ID, $key, '')) === '') {
-				return false;
+	private function refreshedKeys(string $eventClass, array $saved): array {
+		$refreshed = [];
+		foreach (self::SAVE_REQUIRED_KEYS as $key => $configKeys) {
+			if (array_intersect($configKeys, array_keys($saved)) === []) {
+				continue;
+			}
+
+			if ($this->sendRefresh(eventClass: $eventClass, key: $key) === true) {
+				$refreshed[] = $key;
 			}
 		}
 
-		return true;
-	}//end allFilled()
+		return $refreshed;
+	}//end refreshedKeys()
+
+	/**
+	 * Send one integration key's refresh event.
+	 *
+	 * @param string $eventClass The refresh event class.
+	 * @param string $key        The integration key.
+	 *
+	 * @return bool Whether it was sent.
+	 */
+	private function sendRefresh(string $eventClass, string $key): bool {
+		return $this->send(
+			key: $key,
+			build: static fn (): object => new $eventClass(
+				app: AppIdentity::APP_ID,
+				key: $key,
+			)
+		);
+	}//end sendRefresh()
+
+	/**
+	 * The event class to instantiate, or null when integriq does not ship it.
+	 *
+	 * @param string $eventClass The fully qualified class name, without a leading backslash.
+	 *
+	 * @return string|null The class name to instantiate, or null when absent.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	protected function resolveEventClass(string $eventClass): ?string {
+		$qualified = '\\' . $eventClass;
+		if (class_exists($qualified) === false) {
+			return null;
+		}
+
+		return $qualified;
+	}//end resolveEventClass()
+
+	/**
+	 * Build and dispatch one event, swallowing anything a listener throws.
+	 *
+	 * @param string $key The connection the event is about, for the log.
+	 * @param callable(): object $build Builds the event.
+	 *
+	 * @return bool True when the event was dispatched without an exception.
+	 */
+	private function send(string $key, callable $build): bool {
+		try {
+			$event = $build();
+			if ($event instanceof Event === false) {
+				return false;
+			}
+
+			$this->eventDispatcher->dispatchTyped($event);
+			return true;
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not send a connection event to integriq',
+				['key' => $key, 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end send()
 }//end class

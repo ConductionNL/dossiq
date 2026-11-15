@@ -28,16 +28,22 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
-use OCA\Dossiq\Service\Sharing\CaseTokenShareService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
+use OCA\Dossiq\Service\Sharing\AccessLinkProjection;
+use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
+use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Hand-written fake OpenRegister ObjectService — real named parameters (not
@@ -58,6 +64,7 @@ final class CsfFakeObjectService {
 	 * @return array<string, mixed>|null
 	 */
 	public function find($id, ...$args) {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		return $this->objects[(string)$id] ?? null;
 	}//end find()
 
@@ -66,7 +73,10 @@ final class CsfFakeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, int $register, int $schema, ?string $uuid = null) {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true) {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$id = $object['id'] ?? $uuid ?? ('fake-' . $this->autoId++);
 		$object['id'] = $id;
 		$this->objects[(string)$id] = $object;
@@ -144,7 +154,9 @@ final class CsfFakeFederatedShare {
  * @covers \OCA\Dossiq\Service\CaseSharingService
  *
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessPolicy
- * @uses \OCA\Dossiq\Service\Sharing\CaseTokenShareService
+ * @uses \OCA\Dossiq\Service\Sharing\AccessLinkProjection
+ * @uses \OCA\Dossiq\Service\Sharing\CaseAccessLinkService
+ * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
  * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
  */
@@ -162,7 +174,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 	/**
 	 * Assemble CaseSharingService with real sharing collaborators.
 	 *
-	 * The gateway, access policy, token-share service and federated-share
+	 * The gateway, access policy, access-link service and federated-share
 	 * service are real objects rather than mocks: every assertion in this
 	 * class is about behaviour they inherited verbatim from CaseSharingService,
 	 * and they stay driven entirely by the mocked app manager, container and
@@ -173,6 +185,9 @@ class CaseSharingServiceFederationTest extends TestCase {
 	 * @param ContainerInterface $container DI container (mock).
 	 * @param LoggerInterface $logger Logger (mock).
 	 * @param TenantAuditTrailService $audit Audit trail (mock).
+	 * @param IGroupManager $groupManager Group manager (mock); a bare one answers
+	 *                                    "not an admin", which is what every
+	 *                                    assertion in this class assumes.
 	 *
 	 * @return CaseSharingService
 	 */
@@ -182,18 +197,49 @@ class CaseSharingServiceFederationTest extends TestCase {
 		ContainerInterface $container,
 		LoggerInterface $logger,
 		TenantAuditTrailService $audit,
+		IGroupManager $groupManager,
 	): CaseSharingService {
 		$gateway = new OpenRegisterSharingGateway($appManager, $container, $logger);
+
+		$accessLinks = new CaseAccessLinkService($gateway, new AccessLinkProjection(), $logger);
 
 		return new CaseSharingService(
 			settingsService: $settings,
 			gateway: $gateway,
-			accessPolicy: new CaseAccessPolicy($settings, $gateway, $logger),
-			tokenShares: new CaseTokenShareService($settings, $gateway, $logger),
+			accessPolicy: new CaseAccessPolicy($settings, $gateway, $groupManager, $logger),
+			accessLinks: $accessLinks,
+			linkShares: new CaseLinkShares($settings, $gateway, $accessLinks, $logger),
 			federatedShares: new FederatedCaseShareService($settings, $gateway, $logger, $audit),
+			consent: self::allowingConsentGate(),
 			logger: $logger,
 		);
 	}//end makeSharingService()
+
+	/**
+	 * A consent gate that lets every partner and federated share through.
+	 *
+	 * Stubbed here because this test's subject is the federated share and the
+	 * access link, not the consent. REQ-CST-01 and REQ-CST-02 are watched
+	 * against a real in-memory register in PartnerShareScopeTest.
+	 *
+	 * @return CaseTransferConsentGate The gate.
+	 */
+	private static function allowingConsentGate(): CaseTransferConsentGate {
+		$allowed = [
+			'allowed' => true,
+			'rule' => '',
+			'sentence' => '',
+			'consent' => null,
+			'scope' => [],
+			'until' => '',
+			'crossesOrganisation' => true,
+		];
+		$gate = self::createStub(CaseTransferConsentGate::class);
+		$gate->method('assess')->willReturn($allowed);
+		$gate->method('assessSharing')->willReturn($allowed);
+
+		return $gate;
+	}//end allowingConsentGate()
 
 	/**
 	 * @return void
@@ -236,6 +282,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			$this->container,
 			$this->createMock(LoggerInterface::class),
 			$this->audit,
+			$this->createMock(IGroupManager::class),
 		);
 
 		$this->objects->objects['case-1'] = [
@@ -376,6 +423,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			$container,
 			$this->createMock(LoggerInterface::class),
 			$this->createMock(TenantAuditTrailService::class),
+			$this->createMock(IGroupManager::class),
 		);
 
 		$result = $service->createFederatedShare('case-1', 'partner@remote.example', ['title'], [], 'bekijken', 'alice');
@@ -412,6 +460,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			$this->createMock(ContainerInterface::class),
 			$this->createMock(LoggerInterface::class),
 			$this->createMock(TenantAuditTrailService::class),
+			$this->createMock(IGroupManager::class),
 		);
 
 		$result = $service->revokeFederatedShare('anything', 'bob');

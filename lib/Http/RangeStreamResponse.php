@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -39,7 +39,7 @@ use OCP\AppFramework\Http\Response;
  *
  * @psalm-suppress InvalidTemplateParam
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class RangeStreamResponse extends Response {
 
@@ -88,7 +88,7 @@ class RangeStreamResponse extends Response {
 	 *
 	 * @return string The (possibly sliced) content.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function render(): string {
 		return $this->body;
@@ -115,9 +115,7 @@ class RangeStreamResponse extends Response {
 			return null;
 		}
 
-		[$startRaw, $endRaw] = $parts;
-
-		$bounds = $this->resolveBounds(startRaw: $startRaw, endRaw: $endRaw, total: $total);
+		$bounds = $this->resolveBounds(parts: $parts, total: $total);
 		if ($bounds === null) {
 			return null;
 		}
@@ -168,13 +166,13 @@ class RangeStreamResponse extends Response {
 	 * An absent end means "until EOF"; an absent start makes it a suffix range
 	 * ("the last N bytes"), which is unsatisfiable when N is not positive.
 	 *
-	 * @param string $startRaw The raw start capture (may be empty).
-	 * @param string $endRaw The raw end capture (may be empty).
-	 * @param int $total The total content length.
+	 * @param array{0: string, 1: string} $parts The raw start and end captures (either may be empty).
+	 * @param int                         $total The total content length.
 	 *
 	 * @return array{0:int,1:int}|null The [start, end] pair, or null when unsatisfiable.
 	 */
-	private function resolveBounds(string $startRaw, string $endRaw, int $total): ?array {
+	private function resolveBounds(array $parts, int $total): ?array {
+		[$startRaw, $endRaw] = $parts;
 		if ($startRaw === '') {
 			// Suffix range: last N bytes.
 			$suffix = (int)$endRaw;

@@ -1,0 +1,52 @@
+# Tasks: case-definition-packages
+
+- [x] 1.1 Read a package from `lib/Settings/packages/<id>/` and validate its manifest and parts (`PackageDirectory`, `ShippedPackageRules`, `PackageValidator::validateShipped`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnInvalidPackageIsRefusedWithItsErrors`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnUnknownOrUnsafeIdIsRefused`
+- [x] 1.2 Refuse a package whose required capability is missing, by name (`PackageCapabilities`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMissingCapabilityIsRefusedByName`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnAppRequirementIsMetWhenTheAppIsInstalled`
+- [x] 1.3 Write all rows or none, across parts (`PackageWriter::writePackage`, `undo`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testARefusedRowTakesTheWholePackageBack`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnUnconfiguredSchemaLeavesNothingBehind`
+- [x] 1.4 Record every written row in the shipped-set ledger; refuse to write without a ledger.
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAPackageWritesEveryRowAndRecordsEachInTheLedger`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testWithoutALedgerNothingIsWritten`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testShippedSetsReadsAPackagesVersionFromItsManifest`
+- [x] 1.5 Install idempotently: same version writes nothing, newer version adds rows and keeps local edits.
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASecondInstallOfTheSameVersionWritesNothing`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testANewerVersionAddsNewRowsAndLeavesExistingOnesAlone`
+- [x] 1.6 Settings defaults never overrule an administrator's value; `on-request` packages wait.
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testSettingsNeverOverruleAnAdministratorsValue`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testOnlyAutomaticPackagesInstallAutomatically`
+- [x] 1.7 Repair step `InstallShippedPackages` in post-migration and install; `occ dossiq:package:install`.
+- [x] 1.8 CI workflow `packages.yml`: install every package and the fixture package on a clean instance, read the rows back with Newman.
+- [x] 1.9 Adopt a case type a seeder already wrote, by identifier, with its rows, into the package ledger; never remove an adopted row (decision 190, `ExistingRowMatcher`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnAdoptedCaseTypeGetsOnlyTheRowsItLacksPointingAtItsOwnIds`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithAnotherIdentifierIsNotAdopted`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallNeverRemovesAnAdoptedRow`
+- [x] 1.10 A setting may name another app's schema by app, register and slug, resolved at install; a missing schema refuses the package with the app named (decision 198, `PackageSchemaReferences`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingNamingAnotherAppsSchemaIsStoredAsItsIdHere`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAReferenceFindsTheSchemaUnderAnOlderRegisterSlug`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMissingReferencedSchemaRefusesThePackageAndNamesTheApp`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAReferenceToAnAppThatIsNotInstalledRefusesThePackage`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMalformedReferenceMakesThePackageInvalid`
+- [x] 1.11 Record every installed package at its version, so a package that writes no rows reports current (decision 198).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingsOnlyPackageIsCurrentOnTheSecondInstall`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testThePackageVersionRecordIsOneRowUpdatedInPlace`
+- [x] 1.12 A seed file may name another app's schema by app, register and slug; its rows go into that register, and a `match` property adopts a row held under another id (`PackageSchemaReferences::seedGroup`, `PackageSeedRules`, `ExistingRowMatcher::find`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedFileNamingAnotherAppsSchemaWritesItsRowsIntoThatRegister`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForAnAppThatIsNotInstalledRefusesThePackage`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForASchemaTheRegisterDoesNotHoldRefusesThePackage`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallTakesARowBackFromTheOtherRegister`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedNamingAnotherAppsSchemaIncompletelyIsInvalid`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowWithoutTheMatchPropertyIsInvalid`
+- [x] 1.13 A seed file's `match` may be a flag, or several properties together (decision 204: an active default is adopted by being active, not by name) (`PackageSeedRules::matchProperties`, `ExistingRowMatcher::findBy`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByAFlagWhateverTheExistingRowIsCalled`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsNotAdoptedByARowWithTheFlagCleared`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedOnlyWhenEveryMatchedPropertyIsEqual`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowWithoutOneOfSeveralMatchedPropertiesIsInvalid`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedMatchThatNamesNoPropertyIsInvalid`
+- [ ] 2.1 Convert each seeder into a package, one pull request per package, deleting the seeder classes (bezwaar and beroep, VTH, besluitvorming, subsidie, DSO, LHS). Tracked by refactor lane R1 in hydra `procedures-are-configuration` T10.

@@ -2,11 +2,19 @@
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
 
-  Plan a follow-up case for a later date.
+  Plan a follow-up case for a later date, once or as a series.
 
-  Three fields, because three are what a scheduled case needs: which type it
-  is, when it should exist, and what it is called. Everything else the case
-  inherits from its type when it is created.
+  Three fields are what a scheduled case needs: which type it is, when it
+  should exist, and what it is called. Everything else the case inherits from
+  its type when it is created.
+
+  Two more turn it into a series. Repeat says how often the case comes back, and
+  Ends says when it stops coming back. Both are pickers, never a cron
+  expression: five cron fields are a language, and a yearly permit check typed
+  as one is a flow that fires every day in January.
+
+  The end fields only appear once a repeat is chosen, because "ends after 3"
+  means nothing on a case that happens once.
 
   The earliest date is TOMORROW. A schedule trigger fires on a cron minute, so
   a follow-up planned for today would fire either in a few hours or not at all
@@ -18,20 +26,11 @@
   @spec openspec/specs/workflow-definition-engine/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Plan a follow-up case')"
+	<CnDialog
+		:name="t('dossiq', 'Plan follow-up')"
 		data-testid="case-plan-dialog"
 		@closing="$emit('close')">
 		<div class="case-plan">
-			<p class="case-plan__explainer">
-				{{
-					t(
-						'dossiq',
-						'The case is created on the date you pick, related to this one. Until then it shows on the Related cases tab as planned.',
-					)
-				}}
-			</p>
-
 			<NcSelect
 				v-model="caseType"
 				data-testid="case-plan-type"
@@ -41,6 +40,11 @@
 				:clearable="false"
 				:loading="loadingTypes" />
 
+			<NcTextField
+				v-model="title"
+				data-testid="case-plan-title"
+				:label="t('dossiq', 'Title of the follow-up')" />
+
 			<NcDateTimePicker
 				v-model="date"
 				data-testid="case-plan-date"
@@ -48,10 +52,49 @@
 				:min="earliest"
 				:label="t('dossiq', 'Date')" />
 
-			<NcTextField
-				v-model="title"
-				data-testid="case-plan-title"
-				:label="t('dossiq', 'Title of the follow-up')" />
+			<div class="case-plan__row">
+				<NcSelect
+					v-model="recurrence"
+					data-testid="case-plan-recurrence"
+					:inputLabel="t('dossiq', 'Repeat (optional)')"
+					:options="recurrences"
+					label="label"
+					:clearable="false" />
+
+				<NcSelect
+					v-model="end"
+					data-testid="case-plan-end"
+					:inputLabel="t('dossiq', 'Ends (optional)')"
+					:options="ends"
+					label="label"
+					:disabled="!repeats"
+					:clearable="false" />
+			</div>
+
+			<template v-if="repeats">
+				<NcDateTimePicker
+					v-if="end && end.id === 'until'"
+					v-model="until"
+					data-testid="case-plan-until"
+					type="date"
+					:min="isoDate || earliest"
+					:label="t('dossiq', 'End date')" />
+
+				<NcTextField
+					v-if="end && end.id === 'count'"
+					v-model="count"
+					data-testid="case-plan-count"
+					type="number"
+					min="1"
+					:label="t('dossiq', 'Number of cases')" />
+			</template>
+
+			<p class="case-plan__note">
+				{{ t('dossiq', 'Until its date the follow-up shows on Related, as planned.') }}
+				<template v-if="repeats">
+					{{ t('dossiq', 'A series that lands on the 31st moves to the last day of a shorter month.') }}
+				</template>
+			</p>
 
 			<p
 				v-if="error"
@@ -71,26 +114,28 @@
 				variant="primary"
 				:disabled="!canConfirm"
 				@click="confirm">
-				{{ t('dossiq', 'Plan follow-up') }}
+				{{ t('dossiq', 'Plan') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import {
 	caseActionRefusal,
 	earliestFollowUpDate,
+	endOptions,
 	isPlanComplete,
+	recurrenceOptions,
 } from '../utils/caseActionsHelpers.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -101,7 +146,7 @@ export default {
 	components: {
 		NcButton,
 		NcDateTimePicker,
-		NcDialog,
+		CnDialog,
 		NcSelect,
 		NcTextField,
 	},
@@ -126,6 +171,12 @@ export default {
 			caseType: null,
 			date: null,
 			title: '',
+			recurrences: recurrenceOptions((s) => t('dossiq', s)),
+			recurrence: recurrenceOptions((s) => t('dossiq', s))[0],
+			ends: endOptions((s) => t('dossiq', s)),
+			end: endOptions((s) => t('dossiq', s))[0],
+			until: null,
+			count: '3',
 			loadingTypes: true,
 			busy: false,
 			error: '',
@@ -158,21 +209,51 @@ export default {
 		},
 
 		/**
+		 * @return {boolean} Whether a repeat was chosen.
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
+		 */
+		repeats() {
+			return (this.recurrence?.id ?? 'none') !== 'none'
+		},
+
+		/**
+		 * @return {string} The chosen end date as YYYY-MM-DD, or the empty string.
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
+		 */
+		isoUntil() {
+			if (!this.until) {
+				return ''
+			}
+			const picked = new Date(this.until)
+			if (Number.isNaN(picked.getTime())) {
+				return ''
+			}
+			return picked.toISOString().slice(0, 10)
+		},
+
+		/**
+		 * @return {object} The plan as the server reads it.
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
+		 */
+		plan() {
+			const end = this.repeats ? (this.end?.id ?? 'open') : 'open'
+			return {
+				caseType: this.caseType?.id ?? '',
+				date: this.isoDate,
+				title: this.title,
+				recurrence: this.recurrence?.id ?? 'none',
+				end,
+				until: end === 'until' ? this.isoUntil : '',
+				count: end === 'count' ? Number(this.count) : 0,
+			}
+		},
+
+		/**
 		 * @return {boolean} Whether the plan may be sent.
 		 * @spec openspec/specs/workflow-definition-engine/spec.md
 		 */
 		canConfirm() {
-			return (
-				this.busy === false
-				&& isPlanComplete(
-					{
-						caseType: this.caseType?.id ?? '',
-						date: this.isoDate,
-						title: this.title,
-					},
-					this.earliest,
-				)
-			)
+			return this.busy === false && isPlanComplete(this.plan, this.earliest)
 		},
 	},
 
@@ -238,9 +319,12 @@ export default {
 						`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/plan`,
 					),
 					{
-						caseType: this.caseType.id,
-						date: this.isoDate,
+						caseType: this.plan.caseType,
+						date: this.plan.date,
 						title: this.title.trim(),
+						recurrence: this.plan.recurrence,
+						until: this.plan.until,
+						count: this.plan.count,
 					},
 				)
 				emit(PAGE_REFRESH)
@@ -265,7 +349,14 @@ export default {
 	padding: 8px 0;
 }
 
-.case-plan__explainer {
+.case-plan__row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.case-plan__note {
+	font-size: 13px;
 	color: var(--color-text-maxcontrast);
 	margin: 0;
 }

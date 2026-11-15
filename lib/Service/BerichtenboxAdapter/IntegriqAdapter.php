@@ -1,0 +1,483 @@
+<?php
+
+/**
+ * Dossiq Integriq Berichtenbox Adapter.
+ *
+ * The adapter this seam was built for. `SubstitutableAdapterRegistrar` has
+ * said since it was written that the real contract belongs in integriq and
+ * that dossiq must carry neither the protocol nor the credential; until
+ * 2026-09-18 there was nothing on the other side to name, so
+ * `lib/Service/BerichtenboxAdapter/` held an interface and a mock and every
+ * letter dossiq composed was delivered to nothing.
+ *
+ * integriq#2062 closed its half: `DigitalPostProviderInterface` with send,
+ * status, inbound polling and `activationRefusals`, bindings for log,
+ * berichtenbox and postex, a `digitalPostMessage` schema tracking the
+ * lifecycle, and `DigitalPostSendRequestedEvent` carrying either a tracked
+ * message id or a structured refusal and never both.
+ *
+ * 🔴 IT IMPORTS NO INTEGRIQ CLASS AND TYPE HINTS NOTHING FROM IT. integriq is
+ * an optional runtime dependency, and a type hint on a class the instance does
+ * not have is a fatal when the container builds this adapter rather than a
+ * feature that is quietly missing. The event class is resolved through
+ * {@see FleetAppId}, never by writing another app's id or namespace into a
+ * literal: integriq's id is moving, and a duck-typed lookup against a dead
+ * name answers false without erroring, which would make this adapter a silent
+ * no-op rather than a refusal.
+ *
+ * 🔴 IT NEVER SIMULATES. Every path that is not a tracked message id is a
+ * refusal carrying the reason, because a mock standing in for a real letter is
+ * how a citizen stops being notified without anyone noticing. That includes
+ * the path integriq's own contract names: an event nobody handled, whose
+ * result slot holds neither an id nor a refusal, is a refusal here.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\BerichtenboxAdapter
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/berichtenbox-integration/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\BerichtenboxAdapter;
+
+use DateTime;
+use OCA\Dossiq\Support\FleetAppId;
+use OCP\App\IAppManager;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IAppConfig;
+use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Sends digital post by asking integriq to send it.
+ *
+ * @spec openspec/specs/berichtenbox-integration/spec.md
+ */
+class IntegriqAdapter implements BerichtenboxAdapterInterface {
+
+	/**
+	 * The app-config key naming the integriq digital post source to send over.
+	 */
+	public const SOURCE_CONFIG_KEY = 'digital_post_source';
+
+	/**
+	 * The integriq event class, relative to integriq's own namespace.
+	 *
+	 * Resolved through FleetAppId rather than written as an FQN, for the
+	 * reason the class docblock gives.
+	 */
+	private const SEND_EVENT = 'Event\\DigitalPostSendRequestedEvent';
+
+	/**
+	 * The status this adapter records for a letter it could not send.
+	 */
+	public const STATUS_REFUSED = 'refused';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param IEventDispatcher $dispatcher Dispatches the cross-app command.
+	 * @param IAppManager      $appManager Answers whether integriq is present.
+	 * @param IAppConfig       $appConfig  Holds the digital post source id.
+	 * @param IUserSession     $userSession Who asked for this letter.
+	 * @param LoggerInterface  $logger     Logger.
+	 */
+	public function __construct(
+		private readonly IEventDispatcher $dispatcher,
+		private readonly IAppManager $appManager,
+		private readonly IAppConfig $appConfig,
+		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * Ask integriq to send one letter to a citizen's digital post.
+	 *
+	 * @param string      $bsn        The recipient's BSN.
+	 * @param string      $subject    The letter's subject.
+	 * @param string      $body       The letter's plain text body.
+	 * @param string      $typeCode   The bericht type code.
+	 * @param string|null $attachment Attachment content, base64.
+	 * @param string      $category   What the letter is; integriq decides on it, not on the channel.
+	 * @param string      $caseRef    The case, so a case opt-out can match.
+	 *
+	 * @return array<string, mixed> Either a tracked send, or a refusal with its reason.
+	 *
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 */
+	public function sendMessage(
+		string $bsn,
+		string $subject,
+		string $body,
+		string $typeCode,
+		?string $attachment = null,
+		string $category = 'case-update',
+		string $caseRef = '',
+	): array {
+		$letter = new DigitalPostLetter(recipient: $bsn, subject: $subject);
+		$letter->body = $body;
+		$letter->attachment = $attachment;
+		$letter->category = $category;
+		$letter->caseRef = $caseRef;
+
+		$refusal = $this->bindSeam(letter: $letter);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->dispatchLetter(letter: $letter);
+	}//end sendMessage()
+
+	/**
+	 * Find the seam and the source the letter goes over; a refusal when either is missing.
+	 *
+	 * @param DigitalPostLetter $letter The letter, given its event class and source here.
+	 *
+	 * @return array<string, mixed>|null The refusal, or null when the letter can go.
+	 */
+	private function bindSeam(DigitalPostLetter $letter): ?array {
+		if (FleetAppId::isEnabledForUser(appManager: $this->appManager, canonical: 'integriq') === false) {
+			return $this->integriqMissing();
+		}
+
+		$eventClass = FleetAppId::resolveClass(canonical: 'integriq', relative: self::SEND_EVENT);
+		if ($eventClass === null) {
+			return $this->seamMissing();
+		}
+
+		$letter->eventClass = $eventClass;
+		$letter->sourceId = $this->sourceId();
+		if ($letter->sourceId === '') {
+			return $this->sourceUnset();
+		}
+
+		return null;
+	}//end bindSeam()
+
+	/**
+	 * The refusal when integriq is not there to send over.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function integriqMissing(): array {
+		return $this->refusal(
+			code: 'integriq-missing',
+			reason: 'Integriq is not installed or not enabled, so there is nothing to send '
+				. 'digital post over. Nothing was sent.',
+		);
+	}//end integriqMissing()
+
+	/**
+	 * The refusal when integriq carries no digital post seam.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function seamMissing(): array {
+		return $this->refusal(
+			code: 'integriq-seam-missing',
+			reason: 'Integriq is installed but carries no digital post seam, so this version '
+				. 'cannot send digital post. Nothing was sent.',
+		);
+	}//end seamMissing()
+
+	/**
+	 * The refusal when no digital post source is set.
+	 *
+	 * MEASURED from integriq `development` on 2026-09-20:
+	 * `DigitalPostService::sourceConfig()` opens with
+	 * `if ($sourceId === '') { return null; }`, so an empty source can
+	 * never resolve and the send is refused every time. integriq's own
+	 * refusal reads `No digital post source is configured under "".
+	 * Nothing was sent.`, which names no key an administrator can set.
+	 * Refusing here costs a dispatch nobody wanted and says what to do.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function sourceUnset(): array {
+		return $this->refusal(
+			code: 'digital-post-source-unset',
+			reason: 'No integriq digital post source is set, so there is nothing to send over. '
+				. 'Set it with occ config:app:set dossiq ' . self::SOURCE_CONFIG_KEY
+				. ' --value <slug>. Nothing was sent.',
+		);
+	}//end sourceUnset()
+
+	/**
+	 * Hand the letter to integriq and read its answer.
+	 *
+	 * @param DigitalPostLetter $letter The letter, with its seam and source.
+	 *
+	 * @return array<string, mixed> Either a tracked send, or a refusal with its reason.
+	 */
+	private function dispatchLetter(DigitalPostLetter $letter): array {
+		try {
+			$event = $this->sendEventFor(letter: $letter);
+
+			$this->dispatcher->dispatchTyped($event);
+		} catch (Throwable $e) {
+			return $this->dispatchFailed(error: $e);
+		}
+
+		return $this->readSlot(event: $event);
+	}//end dispatchLetter()
+
+	/**
+	 * The refusal, logged as an error, when the send event could not be dispatched.
+	 *
+	 * @param Throwable $error What the dispatch threw.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function dispatchFailed(Throwable $error): array {
+		$this->logger->error(
+			'Dossiq: the digital post send event could not be dispatched',
+			['exception' => $error->getMessage()]
+		);
+
+		return $this->refusal(
+			code: 'dispatch-failed',
+			reason: 'The digital post request could not be handed to integriq. Nothing was sent.',
+		);
+	}//end dispatchFailed()
+
+	/**
+	 * Integriq's send event for the letter.
+	 *
+	 * @param DigitalPostLetter $letter The letter, with its seam and source.
+	 *
+	 * @return object The event to dispatch.
+	 */
+	private function sendEventFor(DigitalPostLetter $letter): object {
+		$eventClass = $letter->eventClass;
+
+		return new $eventClass(
+			'dossiq',
+			$letter->sourceId,
+			$letter->recipient,
+			$letter->subject,
+			$letter->body,
+			$this->attachmentsOf(attachment: $letter->attachment),
+			$this->requestedBy(),
+			bin2hex(random_bytes(8)),
+			// Ninth and tenth (integriq b20053418). An older integriq
+			// declares eight, and PHP drops extra positional arguments to
+			// a userland constructor, so the call still lands there.
+			$letter->category,
+			$letter->caseRef,
+		);
+	}//end sendEventFor()
+
+	/**
+	 * Read integriq's answer out of the event's result slot.
+	 *
+	 * The contract says the slot carries either the tracked message id or a
+	 * structured refusal, never both, and is never left empty on a handled
+	 * event. All three of the other cases are refusals here, because the one
+	 * thing this adapter must never do is report a send it cannot show a
+	 * tracked message for.
+	 *
+	 * @param object $event The dispatched event.
+	 *
+	 * @return array<string, mixed> The send result.
+	 *
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
+	 */
+	private function readSlot(object $event): array {
+		if ($this->isUnhandled(event: $event) === true) {
+			return $this->unhandled();
+		}
+
+		$refusal = $this->structuredRefusal(event: $event);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$messageId = $this->trackedMessageId(event: $event);
+		if ($messageId === '') {
+			return $this->noTrackedMessage();
+		}
+
+		return $this->sent(messageId: $messageId);
+	}//end readSlot()
+
+	/**
+	 * A tracked send, stamped now.
+	 *
+	 * @param string $messageId Integriq's tracked message id.
+	 *
+	 * @return array<string, mixed> The send result.
+	 */
+	private function sent(string $messageId): array {
+		return [
+			'messageId' => $messageId,
+			'status' => 'sent',
+			'sentAt' => (new DateTime())->format('c'),
+		];
+	}//end sent()
+
+	/**
+	 * Whether the event says no binding handled it.
+	 *
+	 * @param object $event The dispatched event.
+	 *
+	 * @return bool True when the event reports itself unhandled.
+	 */
+	private function isUnhandled(object $event): bool {
+		return method_exists($event, 'isHandled') === true && $event->isHandled() === false;
+	}//end isUnhandled()
+
+	/**
+	 * Integriq's structured refusal as a refusal here; null when the slot holds none.
+	 *
+	 * @param object $event The dispatched event.
+	 *
+	 * @return array<string, mixed>|null The refusal, or null.
+	 */
+	private function structuredRefusal(object $event): ?array {
+		$refusal = null;
+		if (method_exists($event, 'getRefusal') === true) {
+			$refusal = $event->getRefusal();
+		}
+
+		if (is_array($refusal) === false || $refusal === []) {
+			return null;
+		}
+
+		return $this->refusal(
+			code: (string)($refusal['code'] ?? self::STATUS_REFUSED),
+			reason: (string)($refusal['reason'] ?? 'Integriq refused the send and gave no reason.'),
+		);
+	}//end structuredRefusal()
+
+	/**
+	 * The tracked message id in the event's slot, trimmed; '' when there is none.
+	 *
+	 * @param object $event The dispatched event.
+	 *
+	 * @return string The message id, or ''.
+	 */
+	private function trackedMessageId(object $event): string {
+		$messageId = null;
+		if (method_exists($event, 'getMessageId') === true) {
+			$messageId = $event->getMessageId();
+		}
+
+		if (is_string($messageId) === false) {
+			return '';
+		}
+
+		return trim($messageId);
+	}//end trackedMessageId()
+
+	/**
+	 * The refusal for an event no binding answered.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function unhandled(): array {
+		return $this->refusal(
+			code: 'unhandled',
+			reason: 'Integriq did not handle the digital post request, so nothing was sent. '
+				. 'Its digital post seam is present but no binding answered.',
+		);
+	}//end unhandled()
+
+	/**
+	 * The refusal for a handled event with neither an id nor a refusal.
+	 *
+	 * Integriq's own contract says this cannot happen; treating it as a send
+	 * anyway is how a letter that went nowhere reads as delivered.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function noTrackedMessage(): array {
+		return $this->refusal(
+			code: 'no-tracked-message',
+			reason: 'Integriq answered without a tracked message, so this letter cannot be '
+				. 'followed and is not recorded as sent.',
+		);
+	}//end noTrackedMessage()
+
+	/**
+	 * A refusal in the shape the caller reads.
+	 *
+	 * No `messageId` key at all, deliberately: `BerichtenboxService` writes
+	 * `$result['messageId'] ?? null` onto the stored message, and an empty
+	 * string there would be an external id of its own kind.
+	 *
+	 * @param string $code   A machine-readable code.
+	 * @param string $reason The sentence a handler reads.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function refusal(string $code, string $reason): array {
+		$this->logger->warning('Dossiq: digital post refused', ['code' => $code, 'reason' => $reason]);
+
+		return [
+			'status' => self::STATUS_REFUSED,
+			'refused' => true,
+			'code' => $code,
+			'error' => $reason,
+		];
+	}//end refusal()
+
+	/**
+	 * The integriq digital post source this instance sends over.
+	 *
+	 * WHICH sources exist is integriq's to say, and dossiq never guesses one.
+	 * That an EMPTY one cannot work is not a guess: integriq's
+	 * `DigitalPostService::sourceConfig()` returns null on the empty string
+	 * before it looks anything up, so the caller refuses on '' rather than
+	 * dispatching a letter that is certain to come back refused.
+	 *
+	 * @return string The configured source id, or ''.
+	 */
+	private function sourceId(): string {
+		return trim($this->appConfig->getValueString('dossiq', self::SOURCE_CONFIG_KEY, ''));
+	}//end sourceId()
+
+	/**
+	 * Who asked for this letter.
+	 *
+	 * @return string The acting user id, or 'system'.
+	 */
+	private function requestedBy(): string {
+		$user = $this->userSession->getUser();
+
+		if ($user === null) {
+			return 'system';
+		}
+
+		return $user->getUID();
+	}//end requestedBy()
+
+	/**
+	 * The attachment references the event carries.
+	 *
+	 * @param string|null $attachment Base64 attachment content, or null.
+	 *
+	 * @return array<int, array<string, mixed>> The attachment references.
+	 */
+	private function attachmentsOf(?string $attachment): array {
+		if ($attachment === null || $attachment === '') {
+			return [];
+		}
+
+		return [['content' => $attachment, 'encoding' => 'base64']];
+	}//end attachmentsOf()
+}//end class

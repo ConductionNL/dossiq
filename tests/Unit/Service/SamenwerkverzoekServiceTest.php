@@ -31,6 +31,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Minimal ObjectService stub with named-parameter signatures.
@@ -248,6 +249,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 				// caller uses named arguments — so the double receives them in the
 				// CONTRACT's order, not the old ($register, $schema, $object) one.
 				function (array $object, ...$rest) {
+					$rest = array_slice(LegacyObjectArgs::positional(method: 'saveObject', args: [$object, ...$rest]), 1);
 					return $this->entity($object);
 				}
 			);
@@ -303,6 +305,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 				// caller uses named arguments — so the double receives them in the
 				// CONTRACT's order, not the old ($register, $schema, $object) one.
 				function (array $object, ...$rest) {
+					$rest = array_slice(LegacyObjectArgs::positional(method: 'saveObject', args: [$object, ...$rest]), 1);
 					return $this->entity($object);
 				}
 			);

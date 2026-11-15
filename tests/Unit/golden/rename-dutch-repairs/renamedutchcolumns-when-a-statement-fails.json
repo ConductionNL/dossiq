@@ -1,0 +1,87 @@
+[
+    {
+        "executeQuery": "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+        "params": [
+            "dossiq%"
+        ]
+    },
+    {
+        "prepare": "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+    },
+    {
+        "bindValue": [
+            "pattern",
+            "%openregister\\_table\\_%"
+        ]
+    },
+    {
+        "execute": {
+            "pattern": "%openregister\\_table\\_%"
+        }
+    },
+    {
+        "prepare": "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+    },
+    {
+        "bindValue": [
+            "table",
+            "oc_openregister_table_17_85"
+        ]
+    },
+    {
+        "execute": {
+            "table": "oc_openregister_table_17_85"
+        }
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_85\" SET \"requested_on\" = \"aangevraagd_op\" WHERE \"requested_on\" IS NULL AND \"aangevraagd_op\" IS NOT NULL",
+        "params": []
+    },
+    {
+        "warning": "RenameDutchColumns: statement failed; leaving the column as it was.",
+        "context": {
+            "sql": "UPDATE \"oc_openregister_table_17_85\" SET \"requested_on\" = \"aangevraagd_op\" WHERE \"requested_on\" IS NULL AND \"aangevraagd_op\" IS NOT NULL",
+            "exception": "statement refused"
+        }
+    },
+    {
+        "executeStatement": "ALTER TABLE \"oc_openregister_table_17_85\" RENAME COLUMN \"onderwerp\" TO \"subject\"",
+        "params": []
+    },
+    {
+        "warning": "RenameDutchColumns: statement failed; leaving the column as it was.",
+        "context": {
+            "sql": "ALTER TABLE \"oc_openregister_table_17_85\" RENAME COLUMN \"onderwerp\" TO \"subject\"",
+            "exception": "statement refused"
+        }
+    },
+    {
+        "prepare": "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+    },
+    {
+        "bindValue": [
+            "table",
+            "oc_openregister_table_17_86"
+        ]
+    },
+    {
+        "execute": {
+            "table": "oc_openregister_table_17_86"
+        }
+    },
+    {
+        "executeStatement": "ALTER TABLE \"oc_openregister_table_17_86\" RENAME COLUMN \"aangevraagd_bedrag\" TO \"requested_amount\"",
+        "params": []
+    },
+    {
+        "executeStatement": "ALTER TABLE \"oc_openregister_table_17_86\" RENAME COLUMN \"aanvraag_datum\" TO \"request_date\"",
+        "params": []
+    },
+    {
+        "executeStatement": "ALTER TABLE \"oc_openregister_table_17_86\" RENAME COLUMN \"onderwerp\" TO \"subject\"",
+        "params": []
+    },
+    {
+        "output": "RenameDutchColumns: 3 renamed, 0 back-filled, 0 refused, across 2 shard table(s)."
+    }
+]

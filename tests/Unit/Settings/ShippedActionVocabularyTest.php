@@ -16,7 +16,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Dossiq\Repair\Vth\VthWorkflowGraphResolver;
+use OCA\Dossiq\Service\Flow\RetiredActionRunner;
+use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
+use OCA\Dossiq\Service\Flow\RetiredWebhookSteps;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IUserSession;
+use OCA\Dossiq\Service\Flow\RetiredNodeMap;
+use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
+use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
+use OCA\Dossiq\Service\Flow\UnmappableStep;
+use OCA\Dossiq\Service\SettingsService;
+use OCP\IL10N;
+use Psr\Container\ContainerInterface;
+use Psr\Log\NullLogger;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -73,11 +85,78 @@ class ShippedActionVocabularyTest extends TestCase {
 		$types = [];
 		preg_match_all("/'([a-zA-Z][a-zA-Z0-9_]*)'\s*=>/", $matches[1], $types);
 
-		return $types[1];
+		// A type whose handler left dossiq still runs, as the node that
+		// replaced it (RetiredActionRunner). Read from the runner itself.
+		return array_merge($types[1], $this->runner()->runnableTypes());
 	}
 
 	/**
-	 * Collect every automaticActions[]/autoActions[] entry in a decoded file.
+	 * The real translator, over a configured register and case schema.
+	 *
+	 * @return RetiredNodeTranslator The translator.
+	 */
+	private function translator(): RetiredNodeTranslator {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ['register' => '12', 'case_schema' => '34'][$key] ?? ''
+		);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+		$syntax = new RetiredTemplateSyntax();
+
+		return new RetiredNodeTranslator($settings, $this->createMock(ContainerInterface::class), $l10n, $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax));
+	}
+
+	/**
+	 * The real retired-action runner.
+	 *
+	 * @return RetiredActionRunner The runner.
+	 */
+	private function runner(): RetiredActionRunner {
+		return new RetiredActionRunner(new RetiredNodeMap(), $this->translator(), $this->createMock(ContainerInterface::class), new NullLogger());
+	}
+
+	/**
+	 * Every shipped action of a retired type translates into its replacement.
+	 *
+	 * Being in the runnable list only says a replacement exists. This asks
+	 * the translation itself, with the shipped configuration, so a seeded
+	 * declaration the translator would refuse fails here rather than at the
+	 * first transition that fires it.
+	 *
+	 * @return void
+	 */
+	public function testEveryShippedRetiredActionTranslates(): void {
+		$map = new RetiredNodeMap();
+		$translator = $this->translator();
+		$refused = [];
+		$seen = 0;
+		foreach ($this->shippedJsonFiles() as $file) {
+			$data = json_decode((string)file_get_contents($file), true);
+			$found = [];
+			$this->collectActions(node: $data, path: '', found: $found);
+			foreach ($found as $entry) {
+				$row = $map->rowFor(type: 'dossiq.' . (string)($entry['action']['type'] ?? ''));
+				if ($row === null || isset($row['translation']) === false) {
+					continue;
+				}
+
+				$seen++;
+				try {
+					$translator->translate(translation: $row['translation'], config: $entry['action']);
+				} catch (UnmappableStep $e) {
+					$refused[] = basename($file) . ' ' . $entry['path'] . ': ' . $e->getMessage();
+				}
+			}
+		}
+
+		$this->assertGreaterThan(0, $seen, 'No shipped action of a retired type was found: the sweep is broken, or the seeds moved on.');
+		$this->assertSame([], $refused);
+	}
+
+	/**
+	 * Collect every automaticActions[]/autoActions[] entry in a decoded file,
+	 * including inside JSON-encoded string values.
 	 *
 	 * @param mixed $node The current JSON node.
 	 * @param string $path The JSON pointer walked so far.
@@ -99,6 +178,12 @@ class ShippedActionVocabularyTest extends TestCase {
 				}
 			}
 
+			// A package stores a flow's steps and transitions as JSON strings, as
+			// the workflowTemplate schema types them; read inside those too.
+			if (is_string($value) === true && in_array(substr(ltrim($value), 0, 1), ['[', '{'], true) === true) {
+				$value = json_decode($value, true);
+			}
+
 			$this->collectActions(node: $value, path: $path . '.' . (string)$key, found: $found);
 		}
 	}
@@ -106,12 +191,9 @@ class ShippedActionVocabularyTest extends TestCase {
 	/**
 	 * Every shipped inline action names a type the dispatcher implements.
 	 *
-	 * The only exemptions are the types VthWorkflowGraphResolver declares it
-	 * REWRITES before anything is stored (`spawnCase` names its target by
-	 * template slug, which only the seeder can resolve to a caseType UUID). The
-	 * exemption list is read from the resolver, so a type can only be exempt if
-	 * the code that rewrites it exists — and VthWorkflowGraphResolverTest is
-	 * what proves the rewrite actually happens.
+	 * No type is exempt. The VTH catalogue used to ship `spawnCase`, which a
+	 * seeder rewrote to `createSubCase` before storing it; the `vth` package
+	 * carries the stored form, so nothing is rewritten at install any more.
 	 *
 	 * @return void
 	 */
@@ -131,7 +213,6 @@ class ShippedActionVocabularyTest extends TestCase {
 			foreach ($found as $entry) {
 				$type = (string)($entry['action']['type'] ?? '');
 				if ($type === ''
-					|| in_array($type, VthWorkflowGraphResolver::NORMALISED_TYPES, true) === true
 					|| in_array($type, $executable, true) === true
 				) {
 					continue;
@@ -147,53 +228,6 @@ class ShippedActionVocabularyTest extends TestCase {
 			"Shipped automatic actions name types no handler implements. Each one is a SILENT no-op:\n"
 			. implode("\n", $offenders)
 			. "\nExecutable types: " . implode(', ', $executable)
-		);
-	}
-
-	/**
-	 * Every shipped `spawnCase` carries a target the seeder can normalise.
-	 *
-	 * Without `targetWorkflowSlug` the resolver drops the action, so a catalog
-	 * entry that omits it ships a promise nothing keeps.
-	 *
-	 * @return void
-	 */
-	public function testEverySpawnCaseNamesAKnownTemplate(): void {
-		$templateSlugs = [];
-		foreach (glob(__DIR__ . '/../../../lib/Settings/seed/vth-workflow-templates/*.json') ?: [] as $file) {
-			$data = json_decode((string)file_get_contents($file), true);
-			if (is_array($data) === true && ($data['caseTypeSlug'] ?? '') !== '') {
-				$templateSlugs[] = (string)($data['slug'] ?? '');
-			}
-		}
-
-		$offenders = [];
-		foreach ($this->shippedJsonFiles() as $file) {
-			$data = json_decode((string)file_get_contents($file), true);
-			if (is_array($data) === false) {
-				continue;
-			}
-
-			$found = [];
-			$this->collectActions(node: $data, path: '', found: $found);
-			foreach ($found as $entry) {
-				if ((string)($entry['action']['type'] ?? '') !== 'spawnCase') {
-					continue;
-				}
-
-				$target = (string)($entry['action']['config']['targetWorkflowSlug'] ?? '');
-				if ($target === '' || in_array($target, $templateSlugs, true) === false) {
-					$offenders[] = basename($file) . ' ' . $entry['path'] . ' target=' . ($target ?: '(missing)');
-				}
-			}
-		}
-
-		$this->assertSame(
-			[],
-			$offenders,
-			"spawnCase actions naming an unknown template are dropped at seed time:\n"
-			. implode("\n", $offenders)
-			. "\nKnown templates: " . implode(', ', $templateSlugs)
 		);
 	}
 }

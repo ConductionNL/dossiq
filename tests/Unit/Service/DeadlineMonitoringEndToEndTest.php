@@ -29,21 +29,27 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
-use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Service\Termijn\TermNoticeSender;
+use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
-use OCA\Dossiq\Service\DwangsomBezwaarService;
-use OCA\Dossiq\Service\DwangsomCalculationService;
-use OCA\Dossiq\Service\DwangsomUitbetalingService;
-use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\Money\AmountObjectionService;
+use OCA\Dossiq\Service\Money\PayoutService;
+use OCA\Dossiq\Service\Money\AccruingAmountSettler;
+use OCA\Dossiq\Service\Money\AccrualNoticeService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Service\Flow\Timer\EscalationNotice;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -51,15 +57,17 @@ use Psr\Log\LoggerInterface;
  * Drives all 5 termijnbewaking E2E scenarios against the chain.
  */
 class DeadlineMonitoringEndToEndTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private SettingsService $settings;
 	private TermijnService $termService;
 	private DeadlinePauseService $pauseService;
 	private DeadlineExtensionService $extService;
-	private NoticeOfDefaultService $ingService;
-	private DwangsomCalculationService $calcService;
-	private DwangsomUitbetalingService $outService;
-	private DwangsomBezwaarService $bezService;
+	private AccrualNoticeService $ingService;
+	private AccruingAmountSettler $settler;
+	private PayoutService $outService;
+	private AmountObjectionService $bezService;
 	private TermijnNotificationService $notifService;
 	private TermijnTimerFiredListener $firedListener;
 
@@ -74,9 +82,9 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'ingebrekestelling_schema' => 'noticeOfDefault',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
-					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
+					'notice_of_default_schema' => 'noticeOfDefault',
+					'accruing_amount_schema' => 'penaltyPaymentCalculation',
+					'payout_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
 			},
@@ -86,24 +94,35 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->termService = new TermijnService($settings, $logger);
 		$this->pauseService = new DeadlinePauseService($this->termService);
-		$this->extService = new DeadlineExtensionService($this->termService);
-		$this->ingService = new NoticeOfDefaultService($settings, $this->termService, $logger);
-		$this->calcService = new DwangsomCalculationService($settings, $logger);
-		$this->outService = new DwangsomUitbetalingService($settings);
-		$this->bezService = new DwangsomBezwaarService($settings, $this->termService, $logger);
+		$this->extService = new DeadlineExtensionService(termService: $this->termService, dates: $this->caseDates());
+		$this->ingService = new AccrualNoticeService($settings, $this->termService, $logger);
+		$this->settler = new AccruingAmountSettler(settingsService: $settings, dates: $this->caseDates());
+		$this->outService = new PayoutService(settingsService: $settings, dates: $this->caseDates());
+		$this->bezService = new AmountObjectionService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
-			$this->termService,
-			new BerichtenboxRoutingService($logger),
-			$logger
+			notices: new TermNoticeSources(
+				termService: $this->termService,
+				sender: $this->createMock(originalClassName: TermNoticeSender::class),
+			),
+			logger: $logger
 		);
 		// The retired daily scan's role is now split: the engine sweep
 		// fires the armed timers, and this listener does the domain side.
+		// These tests are about the term, not the writer: the account runs the
+		// fire as it comes. TermijnTimerFiredListenerServiceAccountTest covers who writes.
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
 		$this->firedListener = new TermijnTimerFiredListener(
 			$this->termService,
-			new DeadlineEscalationService($this->termService, $logger),
-			$this->calcService,
-			$settings,
-			$logger
+			new DeadlineEscalationService(
+				termService: $this->termService,
+				priorityRaiseService: $this->createMock(
+					originalClassName: CasePriorityRaiseService::class
+				),
+				logger: $logger
+			),
+			$logger,
+			$account
 		);
 
 		// Seed AWB-default Wmo definition.
@@ -222,19 +241,15 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		]);
 		$this->firedListener->handle(new FlowTimerFiredEvent(
 			timer: $timer,
-			kind: FlowTimerFiredEvent::KIND_RUNG,
-			transition: 'escalation:slaBreached:0',
-			rungKey: 'slaBreached:0',
-			recipients: [],
-			priority: 'critical',
-			message: 'termijn-overschreden'
+			firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:slaBreached:0', rungKey: 'slaBreached:0'),
+			notice: new EscalationNotice(priority: 'critical', message: 'termijn-overschreden'),
 		));
 
 		$flipped = $this->termService->getTermijnInstance($instanceId);
 		self::assertSame('exceeded', $flipped['status']);
 
 		// Register ingebrekestelling (after deadline).
-		$row = $this->ingService->registerNoticeOfDefault(
+		$row = $this->ingService->registerNotice(
 			$instanceId,
 			new DateTimeImmutable('2026-03-15'),
 			'email',
@@ -244,20 +259,28 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		self::assertArrayHasKey('penaltyPaymentCalculation', $row);
 		$calculationId = (string)$row['penaltyPaymentCalculation']['id'];
 
-		// Settle the accrual 5 days past the (receipt + 14d grace) start:
-		// the derivation lands where 5 legacy daily ticks landed.
-		$this->calcService->accrueThrough($calculationId, new DateTimeImmutable('2026-04-03'));
-		$accrued = $this->objects->store['penaltyPaymentCalculation'][$calculationId];
-		self::assertSame(5, $accrued['currentDag']);
-		self::assertSame(11500, $accrued['cumulativeAmount']);
+		// The day count and the amount are stored calculations on the
+		// schema; OpenRegister materialises them on save and in its temporal
+		// sweep. 5 days past the start the Awb bands give 11500 (evaluated
+		// with OpenRegister's CalculationEvaluator, see the C16 cross-check).
+		$row = $this->objects->store['penaltyPaymentCalculation'][$calculationId];
+		self::assertArrayNotHasKey('cumulativeAmount', $row, 'dossiq no longer writes the accrued amount');
+		self::assertSame([], $row['rateBands']);
+		$this->objects->store['penaltyPaymentCalculation'][$calculationId]['cumulativeAmount'] = 11500;
 
-		// Beschikking arrives — stop, settling through the stop moment.
-		$stopped = $this->calcService->stopForBeschikking($calculationId, new DateTimeImmutable('2026-04-03'));
+		// Beschikking arrives: the settler stops the clock and locks the amount.
+		$stopped = $this->settler->settle(
+			schemaConfigKey: 'accruing_amount_schema',
+			id: $calculationId,
+			status: 'gestopt-wegens-decision',
+			stopAt: new DateTimeImmutable('2026-04-03 10:00'),
+		);
 		self::assertSame('gestopt-wegens-decision', $stopped['status']);
+		self::assertSame('2026-04-03', $stopped['stoppedOn']);
 		self::assertSame(11500, $stopped['definitiveAmount']);
 
 		// Prepare payment.
-		$uitb = $this->outService->prepareBetaling(
+		$uitb = $this->outService->preparePayout(
 			$calculationId,
 			'J. Burger',
 			'NL91ABNA0417164300',
@@ -296,13 +319,13 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			'status' => 'voorbereid',
 		]);
 
-		$frozen = $this->bezService->registerBezwaar('b-s5', 'AWB 7:1', 'Bedrag te hoog');
+		$frozen = $this->bezService->registerObjection('b-s5', 'AWB 7:1', 'Bedrag te hoog');
 		self::assertSame('objection-bevroren', $frozen['status']);
 		$outFrozen = $this->objects->store['dwangsomUitbetaling']['u-s5'];
 		self::assertSame('on-hold-objection', $outFrozen['status']);
 
 		// Heroverweging halves the amount.
-		$resolved = $this->bezService->resolveBezwaar('b-s5', 25000, 'AWB 7:11');
+		$resolved = $this->bezService->resolveObjection('b-s5', 25000, 'AWB 7:11');
 		self::assertSame(25000, $resolved['definitiveAmount']);
 		self::assertSame('completed', $resolved['status']);
 		$outResumed = $this->objects->store['dwangsomUitbetaling']['u-s5'];

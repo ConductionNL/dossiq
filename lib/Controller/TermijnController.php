@@ -28,18 +28,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use DateTimeImmutable;
-use OCA\Dossiq\Service\CaseTypeSlugResolver;
-use OCA\Dossiq\Service\DeadlineExtensionService;
-use OCA\Dossiq\Service\DeadlinePauseService;
-use OCA\Dossiq\Service\TermijnService;
+use InvalidArgumentException;
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\DeadlineExtensionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DeadlinePauseServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,25 +59,29 @@ use Throwable;
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 class TermijnController extends Controller {
+	use ReadsJsonRequests;
+
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param TermijnService $term Termijn service.
-	 * @param DeadlinePauseService $pause Pause service.
-	 * @param DeadlineExtensionService $extension Extension service.
-	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
+	 * @param TermijnServiceInterface $term Termijn service.
+	 * @param DeadlinePauseServiceInterface $pause Pause service.
+	 * @param DeadlineExtensionServiceInterface $extension Extension service.
+	 * @param CaseDateNormaliserInterface $dates The one date write path.
+	 * @param CaseTypeSlugResolverInterface $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TermijnService $term,
-		private readonly DeadlinePauseService $pause,
-		private readonly DeadlineExtensionService $extension,
-		private readonly CaseTypeSlugResolver $caseTypeSlugs,
+		private readonly TermijnServiceInterface $term,
+		private readonly DeadlinePauseServiceInterface $pause,
+		private readonly DeadlineExtensionServiceInterface $extension,
+		private readonly CaseDateNormaliserInterface $dates,
+		private readonly CaseTypeSlugResolverInterface $caseTypeSlugs,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -111,7 +117,7 @@ class TermijnController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function create(): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -151,7 +157,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function show(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -176,7 +182,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function pauze(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -190,7 +196,17 @@ class TermijnController extends Controller {
 		$documentLink = (string)($body['documentLink'] ?? '');
 
 		try {
-			$row = $this->pause->registerPauze($id, $durationDays, $rationale, $documentLink);
+			// The declared reason reaches this path too. Without it a pause
+			// registered here could never carry one, and a case suspended
+			// through the term endpoint would be the one case in the app that
+			// silently chases nobody.
+			$row = $this->pause->registerPauze(
+				$id,
+				$durationDays,
+				$rationale,
+				$documentLink,
+				(string)($body['pauseReason'] ?? '')
+			);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return $this->error(e: $e, log: 'Pauze failed');
@@ -206,7 +222,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function hervat(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -218,7 +234,11 @@ class TermijnController extends Controller {
 		$when = (string)($body['aanvullingDatum'] ?? '');
 		$resumeAt = null;
 		if ($when !== '') {
-			$resumeAt = new DateTimeImmutable($when);
+			try {
+				$resumeAt = $this->dates->parse($when, 'aanvullingDatum');
+			} catch (InvalidArgumentException $e) {
+				return $this->badRequest(msg: $e->getMessage());
+			}
 		}
 
 		try {
@@ -238,7 +258,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function verleng(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -247,28 +267,65 @@ class TermijnController extends Controller {
 		}
 
 		$body = $this->jsonBody();
-		$rationale = (string)($body['rationale'] ?? '');
-		$newEndDate = (string)($body['newEinddatum'] ?? '');
-		$documentLink = (string)($body['documentLink'] ?? '');
-		$isSupervisor = (bool)($body['supervisorOverride'] ?? false);
+		$newEndDate = $this->newEndDate(value: (string)($body['newEinddatum'] ?? ''));
+		if ($newEndDate instanceof JSONResponse) {
+			return $newEndDate;
+		}
 
+		$body['newEinddatum'] = $newEndDate;
 		try {
-			if ($isSupervisor === true) {
-				$row = $this->extension->requestSupervisorExtension(
-					$id,
-					$rationale,
-					$newEndDate,
-					$documentLink
-				);
-				return new JSONResponse($row);
-			}
-
-			$row = $this->extension->requestExtension($id, $rationale, $newEndDate, $documentLink);
-			return new JSONResponse($row);
+			return new JSONResponse($this->extend(id: $id, body: $body));
 		} catch (Throwable $e) {
 			return $this->error(e: $e, log: 'Verleng failed');
 		}
 	}//end verleng()
+
+	/**
+	 * The requested new end date as a calendar date, or the 400 refusal.
+	 *
+	 * The extension service used to take this as a raw string and parse it
+	 * its own way. It is normalised here, once, before it reaches any
+	 * arithmetic. An absent value stays absent: the service owns the
+	 * "a new deadline is required" rule and states it in Awb terms.
+	 *
+	 * @param string $value The posted `newEinddatum`, empty when absent.
+	 *
+	 * @return string|JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 */
+	private function newEndDate(string $value): string|JSONResponse {
+		if ($value === '') {
+			return $value;
+		}
+
+		try {
+			return $this->dates->toCalendarDate($value, 'newEinddatum');
+		} catch (InvalidArgumentException $e) {
+			return $this->badRequest(msg: $e->getMessage());
+		}
+	}//end newEndDate()
+
+	/**
+	 * Ask for the extension: the supervisor path only when the body explicitly asks for it.
+	 *
+	 * @param string               $id   The termijn instance id.
+	 * @param array<string, mixed> $body The request body, its `newEinddatum` normalised.
+	 *
+	 * @return array<string, mixed> The updated instance.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 */
+	private function extend(string $id, array $body): array {
+		$rationale = (string)($body['rationale'] ?? '');
+		$newEndDate = (string)($body['newEinddatum'] ?? '');
+		$documentLink = (string)($body['documentLink'] ?? '');
+		if ((bool)($body['supervisorOverride'] ?? false) === true) {
+			return $this->extension->requestSupervisorExtension($id, $rationale, $newEndDate, $documentLink);
+		}
+
+		return $this->extension->requestExtension($id, $rationale, $newEndDate, $documentLink);
+	}//end extend()
 
 	/**
 	 * Mark a TermijnInstance as voltooid.
@@ -279,7 +336,7 @@ class TermijnController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function voltooi(string $id): JSONResponse {
 		$denied = $this->ensureAuthenticated();
@@ -290,54 +347,61 @@ class TermijnController extends Controller {
 		$body = $this->jsonBody();
 		$when = (string)($body['voltooiDatum'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
-		$completedAt = null;
-		if ($when !== '') {
-			$completedAt = new DateTimeImmutable($when);
+		[$completedAt, $refusal] = $this->completedAtOf(when: $when);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
-			$row = $this->term->markTermijnCompleted(
-				$id,
-				$completedAt,
-				$documentLink
-			);
-			if ($row === null) {
-				return $this->notFound(msg: 'TermijnInstance not found: ' . $id);
-			}
-
-			return new JSONResponse($row);
+			return $this->completeTermijn(id: $id, completion: ['at' => $completedAt, 'documentLink' => $documentLink]);
 		} catch (Throwable $e) {
 			return $this->error(e: $e, log: 'Voltooi failed');
 		}
 	}//end voltooi()
 
 	/**
-	 * Decode the JSON request body into an array.
+	 * The voltooiDatum a request sends, parsed; null when it sends none.
 	 *
-	 * @return array<string, mixed>
+	 * @param string $when The raw voltooiDatum.
+	 *
+	 * @return array{0: \DateTimeImmutable|null, 1: JSONResponse|null} The parsed date (null when none was sent), and any refusal.
 	 */
-	private function jsonBody(): array {
-		// OCP\IRequest::getContent() is protected on the concrete OC
-		// request; read raw payload from php://input instead.
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === true) {
-			return $body;
+	private function completedAtOf(string $when): array {
+		$completedAt = null;
+		if ($when !== '') {
+			try {
+				$completedAt = $this->dates->parse($when, 'voltooiDatum');
+			} catch (InvalidArgumentException $e) {
+				return [null, $this->badRequest(msg: $e->getMessage())];
+			}
 		}
 
-		return [];
-	}//end jsonBody()
+		return [$completedAt, null];
+	}//end completedAtOf()
 
 	/**
-	 * Build a 400 Bad Request response.
+	 * Mark a termijn completed and answer the updated row.
 	 *
-	 * @param string $msg Message.
+	 * @param string $id The termijn instance.
+	 * @param array{at: \DateTimeImmutable|null, documentLink: string} $completion The completion date, or null, and
+	 *                                                                  the document the completion points at.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @throws Throwable When completing fails.
 	 */
-	private function badRequest(string $msg): JSONResponse {
-		return new JSONResponse(['message' => $msg], Http::STATUS_BAD_REQUEST);
-	}//end badRequest()
+	private function completeTermijn(string $id, array $completion): JSONResponse {
+		$row = $this->term->markTermijnCompleted(
+			$id,
+			$completion['at'],
+			$completion['documentLink']
+		);
+		if ($row === null) {
+			return $this->notFound(msg: 'TermijnInstance not found: ' . $id);
+		}
+
+		return new JSONResponse($row);
+	}//end completeTermijn()
 
 	/**
 	 * Build a 404 Not Found response.

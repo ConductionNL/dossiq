@@ -34,7 +34,7 @@ namespace OCA\Dossiq\Service\Subsidie;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class StaatssteunClassifier {
 	/**
@@ -65,7 +65,7 @@ class StaatssteunClassifier {
 	 *
 	 * @return bool True when the cumulative total stays within the ceiling.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function fitsDeMinimis(float $newAmount, float $eerdereDeMinimis): bool {
 		return ($eerdereDeMinimis + $newAmount) <= self::DE_MINIMIS_PLAFOND;
@@ -78,7 +78,7 @@ class StaatssteunClassifier {
 	 *
 	 * @return float The remaining headroom in EUR (never negative).
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function deMinimisHeadroom(float $eerdereDeMinimis): float {
 		return max(0.0, (self::DE_MINIMIS_PLAFOND - $eerdereDeMinimis));
@@ -93,7 +93,7 @@ class StaatssteunClassifier {
 	 *
 	 * @return bool True when a state-aid ground must be recorded.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function requiresStaatssteunGrondslag(float $amount, float $eerdereDeMinimis): bool {
 		return $this->fitsDeMinimis(newAmount: $amount, eerdereDeMinimis: $eerdereDeMinimis) === false;
@@ -106,7 +106,7 @@ class StaatssteunClassifier {
 	 *
 	 * @return bool True when supported.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function isAgvvArtikel(string $artikel): bool {
 		return in_array($artikel, self::AGVV_ARTIKELEN, true);
@@ -125,7 +125,7 @@ class StaatssteunClassifier {
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $isDaeb is a classification
 	 * input (the activity either is or is not a DAEB), not a behaviour switch.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function classify(float $amount, float $eerdereDeMinimis, ?string $agvvArtikel = null, bool $isDaeb = false): string {
 		if ($isDaeb === true) {
@@ -156,7 +156,7 @@ class StaatssteunClassifier {
 	 *
 	 * @return array<string, mixed> The melding payload for async transmission.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function buildTamMelding(string $beschikkingnummer, string $agvvArtikel, float $amount): array {
 		return [

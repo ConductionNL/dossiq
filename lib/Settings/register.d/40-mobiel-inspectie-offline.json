@@ -16,7 +16,7 @@
       "fieldInspection": {
         "slug": "fieldInspection",
         "icon": "ClipboardSearchOutline",
-        "version": "1.0.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Action",
         "title": "Field Inspection",
         "description": "A planned or in-progress field inspection synchronized to an inspector's device for offline fieldwork. Extends a Dossiq case with offline lifecycle metadata.",
@@ -26,11 +26,22 @@
           "inspectorRef",
           "status"
         ],
+        "configuration": {
+          "linkedTypes": [
+            "maps"
+          ]
+        },
         "properties": {
           "caseRef": {
             "type": "string",
             "title": "Case Reference",
             "description": "Reference to the Dossiq case this inspection belongs to"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Location",
+            "description": "Where the inspection is, in words (e.g. Molenweg 4). The day list names the inspection by it, else by the case."
           },
           "inspectorRef": {
             "type": "string",
@@ -57,7 +68,7 @@
           "completedAt": {
             "type": "string",
             "format": "date-time",
-            "title": "Completed At",
+            "title": "Completed at",
             "description": "Date and time the inspection was completed"
           },
           "gpsLocation": {
@@ -105,7 +116,8 @@
       "checklistResult": {
         "slug": "checklistResult",
         "icon": "ClipboardCheckOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "x-schema-org": "schema:Report",
         "title": "Checklist Result",
         "description": "Per-item answers captured offline for a single field inspection against a checklist template.",
@@ -127,7 +139,7 @@
           },
           "items": {
             "type": "array",
-            "title": "Items",
+            "title": "items",
             "description": "Per-question answers",
             "items": {
               "type": "object",
@@ -141,7 +153,7 @@
                   "description": "References to fieldEvidence records for this answer"
                 },
                 "notes": { "type": "string", "title": "Notes", "description": "Optional notes for this checklist item" },
-                "answeredAt": { "type": "string", "format": "date-time", "title": "Answered At", "description": "Timestamp at which this question was answered" },
+                "answeredAt": { "type": "string", "format": "date-time", "title": "Answered at", "description": "Timestamp at which this question was answered" },
                 "gpsAtAnswer": {
                   "type": "object",
                   "title": "GPS At Answer",
@@ -166,9 +178,10 @@
       "fieldEvidence": {
         "slug": "fieldEvidence",
         "icon": "CameraOutline",
-        "version": "1.0.0",
+        "version": "1.2.1",
+        "searchable": false,
         "x-schema-org": "schema:MediaObject",
-        "title": "Field Evidence",
+        "title": "Field evidence",
         "description": "A piece of evidence (photo, voice memo, document, or sketch) captured offline during a field inspection.",
         "type": "object",
         "required": [
@@ -227,15 +240,56 @@
           "transcriptionStatus": {
             "type": "string",
             "enum": [
+              "not_applicable",
               "pending",
-              "syncing",
-              "synced",
-              "failed",
-              "not_applicable"
+              "queued",
+              "running",
+              "done",
+              "manual",
+              "failed"
             ],
             "default": "not_applicable",
             "title": "Transcription Status",
-            "description": "Current status of the transcription process"
+            "description": "Where the transcription of a voice memo has got to; not_applicable for every other kind of evidence. These are the values TranscriptionService actually writes. The list used to read pending/syncing/synced/failed, which is verbatim the syncQueue status vocabulary: it answers whether a row reached the server, not whether anybody has transcribed the memo."
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "title": "Duration (seconds)",
+            "description": "How long a voice memo runs. TranscriptionService reads it to refuse a memo over the five-minute limit, so a record that does not carry it cannot be refused for length."
+          },
+          "language": {
+            "type": "string",
+            "default": "nl",
+            "title": "Language",
+            "description": "The language spoken in a voice memo, passed to the transcriber."
+          },
+          "transcriptionQueuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Transcription Queued At",
+            "description": "When the memo was queued for transcription."
+          },
+          "transcriptionCompletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Transcription Completed At",
+            "description": "When the transcription finished, by machine or by hand."
+          },
+          "transcriptionAttempts": {
+            "type": "integer",
+            "default": 0,
+            "title": "Transcription Attempts",
+            "description": "How many times transcription has been tried. Undeclared, this count was dropped on every write and read back as zero, so a memo that could not be transcribed would have been retried for ever and never reached the manual fallback."
+          },
+          "transcriptionNote": {
+            "type": "string",
+            "title": "Transcription Note",
+            "description": "Why this memo needs transcribing by hand, when it does."
+          },
+          "transcriptionLastError": {
+            "type": "string",
+            "title": "Transcription Last Error",
+            "description": "What the transcriber said the last time it failed."
           },
           "tags": {
             "type": "array",
@@ -260,7 +314,8 @@
       "syncQueue": {
         "slug": "syncQueue",
         "icon": "Sync",
-        "version": "1.0.0",
+        "version": "1.2.0",
+        "searchable": false,
         "x-schema-org": "schema:Action",
         "title": "Sync Queue Operation",
         "description": "A single mutation queued offline to be replayed against OpenRegister when the device reconnects.",
@@ -293,6 +348,18 @@
             "type": "string",
             "title": "Target Entity",
             "description": "Schema slug the operation targets (e.g. checklistResult, fieldEvidence)"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Label",
+            "description": "What the queued change is about in words, written by the device when it queues the change (e.g. Molenweg 4, checklist). Lists fall back to the target entity without one."
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Summary",
+            "description": "What the queued change holds, in words, written by the device (e.g. 18 antwoorden, 4 foto's). The outbox shows it under the label."
           },
           "targetId": {
             "type": "string",
@@ -345,7 +412,8 @@
       "conflictRecord": {
         "slug": "conflictRecord",
         "icon": "AlertOctagonOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
+        "searchable": false,
         "x-schema-org": "schema:Action",
         "title": "Conflict Record",
         "description": "Records a concurrent-edit, deleted-remote, or permission-lost conflict detected while replaying a queued operation, plus its resolution for AVG audit.",
@@ -362,7 +430,7 @@
           },
           "serverVersion": {
             "type": "object",
-            "title": "Server Version",
+            "title": "Server version",
             "description": "Snapshot of the server-side object at conflict time"
           },
           "clientVersion": {
@@ -400,6 +468,35 @@
             "format": "date-time",
             "title": "Resolved At",
             "description": "Timestamp at which the conflict was resolved"
+          },
+          "targetRegister": {
+            "type": "string",
+            "title": "Target register",
+            "description": "Register of the object the conflicting change was written to"
+          },
+          "targetSchema": {
+            "type": "string",
+            "title": "Target schema",
+            "description": "Schema of the object the conflicting change was written to"
+          },
+          "targetId": {
+            "type": "string",
+            "title": "Target ID",
+            "description": "Identifier of the object the conflicting change was written to. Choosing the device's version writes onto this object."
+          },
+          "conflictFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Conflicting fields",
+            "description": "Dot paths of the fields both sides changed (e.g. responses.3.comment). The sync frame shows these, and choosing the device's version writes only these."
+          },
+          "detectedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Detected at",
+            "description": "When the replay met the conflict"
           }
         }
       }

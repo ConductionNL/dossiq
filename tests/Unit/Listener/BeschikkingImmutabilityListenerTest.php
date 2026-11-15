@@ -37,11 +37,13 @@ use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Listener\BeschikkingImmutabilityListener
  *
  * @uses \OCA\Dossiq\Service\StateMachineService
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  */
 class BeschikkingImmutabilityListenerTest extends TestCase {
 	/**
@@ -95,6 +97,51 @@ class BeschikkingImmutabilityListenerTest extends TestCase {
 
 		return $entity;
 	}//end entity()
+
+	/**
+	 * Build a beschikking entity carrying OpenRegister's deletion metadata,
+	 * the shape `DeleteObject` stamps on a row before saving a soft delete.
+	 *
+	 * @param array<string, mixed> $payload Beschikking fields.
+	 *
+	 * @return ObjectEntity
+	 */
+	private function deletedEntity(array $payload): ObjectEntity {
+		$entity = $this->entity($payload);
+		$entity->setDeleted(
+			[
+				'deletedBy' => 'admin',
+				'deletedAt' => '2026-09-10T12:00:00+00:00',
+				'objectId' => '33333333-3333-3333-3333-333333333333',
+			]
+		);
+
+		return $entity;
+	}//end deletedEntity()
+
+	/**
+	 * Build an entity whose payload cannot be read.
+	 *
+	 * `ObjectUpdatingEvent::getNewObject()` is non-nullable on the real class,
+	 * so the only way the listener sees no incoming payload is a serialisation
+	 * that throws. That is the case being pinned here.
+	 *
+	 * @return ObjectEntity
+	 */
+	private function unreadableEntity(): ObjectEntity {
+		return new class extends ObjectEntity {
+			/**
+			 * Refuse to serialise.
+			 *
+			 * @return array<string, mixed>
+			 *
+			 * @throws RuntimeException Always.
+			 */
+			public function jsonSerialize(): array {
+				throw new RuntimeException('payload unavailable');
+			}//end jsonSerialize()
+		};
+	}//end unreadableEntity()
 
 	/**
 	 * A content edit on a draft is allowed through: the positive control for
@@ -193,6 +240,61 @@ class BeschikkingImmutabilityListenerTest extends TestCase {
 	}//end testProcessEventsStayAllowedAfterSigning()
 
 	/**
+	 * A correction writes its forward pointer on the signed beschikking it
+	 * replaces: the one field the freeze lets a successor write (REQ-BES-012).
+	 *
+	 * @return void
+	 */
+	public function testTheSuccessorPointerMayBeWrittenOnceAfterSigning(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['currentStatus' => 'sent', 'rationale' => 'origineel', 'supersededBy' => 'besch-2']),
+			$this->entity(['currentStatus' => 'sent', 'rationale' => 'origineel'])
+		);
+
+		$this->listener->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped(), 'Naming the successor must be allowed on a sent beschikking');
+	}//end testTheSuccessorPointerMayBeWrittenOnceAfterSigning()
+
+	/**
+	 * A replaced beschikking cannot be re-pointed or cleared: the chain is linear.
+	 *
+	 * @return void
+	 */
+	public function testTheSuccessorPointerCannotBeRewritten(): void {
+		$repoint = new ObjectUpdatingEvent(
+			$this->entity(['currentStatus' => 'sent', 'supersededBy' => 'besch-3']),
+			$this->entity(['currentStatus' => 'sent', 'supersededBy' => 'besch-2'])
+		);
+		$clear = new ObjectUpdatingEvent(
+			$this->entity(['currentStatus' => 'sent', 'supersededBy' => null]),
+			$this->entity(['currentStatus' => 'sent', 'supersededBy' => 'besch-2'])
+		);
+
+		$this->listener->handle($repoint);
+		$this->listener->handle($clear);
+
+		$this->assertTrue($repoint->isPropagationStopped(), 'A second successor must be refused');
+		$this->assertTrue($clear->isPropagationStopped(), 'Clearing the successor must be refused');
+	}//end testTheSuccessorPointerCannotBeRewritten()
+
+	/**
+	 * The number a bezwaar cites cannot change after signing.
+	 *
+	 * @return void
+	 */
+	public function testTheNumberIsFrozenAfterSigning(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['currentStatus' => 'signed', 'reference' => 'B-2026-000999']),
+			$this->entity(['currentStatus' => 'signed', 'reference' => 'B-2026-000123'])
+		);
+
+		$this->listener->handle($event);
+
+		$this->assertTrue($event->isPropagationStopped(), 'A signed beschikking keeps its number');
+	}//end testTheNumberIsFrozenAfterSigning()
+
+	/**
 	 * Repeating a stored value changes nothing. The generic object API sends
 	 * the whole object on every write, so a presence-only check would refuse
 	 * every legitimate process event.
@@ -240,6 +342,108 @@ class BeschikkingImmutabilityListenerTest extends TestCase {
 
 		$this->assertFalse($event->isPropagationStopped());
 	}//end testDeleteOfADraftIsAllowed()
+
+	/**
+	 * The ordinary DELETE is a soft delete, and a soft delete is persisted as
+	 * an UPDATE that stamps the deletion metadata on the row. It moves no
+	 * content field at all, so a guard that only diffed content let a signed
+	 * besluit be deleted through the door every caller actually uses.
+	 *
+	 * @return void
+	 */
+	public function testSoftDeleteOfASignedBeschikkingIsRejected(): void {
+		$stored = $this->entity(['currentStatus' => 'signed', 'rationale' => 'origineel']);
+
+		$event = new ObjectUpdatingEvent(
+			$this->deletedEntity(['currentStatus' => 'signed', 'rationale' => 'origineel']),
+			$stored
+		);
+
+		$this->listener->handle($event);
+
+		$this->assertTrue(
+			$event->isPropagationStopped(),
+			'A soft delete arrives as an update and must still be refused on a signed beschikking'
+		);
+		$this->assertSame('beschikking.immutable', $event->getErrors()['code'] ?? null);
+	}//end testSoftDeleteOfASignedBeschikkingIsRejected()
+
+	/**
+	 * The paired accept: a draft may still be soft-deleted. A guard that
+	 * refused every deletion marker would be as wrong as one that refused
+	 * none.
+	 *
+	 * @return void
+	 */
+	public function testSoftDeleteOfADraftIsAllowed(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->deletedEntity(['currentStatus' => 'draft', 'rationale' => 'origineel']),
+			$this->entity(['currentStatus' => 'draft', 'rationale' => 'origineel'])
+		);
+
+		$this->listener->handle($event);
+
+		$this->assertFalse(
+			$event->isPropagationStopped(),
+			'A draft beschikking must stay deletable'
+		);
+	}//end testSoftDeleteOfADraftIsAllowed()
+
+	/**
+	 * A row that was already deleted is not being deleted again. Without
+	 * this the listener would refuse a restore or a housekeeping write on an
+	 * already soft-deleted archived beschikking.
+	 *
+	 * @return void
+	 */
+	public function testAnAlreadyDeletedRowIsNotTreatedAsANewDelete(): void {
+		$payload = ['currentStatus' => 'archived', 'rationale' => 'origineel'];
+
+		$event = new ObjectUpdatingEvent($this->deletedEntity($payload), $this->deletedEntity($payload));
+
+		$this->listener->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testAnAlreadyDeletedRowIsNotTreatedAsANewDelete()
+
+	/**
+	 * The guard fails CLOSED on a missing incoming payload. An update event
+	 * whose new object cannot be read tells us nothing about what is being
+	 * written, and "we could not look" must not be the way past REQ-BES-008.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableIncomingPayloadIsRefusedOnAFrozenBeschikking(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->unreadableEntity(),
+			$this->entity(['currentStatus' => 'sent'])
+		);
+
+		$this->listener->handle($event);
+
+		$this->assertTrue(
+			$event->isPropagationStopped(),
+			'A frozen beschikking must refuse a write it cannot inspect'
+		);
+		$this->assertSame('beschikking.immutable', $event->getErrors()['code'] ?? null);
+	}//end testAnUnreadableIncomingPayloadIsRefusedOnAFrozenBeschikking()
+
+	/**
+	 * The paired accept for the fail-closed branch: the same unreadable
+	 * payload over a draft is allowed, so the branch is not a blanket refusal.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableIncomingPayloadIsAllowedOnADraft(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->unreadableEntity(),
+			$this->entity(['currentStatus' => 'draft'])
+		);
+
+		$this->listener->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testAnUnreadableIncomingPayloadIsAllowedOnADraft()
 
 	/**
 	 * Objects of another schema are untouched. The listener must not freeze

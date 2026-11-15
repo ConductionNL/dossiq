@@ -1,0 +1,3941 @@
+{
+    "finish": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "finish, named terminal status": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-end-b",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-b",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-b",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-b",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-end-b",
+                    "fromStatus": "s-2",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "finish, named terminal status in uuid shape": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "finish, named status not terminal": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "finish, named status unknown": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "finish, no result type": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": null
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "finish, result resolves to nothing": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": null,
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "finish, result refused": {
+        "answer": {
+            "refused": "resolveClosingResult-refused",
+            "sentence": "No.",
+            "status": 403
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "finish, empty archival future": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "finish, from the last phase": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Ongeordend"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "id": "case-1"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "id": "case-1"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "id": "case-1",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Ongeordend\"]"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "id": "case-1",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Ongeordend\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [
+                            "Ongeordend"
+                        ],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "id": "case-1",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Ongeordend\"]",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [
+                                "Ongeordend"
+                            ],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-5",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 1
+                }
+            ]
+        ]
+    },
+    "finish, from a status not in the type": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": []
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "status": "elsewhere",
+                        "id": "case-1",
+                        "caseType": "ct-1"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "status": "elsewhere",
+                        "id": "case-1",
+                        "caseType": "ct-1"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "status": "s-5",
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "status": "s-5",
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "status": "s-5",
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "elsewhere",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 0
+                }
+            ]
+        ]
+    },
+    "finish, case without type or status": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": []
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": ""
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": ""
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 0
+                }
+            ]
+        ]
+    },
+    "finish, no terminal status": {
+        "answer": {
+            "refused": "no-terminal-status",
+            "sentence": "This case type has no status to end on.",
+            "status": 409
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "finish, only an unordered terminal status": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "finish",
+            "status": "s-z",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": []
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-z",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-z",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    },
+                    "entry": {
+                        "type": "finish",
+                        "reason": "Klaar",
+                        "resultType": "rt-1",
+                        "skippedPhases": [],
+                        "besluit": true
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-z",
+                        "endDate": "<today>",
+                        "endingAct": "finish",
+                        "result": "result-1",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "journalled": {
+                            "type": "finish",
+                            "reason": "Klaar",
+                            "resultType": "rt-1",
+                            "skippedPhases": [],
+                            "besluit": true
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-z",
+                    "fromStatus": "s-2",
+                    "label": "Finish",
+                    "comment": "Klaar",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "finish",
+                    "skipped": 0
+                }
+            ]
+        ]
+    },
+    "finish, blank reason": {
+        "answer": {
+            "refused": "reason-required",
+            "sentence": "Give a reason first.",
+            "status": 422
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "finish, case not found": {
+        "answer": {
+            "refused": "case-not-found",
+            "sentence": "This case could not be found.",
+            "status": 422
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "finish, gate refuses": {
+        "answer": {
+            "refused": "require-refused",
+            "sentence": "No.",
+            "status": 403
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "finish, incomplete": {
+        "answer": {
+            "refused": "requireComplete-refused",
+            "sentence": "No.",
+            "status": 403
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "finish",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "CaseIncompleteness::requireComplete",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "abort": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "abort",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "abort",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-2"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "abort",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "entry": {
+                        "type": "abort",
+                        "reason": "Ingetrokken",
+                        "resultType": "rt-2",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": false
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "abort",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "journalled": {
+                            "type": "abort",
+                            "reason": "Ingetrokken",
+                            "resultType": "rt-2",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": false
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Abort",
+                    "comment": "Ingetrokken",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "abort",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "abort, incomplete still works": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "abort",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "abort",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-2"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "abort",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "entry": {
+                        "type": "abort",
+                        "reason": "Ingetrokken",
+                        "resultType": "rt-2",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": false
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "abort",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "journalled": {
+                            "type": "abort",
+                            "reason": "Ingetrokken",
+                            "resultType": "rt-2",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": false
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Abort",
+                    "comment": "Ingetrokken",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "abort",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "abort, no result type": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "abort",
+            "status": "s-5",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "abort",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": null
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "abort",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "entry": {
+                        "type": "abort",
+                        "reason": "Ingetrokken",
+                        "resultType": "",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": false
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-5",
+                        "endDate": "<today>",
+                        "endingAct": "abort",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "journalled": {
+                            "type": "abort",
+                            "reason": "Ingetrokken",
+                            "resultType": "",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": false
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-5",
+                    "fromStatus": "s-2",
+                    "label": "Abort",
+                    "comment": "Ingetrokken",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "abort",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "abort, named terminal status": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "abort",
+            "status": "s-end-b",
+            "endDate": "<today>",
+            "result": "result-1",
+            "skippedPhases": [
+                "Beoordelen",
+                "s-4",
+                "Wacht"
+            ]
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "abort",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseResultWriter::resolveClosingResult",
+                {
+                    "caseId": "case-1",
+                    "caseTypeId": "ct-1",
+                    "resultTypeId": "rt-2"
+                }
+            ],
+            [
+                "StatusTypeLookup::rowsOf",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-b",
+                        "endDate": "<today>",
+                        "endingAct": "abort",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]"
+                    },
+                    "entry": {
+                        "type": "abort",
+                        "reason": "Ingetrokken",
+                        "resultType": "rt-2",
+                        "skippedPhases": [
+                            "Beoordelen",
+                            "s-4",
+                            "Wacht"
+                        ],
+                        "besluit": false
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-b",
+                        "endDate": "<today>",
+                        "endingAct": "abort",
+                        "result": "result-1",
+                        "skippedPhases": "[\"Beoordelen\",\"s-4\",\"Wacht\"]",
+                        "journalled": {
+                            "type": "abort",
+                            "reason": "Ingetrokken",
+                            "resultType": "rt-2",
+                            "skippedPhases": [
+                                "Beoordelen",
+                                "s-4",
+                                "Wacht"
+                            ],
+                            "besluit": false
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::writeStatusRecord",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "s-end-b",
+                    "fromStatus": "s-2",
+                    "label": "Abort",
+                    "comment": "Ingetrokken",
+                    "evaluatedGuards": [],
+                    "noWorkflowTemplate": true,
+                    "actor": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case ended",
+                {
+                    "caseId": "case-1",
+                    "act": "abort",
+                    "skipped": 3
+                }
+            ]
+        ]
+    },
+    "abort, gate refuses": {
+        "answer": {
+            "refused": "require-refused",
+            "sentence": "No.",
+            "status": 403
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "abort",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "abort, blank reason": {
+        "answer": {
+            "refused": "reason-required",
+            "sentence": "Give a reason first.",
+            "status": 422
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "archive": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "archive",
+            "archiveStatus": "archived",
+            "archiveNomination": "vernietigen",
+            "archiveActionDate": "2036-01-01",
+            "archived": "2026-03-04"
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "autoClose"
+                    ]
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "2026-02-03"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived"
+                    },
+                    "entry": {
+                        "type": "archive",
+                        "reason": "Afgehandeld",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived",
+                        "journalled": {
+                            "type": "archive",
+                            "reason": "Afgehandeld",
+                            "archiveNomination": "vernietigen",
+                            "archiveActionDate": "2036-01-01"
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::mark",
+                {
+                    "caseId": "case-1",
+                    "reason": "Afgehandeld"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case archived",
+                {
+                    "caseId": "case-1",
+                    "nomination": "vernietigen"
+                }
+            ]
+        ]
+    },
+    "archive, no end date": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "archive",
+            "archiveStatus": "archived",
+            "archiveNomination": "vernietigen",
+            "archiveActionDate": "2036-01-01",
+            "archived": "2026-03-04"
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "endDate": "",
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish"
+                    }
+                }
+            ],
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "endDate": "",
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "autoClose"
+                    ]
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "endDate": "",
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "endDate": "",
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived"
+                    },
+                    "entry": {
+                        "type": "archive",
+                        "reason": "Afgehandeld",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "endDate": "",
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived",
+                        "journalled": {
+                            "type": "archive",
+                            "reason": "Afgehandeld",
+                            "archiveNomination": "vernietigen",
+                            "archiveActionDate": "2036-01-01"
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::mark",
+                {
+                    "caseId": "case-1",
+                    "reason": "Afgehandeld"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case archived",
+                {
+                    "caseId": "case-1",
+                    "nomination": "vernietigen"
+                }
+            ]
+        ]
+    },
+    "archive, end date missing": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "archive",
+            "archiveStatus": "archived",
+            "archiveNomination": "vernietigen",
+            "archiveActionDate": "2036-01-01",
+            "archived": "2026-03-04"
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish"
+                    }
+                }
+            ],
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "autoClose"
+                    ]
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "<today>"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived"
+                    },
+                    "entry": {
+                        "type": "archive",
+                        "reason": "Afgehandeld",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived",
+                        "journalled": {
+                            "type": "archive",
+                            "reason": "Afgehandeld",
+                            "archiveNomination": "vernietigen",
+                            "archiveActionDate": "2036-01-01"
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::mark",
+                {
+                    "caseId": "case-1",
+                    "reason": "Afgehandeld"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case archived",
+                {
+                    "caseId": "case-1",
+                    "nomination": "vernietigen"
+                }
+            ]
+        ]
+    },
+    "archive, no action date": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "archive",
+            "archiveStatus": "archived_retention_period_unknown",
+            "archiveNomination": "bewaren",
+            "archiveActionDate": null,
+            "archived": "2026-03-04"
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "autoClose"
+                    ]
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "2026-02-03"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "bewaren",
+                        "archiveStatus": "archived_retention_period_unknown"
+                    },
+                    "entry": {
+                        "type": "archive",
+                        "reason": "Afgehandeld",
+                        "archiveNomination": "bewaren",
+                        "archiveActionDate": ""
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "bewaren",
+                        "archiveStatus": "archived_retention_period_unknown",
+                        "journalled": {
+                            "type": "archive",
+                            "reason": "Afgehandeld",
+                            "archiveNomination": "bewaren",
+                            "archiveActionDate": ""
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::mark",
+                {
+                    "caseId": "case-1",
+                    "reason": "Afgehandeld"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case archived",
+                {
+                    "caseId": "case-1",
+                    "nomination": "bewaren"
+                }
+            ]
+        ]
+    },
+    "archive, empty action date": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "archive",
+            "archiveStatus": "archived_retention_period_unknown",
+            "archiveNomination": "bewaren",
+            "archiveActionDate": "",
+            "archived": "2026-03-04"
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "autoClose"
+                    ]
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "2026-02-03"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "bewaren",
+                        "archiveActionDate": "",
+                        "archiveStatus": "archived_retention_period_unknown"
+                    },
+                    "entry": {
+                        "type": "archive",
+                        "reason": "Afgehandeld",
+                        "archiveNomination": "bewaren",
+                        "archiveActionDate": ""
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "bewaren",
+                        "archiveActionDate": "",
+                        "archiveStatus": "archived_retention_period_unknown",
+                        "journalled": {
+                            "type": "archive",
+                            "reason": "Afgehandeld",
+                            "archiveNomination": "bewaren",
+                            "archiveActionDate": ""
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::mark",
+                {
+                    "caseId": "case-1",
+                    "reason": "Afgehandeld"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case archived",
+                {
+                    "caseId": "case-1",
+                    "nomination": "bewaren"
+                }
+            ]
+        ]
+    },
+    "archive, empty future": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "archive",
+            "archiveStatus": "archived_retention_period_unknown",
+            "archiveNomination": null,
+            "archiveActionDate": null,
+            "archived": "2026-03-04"
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "autoClose"
+                    ]
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "2026-02-03"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveStatus": "archived_retention_period_unknown"
+                    },
+                    "entry": {
+                        "type": "archive",
+                        "reason": "Afgehandeld",
+                        "archiveNomination": "",
+                        "archiveActionDate": ""
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveStatus": "archived_retention_period_unknown",
+                        "journalled": {
+                            "type": "archive",
+                            "reason": "Afgehandeld",
+                            "archiveNomination": "",
+                            "archiveActionDate": ""
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::mark",
+                {
+                    "caseId": "case-1",
+                    "reason": "Afgehandeld"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case archived",
+                {
+                    "caseId": "case-1",
+                    "nomination": null
+                }
+            ]
+        ]
+    },
+    "archive, no ending in the journal": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "archive",
+            "archiveStatus": "archived",
+            "archiveNomination": "vernietigen",
+            "archiveActionDate": "2036-01-01",
+            "archived": "2026-03-04"
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "autoClose"
+                    ]
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "resultTypeId": "",
+                    "endDate": "2026-02-03"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived"
+                    },
+                    "entry": {
+                        "type": "archive",
+                        "reason": "Afgehandeld",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived",
+                        "journalled": {
+                            "type": "archive",
+                            "reason": "Afgehandeld",
+                            "archiveNomination": "vernietigen",
+                            "archiveActionDate": "2036-01-01"
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::mark",
+                {
+                    "caseId": "case-1",
+                    "reason": "Afgehandeld"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case archived",
+                {
+                    "caseId": "case-1",
+                    "nomination": "vernietigen"
+                }
+            ]
+        ]
+    },
+    "archive, marker answers nothing": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "archive",
+            "archiveStatus": "archived",
+            "archiveNomination": "vernietigen",
+            "archiveActionDate": "2036-01-01",
+            "archived": null
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "autoClose"
+                    ]
+                }
+            ],
+            [
+                "CaseResultWriter::archivalFuture",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "resultTypeId": "rt-1",
+                    "endDate": "2026-02-03"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived"
+                    },
+                    "entry": {
+                        "type": "archive",
+                        "reason": "Afgehandeld",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01"
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveNomination": "vernietigen",
+                        "archiveActionDate": "2036-01-01",
+                        "archiveStatus": "archived",
+                        "journalled": {
+                            "type": "archive",
+                            "reason": "Afgehandeld",
+                            "archiveNomination": "vernietigen",
+                            "archiveActionDate": "2036-01-01"
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::mark",
+                {
+                    "caseId": "case-1",
+                    "reason": "Afgehandeld"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case archived",
+                {
+                    "caseId": "case-1",
+                    "nomination": "vernietigen"
+                }
+            ]
+        ]
+    },
+    "archive, open case": {
+        "answer": {
+            "refused": "case-not-ended",
+            "sentence": "Finish or abort this case before archiving it.",
+            "status": 409
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-2"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "archive, blank ending field": {
+        "answer": {
+            "refused": "case-not-ended",
+            "sentence": "Finish or abort this case before archiving it.",
+            "status": 409
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "endingAct": " ",
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "archive, blank reason": {
+        "answer": {
+            "refused": "reason-required",
+            "sentence": "Give a reason first.",
+            "status": 422
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "archive, gate refuses": {
+        "answer": {
+            "refused": "require-refused",
+            "sentence": "No.",
+            "status": 403
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "archive, case not found": {
+        "answer": {
+            "refused": "case-not-found",
+            "sentence": "This case could not be found.",
+            "status": 422
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "unarchive": {
+        "answer": {
+            "caseId": "case-1",
+            "act": "unarchive",
+            "archiveStatus": "nog_te_archiveren",
+            "archived": null
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::isArchived",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::clear",
+                {
+                    "caseId": "case-1",
+                    "reason": "Per abuis"
+                }
+            ],
+            [
+                "CaseJournal::append",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveStatus": "nog_te_archiveren"
+                    },
+                    "entry": {
+                        "type": "unarchive",
+                        "reason": "Per abuis"
+                    }
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03",
+                        "archiveStatus": "nog_te_archiveren",
+                        "journalled": {
+                            "type": "unarchive",
+                            "reason": "Per abuis"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "CaseEndingActs: case restored from the archive",
+                {
+                    "caseId": "case-1"
+                }
+            ]
+        ]
+    },
+    "unarchive, not archived": {
+        "answer": {
+            "refused": "case-not-archived",
+            "sentence": "This case is not in the archive.",
+            "status": 409
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::isArchived",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "unarchive, blank reason": {
+        "answer": {
+            "refused": "reason-required",
+            "sentence": "Give a reason first.",
+            "status": 422
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "unarchive, gate refuses": {
+        "answer": {
+            "refused": "require-refused",
+            "sentence": "No.",
+            "status": 403
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "unarchive, platform refuses": {
+        "answer": {
+            "refused": "clear-refused",
+            "sentence": "No.",
+            "status": 403
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "LifecycleActorGate::require",
+                {
+                    "act": "archive",
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::isArchived",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    }
+                }
+            ],
+            [
+                "CaseArchiveState::clear",
+                {
+                    "caseId": "case-1",
+                    "reason": "Per abuis"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "ending of": {
+        "answer": {
+            "act": "finish",
+            "at": "2026-01-02",
+            "by": "anna",
+            "reason": "done"
+        },
+        "calls": [
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "archive",
+                        "autoClose"
+                    ]
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "ending of, none": {
+        "answer": [],
+        "calls": [
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "archive",
+                        "autoClose"
+                    ]
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "ending of, partial entry": {
+        "answer": {
+            "act": "abort",
+            "at": "",
+            "by": "",
+            "reason": ""
+        },
+        "calls": [
+            [
+                "CaseJournal::latest",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": "ct-1",
+                        "status": "s-end-a",
+                        "endingAct": "finish",
+                        "endDate": "2026-02-03"
+                    },
+                    "types": [
+                        "finish",
+                        "abort",
+                        "archive",
+                        "autoClose"
+                    ]
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "result choices": {
+        "answer": [
+            {
+                "id": "rt-1",
+                "name": "Verleend"
+            }
+        ],
+        "calls": [
+            [
+                "CaseResultWriter::resultTypeChoices",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "result choices, no type": {
+        "answer": [
+            {
+                "id": "rt-1",
+                "name": "Verleend"
+            }
+        ],
+        "calls": [
+            [
+                "CaseResultWriter::resultTypeChoices",
+                {
+                    "caseTypeId": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "is ended": {
+        "answer": [
+            true,
+            false,
+            false
+        ],
+        "calls": [],
+        "logs": []
+    }
+}

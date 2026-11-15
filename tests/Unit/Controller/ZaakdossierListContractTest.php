@@ -37,6 +37,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ZaakdossierController;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCaseWriteGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -46,11 +48,15 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
+use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 
 /**
  * Wire-contract tests for ZaakdossierController::listDossier().
  *
  * @covers \OCA\Dossiq\Controller\ZaakdossierController
+ * @uses \OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate
  */
 class ZaakdossierListContractTest extends TestCase {
 
@@ -90,6 +96,13 @@ class ZaakdossierListContractTest extends TestCase {
 	private IUserSession $userSession;
 
 	/**
+	 * The approval-clearance mock (required to construct since #3004).
+	 *
+	 * @var DocumentApprovalClearance|MockObject
+	 */
+	private DocumentApprovalClearance $approvals;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var ZaakdossierController
@@ -107,8 +120,17 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->fileService = $this->createMock(ZaakdossierService::class);
 		$this->reader = $this->createMock(InformatieobjectReader::class);
+		$this->reader->method('withScanVerdicts')->willReturnArgument(0);
+		$this->reader->method('withReviewVerdicts')->willReturnArgument(1);
+		$this->reader->method('withAccessExceptionNames')->willReturnArgument(0);
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
 		$this->userSession = $this->createMock(IUserSession::class);
+
+		// The seventh collaborator arrived with the approval chain on a
+		// document (#3004). It is mocked rather than left out because every
+		// test in this file builds the controller in setUp(), so one missing
+		// argument reads as the whole contract being unreachable.
+		$this->approvals = $this->createMock(DocumentApprovalClearance::class);
 
 		$this->controller = new ZaakdossierController(
 			appName: 'dossiq',
@@ -117,8 +139,36 @@ class ZaakdossierListContractTest extends TestCase {
 			reader: $this->reader,
 			uploadHandler: $this->uploadHandler,
 			userSession: $this->userSession,
+			approvals: $this->approvals,
+			// A REAL bulk actions object over the SAME reader and dossier
+			// service the assertions read through. Only the wiring line moved
+			// when one act over many documents was split out.
+			writes: new DocumentWriteGate(
+				caseWrites: $this->caseWrites(),
+				bulk: new BulkDocumentActions(
+					reader: $this->reader,
+					fileService: $this->fileService,
+				),
+			),
 		);
 	}//end setUp()
+
+	/**
+	 * A case write guard that marks every row as not changeable.
+	 *
+	 * @return DocumentCaseWriteGuard
+	 */
+	private function caseWrites(): DocumentCaseWriteGuard {
+		$guard = $this->createMock(DocumentCaseWriteGuard::class);
+		$guard->method('withChangeRight')->willReturnCallback(
+			static fn ($user, array $documents): array => array_map(
+				static fn (array $row): array => [...$row, 'canChangeAccess' => false],
+				$documents
+			)
+		);
+
+		return $guard;
+	}//end caseWrites()
 
 	/**
 	 * Put an authenticated user in the session.
@@ -216,11 +266,11 @@ class ZaakdossierListContractTest extends TestCase {
 			'the whole dossier must be offered to the clearance filter for the session user'
 		);
 		$this->assertSame(
-			[$public],
+			[[...$public, 'canChangeAccess' => false]],
 			$grouped,
 			'grouping must consume the FILTERED list — the removed document must not be regrouped'
 		);
-		$this->assertSame(['overig' => [$public]], $response->getData());
+		$this->assertSame(['overig' => [[...$public, 'canChangeAccess' => false]]], $response->getData());
 	}//end testListDossierGroupsTheClearanceFilteredListAndNotTheRawDossier()
 
 	/**
@@ -251,4 +301,52 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->assertSame([], $offered);
 		$this->assertSame([], $response->getData());
 	}//end testListDossierOffersAnEmptyListWhenTheDossierHasNoDocuments()
+
+	/**
+	 * The listing hands its rows, scan verdicts on, to the reader for the
+	 * case's review verdicts, and groups what comes back.
+	 *
+	 * @return void
+	 */
+	public function testListDossierPutsEachDocumentsReviewVerdictOnItsRow(): void {
+		$this->signIn();
+		$this->fileService->method('getDossierForCase')->willReturn(value: ['informatieobjecten' => [['id' => 'doc-1'], ['id' => 'doc-2']]]);
+		$grouped = [];
+		$this->fileService->method('groupByType')->willReturnCallback(
+			callback: static function (array $documents) use (&$grouped): array {
+				$grouped = $documents;
+				return ['overig' => $documents];
+			}
+		);
+		$reader = $this->createMock(originalClassName: InformatieobjectReader::class);
+		$reader->method('filterForUser')->willReturnArgument(argumentIndex: 1);
+		$reader->method('withScanVerdicts')->willReturnArgument(argumentIndex: 0);
+		$reader->method('withAccessExceptionNames')->willReturnArgument(argumentIndex: 0);
+		$reader->expects($this->once())->method('withReviewVerdicts')
+			->with('case-1', [['id' => 'doc-1'], ['id' => 'doc-2']])
+			->willReturn(value: [['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar'], ['id' => 'doc-2']]);
+
+		$controller = new ZaakdossierController(
+			appName: 'dossiq',
+			request: $this->request,
+			fileService: $this->fileService,
+			reader: $reader,
+			uploadHandler: $this->uploadHandler,
+			userSession: $this->userSession,
+			approvals: $this->approvals,
+			writes: new DocumentWriteGate(
+				caseWrites: $this->caseWrites(),
+				bulk: new BulkDocumentActions(reader: $reader, fileService: $this->fileService),
+			),
+		);
+		$controller->listDossier(caseId: 'case-1');
+
+		$this->assertSame(
+			expected: [
+				['id' => 'doc-1', 'reviewVerdict' => 'deels_openbaar', 'canChangeAccess' => false],
+				['id' => 'doc-2', 'canChangeAccess' => false],
+			],
+			actual: $grouped
+		);
+	}//end testListDossierPutsEachDocumentsReviewVerdictOnItsRow()
 }//end class

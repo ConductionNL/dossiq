@@ -128,6 +128,15 @@ npm ci
 npm run dev
 ```
 
+`npm ci` registers the l10n merge driver for you. In a clone that already installed, register it by hand:
+
+```bash
+git config merge.l10n.name 'l10n catalogue key-wise merge'
+git config merge.l10n.driver 'node tools/merge-l10n.js %O %A %B %P'
+```
+
+Without it, `l10n/en.json` and `l10n/nl.json` merge line by line and every branch that adds a string conflicts with every other one. See [the merge driver page](./l10n-merge-driver.md).
+
 ### Creating a New Feature
 
 ```bash

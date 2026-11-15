@@ -2,10 +2,25 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Presentation logic for the capability comparison on the Features & roadmap
- * page. Pure functions over `src/data/capabilityComparison.json`, kept out of
- * the .vue file so the grouping and the tallies are unit-testable in the node
- * environment (vitest.config.js: component specs need jsdom, these do not).
+ * Presentation logic for the capability comparison. Pure functions over
+ * `openspec/parity/capabilities.json`, unit-testable in the node environment
+ * (vitest.config.js: component specs need jsdom, these do not).
+ *
+ * THE APP BUNDLE DOES NOT IMPORT THIS ANY MORE. The comparison was a tab on
+ * the in-app Features & roadmap page until 2026-10-07 and is now the
+ * "How dossiq compares" page on dossiq.conduction.nl, which imports this file
+ * from `docs/src/components/CapabilityComparison`. It stays here, beside the
+ * data and its tests, so the docs page and the data have one set of helpers.
+ *
+ * ROWS AND PROPOSALS ARE TWO LISTS, AND ONLY ONE OF THEM IS SCORED.
+ * `data.capabilities` holds the rows: every system has been read against each
+ * of them, which is what makes a tally over them mean something.
+ * `data.pending` holds the proposals: questions raised against one product and
+ * not yet read against the rest. Every function here that counts, tallies or
+ * compares reads `capabilities` and never `pending`, because a proposal has
+ * one rated column out of five and putting it in a total would move our score
+ * against cells nobody has filled. The page renders them, clearly marked, so a
+ * reader can see the questions we are about to be measured on.
  *
  * The tallies are DERIVED here rather than stored in the JSON on purpose. A
  * stored total is a second copy of the truth that goes stale the moment a row
@@ -47,21 +62,36 @@ export const RATING_COLUMNS = Object.freeze([...RATINGS, 'unknown'])
  * so a half-translated file degrades to English rather than to a blank cell.
  *
  * @param {{name: string, name_nl?: string}} entry Labelled entry from the data file.
- * @param {string} [locale] BCP 47 locale, e.g. `nl`, `nl_NL`, `en-GB`.
+ * @param {string} [locale] BCP 47 locale, e.g. `nl`, `nl_NL`, `en-GB`; English when absent.
  * @return {string} The label to render.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-every-user-visible-string-must-exist-in-dutch
  */
-export function labelFor(entry, locale = 'en') {
+export function labelFor(entry, locale) {
 	if (!entry) {
 		return ''
 	}
-	const dutch = String(locale || '')
-		.toLowerCase()
-		.startsWith('nl')
-	if (dutch && typeof entry.name_nl === 'string' && entry.name_nl.trim() !== '') {
+	if (isDutchLocale(locale) && hasDutchName(entry)) {
 		return entry.name_nl
 	}
 	return entry.name ?? ''
+}
+
+/**
+ * @param {string} [locale] BCP 47 locale.
+ * @return {boolean} Whether the locale is a Dutch one (`nl`, `nl_NL`, `nl-BE`).
+ */
+function isDutchLocale(locale) {
+	return String(locale || '')
+		.toLowerCase()
+		.startsWith('nl')
+}
+
+/**
+ * @param {{name_nl?: string}} entry Labelled entry from the data file.
+ * @return {boolean} Whether the entry carries a non-blank Dutch name.
+ */
+function hasDutchName(entry) {
+	return typeof entry.name_nl === 'string' && entry.name_nl.trim() !== ''
 }
 
 /**
@@ -83,24 +113,51 @@ export function tally(capabilities, systemKey) {
 }
 
 /**
+ * The proposals: questions raised against one product, not yet read against
+ * the rest.
+ *
+ * A separate list rather than a flag on the rows, because every counting
+ * function here would otherwise have to remember to exclude them, and the one
+ * that forgot would publish a score over cells nobody had filled. A reader of
+ * `data.capabilities` gets the scored list and cannot get this by accident.
+ *
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
+ * @return {Array<object>} The pending proposals, or an empty list.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
+ */
+export function pendingRows(data) {
+	return data?.pending ?? []
+}
+
+/**
  * Group the capabilities by area, resolving labels for the given locale and
  * tallying every system per area.
  *
  * Areas come out in the order the data file declares them, which is the
- * audit's own numbering (1 Intake through 13 Access and privacy). The row
+ * audit's own numbering (1 Intake through 17 Multi-organisation). The row
  * `id` a reader sees is that numbering, so re-sorting the areas here would
  * put "13.1" above "1.1" on a page whose first column is the number.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * `capabilities` are the scored rows and `pending` are the proposals filed
+ * under the same area. `tallies` counts the rows ONLY. An area can hold
+ * proposals and no rows, which is what areas 14 to 17 are today: four
+ * questions round 4 raised that had nowhere to go, each still waiting on
+ * every column but ours.
+ *
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @param {string} [locale] BCP 47 locale used to pick labels.
- * @return {Array<object>} One entry per area, each with its rows and tallies.
+ * @return {Array<object>} One entry per area, each with its rows, proposals and tallies.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
  */
 export function groupByArea(data, locale = 'en') {
 	const systems = (data?.systems ?? []).map((s) => s.key)
 	const rows = data?.capabilities ?? []
+	const proposals = pendingRows(data)
 	return (data?.areas ?? []).map((area) => {
 		const capabilities = rows
+			.filter((row) => row.area === area.key)
+			.map((row) => ({ ...row, label: labelFor(row, locale) }))
+		const pending = proposals
 			.filter((row) => row.area === area.key)
 			.map((row) => ({ ...row, label: labelFor(row, locale) }))
 		const tallies = {}
@@ -111,6 +168,7 @@ export function groupByArea(data, locale = 'en') {
 			key: area.key,
 			label: labelFor(area, locale),
 			capabilities,
+			pending,
 			tallies,
 		}
 	})
@@ -119,7 +177,7 @@ export function groupByArea(data, locale = 'en') {
 /**
  * Tally every system over the whole comparison.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @return {Record<string, {yes: number, partial: number, no: number, unknown: number, total: number}>} Tally per system key.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
  */
@@ -148,17 +206,36 @@ export function formatComparedOn(iso, locale = 'en') {
 	if (typeof iso !== 'string' || iso.trim() === '') {
 		return ''
 	}
+	return longUtcDateOrRaw(iso, locale)
+}
+
+/**
+ * Intl options for a long date read in UTC: `7 september 2026`.
+ *
+ * @type {object}
+ */
+const LONG_UTC_DATE = {
+	day: 'numeric',
+	month: 'long',
+	year: 'numeric',
+	timeZone: 'UTC',
+}
+
+/**
+ * An ISO date as a long UTC date in the locale, or the ISO string itself when
+ * it is not a date or the runtime has no `Intl` data for the locale.
+ *
+ * @param {string} iso ISO 8601 date, e.g. `2026-09-07`.
+ * @param {string} locale BCP 47 locale.
+ * @return {string} A human-readable date.
+ */
+function longUtcDateOrRaw(iso, locale) {
 	const parsed = new Date(`${iso}T00:00:00Z`)
 	if (Number.isNaN(parsed.getTime())) {
 		return iso
 	}
 	try {
-		return new Intl.DateTimeFormat(locale.replace('_', '-'), {
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric',
-			timeZone: 'UTC',
-		}).format(parsed)
+		return new Intl.DateTimeFormat(locale.replace('_', '-'), LONG_UTC_DATE).format(parsed)
 	} catch {
 		// No Intl data for this locale in this runtime. The ISO string is
 		// still a date a reader can act on, which is the whole job here.
@@ -179,7 +256,7 @@ export function formatComparedOn(iso, locale = 'en') {
  * three independent teams shipped something we did not, and a half-built
  * version of it does not refute that.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @return {Array<object>} Rows where every non-self system is `yes` and we are not.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
  */

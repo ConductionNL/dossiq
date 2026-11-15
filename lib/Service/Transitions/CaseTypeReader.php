@@ -29,24 +29,30 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 /**
  * Reads a case type's lifecycle rules and its statuses.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class CaseTypeReader {
+class CaseTypeReader implements CaseTypeReaderInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -58,7 +64,9 @@ class CaseTypeReader {
 	 *
 	 * @param string $caseTypeId CaseType UUID.
 	 *
-	 * @return array{suspensionAllowed: bool, extensionAllowed: bool, extensionPeriod: string, initialStatus: string, title: string}
+	 * @return array{suspensionAllowed: bool, extensionAllowed: bool, extensionPeriod: string,
+	 *               maxExtensions: int|null, initialStatus: string, title: string,
+	 *               entryRequirements: array<string, mixed>}
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
@@ -69,10 +77,68 @@ class CaseTypeReader {
 			'suspensionAllowed' => $this->flag(value: ($row['suspensionAllowed'] ?? false)),
 			'extensionAllowed' => $this->flag(value: ($row['extensionAllowed'] ?? false)),
 			'extensionPeriod' => (string)($row['extensionPeriod'] ?? ''),
+			'maxExtensions' => $this->limit(value: ($row['maxExtensions'] ?? null)),
 			'initialStatus' => (string)($row['initialStatus'] ?? ''),
-			'title' => (string)($row['title'] ?? ($row['name'] ?? '')),
+			'title' => $this->text->textOf(value: ($row['title'] ?? ($row['name'] ?? null))),
+			// What each status requires before a case enters it, projected from the case type's rules.
+			'entryRequirements' => (array)($row['entryRequirements'] ?? []),
 		];
 	}//end read()
+
+	/**
+	 * How often a term may be extended, or null when the case type states no limit.
+	 *
+	 * Anything that is not a whole number above zero is no limit: an empty
+	 * field must not read as "never", which `extensionAllowed` already says.
+	 *
+	 * @param mixed $value The stored value.
+	 *
+	 * @return int|null
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	private function limit(mixed $value): ?int {
+		if (is_numeric($value) === false || (int)$value < 1) {
+			return null;
+		}
+
+		return (int)$value;
+	}//end limit()
+
+	/**
+	 * The payment rule one case type declares, or null when it declares none.
+	 *
+	 * Kept apart from {@see read()} on purpose. That method answers a fixed
+	 * shape the transition engine reads on every move, and widening it would
+	 * make every caller carry a field almost none of them asks about. This one
+	 * is asked only where money is the question.
+	 *
+	 * A case type nobody can read answers null, which {@see UnpaidCaseGate}
+	 * reads as "no payment rule". That is the additive reading and it is
+	 * deliberate: this rule only ever ADDS a refusal, so an unreadable case
+	 * type must leave the app behaving as it did before the rule existed,
+	 * rather than stopping every melding on the instance.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array{paymentRequiredBeforeHandling: bool}|null The rule, or null.
+	 *
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 */
+	public function paymentRule(string $caseTypeId): ?array {
+		if ($caseTypeId === '') {
+			return null;
+		}
+
+		$row = $this->findRow(schemaKey: 'case_type_schema', id: $caseTypeId);
+		if ($row === []) {
+			return null;
+		}
+
+		return [
+			'paymentRequiredBeforeHandling' => $this->flag(value: ($row['paymentRequiredBeforeHandling'] ?? false)),
+		];
+	}//end paymentRule()
 
 	/**
 	 * Whether a statusType closes the case it is on.
@@ -152,7 +218,7 @@ class CaseTypeReader {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($id, register: $register, schema: $schema));
+			return $this->toArray(value: $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema)));
 		} catch (\Throwable $e) {
 			return [];
 		}
@@ -168,17 +234,6 @@ class CaseTypeReader {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

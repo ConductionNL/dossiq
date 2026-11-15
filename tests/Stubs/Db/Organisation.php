@@ -125,6 +125,13 @@ class Organisation {
 	private ?int $bandwidthQuota = null;
 
 	/**
+	 * The user limit, present on OCA\OpenRegister\Db\Organisation since openregister#4800.
+	 *
+	 * @var integer|null
+	 */
+	private ?int $userQuota = null;
+
+	/**
 	 * @var string|null
 	 */
 	private ?string $description = null;
@@ -188,8 +195,10 @@ class Organisation {
 	/**
 	 * @param array<int, string>|null $groups Groups list.
 	 */
-	public function setGroups(?array $groups): void {
+	public function setGroups(?array $groups): static {
 		$this->groups = ($groups ?? []);
+
+		return $this;
 	}
 
 	public function getActive(): bool {
@@ -200,8 +209,10 @@ class Organisation {
 		return $this->active;
 	}
 
-	public function setActive(mixed $active): void {
+	public function setActive(mixed $active): static {
 		$this->active = (bool)$active;
+
+		return $this;
 	}
 
 	public function getStorageQuota(): ?int {
@@ -357,6 +368,22 @@ class Organisation {
 	}
 
 	/**
+	 * @return integer|null The user quota.
+	 */
+	public function getUserQuota(): ?int {
+		return $this->userQuota;
+	}
+
+	/**
+	 * @param integer|null $userQuota The user quota.
+	 *
+	 * @return void
+	 */
+	public function setUserQuota(?int $userQuota): void {
+		$this->userQuota = $userQuota;
+	}
+
+	/**
 	 * @return string|null The description.
 	 */
 	public function getDescription(): ?string {
@@ -450,6 +477,31 @@ class Organisation {
 	 */
 	public function setRetainedAt(?\DateTime $retainedAt): void {
 		$this->retainedAt = $retainedAt;
+	}
+
+	/**
+	 * When the Organisation was created. Verified present on
+	 * OCA\OpenRegister\Db\Organisation (`protected ?DateTime $created`), read
+	 * by `TenantService::ensureAuditAnchor()` for the anchor's createdAt.
+	 *
+	 * @var \DateTime|null
+	 */
+	private ?\DateTime $created = null;
+
+	/**
+	 * @return \DateTime|null When the Organisation was created.
+	 */
+	public function getCreated(): ?\DateTime {
+		return $this->created;
+	}
+
+	/**
+	 * @param \DateTime|null $created When the Organisation was created.
+	 *
+	 * @return void
+	 */
+	public function setCreated(?\DateTime $created): void {
+		$this->created = $created;
 	}
 
 	// phpcs:enable

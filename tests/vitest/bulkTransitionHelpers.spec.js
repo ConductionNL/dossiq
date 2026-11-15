@@ -3,199 +3,15 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Unit tests for the bulk status-transition helper utilities
- * (case-bulk-status-transition): column-scoped selection toggling
- * (incl. cross-column reset), payload builders, and result summarisation.
+ * (case-bulk-status-transition): the payload builders.
  */
 
 import { describe, expect, it } from 'vitest'
 import {
-	buildExecutePayload,
-	buildLifecycleExecutePayload,
-	buildLifecyclePreviewPayload,
-	buildPreviewPayload,
-	clearSelection,
-	emptySelection,
 	isLifecycleGesture,
-	isSelected,
-	summarizeResults,
-	toggleSelection,
+	lifecycleParameters,
+	transitionParameters,
 } from '../../src/utils/bulkTransitionHelpers.js'
-
-describe('emptySelection', () => {
-	it('returns a selection with no column and no cases', () => {
-		expect(emptySelection()).toEqual({ columnId: null, caseIds: [] })
-	})
-})
-
-describe('toggleSelection', () => {
-	it('selects a case into an empty selection', () => {
-		const result = toggleSelection(emptySelection(), 'case-1', 'Received')
-		expect(result).toEqual({ columnId: 'Received', caseIds: ['case-1'] })
-	})
-
-	it('adds a second case within the same column', () => {
-		const first = toggleSelection(emptySelection(), 'case-1', 'Received')
-		const second = toggleSelection(first, 'case-2', 'Received')
-		expect(second).toEqual({
-			columnId: 'Received',
-			caseIds: ['case-1', 'case-2'],
-		})
-	})
-
-	it('removes a case already selected within the same column', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
-		const result = toggleSelection(selection, 'case-1', 'Received')
-		expect(result).toEqual({ columnId: 'Received', caseIds: ['case-2'] })
-	})
-
-	it('clears the column scope when the last case is deselected', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1'] }
-		const result = toggleSelection(selection, 'case-1', 'Received')
-		expect(result).toEqual({ columnId: null, caseIds: [] })
-	})
-
-	it('resets the selection when a case is selected in a different column (cross-column reset)', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
-		const result = toggleSelection(selection, 'case-9', 'In handling')
-		expect(result).toEqual({ columnId: 'In handling', caseIds: ['case-9'] })
-	})
-
-	it('compares case ids as strings so numeric/string mismatches still toggle correctly', () => {
-		const selection = { columnId: 'Received', caseIds: [1, 2] }
-		const result = toggleSelection(selection, '1', 'Received')
-		expect(result).toEqual({ columnId: 'Received', caseIds: [2] })
-	})
-
-	it('tolerates a null/undefined selection as the starting state', () => {
-		expect(toggleSelection(null, 'case-1', 'Received')).toEqual({
-			columnId: 'Received',
-			caseIds: ['case-1'],
-		})
-		expect(toggleSelection(undefined, 'case-1', 'Received')).toEqual({
-			columnId: 'Received',
-			caseIds: ['case-1'],
-		})
-	})
-})
-
-describe('isSelected', () => {
-	it('returns true when the case id is in the selection', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
-		expect(isSelected(selection, 'case-1')).toBe(true)
-	})
-
-	it('returns false when the case id is not in the selection', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1'] }
-		expect(isSelected(selection, 'case-9')).toBe(false)
-	})
-
-	it('returns false for an empty or malformed selection', () => {
-		expect(isSelected(emptySelection(), 'case-1')).toBe(false)
-		expect(isSelected(null, 'case-1')).toBe(false)
-		expect(isSelected({}, 'case-1')).toBe(false)
-	})
-})
-
-describe('clearSelection', () => {
-	it('returns an empty selection', () => {
-		expect(clearSelection()).toEqual({ columnId: null, caseIds: [] })
-	})
-})
-
-describe('buildPreviewPayload', () => {
-	it('builds a payload from the selection and transitionId', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
-		expect(buildPreviewPayload(selection, 'submit')).toEqual({
-			caseIds: ['case-1', 'case-2'],
-			transitionId: 'submit',
-		})
-	})
-
-	it('defaults to an empty caseIds array and empty transitionId for a malformed selection', () => {
-		expect(buildPreviewPayload(null, undefined)).toEqual({
-			caseIds: [],
-			transitionId: '',
-		})
-	})
-})
-
-describe('buildExecutePayload', () => {
-	it('builds a payload including the comment', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1'] }
-		expect(buildExecutePayload(selection, 'submit', 'go ahead')).toEqual({
-			caseIds: ['case-1'],
-			transitionId: 'submit',
-			comment: 'go ahead',
-		})
-	})
-
-	it('nulls out an empty/undefined comment', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1'] }
-		expect(buildExecutePayload(selection, 'submit', '')).toEqual({
-			caseIds: ['case-1'],
-			transitionId: 'submit',
-			comment: null,
-		})
-		expect(buildExecutePayload(selection, 'submit')).toEqual({
-			caseIds: ['case-1'],
-			transitionId: 'submit',
-			comment: null,
-		})
-	})
-})
-
-describe('summarizeResults', () => {
-	it('counts statuses and collects non-ready/non-succeeded entries as failed', () => {
-		const results = {
-			'case-1': { status: 'ready', reasons: [] },
-			'case-2': {
-				status: 'blocked',
-				reasons: [{ message: 'missing document' }],
-			},
-			'case-3': { status: 'succeeded' },
-			'case-4': { status: 'failed', reasons: [{ message: 'guard failed' }] },
-			'case-5': { status: 'error', reasons: [{ message: 'preview_failed' }] },
-		}
-
-		const summary = summarizeResults(results)
-
-		expect(summary.total).toBe(5)
-		expect(summary.counts).toEqual({
-			ready: 1,
-			blocked: 1,
-			succeeded: 1,
-			failed: 1,
-			error: 1,
-		})
-		expect(summary.failed).toEqual([
-			{
-				caseId: 'case-2',
-				status: 'blocked',
-				reasons: [{ message: 'missing document' }],
-			},
-			{
-				caseId: 'case-4',
-				status: 'failed',
-				reasons: [{ message: 'guard failed' }],
-			},
-			{
-				caseId: 'case-5',
-				status: 'error',
-				reasons: [{ message: 'preview_failed' }],
-			},
-		])
-	})
-
-	it('returns an empty summary for an empty or malformed results map', () => {
-		expect(summarizeResults({})).toEqual({ total: 0, counts: {}, failed: [] })
-		expect(summarizeResults(null)).toEqual({ total: 0, counts: {}, failed: [] })
-		expect(summarizeResults(undefined)).toEqual({
-			total: 0,
-			counts: {},
-			failed: [],
-		})
-	})
-})
 
 describe('isLifecycleGesture', () => {
 	it('names the three gestures that move the clock, not the status', () => {
@@ -214,90 +30,59 @@ describe('isLifecycleGesture', () => {
 	})
 })
 
-describe('buildLifecyclePreviewPayload', () => {
-	it('carries the ids and the gesture, and no transition id', () => {
-		expect(
-			buildLifecyclePreviewPayload({ caseIds: ['a', 'b'] }, 'suspend'),
-		).toEqual({ caseIds: ['a', 'b'], gesture: 'suspend' })
-	})
-
-	it('copies the ids rather than aliasing the selection', () => {
-		const selection = { columnId: 'col-1', caseIds: ['a'] }
-		const payload = buildLifecyclePreviewPayload(selection, 'resume')
-
-		payload.caseIds.push('b')
-
-		expect(selection.caseIds).toEqual(['a'])
-	})
-
-	it('survives a malformed selection', () => {
-		expect(buildLifecyclePreviewPayload(null, 'resume')).toEqual({
-			caseIds: [],
-			gesture: 'resume',
+describe('transitionParameters', () => {
+	it('carries the transition and the comment the case timeline gets', () => {
+		expect(transitionParameters('to-decided', 'Handled in bulk')).toEqual({
+			transitionId: 'to-decided',
+			comment: 'Handled in bulk',
 		})
+	})
+
+	it('answers empty strings rather than undefined keys', () => {
+		// A key whose value is `undefined` disappears in JSON, so the server
+		// would read a missing parameter rather than an empty one, and the
+		// refusal would name the wrong thing.
+		expect(transitionParameters()).toEqual({ transitionId: '', comment: '' })
 	})
 })
 
-describe('buildLifecycleExecutePayload', () => {
-	it('sends the trimmed reason for every gesture', () => {
+describe('lifecycleParameters', () => {
+	it('sends days with a suspend and nothing else', () => {
 		expect(
-			buildLifecycleExecutePayload({ caseIds: ['a'] }, 'resume', {
-				reason: '  Documents received  ',
+			lifecycleParameters('suspend', {
+				reason: 'Awaiting documents',
+				days: '14',
 			}),
 		).toEqual({
-			caseIds: ['a'],
-			gesture: 'resume',
-			reason: 'Documents received',
-		})
-	})
-
-	it('sends days only for suspend', () => {
-		const suspend = buildLifecycleExecutePayload({ caseIds: ['a'] }, 'suspend', {
-			reason: 'Awaiting documents',
-			days: '21',
-			newEndDate: '2026-12-01',
-		})
-
-		expect(suspend).toEqual({
-			caseIds: ['a'],
 			gesture: 'suspend',
 			reason: 'Awaiting documents',
-			days: 21,
+			days: 14,
 		})
-		expect(suspend.newEndDate).toBeUndefined()
 	})
 
-	it('sends the new end date only for extend', () => {
-		const extend = buildLifecycleExecutePayload({ caseIds: ['a'] }, 'extend', {
-			reason: 'Complex case',
-			days: '21',
-			newEndDate: '2026-12-01',
-		})
-
-		expect(extend).toEqual({
-			caseIds: ['a'],
+	it('sends the new deadline with an extend and no days', () => {
+		expect(
+			lifecycleParameters('extend', {
+				reason: 'Complex case',
+				newEndDate: '2026-12-01',
+			}),
+		).toEqual({
 			gesture: 'extend',
 			reason: 'Complex case',
 			newEndDate: '2026-12-01',
 		})
-		expect(extend.days).toBeUndefined()
 	})
 
-	it('reads an unreadable day count as zero, which the server defaults', () => {
+	it('sends neither with a resume', () => {
 		expect(
-			buildLifecycleExecutePayload({ caseIds: ['a'] }, 'suspend', {
-				reason: 'Awaiting documents',
-				days: 'soon',
-			}).days,
-		).toBe(0)
+			lifecycleParameters('resume', { reason: 'Documents arrived' }),
+		).toEqual({
+			gesture: 'resume',
+			reason: 'Documents arrived',
+		})
 	})
 
-	it('sends an empty reason rather than dropping the key', () => {
-		// The server has to be the one that refuses: dropping the key would
-		// make an empty reason indistinguishable from an older client that
-		// never sent one, and the refusal is what the requirement rests on.
-		expect(
-			buildLifecycleExecutePayload({ caseIds: ['a'] }, 'suspend', {}).reason,
-		).toBe('')
+	it('trims the reason, so whitespace cannot pass for a justification', () => {
+		expect(lifecycleParameters('resume', { reason: '   ' }).reason).toBe('')
 	})
 })

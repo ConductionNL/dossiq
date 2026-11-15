@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
-use OCA\Dossiq\Service\Zaakdossier\LinkedDocumentsReader;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\LinkedDocumentsReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -38,15 +38,15 @@ class LinkedDocumentsController extends Controller {
 	/**
 	 * @param string $appName The app id.
 	 * @param IRequest $request The request.
-	 * @param LinkedDocumentsReader $linkedDocuments The rows.
-	 * @param InformatieobjectReader $reader The clearance gate per document.
+	 * @param LinkedDocumentsReaderInterface $linkedDocuments The rows.
+	 * @param InformatieobjectReaderInterface $reader The clearance gate per document.
 	 * @param IUserSession $userSession Who asks.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly LinkedDocumentsReader $linkedDocuments,
-		private readonly InformatieobjectReader $reader,
+		private readonly LinkedDocumentsReaderInterface $linkedDocuments,
+		private readonly InformatieobjectReaderInterface $reader,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

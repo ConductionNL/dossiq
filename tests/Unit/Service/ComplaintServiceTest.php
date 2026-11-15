@@ -22,11 +22,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Typed stub for the OpenRegister ObjectService.
@@ -77,7 +80,7 @@ interface ComplaintObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -86,8 +89,12 @@ interface ComplaintObjectServiceStub {
  * @covers \OCA\Dossiq\Service\ComplaintService
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class ComplaintServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
@@ -105,6 +112,13 @@ class ComplaintServiceTest extends TestCase {
 	private ComplaintService $service;
 
 	/**
+	 * The one clock both the service and the fixtures below read.
+	 *
+	 * @var CaseDateNormaliser
+	 */
+	private CaseDateNormaliser $dates;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -113,10 +127,13 @@ class ComplaintServiceTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		$this->dates = $this->caseDatesFrozenAt();
+
 		$this->service = new ComplaintService(
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 			workingDays: new WorkingDayCalculator(),
+			dates: $this->dates,
 		);
 	}//end setUp()
 
@@ -247,7 +264,10 @@ class ComplaintServiceTest extends TestCase {
 		$objectServiceMock
 			->method('saveObject')
 			->willReturnCallback(
-				function (array $data, string $reg, string $sch, ?string $id = null) {
+				function (array $data, ObjectSaveOptions $options = new ObjectSaveOptions()) {
+					$reg = $options->extend;
+					$sch = $options->target->register;
+					$id = $options->target->schema;
 					$this->assertFalse($data['postponementPossible']);
 					$this->assertSame('2026-05-10', $data['afhandelDeadline']);
 					return $data;
@@ -459,7 +479,7 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetDeadlineAlertsGroupsOverdueAndWarning(): void {
-		$today = new \DateTimeImmutable('today');
+		$today = $this->dates->today();
 		$this->withComplaints(
 			rows: [
 				['id' => 'overdue', 'afhandelDeadline' => $today->modify('-1 day')->format('Y-m-d')],
@@ -491,7 +511,7 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetDeadlineAlertsHonoursTheWarningWindow(): void {
-		$today = new \DateTimeImmutable('today');
+		$today = $this->dates->today();
 		$this->withComplaints(
 			rows: [
 				['id' => 'in-ten-days', 'afhandelDeadline' => $today->modify('+10 days')->format('Y-m-d')],
@@ -504,5 +524,108 @@ class ComplaintServiceTest extends TestCase {
 			array_column($this->service->getDeadlineAlerts(warningDays: 14)['warning'], 'id')
 		);
 	}//end testGetDeadlineAlertsHonoursTheWarningWindow()
+
+	/**
+	 * The overdue list for an assistant carries no complainant (REQ-MCP-203).
+	 *
+	 * The rows carry a fully populated complainant, so a projection that let
+	 * any of it through is caught here, and an unknown field added later stays
+	 * out because the row is rebuilt from an allowlist.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-203-overdue-complaints-via-redacted-projection
+	 */
+	public function testListOverdueComplaintsNeverCarriesTheComplainant(): void {
+		$today = $this->dates->today();
+		$this->withComplaints(
+			rows: [
+				[
+					'id' => 'k-1',
+					'complaintNumber' => 'KL-2026-0007',
+					'subject' => 'Lang wachten',
+					'status' => 'received',
+					'handler' => 'henk',
+					'acknowledgementOfReceiptDeadline' => $today->modify('-3 days')->format('Y-m-d'),
+					'afhandelDeadline' => $today->modify('-1 day')->format('Y-m-d'),
+					'complainant' => ['naam' => 'Fatima El-Amrani', 'email' => 'fatima@example.org', 'telefoon' => '0612345678'],
+					'description' => 'Ik wacht al zes weken.',
+					'someFutureField' => 'kept out',
+				],
+				['id' => 'k-2', 'afhandelDeadline' => $today->modify('+10 days')->format('Y-m-d'), 'complainant' => ['naam' => 'Henk']],
+			]
+		);
+
+		$result = $this->service->listOverdueComplaints();
+
+		$this->assertSame(1, $result['count']);
+		$row = $result['complaints'][0];
+		$this->assertSame('KL-2026-0007', $row['complaintNumber']);
+		$this->assertTrue($row['handlingOverdue']);
+		$this->assertTrue($row['acknowledgementOverdue']);
+		$this->assertArrayNotHasKey('complainant', $row);
+		$this->assertArrayNotHasKey('description', $row);
+		$this->assertArrayNotHasKey('someFutureField', $row);
+		$this->assertStringNotContainsString('Fatima', (string)json_encode($result));
+	}//end testListOverdueComplaintsNeverCarriesTheComplainant()
+
+	/**
+	 * createComplaint sends no klachtnummer, and reports the one it got back.
+	 *
+	 * The number is `complaintNumber`'s `x-openregister-generated` declaration
+	 * now, taken under a lock inside the create transaction. The retired
+	 * `generateComplaintNumber` counted rows and added one, which fails twice
+	 * over: a deletion hands a live complaint's number to the next one filed,
+	 * and its year filter named `ontvangstdatum`, a key the `complaint` schema
+	 * does not carry, so the count was never scoped to a year at all.
+	 *
+	 * The assertion is on what leaves the service, because that is the only
+	 * place a reintroduced generator could show itself: a number computed here
+	 * and posted would be KEPT by OpenRegister, which keeps a supplied value,
+	 * so the register would look correct and the counter would be wrong.
+	 *
+	 * @return void
+	 */
+	public function testCreateComplaintSendsNoNumberAndReportsTheIssuedOne(): void {
+		$sent = null;
+
+		$objectService = $this->createMock(ComplaintObjectServiceStub::class);
+		$objectService->method('saveObject')->willReturnCallback(
+			static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$sent): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				$sent = $object;
+
+				return array_merge($object, ['id' => 'uuid-1', 'complaintNumber' => 'KL-2026-0042']);
+			}
+		);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
+
+		$this->logger->expects($this->once())
+			->method('info')
+			->with($this->stringContains('KL-2026-0042'), $this->anything());
+
+		$created = $this->service->createComplaint([
+			'subject'     => 'Test',
+			'description' => 'Description',
+			'receiptDate' => '2026-03-02',
+		]);
+
+		$this->assertIsArray($sent, 'a control: saveObject must actually have been called');
+		$this->assertArrayNotHasKey(
+			'complaintNumber',
+			$sent,
+			'dossiq must not compute a klachtnummer; the schema declares it and OpenRegister issues it'
+		);
+		$this->assertSame('KL-2026-0042', $created['complaintNumber']);
+
+		// The deadlines still travel, so the assertion above cannot pass merely
+		// because the service stopped writing anything at all.
+		$this->assertSame('2026-03-09', $sent['acknowledgementOfReceiptDeadline']);
+		$this->assertSame('received', $sent['status']);
+	}//end testCreateComplaintSendsNoNumberAndReportsTheIssuedOne()
 
 }//end class

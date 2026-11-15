@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZipManifestBuilder;
@@ -41,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\ZipManifestBuilder
  *
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
+ * @uses \OCA\Dossiq\Service\DossierZipRun
  */
 class ZipManifestBuilderTest extends TestCase {
 
@@ -96,6 +98,7 @@ class ZipManifestBuilderTest extends TestCase {
 			settingsService: $settings,
 			groupManager: $groupManager,
 			logger: $this->createMock(LoggerInterface::class),
+			exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 		);
 		$this->builder = new ZipManifestBuilder(
 			documentService: $this->documents,
@@ -232,6 +235,50 @@ class ZipManifestBuilderTest extends TestCase {
 		$zip->close();
 
 	}//end testBuildZipExcludesAboveClearance()
+
+	/**
+	 * A document without an id or a file name, or whose file cannot be read,
+	 * is left out of the archive but still counted as included and listed in
+	 * the manifest.
+	 *
+	 * @return void
+	 */
+	public function testUnreadableAndNamelessDocumentsAreSkipped(): void {
+		$documents = $this->createMock(ZgwDocumentService::class);
+		$documents->method('getContent')->willReturnCallback(
+			static function (string $uuid, string $fileName): string {
+				if ($uuid === 'inf-2') {
+					throw new \RuntimeException('gone');
+				}
+
+				return 'content-of-' . $uuid;
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with('Dossiq dossier ZIP: skipped unreadable file kwijt.pdf (gone)');
+		$builder = new ZipManifestBuilder(documentService: $documents, accessGuard: $this->guard, logger: $logger);
+		$docs = [
+			['id' => 'inf-1', 'fileName' => 'open.pdf', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['id' => 'inf-2', 'fileName' => 'kwijt.pdf', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['uuid' => 'inf-3', 'fileName' => 'uuid.pdf', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['id' => 'inf-4', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+		];
+
+		$path = (string)tempnam(sys_get_temp_dir(), 'ziptest-');
+		$this->tmpPaths[] = $path;
+		$result = $builder->buildZip($path, $this->internUser(), $docs, ZipManifestBuilder::LAYOUT_FLAT);
+
+		$this->assertSame(['path' => $path, 'included' => 4, 'excluded' => 0], $result);
+		$zip = new \ZipArchive();
+		$zip->open($path);
+		$names = [];
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$names[] = $zip->getNameIndex($i);
+		}
+
+		$zip->close();
+		$this->assertSame(['manifest.csv', 'open.pdf', 'uuid.pdf'], $names);
+	}//end testUnreadableAndNamelessDocumentsAreSkipped()
 
 	/**
 	 * Duplicate filenames are de-duplicated within the archive.

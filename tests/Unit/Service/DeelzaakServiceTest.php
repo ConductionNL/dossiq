@@ -27,10 +27,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
+use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\DeelzaakService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for DeelzaakService::getParentCase().
@@ -38,6 +40,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\DeelzaakService
  *
  * @uses \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
+ * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class DeelzaakServiceTest extends TestCase {
 
@@ -92,6 +97,10 @@ class DeelzaakServiceTest extends TestCase {
 				settingsService: $this->settingsService,
 				logger: $this->logger,
 			),
+			deriver: new SubCaseDeriver(
+				settingsService: $this->settingsService,
+				logger: $this->logger,
+			),
 		);
 	}//end setUp()
 
@@ -124,7 +133,9 @@ class DeelzaakServiceTest extends TestCase {
 			 *
 			 * @return object|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?object {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (isset($this->store[$id]) === false) {
 					return null;
 				}

@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use OCA\Dossiq\Service\CaseLifecycleService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
@@ -29,11 +30,14 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 
 /**
  * Suspend, resume, extend and reopen.
  *
  * @covers \OCA\Dossiq\Service\CaseLifecycleService
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class CaseLifecycleServiceTest extends TestCase {
 
@@ -133,10 +137,13 @@ class CaseLifecycleServiceTest extends TestCase {
 		$this->service = new CaseLifecycleService(
 			store: $this->store,
 			caseTypes: $this->caseTypes,
-			termService: $this->termService,
-			pauseService: $this->pauseService,
-			extensionService: $this->extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $this->termService,
+				pauseService: $this->pauseService,
+				extensionService: $this->extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);
 	}//end setUp()
 
@@ -176,10 +183,13 @@ class CaseLifecycleServiceTest extends TestCase {
 		$service = new CaseLifecycleService(
 			store: $this->store,
 			caseTypes: $caseTypes,
-			termService: $this->termService,
-			pauseService: $this->pauseService,
-			extensionService: $this->extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $this->termService,
+				pauseService: $this->pauseService,
+				extensionService: $this->extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);
 
 		$this->expectException(RuntimeException::class);
@@ -239,10 +249,13 @@ class CaseLifecycleServiceTest extends TestCase {
 		$service = new CaseLifecycleService(
 			store: $this->store,
 			caseTypes: $this->caseTypes,
-			termService: $termService,
-			pauseService: $pauseService,
-			extensionService: $this->extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $termService,
+				pauseService: $pauseService,
+				extensionService: $this->extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);
 
 		$service->suspend(caseId: 'case-1', reason: 'Aanvulling gevraagd', days: 14);
@@ -337,10 +350,13 @@ class CaseLifecycleServiceTest extends TestCase {
 		$service = new CaseLifecycleService(
 			store: $this->store,
 			caseTypes: $caseTypes,
-			termService: $this->termService,
-			pauseService: $this->pauseService,
-			extensionService: $this->extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $this->termService,
+				pauseService: $this->pauseService,
+				extensionService: $this->extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);
 
 		$this->expectException(RuntimeException::class);
@@ -426,4 +442,246 @@ class CaseLifecycleServiceTest extends TestCase {
 		$this->assertFalse($state['canSuspend']);
 		$this->assertFalse($state['canExtend']);
 	}//end testAClosedCaseOffersOnlyReopen()
+
+	/**
+	 * The state names the case type, so the close form can scope its result
+	 * templates without a second read of the case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
+	 */
+	public function testTheStateNamesTheCaseType(): void {
+		$state = $this->service->state(caseId: 'case-1');
+
+		$this->assertSame(expected: 'ct-1', actual: $state['caseType']);
+	}//end testTheStateNamesTheCaseType()
+
+	/**
+	 * A service whose store refuses a readOnly change the way OpenRegister
+	 * does, and whose term gestures move the case's deadline the way the
+	 * deadline mirror does.
+	 *
+	 * The mirror runs INSIDE the term gesture: the TermijnInstance is saved,
+	 * and the case gets the term's new end as `statutoryDeadline` and, in
+	 * that same save, `deadline`. A gesture that then saves a case it read
+	 * BEFORE the term moved sends the old `deadline`, and OpenRegister
+	 * answers "Cannot modify readOnly property: deadline". That is the 500
+	 * the review found on pause, extend and resume (B1, 10 Oct).
+	 *
+	 * @return CaseLifecycleService The service, wired to the mirroring fakes.
+	 */
+	private function serviceWithTheDeadlineMirror(array $notice = []): CaseLifecycleService {
+		$this->case['deadline'] = '2026-09-01';
+		$this->case['statutoryDeadline'] = '2026-09-01';
+
+		$store = $this->createMock(CaseStatusStore::class);
+		$store->method('loadCase')->willReturnCallback(fn (): array => $this->case);
+		$store->method('lookupStatusName')->willReturn('In behandeling');
+		$store->method('saveCase')->willReturnCallback(
+			function (array $case): array {
+				if (array_key_exists('deadline', $case) === true && $case['deadline'] !== ($this->case['deadline'] ?? null)) {
+					// OpenRegister's ValidationException; a plain exception
+					// keeps the test independent of the OpenRegister classes.
+					throw new \Exception('Cannot modify readOnly property: deadline');
+				}
+
+				$this->case = $case;
+				return $case;
+			}
+		);
+
+		$mirror = function (string $end): array {
+			$this->case['statutoryDeadline'] = $end;
+			$this->case['deadline'] = $end;
+			return ['id' => 'ti-1', 'endDateCurrent' => $end];
+		};
+
+		$termService = $this->createMock(TermijnService::class);
+		$termService->method('getTermijnInstanceForZaak')->willReturn(['id' => 'ti-1']);
+
+		$pauseService = $this->createMock(DeadlinePauseService::class);
+		$pauseService->method('registerPauze')->willReturnCallback(fn (): array => $mirror('2026-09-15'));
+		$pauseService->method('resumeAfterPauze')->willReturnCallback(fn (): array => $mirror('2026-09-12'));
+
+		$extensionService = $this->createMock(DeadlineExtensionService::class);
+		$extensionService->method('requestExtension')->willReturnCallback(
+			fn (string $termInstanceId, string $rationale, string $newEndDate): array => ($mirror($newEndDate) + $notice)
+		);
+
+		return new CaseLifecycleService(
+			store: $store,
+			caseTypes: $this->caseTypes,
+			deadlines: new CaseDeadlineServices(
+				termService: $termService,
+				pauseService: $pauseService,
+				extensionService: $extensionService,
+			),
+			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class),
+		);
+	}//end serviceWithTheDeadlineMirror()
+
+	/**
+	 * Pausing a case with a statutory term saves the case as the mirror left
+	 * it: no readOnly refusal, and the term's new end is kept.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testPauseOnATermSavesTheCaseTheMirrorWrote(): void {
+		$service = $this->serviceWithTheDeadlineMirror();
+
+		$state = $service->suspend(caseId: 'case-1', reason: 'Aanvulling gevraagd', days: 14);
+
+		$this->assertTrue($state['suspended']);
+		$this->assertSame('2026-09-15', $this->case['deadline']);
+		$this->assertSame('2026-09-15', $this->case['statutoryDeadline'], 'a stale payload must not write the old date back');
+
+		$resumed = $service->resume(caseId: 'case-1', reason: 'Aanvulling ontvangen');
+
+		$this->assertFalse($resumed['suspended']);
+		$this->assertSame('2026-09-12', $this->case['statutoryDeadline']);
+	}//end testPauseOnATermSavesTheCaseTheMirrorWrote()
+
+	/**
+	 * Extending a case with a statutory term saves the gesture's own fields
+	 * on top of what the mirror wrote.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function testExtendOnATermSavesTheCaseTheMirrorWrote(): void {
+		$service = $this->serviceWithTheDeadlineMirror();
+
+		$state = $service->extend(caseId: 'case-1', reason: 'Meer onderzoek nodig');
+
+		$this->assertSame('2026-09-15', $state['deadline']);
+		$this->assertSame(1, $state['extensionCount']);
+		$this->assertSame('2026-09-15', $this->case['deadline']);
+		$this->assertSame('2026-09-15', $this->case['statutoryDeadline']);
+		$this->assertStringContainsString('"type":"extend"', (string)$this->case['activity']);
+	}//end testExtendOnATermSavesTheCaseTheMirrorWrote()
+
+	/**
+	 * A case type that states how often its term may be extended is held to
+	 * it: the extension past the limit is refused by name, and the state says
+	 * beforehand that it is no longer offered.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	public function testExtendIsRefusedOnceTheCaseTypesLimitIsReached(): void {
+		$service = $this->serviceLimitedTo(maxExtensions: 1);
+
+		$this->assertTrue($service->state(caseId: 'case-1')['canExtend']);
+		$this->assertSame(1, $service->state(caseId: 'case-1')['maxExtensions']);
+
+		$state = $service->extend(caseId: 'case-1', reason: 'Zienswijzen van derden');
+
+		$this->assertSame(1, $state['extensionCount']);
+		$this->assertFalse($state['canExtend'], 'the one extension is used');
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('extension_limit_reached');
+
+		$service->extend(caseId: 'case-1', reason: 'Nog een keer');
+	}//end testExtendIsRefusedOnceTheCaseTypesLimitIsReached()
+
+	/**
+	 * A case type that states no limit keeps the behaviour it had.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	public function testACaseTypeWithoutALimitAnswersNone(): void {
+		$state = $this->service->state(caseId: 'case-1');
+
+		$this->assertNull($state['maxExtensions']);
+		$this->assertTrue($state['canExtend']);
+	}//end testACaseTypeWithoutALimitAnswersNone()
+
+	/**
+	 * The answer to an extension says whether the requester was told, in the
+	 * words the term engine gave.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
+	 */
+	public function testExtendAnswersWhetherTheRequesterWasTold(): void {
+		$service = $this->serviceWithTheDeadlineMirror(
+			notice: [
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'no-channel',
+				'noticeReason' => 'The requester has no reachable channel.',
+			]
+		);
+
+		$state = $service->extend(caseId: 'case-1', reason: 'Zienswijzen van derden');
+
+		$this->assertSame(
+			[
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'no-channel',
+				'noticeReason' => 'The requester has no reachable channel.',
+			],
+			$state['notice']
+		);
+	}//end testExtendAnswersWhetherTheRequesterWasTold()
+
+	/**
+	 * A case without a statutory term has no notice to send, and the answer
+	 * says so instead of leaving the key out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
+	 */
+	public function testExtendWithoutATermSaysNoNoticeWasSent(): void {
+		$state = $this->service->extend(caseId: 'case-1', reason: 'Meer onderzoek nodig');
+
+		$this->assertSame('not-sent', $state['notice']['noticeStatus']);
+		$this->assertSame('no-statutory-term', $state['notice']['noticeReasonCode']);
+	}//end testExtendWithoutATermSaysNoNoticeWasSent()
+
+	/**
+	 * The service over a case type that allows a stated number of extensions.
+	 *
+	 * @param int $maxExtensions How often the term may be extended.
+	 *
+	 * @return CaseLifecycleService
+	 */
+	private function serviceLimitedTo(int $maxExtensions): CaseLifecycleService {
+		$caseTypes = $this->createMock(CaseTypeReader::class);
+		$caseTypes->method('read')->willReturn(
+			[
+				'suspensionAllowed' => true,
+				'extensionAllowed' => true,
+				'extensionPeriod' => 'P14D',
+				'maxExtensions' => $maxExtensions,
+				'initialStatus' => 'st-received',
+				'title' => 'Woo-verzoek',
+			]
+		);
+		$caseTypes->method('isFinalStatus')->willReturn(false);
+
+		return new CaseLifecycleService(
+			store: $this->store,
+			caseTypes: $caseTypes,
+			deadlines: new CaseDeadlineServices(
+				termService: $this->termService,
+				pauseService: $this->pauseService,
+				extensionService: $this->extensionService,
+			),
+			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class),
+		);
+	}//end serviceLimitedTo()
 }//end class

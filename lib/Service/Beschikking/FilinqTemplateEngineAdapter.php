@@ -44,15 +44,17 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
+ * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Support\FleetAppId;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -108,17 +110,25 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @param SettingsService $settings Supplies the case register/schema a template binds to.
 	 * @param IUserSession $userSession The acting user; filinq stores the output in their Files.
 	 * @param LoggerInterface $logger Structured logger.
+	 * @param DecisionTemplateEngine $engines The engine the case type names for a template.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly DecisionTemplateEngine $engines,
 	) {
 	}//end __construct()
 
 	/**
 	 * Render a beschikking template through filinq and store the result.
+	 *
+	 * The engine the case type names for the template (`filinq`, or
+	 * `vendor:<sourceSlug>` for a document vendor reached through integriq)
+	 * travels to filinq with the render. A vendor render that fails is refused
+	 * with a message naming the vendor; it never falls back to filinq's own
+	 * engine or to the mock.
 	 *
 	 * @param string $templateId The filinq template UUID.
 	 * @param array<string, mixed> $context The zaakdata + beschikking context.
@@ -127,17 +137,36 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 *
 	 * @throws RuntimeException When filinq is absent, no user is acting, or the render fails.
 	 *
-	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedAssignment filinq is an optional cross-app dependency.
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
+	 */
+	public function render(string $templateId, array $context): array {
+		$documentService = $this->filinqDocumentService();
+		$user = $this->actingUser();
+
+		$caseId = (string)($context['caseId'] ?? '');
+		$engine = $this->engines->engineFor(caseId: $caseId, templateId: $templateId);
+
+		try {
+			$options = $this->renderOptions(context: $context, job: ['user' => $user, 'caseId' => $caseId, 'engine' => $engine]);
+			$result = $documentService->generateDocument($templateId, $this->buildDataRefs(caseId: $caseId), $options);
+		} catch (Throwable $e) {
+			throw $this->renderFailure(job: ['engine' => $engine, 'templateId' => $templateId], e: $e);
+		}
+
+		return $this->toComposition(result: (array)$result, templateId: $templateId);
+	}//end render()
+
+	/**
+	 * Resolve filinq's DocumentService, refusing when filinq is absent.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver over the
-	 *      app-id and namespace rename map; injecting it would add a dependency to say
-	 *      the same thing.
+	 * @return object The DocumentService.
+	 *
+	 * @throws RuntimeException When filinq's DocumentService cannot be resolved.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	public function render(string $templateId, array $context): array {
+	private function filinqDocumentService(): object {
 		$documentService = FleetAppId::getService($this->container, 'filinq', self::DOCUMENT_SERVICE);
 		if ($documentService === null) {
 			throw new RuntimeException(
@@ -146,6 +175,19 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 		}
 
+		return $documentService;
+	}//end filinqDocumentService()
+
+	/**
+	 * The acting Nextcloud user, refusing when nobody is acting.
+	 *
+	 * @return IUser The acting user.
+	 *
+	 * @throws RuntimeException When no user is acting.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function actingUser(): IUser {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			// Filinq refuses to store a generated document without an owning
@@ -154,31 +196,62 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			throw new RuntimeException('user_required: a beschikking render must run as a Nextcloud user');
 		}
 
-		$caseId = (string)($context['caseId'] ?? '');
+		return $user;
+	}//end actingUser()
 
-		try {
-			$result = $documentService->generateDocument(
-				$templateId,
-				$this->buildDataRefs(caseId: $caseId),
-				[
-					'format' => 'pdf',
-					'adHocData' => $context,
-					'userId' => $user->getUID(),
-					'caseId' => $caseId,
-					'filename' => $this->buildFilename(caseId: $caseId),
-					'output' => ['mode' => 'both'],
-				]
-			);
-		} catch (Throwable $e) {
+	/**
+	 * The options filinq's generateDocument() receives for a beschikking render.
+	 *
+	 * @param array<string, mixed> $context The zaakdata + beschikking context.
+	 * @param array{user: IUser, caseId: string, engine: string} $job The acting user, the case id and the engine
+	 *                                                                the case type names for the template.
+	 *
+	 * @return array<string, mixed> The render options.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function renderOptions(array $context, array $job): array {
+		return [
+			'format' => 'pdf',
+			'adHocData' => $context,
+			'userId' => $job['user']->getUID(),
+			'caseId' => $job['caseId'],
+			'filename' => $this->buildFilename(caseId: $job['caseId']),
+			'output' => ['mode' => 'both'],
+			'engine' => $job['engine'],
+		];
+	}//end renderOptions()
+
+	/**
+	 * Log a refused render and build the exception that reports it.
+	 *
+	 * A vendor render names the vendor; a filinq render carries filinq's message.
+	 *
+	 * @param array{engine: string, templateId: string} $job The engine the render went to and the filinq template UUID.
+	 * @param Throwable $e The render failure.
+	 *
+	 * @return RuntimeException The exception to throw.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.2
+	 */
+	private function renderFailure(array $job, Throwable $e): RuntimeException {
+		['engine' => $engine, 'templateId' => $templateId] = $job;
+		$vendor = DecisionTemplateEngine::vendorSlugOf(engine: $engine);
+		if ($vendor !== null) {
 			$this->logger->error(
-				'Filinq refused a beschikking render',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				'A document vendor refused a beschikking render',
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'source' => $vendor, 'exception' => $e->getMessage()]
 			);
-			throw new RuntimeException('filinq_render_failed: ' . $e->getMessage(), 0, $e);
+			return new RuntimeException(DecisionTemplateEngine::vendorName(slug: $vendor) . ' is niet bereikbaar', 0, $e);
 		}
 
-		return $this->toComposition(result: (array)$result, templateId: $templateId);
-	}//end render()
+		$this->logger->error(
+			'Filinq refused a beschikking render',
+			['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+		);
+		return new RuntimeException('filinq_render_failed: ' . $e->getMessage(), 0, $e);
+	}//end renderFailure()
 
 	/**
 	 * Resolve the template version effective on a given date.
@@ -220,12 +293,6 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @throws RuntimeException When filinq is absent, does not know the template,
 	 *                          or holds no version for it.
 	 *
-	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedAssignment filinq is an optional cross-app dependency.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver.
-	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function resolveVersion(string $templateId, string $effectiveDate): array {
@@ -236,16 +303,54 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 		}
 
+		$template = $this->fetchTemplate(templateService: $templateService, templateId: $templateId);
+
+		return [
+			'templateId' => $templateId,
+			'version' => $this->effectiveVersion(asked: ['templateId' => $templateId, 'effectiveDate' => $effectiveDate], template: $template),
+			'effectiveDate' => $effectiveDate,
+		];
+	}//end resolveVersion()
+
+	/**
+	 * Fetch a template from filinq, refusing a template filinq does not know.
+	 *
+	 * @param object $templateService Filinq's TemplateService.
+	 * @param string $templateId The filinq template UUID.
+	 *
+	 * @return array<string, mixed> The template.
+	 *
+	 * @throws RuntimeException When filinq does not know the template.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function fetchTemplate(object $templateService, string $templateId): array {
 		try {
-			$template = (array)$templateService->getTemplate($templateId);
+			return (array)$templateService->getTemplate($templateId);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Filinq does not know the beschikking template',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('filinq_template_unknown: ' . $templateId, 0, $e);
 		}
+	}//end fetchTemplate()
 
+	/**
+	 * The version in force on the date, else the template's own version.
+	 *
+	 * @param array{templateId: string, effectiveDate: string} $asked The filinq template UUID and the ISO date the
+	 *                                                               beschikking is effective.
+	 * @param array<string, mixed> $template The template as filinq returns it.
+	 *
+	 * @return string The resolved version.
+	 *
+	 * @throws RuntimeException When filinq holds no version for the template.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function effectiveVersion(array $asked, array $template): string {
+		['templateId' => $templateId, 'effectiveDate' => $effectiveDate] = $asked;
 		$version = $this->versionInForce(templateId: $templateId, effectiveDate: $effectiveDate);
 		if ($version === null) {
 			$version = $this->templateOwnVersion(template: $template);
@@ -257,12 +362,8 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			);
 		}
 
-		return [
-			'templateId' => $templateId,
-			'version' => $version,
-			'effectiveDate' => $effectiveDate,
-		];
-	}//end resolveVersion()
+		return $version;
+	}//end effectiveVersion()
 
 	/**
 	 * The highest chain version created on or before the effective date.
@@ -276,12 +377,6 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 *
 	 * @return string|null The version, as `v<n>`, or null when the chain
 	 *                     answers nothing for that date.
-	 *
-	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedAssignment filinq is an optional cross-app dependency.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver.
 	 */
 	private function versionInForce(string $templateId, string $effectiveDate): ?string {
 		$versionService = FleetAppId::getService($this->container, 'filinq', self::TEMPLATE_VERSION_SERVICE);
@@ -299,18 +394,30 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Filinq could not list the versions of a beschikking template',
-				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
 
+		return $this->versionTag(page: $page, cutoff: $cutoff);
+	}//end versionInForce()
+
+	/**
+	 * The tag of the highest version on the page that was in force at the cutoff.
+	 *
+	 * @param array $page   The page of template versions.
+	 * @param int   $cutoff The end of the effective date, as a timestamp.
+	 *
+	 * @return string|null The version tag, or null when none was in force.
+	 */
+	private function versionTag(array $page, int $cutoff): ?string {
 		$highest = $this->highestVersionAtOrBefore(rows: (array)($page['results'] ?? []), cutoff: $cutoff);
 		if ($highest === null) {
 			return null;
 		}
 
 		return 'v' . $highest;
-	}//end versionInForce()
+	}//end versionTag()
 
 	/**
 	 * The highest version number among the chain rows at or before a moment.
@@ -386,7 +493,7 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		if ($register === '' || $schema === '') {
 			$this->logger->warning(
 				'Rendering a beschikking without the case object: register or case_schema is unset',
-				['app' => Application::APP_ID, 'caseId' => $caseId]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId]
 			);
 			return [];
 		}

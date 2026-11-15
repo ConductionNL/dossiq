@@ -1,0 +1,59 @@
+<?php
+
+// Fixture for ServiceCatchReturnsNullTest: four shapes that are NOT the one
+// under measurement. Each of these was a false positive somewhere in the
+// fleet, so each is here to stay a non-finding.
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Fixtures;
+
+class HonestService {
+	/**
+	 * A docblock may describe the anti-pattern without becoming one:
+	 * catch (\Throwable $e) { return null; }
+	 */
+	public function rethrows(string $id): array {
+		try {
+			return $this->store->find($id);
+		} catch (\Throwable $e) {
+			throw new \RuntimeException('store_unreadable', 0, $e);
+		}
+	}
+
+	public function quotesThePattern(): string {
+		$prose = 'catch (\Throwable $e) { return null; }';
+		return $prose;
+	}
+
+	public function returnsAValue(): array {
+		try {
+			return $this->store->all();
+		} catch (\Throwable $e) {
+			return ['error' => true];
+		}
+	}
+
+	public function returnsNullOnlyUnderACondition(string $id): ?array {
+		try {
+			return $this->store->find($id);
+		} catch (\Throwable $e) {
+			if ($this->isMissing($e) === true) {
+				return null;
+			}
+
+			throw $e;
+		}
+	}
+
+	public function answersLate(string $id): ?array {
+		try {
+			return $this->store->find($id);
+		} catch (\Throwable $e) {
+			$this->logger->warning('one');
+			$this->logger->warning('two');
+			$this->logger->warning('three');
+			return null;
+		}
+	}
+}

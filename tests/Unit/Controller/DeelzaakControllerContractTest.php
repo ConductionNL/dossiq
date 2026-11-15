@@ -141,6 +141,82 @@ class DeelzaakControllerContractTest extends TestCase {
 	}//end withRequestParams()
 
 	/**
+	 * create() refuses a caller without read access to the named parent, and
+	 * derives nothing.
+	 *
+	 * The guard is load-bearing twice here. Without it the endpoint hangs an
+	 * arbitrary case off an arbitrary parent AND copies that parent's
+	 * confidentiality and handler onto it, so the refusal is a disclosure
+	 * control and not only an existence oracle.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	public function testCreateRefusesACallerWithoutReadAccessToTheParent(): void {
+		$this->signIn();
+		$this->withRequestParams([
+			'parentCaseUuid' => 'parent-1',
+			'childCaseTypeId' => 'ct-deelzaak',
+			'object' => ['title' => 'Deelzaak'],
+		]);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(false);
+		$this->deelzaakService->expects($this->never())->method('createSubCase');
+
+		$response = $this->controller->create();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testCreateRefusesACallerWithoutReadAccessToTheParent()
+
+	/**
+	 * create() answers 201 with the derived case and what it inherited.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	public function testCreateAnswers201WithTheDerivedCase(): void {
+		$this->signIn();
+		$this->withRequestParams([
+			'parentCaseUuid' => 'parent-1',
+			'childCaseTypeId' => 'ct-deelzaak',
+			'object' => ['title' => 'Deelzaak'],
+		]);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+		$this->deelzaakService->method('createSubCase')->willReturn(
+			[
+				'ok' => true,
+				'object' => ['id' => 'child-1', 'confidentiality' => 'zaakvertrouwelijk'],
+				'inherited' => ['confidentiality' => ['property' => 'confidentiality', 'value' => 'zaakvertrouwelijk']],
+				'inheritanceApplied' => true,
+			]
+		);
+
+		$response = $this->controller->create();
+		$body = $response->getData();
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame('child-1', $body['object']['id']);
+		$this->assertTrue($body['inheritanceApplied']);
+		$this->assertSame('zaakvertrouwelijk', $body['inherited']['confidentiality']['value']);
+	}//end testCreateAnswers201WithTheDerivedCase()
+
+	/**
+	 * create() refuses a body that names no parent, no type or no object.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	public function testCreateRefusesAnIncompleteBodyWith400(): void {
+		$this->signIn();
+		$this->withRequestParams(['parentCaseUuid' => 'parent-1']);
+		$this->deelzaakService->expects($this->never())->method('createSubCase');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->controller->create()->getStatus());
+	}//end testCreateRefusesAnIncompleteBodyWith400()
+
+	/**
 	 * Both endpoints refuse an anonymous caller with 401 and read nothing.
 	 *
 	 * @return void

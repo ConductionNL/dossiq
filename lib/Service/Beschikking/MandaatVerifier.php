@@ -36,7 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectSearch;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -83,42 +85,86 @@ class MandaatVerifier {
 		string $decisionType,
 		string $caseType,
 	): bool {
+		$asked = ['level' => $level, 'decisionType' => $decisionType, 'caseType' => $caseType];
 		foreach ((array)($regeling['mandateGroups'] ?? []) as $groep) {
-			if ((string)($groep['level'] ?? '') !== $level) {
+			if ($this->groupMatches(groep: $groep, asked: $asked) === false) {
 				continue;
 			}
 
-			$caseTypes = (array)($groep['caseTypes'] ?? []);
-			if (empty($caseTypes) === false && in_array($caseType, $caseTypes, true) === false) {
-				continue;
-			}
-
-			$types = (array)($groep['decisionTypes'] ?? []);
-			if (empty($types) === false && in_array($decisionType, $types, true) === false) {
-				continue;
-			}
-
-			$limit = ($groep['to_amount'] ?? null);
-			if ($limit === null) {
+			if ($this->withinLimit(groep: $groep, amount: $amount) === true) {
 				return true;
 			}
-
-			if ($amount <= (float)$limit) {
-				return true;
-			}
-		}//end foreach
+		}
 
 		return false;
 	}//end verifyMandaat()
+
+	/**
+	 * Whether a mandate group is for this level, case type and decision type.
+	 *
+	 * @param mixed                                                    $groep The mandate group.
+	 * @param array{level: string, decisionType: string, caseType: string} $asked The proposed approver level, the decision type and the case type.
+	 *
+	 * @return bool True when the group applies.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function groupMatches(mixed $groep, array $asked): bool {
+		if ((string)($groep['level'] ?? '') !== $asked['level']) {
+			return false;
+		}
+
+		if ($this->listAllows(list: (array)($groep['caseTypes'] ?? []), value: $asked['caseType']) === false) {
+			return false;
+		}
+
+		return $this->listAllows(list: (array)($groep['decisionTypes'] ?? []), value: $asked['decisionType']);
+	}//end groupMatches()
+
+	/**
+	 * Whether a group's list allows a value: an empty list allows every value.
+	 *
+	 * @param array<mixed> $list  The group's list.
+	 * @param string       $value The value asked about.
+	 *
+	 * @return bool True when the list is empty or holds the value.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function listAllows(array $list, string $value): bool {
+		return (empty($list) === true || in_array($value, $list, true) === true);
+	}//end listAllows()
+
+	/**
+	 * Whether an amount stays within a group's limit; a group without a limit has none.
+	 *
+	 * @param mixed $groep  The mandate group.
+	 * @param float $amount The decision bedrag.
+	 *
+	 * @return bool True when the amount is covered.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function withinLimit(mixed $groep, float $amount): bool {
+		$limit = ($groep['to_amount'] ?? null);
+		if ($limit === null) {
+			return true;
+		}
+
+		return ($amount <= (float)$limit);
+	}//end withinLimit()
 
 	/**
 	 * Resolve the mandaatRegeling applicable to a zaaktype.
 	 *
 	 * @param string $caseType The case type slug.
 	 *
-	 * @return array<string, mixed>
+	 * @return array<string, mixed> The regeling, or an empty array when the case type has none.
+	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function resolveMandaatRegeling(string $caseType): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -132,18 +178,61 @@ class MandaatVerifier {
 			return [];
 		}
 
+		$regelingen = $this->allRegelingen(
+			search: new ObjectSearch(objectService: $objectService, register: $register, schema: $schema, filters: [], scope: [])
+		);
+
+		return $this->regelingFor(regelingen: $regelingen, caseType: $caseType);
+	}//end resolveMandaatRegeling()
+
+	/**
+	 * Every mandaatRegeling in the register.
+	 *
+	 * @param ObjectSearch $search The OpenRegister ObjectService, the register id and the mandaatRegeling schema id.
+	 *
+	 * @return array<int, array<string, mixed>> The regelingen.
+	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
+	 */
+	private function allRegelingen(ObjectSearch $search): array {
 		try {
 			$regelingen = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: []
+				objectService: $search->objectService,
+				register: $search->register,
+				schema: $search->schema,
+				filters: $search->filters
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error('BeschikkingService: resolveMandaatRegeling failed', ['exception' => $e->getMessage()]);
-			return [];
-		}
+			// An empty regeling here reached the approver as "insufficient
+			// mandate", which names the person. The register being unreadable
+			// is not a fact about the person.
+			throw new RefusedException(
+				rule: 'mandaat-regeling-unreadable',
+				sentence: 'The mandate scheme could not be read, so this approval cannot be checked right now.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}//end try
 
+		return $regelingen;
+	}//end allRegelingen()
+
+	/**
+	 * The first regeling with a mandate group for the case type; any regeling with a group when no case type is given.
+	 *
+	 * @param array<int, array<string, mixed>> $regelingen The regelingen.
+	 * @param string                           $caseType   The case type slug.
+	 *
+	 * @return array<string, mixed> The regeling, or an empty array when none applies.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
+	 */
+	private function regelingFor(array $regelingen, string $caseType): array {
 		foreach ((array)$regelingen as $regeling) {
 			$arr = $this->toArray(value: $regeling);
 			foreach ((array)($arr['mandateGroups'] ?? []) as $groep) {
@@ -155,7 +244,7 @@ class MandaatVerifier {
 		}
 
 		return [];
-	}//end resolveMandaatRegeling()
+	}//end regelingFor()
 
 	/**
 	 * Resolve the highest niveau a user is authorised for, verifying the mandaat.
@@ -209,17 +298,6 @@ class MandaatVerifier {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $value) ?? []);
 	}//end toArray()
 }//end class

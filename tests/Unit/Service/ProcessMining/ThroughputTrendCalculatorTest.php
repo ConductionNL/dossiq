@@ -31,12 +31,16 @@ namespace OCA\Dossiq\Tests\Unit\Service\ProcessMining;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ThroughputTrendCalculatorTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	private ThroughputTrendCalculator $calculator;
 
@@ -44,7 +48,7 @@ class ThroughputTrendCalculatorTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->calculator = new ThroughputTrendCalculator();
+		$this->calculator = new ThroughputTrendCalculator(dates: $this->caseDates());
 
 	}//end setUp()
 
@@ -200,4 +204,23 @@ class ThroughputTrendCalculatorTest extends TestCase {
 
 	}//end testSingleDayPeriodYieldsOneBucket()
 
+	/**
+	 * A closure inside the period that falls in an ISO week before the first
+	 * seeded one, because the period starts in a zone ahead of the tenant's,
+	 * is counted into its own week rather than dropped.
+	 *
+	 * @return void
+	 */
+	public function testAClosureBeforeTheFirstSeededWeekGetsItsOwnBucket(): void {
+		$trend = $this->calculator->computeThroughputTrend(
+			cases: [['endDate' => '2026-03-01T21:00:00+01:00']],
+			from: new DateTimeImmutable('2026-03-02T00:30:00+05:00'),
+			to: new DateTimeImmutable('2026-03-08T00:00:00+05:00'),
+		);
+
+		self::assertSame(
+			expected: [['week' => '2026-W09', 'count' => 1], ['week' => '2026-W10', 'count' => 0]],
+			actual: $trend
+		);
+	}//end testAClosureBeforeTheFirstSeededWeekGetsItsOwnBucket()
 }//end class

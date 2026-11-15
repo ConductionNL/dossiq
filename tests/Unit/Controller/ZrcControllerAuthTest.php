@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\Dossiq\Controller\ZrcController;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseRelationService;
@@ -35,6 +36,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -44,8 +46,11 @@ use PHPUnit\Framework\TestCase;
  * validation now enforces authentication.
  *
  * @covers \OCA\Dossiq\Controller\ZrcController
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ZrcControllerAuthTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The mocked request.
@@ -112,12 +117,11 @@ class ZrcControllerAuthTest extends TestCase {
 		);
 
 		$this->controller = new ZrcController(
-			appName: 'dossiq',
 			request: $this->request,
 			zgwService: $this->zgwService,
 			l10n: $this->l10n,
 			caseRelationService: $this->caseRelationService,
-			archivalDeriver: $this->createMock(ArchivalNominationDeriver::class),
+			statusEffects: $this->createMock(ZrcStatusEffects::class),
 			joinHoming: $this->createMock(originalClassName: DocumentJoinHoming::class),
 		);
 	}//end setUp()

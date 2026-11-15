@@ -30,6 +30,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { randomInt } from 'node:crypto'
 import { OWNS_INSTANCE, SHARED_INSTANCE_FLAG } from '../base-url.ts'
 import { occPurge } from './occ.ts'
 import { isStaleResidue, residueMinAgeMs, sweepsAllResidue } from './residue.ts'
@@ -51,7 +52,7 @@ export const FIXTURE_PREFIX = 'E2EZAAK-'
  * field so list/detail assertions and afterAll cleanup can target exactly
  * the rows this run created (never another run's or real demo data).
  */
-export const RUN_PREFIX = `${FIXTURE_PREFIX}${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`
+export const RUN_PREFIX = `${FIXTURE_PREFIX}${Date.now().toString(36)}-${randomInt(1e4)}`
 
 /**
  * Every object id this run created, by schema. THE delete key for teardown.
@@ -170,6 +171,11 @@ export const FIXTURE_SCHEMAS = [
 	// it stops declaring. They are orphan rows under an orphan schema and
 	// removing them is an administrative act, not a test fixture's job.
 	'contactmoment',
+	// One intake log entry names the case a message became, so it goes before
+	// `case` like every other child. An entry also holds the ORIGINAL of a
+	// message, which is why a run that leaves one behind is worse than an
+	// orphan row: it is somebody's mail sitting in a log a person can read.
+	'mailIntakeEntry',
 	// The things a case is about. Before `case` for the same reason every
 	// other child is: `case` is on a CASCADE, so a case removed first takes
 	// its objects with it and the sweep then reports rows it cannot find.
@@ -181,8 +187,32 @@ export const FIXTURE_SCHEMAS = [
 	'informatieobjecttype',
 	'consultation',
 	'objectionProceeding',
+	// The family plan, child-first: an intervention names its goal AND its
+	// plan, a goal names its plan, and the plan names its Jeugdwet case
+	// (the-social-domain-plan-and-its-grounds).
+	//
+	// 🔴 `sociaalDomeinAuditLog` IS DELIBERATELY ABSENT. The schema says in as
+	// many words that it is append-only and never mutated: it is what a
+	// subject access request reads, and a suite that deletes from it teaches
+	// everyone that entries can be removed. The rows an e2e run leaves there
+	// name a documented test BSN and no real person, which is the whole reason
+	// the fixture uses one.
+	'intervention',
+	'casePlanGoal',
+	'gezinsplan',
+	'jeugdwetZaak',
 	// A role points at a case AND at a role type, so it goes before both.
 	'role',
+	// The chain of holdings, the takeover request and the consent all name the
+	// case, so all three go before it for the same reason every other child
+	// does: `case` is on a CASCADE, and a case removed first takes them with it
+	// and the sweep then reports rows it cannot find.
+	'caseCustody',
+	'caseTakeover',
+	// A consent is somebody's recorded permission to disclose their file, so a
+	// run that leaves one behind is worse than an orphan row: it is a standing
+	// authorisation nobody granted.
+	'toestemming',
 	'case',
 	'roleType',
 	// The team a case names. After `case` for the same reason `caseType` is:
@@ -595,10 +625,164 @@ export async function adoptableCaseTypes(api: APIRequestContext): Promise<any[]>
 }
 
 /**
+ * The Nextcloud groups this run created as teams, so teardown removes them.
+ */
+const teamsCreated: string[] = []
+
+/**
+ * Seed one team and return the group id `case.assignedGroup` holds.
+ *
+ * A TEAM IS A NEXTCLOUD GROUP (one-team-model). `case.assignedGroup` used to
+ * be a `$ref` to an `organisatieRol` row, and this fixture seeded one of those
+ * to satisfy the uuid format, while the custody chain and the handover asked
+ * Nextcloud who was in the team: a uuid nobody could be a member of. It now
+ * creates a group, tagged with RUN_PREFIX, and `removeTeams` deletes them.
+ *
+ * The group id is lower case and carries no spaces, so it reads the same in
+ * a URL, a filter and a column.
+ *
+ * @param api        Authenticated request context (an administrator).
+ * @param token      CSRF request-token, unused: OCS takes the OCS header.
+ * @param department The department the team belongs to, in words.
+ * @return The group id and the display name it shows under.
+ */
+export async function ensureTeam(
+	api: APIRequestContext,
+	token: string,
+	department: string,
+): Promise<{ id: string; name: string }> {
+	void token
+	const id = `${RUN_PREFIX}-${department}`
+		.toLowerCase()
+		.replace(/[^a-z0-9_.-]+/g, '-')
+	const name = `${RUN_PREFIX} ${department}`
+	const created = await api.post('/ocs/v2.php/cloud/groups?format=json', {
+		headers: { 'OCS-APIRequest': 'true' },
+		form: { groupid: id, displayname: name },
+	})
+	const status = Number(
+		(await created.json().catch(() => ({})))?.ocs?.meta?.statuscode ?? -1,
+	)
+	// 200 is created, 102 is "group exists", which a retry of beforeAll meets.
+	if (status !== 200 && status !== 102) {
+		throw new Error(
+			`ensureTeam: creating group ${id} answered OCS status ${status}`,
+		)
+	}
+	teamsCreated.push(id)
+
+	return { id, name }
+}
+
+/**
+ * Delete the groups `ensureTeam` created in this process.
+ *
+ * @param api Authenticated request context (an administrator).
+ * @return Nothing.
+ */
+export async function removeTeams(api: APIRequestContext): Promise<void> {
+	while (teamsCreated.length > 0) {
+		const id = teamsCreated.pop() as string
+		await api
+			.delete(
+				`/ocs/v2.php/cloud/groups/${encodeURIComponent(id)}?format=json`,
+				{
+					headers: { 'OCS-APIRequest': 'true' },
+				},
+			)
+			.catch(() => undefined)
+	}
+}
+
+/** The informatieobjecttype this process files its documents under. */
+let documentTypeForRun = ''
+
+/**
+ * File an informatieobject that satisfies its schema.
+ *
+ * `informatieobject` requires title, fileName, vertrouwelijkheidaanduiding
+ * and informatieobjecttype (lib/Settings/register.d/70-document-zaakdossier.json,
+ * since 96aa93a23; `titel` became `title` in f3ca3f782). A spec that filed a
+ * bare `{ titel }` was refused in its setup and never reached the behaviour it
+ * was written for, so the required fields are supplied here once. The type is
+ * created on first use and tracked like every other fixture.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param fields The document fields the spec cares about, `title` included.
+ * @return The created informatieobject.
+ */
+export async function seedDocument(
+	api: APIRequestContext,
+	token: string,
+	fields: Record<string, unknown> & { title: string },
+): Promise<any> {
+	if (documentTypeForRun === '') {
+		const type = await createObject(api, token, 'informatieobjecttype', {
+			description: `${RUN_PREFIX} Document`,
+			informatieobjectcategorie: 'incoming',
+			vertrouwelijkheidaanduiding: 'openbaar',
+		})
+		documentTypeForRun = objectId(type)
+	}
+	return createObject(api, token, 'informatieobject', {
+		fileName: `${String(fields.title).replace(/[^\w-]+/g, '-')}.pdf`,
+		vertrouwelijkheidaanduiding: 'openbaar',
+		informatieobjecttype: documentTypeForRun,
+		...fields,
+	})
+}
+
+/**
+ * A published case type of this run that allows its term to be suspended.
+ *
+ * A pause on a term is refused unless the case's type sets
+ * `suspensionAllowed: true` (CaseLifecycleService::suspend since 0f0d36c61,
+ * DeadlinePauseService::assertSuspensionAllowed since 78ea5bbf8). A spec that
+ * pauses a term on whatever `ensureCaseType` adopts gets
+ * `suspension_not_allowed` whenever the adopted type does not allow it, which
+ * is most shipped types, so the pause is the spec's own fixture to make.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @return The case type id.
+ */
+export async function seedSuspendableCaseType(
+	api: APIRequestContext,
+	token: string,
+): Promise<string> {
+	const suffix = nextFixtureSuffix()
+	const caseType = await createObject(api, token, 'caseType', {
+		title: `${RUN_PREFIX} Opschortbaar ${suffix}`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-opschortbaar-${suffix}`,
+		description: 'Throwaway caseType whose term may be suspended.',
+		isDraft: false,
+		suspensionAllowed: true,
+	})
+	return objectId(caseType)
+}
+
+/**
  * Discover an existing caseType to attach seeded cases to. The `case` schema
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
  * the transition engine. If none exists we seed a throwaway one tagged with
  * RUN_PREFIX so cleanup removes it.
+ *
+ * 🔴 `identifier` IS PART OF THE RETURN, and it was missing.
+ * `case.caseType` wants the uuid, so `id` was all most callers needed. But
+ * `deadlineDefinition.caseType` is declared a plain SLUG string ("Zaaktype
+ * slug this definition binds to"), and the two specs that write one reached
+ * for `caseType.slug ?? caseType.identifier ?? ''` on a return value that
+ * declared neither. Both terms were `undefined`, so both specs sent the empty
+ * string and OpenRegister answered
+ * `400 The required property (caseType) is missing` in `beforeAll`. Nothing
+ * caught it, because nothing type-checked the suite; `npm run check:types-e2e`
+ * now does, and reports it as "Property 'slug' does not exist".
+ *
+ * The fallback is the object id rather than the empty string. An adopted case
+ * type that carries no identifier still has a stable, unique key to bind a
+ * definition to, and a binding key that cannot be empty is the property the
+ * old expression lacked.
  *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
@@ -606,22 +790,30 @@ export async function adoptableCaseTypes(api: APIRequestContext): Promise<any[]>
 export async function ensureCaseType(
 	api: APIRequestContext,
 	token: string,
-): Promise<{ id: string; name: string; seeded: boolean }> {
+): Promise<{
+	id: string
+	name: string
+	identifier: string
+	seeded: boolean
+}> {
 	const existing = await adoptableCaseTypes(api)
 	if (existing.length > 0) {
 		const ct = existing[0]
+		const id = objectId(ct)
 		return {
-			id: objectId(ct),
+			id,
 			name: String(ct.title ?? ct.name ?? 'caseType'),
+			identifier: String(ct.identifier ?? ct.slug ?? id),
 			seeded: false,
 		}
 	}
 	// Live caseType schema requires `title` (+ identifier), not `name`.
 	const suffix = nextFixtureSuffix()
 	const name = `${RUN_PREFIX} CaseType ${suffix}`
+	const identifier = `${RUN_PREFIX.toLowerCase()}-casetype-${suffix}`
 	const ct = await createObject(api, token, 'caseType', {
 		title: name,
-		identifier: `${RUN_PREFIX.toLowerCase()}-casetype-${suffix}`,
+		identifier,
 		description: 'Throwaway caseType seeded by the dossiq deep e2e layer.',
 		// PUBLISHED, NOT DRAFT. `case.caseType` carries
 		// `x-relation-filter: {isDraft: false}` and the caseType schema defaults
@@ -629,7 +821,7 @@ export async function ensureCaseType(
 		// appears in the New case picker.
 		isDraft: false,
 	})
-	return { id: objectId(ct), name, seeded: true }
+	return { id: objectId(ct), name, identifier, seeded: true }
 }
 
 /**
@@ -645,8 +837,14 @@ export async function seedCase(
 	fields: Record<string, unknown> & { title: string; caseType: string },
 ): Promise<any> {
 	return createObject(api, token, 'case', {
-		identifier: `${RUN_PREFIX}-${Math.floor(Math.random() * 1e4)}`,
-		priority: 'normal',
+		identifier: `${RUN_PREFIX}-${randomInt(1e4)}`,
+		// THE TWO FACTS, NOT THE DERIVED VALUE. `case.priority` is derived from
+		// impact and urgency on every save, so a fixture that seeded a priority
+		// directly would have it silently replaced and would stop meaning
+		// anything. medium + medium derives `normal`, which is what this seeded
+		// before. See openspec/changes/case-priority-impact-urgency.
+		impact: 'medium',
+		urgency: 'medium',
 		intakeChannel: 'manual',
 		...fields,
 	})
@@ -742,6 +940,15 @@ export async function seedStateMachine(
 	const statusReceived = add('statusType', r)
 	const statusInProgress = add('statusType', p)
 	const statusDone = add('statusType', d)
+
+	// A case type names the status a new case starts in. Publishing refuses
+	// one that does not ("Pick the status a new case of this type starts in.",
+	// PublicationChecks::initialStatusIsOwn, a3be5d41a), so a machine seeded
+	// without it can never be published, and every spec that publishes this
+	// fixture failed in its setup rather than on its own assertion.
+	await updateObject(api, token, 'caseType', caseTypeId, {
+		initialStatus: statusReceived,
+	})
 
 	const transitions = [
 		{
@@ -896,6 +1103,8 @@ export interface FlowTaskSeed {
 	dueAt?: string
 	/** low | normal | high | urgent. */
 	priority?: string
+	/** What sort of work this is, e.g. `reminder`. Indexed and filterable. */
+	kind?: string
 	/** The uids that may claim an unassigned task, i.e. its pool. */
 	candidateUsers?: string[]
 	/** The group ids that may claim an unassigned task. */

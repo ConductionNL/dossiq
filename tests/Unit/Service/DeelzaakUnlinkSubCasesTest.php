@@ -29,11 +29,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
+use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\DeelzaakService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for DeelzaakService::unlinkSubCases().
@@ -59,6 +61,10 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\DeelzaakService
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
+ * @uses   \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
+ * @uses   \OCA\Dossiq\Service\Deelzaak\SubCaseStore
+ * @uses   \OCA\Dossiq\Service\Deelzaak\SubCaseLink
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class DeelzaakUnlinkSubCasesTest extends TestCase {
 
@@ -174,7 +180,9 @@ class DeelzaakUnlinkSubCasesTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = ''): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
 				$this->saveCalls++;
 				$id = (string)($object['id'] ?? '');
 				if (in_array($id, $this->failIds, true) === true) {
@@ -201,6 +209,10 @@ class DeelzaakUnlinkSubCasesTest extends TestCase {
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 			caseReader: new CaseObjectReader(
+				settingsService: $this->settingsService,
+				logger: $this->logger,
+			),
+			deriver: new SubCaseDeriver(
 				settingsService: $this->settingsService,
 				logger: $this->logger,
 			),
@@ -308,6 +320,10 @@ class DeelzaakUnlinkSubCasesTest extends TestCase {
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 			caseReader: new CaseObjectReader(
+				settingsService: $this->settingsService,
+				logger: $this->logger,
+			),
+			deriver: new SubCaseDeriver(
 				settingsService: $this->settingsService,
 				logger: $this->logger,
 			),

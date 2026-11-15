@@ -79,7 +79,7 @@ describe('the caseObject schema', () => {
 		// OpenRegister compares the incoming schema's `version` with the stored
 		// one and skips the whole schema when they are equal. A property added
 		// at the old version is inert on every existing instance.
-		expect(caseObject().version).toBe('1.1.0')
+		expect(caseObject().version).toBe('1.2.0')
 	})
 
 	it('still requires the case and the object type', () => {
@@ -129,27 +129,33 @@ describe('the Objects tab on the case page', () => {
 		expect(caseWidget('case-objects').type).toBe('object-list')
 	})
 
-	it('shows the object type, identification, description and link', () => {
+	it('shows the object, its type and status, the identification, description and link', () => {
 		expect(columnKeys(caseWidget('case-objects'))).toEqual([
+			'objectTitle',
 			'objectType',
+			'objectStatus',
 			'objectIdentification',
 			'description',
 			'objectUrl',
 		])
 	})
 
-	it('names every column against a property the schema declares', () => {
+	it('names every column against a property or a lens the schema declares', () => {
+		// A column key that is neither is a column of em-dashes on every row,
+		// which is what a mistyped lens name looks like: the widget asks the
+		// row for a key nothing puts there and renders nothing, silently.
+		const lenses = caseObject().configuration['x-openregister-lenses']
 		for (const key of columnKeys(caseWidget('case-objects'))) {
 			expect(
-				caseObject().properties[key],
-				`caseObject has no property ${key}`,
+				caseObject().properties[key] || lenses[key],
+				`caseObject has neither a property nor a lens named ${key}`,
 			).toBeDefined()
 		}
 	})
 
-	it('sorts on the object type and carries an empty state', () => {
+	it('sorts on the identification, as board DqZaakGerelateerd lists the objects, and carries an empty state', () => {
 		const w = caseWidget('case-objects')
-		expect(w.content.sort).toEqual({ field: 'objectType', dir: 'asc' })
+		expect(w.content.sort).toEqual({ field: 'objectIdentification', dir: 'asc' })
 		expect(w.content.limit).toBe(25)
 		expect(w.content.emptyText).toBe('No objects linked to this case yet')
 	})
@@ -171,12 +177,20 @@ describe('the Objects tab on the case page', () => {
 		expect(where.tab).toBe('Related')
 		expect(where.label).toBe('Objects')
 
-		// Last of Related's sections, after the cases. The two case collections
-		// are what a handler opens Related for; the objects are the tail.
+		// After the cases. The two case collections are what a handler opens
+		// Related for; the objects are the tail. The one thing behind them is
+		// the Object types card (#2911), which is a link to the register
+		// rather than a collection on this case, so it reads last.
 		const sections = panels
 			.caseWidget('case-related-panel')
 			.content.sections.map((section) => section.widget.id)
-		expect(sections.at(-1)).toBe('case-objects')
+		expect(sections).toEqual([
+			'case-related',
+			'case-programme',
+			'case-sub-cases',
+			'case-objects',
+			'case-object-types-link',
+		])
 
 		// And the tab it came from is gone rather than left standing empty.
 		expect(panelTabs().map((tab) => tab.label)).not.toContain(
@@ -193,8 +207,9 @@ describe('the Objects tab on the case page', () => {
 
 		const map = panels.caseWidget('case-location-map')
 		expect(map, 'the locations map is not on the page').toBeTruthy()
-		expect(map.type).toBe('case-location-map')
-		expect(panels.caseTabOf('case-location-map').tab).toBe('Data')
+		expect(map.type).toBe('map')
+		expect(map.content.markers.dataSource.filter).toEqual({ case: '@objectId' })
+		expect(panels.caseTabOf('case-location-map').tab).toBe('Overview')
 	})
 
 	it('stays out of layout, or the strip would render it twice', () => {
@@ -271,7 +286,7 @@ describe('the Objects index', () => {
 	it('reads the caseObject schema of the dossiq register', () => {
 		expect(page()).toBeDefined()
 		expect(page().type).toBe('index')
-		expect(page().route).toBe('/case-objects')
+		expect(page().route).toBe('/objects')
 		expect(page().config.register).toBe('dossiq')
 		expect(page().config.schema).toBe('caseObject')
 	})

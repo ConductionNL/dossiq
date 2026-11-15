@@ -11,6 +11,7 @@
  * the shapes refer to each other.
  *
  * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+ * @spec openspec/specs/deelzaak-support/spec.md#requirement-parent-case-breadcrumb-navigation
  */
 
 import fs from 'fs'
@@ -65,10 +66,48 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// carries the widgets split off the Dashboard. The number is what makes
 		// this assertion worth anything, so it is raised by exactly the pages
 		// that were added rather than loosened to a range.
-		expect(manifest.pages).toHaveLength(50)
+		// 50 -> 51: `case-recycle-window` adds CasesDeleted, the deleted lens.
+		// It is a page rather than a chip on the case list because the objects
+		// endpoint those chips filter excludes soft-deleted rows by design.
+		// 51 -> 53: `one-personal-queue` (#2842) adds PersonalQueue, the one
+		// list of everything waiting on the reader across four stores, and
+		// EndOfDay, the screen that closes the day against what they opened
+		// in it. Neither is a lens on an existing page: both cross stores no
+		// index page can name.
+		// 53 -> 54: `attribute-catalogue-folders` adds PropertyDefinitions,
+		// the attribute catalogue. It is a page rather than a lens because an
+		// attribute with no case type is shared across every one of them, so
+		// there is no existing index it could be a filter over.
+		// 54 -> 62: eight registers that shipped with stored data and no page
+		// to read it on. `the-two-schemas-holding-personal-data` (#2958) adds
+		// SupplierUsers and AvgIncidents, `the-offline-inspection-schemas`
+		// (#2959) adds FieldEvidence, OfflineSyncQueue and
+		// OfflineSyncConflicts, and `the-last-sociaal-domein-schemas` (#2961)
+		// adds Indicatiestellingen, MdoOverleggen and ReIntegratieTrajecten.
+		// Each is a page and not a lens for the same reason the four above
+		// are: there is no existing index any of them could be a filter over.
+		// 62 -> 64: `woo-refusal-grounds-list` adds WooRefusalGrounds and
+		// WooRefusalGroundDetail, the settings list of the grounds a refusal
+		// cites. A settings register, so a page and not a lens on a case list.
+		// 64 -> 62: `tenancy-onto-openregister-organisation` step 5 retires
+		// Tenants and TenantDetail; a tenant is an OpenRegister organisation.
+		// 62 -> 63: `woo-delivered-set-is-a-record` adds one page.
+		// 63 -> 62: the WorkflowBoard page retires; the board is the Cases list.
+		// 62 -> 63: the redaction page of a case (DqLakken).
+		// 63 -> 62: the CaseMap page retires; the map is the Cases list.
+		// 62 -> 60: `lists-are-views` retires Queue and MyWork; they are views of Cases.
+		// 60 -> 58: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
+		// 58 -> 57: SubstitutionAdmin retires; substitution admin lives in the admin settings.
+		// 57 -> 56: ReIntegratieTrajecten retires; re-integration trajectories are cases, their list a view of Cases.
+		expect(manifest.pages).toHaveLength(56)
+		// Two entries open Cases as a place: the list, and the Werkbord, which is the
+		// same list in its board view (`query: { _view: 'board' }`). The
+		// team queue opens a view of it (`savedView`), which is not a page.
 		expect(
-			manifest.menu.filter((entry) => entry.route === 'Cases'),
-		).toHaveLength(1)
+			manifest.menu
+				.filter((entry) => entry.route === 'Cases' && !entry.query?.savedView)
+				.map((entry) => entry.query?._view ?? ''),
+		).toEqual(['', 'board'])
 	})
 })
 
@@ -97,7 +136,7 @@ describe('CaseDetail — the identity row is three configured tiles and the hour
 	it('has retired the custom band and its slot', () => {
 		expect(widget('case-header')).toBeUndefined()
 		expect(cells('case-header')).toHaveLength(0)
-		expect(caseDetail().slots['widget-case-header']).toBeUndefined()
+		expect((caseDetail().slots || {})['widget-case-header']).toBeUndefined()
 		// The IMPORT and the ENTRY, not the name: the registry keeps a comment
 		// saying the three components went and why, and a bare name match would
 		// read that explanation as the thing it explains.
@@ -223,26 +262,27 @@ describe('CaseDetail — the identity row is three configured tiles and the hour
 	})
 })
 
-describe('CaseDetail — the breadcrumb is gone, deliberately (regression guard)', () => {
-	it('declares no breadcrumb trail on the page or the widget', () => {
-		// The trail's LAST crumb was the case title, rendered one line below the
-		// page header that already printed that title. It read as a repeat
-		// rather than as a location, and it cost the top of the page a row.
-		//
-		// This asserts the ABSENCE because the removal is a decision, not an
-		// oversight: without it, the next reader finds a `_breadcrumbsNote`
-		// explaining a key that is not there and re-adds the key.
+describe('CaseDetail — the trail ends on the case number (REQ-CDV-15)', () => {
+	it('reads All cases / <identifier>, so no crumb repeats the title', () => {
+		expect(caseDetail().config.breadcrumb[0]).toEqual({
+			label: 'All cases',
+			route: 'Cases',
+			currentField: 'identifier',
+			separator: '/',
+		})
 		expect(caseDetail().config.breadcrumbs).toBeUndefined()
-		// The widget half of this guard went with CaseHeaderRow. Nothing on the
-		// page declares a trail now, so assert that across every widget rather
-		// than against one that no longer exists.
-		expect(JSON.stringify(caseDetail().config.widgets)).not.toContain(
-			'breadcrumb',
-		)
 	})
 
-	it('keeps the note that says why, so the removal is not re-litigated', () => {
-		expect(caseDetail().config._breadcrumbsNote).toMatch(/REMOVED/)
+	it('puts a sub-case\'s parent number between the two, as a link to the parent (deelzaak-support)', () => {
+		const parent = caseDetail().config.breadcrumb[1]
+		expect(parent).toEqual({ parent: 'parentCase', labelField: 'identifier', route: 'CaseDetail' })
+		// The crumb reads the context record it names; without the entry it renders nothing.
+		expect(caseDetail().config.visibilityContext[parent.parent]).toEqual({
+			field: 'parentCase',
+			register: 'dossiq',
+			schema: 'case',
+		})
+		expect(caseDetail().config.breadcrumb).toHaveLength(2)
 	})
 })
 
@@ -253,27 +293,24 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 	}
 
 	it('is the work a handler does, in order, and nothing else', () => {
-		// Task 4.1 asked for the work tabs to LEAD the strip, because there were
-		// nine more behind them. There are none behind them now: this is the
-		// whole strip, so what was a prefix assertion is an exact one. Timeline
-		// is deliberately absent: the timeline is the sidebar History tab
-		// (change case-timeline), and a body panel over the same log would be
-		// the duplication that change exists to retire.
-		//
-		// Communication, Email and Besluiten joined on 2026-09-13. The sidebar
-		// lost the three tabs that carried the last two, so the page gained no
-		// surface; `case-core` became a section of `case-data-panel`, which also
-		// holds the locations map.
+		// REQ-CDV-16: the five everyday tabs lead (boards DqZaak), the rest
+		// follow under More (DqZaakMeer). The whole strip, as an exact list.
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-data-panel',
 			'case-files',
+			'case-communication-panel',
+			'case-work-panel',
+			'case-timeline-panel',
 			'case-notes-panel',
 			'case-people-panel',
-			'case-communication-panel',
 			'case-email-panel',
-			'case-work-panel',
 			'case-decisions-panel',
 			'case-related-panel',
+			'case-custody-panel',
+			'case-archival-panel',
+			'case-knowledge-panel',
+			'case-document-review',
+			'case-change-proposals',
 		])
 	})
 
@@ -286,7 +323,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// would leave a shorter strip and a passing count.
 		const stillOnThePage = {
 			'case-sub-cases': 'Related',
-			'case-calendar': 'Work',
+			'case-calendar': 'Tasks',
 			'case-objects': 'Related',
 		}
 		for (const [id, tab] of Object.entries(stillOnThePage)) {
@@ -301,7 +338,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// tab is what makes that a replacement instead of a deletion, so the
 		// map is what gets asserted.
 		expect(panels.caseWidget('case-locaties')).toBeUndefined()
-		expect(panels.caseTabOf('case-location-map')?.tab).toBe('Data')
+		expect(panels.caseTabOf('case-location-map')?.tab).toBe('Overview')
 
 		// `case-decidesk-decisions` is the fourth. It left the body when it
 		// duplicated the Besluitvorming sidebar tab; on 2026-09-13 that

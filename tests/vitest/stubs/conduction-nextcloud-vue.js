@@ -36,6 +36,26 @@ export function createObjectStore(_id, _options) {
 	}
 }
 
+/**
+ * Stand-in for the library's own `useObjectStore` (pinia id
+ * `conduction-objects`).
+ *
+ * 🔴 IT IS NOT dossiq's `src/store/modules/object.js`, WHICH IS A SECOND
+ * STORE UNDER THE ID `object`. CnIndexPage's self-fetch mode reads the
+ * library one, so a surface that wants the Cases list's own loading state or
+ * its last error has to read the same instance. A spec that stubbed dossiq's
+ * store instead would assert against a store the page never wrote to, and
+ * pass.
+ *
+ * A spec overrides the `objectStore` computed on the component under test, so
+ * this only has to satisfy the `import` at module load.
+ *
+ * @return {object} An empty store.
+ */
+export function useObjectStore() {
+	return { collections: {}, errors: {}, loading: {}, facets: {}, pagination: {} }
+}
+
 export const filesPlugin = () => ({})
 export const auditTrailsPlugin = () => ({})
 export const relationsPlugin = () => ({})
@@ -76,6 +96,51 @@ export const CnLifecycleActions = {
 }
 
 /**
+ * Stand-ins for the library components the bulk dialogs, the template
+ * selects and the party kinds editor mount. Each records the props a dossiq
+ * host hands it (rendered as JSON under its own test id), because that hand
+ * over is the part dossiq owns; the components' own behaviour is the
+ * library's and is tested there.
+ *
+ * @param {string} name The component name.
+ * @param {string} testid The test id the stand-in renders under.
+ * @param {Array<string>} props The props it records.
+ * @param {Array<string>} [emits] The events a spec may emit from it.
+ * @return {object} The stand-in.
+ */
+function recordingStub(name, testid, props, emits = []) {
+	return {
+		name,
+		props,
+		emits,
+		render() {
+			const shown = {}
+			props.forEach((key) => {
+				if (typeof this[key] !== 'function') {
+					shown[key] = this[key]
+				}
+			})
+			return h('div', { 'data-testid': testid, 'data-props': JSON.stringify(shown) })
+		},
+	}
+}
+
+export const CnBulkJobProgress = recordingStub('CnBulkJobProgress', 'bulk-job-progress', ['job', 'busy', 'labels', 'source', 'rows'], ['update:job', 'finished'])
+export const CnSelectionScope = recordingStub('CnSelectionScope', 'bulk-selection-scope', ['selectedIds', 'total', 'scope', 'labels'], ['update:scope'])
+export const CnTemplateSelect = recordingStub('CnTemplateSelect', 'cn-template-select', ['schema', 'url', 'params', 'inputLabel', 'placeholder', 'mapOption'], ['apply'])
+export const CnOrderedListField = recordingStub('CnOrderedListField', 'cn-ordered-list-field', ['modelValue', 'options', 'label', 'addLabel', 'emptyText', 'disabled'], ['update:modelValue'])
+export const CnSettingsField = recordingStub('CnSettingsField', 'cn-settings-field', ['field', 'modelValue', 'error', 'hint'], ['update:modelValue'])
+export const CnTransitionInputFields = recordingStub('CnTransitionInputFields', 'cn-transition-input-fields', ['inputs', 'modelValue', 'context', 'columns', 'summary', 'notice', 'disabled', 'markRequired'], ['update:modelValue'])
+export const CnMarkdownEditor = recordingStub('CnMarkdownEditor', 'cn-markdown-editor', ['modelValue', 'mode', 'variableSyntax', 'plainText', 'rows', 'ariaLabel', 'placeholder', 'variables', 'unknownVariableText'], ['update:modelValue'])
+
+// The library's own reading of declared inputs, not a stand-in: whether an
+// act may be confirmed is decided there, and a copy here could only agree
+// with itself.
+export { readTransitionInputs } from '@conduction/nextcloud-vue/src/utils/transitionInputs.js'
+export const CnConditionListEditor = recordingStub('CnConditionListEditor', 'cn-condition-list-editor', ['modelValue', 'fields', 'label', 'emptyText'], ['update:modelValue'])
+export { conditionSentence, operatorsForType } from '@conduction/nextcloud-vue/src/components/CnConditionListEditor/conditionOperators.js'
+
+/**
  * Stand-in for `CnRelatedObjectsWidget`.
  *
  * Only the part a dossiq consumer owns is reproduced: the `extraSections`
@@ -99,6 +164,9 @@ export const CnRelatedObjectsWidget = {
 		register: { type: [String, Object], default: '' },
 		schema: { type: [String, Object], default: '' },
 		store: { type: Object, default: null },
+		// Declared with the library's default so a spec can read what the host
+		// passed: on, the real widget lists every `/uses` and `/used` object.
+		showObjects: { type: Boolean, default: true },
 		extraSections: { type: Array, default: () => [] },
 	},
 	render() {
@@ -200,3 +268,114 @@ export const CnDataTable = {
 		])
 	},
 }
+
+/**
+ * Stand-in for `CnContextMenu`.
+ *
+ * Reproduces the contract a host depends on and nothing else: it renders only
+ * while `open`, draws one button per entry of `actions`, and invokes that
+ * entry's `handler` with `targetItem`. The real component's cursor
+ * positioning, floating-vue popper and panel slots are the library's own and
+ * are not a consumer suite's to check.
+ *
+ * The button carries the action's label, so a spec picks the entry the way a
+ * reader does rather than by index.
+ */
+export const CnContextMenu = {
+	name: 'CnContextMenu',
+	props: {
+		open: { type: Boolean, default: false },
+		actions: { type: Array, default: () => [] },
+		targetItem: { type: [Object, String, Number], default: null },
+	},
+	emits: ['action', 'close', 'update:open'],
+	render() {
+		if (this.open !== true) {
+			return null
+		}
+		return h(
+			'div',
+			{ 'data-testid': 'cn-context-menu' },
+			this.actions.map((action) =>
+				h(
+					'button',
+					{
+						key: action.label,
+						'data-context-action': action.label,
+						onClick: () => {
+							if (typeof action.handler === 'function') {
+								action.handler(this.targetItem)
+							}
+							this.$emit('action', {
+								action: action.label,
+								row: this.targetItem,
+							})
+						},
+					},
+					String(action.label ?? ''),
+				),
+			),
+		)
+	},
+}
+
+/**
+ * Stand-in for CnFactsWidget: one `cn-fact-<key>` row per declared field that
+ * the object carries, with a `list` field joined by ", " and the other values
+ * as they are. The real widget (date formats, links, pills) is tested in
+ * nextcloud-vue; a spec here asserts only WHICH facts the page declares and
+ * that an absent one is dropped.
+ */
+export const CnFactsWidget = {
+	name: 'CnFactsWidget',
+	props: {
+		content: { type: Object, default: () => ({}) },
+		objectData: { type: Object, default: null },
+	},
+	render() {
+		const rows = []
+		for (const field of this.content.fields ?? []) {
+			const raw = (this.objectData ?? {})[field.path]
+			const value = Array.isArray(raw)
+				? raw.join(', ')
+				: String(raw ?? '').trim()
+			if (value === '') continue
+			rows.push(
+				h('div', { 'data-testid': `cn-fact-${field.key}` }, [
+					h('dt', field.label),
+					h('dd', value),
+				]),
+			)
+		}
+		return h('dl', rows)
+	},
+}
+
+/**
+ * `useContextMenu` and `buildManifestRoutes` — RE-EXPORTED FROM THE REAL
+ * PACKAGE, not stubbed.
+ *
+ * Everything above this line stands in for a Vue component the suite cannot
+ * mount. These are different: they are pure JavaScript (the composable over
+ * refs and a couple of CSS custom properties on `<html>`, which jsdom
+ * provides), and `buildManifestRoutes` is the thing
+ * `src/utils/manifestRoutes.js` is tested FOR. A stub of it would make
+ * `routePermissions.spec.js` assert that our own fake emits the split route,
+ * which is a test that cannot fail. The subpath import is not aliased back
+ * here — the alias in `vitest.config.js` matches the bare package name
+ * exactly — so these reach the installed library.
+ */
+export { useContextMenu } from '@conduction/nextcloud-vue/src/composables/useContextMenu.js'
+export {
+	buildManifestRoutes,
+	pageHasSplitView,
+	pageIdForRoute,
+	SPLIT_ROUTE_SUFFIX,
+	splitIdForRoute,
+	splitRouteName,
+	splitRoutePath,
+} from '@conduction/nextcloud-vue/src/utils/buildManifestRoutes.js'
+export {
+	dispatchObjectsChanged,
+	OBJECTS_CHANGED_EVENT,
+} from '@conduction/nextcloud-vue/src/utils/objectSignals.js'

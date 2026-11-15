@@ -37,6 +37,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Minimal ObjectService stub with named-parameter signatures for DsoController tests.
@@ -62,7 +63,7 @@ interface DsoControllerObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(string $register, string $schema, array $object): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -344,6 +345,7 @@ class DsoControllerRequestStub implements IRequest {
  * @uses \OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier
  * @uses \OCA\Dossiq\Service\Dso\DsoObjectRepository
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
  */
 class DsoControllerTest extends TestCase {
 
@@ -390,13 +392,6 @@ class DsoControllerTest extends TestCase {
 	private SettingsService $settingsService;
 
 	/**
-	 * The DsoLvAuthService mock.
-	 *
-	 * @var \OCA\Dossiq\Service\DsoLvAuthService|MockObject
-	 */
-	private \OCA\Dossiq\Service\DsoLvAuthService $lvAuthService;
-
-	/**
 	 * The IEventDispatcher mock.
 	 *
 	 * @var IEventDispatcher|MockObject
@@ -431,7 +426,6 @@ class DsoControllerTest extends TestCase {
 		$this->samenwerkService = $this->createMock(SamenwerkverzoekService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->settingsService = $this->createMock(SettingsService::class);
-		$this->lvAuthService = $this->createMock(\OCA\Dossiq\Service\DsoLvAuthService::class);
 		$this->eventDispatcher = $this->createMock(IEventDispatcher::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
