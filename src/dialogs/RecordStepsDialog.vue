@@ -46,6 +46,7 @@ import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { useEngineTaskStore } from '../store/modules/engineTask.js'
 import {
 	defaultValues,
@@ -64,13 +65,10 @@ export default {
 
 	components: { CnSettingsField, CnWizardDialog },
 
+	mixins: [caseDialog],
+
 	props: {
 		/** The case the record belongs to. Absent when the manifest opened the dialog: the route answers. */
-		caseId: {
-			type: String,
-			default: '',
-		},
-
 		/** The dialog's title. */
 		dialogTitle: {
 			type: String,

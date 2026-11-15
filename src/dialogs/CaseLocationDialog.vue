@@ -119,6 +119,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
 import DialogNotice from '../components/dialog/DialogNotice.vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { lookupParcel } from '../services/brkApi.js'
 import { caseLocationRecord, parcelOf, saveCaseLocation } from '../services/caseLocationApi.js'
 import { fetchCaseSummary } from '../services/caseSummary.js'
@@ -142,12 +143,10 @@ export default {
 		NcCheckboxRadioSwitch,
 	},
 
+	mixins: [caseDialog],
+
 	props: {
 		/** The case the location goes on; falls back to the route's id. */
-		caseId: {
-			type: String,
-			default: '',
-		},
 	},
 
 	emits: ['close', 'saved'],

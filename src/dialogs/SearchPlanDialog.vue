@@ -154,6 +154,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseDialog } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 const DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -295,12 +296,10 @@ export default {
 		CnTemplateSelect,
 	},
 
+	mixins: [caseDialog],
+
 	props: {
 		/** The Woo case. Absent when the manifest opened the dialog: the route answers. */
-		caseId: {
-			type: String,
-			default: '',
-		},
 	},
 
 	emits: ['close'],

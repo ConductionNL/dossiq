@@ -112,6 +112,7 @@ import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcNoteCard, NcSelect } from '@nextcloud/vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { classificationOptions as buildClassificationOptions } from '../utils/dossierHelpers.js'
 import { resolveCaseId } from '../utils/resolveCaseId.js'
 
@@ -149,6 +150,8 @@ function downloadZipGesture(dialog) {
 export default {
 	name: 'BulkDocumentActionDialog',
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect },
+
+	mixins: [caseDialog],
 
 	props: {
 		/**
@@ -194,13 +197,6 @@ export default {
 
 		/** The clicked node's name, for the dialog's own sentence. */
 		fileName: {
-			type: String,
-			default: '',
-		},
-
-		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
-		// Only used by `zip`, which downloads scoped to one case.
-		caseId: {
 			type: String,
 			default: '',
 		},

@@ -137,6 +137,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import CaseRebindImpact from '../components/case/CaseRebindImpact.vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -154,16 +155,7 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The case to rebind. Absent when the manifest opened the dialog: an
-		 * `open-modal` action carries no object context, so the route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close'],
 

@@ -127,6 +127,7 @@ import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import ClockOutline from 'vue-material-design-icons/ClockOutline.vue'
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { resolveCaseId } from '../utils/resolveCaseId.js'
 import { templateFillRows } from '../utils/templateFills.js'
@@ -164,16 +165,12 @@ export default {
 		NcNoteCard,
 	},
 
+	mixins: [caseDialog],
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
-		},
-
-		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
-		caseId: {
-			type: String,
-			default: '',
 		},
 	},
 

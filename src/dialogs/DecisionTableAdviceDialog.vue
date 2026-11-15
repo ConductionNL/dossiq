@@ -119,6 +119,7 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { adviceForm, adviceRefusal, decide, recommend } from '../services/decisionAdviceApi.js'
 
 export default {
@@ -131,16 +132,7 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close'],
 

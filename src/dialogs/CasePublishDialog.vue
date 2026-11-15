@@ -93,6 +93,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
 import PublishIcon from 'vue-material-design-icons/Publish.vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -150,13 +151,10 @@ export default {
 		PublishIcon,
 	},
 
+	mixins: [caseDialog],
+
 	props: {
 		/** The case; arrives as the unresolved `@objectId` token, so the route answers. */
-		caseId: {
-			type: String,
-			default: '',
-		},
-
 		/** The dialog title, an i18n key. */
 		title: {
 			type: String,

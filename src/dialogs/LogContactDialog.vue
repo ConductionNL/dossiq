@@ -149,6 +149,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import {
 	logContactMoment,
 	refusalOf,
@@ -170,16 +171,7 @@ export default {
 		PhoneLogOutline,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close'],
 

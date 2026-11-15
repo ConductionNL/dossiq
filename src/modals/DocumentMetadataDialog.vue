@@ -191,6 +191,7 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { fetchCaseParties } from '../services/caseParties.js'
 import {
 	allowedFor,
@@ -236,16 +237,12 @@ export default {
 		NcTextField,
 	},
 
+	mixins: [caseDialog],
+
 	props: {
 		files: {
 			type: Array,
 			default: () => [],
-		},
-
-		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
-		caseId: {
-			type: String,
-			default: '',
 		},
 
 		/**

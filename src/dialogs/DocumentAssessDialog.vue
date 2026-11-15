@@ -188,6 +188,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import { caseDialog } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 const SPEC_NOTE = 'document-assessment REQ-DAS-002'
@@ -234,16 +235,9 @@ export default {
 		NcSelect,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
+	mixins: [caseDialog],
 
+	props: {
 		/** Where the outstanding documents are read; `{caseId}` is filled in. */
 		outstandingUrl: {
 			type: String,

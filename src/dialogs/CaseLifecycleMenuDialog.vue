@@ -160,6 +160,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import manifest from '../manifest.json'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { actForm } from '../utils/caseActInputs.js'
 import { buildActsMenu, endpointFor, iconFor } from '../utils/caseActsMenu.js'
@@ -367,21 +368,14 @@ export default {
 		NcLoadingIcon,
 	},
 
+	mixins: [caseDialog],
+
 	inject: {
 		/** The page's action dispatcher, to open an act's own dialog. */
 		cnDispatchAction: { default: null },
 	},
 
 	props: {
-		/**
-		 * The case to act on. Absent when the manifest opened the dialog: an
-		 * `open-modal` action carries no object context, so the route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-
 		/** An act to open on directly, such as `archive`, when the case allows it. */
 		act: {
 			type: String,

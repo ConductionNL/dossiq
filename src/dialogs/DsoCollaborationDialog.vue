@@ -69,6 +69,7 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { dsoErrorOf, startCollaboration } from '../services/dsoCaseApi.js'
 
 export default {
@@ -81,16 +82,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close', 'done'],
 

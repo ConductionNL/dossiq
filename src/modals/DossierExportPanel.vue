@@ -75,6 +75,7 @@ import { generateUrl } from '@nextcloud/router'
 import { NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
@@ -92,6 +93,8 @@ export default {
 		FileDocumentOutline,
 	},
 
+	mixins: [caseDialog],
+
 	props: {
 		open: {
 			type: Boolean,
@@ -99,10 +102,6 @@ export default {
 		},
 
 		/** May arrive as the unresolved `@objectId` token; see resolvedCaseId. */
-		caseId: {
-			type: String,
-			default: '',
-		},
 	},
 
 	emits: ['close'],

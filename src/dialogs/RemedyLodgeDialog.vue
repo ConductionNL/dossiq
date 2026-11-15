@@ -119,6 +119,7 @@ import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import { caseDialog } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -177,16 +178,9 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The decided case. Arrives as the unresolved `@objectId` token from
-		 * an `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
+	mixins: [caseDialog],
 
+	props: {
 		/** What the dialog is called, in the words of the case type that configures it. */
 		title: {
 			type: String,

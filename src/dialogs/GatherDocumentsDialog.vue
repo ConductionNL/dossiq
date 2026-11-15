@@ -195,6 +195,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseDialog } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 const ROW_LIMIT = 50
@@ -334,12 +335,10 @@ export default {
 		NcTextField,
 	},
 
+	mixins: [caseDialog],
+
 	props: {
 		/** The Woo case. Absent when the manifest opened the dialog: the route answers. */
-		caseId: {
-			type: String,
-			default: '',
-		},
 	},
 
 	emits: ['close'],

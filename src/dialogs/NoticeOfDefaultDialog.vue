@@ -91,6 +91,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { noticeRefusal, registerNotice } from '../services/noticeOfDefaultApi.js'
 
 /**
@@ -114,16 +115,7 @@ export default {
 		NcSelect,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close'],
 

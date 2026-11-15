@@ -89,6 +89,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseDialog } from '../mixins/caseDialog.js'
 import {
 	CONSENT_REGISTER,
 	CONSENT_SCHEMA,
@@ -108,12 +109,10 @@ export default {
 		NcTextField,
 	},
 
+	mixins: [caseDialog],
+
 	props: {
 		/** The case the consent is recorded on; the route answers when empty. */
-		caseId: {
-			type: String,
-			default: '',
-		},
 	},
 
 	emits: ['close'],

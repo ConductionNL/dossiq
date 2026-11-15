@@ -100,6 +100,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { caseActionRefusal } from '../utils/caseActionsHelpers.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -109,17 +110,7 @@ export default {
 
 	components: { NcButton, NcCheckboxRadioSwitch, CnDialog, NcLoadingIcon },
 
-	props: {
-		/**
-		 * The case to start a flow for. Absent when the manifest opened the
-		 * dialog: an `open-modal` action carries no object context, so the
-		 * route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close'],
 

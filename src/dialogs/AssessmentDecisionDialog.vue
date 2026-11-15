@@ -235,6 +235,7 @@ import CalendarBlankOutline from 'vue-material-design-icons/CalendarBlankOutline
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
 import GenerateDocumentDialog from './GenerateDocumentDialog.vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { nextStepOf } from '../utils/caseNextStep.js'
 
@@ -333,16 +334,9 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
+	mixins: [caseDialog],
 
+	props: {
 		/** What the dialog is called, in the words of the case type that configures it. */
 		title: {
 			type: String,

@@ -90,6 +90,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { caseActionRefusal, proposedCopyTitle } from '../utils/caseActionsHelpers.js'
 
 export default {
@@ -97,16 +98,7 @@ export default {
 
 	components: { NcButton, NcCheckboxRadioSwitch, CnDialog, NcTextField },
 
-	props: {
-		/**
-		 * The case to copy. Absent when the manifest opened the dialog: an
-		 * `open-modal` action carries no object context, so the route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close'],
 
