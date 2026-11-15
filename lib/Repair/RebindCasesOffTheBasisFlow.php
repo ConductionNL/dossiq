@@ -227,7 +227,7 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 				continue;
 			}
 
-			if ($this->moveCase(run: $run, case: $case, target: $binding['target']) === true) {
+			if ($this->moveCase(run: $run, case: $this->boundTo(case: $case, target: $binding['target'])) === true) {
 				$moved++;
 			}
 		}
@@ -236,20 +236,32 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 	}//end rebindCaseType()
 
 	/**
-	 * Bind one case to the target flow, keeping everything else on it.
+	 * The case bound to the target flow, keeping everything else on it.
 	 *
-	 * @param FlowRebindRun        $run    The run.
 	 * @param array<string, mixed> $case   The case.
 	 * @param array<string, mixed> $target The flow the case type names.
 	 *
+	 * @return array<string, mixed> The case with its new flow binding.
+	 */
+	private function boundTo(array $case, array $target): array {
+		$case['workflowTemplate'] = (string)($target['id'] ?? ($target['@self']['id'] ?? ''));
+		$case['workflowVersion'] = (int)($target['version'] ?? 1);
+
+		return $case;
+	}//end boundTo()
+
+	/**
+	 * Save one case under its own id, without its id and metadata in the row.
+	 *
+	 * @param FlowRebindRun        $run  The run.
+	 * @param array<string, mixed> $case The case, bound to its new flow.
+	 *
 	 * @return bool Whether the case was saved.
 	 */
-	private function moveCase(FlowRebindRun $run, array $case, array $target): bool {
+	private function moveCase(FlowRebindRun $run, array $case): bool {
 		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
 		$row = $case;
 		unset($row['@self'], $row['id']);
-		$row['workflowTemplate'] = (string)($target['id'] ?? ($target['@self']['id'] ?? ''));
-		$row['workflowVersion'] = (int)($target['version'] ?? 1);
 
 		try {
 			$run->objectService->saveObject(object: $row, register: $run->register, schema: $run->schemas['case'], uuid: $caseId);
