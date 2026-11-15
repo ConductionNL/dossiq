@@ -314,28 +314,16 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use './_modalForm.scss' as form;
+
 .bulk-reassign {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 8px 4px;
+	@include form.form-stack;
 }
 
-.form-row {
-	display: flex;
-	gap: 12px;
-}
+@include form.form-rows;
 
-.form-row .form-group {
-	flex: 1;
-}
-
-.form-group {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
+@include form.form-group;
 
 .bulk-reassign__table {
 	width: 100%;
@@ -358,15 +346,5 @@ export default {
 	color: var(--color-error);
 }
 
-.form-error {
-	color: var(--color-error);
-	font-size: 0.85rem;
-	margin: 0;
-}
-
-.form-error--server {
-	padding: 8px;
-	background: var(--color-error-hover);
-	border-radius: var(--border-radius);
-}
+@include form.form-errors;
 </style>
