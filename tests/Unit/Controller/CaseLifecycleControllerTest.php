@@ -34,7 +34,7 @@ use OCA\Dossiq\Service\CaseLifecycleService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Exception\HookStoppedException;
 use OCA\Dossiq\Service\StatusTransitionService;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;

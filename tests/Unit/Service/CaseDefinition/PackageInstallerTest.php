@@ -34,7 +34,7 @@ use OCA\Dossiq\Service\Starter\ShippedFingerprint;
 use OCA\Dossiq\Service\Starter\ShippedSets;
 use OCA\Dossiq\Service\Starter\StarterStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;

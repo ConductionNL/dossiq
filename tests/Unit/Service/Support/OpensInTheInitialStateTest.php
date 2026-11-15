@@ -16,7 +16,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Support;
 use OCA\Dossiq\Service\Support\OpensInTheInitialState;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

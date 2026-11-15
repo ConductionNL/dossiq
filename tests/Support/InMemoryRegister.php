@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 /**

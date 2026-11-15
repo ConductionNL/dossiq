@@ -31,7 +31,7 @@ use OCA\Dossiq\Service\Recycle\CaseDestructionService;
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
 use OCA\Dossiq\Service\Recycle\RetentionClocks;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;

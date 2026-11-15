@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync;
 use OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;

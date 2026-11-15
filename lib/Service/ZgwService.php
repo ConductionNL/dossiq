@@ -28,7 +28,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\OpenRegister\Db\Mapping;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;

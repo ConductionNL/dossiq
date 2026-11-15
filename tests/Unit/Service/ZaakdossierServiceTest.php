@@ -40,7 +40,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 

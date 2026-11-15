@@ -31,7 +31,7 @@ use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;

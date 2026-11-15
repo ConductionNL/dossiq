@@ -33,7 +33,7 @@ namespace OCA\Dossiq\Service\Zgw;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * The cross-register side effects of the Besluiten API.

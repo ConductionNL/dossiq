@@ -32,7 +32,7 @@ use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\IL10N;
 use OCP\IRequest;

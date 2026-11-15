@@ -12,7 +12,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 use OCA\Dossiq\Service\People\CaseRoleProjection;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;

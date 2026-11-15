@@ -40,7 +40,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\OpenRegister\Exception\HookStoppedException;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
