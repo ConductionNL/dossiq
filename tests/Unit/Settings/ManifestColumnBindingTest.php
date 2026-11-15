@@ -168,11 +168,22 @@ class ManifestColumnBindingTest extends TestCase {
 					continue;
 				}
 
+				// `readOnlyRows` (nextcloud-vue) adds rows read from an endpoint
+				// beside the schema's own; a key its `where` filters on is a value
+				// those rows carry (the blueprint's `origin`), and an own row shows
+				// the column's `emptyValue`. Such a column binds the endpoint's
+				// rows, not the schema.
+				$endpointKeys = array_keys((array)(((array)($content['readOnlyRows'] ?? []))['where'] ?? []));
 				$this->collect(
 					bindings: $bindings,
 					where: $widgetLabel . '.content.columns',
 					schema: $schema,
-					keys: (array)($content['columns'] ?? []),
+					keys: array_values(
+						array_filter(
+							(array)($content['columns'] ?? []),
+							static fn ($column): bool => in_array((is_array($column) === true ? ($column['key'] ?? null) : $column), $endpointKeys, true) === false
+						)
+					),
 				);
 				$this->collect(
 					bindings: $bindings,
@@ -247,6 +258,14 @@ class ManifestColumnBindingTest extends TestCase {
 	 * @return void
 	 */
 	private function collectAggregate(array &$bindings, string $where, string $rowSchema, array $aggregate): void {
+		// `endpoint` (nextcloud-vue aggregate-from-endpoint): the app's own route answers a value per row key,
+		// so no schema is counted; the row field that names the key must resolve.
+		if (is_string($aggregate['endpoint'] ?? null) === true) {
+			$this->aggregates[] = ['where' => $where, 'endpoint' => $aggregate['endpoint']];
+			$bindings[]         = ['where' => $where . '.key', 'schema' => $rowSchema, 'key' => (string)($aggregate['key'] ?? '')];
+			return;
+		}
+
 		$counted = (string)($aggregate['schema'] ?? '');
 		$this->aggregates[] = [
 			'where'    => $where,
@@ -299,7 +318,17 @@ class ManifestColumnBindingTest extends TestCase {
 		);
 
 		$offenders = [];
+		$routes = file_get_contents(filename: self::ROOT . '/appinfo/routes.php');
 		foreach ($this->aggregates as $aggregate) {
+			if (isset($aggregate['endpoint']) === true) {
+				$url = (string)preg_replace(pattern: '#^/apps/dossiq#', replacement: '', subject: $aggregate['endpoint']);
+				if (str_contains(haystack: $routes, needle: "'url' => '" . $url . "'") === false) {
+					$offenders[] = sprintf('%s asks endpoint "%s", which no route in appinfo/routes.php answers', $aggregate['where'], $aggregate['endpoint']);
+				}
+
+				continue;
+			}
+
 			if (in_array($aggregate['op'], ['count', 'max'], true) === false) {
 				$offenders[] = sprintf('%s has op "%s"; the table runs only "count" and "max"', $aggregate['where'], $aggregate['op']);
 			}

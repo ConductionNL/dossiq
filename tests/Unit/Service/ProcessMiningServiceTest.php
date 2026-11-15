@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
@@ -41,14 +42,21 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMiningService
- *
+ * @covers \OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers
  * @uses \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
+ * @uses \OCA\Dossiq\Service\ProcessMining\DwellWindow
+ * @uses \OCA\Dossiq\Service\ProcessMining\CaseDwell
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusVisit
  * @uses \OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader
  * @uses \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator
  * @uses \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\ProcessMining\PhaseSummary
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusLabels
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ProcessMiningServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -78,9 +86,11 @@ class ProcessMiningServiceTest extends TestCase {
 
 		$this->service = new ProcessMiningService(
 			new ProcessMiningDataLoader($settings),
-			new DwellTimeAnalyzer(dates: $this->caseDates()),
-			new TransitionMatrixBuilder(),
-			new ThroughputTrendCalculator(dates: $this->caseDates()),
+			new ProcessMiningAnalysers(
+				dwellTimeAnalyzer: new DwellTimeAnalyzer(dates: $this->caseDates()),
+				transitionBuilder: new TransitionMatrixBuilder(),
+				throughputCalculator: new ThroughputTrendCalculator(dates: $this->caseDates()),
+			),
 			$this->caseDates(),
 		);
 	}//end setUp()
@@ -364,6 +374,91 @@ class ProcessMiningServiceTest extends TestCase {
 		self::assertNotEmpty($report['caseTypes'][0]['dwellTime']);
 		self::assertArrayHasKey('throughputTrend', $report);
 	}//end testGetReportOrchestratesFullPayload()
+
+	/**
+	 * A case without status records (example data, an imported case) is read from its own status history: each
+	 * entry is a moment the case entered that status, so its phases count too.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	public function testACaseWithoutStatusRecordsIsReadFromItsStatusHistory(): void {
+		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Woo-verzoek']);
+		$this->objects->seed('statusType', ['id' => 'st-received', 'name' => 'Ontvangen']);
+		$this->objects->seed('statusType', ['id' => 'st-handling', 'name' => 'In behandeling']);
+		$this->objects->seed('case', [
+			'id'            => 'case-1',
+			'caseType'      => 'ct-1',
+			'startDate'     => '2026-06-01',
+			'endDate'       => '2026-06-10',
+			'statusHistory' => '[{"status":"st-received","enteredAt":"2026-06-01T09:00:00+02:00"},{"status":"st-handling","enteredAt":"2026-06-03T09:00:00+02:00"}]',
+		]);
+
+		$report = $this->service->getReport(['from' => '2026-01-01', 'to' => '2026-12-31']);
+
+		self::assertNotEmpty($report['caseTypes'][0]['dwellTime']);
+		$names = array_column($report['caseTypes'][0]['dwellTime'], 'statusName');
+		self::assertContains('Ontvangen', $names);
+	}//end testACaseWithoutStatusRecordsIsReadFromItsStatusHistory()
+
+	/**
+	 * Time read from a case's status history is held by the person the entry
+	 * names, else by the case's handler, so the per-handler table has a name
+	 * for it instead of "not recorded" (DqProcesanalyse "Doorlooptijd per
+	 * behandelaar").
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/dwell-from-status-history-actor/spec.md#requirement-time-read-from-the-status-history-has-a-holder
+	 */
+	public function testTimeReadFromTheStatusHistoryHasAHolder(): void {
+		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Woo-verzoek']);
+		$this->objects->seed('statusType', ['id' => 'st-received', 'name' => 'Ontvangen']);
+		$this->objects->seed('statusType', ['id' => 'st-handling', 'name' => 'In behandeling']);
+		$this->objects->seed('case', [
+			'id'            => 'case-1',
+			'caseType'      => 'ct-1',
+			'assignee'      => 'fatma',
+			'startDate'     => '2026-06-01',
+			'endDate'       => '2026-06-10',
+			'statusHistory' => '[{"status":"st-received","enteredAt":"2026-06-01T09:00:00+02:00","actor":"lars"},'
+				.'{"status":"st-handling","enteredAt":"2026-06-03T09:00:00+02:00"}]',
+		]);
+
+		$report = $this->service->getReport(params: ['from' => '2026-01-01', 'to' => '2026-12-31']);
+
+		$actors = array_column($report['caseTypes'][0]['dwellByAssignee'], 'actor');
+		sort($actors);
+		self::assertSame(expected: ['fatma', 'lars'], actual: $actors);
+	}//end testTimeReadFromTheStatusHistoryHasAHolder()
+
+	/**
+	 * Days per phase counts only visits that ended: a case still sitting in a
+	 * status would otherwise add a visit that grows every day, and the matrix
+	 * would move under the same data (DqProcesanalyse, r33).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/phase-days-from-completed-visits/spec.md#requirement-days-per-phase-counts-completed-visits
+	 */
+	public function testDaysPerPhaseCountsOnlyCompletedVisits(): void {
+		$this->objects->seed('caseType', ['id' => 'ct-1', 'title' => 'Woo-verzoek']);
+		$this->objects->seed('statusType', ['id' => 'st-received', 'name' => 'Ontvangen', 'phase' => 'Ontvangst']);
+		$this->objects->seed('statusType', ['id' => 'st-handling', 'name' => 'In behandeling', 'phase' => 'Beoordeling']);
+		$this->objects->seed('case', [
+			'id'            => 'case-1',
+			'caseType'      => 'ct-1',
+			'startDate'     => '2026-06-01',
+			'endDate'       => null,
+			'statusHistory' => '[{"status":"st-received","enteredAt":"2026-06-01T09:00:00+02:00"},'
+				.'{"status":"st-handling","enteredAt":"2026-06-03T09:00:00+02:00"}]',
+		]);
+
+		$report = $this->service->getReport(params: ['from' => '2026-01-01', 'to' => '2026-12-31']);
+
+		self::assertSame(expected: ['Ontvangst'], actual: $report['phaseDays']['mean']['columns']);
+	}//end testDaysPerPhaseCountsOnlyCompletedVisits()
 
 	/**
 	 * `caseType` filter scopes the loaded case set — an unrelated case type

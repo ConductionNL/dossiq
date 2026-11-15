@@ -8,7 +8,8 @@
  * POST /api/cases/{caseId}/household-cases/lookup  look the household up in the other domains, on a chosen ground
  *
  * Both answer only to a reader who may see the social domain's sensitive
- * fields (dossiq-sensitive, or an administrator) and who may read the case.
+ * fields (dossiq-sensitive; an administrator outside that group is refused
+ * too) and who may read the case.
  * An other-domain row carries `exists`, `domain` and `contact` and nothing
  * else, and it exists only because the reader chose a ground and the lookup
  * was logged. It is kept in the reader's session, never stored.
@@ -24,19 +25,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CitizenLookupGuard;
-use OCA\Dossiq\Service\SociaalDomein\HouseholdCases;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CitizenLookupGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\HouseholdCasesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class HouseholdCasesController extends Controller {
 	use TranslatesRefusals;
@@ -67,21 +68,21 @@ class HouseholdCasesController extends Controller {
 	 * @param IRequest           $request     The request.
 	 * @param IUserSession       $userSession Who is asking.
 	 * @param ISession           $session     Where this reader's lookups are kept until they sign out.
-	 * @param CaseAccessGuard    $caseAccess  Whether the reader may read a case.
-	 * @param CitizenLookupGuard $sensitive   Whether the reader may see the social domain's sensitive fields.
-	 * @param HouseholdCases     $household   Builds the rows.
+	 * @param CaseAccessGuardInterface    $caseAccess  Whether the reader may read a case.
+	 * @param CitizenLookupGuardInterface $sensitive   Whether the reader may see the social domain's sensitive fields.
+	 * @param HouseholdCasesInterface     $household   Builds the rows.
 	 * @param LoggerInterface    $logger      The logger.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ISession $session,
-		private readonly CaseAccessGuard $caseAccess,
-		private readonly CitizenLookupGuard $sensitive,
-		private readonly HouseholdCases $household,
+		private readonly CaseAccessGuardInterface $caseAccess,
+		private readonly CitizenLookupGuardInterface $sensitive,
+		private readonly HouseholdCasesInterface $household,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -91,7 +92,7 @@ class HouseholdCasesController extends Controller {
 	 *
 	 * @return JSONResponse `{ results }`.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
@@ -102,23 +103,7 @@ class HouseholdCasesController extends Controller {
 		}
 
 		try {
-			$case = $this->household->readCase(caseId: $caseId);
-			if ($case === null) {
-				return new JSONResponse(['results' => []]);
-			}
-
-			$bsns = $this->household->householdBsns(case: $case);
-			if ($bsns === []) {
-				return new JSONResponse(['results' => []]);
-			}
-
-			$rows = $this->household->sameDomain(
-				case: $case,
-				bsns: $bsns,
-				canRead: fn (string $id): bool => $this->caseAccess->hasCaseReadAccess(caseId: $id, user: $user),
-			);
-
-			return new JSONResponse(['results' => array_merge($rows, $this->lookedUp(caseId: $caseId, user: $user))]);
+			return $this->householdCasesOf(caseId: $caseId, user: $user);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'household-cases', e: $e);
 		} catch (Throwable $e) {
@@ -127,13 +112,44 @@ class HouseholdCasesController extends Controller {
 	}//end index()
 
 	/**
+	 * The household's other cases in the same domain the user may read, plus the ones looked up this session.
+	 *
+	 * @param string $caseId The case.
+	 * @param IUser $user The current user.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws RefusedException When the household cannot be read.
+	 * @throws Throwable When reading fails.
+	 */
+	private function householdCasesOf(string $caseId, IUser $user): JSONResponse {
+		$case = $this->household->readCase(caseId: $caseId);
+		if ($case === null) {
+			return new JSONResponse(['results' => []]);
+		}
+
+		$bsns = $this->household->householdBsns(case: $case);
+		if ($bsns === []) {
+			return new JSONResponse(['results' => []]);
+		}
+
+		$rows = $this->household->sameDomain(
+			case: $case,
+			bsns: $bsns,
+			canRead: fn (string $id): bool => $this->caseAccess->hasCaseReadAccess(caseId: $id, user: $user),
+		);
+
+		return new JSONResponse(['results' => array_merge($rows, $this->lookedUp(caseId: $caseId, user: $user))]);
+	}//end householdCasesOf()
+
+	/**
 	 * Look the household up in the other domains, on the chosen ground.
 	 *
 	 * @param string $caseId The case uuid.
 	 *
 	 * @return JSONResponse `{ results }`: the other-domain rows.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	#[NoAdminRequired]
 	public function lookUp(string $caseId): JSONResponse {
@@ -144,17 +160,10 @@ class HouseholdCasesController extends Controller {
 		}
 
 		try {
-			$case      = $this->household->readCase(caseId: $caseId);
-			$bsns      = [];
-			$ownDomain = '';
-			if ($case !== null) {
-				$bsns      = $this->household->householdBsns(case: $case);
-				$ownDomain = $this->household->ownDomain(case: $case);
-			}
-
+			$household = $this->householdOf(caseId: $caseId);
 			$rows = $this->household->otherDomains(
-				bsns: $bsns,
-				ownDomain: $ownDomain,
+				bsns: $household['bsns'],
+				ownDomain: $household['ownDomain'],
 				ground: (string)$this->request->getParam('ground', ''),
 				requester: $user->getUID(),
 			);
@@ -167,6 +176,27 @@ class HouseholdCasesController extends Controller {
 			return $this->broke(op: 'household-lookup', e: $e);
 		}//end try
 	}//end lookUp()
+
+	/**
+	 * The BSNs of the case's household and the case's own domain; none of either when the case cannot be read.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array{bsns: array<mixed>, ownDomain: string}
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 */
+	private function householdOf(string $caseId): array {
+		$read = $this->household->readCase(caseId: $caseId);
+		if ($read === null) {
+			return ['bsns' => [], 'ownDomain' => ''];
+		}
+
+		return [
+			'bsns' => $this->household->householdBsns(case: $read),
+			'ownDomain' => $this->household->ownDomain(case: $read),
+		];
+	}//end householdOf()
 
 	/**
 	 * Why this reader may not ask about this case, or null when they may.

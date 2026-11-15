@@ -7,7 +7,7 @@
  * steps are a JSON string no declarative list can group), then the terms,
  * the messages and the blueprint as before, so nothing that tab showed is lost.
  *
- * @spec openspec/changes/screens-round12-case-type-phases/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { describe, expect, it } from 'vitest'
@@ -18,9 +18,9 @@ const widgets = page.configAppend.widgets
 const tabs = widgets.find((w) => w.type === 'tabs').content.tabs
 
 describe('the Phases and tasks tab of a case type', () => {
-	it('opens with the phase board and draws the board\'s four cards', () => {
+	it('opens with the phase board and draws the board\'s five cards', () => {
 		const tab = tabs.find((t) => t.label === 'Phases and tasks')
-		expect(tab.widgetIds).toEqual(['case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages-editor'])
+		expect(tab.widgetIds).toEqual(['case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages', 'case-type-milestones'])
 	})
 
 	it('reads the phases of this case type from the phases endpoint', () => {

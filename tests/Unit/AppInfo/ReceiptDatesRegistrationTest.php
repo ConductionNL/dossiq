@@ -23,15 +23,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\WorkflowListenerRegistrar;
 use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;

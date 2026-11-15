@@ -8,7 +8,7 @@
  * success colour, 2.6:1 under the Zuiddrecht theme; the library's success pill
  * is the light tint with the deep ink, 5.8:1.
  *
- * @spec openspec/changes/vth-checklists-as-rows/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
+ * @spec openspec/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
  */
 
 import axios from '@nextcloud/axios'
@@ -58,7 +58,7 @@ describe('VTH checklists as library rows', () => {
 		expect(rows[0].props('config')).toEqual({ titleField: 'name', subtitleField: 'subtitle', badgeField: 'state', badgeVariantField: 'tone' })
 		expect(rows[0].props('object')).toMatchObject({ name: 'Brandveiligheid', state: 'Active', tone: 'success' })
 		expect(rows[0].props('object').subtitle).toContain('3')
-		expect(rows[1].props('object')).toMatchObject({ state: 'Inactive', tone: 'warning' })
+		expect(rows[1].props('object')).toMatchObject({ state: 'Inactive', tone: 'default' })
 	})
 
 	it('keeps Edit and Delete in the row menu, bound to the checklist', async () => {

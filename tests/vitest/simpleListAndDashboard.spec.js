@@ -13,7 +13,7 @@
  * the manifest.
  *
  * @spec openspec/specs/dashboard/spec.md
- * @spec openspec/changes/landing-views/specs/my-work-landing/spec.md
+ * @spec openspec/specs/my-work-landing/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -39,6 +39,9 @@ const fullFile = readJson('src', 'menu-layout.json')
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const iconsSource = read('src', 'icons.js')
 const registrySource = read('src', 'registry.js')
+
+/** The signal tiles board DqDashboard draws under the case tiles (signalering-widgets). */
+const SIGNAL_TILES = ['my-open-work', 'teams-queue-signal', 'deadline-signals', 'task-reminders', 'woo-deadlines']
 
 const WOO = '3c0f5a00-0000-4000-a000-00000000a001'
 
@@ -113,8 +116,8 @@ describe('the cases list', () => {
 	const simple = page(builtSimple, 'Cases').config
 	const before = original('Cases').config
 
-	it('leads with six views that each show a count', () => {
-		expect(simple.quickFilterMaxVisible).toBe(6)
+	it('leads with six views that each show a count, three on the row and the rest behind More (Ruben, 23 Oct)', () => {
+		expect(simple.quickFilterMaxVisible).toBe(3)
 		const lead = simple.quickFilters.slice(0, 6)
 		expect(lead.map((lens) => lens.label)).toEqual([
 			'All',
@@ -158,10 +161,10 @@ describe('the cases list', () => {
 		expect(rest(simple.quickFilters)).toEqual(rest(before.quickFilters))
 	})
 
-	it('narrows Woo requests on the seeded Woo case type', () => {
+	it('narrows Woo requests on every version of the seeded Woo case type', () => {
 		const woo = simple.quickFilters.find((lens) => lens.label === 'Woo requests')
 		expect(woo.filter).toEqual({
-			caseType: WOO,
+			caseTypeIdentifier: 'woo-verzoek',
 			statusHiddenInLists: false,
 			isDraft: false,
 		})
@@ -292,13 +295,14 @@ describe('the cases list', () => {
 		// The second line is the case address, falling back to the identifier.
 		expect(simple.mapConfig.list.sub).toContain('{identifier}')
 		const { list, ...rest } = simple.mapConfig
-		const { _basemapNote, _parityNote, plotAll, ...fullMap } = before.mapConfig
+		const { _basemapNote, _parityNote, plotAll, count, ...fullMap } = before.mapConfig
 		expect(rest).toEqual(fullMap)
 	})
 
-	it('colours and counts the markers but plots only the current page', () => {
+	it('colours the markers, counts them in the header only and plots only the current page', () => {
 		expect(simple.mapConfig.markerColor).toEqual(before.mapConfig.markerColor)
-		expect(simple.mapConfig.count).toBe(before.mapConfig.count)
+		// The header says "· 5 met een adres op de kaart" with the list; no line under the map repeats it.
+		expect(simple.mapConfig).not.toHaveProperty('count')
 		expect(simple.mapConfig).not.toHaveProperty('plotAll')
 	})
 
@@ -306,20 +310,38 @@ describe('the cases list', () => {
 		const rest = ({
 			quickFilters,
 			quickFilterMaxVisible,
+			_quickFilterMaxVisibleNote,
 			columns,
 			folderSidebar,
 			showTitle,
 			countSubtitle,
 			countText,
+			countTextByView,
+			_countTextByViewNote,
+			defaultFilters,
+			_defaultFiltersNote,
+			heldDefaultFilters,
+			_heldDefaultFiltersNote,
+			savedViewCountText,
+			_savedViewCountTextNote,
 			defaultOrder,
 			footerNote,
+			footerNoteByView,
 			bulkHint,
+			bulkNoun,
 			headerButtons,
 			headerActions,
 			mapConfig,
 			_mapConfigNote,
+			realtime,
+			_realtimeNote,
 			showAdd,
 			showViewToggle,
+			showMassCopy,
+			showMassDelete,
+			_massCopyDeleteNote,
+			cardLayout,
+			_cardLayoutNote,
 			headerFilters,
 			searchPlaceholder,
 			...others
@@ -420,16 +442,22 @@ describe('the landing page', () => {
 		expect(simple.config.defaultView).toBe('mine')
 	})
 
-	it('changes only the My work view: My team is the manifest declaration, in both structures', () => {
+	it('changes My team only where DqMijnTeam differs: the stalled cases and the team queue as rows', () => {
 		const team = (built) => pageView(page(built, 'MyWorkHome'), 'team')
-		expect(team(builtSimple)).toEqual(pageView(original('MyWorkHome'), 'team'))
-		expect(team(builtSimple)).toEqual(team(builtFull))
+		expect(team(builtFull)).toEqual(pageView(original('MyWorkHome'), 'team'))
+		// The stalled-cases and team-queue rows are held in landingViews.spec.js;
+		// the rest of the view is the manifest's.
+		const rest = (view) => ({ ...view, widgets: withoutNotes(view.widgets.filter((w) => !['stalled-cases', 'your-teams-queue'].includes(w.id))) })
+		expect(rest(team(builtSimple))).toEqual(rest(team(builtFull)))
 		expect(simple.config.views.map((view) => view.id)).toEqual(['mine', 'team'])
 	})
 
 	it('keeps My archival reviews, which the design has no stand-in for, as the manifest declares it', () => {
 		const base = pageView(original('MyWorkHome'), 'mine').widgets
-		expect(widget('archival-reviews')).toEqual(
+		// The simple profile adds the board's subtitle (DqMijnWerk "Mijn archiefbeoordelingen").
+		const { subtitle, ...kept } = widget('archival-reviews')
+		expect(subtitle).toBe('Archival decisions waiting for your signature')
+		expect(kept).toEqual(
 			withoutNotes(base.find((w) => w.id === 'archival-reviews')),
 		)
 		expect(widget('archival-reviews').type).toBe('decision-list')
@@ -513,8 +541,13 @@ describe('the landing page', () => {
 			'kpi-overdue': 'Late',
 			'kpi-sla-compliance': 'Within deadline',
 		}
+		// The two charts carry the board's subtitle, "Lopende zaken".
+		const subtitled = ['cases-by-status', 'cases-by-type']
 		const sameButBars = (list) =>
 			list.map((item) => {
+				if (subtitled.includes(item.id)) {
+					return { ...item, subtitle: 'Open cases' }
+				}
 				if (boardWords[item.id]) {
 					return {
 						...item,
@@ -524,8 +557,14 @@ describe('the landing page', () => {
 				}
 				return item
 			})
-		// Plus the board's info line under the grid (DqDashboard), which only the simple structure draws.
-		expect(dashboard.config.widgets.filter((item) => item.id !== 'layout-note')).toEqual(sameButBars(before.config.widgets))
+		// Plus the board's info line under the grid (DqDashboard), which only
+		// the simple structure draws, and the three case tiles, which it draws
+		// as rows (see below).
+		const asRows = ['stalled-cases', 'favourite-cases', 'recent-cases']
+		// The five signal tiles (DqDashboard, signalering-widgets) are the
+		// simple structure's own as well.
+		const kept = (list) => list.filter((item) => item.id !== 'layout-note' && !asRows.includes(item.id) && !SIGNAL_TILES.includes(item.id))
+		expect(kept(dashboard.config.widgets)).toEqual(sameButBars(kept(before.config.widgets)))
 		expect(dashboard.config.widgets.map((item) => item.id)).toContain('layout-note')
 		expect(dashboard.config.kpiRow).toEqual([
 			'kpi-open-cases',
@@ -540,6 +579,7 @@ describe('the landing page', () => {
 			'stalled-cases',
 			'favourite-cases',
 			'recent-cases',
+			...SIGNAL_TILES,
 			'layout-note',
 		])
 		expect(dashboard.config.showHeader).toBeUndefined()
@@ -547,6 +587,123 @@ describe('the landing page', () => {
 		expect(dashboard.config.headerActions.map((action) => action.id)).toContain(
 			'open-end-of-day',
 		)
+	})
+
+	it('draws the dashboard case tiles as the board\'s rows: title, number, one line, no chevron', () => {
+		// DqDashboard: Vastgelopen zaken, Zaken die u volgt and Recent geopend
+		// are rows of the case title, its number and a muted trailing line, without a
+		// chevron, and their View all sits in the card header.
+		const dashboard = page(builtSimple, 'Dashboard')
+		const before = original('Dashboard')
+		const tile = (list, id) => list.find((item) => item.id === id)
+		const lines = {
+			'stalled-cases': '{daysSinceActivity} days idle',
+			'favourite-cases': undefined,
+			'recent-cases': '{@self.viewedAt|relative}',
+		}
+		for (const [id, text] of Object.entries(lines)) {
+			const rows = tile(dashboard.config.widgets, id)
+			const table = tile(before.config.widgets, id)
+			expect(rows.type).toBe('record-list')
+			expect(rows.content).toMatchObject({
+				register: table.content.source.register,
+				schema: table.content.source.schema,
+				filter: table.content.source.filter,
+				limit: 3,
+				presentation: 'rows',
+				title: '{title}',
+				meta: '{identifier}',
+				chevron: false,
+				rowRoute: 'CaseDetail',
+				emptyText: table.content.emptyText,
+			})
+			// The line is the row's trailing text, which wraps under the number at
+			// the row's start as the board draws it, not a second meta line.
+			expect(rows.content.text).toBeUndefined()
+			expect(rows.content.trailing).toEqual(text === undefined ? undefined : [text])
+			// The header link opens the list the table's View all opened.
+			const layout = dashboard.config.layout.find((entry) => entry.widgetId === id)
+			const { name, ...rest } = table.content.viewAllRoute
+			// Under the title, where the board draws "Alles bekijken".
+			expect(layout.headerLink).toEqual({ label: 'View all', route: name, ...rest, placement: 'title' })
+			// Three rows in a card the board's height (376px: five grid rows).
+			expect(layout.gridHeight, id).toBe(5)
+		}
+		// Zaken die u volgt and Recent geopend also end with "Alles bekijken"
+		// under the rows, as the board draws them (record-list-footer-link).
+		for (const id of ['favourite-cases', 'recent-cases']) {
+			const { name, ...rest } = tile(before.config.widgets, id).content.viewAllRoute
+			expect(tile(dashboard.config.widgets, id).content.footerLink, id).toEqual({ label: 'View all', route: name, ...rest })
+		}
+		expect(tile(dashboard.config.widgets, 'stalled-cases').content.footerLink).toBeUndefined()
+		const stalled = tile(dashboard.config.widgets, 'stalled-cases').content
+		expect(stalled.extend).toEqual(['calculations'])
+		expect(stalled.sort).toEqual({ field: 'lastActivityAt', dir: 'asc' })
+		// The info line under the grid is a line, not a card (DqDashboard).
+		const note = dashboard.config.layout.find((entry) => entry.widgetId === 'layout-note')
+		expect(note).toMatchObject({ borderless: true, sizeToContent: true })
+		expect(tile(dashboard.config.widgets, 'recent-cases').content.lensReasonTexts)
+			.toEqual(tile(before.config.widgets, 'recent-cases').content.lensReasonTexts)
+	})
+
+	it('names the dashboard\'s month and who it covers in the description, as the board does', () => {
+		// DqDashboard: "Hoe het team ervoor staat · oktober 2026, alle teams
+		// waar u in zit". `{dateRange}` reads the dashboard's date range as a
+		// period (nextcloud-vue description-period-from-date-range), so the
+		// range must open on a calendar month preset.
+		const dashboard = page(builtSimple, 'Dashboard')
+		expect(dashboard.config.description).toBe('How the team is doing · {dateRange}, all teams you are in')
+		const range = dashboard.config.dateRange
+		expect(range.enabled).toBe(true)
+		const preset = range.presets.find((entry) => entry.id === range.default.preset)
+		expect(preset.period).toBe('month')
+		const nl = readJson('l10n', 'nl.json').translations
+		expect(nl[dashboard.config.description]).toBe('Hoe het team ervoor staat · {dateRange}, alle teams waar u in zit')
+	})
+
+	it('rules above the first case row as well, as the boards draw their case lists', () => {
+		// DqDashboard, DqMijnWerk and DqMijnTeam draw a hairline above every
+		// row of Vastgelopen zaken and Zaken die u volgt, the first included
+		// (nextcloud-vue record-list ruleAbove).
+		const dashboard = page(builtSimple, 'Dashboard').config.widgets
+		for (const id of ['stalled-cases', 'favourite-cases', 'recent-cases']) {
+			expect(dashboard.find((item) => item.id === id).content.ruleAbove, id).toBe(true)
+		}
+		expect(widget('followed-cases').content.ruleAbove).toBe(true)
+		expect(widget('stalled-cases').content.ruleAbove).toBe(true)
+		// DqMijnWerk Verder werken too (design-system #393).
+		expect(widget('simple-continue').content.ruleAbove).toBe(true)
+		// The status pills take their status type's colour (DqMijnWerk "In behandeling" purple).
+		expect(widget('simple-continue').content.pill.colorField).toBe('status.colour')
+		expect(widget('followed-cases').content.pill.colorField).toBe('status.colour')
+		// DqMijnTeam Wachtrij van uw team too.
+		expect(widget('your-teams-queue').content.ruleAbove).toBe(true)
+		// DqMijnTeam "Oppakken" is the outlined row action (nextcloud-vue 24t1o opt-in).
+		expect(widget('your-teams-queue').content.rowAction.variant).toBe('outlined')
+	})
+
+	it('ends a Verder werken row with the chevron, and only that list among the dashboard lists', () => {
+		// DqMijnWerk draws a chevron after the time on each Verder werken row; no
+		// other list on DqMijnWerk, DqMijnTeam, DqDashboard or DqDagAfsluiten
+		// does. The board look hides a dashboard row's chevron unless the list
+		// asks for it (nextcloud-vue record-list `chevron: true`).
+		expect(widget('simple-continue').content.chevron).toBe(true)
+		for (const id of ['followed-cases', 'your-teams-queue', 'stalled-cases']) {
+			expect(widget(id).content.chevron, id).not.toBe(true)
+		}
+	})
+
+	it('shows recent activity without tag changes, each item in the tone of its app', () => {
+		// DqMijnWerk Recente activiteit: a reaction primary, a publication
+		// green, a handover grey; tag changes are not work.
+		const content = widget('simple-recent-activity').content
+		expect(content.excludeApps).toEqual(['systemtags'])
+		expect(content.itemTones).toEqual({
+			comments: 'info',
+			files: 'success',
+			openregister: 'neutral',
+			dossiq: 'neutral',
+		})
 	})
 
 	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {
@@ -577,8 +734,10 @@ describe('the landing page', () => {
 		})
 		expect(caseFields.has('identifier')).toBe(true)
 		expect(caseFields.has('caseType')).toBe(true)
-		// When the reader opened it, from the lens, not the case's own change.
-		expect(cont.content.trailing).toEqual(['{@self.viewedAt|relativetime}'])
+		// When the reader opened it, from the lens, not the case's own change,
+		// said as DqMijnWerk does: "10 min geleden", "vanochtend", "vrijdag"
+		// (nextcloud-vue relative-ago-formatter).
+		expect(cont.content.trailing).toEqual(['{@self.viewedAt|ago}'])
 		// An unavailable lens says why, in the same words as the full tile.
 		expect(cont.content.lensReasonTexts).toEqual(recent.content.lensReasonTexts)
 		expect(Object.keys(cont.content.lensReasonTexts).length).toBeGreaterThan(0)
@@ -674,6 +833,16 @@ describe('the landing page', () => {
 		for (const key of [...bar.order, ...Object.keys(bar.labels)]) {
 			expect(roles, key).toContain(key)
 		}
+	})
+
+	it('counts the cases in the steps title, as DqMijnWerk does', () => {
+		// "Mijn 14 zaken per stap": `{count}` is the total the bar reports
+		// under headerCount (nextcloud-vue widget-title-count).
+		const bar = widget('simple-per-step')
+		expect(bar.title).toBe('My {count} cases per step')
+		expect(bar.content.headerCount).toBe(true)
+		const nl = readJson('l10n', 'nl.json').translations
+		expect(nl[bar.title]).toBe('Mijn {count} zaken per stap')
 	})
 
 	it('marks only a passed deadline as late in the week strip, like the list and the board', () => {
@@ -817,9 +986,27 @@ describe('the case type list', () => {
 		// A Dutch reader saw "38 case types": the key was in the manifest and
 		// in no catalogue, so the library drew it as written.
 		const nl = JSON.parse(read('l10n', 'nl.json')).translations
-		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen')
+		// DqZaaktypen: "14 zaaktypen · 9 meegeleverd, 5 eigen".
+		expect(nl[list.config.headerMeta]).toBe('{total} zaaktypen · {count:shipped} meegeleverd, {count:own} eigen')
 		// DqZaaktypen draws the field as "Zoek een zaaktype".
 		expect(nl[list.config.searchPlaceholder]).toBe('Zoek een zaaktype')
+	})
+
+	it('counts the shipped and the own case types, current versions only, for the header line', () => {
+		const current = { supersededBy: { isnull: true } }
+		expect(list.config.headerMetaCounts).toEqual({
+			shipped: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self': { owner: '__system__' } } },
+			own: { register: 'dossiq', schema: 'caseType', filter: { ...current, '@self[owner][ne]': '__system__' } },
+		})
+	})
+
+	it('names each case type shipped or own under its title, as DqZaaktypen does ("Meegeleverd · Woo")', () => {
+		const nl = JSON.parse(read('l10n', 'nl.json')).translations
+		const title = list.config.columns.find((column) => column.key === 'title')
+		expect(title.secondary).toBe('{@self.owner} · {subject}')
+		expect(title.secondaryLabels).toEqual({ '@self.owner': { __system__: 'Shipped', '*': 'Own case type' } })
+		expect(nl.Shipped).toBe('Meegeleverd')
+		expect(nl['Own case type']).toBe('Eigen zaaktype')
 	})
 
 	it('has an Actions menu with the import dialog the case type page already owns', () => {
@@ -828,6 +1015,12 @@ describe('the case type list', () => {
 				id: 'case-type-import',
 				type: 'open-modal',
 				target: 'CaseTypeImportDialog',
+			}),
+			expect.objectContaining({
+				id: 'case-type-templates-reload',
+				type: 'api-call',
+				url: '/apps/dossiq/api/packages/reload',
+				adminOnly: true,
 			}),
 		])
 		expect(registrySource).toContain('CaseTypeImportDialog')

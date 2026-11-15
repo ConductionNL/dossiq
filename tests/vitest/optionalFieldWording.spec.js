@@ -8,7 +8,7 @@
  * the library draws says "(niet verplicht)". The Dutch catalogue follows the
  * library's word.
  *
- * @spec openspec/changes/woo-screens-follow-the-case/specs/woo-case-type/spec.md
+ * @spec openspec/specs/woo-case-type/spec.md
  */
 
 import fs from 'fs'
@@ -32,9 +32,12 @@ describe('the wording of an optional field', () => {
 		)
 		expect(library.translations.optional).toBe('niet verplicht')
 
+		// A select placeholder the board draws word for word: DqUwWachtrij labels the
+		// field "(niet verplicht)" and its empty select reads "Kies een sjabloon (optioneel)".
+		const boardPlaceholders = ['Choose a template (optional)']
 		const nl = read(path.join(ROOT, 'l10n', 'nl.json')).translations
-		const off = Object.entries(nl).filter(([, value]) =>
-			/\(optioneel\)/i.test(value),
+		const off = Object.entries(nl).filter(([key, value]) =>
+			/\(optioneel\)/i.test(value) && !boardPlaceholders.includes(key),
 		)
 		expect(off).toEqual([])
 	})

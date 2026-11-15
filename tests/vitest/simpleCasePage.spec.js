@@ -81,6 +81,8 @@ const casePage = (file) => build(file).pages.find((page) => page.id === 'CaseDet
 
 const overlay = simpleFile.pages.find((page) => page.id === 'CaseDetail')
 const simple = casePage(simpleFile).config
+// A quick action is an id, or `{ id, notTabs }` for one a tab leaves out.
+const quickIds = simple.quickActions.map((entry) => (typeof entry === 'string' ? entry : entry.id))
 const original = readJson('src', 'manifest.json').pages.find(
 	(page) => page.id === 'CaseDetail',
 ).config
@@ -193,6 +195,16 @@ describe('the stage', () => {
 		).toBe('Case')
 	})
 
+	it('draws Next step as a text button, as the DqZaak boards do (r36)', () => {
+		// nextcloud-vue 2.163 draws a stage button's own icon; the boards draw none.
+		const nextSteps = Object.values(simple.primaryActionByStage)
+			.filter((entry) => typeof entry === 'object' && entry.id === 'stage-next-step')
+		expect(nextSteps.length).toBe(3)
+		for (const entry of nextSteps) {
+			expect(entry.icon).toBeUndefined()
+		}
+	})
+
 	it('degrades on a case whose status has no role: no card, no stage button', () => {
 		for (const record of [
 			{ id: 'a', assignee: 'jan' },
@@ -217,7 +229,7 @@ describe('the stage', () => {
 		)
 		expect(lifecycle.group).toBeUndefined()
 		expect(lifecycle.adminOnly).toBeUndefined()
-		expect(simple.quickActions).not.toContain('case-lifecycle-menu')
+		expect(quickIds).not.toContain('case-lifecycle-menu')
 	})
 
 	it('shows the card for a Woo request in handling, with the open item first', () => {
@@ -259,28 +271,33 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 35 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 44 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
 		}
 		// Every action is still there; the simple page orders them as DqZaakMeer lists them.
-		// The simple page adds two acts: Add location (DqZaakLocatie) and
-		// Share with another organisation (DqZaakSamenwerken).
-		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids, 'add-location', 'share-with-organisation'].sort())
+		// The simple page adds four acts: Add location (DqZaakLocatie),
+		// Share with another organisation (DqZaakSamenwerken), Plan a case
+		// meeting (DqSociaalDomein) and Start enforcement (DqHandhaving).
+		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids, 'add-location', 'start-enforcement', 'share-with-organisation', 'plan-case-meeting'].sort())
 		expect(simple.headerActions.map((action) => action.id).slice(0, overlay.configOrder.headerActions.length)).toEqual(overlay.configOrder.headerActions)
 
 		const placed = simple.headerActions.map((action) => {
-			if (simple.quickActions.includes(action.id)) {
+			if (quickIds.includes(action.id)) {
 				return 'quick'
 			}
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(35)
+		// 43: Advice from the decision table joined Case (DqHandhaving,
+		// enforcement-intervention-from-the-case 3.2), and so did two acts
+		// of vth-cases-run-end-to-end. 44: Ask a partner joined Case
+		// (capability-rows-said-and-planned T04).
+		expect(placed).toHaveLength(44)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(20)
+		expect(count('Case')).toBe(29)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)
@@ -318,7 +335,7 @@ describe('the actions', () => {
 	})
 
 	it('keeps three quick actions: message, document, contact', () => {
-		expect(simple.quickActions).toEqual([
+		expect(quickIds).toEqual([
 			'send-digital-post',
 			'generate-document',
 			'log-contact',
@@ -327,7 +344,7 @@ describe('the actions', () => {
 
 	it('puts the admin group last and hides it from a handler, by the library grouping', () => {
 		const entries = simple.headerActions
-			.filter((action) => !simple.quickActions.includes(action.id))
+			.filter((action) => !quickIds.includes(action.id))
 			.map((action) => ({ id: action.id, label: action.label }))
 		const byId = Object.fromEntries(
 			simple.headerActions.map((action) => [action.id, action]),
@@ -381,11 +398,11 @@ describe('the tabs', () => {
 		// behind a visibleWhen (checked under the side column).
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow && !tab.visibleWhen).map((tab) => tab.label),
-		).toEqual(['Overview', 'Documents', 'Contact', 'Tasks', 'Case history'])
+		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Case history'])
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Custody', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Fees and payments', 'Merge into one PDF', 'Archiving', 'Knowledge', 'Publication', 'Review', 'AI oversight'])
 		// Proposals is not a fixed overflow tab: it shows while proposals wait
 		// (feat/case-proposals-tab), checked in caseProposalsTabInStrip.spec.js.
 		expect(strip.tabs.find((tab) => tab.label === 'Proposals').visibleWhen.appInstalled).toBe('portaliq')
@@ -401,7 +418,9 @@ describe('the tabs', () => {
 		const relatedTab = strip.tabs.find((tab) => tab.label === 'Related')
 		// The typed related cases lead (DqZaakGerelateerd), then the related panel's sections.
 		expect(relatedTab.widgetIds[0]).toBe('case-related-cases-card')
-		const sectionCards = relatedTab.widgetIds.slice(1)
+		// planninq's Projecten card is the board's own, not one of the related panel's sections.
+		expect(relatedTab.widgetIds).toContain('case-projects-card')
+		const sectionCards = relatedTab.widgetIds.slice(1).filter((id) => id !== 'case-projects-card')
 		expect(sectionCards.map((id) => id.replace(/-card$/, ''))).toEqual(['case-related', 'case-sub-cases', 'case-objects', 'case-programme'])
 		// The object-type link is a link under the objects, as the board draws it.
 		expect(sectionCards.map((id) => id.replace(/-card$/, '')).concat('case-object-types-link').sort()).toEqual([...relatedSections].sort())
@@ -414,10 +433,13 @@ describe('the tabs', () => {
 		// The Betrokkenen tab holds the people panel's sections as cards (DqZaakBetrokkenen).
 		const peopleSections = find(original, 'case-people-panel').content.sections.map((section) => section.widget.id)
 		const peopleTab = strip.tabs.find((tab) => tab.label === 'People')
-		expect(peopleTab.widgetIds.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
-		// The parties by role lead, as Partijen; the linked contacts follow (DqZaakBetrokkenen).
-		expect(peopleTab.widgetIds[0]).toBe('case-party-roles-card')
-		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Case parties')
+		// Toegang, the case's access links, and the shares outside the organisation are the simple page's own cards after them.
+		expect(peopleTab.widgetIds.slice(-2)).toEqual(['case-access-card', 'case-shares-card'])
+		expect(peopleTab.widgetIds.slice(0, -2).map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
+		// The people by role lead, as Partijen; the party model follows as Rollen (DqZaakBetrokkenen).
+		expect(peopleTab.widgetIds[0]).toBe('case-parties-card')
+		expect(simple.widgets.find((widget) => widget.id === 'case-parties-card').title).toBe('Case parties')
+		expect(simple.widgets.find((widget) => widget.id === 'case-party-roles-card').title).toBe('Roles')
 		// Followers are the header popover only (Ruben, 20 Oct 2026), so the seats have the row to themselves.
 		expect(peopleTab.layout).toBeUndefined()
 		expect(peopleTab.widgetIds).not.toContain('case-followers-card')
@@ -465,7 +487,7 @@ describe('the tabs', () => {
 		const strip = tabsOf(simple)
 		const fees = strip.tabs.find((tab) => tab.label === 'Fees and payments')
 		expect(fees.overflow).toBe(true)
-		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract'])
+		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract', 'case-notices-of-default'])
 		expect(strip.tabs.find((tab) => tab.label === 'Merge into one PDF').widgetId).toBe('case-merge-to-pdf')
 		const overview = strip.tabs.find((tab) => tab.label === 'Overview').widgetIds
 		expect(overview.indexOf('goal-plan')).toBe(overview.indexOf('case-household-cases-card') + 1)
@@ -493,6 +515,9 @@ describe('the tabs', () => {
 			rowRoute: 'TaskDetail',
 			viewAllRoute: { name: 'Tasks', query: { case: '@objectId' } },
 		})
+		// Status tones as DqZaakTaken draws them: in progress purple, open amber,
+		// done grey (nextcloud-vue tasks-state-variants).
+		expect(tasks.content.stateVariants).toEqual({ available: 'warning', enabled: 'warning', active: 'purple', completed: 'default' })
 	})
 
 	it('turns the stages horizontal and leaves every other widget of the page as it was', () => {
@@ -500,8 +525,10 @@ describe('the tabs', () => {
 			config.widgets.find((widget) => widget.id === id)
 		// The design draws the case's progress as a bar across the header
 		// card. The widget keeps everything but its orientation.
+		// It stands aside beside AI oversight, as the what-now card does.
 		expect(find(simple, 'case-stages')).toEqual({
 			...find(original, 'case-stages'),
+			notTabs: ['ai-oversight'],
 			content: {
 				...find(original, 'case-stages').content,
 				orientation: 'horizontal',
@@ -515,6 +542,7 @@ describe('the tabs', () => {
 					labelField: 'name',
 					descriptionField: 'description',
 					finalField: 'isFinal',
+					offPathField: 'offPath',
 					limit: 50,
 				},
 				datesSource: {
@@ -536,12 +564,18 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		// The banner stack is titled Status, as the side card DqZaak draws.
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-banner-stack', 'case-attention']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-linked-mail', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card']
+		const patched = ['goal-plan', 'case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-status-declaration', 'case-banner-stack', 'case-attention', 'case-archival-panel', 'case-files', 'case-timeline-panel', 'case-notes-panel']
+		const added = ['case-note-card', 'case-investigation-steps', 'case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-goals', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-access-card', 'case-shares-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card', 'case-completeness-card', 'case-projects-card', 'case-archive-marking-card', 'case-archive-mismatch']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
 		added.push('case-grant-decisions-card')
+		added.push('case-payment-schedule')
+		// overview-cards-per-case-type: the settlement of a grant case, a card of the Overview tab.
+		added.push('case-settlement')
+		added.push('case-overview-sections')
+		// notice-of-default-from-the-case: the case's notices of default, a card of the Fees tab.
+		added.push('case-notices-of-default')
 		expect(others(simple)).toEqual(others(original))
 		expect(find(simple, 'case-banner-stack')).toEqual({ ...find(original, 'case-banner-stack'), title: 'Status', _note: expect.any(String) })
 		// Its attention strip asks the reason behind one button, with the board's hint.
@@ -605,13 +639,17 @@ describe('the tabs', () => {
 		expect(find(original, 'case-panels').content.variant).toBeUndefined()
 		expect(simple.showTypeEyebrow).toBe(false)
 		// The trail ends in the case number, as DqZaak draws "Alle zaken / 2026-0082".
-		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases', currentField: 'identifier', separator: '/' })
+		// A sub-case carries its parent's number between the two (deelzaak-support).
+		expect(simple.breadcrumb).toEqual([
+			{ label: 'All cases', route: 'Cases', currentField: 'identifier', separator: '/' },
+			{ parent: 'parentCase', labelField: 'identifier', route: 'CaseDetail' },
+		])
 		expect(original.showTypeEyebrow).toBeUndefined()
-		expect(original.breadcrumb).toBeUndefined()
+		expect(original.breadcrumb).toEqual(simple.breadcrumb)
 		expect(casePage(simpleFile).route).toBeDefined()
 		expect(
 			build(simpleFile).pages.some(
-				(page) => page.id === simple.breadcrumb.route,
+				(page) => page.id === simple.breadcrumb[0].route,
 			),
 		).toBe(true)
 	})
@@ -626,7 +664,7 @@ describe('the tabs', () => {
 		// is in the side column, so its full-profile cell goes too.
 		// The fees, the contract, the family plan and the PDF merge are cards
 		// of tabs, so they keep no cell under the tab card either.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6', 'full-linked', 'money-payments', 'money-contract', 'goal-plan-panel', 'documents-merge-to-pdf']
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'presence-strip', 'case-banners', '12', '11', '7', '6', 'full-linked', 'money-payments', 'money-contract', 'goal-plan-panel', 'documents-merge-to-pdf']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)
@@ -655,7 +693,10 @@ describe('the tabs', () => {
 		const order = [...simple.layout]
 			.sort((a, b) => a.gridY - b.gridY)
 			.map((entry) => entry.id)
-		expect(order.slice(0, 2)).toEqual(['presence-strip', '5'])
+		// Who else is here is the follow row's sentence; a grid item beside it
+		// draws an empty card while somebody else has the case open.
+		expect(order[0]).toBe('5')
+		expect(order).not.toContain('presence-strip')
 		// No two cards share a cell.
 		const cells = new Set()
 		for (const entry of simple.layout) {
@@ -672,7 +713,7 @@ describe('the tabs', () => {
 		// None of the three is lost: the number ends the breadcrumb,
 		// the deadline is the first card of the side column, and neither
 		// widget is still placed in the grid, so nothing renders twice.
-		expect(simple.breadcrumb.currentField).toBe('identifier')
+		expect(simple.breadcrumb[0].currentField).toBe('identifier')
 		// The pill above the title names the case type, as DqZaak draws "Woo-verzoek",
 		// in the case type's own colour and, as the board draws it, without an icon.
 		expect(simple.typePill).toEqual({
@@ -698,18 +739,21 @@ describe('the tabs', () => {
 describe('the header and the side column', () => {
 	it('reads the pills and the cards from fields the case carries', () => {
 		expect(onTheCase(simple.statusPill.field)).toBe(true)
-		expect(onTheCase(simple.breadcrumb.currentField)).toBe(true)
+		expect(onTheCase(simple.breadcrumb[0].currentField)).toBe(true)
+		expect(onTheCase(simple.breadcrumb[1].labelField)).toBe(true)
 		expect(onTheCase(simple.typePill.field)).toBe(true)
 		// The cards every case shows; the case-type cards are gated and checked below.
 		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen && card.type !== 'banner')
-		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Linked', 'Work instruction'])
+		// Toegang (DqZaak) follows the work instruction beside the Overview tab only; it reads the grants, not the case.
+		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Linked', 'Work instruction', 'Access'])
+		expect(cards.find((card) => card.id === 'side-access')).toMatchObject({ type: 'record-list', tabs: ['overview'] })
 		const shown = []
 		for (const card of cards) {
 			// The requester is a facts card (a lead, as DqZaak draws it), the
 			// handling a read-only data card, the work instruction a facts card
 			// over the case TYPE (a link only, no fields of the case).
 			const fields = card.type === 'facts'
-				? (card.content.fields || []).flatMap((entry) => (entry.as === 'lead' ? [entry.title, entry.subtitle?.path] : [entry.path])).filter(Boolean)
+				? (card.content.fields || []).flatMap((entry) => (entry.as === 'lead' ? [entry.title, entry.subtitle?.path, ...(entry.subtitle?.firstOf || []).map((option) => option.path)] : [entry.path])).filter(Boolean)
 				: card.type === 'data' ? card.content.include : []
 			if (card.type === 'data') {
 				expect(card.content.editable).toBe(false)
@@ -723,8 +767,10 @@ describe('the header and the side column', () => {
 		const handling = cards.find((card) => card.id === 'side-handling')
 		expect(handling.type).toBe('facts')
 		expect(handling.content.fields.find((field) => field.path === 'assignee').format).toBe('user')
-		// Nothing the requester card showed before is gone.
-		expect(shown).toEqual(expect.arrayContaining(['initiatorDisplayName', 'initiatorType', 'intakeChannel']))
+		// The requester card names the requester, how they logged in, else their
+		// kind; the intake channel is not on it, as the board draws it.
+		expect(shown).toEqual(expect.arrayContaining(['initiatorDisplayName', 'initiatorType', 'intakeIdentification']))
+		expect(shown).not.toContain('intakeChannel')
 		// The deadline has its own card, so no data card repeats it.
 		expect(shown).not.toContain('deadline')
 	})
@@ -735,18 +781,28 @@ describe('the header and the side column', () => {
 		// card lists records that name this case, so no card states a fact
 		// the register does not hold.
 		// The special-category warnings are gated on the case type itself
-		// (caseSpecialDataNotice.spec.js), not on records linked to the case.
-		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen && card.type !== 'banner')
+		// (caseSpecialDataNotice.spec.js), not on records linked to the case,
+		// and so is the case history card those case types show.
+		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen && card.type !== 'banner' && card.type !== 'audit-trail')
 		expect(gated.map((card) => card.id)).toEqual([
+			'side-enforcement',
 			'side-objection-appeal',
+			'side-payment-amounts',
 			'side-grant-application',
 			'side-social-consent',
 			'side-social-people',
 			'side-tender-bids',
 		])
 		for (const card of gated) {
-			expect(card.type).toBe('record-list')
-			expect(Object.values(card.content.filter)).toEqual(['@objectId'])
+			// A list of those records, or (Consent) the facts of the newest one,
+			// or (Amounts) the facts dossiq reads for this case.
+			expect(['record-list', 'facts']).toContain(card.type)
+			if (card.content.endpointSource) {
+				expect(card.content.endpointSource.url).toBe('/apps/dossiq/api/cases/@objectId/payment-schedule')
+				continue
+			}
+			const filter = card.type === 'facts' ? card.content.source.filter : card.content.filter
+			expect(Object.values(filter)).toEqual(['@objectId'])
 			expect(JSON.stringify(card.visibleWhen)).toContain('@context.caseType.category')
 		}
 	})
@@ -755,7 +811,8 @@ describe('the header and the side column', () => {
 		const find = (config, id) => config.widgets.find((widget) => widget.id === id)
 		const tabs = find(simple, 'case-panels').content.tabs
 		// Proposals is gated on waiting proposals, not on a case type domain.
-		const gated = tabs.filter((tab) => tab.visibleWhen && tab.widgetId !== 'case-change-proposals')
+		// Investigation lists the case's own answer (investigationStepsTab.spec.js), not linked records.
+		const gated = tabs.filter((tab) => tab.visibleWhen && tab.widgetId !== 'case-change-proposals' && tab.widgetId !== 'case-investigation-steps')
 		expect(gated.map((tab) => tab.widgetId)).toEqual([
 			'case-objection-hearings',
 			'case-objection-advice',
@@ -863,7 +920,7 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 
 	it('stands the four generic side cards aside on that tab, so the chat is alone as the board draws it', () => {
 		const side = page.config.sideColumn.filter((entry) => typeof entry === 'object')
-		for (const id of ['side-requester', 'side-handling', 'side-work-instruction']) {
+		for (const id of ['side-requester', 'side-handling', 'side-linked', 'side-work-instruction']) {
 			expect(side.find((entry) => entry.id === id).notTabs).toEqual(['ai-oversight'])
 		}
 		expect(page.configPatch.widgets['case-tile-deadline'].notTabs).toEqual(['ai-oversight'])
@@ -883,12 +940,18 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 			params: { originApp: 'dossiq', subjectId: '@objectId', limit: 25 },
 		})
 		expect(activity.content.register).toBeUndefined()
-		expect(activity.content.columns.map((column) => column.key)).toEqual(['decidedAt', 'decidedBy', 'prompt', 'status', 'advisoryContext.model'])
-		expect(activity.content.columns[3].enumLabels).toEqual({ approved: 'Used', overridden: 'Adapted', unused: 'Not used', denied: 'Rejected' })
+		// DqZaakAssistent: Soort en actie after the user.
+		expect(activity.content.columns.map((column) => column.key)).toEqual(['decidedAt', 'decidedBy', 'advisoryContext.suggestionType', 'prompt', 'status', 'advisoryContext.model'])
+		expect(activity.content.columns[4].enumLabels).toEqual({ approved: 'Used', overridden: 'Adapted', unused: 'Not used', denied: 'Rejected' })
 	})
 
 	it('places the case schema\'s macros through the library macros widget', () => {
 		expect(byId('case-macros')).toMatchObject({ type: 'macros', title: 'Macros' })
 		expect(byId('case-macros').content.macrosFrom).toBe('@context.caseType.macros')
+	})
+
+	it('draws the Macro\'s line as the card subtitle, as DqZaakAssistent', () => {
+		expect(byId('case-macros').subtitle).toBe('Several steps at once; then you see what changed')
+		expect(byId('case-macros').content.description).toBeUndefined()
 	})
 })

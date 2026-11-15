@@ -29,15 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Milestone\MilestoneStallActs;
-use OCA\Dossiq\Service\Milestone\MilestoneStallTimer;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallActsInterface;
+use OCA\Dossiq\Kernel\Contracts\MilestoneStallTimerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\CaseTimerSweep;
+use OCA\Dossiq\Repair\Support\CaseTimerSweeper;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Syncs the milestone timer of every case once.
@@ -45,21 +44,18 @@ use Throwable;
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class ArmMilestoneStallTimers implements IRepairStep {
-	use RunsUnderSystemIdentity;
-	use SearchesObjects;
-
 	/**
 	 * Build the step.
 	 *
-	 * @param SettingsService  $settingsService Reaches OpenRegister and the case schema.
-	 * @param MilestoneStallTimer $timer           Arms each case's timer.
-	 * @param MilestoneStallActs  $acts            Tells the assignees of cases already stalled.
+	 * @param SettingsServiceInterface  $settingsService Reaches OpenRegister and the case schema.
+	 * @param MilestoneStallTimerInterface $timer           Arms each case's timer.
+	 * @param MilestoneStallActsInterface  $acts            Tells the assignees of cases already stalled.
 	 * @param LoggerInterface  $logger          Logs the counts.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly MilestoneStallTimer $timer,
-		private readonly MilestoneStallActs $acts,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly MilestoneStallTimerInterface $timer,
+		private readonly MilestoneStallActsInterface $acts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -85,36 +81,17 @@ class ArmMilestoneStallTimers implements IRepairStep {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function run(IOutput $output): void {
-		$objectService = $this->settingsService->getObjectService();
-		$register      = (string) $this->settingsService->getConfigValue('register');
-		$schema        = (string) $this->settingsService->getConfigValue('case_schema');
-		if ($this->settingsService->isOpenRegisterAvailable() === false || $objectService === null || $register === '' || $schema === '') {
+		$counts = ['armed' => 0, 'stalled' => 0, 'failed' => 0];
+		$sweep = new CaseTimerSweep();
+		$sweep->migration = 'milestone stall timer';
+		$sweep->filters = ['_limit' => 1000];
+		$sweep->each = function (array $case) use (&$counts): void {
+			$this->syncOne(case: $case, counts: $counts);
+		};
+		if ((new CaseTimerSweeper(settingsService: $this->settingsService, logger: $this->logger))->sweep(sweep: $sweep) === false) {
 			$output->warning('OpenRegister or the case schema is not available. Skipping milestone stall timer migration.');
 			return;
 		}
-
-		$counts = ['armed' => 0, 'stalled' => 0, 'failed' => 0];
-
-		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $register, $schema, &$counts): void {
-				try {
-					$cases = $this->searchObjectsAsArrays(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						filters: ['_limit' => 1000],
-					);
-				} catch (Throwable $e) {
-					$this->logger->error('Dossiq milestone stall timer migration: the cases could not be read', ['error' => $e->getMessage()]);
-					$cases = [];
-				}
-
-				foreach ($cases as $case) {
-					$this->syncOne(case: $case, counts: $counts);
-				}
-			}
-		);
 
 		$this->logger->info('Dossiq milestone stall timer migration complete', $counts);
 		$output->info(
@@ -132,18 +109,18 @@ class ArmMilestoneStallTimers implements IRepairStep {
 	 */
 	private function syncOne(array $case, array &$counts): void {
 		$outcome = $this->timer->sync(case: $case);
-		if ($outcome === MilestoneStallTimer::ARMED) {
+		if ($outcome === MilestoneStallTimerInterface::ARMED) {
 			$counts['armed']++;
 			return;
 		}
 
-		if ($outcome === MilestoneStallTimer::DUE) {
+		if ($outcome === MilestoneStallTimerInterface::DUE) {
 			$this->acts->notifyIfStalled(case: $case);
 			$counts['stalled']++;
 			return;
 		}
 
-		if ($outcome === MilestoneStallTimer::UNAVAILABLE) {
+		if ($outcome === MilestoneStallTimerInterface::UNAVAILABLE) {
 			$counts['failed']++;
 		}
 	}//end syncOne()

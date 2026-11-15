@@ -36,8 +36,9 @@ describe('the related cases card (DqZaakGerelateerd)', () => {
 	})
 
 	it('reads the number, case type and handler the endpoint adds', () => {
-		expect(card.content.avatar).toBe('{title}')
-		expect(card.content.meta[0]).toBe('{identifier} · {caseTypeTitle} · {assigneeName}')
+		// related-cases-as-board: the avatar names the case type, 32px, in the primary tone.
+		expect(card.content.avatar).toEqual({ text: ['{caseTypeTitle}', '{plannedKind}'], size: 32, tone: 'primary', letters: 2 })
+		expect(card.content.meta.text[0]).toBe('{identifier} · {caseTypeTitle} · {assigneeName}')
 	})
 
 	it('groups by what the relation is to this case, with a heading for every relation type', () => {
@@ -53,6 +54,8 @@ describe('the related cases card (DqZaakGerelateerd)', () => {
 		expect(nl[card.content.valueLabels.group.planned]).toBe('Gepland vervolg')
 		expect(card.content.footerAction).toMatchObject({ type: 'open-modal', target: 'CasePlanFollowUpDialog' })
 		expect(card.content.rowActions[0]).toMatchObject({ label: 'Stop series', endpoint: '/apps/dossiq/api/case/@objectId/planned/{id}/stop', method: 'POST' })
+		// Only a series can be stopped; a single planned flow carries no menu.
+		expect(card.content.rowActions[0].visibleWhen).toEqual({ field: 'plannedKind', value: 'series' })
 		for (const kind of ['flow', 'series']) {
 			expect(nl[card.content.valueLabels.plannedKind[kind]], kind).toBeTruthy()
 		}

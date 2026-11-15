@@ -3,7 +3,7 @@
   items are an editable table of sub-objects.
   SPDX-License-Identifier: EUPL-1.2
   SPDX-FileCopyrightText: 2026 Conduction B.V.
-  @spec openspec/changes/vth-module/tasks.md#task-5
+  @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-5
 -->
 <template>
 	<div class="checklists-tab">
@@ -176,10 +176,10 @@ export default {
 	computed: {
 		/**
 		 * The checklists as list rows: the name, its version and size, and its
-		 * state as a status pill (success when active, warning when not).
+		 * state as a status pill (success when active, neutral when not).
 		 *
 		 * @return {Array<object>} One row per checklist.
-		 * @spec openspec/changes/vth-checklists-as-rows/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
+		 * @spec openspec/specs/vth-checklists-as-rows/spec.md#requirement-the-vth-checklists-are-library-rows-with-a-status-pill
 		 */
 		rows() {
 			return this.checklists.map((checklist) => {
@@ -190,7 +190,7 @@ export default {
 					subtitle: t('dossiq', 'Version {version}', { version: checklist.version || 1 })
 						+ ' · ' + n('dossiq', '%n item', '%n items', items),
 					state: checklist.active ? t('dossiq', 'Active') : t('dossiq', 'Inactive'),
-					tone: checklist.active ? 'success' : 'warning',
+					tone: checklist.active ? 'success' : 'default',
 					checklist,
 				}
 			})
@@ -362,7 +362,7 @@ export default {
 		 * @param {object} checklist Checklist row.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/vth-module/tasks.md#task-5
+		 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-5
 		 */
 		confirmDelete(checklist) {
 			this.pendingDeleteChecklist = checklist
@@ -374,7 +374,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/vth-module/tasks.md#task-5
+		 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-5
 		 */
 		async onConfirmDelete() {
 			const checklist = this.pendingDeleteChecklist
@@ -405,9 +405,16 @@ export default {
 	margin-bottom: 16px;
 }
 
+/* DqVthInstellingen: the rows start at the card's content edge, under a
+   line that closes the list off from the title. */
 .checklists-tab__list {
 	display: flex;
 	flex-direction: column;
+	border-top: 1px solid var(--color-border);
+}
+
+.checklists-tab__item.checklists-tab__item {
+	padding-inline: 0;
 }
 
 .checklists-tab__item + .checklists-tab__item {

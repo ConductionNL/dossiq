@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Iv3TaakveldList;
+use OCA\Dossiq\Kernel\Contracts\Iv3TaakveldListInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,13 +55,13 @@ class Iv3TaakveldController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param Iv3TaakveldList $taskFieldList Taakveld reference list.
+	 * @param Iv3TaakveldListInterface $taskFieldList Taakveld reference list.
 	 * @param IUserSession $userSession Current user session.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly Iv3TaakveldList $taskFieldList,
+		private readonly Iv3TaakveldListInterface $taskFieldList,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

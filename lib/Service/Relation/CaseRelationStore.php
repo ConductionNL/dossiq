@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Relation;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -49,6 +50,16 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/related-case-linking/spec.md
  */
 class CaseRelationStore {
+	/**
+	 * What the object of each schema setting is, for the log line.
+	 *
+	 * @var array<string, string>
+	 */
+	private const OBJECT_NAMES = [
+		'case_schema' => 'case',
+		'case_type_schema' => 'case type',
+	];
+
 	/**
 	 * Constructor.
 	 *
@@ -74,7 +85,7 @@ class CaseRelationStore {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function fetchCase(string $caseUuid): ?array {
-		return $this->findObject(uuid: $caseUuid, schemaKey: 'case_schema', what: 'case');
+		return $this->findObject(uuid: $caseUuid, schemaKey: 'case_schema');
 	}//end fetchCase()
 
 	/**
@@ -87,7 +98,7 @@ class CaseRelationStore {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function fetchCaseType(string $caseTypeUuid): ?array {
-		return $this->findObject(uuid: $caseTypeUuid, schemaKey: 'case_type_schema', what: 'case type');
+		return $this->findObject(uuid: $caseTypeUuid, schemaKey: 'case_type_schema');
 	}//end fetchCaseType()
 
 	/**
@@ -95,14 +106,13 @@ class CaseRelationStore {
 	 * read it; null when it is absent, unreadable or the read fails.
 	 *
 	 * @param string $uuid      The object UUID.
-	 * @param string $schemaKey The setting naming its schema.
-	 * @param string $what      What the object is, for the log line.
+	 * @param string $schemaKey The setting naming its schema, one of OBJECT_NAMES' keys.
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
-	private function findObject(string $uuid, string $schemaKey, string $what): ?array {
+	private function findObject(string $uuid, string $schemaKey): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register      = $this->settingsService->getConfigValue('register');
 		$schema        = $this->settingsService->getConfigValue($schemaKey);
@@ -114,7 +124,7 @@ class CaseRelationStore {
 			$obj = $objectService->find($uuid, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
-				'CaseRelationService: ' . $what . ' lookup failed',
+				'CaseRelationService: ' . self::OBJECT_NAMES[$schemaKey] . ' lookup failed',
 				['uuid' => $uuid, 'error' => $e->getMessage()]
 			);
 			return null;
@@ -149,6 +159,21 @@ class CaseRelationStore {
 			return;
 		}
 
+		$payload = $this->relationPayload(case: $case, links: ['relations' => $relations, 'typed' => $typedLinks]);
+
+		$this->saveRelations(store: [$objectService, $register, $schema], payload: $payload);
+	}//end persistRelations()
+
+	/**
+	 * The case with its relations and typed link lists set.
+	 *
+	 * @param array<string, mixed> $case  Case object to update.
+	 * @param array<string, mixed> $links The `relations` entries, and the `typed` link lists by property (or null).
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function relationPayload(array $case, array $links): array {
+		['relations' => $relations, 'typed' => $typedLinks] = $links;
 		$payload = $case;
 		$payload['relatedCases'] = json_encode(array_values($relations));
 
@@ -159,6 +184,19 @@ class CaseRelationStore {
 			$payload[$property] = array_values($uuids);
 		}
 
+		return $payload;
+	}//end relationPayload()
+
+	/**
+	 * Save the case, logging a failure.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store   OpenRegister's object service, the register and the case schema.
+	 * @param array<string, mixed>                  $payload The case to save.
+	 *
+	 * @return void
+	 */
+	private function saveRelations(array $store, array $payload): void {
+		[$objectService, $register, $schema] = $store;
 		try {
 			$objectService->saveObject(
 				object: $payload,
@@ -171,7 +209,7 @@ class CaseRelationStore {
 				['error' => $e->getMessage()]
 			);
 		}
-	}//end persistRelations()
+	}//end saveRelations()
 
 	/**
 	 * The relation rows OpenRegister answers for a case, in one direction.
@@ -202,11 +240,7 @@ class CaseRelationStore {
 		}
 
 		try {
-			$answer = $this->askOpenRegister(
-				objectService: $objectService,
-				caseUuid: $caseUuid,
-				incoming: $incoming
-			);
+			$answer = $this->askOpenRegister(objectService: $objectService, ask: ['caseUuid' => $caseUuid, 'incoming' => $incoming]);
 		} catch (\Throwable $e) {
 			// A degradation, not a miss: OpenRegister is there and could not
 			// answer. The case page keeps working without its relation groups,
@@ -224,13 +258,25 @@ class CaseRelationStore {
 	/**
 	 * Ask OpenRegister for one direction's rows.
 	 *
+	 * The object service is shared within a request and looks the case up in
+	 * the table of whatever register and schema an earlier call left set; under
+	 * another schema it answers nothing. So the case's own register is set
+	 * first, then its schema, as OpenRegister's own uses/used controllers do.
+	 *
 	 * @param object $objectService OpenRegister's object service.
-	 * @param string $caseUuid Case UUID.
-	 * @param bool $incoming Whether to ask for the reverse direction.
+	 * @param array{caseUuid: string, incoming: bool} $ask The case UUID, and whether to ask for the reverse direction.
 	 *
 	 * @return array<string, mixed> The envelope.
 	 */
-	private function askOpenRegister(object $objectService, string $caseUuid, bool $incoming): array {
+	private function askOpenRegister(object $objectService, array $ask): array {
+		['caseUuid' => $caseUuid, 'incoming' => $incoming] = $ask;
+		$register = $this->settingsService->getConfigValue('register');
+		$schema   = $this->settingsService->getConfigValue('case_schema');
+		if ($register !== '' && $schema !== '') {
+			$objectService->setRegister($register);
+			$objectService->setSchema($schema);
+		}
+
 		if ($incoming === true) {
 			return $objectService->getObjectUsedBy($caseUuid);
 		}
@@ -272,18 +318,6 @@ class CaseRelationStore {
 	 * @return array<string, mixed>|null The case as an array, or null when unusable.
 	 */
 	private function normalizeCaseObject(mixed $object): ?array {
-		if ($object === null) {
-			return null;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$object = $object->jsonSerialize();
-		}
-
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		return null;
+		return SerialisedResult::rowOf(value: $object);
 	}//end normalizeCaseObject()
 }//end class

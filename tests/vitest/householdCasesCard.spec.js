@@ -55,9 +55,14 @@ describe('the household card (DqSociaalDomein)', () => {
 	})
 
 	it('says what the reader sees of each row, and offers the lookup on a ground', () => {
-		const [full, existence] = card.content.badges
-		expect(nl[full.labels.full]).toBe('Zichtbaar voor u: ja')
-		expect(nl[existence.labels.true]).toBe('Zichtbaar voor u: alleen dat hij bestaat')
+		// The board's table: a case the reader may open, or only that one exists.
+		expect(card.content.presentation).toBe('table')
+		expect(card.content.columns.map((column) => nl[column.label])).toEqual(['Zaak', 'Zaaktype', 'Status', 'Zichtbaar voor u'])
+		expect(card.content.columns[0].value).toEqual(['{identifier} {title}', '{domain}'])
+		const visible = card.content.columns[3]
+		expect(visible.value).toEqual(['{access}', 'Only that it exists'])
+		expect(nl[card.content.valueLabels.access.full]).toBe('Ja')
+		expect(nl[visible.value[1]]).toBe('Alleen dat hij bestaat')
 		expect(card.content.footerAction).toMatchObject({ type: 'open-modal', target: 'CrossDomainLookupDialog', props: { household: true } })
 		expect(nl[card.content.footerAction.label]).toBe('Opzoeken in andere domeinen')
 	})

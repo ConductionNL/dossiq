@@ -91,6 +91,32 @@ describe('WorkloadSummaryBar', () => {
 	})
 })
 
+describe('WorkloadSummaryBar in parts', () => {
+	it('draws only the heading for part heading', () => {
+		const wrapper = mount(WorkloadSummaryBar, { props: { handlers, part: 'heading' }, global: { mocks: { t } } })
+		expect(wrapper.find('.workload-summary__title').exists()).toBe(true)
+		expect(wrapper.findComponent({ name: 'CnQuickFilterBar' }).exists()).toBe(false)
+	})
+
+	it('draws only the name chips for part chips', () => {
+		const wrapper = mount(WorkloadSummaryBar, { props: { handlers, part: 'chips' }, global: { mocks: { t } } })
+		expect(wrapper.find('.workload-summary__title').exists()).toBe(false)
+		expect(wrapper.findComponent({ name: 'CnQuickFilterBar' }).exists()).toBe(true)
+	})
+
+	it('reads the workload once for the heading and the chips together', async () => {
+		getWorkload.mockReset()
+		getWorkload.mockResolvedValue({ data: { handlers } })
+		const mocks = { t, $router: { push: vi.fn() } }
+		const heading = mount(WorkloadSummaryBar, { props: { part: 'heading' }, global: { mocks } })
+		const chips = mount(WorkloadSummaryBar, { props: { part: 'chips' }, global: { mocks } })
+		await flushPromises()
+		expect(getWorkload).toHaveBeenCalledTimes(1)
+		expect(heading.find('.workload-summary__title').exists()).toBe(true)
+		expect(chips.findComponent({ name: 'CnQuickFilterBar' }).exists()).toBe(true)
+	})
+})
+
 describe('WorkloadSummaryBar on My Work', () => {
 	it('reads the workload itself when no rows are handed in', async () => {
 		getWorkload.mockResolvedValue({ data: { handlers } })

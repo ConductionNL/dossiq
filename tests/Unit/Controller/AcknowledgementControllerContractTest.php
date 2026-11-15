@@ -109,7 +109,6 @@ class AcknowledgementControllerContractTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new AcknowledgementController(
-			appName: 'dossiq',
 			request: $this->request,
 			acknowledgement: $this->acknowledgement,
 			caseAccessGuard: $this->guard,

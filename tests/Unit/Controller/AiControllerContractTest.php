@@ -115,7 +115,6 @@ class AiControllerContractTest extends TestCase {
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
 
 		$this->controller = new AiController(
-			appName: 'dossiq',
 			request: $this->request,
 			aiService: $this->aiService,
 			auditService: $this->auditService,

@@ -6,7 +6,7 @@
  * accounts, as board DqContracten draws "Contracten | Leveranciers |
  * Portaalaccounts". The accounts tab shows to an admin only.
  *
- * @spec openspec/changes/r21-procurement-portal-accounts-tab/specs/procurement-pages/spec.md#requirement-the-procurement-pages-link-the-supplier-portal-accounts
+ * @spec openspec/specs/procurement-pages/spec.md#requirement-the-procurement-pages-link-the-supplier-portal-accounts
  */
 
 import fs from 'fs'

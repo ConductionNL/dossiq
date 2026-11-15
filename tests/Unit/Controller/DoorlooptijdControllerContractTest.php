@@ -47,6 +47,7 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for DoorlooptijdController::metrics().
  *
  * @covers \OCA\Dossiq\Controller\DoorlooptijdController
+ * @uses \OCA\Dossiq\Service\Csv\CsvWriter
  */
 class DoorlooptijdControllerContractTest extends TestCase {
 
@@ -122,7 +123,7 @@ class DoorlooptijdControllerContractTest extends TestCase {
 	 */
 	private function l10n(): IL10N {
 		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
 		return $l10n;
 	}//end l10n()
 
@@ -130,7 +131,7 @@ class DoorlooptijdControllerContractTest extends TestCase {
 	 * The CSV download of the figures per case type and month: the same filter
 	 * and period as the page, column labels, the rows, and the BOM.
 	 *
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 *
 	 * @return void
 	 */
@@ -161,7 +162,7 @@ class DoorlooptijdControllerContractTest extends TestCase {
 	/**
 	 * A format the endpoint does not speak is refused, not answered as JSON.
 	 *
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 *
 	 * @return void
 	 */
@@ -180,7 +181,7 @@ class DoorlooptijdControllerContractTest extends TestCase {
 	 * The download is refused to a reader outside the reporting audience,
 	 * before anything is read.
 	 *
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 *
 	 * @return void
 	 */

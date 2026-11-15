@@ -7,10 +7,12 @@
  * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
  */
 
+import { getUserLocale, resolveTranslatable } from './i18nResolver.js'
+
 /**
  * The status after the current one, numbered as a step.
  *
- * @param {Array<object>|null} statusTypes The case type's statuses, `{ id, name, order }`, in any order.
+ * @param {Array<object>|null} statusTypes The case type's statuses, `{ id, name, order }`, in any order; a name may be language-tagged (`{ nl, en }`).
  * @param {string} currentId The id of the status the case is in.
  * @return {{number: number, name: string}|null} The next step, or null when there is none.
  * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
@@ -28,5 +30,5 @@ export function nextStepOf(statusTypes, currentId) {
 		return null
 	}
 
-	return { number: at + 2, name: String(ordered[at + 1]?.name ?? '') }
+	return { number: at + 2, name: resolveTranslatable(ordered[at + 1]?.name ?? '', getUserLocale()).text }
 }

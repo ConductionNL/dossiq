@@ -22,14 +22,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/a-recorded-decision-is-listed-on-its-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-a-recorded-decision-is-listed-on-its-case-req-cm-81
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\DecisionDocument;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Lists a recorded decision on its case.
  *
- * @spec openspec/changes/a-recorded-decision-is-listed-on-its-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-a-recorded-decision-is-listed-on-its-case-req-cm-81
  */
 class CaseDecisionLink {
 
@@ -68,7 +68,7 @@ class CaseDecisionLink {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/a-recorded-decision-is-listed-on-its-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-recorded-decision-is-listed-on-its-case-req-cm-81
 	 */
 	public function link(object $objectService, string $register, string $caseId, string $decisionId): void {
 		if ($decisionId === '') {
@@ -98,7 +98,7 @@ class CaseDecisionLink {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'CaseDecisionLink: the case could not list its recorded decision',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}//end try
 	}//end link()

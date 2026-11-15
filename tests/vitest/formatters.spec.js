@@ -142,6 +142,14 @@ describe('the case type list formatters', () => {
 		expect(formatters.versionLabel(null)).toBe('')
 	})
 
+	it('caseTypeCount writes a number of case types as a phrase and nothing when unknown (DqCatalogus "3 zaaktypen")', () => {
+		expect(formatters.caseTypeCount(1)).toBe('%n case type')
+		expect(formatters.caseTypeCount(3)).toBe('%n case types')
+		expect(formatters.caseTypeCount(0)).toBe('%n case types')
+		expect(formatters.caseTypeCount(null)).toBe('')
+		expect(formatters.caseTypeCount('x')).toBe('')
+	})
+
 	it('caseCount writes a number of cases as a phrase and nothing for a non-count', () => {
 		// The l10n stub picks the form and leaves `%n` to the real library.
 		expect(formatters.caseCount(1)).toBe('%n case')

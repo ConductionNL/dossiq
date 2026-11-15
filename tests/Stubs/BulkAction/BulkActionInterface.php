@@ -28,8 +28,6 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\BulkAction;
 
-use OCA\OpenRegister\Db\ObjectEntity;
-use OCP\IUser;
 
 /**
  * The contract every bulk action implements.
@@ -92,12 +90,9 @@ interface BulkActionInterface {
 	/**
 	 * What the action would do, or does, to one object.
 	 *
-	 * @param ObjectEntity         $object     The object to act on.
-	 * @param array<string, mixed> $parameters The job's parameters.
-	 * @param bool                 $commit     False to rehearse, true to write.
-	 * @param IUser|null           $actor      The user the job runs as.
+	 * @param BulkStep $step The member object, the parameters, whether to commit and who started the job.
 	 *
 	 * @return BulkActionResult What happened, or what would happen.
 	 */
-	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult;
+	public function apply(BulkStep $step): BulkActionResult;
 }//end interface

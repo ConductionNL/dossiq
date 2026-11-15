@@ -161,6 +161,61 @@ function newerPageType(err, manifest) {
 	return typeof type === 'string' && Array.isArray(listed) && listed.includes(type) ? type : ''
 }
 
+const ACTION_LISTS = ['headerActions', 'actions', 'bulkActions', 'newActions']
+
+/**
+ * Whether `segments` is `pages/<n>/config/<key>/…` with `length` segments.
+ *
+ * @param {string[]} segments The instance path, split.
+ * @param {number}   length   The required segment count.
+ * @return {boolean} True when it is a page-config path of that length.
+ */
+function isPageConfigPath(segments, length) {
+	return segments.length === length && segments[0] === 'pages' && segments[2] === 'config'
+}
+
+/**
+ * The shapes an unknown property can be rejected on, each resolved from the
+ * PATH, so a new one fails closed: unknown shape, not a lag, and the error
+ * keeps failing the build until somebody teaches this table. The first entry
+ * whose `matches` holds decides.
+ */
+const NEWER_SCHEMA_SHAPES = [
+	{
+		matches: (seg) => seg.length === 2 && seg[0] === 'pages',
+		def: (schema) => schema.$defs.page,
+	},
+	{
+		matches: (seg) => isPageConfigPath(seg, 5) && ACTION_LISTS.includes(seg[3]),
+		def: (schema) => schema.$defs.action,
+	},
+	{
+		matches: (seg) => isPageConfigPath(seg, 6) && ACTION_LISTS.includes(seg[3]) && seg[5] === 'visibleWhen',
+		def: (schema) => schema.$defs.visibleWhen,
+	},
+	// A detail header pill's `resolve` (pill-color-field, schema 2.134.0).
+	{
+		matches: (seg) => isPageConfigPath(seg, 5) && ['typePill', 'statusPill'].includes(seg[3]) && seg[4] === 'resolve',
+		def: (schema) => schema.$defs.headerPill?.properties?.resolve,
+	},
+	// A board card (its pill's `resolve`, pill-color-field, schema 2.135.0).
+	{
+		matches: (seg) => isPageConfigPath(seg, 5) && seg[3] === 'board' && seg[4] === 'card',
+		def: (schema) => schema.$defs.boardView?.properties?.card,
+	},
+	// A page's default saved view (its `icon`, pill-color-field, schema 2.134.0).
+	{
+		matches: (seg) => isPageConfigPath(seg, 5) && seg[3] === 'defaultSavedViews',
+		def: (schema) => schema.$defs.page?.properties?.config?.properties?.defaultSavedViews?.items,
+	},
+	// A walkthrough tour is declared inline, not under $defs (the-getting-
+	// started-tour-starts-on-the-dashboard, `startOn` in schema 2.94.0).
+	{
+		matches: (seg) => seg.length === 3 && seg[0] === 'walkthrough' && seg[1] === 'tours',
+		def: (schema) => schema.properties?.walkthrough?.properties?.tours?.items,
+	},
+]
+
 /**
  * Whether the vendored newer schema declares `property` at `instancePath`.
  *
@@ -179,94 +234,14 @@ function newerSchemaAccepts(instancePath, property) {
 	if (!schema || !schema.$defs) {
 		return false
 	}
-
 	const segments = String(instancePath || '')
 		.split('/')
 		.filter(Boolean)
-	// The two shapes an unknown property can be rejected on today. Both are
-	// resolved from the PATH, so a new one fails closed: unknown shape, not a
-	// lag, and the error keeps failing the build until somebody teaches this.
-	let def = null
-	if (segments.length === 2 && segments[0] === 'pages') {
-		def = schema.$defs.page
-	} else if (
-		segments.length === 4
-		&& segments[0] === 'pages'
-		&& segments[2] === 'config'
-	) {
-		def = null
-	} else if (
-		segments.length === 5
-		&& segments[0] === 'pages'
-		&& segments[2] === 'config'
-		&& ['headerActions', 'actions', 'bulkActions', 'newActions'].includes(
-			segments[3],
-		)
-	) {
-		def = schema.$defs.action
-	} else if (
-		segments.length === 6
-		&& segments[0] === 'pages'
-		&& segments[2] === 'config'
-		&& ['headerActions', 'actions', 'bulkActions', 'newActions'].includes(
-			segments[3],
-		)
-		&& segments[5] === 'visibleWhen'
-	) {
-		def = schema.$defs.visibleWhen
-	}
-
-	// A detail header pill's `resolve` (pill-color-field, schema 2.134.0).
-	if (
-		def === null
-		&& segments.length === 5
-		&& segments[0] === 'pages'
-		&& segments[2] === 'config'
-		&& ['typePill', 'statusPill'].includes(segments[3])
-		&& segments[4] === 'resolve'
-	) {
-		def = schema.$defs.headerPill?.properties?.resolve ?? null
-	}
-
-	// A board card (its pill's `resolve`, pill-color-field, schema 2.135.0).
-	if (
-		def === null
-		&& segments.length === 5
-		&& segments[0] === 'pages'
-		&& segments[2] === 'config'
-		&& segments[3] === 'board'
-		&& segments[4] === 'card'
-	) {
-		def = schema.$defs.boardView?.properties?.card ?? null
-	}
-
-	// A page's default saved view (its `icon`, pill-color-field, schema 2.134.0).
-	if (
-		def === null
-		&& segments.length === 5
-		&& segments[0] === 'pages'
-		&& segments[2] === 'config'
-		&& segments[3] === 'defaultSavedViews'
-	) {
-		def = schema.$defs.page?.properties?.config?.properties?.defaultSavedViews?.items ?? null
-	}
-
-	// A walkthrough tour is declared inline, not under $defs. Resolved by
-	// its path like the others (the-getting-started-tour-starts-on-the-
-	// dashboard, `startOn` in schema 2.94.0).
-	if (
-		def === null
-		&& segments.length === 3
-		&& segments[0] === 'walkthrough'
-		&& segments[1] === 'tours'
-	) {
-		def = schema.properties?.walkthrough?.properties?.tours?.items ?? null
-	}
-
+	const shape = NEWER_SCHEMA_SHAPES.find((candidate) => candidate.matches(segments))
+	const def = shape ? shape.def(schema) : null
 	if (!def || !def.properties) {
 		return false
 	}
-
 	return Object.hasOwn(def.properties, property)
 }
 
@@ -382,93 +357,81 @@ function structuralLint(manifest) {
 	return errors
 }
 
-function main() {
-	if (!fs.existsSync(MANIFEST_PATH)) {
-		console.error(`[validate-manifest] manifest not found: ${MANIFEST_PATH}`)
-		process.exit(1)
+/**
+ * Run the structural lint and exit with its verdict.
+ *
+ * @param {object} manifest The manifest.
+ * @param {string} label    How the lint is named in the output.
+ * @return {void}
+ */
+function exitWithStructuralLint(manifest, label) {
+	const errors = structuralLint(manifest)
+	if (errors.length === 0) {
+		console.log(`[validate-manifest] ${label}: PASS (0 issues)`)
+		process.exit(0)
 	}
+	console.error(`[validate-manifest] ${label}: FAIL`)
+	for (const err of errors) console.error(`  - ${err}`)
+	process.exit(1)
+}
 
-	const manifest = loadJson(MANIFEST_PATH)
-	console.log(`[validate-manifest] manifest: ${MANIFEST_PATH}`)
-	console.log(`[validate-manifest] manifest.version: ${manifest.version}`)
-	console.log(`[validate-manifest] pages: ${(manifest.pages || []).length}`)
-
-	const schemaPath = findSchemaPath()
-	if (!schemaPath) {
-		console.warn(
-			'[validate-manifest] no schema candidate resolved; falling back to structural lint.',
-		)
-		const errors = structuralLint(manifest)
-		if (errors.length === 0) {
-			console.log('[validate-manifest] structural lint: PASS (0 issues)')
-			process.exit(0)
-		}
-		console.error('[validate-manifest] structural lint: FAIL')
-		for (const err of errors) console.error(`  - ${err}`)
-		process.exit(1)
-	}
-	console.log(`[validate-manifest] schema: ${schemaPath}`)
-	const schema = loadJson(schemaPath)
-	console.log(`[validate-manifest] schema.version: ${schema.version || '(unset)'}`)
-
-	const { Ajv, addFormats } = loadAjv()
-	if (!Ajv) {
-		const errors = structuralLint(manifest)
-		if (errors.length === 0) {
-			console.log(
-				'[validate-manifest] structural lint (no Ajv): PASS (0 issues)',
-			)
-			process.exit(0)
-		}
-		console.error('[validate-manifest] structural lint (no Ajv): FAIL')
-		for (const err of errors) console.error(`  - ${err}`)
-		process.exit(1)
-	}
-
+/**
+ * A draft 2020-12 Ajv instance, with formats attached when ajv-formats loads.
+ *
+ * @param {Function}      Ajv            The Ajv constructor.
+ * @param {Function|null} addFormats     The ajv-formats plugin, or null.
+ * @param {Function}      onFormatError  Called with the error when formats fail to attach.
+ * @return {object} The Ajv instance.
+ */
+function newAjv(Ajv, addFormats, onFormatError) {
 	const ajv = new Ajv({ allErrors: true, strict: false })
 	if (addFormats) {
 		try {
 			addFormats(ajv)
 		} catch (err) {
-			console.warn(
-				`[validate-manifest] ajv-formats failed to attach (${err.message}); continuing without format validation`,
-			)
+			onFormatError(err)
 		}
 	}
-	const validate = ajv.compile(schema)
-	const ok = validate(manifest)
-	if (ok) {
-		console.log('[validate-manifest] Ajv validation: PASS (0 errors)')
-		process.exit(0)
-	}
-	// EVERY ERROR IS ONE OF TWO THINGS, AND THEY NEED DIFFERENT PEOPLE.
-	//
-	// Either the manifest is wrong, which an app author fixes, or the INSTALLED
-	// library is older than the schema this manifest targets, which only a
-	// library release fixes and which no app author can do anything about.
-	// Reported as one undifferentiated list they are indistinguishable, and
-	// measured on 2026-09-18 that cost every lane on the integration branch a
-	// red `check:manifest` and a paragraph in every PR body: three errors, two
-	// of them a lag on `savedViewPlaces` (schema 2.34.0, shipped in no release
-	// yet) and one of them a real `_note` on a header action that had been
-	// hiding behind them since it landed.
-	//
-	// The classification is DERIVED, never written down: an unknown-property
-	// error is a lag only when the newer schema this repo vendors actually
-	// declares that property. So it cannot become a blanket excuse, and it
-	// stops being a lag by itself the day the release lands.
-	//
-	// 🔴 `savedViewPlaces` above is kept because it is the MEASURED example,
-	// but the key itself was later removed from the vocabulary (schema 2.40.0:
-	// a saved view is a lens applied onto the page's own address, not a place).
-	// That is the third case, and this classifier cannot see it: a REMOVAL the
-	// vendored copy has not caught up with is the same shape as a lag, so a
-	// page still declaring a retired key would be forgiven and reported as
-	// PASS. Re-vendoring is the only thing that tells them apart, and
-	// `tests/vitest/validateManifestLag.spec.js` is what insists on it.
+	return ajv
+}
+
+// EVERY ERROR IS ONE OF TWO THINGS, AND THEY NEED DIFFERENT PEOPLE.
+//
+// Either the manifest is wrong, which an app author fixes, or the INSTALLED
+// library is older than the schema this manifest targets, which only a
+// library release fixes and which no app author can do anything about.
+// Reported as one undifferentiated list they are indistinguishable, and
+// measured on 2026-09-18 that cost every lane on the integration branch a
+// red `check:manifest` and a paragraph in every PR body: three errors, two
+// of them a lag on `savedViewPlaces` (schema 2.34.0, shipped in no release
+// yet) and one of them a real `_note` on a header action that had been
+// hiding behind them since it landed.
+//
+// The classification is DERIVED, never written down: an unknown-property
+// error is a lag only when the newer schema this repo vendors actually
+// declares that property. So it cannot become a blanket excuse, and it
+// stops being a lag by itself the day the release lands.
+//
+// 🔴 `savedViewPlaces` above is kept because it is the MEASURED example,
+// but the key itself was later removed from the vocabulary (schema 2.40.0:
+// a saved view is a lens applied onto the page's own address, not a place).
+// That is the third case, and this classifier cannot see it: a REMOVAL the
+// vendored copy has not caught up with is the same shape as a lag, so a
+// page still declaring a retired key would be forgiven and reported as
+// PASS. Re-vendoring is the only thing that tells them apart, and
+// `tests/vitest/validateManifestLag.spec.js` is what insists on it.
+/**
+ * Split Ajv's errors into the installed library lagging this manifest and
+ * defects of the manifest itself, by asking the vendored newer schema.
+ *
+ * @param {object[]} errors   Ajv errors against the installed schema.
+ * @param {object}   manifest The manifest.
+ * @return {{lagged: object[], real: object[]}} The two lists.
+ */
+function classifyErrors(errors, manifest) {
 	const lagged = []
 	const real = []
-	for (const err of validate.errors || []) {
+	for (const err of errors) {
 		const property = err.params && err.params.additionalProperty
 		if (
 			err.keyword === 'additionalProperties'
@@ -487,39 +450,51 @@ function main() {
 		}
 		real.push(err)
 	}
+	return { lagged, real }
+}
 
-	// The same question for a VALUE or a branch the newer schema allows (a new
-	// enum value, a new anyOf branch): there is no property name to look up,
-	// so the newer schema is asked directly. An error is a lag only when the
-	// newer schema reports nothing at its path, below it or above it; any
-	// newer error near it keeps it a defect.
+/**
+ * The same question for a VALUE or a branch the newer schema allows (a new
+ * enum value, a new anyOf branch): there is no property name to look up, so
+ * the newer schema is asked directly. An error is a lag only when the newer
+ * schema reports nothing at its path, below it or above it; any newer error
+ * near it keeps it a defect. Moves such errors from `real` to `lagged`.
+ *
+ * @param {object}   context  `{Ajv, addFormats, schema, manifest}`.
+ * @param {object[]} lagged   Lagging errors; gains the moved ones.
+ * @param {object[]} real     Defects; loses the moved ones.
+ * @return {void}
+ */
+function reclassifyByNewerSchema(context, lagged, real) {
 	const newer = newerSchema()
-	if (newer && real.length > 0 && compareSchemaVersions(schemaVersion(newer), schemaVersion(schema)) > 0) {
-		const newerAjv = new Ajv({ allErrors: true, strict: false })
-		if (addFormats) {
-			try {
-				addFormats(newerAjv)
-			} catch (_) {
-				// formats are not what tells a lag from a defect
-			}
-		}
-		const validateNewer = newerAjv.compile(newer)
-		validateNewer(manifest)
-		const newerPaths = (validateNewer.errors || []).map((e) => e.instancePath || '')
-		const near = (at) => newerPaths.some((p) => p === at || p.startsWith(at + '/') || at.startsWith(p + '/') || p === '')
-		for (let i = real.length - 1; i >= 0; i--) {
-			const at = real[i].instancePath || ''
-			if (at !== '' && !near(at)) {
-				lagged.push({ err: real[i], property: real[i].keyword })
-				real.splice(i, 1)
-			}
+	if (!newer || real.length === 0 || compareSchemaVersions(schemaVersion(newer), schemaVersion(context.schema)) <= 0) {
+		return
+	}
+	// formats are not what tells a lag from a defect
+	const validateNewer = newAjv(context.Ajv, context.addFormats, () => {}).compile(newer)
+	validateNewer(context.manifest)
+	const newerPaths = (validateNewer.errors || []).map((e) => e.instancePath || '')
+	const near = (at) => newerPaths.some((p) => p === at || p.startsWith(at + '/') || at.startsWith(p + '/') || p === '')
+	for (let i = real.length - 1; i >= 0; i--) {
+		const at = real[i].instancePath || ''
+		if (at !== '' && !near(at)) {
+			lagged.push({ err: real[i], property: real[i].keyword })
+			real.splice(i, 1)
 		}
 	}
+}
 
-	// A shape checked inside an `if`/`then` (a board under `type: index`)
-	// reports its lag twice: the property, and the `then` it sits under on an
-	// ancestor path. The wrapper is that same lag, not a defect of its own; a
-	// real error under the same page is reported separately and still fails.
+/**
+ * A shape checked inside an `if`/`then` (a board under `type: index`) reports
+ * its lag twice: the property, and the `then` it sits under on an ancestor
+ * path. The wrapper is that same lag, not a defect of its own; a real error
+ * under the same page is reported separately and still fails.
+ *
+ * @param {object[]} lagged Lagging errors.
+ * @param {object[]} real   Defects; loses the `if` wrappers of a lag.
+ * @return {void}
+ */
+function dropLaggedWrappers(lagged, real) {
 	const laggedPaths = lagged.map(({ err }) => err.instancePath || '')
 	for (let i = real.length - 1; i >= 0; i--) {
 		const err = real[i]
@@ -528,21 +503,74 @@ function main() {
 			real.splice(i, 1)
 		}
 	}
+}
 
-	if (lagged.length > 0) {
+/**
+ * Warn about the errors that are the installed library lagging this manifest.
+ *
+ * @param {object[]} lagged Lagging errors.
+ * @param {object}   schema The installed schema.
+ * @return {void}
+ */
+function reportLagged(lagged, schema) {
+	if (lagged.length === 0) {
+		return
+	}
+	console.warn(
+		`[validate-manifest] ${lagged.length} error(s) are the INSTALLED library lagging this manifest, not a defect here:`,
+	)
+	for (const { err, property } of lagged) {
 		console.warn(
-			`[validate-manifest] ${lagged.length} error(s) are the INSTALLED library lagging this manifest, not a defect here:`,
-		)
-		for (const { err, property } of lagged) {
-			console.warn(
-				`  ~ ${err.instancePath || '(root)'} uses "${property}", which schema ${newerSchemaVersion()} accepts and the installed ${schemaVersion(schema)} does not`,
-			)
-		}
-		console.warn(
-			'[validate-manifest] Nothing in this app fixes those. They go when @conduction/nextcloud-vue '
-				+ `releases a version carrying schema ${newerSchemaVersion()}.`,
+			`  ~ ${err.instancePath || '(root)'} uses "${property}", which schema ${newerSchemaVersion()} accepts and the installed ${schemaVersion(schema)} does not`,
 		)
 	}
+	console.warn(
+		'[validate-manifest] Nothing in this app fixes those. They go when @conduction/nextcloud-vue '
+			+ `releases a version carrying schema ${newerSchemaVersion()}.`,
+	)
+}
+
+function main() {
+	if (!fs.existsSync(MANIFEST_PATH)) {
+		console.error(`[validate-manifest] manifest not found: ${MANIFEST_PATH}`)
+		process.exit(1)
+	}
+
+	const manifest = loadJson(MANIFEST_PATH)
+	console.log(`[validate-manifest] manifest: ${MANIFEST_PATH}`)
+	console.log(`[validate-manifest] manifest.version: ${manifest.version}`)
+	console.log(`[validate-manifest] pages: ${(manifest.pages || []).length}`)
+
+	const schemaPath = findSchemaPath()
+	if (!schemaPath) {
+		console.warn(
+			'[validate-manifest] no schema candidate resolved; falling back to structural lint.',
+		)
+		exitWithStructuralLint(manifest, 'structural lint')
+	}
+	console.log(`[validate-manifest] schema: ${schemaPath}`)
+	const schema = loadJson(schemaPath)
+	console.log(`[validate-manifest] schema.version: ${schema.version || '(unset)'}`)
+
+	const { Ajv, addFormats } = loadAjv()
+	if (!Ajv) {
+		exitWithStructuralLint(manifest, 'structural lint (no Ajv)')
+	}
+
+	const validate = newAjv(Ajv, addFormats, (err) => {
+		console.warn(
+			`[validate-manifest] ajv-formats failed to attach (${err.message}); continuing without format validation`,
+		)
+	}).compile(schema)
+	if (validate(manifest)) {
+		console.log('[validate-manifest] Ajv validation: PASS (0 errors)')
+		process.exit(0)
+	}
+
+	const { lagged, real } = classifyErrors(validate.errors || [], manifest)
+	reclassifyByNewerSchema({ Ajv, addFormats, schema, manifest }, lagged, real)
+	dropLaggedWrappers(lagged, real)
+	reportLagged(lagged, schema)
 
 	if (real.length === 0) {
 		console.log(

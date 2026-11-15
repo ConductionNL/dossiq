@@ -16,8 +16,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
@@ -51,7 +51,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return JSONResponse The translated refusal, carrying the refusal's own status.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	private function refused(string $op, RefusedException $e): JSONResponse {
 		$parts = explode('\\', static::class);
@@ -74,7 +74,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return JSONResponse The rule slug, the sentence, and the refusal's own status.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	private function refusalResponse(RefusedException $e): JSONResponse {
 		return new JSONResponse(
@@ -100,7 +100,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return string The translated sentence, or the sentence as written.
 	 *
-	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	private function refusalSentence(RefusedException $e): string {
 		$sentence = $e->getSentence();
@@ -128,7 +128,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return IL10N|null The translator.
 	 *
-	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	private function refusalTranslator(): ?IL10N {
 		$own = $this->refusalL10n();
@@ -140,7 +140,7 @@ trait TranslatesRefusals {
 			// The service locator, because a trait takes no constructor
 			// injection. A controller that can inject `IL10N` overrides
 			// refusalL10n() above and never reaches this line.
-			return \OCP\Server::get(IFactory::class)->get(Application::APP_ID);
+			return \OCP\Server::get(IFactory::class)->get(AppIdentity::APP_ID);
 		} catch (Throwable) {
 			return null;
 		}
@@ -155,7 +155,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return IL10N|null The translator, or null to use the app's.
 	 *
-	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	protected function refusalL10n(): ?IL10N {
 		return null;

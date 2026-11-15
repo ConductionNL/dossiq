@@ -60,7 +60,7 @@ describe('the Contacts menu entry', () => {
 	})
 
 	it('names an icon src/icons.js registers (gate-60)', () => {
-		expect(menuEntry.icon).toBe('AccountGroupOutline')
+		expect(menuEntry.icon).toBe('AccountMultipleOutline')
 		expect(iconsSource).toContain(`\n\t${menuEntry.icon},`)
 	})
 
@@ -90,8 +90,8 @@ describe('the Contacts menu entry', () => {
 		// FOUR, not the design's three. The design and the delta spec both say
 		// the top level is Dashboard, My work and Contacts; the extra is
 		// `SettingsGroup`, the gear group's own header, which carries no route
-		// and is not a domain. `CaseObjectsMenu` (Objects) is an own-record
-		// register and sits under settings (Ruben, 20 October 2026).
+		// and is not a domain. `CaseObjectsMenu` (Objects) is relocated under
+		// Cases, so it spends no top-level slot (Ruben, 6 November 2026).
 		// Asserting the design's three would have been a test that fails on a
 		// correct tree, so the measurement is what is written down.
 		expect(topLevel).toEqual([
@@ -186,6 +186,8 @@ describe.each([
 			// open cases and the latest contact moments under the card.
 			'contact-open-cases',
 			'contact-latest-moments',
+			// The party's open pipelinq tickets (DqContact/DqOrganisatie Tickets card).
+			'contact-open-tickets',
 			'contact-cases',
 			'contact-moments',
 			// The third question this page is for (#2993): what did we send
@@ -199,6 +201,8 @@ describe.each([
 			// History, last as on pipelinq's relation pages: the last tab,
 			// with a last-changed card closing the side column.
 			'contact-history',
+			// An organisation's contact persons (DqOrganisatie Hoofdcontact, "Alle 2 contactpersonen").
+			...(id === 'OrganisationDetail' ? ['org-contact-persons'] : []),
 		])
 		// A facts card in two columns, as the board draws it; facts are read only.
 		expect(widget(p, 'contact-card').type).toBe('facts')
@@ -239,15 +243,17 @@ describe.each([
 		}
 		const strip = widget(p, 'contact-panels')
 		expect(strip.type).toBe('tabs')
-		expect(strip.content.tabs[0].widgetIds).toEqual([
+		expect(strip.content.tabs[0].widgetIds.filter((id) => id !== 'org-contact-persons')).toEqual([
 			'contact-card',
 			'contact-open-cases',
+			'contact-open-tickets',
 			'contact-latest-moments',
 		])
 		expect(strip.content.tabs.map((tab) => tab.widgetId)).toEqual([
 			undefined,
 			'contact-cases',
 			'contact-moments',
+			...(id === 'OrganisationDetail' ? ['org-contact-persons'] : []),
 			'contact-documents',
 			'contact-history',
 		])
@@ -331,9 +337,13 @@ describe('the contact on a contact moment', () => {
 		// (#2931) the sensitive-field read rules. The two files are asserted
 		// TOGETHER and against one value on purpose: #2907 bumped the live
 		// register and left the mock behind, and a mock one version short
-		// looks exactly like a mock that is up to date.
+		// looks exactly like a mock that is up to date. 1.6.0 added the paper
+		// letter (`brief`) as a channel (contact-channel-letter). 1.7.0 added
+		// subject, note and attachmentCount (contact-message-subject-note);
+		// 1.8.0 the full message (contact-message-text); 1.9.0 the automatic
+		// marker (contact-log-skips-automatic).
 		for (const register of [kccRegister, mockRegister]) {
-			expect(register.components.schemas.contactmoment.version).toBe('1.5.0')
+			expect(register.components.schemas.contactmoment.version).toBe('1.9.0')
 		}
 	})
 

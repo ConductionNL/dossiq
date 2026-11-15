@@ -26,7 +26,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/the-woo-publication-carries-its-documents/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\Files\IRootFolder;
 /**
  * One file by its Nextcloud id, wherever OpenRegister keeps it.
  *
- * @spec openspec/changes/the-woo-publication-carries-its-documents/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 trait FindsFilesById {
 
@@ -52,7 +52,7 @@ trait FindsFilesById {
 	 *
 	 * @return File|null The file, or null when neither knows it.
 	 *
-	 * @spec openspec/changes/the-woo-publication-carries-its-documents/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	protected function fileById(?object $fileService, IRootFolder $rootFolder, int $fileId): ?File {
 		if ($fileId <= 0) {

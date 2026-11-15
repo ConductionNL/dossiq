@@ -24,7 +24,6 @@ import {
 	contactCentreFields,
 	DEFAULT_CASE_PATTERN,
 	ISO_DURATION_PATTERN,
-	mandateSettingsFields,
 	menuStructureFields,
 	paymentCallbackFields,
 	queueUrgencyFields,
@@ -75,7 +74,6 @@ describe('admin forms saved through dossiq settings', () => {
 	const sections = {
 		menuStructureFields,
 		queueUrgencyFields,
-		mandateSettingsFields,
 		consultationFields,
 		reviewReportFields,
 		paymentCallbackFields,
@@ -123,16 +121,8 @@ describe('the queue urgency', () => {
 	})
 })
 
-describe('the mandate and consultation behaviour', () => {
-	it('stores the auto-activation switch as 1 or 0', () => {
-		const field = byKey(mandateSettingsFields(t)).mandaat_auto_finalize_approved
-		expect(field).toMatchObject({ type: 'switch', trueValue: '1', falseValue: '0' })
-	})
-
+describe('the consultation behaviour', () => {
 	it('shows the defaults the server uses for an unset value', () => {
-		const mandate = byKey(mandateSettingsFields(t))
-		expect(mandate.mandaat_decidesk_connection.default).toBe('decidesk-default')
-		expect(mandate.mandaat_default_extension_days.default).toBe(14)
 		const consultation = byKey(consultationFields(t))
 		expect(consultation.consultation_default_deadline_days.default).toBe(28)
 		expect(consultation.consultation_warning_offset_days.default).toBe(5)
@@ -159,15 +149,15 @@ describe('the payment callback', () => {
 	const fields = byKey(paymentCallbackFields(t))
 
 	it('shows the secret back to the administrator who hands it on', () => {
-		expect(fields.dwangsom_callback_secret.type).toBe('password')
+		expect(fields.payout_callback_secret.type).toBe('password')
 	})
 
 	it('warns while no secret is stored', () => {
-		expect(fields['callback-secret-missing']).toMatchObject({ type: 'status', tone: 'warning', visibleWhen: { key: 'dwangsom_callback_secret', empty: true } })
+		expect(fields['callback-secret-missing']).toMatchObject({ type: 'status', tone: 'warning', visibleWhen: { key: 'payout_callback_secret', empty: true } })
 	})
 
 	it('generates a 32-byte secret into the field', () => {
-		expect(fields['generate-callback-secret']).toMatchObject({ type: 'action', fill: { key: 'dwangsom_callback_secret', bytes: 32 } })
+		expect(fields['generate-callback-secret']).toMatchObject({ type: 'action', fill: { key: 'payout_callback_secret', bytes: 32 }, placement: 'save' })
 	})
 })
 
@@ -228,6 +218,11 @@ describe('the background service account', () => {
 		expect(tag).toContain('Background jobs now save as {userId}.')
 	})
 
+	it('puts Use this account beside the user name, as DqBeheerinstellingen draws it', () => {
+		const section = adminRoot.slice(adminRoot.indexOf('id="section-background-service-account"'))
+		expect(section.slice(0, section.indexOf('/>'))).toContain(':saveInline="true"')
+	})
+
 	it('names what is wrong with an unusable account, only while it is unusable', () => {
 		expect(fields.reason).toMatchObject({ type: 'status', tone: 'warning', visibleWhen: { key: 'usable', equals: false } })
 		expect(Object.keys(fields.reason.textMap)).toEqual(['unknown', 'disabled', 'not-in-group', '*'])
@@ -277,7 +272,17 @@ describe('the daily digest', () => {
 	})
 
 	it('asks the hour only while the digest is on', () => {
-		expect(fields.hour).toMatchObject({ min: 0, max: 23, integer: true, visibleWhen: { key: 'enabled', equals: true } })
+		expect(fields.hour).toMatchObject({ type: 'select', visibleWhen: { key: 'enabled', equals: true } })
+	})
+
+	it('offers the 24 hours as a select, as the board draws "08.00 uur"', () => {
+		expect(fields.hour.options).toHaveLength(24)
+		expect(fields.hour.options[8]).toEqual({ value: 8, label: '{hour}:00' })
+	})
+
+	it('sets a section description 16px above its content (24px gap less 8)', () => {
+		const rule = userSettings.slice(userSettings.indexOf('.dossiq-user-settings__intro {'), userSettings.indexOf('}', userSettings.indexOf('.dossiq-user-settings__intro {')))
+		expect(rule).toContain('margin-block: 0 -8px;')
 	})
 
 	it('names who decided the setting', () => {
@@ -313,8 +318,43 @@ describe('the shared mailbox', () => {
 		expect(keyed['mail-app-missing']).toMatchObject({ type: 'status', tone: 'warning', valuePath: 'available' })
 	})
 
+	it('shows the board\'s six fields first and the rest behind Advanced, without losing one', () => {
+		// DqBeheerinstellingen Zaak-e-mail: account, folder, interval, batch
+		// size, the case type for unclaimed mail and the case-number switch.
+		const inputs = fields.filter((field) => field.type !== 'status')
+		expect(inputs.filter((field) => !field.advanced).map((field) => field.key)).toEqual([
+			'email_mail_account_id',
+			'email_imap_folder',
+			'email_poll_interval',
+			'email_poll_batch_size',
+			'email_fallback_case_type',
+			'email_case_matching_enabled',
+		])
+		expect(inputs.filter((field) => field.advanced).map((field) => field.key)).toEqual([
+			'email_transport',
+			'email_case_matching_pattern',
+			'email_from_address',
+			'email_from_name',
+			'email_recipient_allowlist',
+			'email_intake_role',
+			'email_intake_blocklist',
+			'email_intake_junk_rules',
+		])
+	})
+
 	it('names the default case number pattern as the server has it', () => {
 		const recognizer = fs.readFileSync(path.join(ROOT, 'lib', 'Service', 'Email', 'CaseNumberRecognizer.php'), 'utf8')
 		expect(recognizer).toContain(`DEFAULT_PATTERN = '${DEFAULT_CASE_PATTERN}'`)
+	})
+})
+
+describe('the AI card layout', () => {
+	it('keeps a switch or a choice on a row of its own in the two-column card', async () => {
+		const { aiFields } = await import('../../src/views/settings/adminFields.js')
+		const fields = aiFields((app, text) => text)
+		for (const field of fields.filter((f) => f.type === 'switch' || f.type === 'radio')) {
+			expect(field.wide, field.key).toBe(true)
+		}
+		expect(fields.find((f) => f.key === 'ai_model_url').wide).toBeUndefined()
 	})
 })

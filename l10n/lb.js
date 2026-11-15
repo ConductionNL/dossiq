@@ -1374,6 +1374,7 @@ OC.L10N.register(
         "SLA": "SLA",
         "SLA Compliance": "SLA-Conformitéit",
         "SLA Compliance %": "SLA-Conformitéit %",
+        "SLA Compliance %%": "SLA-Conformitéit %%",
         "SLA Target: {days}d": "SLA-Zil: {days}d",
         "SLA adherence and processing time analysis": "SLA-Anhalung an Bearbeedungszäitanalys",
         "SLA breaches": "SLA-Verstéiss",

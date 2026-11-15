@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.64"
+        "version": "0.20.97"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.23.0",
+                "version": "1.45.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -267,6 +267,18 @@
                         "default": true,
                         "description": "Whether this case type is a draft (not yet published)",
                         "title": "Is Draft"
+                    },
+                    "shipped": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether a case definition package placed this case type. A copy is the organisation's own and is not shipped.",
+                        "title": "Shipped",
+                        "facetable": true
+                    },
+                    "package": {
+                        "type": "string",
+                        "description": "The id of the case definition package that placed this case type; empty for the organisation's own.",
+                        "title": "Package"
                     },
                     "validFrom": {
                         "type": "string",
@@ -682,7 +694,7 @@
                     },
                     "iv3TaskField": {
                         "type": "string",
-                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
+                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type (e.g. \"8.1\" Ruimtelijke ordening, or a 2023 refinement code such as \"6.71a\", stored as given). The code list is Shillinq's BbvTaakveld catalogue; without Shillinq the code is typed. Dossiq reports nothing from this field: costs per taakveld are Shillinq's Iv3 report.",
                         "title": "IV3 Task Field"
                     },
                     "obligationKinds": {
@@ -963,7 +975,7 @@
                     }
                 },
                 "icon": "ListStatus",
-                "version": "1.7.4",
+                "version": "1.8.0",
                 "searchable": false,
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
@@ -1162,6 +1174,14 @@
                                 }
                             }
                         }
+                    },
+                    "phase": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
+                        "title": "Phase",
+                        "description": "The generic phase this status belongs to (for example Ontvangst, Beoordeling, Advies, Besluit, Verzending, Uitvoering for carrying out a decision). Process analysis groups statuses by it, so case types with different statuses read side by side; a status without one keeps its own name there."
                     },
                     "waitingOn": {
                         "type": "string",
@@ -1761,6 +1781,9 @@
                         "channels": [
                             "nc-notification"
                         ],
+                        "optInChannels": [
+                            "email"
+                        ],
                         "recipients": [
                             {
                                 "kind": "field",
@@ -1785,6 +1808,9 @@
                         "enabled": true,
                         "channels": [
                             "nc-notification"
+                        ],
+                        "optInChannels": [
+                            "email"
                         ],
                         "recipients": [
                             {
@@ -1816,6 +1842,9 @@
                         "channels": [
                             "nc-notification"
                         ],
+                        "optInChannels": [
+                            "email"
+                        ],
                         "recipients": [
                             {
                                 "kind": "field",
@@ -1835,6 +1864,9 @@
                         "channels": [
                             "nc-notification"
                         ],
+                        "optInChannels": [
+                            "email"
+                        ],
                         "recipients": [
                             {
                                 "watchers": true
@@ -1848,7 +1880,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.47.0",
+                "version": "1.54.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1984,25 +2016,25 @@
                             {
                                 "field": "requester",
                                 "method": "exact",
-                                "weight": 0.35
+                                "weight": 0.2
                             },
                             {
                                 "field": "permitApplicationRef",
                                 "method": "exact",
-                                "weight": 0.35
+                                "weight": 0.6
                             },
                             {
                                 "field": "title",
                                 "method": "normalized",
-                                "weight": 0.2
+                                "weight": 0.05
                             },
                             {
                                 "field": "title",
                                 "method": "levenshtein",
-                                "weight": 0.1
+                                "weight": 0.15
                             }
                         ],
-                        "threshold": 0.3,
+                        "threshold": 0.6,
                         "onCreate": "warn",
                         "overrideGroups": [
                             "dossiq-coordinators"
@@ -2039,7 +2071,8 @@
                             "channel": "intakeChannel",
                             "source": "handoffSource",
                             "requester": "requester",
-                            "priority": "priority"
+                            "priority": "priority",
+                            "caseType": "caseType"
                         }
                     },
                     "linkedTypes": [
@@ -2320,6 +2353,14 @@
                                 ]
                             }
                         },
+                        "caseTypeIdentifier": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "The identifier of this case's type, which every version of a case type shares (the version chain is read by it). Materialised so a list, a quick filter or an action can mean every version of a case type with one value; a uuid names one version only. A cross-object @ref lookup resolves in OpenRegister's save-time listener only, so existing cases are filled by the BackfillCaseTypeIdentifier repair step.",
+                            "expression": {
+                                "prop": "@ref.caseType.identifier"
+                            }
+                        },
                         "statusRole": {
                             "type": "string",
                             "materialise": true,
@@ -2413,7 +2454,7 @@
                         "daysSinceActivity": {
                             "type": "integer",
                             "materialise": false,
-                            "description": "Whole days since the object was last modified (falls back to creation date). V1 sources @self.updated: the case.activity log is a JSON-encoded string and OpenRegister's calculation engine has no JSON/array operators to read it. Virtual (materialise:false): a save-time value would always be 0 at the moment of saving; computed fresh at read time via _extend=calculations.",
+                            "description": "Whole days since someone last worked on the case (lastActivityAt, falling back to the creation date). Not @self.updated: every system save moves that, so no case would ever look stalled. Virtual (materialise:false): computed fresh at read time via _extend=calculations.",
                             "expression": {
                                 "dateDiff": {
                                     "from": {
@@ -2421,7 +2462,7 @@
                                             {
                                                 "coalesce": [
                                                     {
-                                                        "prop": "@self.updated"
+                                                        "prop": "lastActivityAt"
                                                     },
                                                     {
                                                         "prop": "@self.created"
@@ -2884,12 +2925,26 @@
                         {
                             "key": "person",
                             "label": "Person",
-                            "description": "A natural person, with or without an account on this instance."
+                            "description": "A natural person, with or without an account on this instance.",
+                            "identityShapes": [
+                                "naturalPerson"
+                            ]
                         },
                         {
                             "key": "organisation",
                             "label": "Organisation",
-                            "description": "A company, authority or other body acting on the case."
+                            "description": "A company, authority or other body acting on the case.",
+                            "identityShapes": [
+                                "organization"
+                            ]
+                        },
+                        {
+                            "key": "colleague",
+                            "label": "Colleague",
+                            "description": "A colleague of the municipality who takes part in the case, such as an adviser.",
+                            "identityShapes": [
+                                "naturalPerson"
+                            ]
                         },
                         {
                             "key": "address",
@@ -3253,6 +3308,15 @@
                         "facetable": true,
                         "visible": false
                     },
+                    "caseTypeIdentifier": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The identifier of the case type, shared by every version of it. Taken from the case type.",
+                        "title": "Case type identifier",
+                        "matchType": "exact",
+                        "inputControl": "text",
+                        "visible": false
+                    },
                     "statusRole": {
                         "type": "string",
                         "readOnly": true,
@@ -3452,6 +3516,20 @@
                         "title": "Team",
                         "facetable": true,
                         "order": 6
+                    },
+                    "routingNote": {
+                        "type": "object",
+                        "description": "The facts of the case's last routing event: a refused handover, or an intake fan-out that opened siblings or missed a destination. Facts and no sentence, so each reader gets it in their own language. Cleared when someone picks the case up.",
+                        "title": "Routing note",
+                        "properties": {
+                            "kind": { "type": "string", "enum": ["handover-refused", "intake-split"], "title": "Kind", "description": "What happened: a refused handover, or an intake that opened more than one case." },
+                            "level": { "type": "string", "enum": ["error", "info"], "title": "Level", "description": "How the note reads in a list: an error needs action, info only says what happened." },
+                            "team": { "type": "string", "title": "Team", "description": "The team the handover was addressed to." },
+                            "reason": { "type": "string", "title": "Reason", "description": "Why the receiving team refused the handover." },
+                            "submission": { "type": "string", "title": "Submission", "description": "The submission that opened the cases of an intake." },
+                            "siblings": { "type": "array", "items": { "type": "string" }, "title": "Sibling cases", "description": "The other cases the same submission opened." },
+                            "failed": { "type": "array", "items": { "type": "object" }, "title": "Missed destinations", "description": "The destinations of the submission that did not get a case." }
+                        }
                     },
                     "handoverPending": {
                         "type": "boolean",
@@ -4993,7 +5071,7 @@
             "document": {
                 "slug": "document",
                 "icon": "FileDocumentOutline",
-                "version": "1.1.2",
+                "version": "1.2.0",
                 "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "EnkelvoudigInformatieObject",
@@ -5149,6 +5227,11 @@
                     "x-openregister-lifecycle": {
                         "field": "status",
                         "initial": "in_bewerking",
+                        "createStates": [
+                            "for_determination",
+                            "final",
+                            "archived"
+                        ],
                         "final": [
                             "archived"
                         ],
@@ -7350,15 +7433,14 @@
             "wmsLayer": {
                 "slug": "wmsLayer",
                 "icon": "LayersOutline",
-                "version": "1.0.0",
-                "title": "WMS/WFS Layer",
-                "description": "Tenant-configurable OGC WMS/WFS overlay layer for case maps. A case type subscribes to it through caseType.layerIds. All outbound traffic runs through the GIS proxy.",
+                "version": "1.1.0",
+                "title": "Map Layer",
+                "description": "Tenant-configurable overlay layer for case maps: an OGC WMS or WFS service, or an ArcGIS map service drawn from its cached tiles. A case type subscribes to it through caseType.layerIds. All outbound traffic runs through the GIS proxy.",
                 "type": "object",
                 "required": [
                     "title",
                     "type",
-                    "url",
-                    "layerName"
+                    "url"
                 ],
                 "properties": {
                     "title": {
@@ -7371,9 +7453,10 @@
                         "type": "string",
                         "enum": [
                             "WMS",
-                            "WFS"
+                            "WFS",
+                            "ArcGIS"
                         ],
-                        "description": "OGC service type (WMS for raster overlays, WFS for vector features)",
+                        "description": "Service type: WMS for raster overlays, WFS for vector features, ArcGIS for an ArcGIS MapServer drawn from its cached tiles ({url}/tile/{z}/{y}/{x})",
                         "title": "Type"
                     },
                     "url": {
@@ -7384,7 +7467,7 @@
                     },
                     "layerName": {
                         "type": "string",
-                        "description": "WMS LAYERS parameter or WFS typeName",
+                        "description": "WMS LAYERS parameter or WFS typeName; required for WMS and WFS, unused for ArcGIS",
                         "title": "Layer Name"
                     },
                     "srs": {
@@ -9075,7 +9158,7 @@
             "inspectionChecklistRun": {
                 "slug": "inspectionChecklistRun",
                 "icon": "ClipboardCheckMultipleOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:Action",
                 "title": "Inspection Checklist Run",
                 "description": "Per-inspection runtime instance of an inspectionChecklistTemplate. Once it is submitted (status=ingediend) the run is append-only, and further edits are rejected.",
@@ -9231,6 +9314,19 @@
                                     ],
                                     "description": "Offline-sync state for this response",
                                     "title": "Sync State"
+                                },
+                                "gpsAtAnswer": {
+                                    "type": "object",
+                                    "title": "GPS at answer",
+                                    "description": "Where the answer was given, captured by the device when the answer first changed, or an address typed by hand when there was no good fix",
+                                    "properties": {
+                                        "lat": { "type": "number", "title": "Latitude", "description": "Geographic latitude" },
+                                        "lng": { "type": "number", "title": "Longitude", "description": "Geographic longitude" },
+                                        "accuracy": { "type": "number", "title": "Accuracy", "description": "Accuracy of the fix in metres" },
+                                        "at": { "type": "string", "format": "date-time", "title": "Captured at", "description": "When the device gave the fix" },
+                                        "low": { "type": "boolean", "title": "Inaccurate", "description": "True when there was no fix or it was less accurate than 50 metres" },
+                                        "address": { "type": "string", "title": "Address", "description": "An address the inspector typed by hand" }
+                                    }
                                 }
                             }
                         },
@@ -9919,7 +10015,7 @@
             "casetransfer": {
                 "slug": "casetransfer",
                 "icon": "SwapHorizontal",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Case transfer",
                 "description": "Hand-off of a case, to another organisation or to another team inside this one (initiate / accept / reject). One record shape answers where a case has been.",
@@ -10104,6 +10200,39 @@
                         },
                         "description": "Append-only custody-change audit trail",
                         "title": "Custody Audit Trail"
+                    },
+                    "senderActivity": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "act": {
+                                    "type": "string",
+                                    "enum": [
+                                        "document added",
+                                        "contact moment added",
+                                        "note added",
+                                        "task completed",
+                                        "status changed"
+                                    ],
+                                    "description": "What the receiver did on the case",
+                                    "title": "Act"
+                                },
+                                "actor": {
+                                    "type": "string",
+                                    "description": "Who did it: the user id, or empty for the system",
+                                    "title": "Actor"
+                                },
+                                "recordedAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the act was recorded",
+                                    "title": "Recorded at"
+                                }
+                            }
+                        },
+                        "description": "Each act recorded on the case after the transfer was accepted, so the sending organisation follows the case it handed over. Append-only; set on an accepted organisation transfer only.",
+                        "title": "Sender Activity"
                     }
                 }
             },
@@ -10238,11 +10367,14 @@
             "bacAdviceRequest": {
                 "slug": "bacAdviceRequest",
                 "icon": "CommentTextOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
                 "x-schema-org": "schema:AskAction",
                 "x-zgw-equivalent": "Adviesdocument",
                 "title": "BAC Advice Request",
                 "description": "Per-bezwaar referral of an objection case to a bezwaaradviescommissie. Tracks the advice deliverable through the assigned -> in-deliberation -> advice-issued lifecycle (Awb Art. 7:13). One-way transitions; withdrawn bezwaaren leave the request in its last state for audit.",
+                "configuration": {
+                    "fireEventsOnBulkWrites": true
+                },
                 "type": "object",
                 "required": [
                     "bezwaar",
@@ -11116,7 +11248,7 @@
             "tenantMandate": {
                 "slug": "tenantMandate",
                 "icon": "FileSign",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "title": "Tenant Mandate",
                 "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority: backs ketenmachtiging (chain-mandate) flows.",
@@ -11158,13 +11290,43 @@
                         "type": "string",
                         "description": "Reference to the signed mandate document",
                         "title": "Document Ref"
+                    },
+                    "terms": {
+                        "type": "object",
+                        "title": "Terms",
+                        "description": "What the mandate lets the role decide: the ceiling in euros (none is unlimited), the decision types it covers and its enforcement level.",
+                        "properties": {
+                            "plafond": {
+                                "title": "Ceiling",
+                                "type": "number",
+                                "description": "The amount in euros up to which the role decides; empty is unlimited"
+                            },
+                            "decisionTypes": {
+                                "title": "Decision types",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "The decision types the role may take, such as bezwaar"
+                            },
+                            "enforcement": {
+                                "title": "Enforcement",
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "warning",
+                                    "full"
+                                ],
+                                "description": "Whether the role may enforce: not, with a warning only, or in full"
+                            }
+                        }
                     }
                 }
             },
             "tenantBillingEvent": {
                 "slug": "tenantBillingEvent",
                 "icon": "CashRegister",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "x-insert-only": true,
                 "title": "Tenant Billing Event",
@@ -11192,7 +11354,8 @@
                             "storage_increment",
                             "api_burst",
                             "quota_exceeded",
-                            "case_refund"
+                            "case_refund",
+                            "subscription_fee"
                         ],
                         "description": "Type of billable event",
                         "title": "Event Type"
@@ -12817,10 +12980,83 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.2.1",
+                    "version": "1.3.0",
                     "slug": "klacht-behandeling"
                 },
                 "title": "Klacht behandeling",
+                "overviewCards": ["case-overview-sections"],
+                "overviewSections": [
+                  {
+                    "id": "gegevens",
+                    "title": "Gegevens",
+                    "columns": 2,
+                    "rows": [
+                      {
+                        "label": "Klager",
+                        "field": "klager"
+                      },
+                      {
+                        "label": "Ontvangen",
+                        "field": "receivedAt"
+                      },
+                      {
+                        "label": "Onderwerp",
+                        "field": "klachtOnderwerp"
+                      },
+                      {
+                        "label": "Afdeling",
+                        "field": "afdeling"
+                      },
+                      {
+                        "label": "Gaat over",
+                        "field": "gaatOver"
+                      },
+                      {
+                        "label": "Categorie",
+                        "field": "klachtCategorie"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "hoorgesprek",
+                    "title": "Hoorgesprek",
+                    "columns": 2,
+                    "pillField": "hoorgesprekStatus",
+                    "rows": [
+                      {
+                        "label": "Wanneer",
+                        "field": "hoorgesprekWanneer"
+                      },
+                      {
+                        "label": "Soort",
+                        "field": "hoorgesprekSoort"
+                      },
+                      {
+                        "label": "Waar",
+                        "field": "hoorgesprekWaar"
+                      },
+                      {
+                        "label": "Aanwezig",
+                        "field": "hoorgesprekAanwezig"
+                      },
+                      {
+                        "label": "Verslag",
+                        "field": "hoorgesprekVerslag"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "oordeel",
+                    "title": "Oordeel",
+                    "intro": "Na het hoorgesprek kies je een oordeel. Het gaat eerst ter goedkeuring naar de klachtencoördinator, de termijn loopt intussen door. Daarna maak je de antwoordbrief voor de klager.",
+                    "rows": [
+                      {
+                        "label": "Oordeel",
+                        "field": "oordeel"
+                      }
+                    ]
+                  }
+                ],
                 "colour": "orange",
                 "icon": "MessageAlertOutline",
                 "category": "Klachten en meldingen",
@@ -12905,7 +13141,7 @@
                         }
                     ]
                 },
-                "description": "Behandeling van een klacht over een gedraging van de gemeente conform Awb hoofdstuk 9.",
+                "description": "Behandeling van een klacht over een gedraging van de gemeente conform Awb hoofdstuk 9. Afhandeling binnen zes weken na ontvangst, of tien weken als een klachtadviescommissie adviseert (Awb 9:11 lid 1); verdaging met ten hoogste vier weken (Awb 9:11 lid 2), daarna alleen met schriftelijke instemming van de klager (lid 3).",
                 "purpose": "Behandeling van klachten van burgers en bedrijven",
                 "trigger": "Klacht ingediend door burger of bedrijf",
                 "subject": "Klacht",
@@ -12917,7 +13153,126 @@
                 "internalOrExternal": "extern",
                 "publicationRequired": false,
                 "isDraft": false,
-                "confidentiality": "vertrouwelijk"
+                "confidentiality": "vertrouwelijk",
+                "sessions": [
+                    {
+                        "key": "hoorgesprek",
+                        "label": "Hoorgesprek",
+                        "inviteeRoles": [
+                            "Klager",
+                            "Betrokken medewerker",
+                            "Klachtencoördinator"
+                        ],
+                        "minInvitees": 1,
+                        "inspectionFloorDays": 0,
+                        "waivable": true,
+                        "minutesRequired": true,
+                        "recordingConsentRequired": true
+                    }
+                ],
+                "recordImports": [
+                    {
+                        "key": "klachten",
+                        "sourceApp": "dossiq",
+                        "sourceRegister": "dossiq",
+                        "sourceSchema": "complaint",
+                        "statusField": "status",
+                        "statuses": {
+                            "received": {
+                                "status": "@ref:klacht-ontvangen",
+                                "term": "running"
+                            },
+                            "receipt_confirmed": {
+                                "status": "@ref:klacht-bevestigd",
+                                "term": "running"
+                            },
+                            "in_handling": {
+                                "status": "@ref:klacht-onderzoek",
+                                "term": "running"
+                            },
+                            "hoorgesprek_planned": {
+                                "status": "@ref:klacht-onderzoek",
+                                "term": "running"
+                            },
+                            "hoorgesprek_completed": {
+                                "status": "@ref:klacht-oordeel",
+                                "term": "running"
+                            },
+                            "handled": {
+                                "status": "@ref:klacht-afgehandeld",
+                                "term": "closed"
+                            },
+                            "withdrawn": {
+                                "status": "@ref:klacht-afgehandeld",
+                                "term": "closed",
+                                "result": "@ref:klacht-ingetrokken"
+                            },
+                            "*": {
+                                "status": "@ref:klacht-ontvangen",
+                                "term": "running"
+                            }
+                        },
+                        "fields": [
+                            {
+                                "to": "title",
+                                "from": "subject",
+                                "maxLength": 255,
+                                "required": true
+                            },
+                            {
+                                "to": "description",
+                                "from": "description"
+                            },
+                            {
+                                "to": "startDate",
+                                "from": "receiptDate",
+                                "as": "date",
+                                "required": true
+                            },
+                            {
+                                "to": "initiatorDisplayName",
+                                "from": "complainant.name"
+                            },
+                            {
+                                "to": "assignee",
+                                "from": "handler"
+                            },
+                            {
+                                "to": "intakeChannel",
+                                "from": "receiptChannel",
+                                "values": {
+                                    "balie": "balie",
+                                    "phone": "phone",
+                                    "email": "email",
+                                    "brief": "post",
+                                    "website": "website",
+                                    "socialmedia": "other"
+                                },
+                                "default": "other"
+                            },
+                            {
+                                "to": "confidentiality",
+                                "value": "vertrouwelijk"
+                            },
+                            {
+                                "to": "externalReference",
+                                "from": "@id"
+                            }
+                        ],
+                        "matchField": "externalReference",
+                        "formerReference": {
+                            "application": "dossiq",
+                            "from": "complaintNumber"
+                        },
+                        "term": {
+                            "endDate": "afhandelDeadline"
+                        },
+                        "stamp": {
+                            "caseId": "escalatedCase"
+                        },
+                        "runOnUpgrade": true
+                    }
+                ]
             },
             {
                 "@self": {
@@ -12950,6 +13305,7 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-ontvangen"
                 },
+                "phase": "Ontvangst",
                 "name": "Ontvangen",
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag is ontvangen en geregistreerd",
@@ -12966,6 +13322,7 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-in-behandeling"
                 },
+                "phase": "Beoordeling",
                 "name": "In behandeling",
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag wordt inhoudelijk getoetst",
@@ -12982,6 +13339,7 @@
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-besluitvorming"
                 },
+                "phase": "Besluit",
                 "name": "Besluitvorming",
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Besluit wordt voorbereid en genomen",
@@ -13015,6 +13373,7 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-ontvangen"
                 },
+                "phase": "Ontvangst",
                 "name": "Ontvangen",
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidieaanvraag is ontvangen",
@@ -13031,6 +13390,7 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-beoordeling"
                 },
+                "phase": "Beoordeling",
                 "name": "Beoordeling",
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Aanvraag wordt getoetst aan subsidiekader",
@@ -13047,6 +13407,7 @@
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-besluitvorming"
                 },
+                "phase": "Besluit",
                 "name": "Besluitvorming",
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidiebesluit wordt voorbereid en genomen",
@@ -13080,6 +13441,7 @@
                     "schema": "statusType",
                     "slug": "klacht-ontvangen"
                 },
+                "phase": "Ontvangst",
                 "name": "Ontvangen",
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is ontvangen en geregistreerd",
@@ -13094,12 +13456,31 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "statusType",
-                    "slug": "klacht-onderzoek"
+                    "slug": "klacht-bevestigd"
                 },
-                "name": "Onderzoek",
+                "phase": "Ontvangst",
+                "name": "Bevestigd",
                 "caseType": "@ref:klacht-behandeling",
-                "description": "Klacht wordt onderzocht (hoor en wederhoor)",
+                "description": "De ontvangst van de klacht is schriftelijk bevestigd (Awb 9:6)",
                 "order": 2,
+                "isFinal": false,
+                "role": "intake",
+                "colour": "blue",
+                "publicLabel": "Ontvangen",
+                "publicDescription": "Wij hebben de ontvangst van uw klacht bevestigd."
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "slug": "klacht-onderzoek",
+                    "version": "1.1.0"
+                },
+                "phase": "Beoordeling",
+                "name": "Hoorgesprek",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "De klager en de betrokken medewerker worden gehoord (Awb 9:10)",
+                "order": 3,
                 "isFinal": false,
                 "role": "in-progress",
                 "colour": "purple",
@@ -13110,12 +13491,47 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "statusType",
-                    "slug": "klacht-afgehandeld"
+                    "slug": "klacht-oordeel"
+                },
+                "phase": "Beoordeling",
+                "name": "Oordeel",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "Het bestuursorgaan oordeelt of de klacht gegrond is",
+                "order": 4,
+                "isFinal": false,
+                "role": "in-progress",
+                "colour": "purple",
+                "publicLabel": "In behandeling",
+                "publicDescription": "Wij beoordelen uw klacht."
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "slug": "klacht-antwoordbrief"
+                },
+                "phase": "Afhandeling",
+                "name": "Antwoordbrief",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "De klager krijgt het oordeel, de gronden en eventuele conclusies schriftelijk (Awb 9:12)",
+                "order": 5,
+                "isFinal": false,
+                "role": "review",
+                "colour": "teal",
+                "publicLabel": "In behandeling",
+                "publicDescription": "Wij sturen u ons oordeel per brief."
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "slug": "klacht-afgehandeld",
+                    "version": "1.1.0"
                 },
                 "name": "Afgehandeld",
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is afgehandeld met formeel antwoord",
-                "order": 3,
+                "order": 6,
                 "isFinal": true,
                 "role": "closed",
                 "colour": "green",
@@ -13129,6 +13545,7 @@
                     "schema": "statusType",
                     "slug": "melding-ontvangen"
                 },
+                "phase": "Ontvangst",
                 "name": "Ontvangen",
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding is ontvangen en doorgezet",
@@ -13145,6 +13562,7 @@
                     "schema": "statusType",
                     "slug": "melding-in-behandeling"
                 },
+                "phase": "Beoordeling",
                 "name": "In behandeling",
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding wordt afgehandeld door beheerdienst",
@@ -13297,6 +13715,75 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "resultType",
+                    "slug": "klacht-deels-gegrond"
+                },
+                "name": "Klacht deels gegrond",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "Een deel van de klacht is gegrond verklaard",
+                "archivalAction": "bewaren",
+                "archivalPeriod": "P10Y"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "resultType",
+                    "slug": "klacht-niet-ontvankelijk"
+                },
+                "name": "Klacht niet-ontvankelijk",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "De klacht hoeft niet in behandeling te worden genomen (Awb 9:8)",
+                "archivalAction": "vernietigen",
+                "archivalPeriod": "P5Y"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "resultType",
+                    "slug": "klacht-ingetrokken"
+                },
+                "name": "Klacht ingetrokken",
+                "caseType": "@ref:klacht-behandeling",
+                "description": "De klager heeft de klacht ingetrokken",
+                "archivalAction": "vernietigen",
+                "archivalPeriod": "P5Y"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "roleType",
+                    "slug": "klacht-rol-klager"
+                },
+                "name": "Klager",
+                "description": "Wie de klacht indient (Awb 9:1)",
+                "genericRole": "initiator",
+                "caseType": "@ref:klacht-behandeling"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "roleType",
+                    "slug": "klacht-rol-betrokken-medewerker"
+                },
+                "name": "Betrokken medewerker",
+                "description": "Op wiens gedraging de klacht betrekking heeft (Awb 9:10)",
+                "genericRole": "stakeholder",
+                "caseType": "@ref:klacht-behandeling"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "roleType",
+                    "slug": "klacht-rol-klachtencoordinator"
+                },
+                "name": "Klachtencoördinator",
+                "description": "Bewaakt de termijn en de afhandeling van klachten",
+                "genericRole": "coordinator",
+                "caseType": "@ref:klacht-behandeling"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "resultType",
                     "slug": "melding-afgehandeld-result"
                 },
                 "name": "Afgehandeld",
@@ -13304,82 +13791,6 @@
                 "description": "Melding is afgehandeld",
                 "archivalAction": "vernietigen",
                 "archivalPeriod": "P1Y"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-welstand-2026-0042"
-                },
-                "case": "@ref:case:case-bp-dormer-lindenlaan",
-                "advisor": "welstandscommissie",
-                "type": "intern",
-                "subject": "Welstandstoets gevelwijziging Keizersgracht 123",
-                "deadline": "2026-04-30",
-                "status": "requested",
-                "requestedAt": "2026-04-16T09:00:00+02:00",
-                "questions": "Voldoet de voorgestelde gevelwijziging aan het welstandsbeleid voor de historische binnenstad?"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-veiligheidsregio-2026-0038"
-                },
-                "case": "@ref:case:case-grant-festival-oranjewijk",
-                "advisor": "Veiligheidsregio Amsterdam-Amstelland",
-                "type": "extern",
-                "subject": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
-                "deadline": "2026-04-25",
-                "status": "requested",
-                "requestedAt": "2026-04-10T14:30:00+02:00",
-                "questions": "Is de nooduitgang-capaciteit voldoende voor 500 bezoekers? Zijn er aanvullende EHBO-posten vereist?"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-rud-2026-0031"
-                },
-                "case": "@ref:case:case-complaint-noise-marktplein",
-                "advisor": "Regionale Uitvoeringsdienst Noord-Holland",
-                "type": "extern",
-                "subject": "Milieukundig advies lozing grondwater bouwproject",
-                "deadline": "2026-03-28",
-                "status": "expired",
-                "requestedAt": "2026-03-07T10:00:00+01:00",
-                "questions": "Is lozing van het opgepompte grondwater toelaatbaar gezien de nabijgelegen watergang?"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-juridisch-2026-0055"
-                },
-                "case": "@ref:case:case-complaint-slow-permit",
-                "advisor": "juridische-dienst",
-                "type": "intern",
-                "subject": "Juridische toets ontvankelijkheid bezwaarschrift",
-                "deadline": "2026-05-02",
-                "status": "received",
-                "requestedAt": "2026-04-11T08:45:00+02:00",
-                "receivedAt": "2026-04-15T16:20:00+02:00",
-                "questions": "Is het bezwaar tijdig ingediend en is de bezwaarmaker ontvankelijk?"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "adviesAanvraag",
-                    "slug": "advies-brandweer-2026-0047"
-                },
-                "case": "@ref:case:case-bp-extension-2025",
-                "advisor": "Brandweer Amsterdam-Amstelland",
-                "type": "extern",
-                "subject": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
-                "deadline": "2026-05-14",
-                "status": "requested",
-                "requestedAt": "2026-04-14T11:00:00+02:00",
-                "questions": "Voldoet het vluchtrouteplan aan de eisen uit het Bouwbesluit 2012, art. 2.113 e.v.?"
             },
             {
                 "@self": {
@@ -13892,6 +14303,7 @@
                 "supplierRef": "@ref:supplier-acme-bouw-bv",
                 "number": "C-2026-001",
                 "subject": "Renovatie schoolgebouw",
+                "status": "active",
                 "startDate": "2026-02-01",
                 "endDate": "2026-12-31",
                 "value": 800000,
@@ -13907,6 +14319,7 @@
                 "supplierRef": "@ref:supplier-orange-it-bv",
                 "number": "C-2025-027",
                 "subject": "Softwarelicenties 2025-2026",
+                "status": "active",
                 "startDate": "2025-04-01",
                 "endDate": "2026-08-31",
                 "value": 120000,
@@ -13923,6 +14336,7 @@
                 "supplierRef": "@ref:supplier-orange-it-bv",
                 "number": "C-2025-028",
                 "subject": "Cloudhosting",
+                "status": "active",
                 "startDate": "2025-06-01",
                 "endDate": "2027-05-31",
                 "value": 240000,
@@ -13938,6 +14352,7 @@
                 "supplierRef": "@ref:supplier-blokker-schoonmaak",
                 "number": "C-2024-011",
                 "subject": "Schoonmaak 2024-2025",
+                "status": "ending",
                 "startDate": "2024-01-01",
                 "endDate": "2025-12-31",
                 "value": 90000,

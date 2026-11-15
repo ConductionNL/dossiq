@@ -5,7 +5,7 @@
  * Every shown AI suggestion ends in exactly one oversight report: the person's
  * decision, or ignored with why (superseded, closed, expired).
  *
- * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+ * @spec openspec/specs/ai-oversight-dispatch/spec.md
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createSuggestionTracker } from '../../src/services/aiSuggestionTracker.js'

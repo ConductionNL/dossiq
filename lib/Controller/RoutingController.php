@@ -31,9 +31,11 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\RoleResolverService;
-use OCA\Dossiq\Service\Routing\CaseRouter;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseRouterInterface;
+use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Service\Support\ObjectArray;
+use OCA\Dossiq\Service\Support\RowList;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -46,7 +48,7 @@ use Throwable;
 /**
  * Controller for routing engine actions.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
  *
  * @psalm-suppress UnusedClass
  */
@@ -58,9 +60,9 @@ class RoutingController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param RoleResolverService $resolver Resolver service
-	 * @param CaseRouter $router Routes a case to one person and arms its take-back window
-	 * @param SettingsService $settingsService Settings bridge
+	 * @param RoleResolverServiceInterface $resolver Resolver service
+	 * @param CaseRouterInterface $router Routes a case to one person and arms its take-back window
+	 * @param SettingsServiceInterface $settingsService Settings bridge
 	 * @param IUserSession $userSession User session
 	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
@@ -68,9 +70,9 @@ class RoutingController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly RoleResolverService $resolver,
-		private readonly CaseRouter $router,
-		private readonly SettingsService $settingsService,
+		private readonly RoleResolverServiceInterface $resolver,
+		private readonly CaseRouterInterface $router,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
@@ -97,9 +99,47 @@ class RoutingController extends Controller {
 	 * IGroupManager::isAdmin() and this declaration states it rather than
 	 * contradicting it with @NoAdminRequired.
 	 *
-	 * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
 	 */
 	public function reroute(string $id): JSONResponse {
+		$refusal = $this->adminRefusal();
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		try {
+			return $this->rerouteCase(id: $id);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'reroute on case ' . $id, e: $e);
+		} catch (Throwable $e) {
+			return $this->rerouteFailure(e: $e, id: $id);
+		}//end try
+	}//end reroute()
+
+	/**
+	 * Log a failed reroute and answer 500.
+	 *
+	 * @param Throwable $e The failure.
+	 * @param string $id The case id.
+	 *
+	 * @return JSONResponse
+	 */
+	private function rerouteFailure(Throwable $e, string $id): JSONResponse {
+		$this->logger->error(
+			'Dossiq: reroute failed for case ' . $id . ': ' . $e->getMessage(),
+		);
+		return new JSONResponse(
+			['error' => 'Herberekening mislukt'],
+			Http::STATUS_INTERNAL_SERVER_ERROR,
+		);
+	}//end rerouteFailure()
+
+	/**
+	 * Refuse a caller that is not logged in or not a server admin.
+	 *
+	 * @return JSONResponse|null The refusal, or null for an admin.
+	 */
+	private function adminRefusal(): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(
@@ -115,46 +155,67 @@ class RoutingController extends Controller {
 			);
 		}
 
-		try {
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return new JSONResponse(
-					['error' => 'OpenRegister is niet beschikbaar'],
-					Http::STATUS_SERVICE_UNAVAILABLE,
-				);
-			}
+		return null;
+	}//end adminRefusal()
 
-			$register = $this->settingsService->getConfigValue('register');
-			$caseSchema = $this->settingsService->getConfigValue('case_schema');
-			$workflowSlug = $this->settingsService->getConfigValue('workflow_template_schema');
-
-			$case = $this->toArray(value: $objectService->find($id, register: $register, schema: $caseSchema));
-
-			$workflowId = (string)($case['workflowTemplate'] ?? '');
-			$steps = [];
-			if ($workflowId !== '' && $workflowSlug !== '') {
-				$workflow = $this->toArray(value: $objectService->find($workflowId, register: $register, schema: $workflowSlug));
-				$steps = $this->decodeSteps(value: $workflow['steps'] ?? '[]');
-			}
-
+	/**
+	 * Recompute the assignees of every routable step on a case.
+	 *
+	 * @param string $id The case id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws RefusedException When a case's roles could not be read at all.
+	 * @throws Throwable When the case or its workflow cannot be read.
+	 */
+	private function rerouteCase(string $id): JSONResponse {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
 			return new JSONResponse(
-				[
-					'caseId' => $id,
-					'affectedSteps' => $this->resolveSteps(steps: $steps, case: $case),
-				],
+				['error' => 'OpenRegister is niet beschikbaar'],
+				Http::STATUS_SERVICE_UNAVAILABLE,
 			);
-		} catch (RefusedException $e) {
-			return $this->refused(op: 'reroute on case ' . $id, e: $e);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: reroute failed for case ' . $id . ': ' . $e->getMessage(),
-			);
-			return new JSONResponse(
-				['error' => 'Herberekening mislukt'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
-		}//end try
-	}//end reroute()
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		$workflowSlug = $this->settingsService->getConfigValue('workflow_template_schema');
+
+		$case = $this->toArray(value: $objectService->find($id, register: $register, schema: $caseSchema));
+
+		return new JSONResponse(
+			[
+				'caseId' => $id,
+				'affectedSteps' => $this->resolveSteps(
+					steps: $this->workflowStepsOf(objectService: $objectService, case: $case, register: $register, workflowSlug: $workflowSlug),
+					case: $case
+				),
+			],
+		);
+	}//end rerouteCase()
+
+	/**
+	 * The steps of the workflow a case runs on, [] when it has none.
+	 *
+	 * @param object $objectService The object service.
+	 * @param array<string, mixed> $case The case.
+	 * @param string $register The register.
+	 * @param string $workflowSlug The workflow template schema.
+	 *
+	 * @return array<int, array<string, mixed>> The workflow's steps.
+	 *
+	 * @throws Throwable When the workflow cannot be read.
+	 */
+	private function workflowStepsOf(object $objectService, array $case, string $register, string $workflowSlug): array {
+		$workflowId = (string)($case['workflowTemplate'] ?? '');
+		$steps = [];
+		if ($workflowId !== '' && $workflowSlug !== '') {
+			$workflow = $this->toArray(value: $objectService->find($workflowId, register: $register, schema: $workflowSlug));
+			$steps = $this->decodeSteps(value: $workflow['steps'] ?? '[]');
+		}
+
+		return $steps;
+	}//end workflowStepsOf()
 
 	/**
 	 * Route the case to one person by a routing rule.
@@ -177,13 +238,9 @@ class RoutingController extends Controller {
 	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
 	 */
 	public function route(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->groupManager->isAdmin($user->getUID()) === false) {
-			return new JSONResponse(['error' => 'Admin-rechten op de zaak vereist'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->adminRefusal();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$rule = $this->request->getParams();
@@ -214,7 +271,7 @@ class RoutingController extends Controller {
 	 *
 	 * @throws RefusedException When a case's roles could not be read at all.
 	 *
-	 * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
 	 */
 	private function resolveSteps(array $steps, array $case): array {
 		$affected = [];
@@ -242,26 +299,7 @@ class RoutingController extends Controller {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function decodeSteps(mixed $value): array {
-		if (is_string($value) === true) {
-			$decoded = json_decode($value, true);
-			$value = [];
-			if (is_array($decoded) === true) {
-				$value = $decoded;
-			}
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
+		return RowList::from(value: $value);
 	}//end decodeSteps()
 
 	/**
@@ -272,28 +310,6 @@ class RoutingController extends Controller {
 	 * @return array<string, mixed>
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-
-			return (array)$value;
-		}
-
-		return [];
+		return ObjectArray::of(value: $value);
 	}//end toArray()
 }//end class

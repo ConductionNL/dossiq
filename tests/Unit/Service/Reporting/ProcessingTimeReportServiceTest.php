@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Reporting;
 
+use OCA\Dossiq\Service\Reporting\ProcessingTimeSteps;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\Reporting\ProcessingTimeCalculator;
 use OCA\Dossiq\Service\Reporting\ProcessingTimeReportService;
@@ -84,12 +85,24 @@ class ProcessingTimeReportServiceTest extends TestCase {
 
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('n')->willReturnCallback(
+			static function (string $singular, string $plural, int $count): string {
+				$text = $plural;
+				if ($count === 1) {
+					$text = $singular;
+				}
+
+				return str_replace(search: '%n', replace: (string)$count, subject: $text);
+			}
+		);
 
 		return new ProcessingTimeReportService(
 			loader: $this->loader,
-			calculator: new ProcessingTimeCalculator(),
-			rows: new ProcessingTimeRows(),
-			publisher: $this->publisher,
+			steps: new ProcessingTimeSteps(
+				calculator: new ProcessingTimeCalculator(),
+				rows: new ProcessingTimeRows(),
+				publisher: $this->publisher,
+			),
 			dates: $this->caseDatesFrozenAt(instant: '2026-06-15T10:00:00+00:00'),
 			periods: new ReportPeriod(),
 			l10n: $l10n,
@@ -141,7 +154,7 @@ class ProcessingTimeReportServiceTest extends TestCase {
 
 		self::assertSame(['ended-not-final', 'late'], array_column($report['atRisk'], 'id'));
 		self::assertSame('Overdue', $report['atRisk'][1]['severityLabel']);
-		self::assertSame('4 days overdue', $report['atRisk'][1]['remainingLabel']);
+		self::assertSame(expected: '4 days late', actual: $report['atRisk'][1]['remainingLabel']);
 		self::assertSame('P-1', $report['atRisk'][1]['identifier']);
 		self::assertSame(['Permit', 'Other'], array_column($report['breakdown'], 'name'));
 		self::assertSame('critical', $report['breakdown'][0]['status']);
@@ -204,6 +217,116 @@ class ProcessingTimeReportServiceTest extends TestCase {
 		self::assertSame(['ended-not-final'], array_column($report['atRisk'], 'id'));
 		self::assertSame([], $report['sla']);
 	}//end testCaseTypeFilterBySlug()
+
+	/**
+	 * A filter by identifier covers every version of the type: the Woo terms
+	 * table asks for "woo-verzoek" and the open cases sit on version 2, whose
+	 * OpenRegister slug is "woo-verzoek-v2".
+	 *
+	 * @return void
+	 */
+	public function testCaseTypeFilterByIdentifierCoversEveryVersion(): void {
+		$this->loader = $this->createMock(originalClassName: ProcessMiningDataLoader::class);
+		$this->loader->method('loadCaseTypes')->willReturn(
+			[
+				['id' => 'woo-1', 'identifier' => 'woo-verzoek', '@self' => ['slug' => 'woo-verzoek'], 'title' => 'Woo-verzoek', 'processingDeadline' => 'P28D'],
+				[
+					'id'                 => 'woo-2',
+					'identifier'         => 'woo-verzoek',
+					'@self'              => ['slug' => 'woo-verzoek-v2'],
+					'title'              => 'Woo-verzoek',
+					'processingDeadline' => 'P28D',
+				],
+				['id' => 'type-other', 'identifier' => 'other', 'title' => 'Other', 'processingDeadline' => 'P30D'],
+			]
+		);
+		$this->loader->method('loadStatusTypes')->willReturn([['id' => 'st-open', 'isFinal' => false]]);
+
+		$report = $this->service(
+			records: [
+				['id' => 'woo-open', 'caseType' => 'woo-2', 'status' => 'st-open', 'startDate' => '2026-06-01', 'title' => 'Woo v2'],
+				['id' => 'woo-old', 'caseType' => 'woo-1', 'status' => 'st-open', 'startDate' => '2026-06-01', 'title' => 'Woo v1'],
+				['id' => 'other-open', 'caseType' => 'type-other', 'status' => 'st-open', 'startDate' => '2026-06-01'],
+			]
+		)->getReport(period: 'all', caseType: 'woo-verzoek', view: 'atRisk', threshold: 1.0);
+
+		$ids = array_column(array: $report['atRisk'], column_key: 'id');
+		sort(array: $ids);
+		self::assertSame(expected: ['woo-old', 'woo-open'], actual: $ids);
+	}//end testCaseTypeFilterByIdentifierCoversEveryVersion()
+
+	/**
+	 * One day is singular: "1 day late", not "1 days late" (DqDoorlooptijd
+	 * Wettelijke Woo-termijnen read "1 dagen te laat").
+	 *
+	 * @return void
+	 */
+	public function testOneDayIsSingular(): void {
+		$report = $this->service(
+			records: [['id' => 'one-late', 'caseType' => 'type-permit', 'status' => 'st-open', 'startDate' => '2026-06-04']]
+		)->getReport(period: '12m', caseType: null, view: 'atRisk', threshold: 1.0);
+
+		self::assertSame(expected: '1 day late', actual: $report['atRisk'][0]['remainingLabel']);
+	}//end testOneDayIsSingular()
+
+	/**
+	 * The breakdown has one row per case type, not per version: Woo-verzoek
+	 * v1 and v2 share an identifier and read as one row with their records
+	 * together.
+	 *
+	 * @return void
+	 */
+	public function testBreakdownHasOneRowPerCaseTypeNotPerVersion(): void {
+		$this->loader = $this->createMock(originalClassName: ProcessMiningDataLoader::class);
+		$this->loader->method('loadCaseTypes')->willReturn(
+			[
+				['id' => 'woo-1', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek', 'processingDeadline' => 'P28D'],
+				['id' => 'woo-2', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek', 'processingDeadline' => 'P28D'],
+				['id' => 'type-other', 'identifier' => 'other', 'title' => 'Other', 'processingDeadline' => 'P30D'],
+			]
+		);
+		$this->loader->method('loadStatusTypes')->willReturn([['id' => 'st-done', 'isFinal' => true]]);
+
+		$report = $this->service(
+			records: [
+				['id' => 'w1', 'caseType' => 'woo-1', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-05'],
+				['id' => 'w2', 'caseType' => 'woo-2', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-11'],
+				['id' => 'w3', 'caseType' => 'woo-2', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-09'],
+			]
+		)->getReport(period: '12m', caseType: null, view: 'breakdown', threshold: 1.0);
+
+		$rows = $report['breakdown'];
+		self::assertSame(expected: ['Woo-verzoek', 'Other'], actual: array_column(array: $rows, column_key: 'name'));
+		self::assertSame(expected: 3, actual: $rows[0]['total']);
+		self::assertSame(expected: 'woo-2', actual: $rows[0]['id']);
+	}//end testBreakdownHasOneRowPerCaseTypeNotPerVersion()
+
+	/**
+	 * The compliance per case type ("Naleving per zaaktype") is one row per
+	 * case type too: Woo-verzoek v1 and v2 together.
+	 *
+	 * @return void
+	 */
+	public function testComplianceHasOneRowPerCaseTypeNotPerVersion(): void {
+		$this->loader = $this->createMock(originalClassName: ProcessMiningDataLoader::class);
+		$this->loader->method('loadCaseTypes')->willReturn(
+			[
+				['id' => 'woo-1', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek', 'processingDeadline' => 'P28D'],
+				['id' => 'woo-2', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek', 'processingDeadline' => 'P28D'],
+			]
+		);
+		$this->loader->method('loadStatusTypes')->willReturn([['id' => 'st-done', 'isFinal' => true]]);
+
+		$report = $this->service(
+			records: [
+				['id' => 'w1', 'caseType' => 'woo-1', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-05'],
+				['id' => 'w2', 'caseType' => 'woo-2', 'status' => 'st-done', 'startDate' => '2026-06-01', 'endDate' => '2026-06-11'],
+			]
+		)->getReport(period: '12m', caseType: null, view: 'sla', threshold: 1.0);
+
+		self::assertCount(expectedCount: 1, haystack: $report['sla']);
+		self::assertSame(expected: 2, actual: $report['sla'][0]['total']);
+	}//end testComplianceHasOneRowPerCaseTypeNotPerVersion()
 
 	/**
 	 * The unfiltered report is handed to the publisher.

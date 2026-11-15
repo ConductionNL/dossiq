@@ -28,6 +28,14 @@ describe('where cases get stuck', () => {
 		expect(stuck.content.text).toBeUndefined()
 	})
 
+	it('lists the two phases where cases stick most, as board DqProcesanalyse draws them (r33: three)', () => {
+		expect(stuck.content.limit).toBe(2)
+	})
+
+	it('draws its rows compact, as board DqProcesanalyse does (nextcloud-vue 24o density)', () => {
+		expect(stuck.content.density).toBe('compact')
+	})
+
 	it('draws no widget Actions menu, as board DqProcesanalyse', () => {
 		expect(page.config.showWidgetActions).toBe(false)
 	})

@@ -203,7 +203,27 @@ describe('check:manifest tells a lag from a defect', () => {
 		// asked about the path itself.
 		const declaresGeneratedFilters = (installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.type?.enum || []).includes('quarter')
 
-		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters) {
+		// A page filter option's rolling window `months` (schema 2.147.0) is
+		// derived the same way.
+		const declaresOptionMonths = Object.hasOwn(
+			installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.options?.items?.properties || {},
+			'months',
+		)
+
+		// A page filter without a control (schema 2.151.0) is derived the same way.
+		const declaresControlNone = (installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.control?.enum || []).includes('none')
+
+		// A dotted path into @self (`@self.can.update`, schema 2.172.0) is
+		// asked of the token pattern itself, the way the guard reads it.
+		const declaresDottedSelf = new RegExp(installed.$defs.sentinelDeclarativeToken?.pattern || '^$').test('@self.can.update')
+
+		// A crumb naming the record's parent (schema 2.174.0) is derived the same way.
+		const declaresParentCrumb = Object.hasOwn(installed.$defs.breadcrumbCrumb?.properties || {}, 'parent')
+
+		// The summary step's rows and button labels (schema 2.175.0) are derived the same way.
+		const declaresSummaryRows = JSON.stringify(installed).includes('summary, board look: the readiness rows')
+
+		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone && declaresDottedSelf && declaresParentCrumb && declaresSummaryRows) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
@@ -221,6 +241,21 @@ describe('check:manifest tells a lag from a defect', () => {
 		if (!declaresGeneratedFilters) {
 			expect(out).toMatch(/\/config\/pageFilters\/0\/type uses "enum", which schema [\d.]+ accepts/)
 		}
+		if (!declaresControlNone) {
+			expect(out).toMatch(/\/config\/pageFilters\/\d+\/control uses "enum", which schema [\d.]+ accepts/)
+		}
+		if (!declaresDottedSelf) {
+			expect(out).toMatch(/\/config\/widgets\/\d+ uses "if", which schema [\d.]+ accepts/)
+		}
+		if (!declaresParentCrumb) {
+			expect(out).toMatch(/\/config\/breadcrumb\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
+		}
+		if (!declaresOptionMonths) {
+			expect(out).toMatch(/\/config\/pageFilters\/\d+\/options\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
+		}
+		if (!declaresSummaryRows) {
+			expect(out).toMatch(/\/setup\/steps\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
+		}
 	}, 30000)
 
 	it('a value the newer schema refuses too is a defect, not a lag', () => {
@@ -233,7 +268,7 @@ describe('check:manifest tells a lag from a defect', () => {
 		const result = validate(manifest)
 
 		expect(result.code).toBe(1)
-	})
+	}, 30000)
 
 	it('a defect on a shape the newer schema also refuses still fails', () => {
 		const manifest = JSON.parse(
@@ -254,7 +289,7 @@ describe('check:manifest tells a lag from a defect', () => {
 		expect(result.out).toContain('FAIL')
 	}, 30000)
 
-	// @spec openspec/changes/the-getting-started-tour-starts-on-the-dashboard/specs/getting-started-tour/spec.md
+	// @spec openspec/specs/getting-started-tour/spec.md
 	it('a tour key only the newer schema declares is a lag, and an unknown one is not', () => {
 		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
 		const installed = JSON.parse(fs.readFileSync(INSTALLED, 'utf8'))
@@ -292,7 +327,7 @@ describe('check:manifest tells a lag from a defect', () => {
 		expect(bogus.out).toContain('FAIL')
 	}, 30000)
 
-	// @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	// @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
 	it('a pill resolve key, a board card resolve or a view icon only the newer schema declares is a lag, and an unknown one is not', () => {
 		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
 		expect(Object.hasOwn(vendored.$defs.headerPill.properties.resolve.properties, 'colorField')).toBe(true)

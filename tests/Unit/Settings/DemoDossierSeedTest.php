@@ -39,9 +39,12 @@ use PHPUnit\Framework\TestCase;
 class DemoDossierSeedTest extends TestCase {
 
 	/**
-	 * The demo seed fragment.
+	 * The register fragment with the document types, and the example data with the dossier.
 	 */
-	private const SEED = __DIR__ . '/../../../lib/Settings/register.d/46-demo-cases-english.json';
+	private const SEEDS = [
+		__DIR__ . '/../../../lib/Settings/register.d/46-demo-cases-english.json',
+		__DIR__ . '/../../../lib/Settings/demo.d/46-english-cases.json',
+	];
 
 	/**
 	 * The template library directory.
@@ -66,10 +69,12 @@ class DemoDossierSeedTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$decoded = json_decode((string)file_get_contents(self::SEED), true);
-		self::assertIsArray($decoded, 'The demo seed must be valid JSON');
+		foreach (self::SEEDS as $seed) {
+			$decoded = json_decode((string)file_get_contents($seed), true);
+			self::assertIsArray($decoded, basename($seed) . ' must be valid JSON');
 
-		$this->objects = $decoded['components']['objects'];
+			$this->objects = array_merge($this->objects, $decoded['components']['objects']);
+		}
 	}//end setUp()
 
 	/**

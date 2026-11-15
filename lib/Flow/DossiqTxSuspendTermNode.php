@@ -17,7 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\SuspendTermHandler;
+use OCA\Dossiq\Kernel\Contracts\SuspendTermHandlerInterface;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
@@ -28,7 +28,7 @@ use OCP\IURLGenerator;
  * applies the case type's suspension rules. A macro such as "Opschorten voor
  * aanvulling" uses it (DqZaakAssistent).
  *
- * @spec openspec/changes/case-macros/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
+ * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
  */
 class DossiqTxSuspendTermNode extends DossiqTransitionNode {
 
@@ -36,14 +36,14 @@ class DossiqTxSuspendTermNode extends DossiqTransitionNode {
     /**
      * Constructor.
      *
-     * @param SuspendTermHandler $handler The handler this node runs.
+     * @param SuspendTermHandlerInterface $handler The handler this node runs.
      * @param IL10N         $l10n    The localisation service.
      * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly SuspendTermHandler $handler,
+        private readonly SuspendTermHandlerInterface $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -90,7 +90,7 @@ class DossiqTxSuspendTermNode extends DossiqTransitionNode {
      *
      * @return string The translated name.
      *
-     * @spec openspec/changes/case-macros/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
+     * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
      */
     public function getDisplayName(): string {
         return $this->l10n->t('Suspend the term');
@@ -103,7 +103,7 @@ class DossiqTxSuspendTermNode extends DossiqTransitionNode {
      *
      * @return string The translated description.
      *
-     * @spec openspec/changes/case-macros/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
+     * @spec openspec/specs/case-dashboard-view/spec.md#requirement-the-case-schema-ships-the-boards-two-macros
      */
     public function getDescription(): string {
         return $this->l10n->t('Suspend the case term for a number of days, under the case type\'s rules for suspending.');

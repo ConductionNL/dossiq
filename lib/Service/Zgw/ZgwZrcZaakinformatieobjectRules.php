@@ -149,30 +149,14 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function validateZioInformatieobjecttype(string $caseUrl, string $ioUrl): ?array {
-		// Get the informatieobject to find its informatieobjecttype.
-		$docTypeId = $this->resolveDocumentTypeId(ioUrl: $ioUrl);
-		if ($docTypeId === null) {
-			return null;
-		}
-
-		// Get the zaak's zaaktype.
-		$zaaktypeUuid = $this->resolveCaseTypeUuid(caseUrl: $caseUrl);
-		if ($zaaktypeUuid === null) {
+		$types = $this->typesOf(caseUrl: $caseUrl, ioUrl: $ioUrl);
+		if ($types === null) {
 			return null;
 		}
 
 		// Check if a ZaakType-InformatieObjectType record links this zaaktype
 		// to the document's informatieobjecttype.
-		$docTypeUuid = $this->extractUuid(url: $docTypeId);
-		if ($docTypeUuid === null) {
-			return null;
-		}
-
-		$isMissing = $this->isCaseTypeInformatieobjecttypeMissing(
-			zaaktypeUuid: $zaaktypeUuid,
-			docTypeUuid: $docTypeUuid
-		);
-		if ($isMissing === false) {
+		if ($this->isCaseTypeInformatieobjecttypeMissing(zaaktypeUuid: $types['zaaktype'], docTypeUuid: $types['informatieobjecttype']) === false) {
 			return null;
 		}
 
@@ -180,14 +164,32 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		return $this->error(
 			status: 400,
 			detail: $detail,
-			invalidParams: [$this->fieldError(
-				fieldName: 'nonFieldErrors',
-				code: 'missing-zaaktype-informatieobjecttype-relation',
-				reason: $detail
-			)
-			]
+			invalidParams: [$this->fieldError(fieldName: 'nonFieldErrors', code: 'missing-zaaktype-informatieobjecttype-relation', reason: $detail)]
 		);
 	}//end validateZioInformatieobjecttype()
+
+	/**
+	 * The zaak's zaaktype and the document's informatieobjecttype, as uuids; null when either cannot be read.
+	 *
+	 * @param string $caseUrl The zaak URL
+	 * @param string $ioUrl   The informatieobject URL
+	 *
+	 * @return array{zaaktype: string, informatieobjecttype: string}|null The two types
+	 */
+	private function typesOf(string $caseUrl, string $ioUrl): ?array {
+		$docTypeId = $this->resolveDocumentTypeId(ioUrl: $ioUrl);
+		if ($docTypeId === null) {
+			return null;
+		}
+
+		$zaaktypeUuid = $this->resolveCaseTypeUuid(caseUrl: $caseUrl);
+		$docTypeUuid  = $this->extractUuid(url: $docTypeId);
+		if ($zaaktypeUuid === null || $docTypeUuid === null) {
+			return null;
+		}
+
+		return ['zaaktype' => $zaaktypeUuid, 'informatieobjecttype' => $docTypeUuid];
+	}//end typesOf()
 
 	/**
 	 * Resolve the informatieobjecttype reference carried by an informatieobject.
@@ -300,23 +302,14 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		$body = $result['enrichedBody'];
 
 		// Zrc-004: zaak is immutable.
-		$caseChanged = $this->isRelationFieldChanged(
-			body: $body,
-			existingObject: $existingObject,
-			field: 'case',
-			storedKey: 'case'
-		);
+		$sides = ['body' => $body, 'existing' => $existingObject];
+		$caseChanged = $this->isRelationFieldChanged(sides: $sides, relation: ['field' => 'case', 'storedKey' => 'case']);
 		if ($caseChanged === true) {
 			return $this->fieldImmutableError(fieldName: 'case');
 		}
 
 		// Zrc-004: informatieobject is immutable.
-		$ioChanged = $this->isRelationFieldChanged(
-			body: $body,
-			existingObject: $existingObject,
-			field: 'informatieobject',
-			storedKey: 'document'
-		);
+		$ioChanged = $this->isRelationFieldChanged(sides: $sides, relation: ['field' => 'informatieobject', 'storedKey' => 'document']);
 		if ($ioChanged === true) {
 			return $this->fieldImmutableError(fieldName: 'informatieobject');
 		}
@@ -333,21 +326,17 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 	 * relation expressed as a bare UUID and as a full URL is not a change.
 	 * An unresolvable UUID on either side is not treated as a change.
 	 *
-	 * @param array $body The request body
-	 * @param array $existingObject The stored object data
-	 * @param string $field The ZGW field name in the body
-	 * @param string $storedKey The dossiq-side key on the stored object
+	 * @param array{body: array, existing: array} $sides The request body and the stored object data
+	 * @param array{field: string, storedKey: string} $relation The ZGW field name in the body and the dossiq-side
+	 *                                                          key on the stored object
 	 *
 	 * @return bool True when the field is present and points at a different object
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function isRelationFieldChanged(
-		array $body,
-		array $existingObject,
-		string $field,
-		string $storedKey,
-	): bool {
+	private function isRelationFieldChanged(array $sides, array $relation): bool {
+		['body' => $body, 'existing' => $existingObject] = $sides;
+		['field' => $field, 'storedKey' => $storedKey] = $relation;
 		if (isset($body[$field]) === false) {
 			return false;
 		}

@@ -38,10 +38,32 @@ function actionsWithId(node, id, found = []) {
 }
 
 describe('the Hand to another team dialog against board DqOverdragen', () => {
+	it('offers only teams that exist, never what was typed', () => {
+		for (const action of actionsWithId(manifest, 'case-hand-over')) {
+			expect(action.props.config.assignee.allowTyped).toBeUndefined()
+			expect(action.props.config.assignee.kinds).toEqual(['group'])
+		}
+	})
+
+	it('lines each team with the organisation role that names its group (DqOverdragen "6 leden · ...")', () => {
+		for (const action of actionsWithId(manifest, 'case-hand-over')) {
+			expect(action.props.config.assignee.describe).toEqual({ register: 'dossiq', schema: 'organisatieRol', only: true })
+		}
+		const fragment = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib', 'Settings', 'register.d', '97-organisation-role-description.json'), 'utf8'))
+		expect(fragment.components.schemas.organisatieRol.properties.description.type).toBe('string')
+	})
+
 	it('names the case number in the eyebrow', () => {
 		const found = actionsWithId(manifest, 'case-hand-over')
 		expect(found).toHaveLength(1)
 		expect(found[0].props.config.eyebrow).toBe('Hand over · {identifier}')
 		expect(nl['Hand over · {identifier}']).toBe('Overdragen · {identifier}')
+	})
+
+	it('names the applicant in the doorzending note, with the plain note when the case has none', () => {
+		const [toggle] = actionsWithId(manifest, 'case-hand-over')[0].props.config.toggles
+		expect(toggle.note).toBe('{initiatorDisplayName} then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation.')
+		expect(nl[toggle.note]).toBe('{initiatorDisplayName} krijgt dan een bericht dat de zaak naar een ander team gaat en naar welk. Bij een interne verschuiving laat u dit uit.')
+		expect(nl[toggle.noteFallback]).toBe('De verzoeker krijgt dan een bericht dat de zaak naar een ander team gaat en naar welk. Bij een interne verschuiving laat u dit uit.')
 	})
 })

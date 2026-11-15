@@ -22,19 +22,20 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Review\BatchSelection;
-use OCA\Dossiq\Review\ReviewBatches;
-use OCA\Dossiq\Review\ReviewSummary;
-use OCA\Dossiq\Review\ReviewWrites;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BatchSelectionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewBatchesInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewSummaryInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -52,11 +53,11 @@ class DocumentReviewController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param ReviewWrites $writes A person's writes on a review.
-	 * @param ReviewSummary $summary The case summary.
-	 * @param ReviewBatches $batches The review batches.
-	 * @param BatchSelection $selection Which documents a batch takes.
-	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
+	 * @param ReviewWritesInterface $writes A person's writes on a review.
+	 * @param ReviewSummaryInterface $summary The case summary.
+	 * @param ReviewBatchesInterface $batches The review batches.
+	 * @param BatchSelectionInterface $selection Which documents a batch takes.
+	 * @param CaseAccessGuardInterface $caseAccessGuard The per-case access check.
 	 * @param IUserSession $userSession The session.
 	 * @param IL10N $l10n The translations.
 	 *
@@ -64,15 +65,15 @@ class DocumentReviewController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ReviewWrites $writes,
-		private readonly ReviewSummary $summary,
-		private readonly ReviewBatches $batches,
-		private readonly BatchSelection $selection,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly ReviewWritesInterface $writes,
+		private readonly ReviewSummaryInterface $summary,
+		private readonly ReviewBatchesInterface $batches,
+		private readonly BatchSelectionInterface $selection,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -86,13 +87,9 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function summary(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+		$user = $this->caseReader(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return new JSONResponse($this->summary->forCase(caseId: $id));
@@ -110,13 +107,9 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function relevance(string $id, string $documentRef): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+		$user = $this->caseWriter(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -127,7 +120,7 @@ class DocumentReviewController extends Controller {
 				userId: $user->getUID(),
 			);
 		} catch (RefusedException $e) {
-			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+			return $this->refused(e: $e);
 		}
 
 		return new JSONResponse($review);
@@ -144,13 +137,9 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function batches(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+		$user = $this->caseReader(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return new JSONResponse(['results' => $this->batches->forCase(caseId: $id, assessed: $this->summary->assessed(caseId: $id))]);
@@ -167,41 +156,78 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function createBatch(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		$user = $this->caseWriter(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
-		}
-
-		$filter = array_map('strval', array_filter((array)$this->request->getParam('filter', []), 'is_scalar'));
-		$listed = array_values(array_map('strval', array_filter((array)$this->request->getParam('documents', []), 'is_scalar')));
 		try {
-			$documents = $this->selection->select(caseId: $id, documents: $listed, filter: $filter);
-			$taken = $this->batches->taken(caseId: $id, documents: $documents);
-			if ($taken !== []) {
-				return new JSONResponse(
-					['error' => 'review-batch-document-taken', 'message' => $this->sentence(rule: 'review-batch-document-taken'), 'taken' => $taken],
-					Http::STATUS_CONFLICT
-				);
-			}
-
-			$made = $this->batches->create(
-				caseId: $id,
-				name: (string)$this->request->getParam('name', ''),
-				assignee: (string)$this->request->getParam('assignee', ''),
-				documents: $documents,
-				userId: $user->getUID(),
-				filter: $filter,
-			);
+			return $this->madeBatch(id: $id, user: $user);
 		} catch (RefusedException $e) {
-			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+			return $this->refused(e: $e);
 		}
+	}//end createBatch()
+
+	/**
+	 * Make the batch the request asks for, unless one of its documents is already taken.
+	 *
+	 * @param string $id   The case UUID.
+	 * @param IUser  $user The caller, who may change the case.
+	 *
+	 * @return JSONResponse The batch (201), or the 409 naming the taken documents.
+	 *
+	 * @throws RefusedException When the selection or the batch is refused.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function madeBatch(string $id, IUser $user): JSONResponse {
+		$filter = $this->scalarParam(name: 'filter');
+		$documents = $this->selection->select(caseId: $id, documents: array_values($this->scalarParam(name: 'documents')), filter: $filter);
+		$taken = $this->batches->taken(caseId: $id, documents: $documents);
+		if ($taken !== []) {
+			return $this->documentsTaken(taken: $taken);
+		}
+
+		$made = $this->batches->create(
+			caseId: $id,
+			name: (string)$this->request->getParam('name', ''),
+			assignee: (string)$this->request->getParam('assignee', ''),
+			documents: $documents,
+			userId: $user->getUID(),
+			filter: $filter,
+		);
 
 		return new JSONResponse($made, Http::STATUS_CREATED);
-	}//end createBatch()
+	}//end madeBatch()
+
+	/**
+	 * The scalar entries of a list parameter, as strings.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return array<string>
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function scalarParam(string $name): array {
+		return array_map('strval', array_filter((array)$this->request->getParam($name, []), 'is_scalar'));
+	}//end scalarParam()
+
+	/**
+	 * The 409 answer for documents already in another open batch.
+	 *
+	 * @param array<mixed> $taken The taken documents and their batches.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function documentsTaken(array $taken): JSONResponse {
+		return new JSONResponse(
+			['error' => 'review-batch-document-taken', 'message' => $this->sentence(rule: 'review-batch-document-taken'), 'taken' => $taken],
+			Http::STATUS_CONFLICT
+		);
+	}//end documentsTaken()
 
 	/**
 	 * The review viewer reports the pages a reviewer displayed, and the page count when it knows it.
@@ -217,13 +243,9 @@ class DocumentReviewController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function pagesSeen(string $id, string $documentRef): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
+		$user = $this->caseReader(id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$pages = array_values(array_map('intval', array_filter((array)$this->request->getParam('pages', []), 'is_numeric')));
@@ -236,11 +258,51 @@ class DocumentReviewController extends Controller {
 		try {
 			$review = $this->writes->pagesSeen(caseId: $id, documentRef: $documentRef, pages: $pages, pageCount: $pageCount, userId: $user->getUID());
 		} catch (RefusedException $e) {
-			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+			return $this->refused(e: $e);
 		}
 
 		return new JSONResponse($review);
 	}//end pagesSeen()
+
+	/**
+	 * The signed-in user when they may read the case, else the refusal.
+	 *
+	 * @param string $id The case.
+	 *
+	 * @return IUser|JSONResponse The user, or 401 without a session user, or 403 without read access.
+	 */
+	private function caseReader(string $id): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
+			return $this->noAccess();
+		}
+
+		return $user;
+	}//end caseReader()
+
+	/**
+	 * The signed-in user when they may change the case, else the refusal.
+	 *
+	 * @param string $id The case.
+	 *
+	 * @return IUser|JSONResponse The user, or 401 without a session user, or 403 without mutation access.
+	 */
+	private function caseWriter(string $id): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
+			return $this->noAccess();
+		}
+
+		return $user;
+	}//end caseWriter()
 
 	/**
 	 * The refusal of a user without access to the case.
@@ -253,6 +315,17 @@ class DocumentReviewController extends Controller {
 			Http::STATUS_FORBIDDEN
 		);
 	}//end noAccess()
+
+	/**
+	 * The answer for a refused review write: the rule, its sentence and its status.
+	 *
+	 * @param RefusedException $e The refusal.
+	 *
+	 * @return JSONResponse
+	 */
+	private function refused(RefusedException $e): JSONResponse {
+		return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+	}//end refused()
 
 	/**
 	 * The translated sentence of a refusal rule.

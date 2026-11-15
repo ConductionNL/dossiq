@@ -17,7 +17,7 @@
  * `/used` reads; a stub honouring a prop the library ignored would prove
  * nothing.
  *
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'

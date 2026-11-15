@@ -34,11 +34,11 @@ describe('the parts of a case type', () => {
 		expect(appended(widgetId).content).toMatchObject({ register: 'dossiq', schema, filter: { caseType: '@objectId' } })
 	})
 
-	it('places results, document and decision types under statuses, roles under rights', () => {
+	it('places results, document, decision and role types under statuses, as DqZaaktypeStatussen draws them', () => {
 		const tabs = appended('case-type-panels').content.tabs
 		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
-		expect(holds('Statuses')).toEqual(['case-type-statuses-editor', 'case-type-results', 'case-type-document-types', 'case-type-decision-types', 'case-type-blueprint'])
-		expect(holds('Rights')).toEqual(['case-type-rights', 'case-type-roles'])
+		expect(holds('Statuses')).toEqual(['case-type-statuses-editor', 'case-type-results', 'case-type-document-types', 'case-type-decision-types', 'case-type-roles', 'case-type-blueprint'])
+		expect(holds('Rights')).toEqual(['case-type-rights'])
 		expect(holds('Phases and tasks')).not.toEqual(expect.arrayContaining(['case-type-document-types']))
 	})
 
@@ -61,17 +61,20 @@ describe('the parts of a case type', () => {
 		const tabs = appended('case-type-panels').content.tabs
 		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
 		expect(holds('Fields')).toEqual(expect.arrayContaining(['case-type-fields-editor']))
-		expect(holds('Rules')).toEqual(['case-type-rules'])
+		// The case type's own rules as sentences (case-type-conditional-rules Task 3), above the schema's rules.
+		expect(holds('Rules')).toEqual(['case-type-rule-rows', 'case-type-rules'])
 		// The workflow canvas has a page of its own, CaseTypeFlow (case-type-page-follows-its-boards).
-		expect(holds('Phases and tasks')).toEqual(expect.arrayContaining(['case-type-messages-editor']))
+		expect(holds('Message templates')).toEqual(['case-type-messages-editor'])
 		const types = overlay.configPatch.widgets
 		expect(types['case-type-statuses-editor']).toBeUndefined()
-		expect(types['case-type-fields-editor']).toBeUndefined()
+		expect(types['case-type-fields-editor']?.type).toBeUndefined()
 		expect(baseWidget('case-type-statuses-editor').type).toBe('object-list')
 		expect(baseWidget('case-type-fields-editor').type).toBe('object-list')
 		expect(types['case-type-messages-editor'].type).toBe('CaseTypeMessagesEditorWidget')
 		expect(types['case-type-workflow-editor'].type).toBe('CaseTypeWorkflowEditorWidget')
 		expect(types['case-type-rules'].type).toBe('CaseTypeRulesWidget')
+		expect(appended('case-type-rule-rows').type).toBe('record-list')
+		expect(appended('case-type-rule-rows').content.endpointSource.url).toBe('/apps/dossiq/api/case-types/@objectId/rules')
 	})
 
 	it('edits the general fields the old editor had on the case type cards', () => {

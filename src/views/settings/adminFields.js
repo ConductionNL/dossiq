@@ -21,22 +21,7 @@ import { QUEUE_URGENCY_FIELDS } from '../../utils/queueUrgencySettings.js'
  */
 export function houseStyleFields(t) {
 	return [
-		{
-			// Nextcloud theming's own name, read from the capabilities and
-			// written through theming's admin-only updateStylesheet.
-			key: 'organisationName',
-			label: t('dossiq', 'Name of the organisation'),
-			url: '/ocs/v2.php/cloud/capabilities?format=json',
-			valuePath: 'ocs.data.capabilities.theming.name',
-			saveUrl: '/apps/theming/ajax/updateStylesheet',
-			saveKey: 'value',
-			saveParams: { setting: 'name' },
-		},
-		{
-			key: 'staff_app_name',
-			label: t('dossiq', 'Name of the app for staff'),
-			placeholder: 'Dossiq',
-		},
+		organisationNameField(t),
 		{
 			// The lists of contacts and organisations open on this city
 			// (`@config.municipalityCity`); empty leaves that lens out.
@@ -44,31 +29,76 @@ export function houseStyleFields(t) {
 			label: t('dossiq', 'City of the municipality'),
 		},
 		{
-			key: 'theme',
-			label: t('dossiq', 'Theme'),
-			type: 'select',
-			url: '/apps/thematiq/settings/app-brands',
-			valuePath: 'brands.dossiq.tokenSet',
-			saveUrl: '/apps/thematiq/settings/app-brands/dossiq',
-			saveKey: 'tokenSet',
-			optionsUrl: '/apps/thematiq/settings/app-brands',
-			optionsPath: 'tokenSets',
-			optionLabel: 'name',
-			optionValue: 'id',
+			key: 'staff_app_name',
+			label: t('dossiq', 'Name of the app for staff'),
+			placeholder: 'Dossiq',
 		},
-		{
-			key: 'logo',
-			label: t('dossiq', 'Other logo'),
-			uploadLabel: t('dossiq', 'Other logo'),
-			type: 'image',
-			url: '/apps/thematiq/settings/theming',
-			valuePath: 'logo_url',
-			initialsFrom: 'organisationName',
-			uploadUrl: '/apps/theming/ajax/uploadImage',
-			uploadParams: { key: 'logo' },
-			uploadValuePath: 'data.url',
-		},
+		themeField(t),
+		logoField(t),
 	]
+}
+
+/**
+ * The organisation's name: Nextcloud theming's own, read from the
+ * capabilities and written through theming's admin-only updateStylesheet.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function organisationNameField(t) {
+	return {
+		key: 'organisationName',
+		label: t('dossiq', 'Name of the organisation'),
+		url: '/ocs/v2.php/cloud/capabilities?format=json',
+		valuePath: 'ocs.data.capabilities.theming.name',
+		saveUrl: '/apps/theming/ajax/updateStylesheet',
+		saveKey: 'value',
+		saveParams: { setting: 'name' },
+	}
+}
+
+/**
+ * The theme: thematiq's brand for dossiq, chosen from thematiq's token sets.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function themeField(t) {
+	return {
+		key: 'theme',
+		label: t('dossiq', 'Theme'),
+		type: 'select',
+		url: '/apps/thematiq/settings/app-brands',
+		valuePath: 'brands.dossiq.tokenSet',
+		saveUrl: '/apps/thematiq/settings/app-brands/dossiq',
+		saveKey: 'tokenSet',
+		optionsUrl: '/apps/thematiq/settings/app-brands',
+		optionsPath: 'tokenSets',
+		optionLabel: 'name',
+		optionValue: 'id',
+	}
+}
+
+/**
+ * The other logo, uploaded through theming and read from thematiq.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function logoField(t) {
+	return {
+		key: 'logo',
+		label: t('dossiq', 'Other logo'),
+		hideLabel: true,
+		uploadLabel: t('dossiq', 'Other logo'),
+		type: 'image',
+		url: '/apps/thematiq/settings/theming',
+		valuePath: 'logo_url',
+		initialsFrom: 'organisationName',
+		uploadUrl: '/apps/theming/ajax/uploadImage',
+		uploadParams: { key: 'logo' },
+		uploadValuePath: 'data.url',
+	}
 }
 
 /**
@@ -78,9 +108,79 @@ export function houseStyleFields(t) {
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
- * @spec openspec/specs/admin-settings/spec.md
+ * @spec openspec/changes/admin-message-and-portal-texts/specs/admin-settings/spec.md#requirement-an-administrator-shall-set-the-message-and-portal-texts-in-the-admin-settings
  */
 export function textsAndAccessFields(t) {
+	return [
+		...messageTextFields(t),
+		...dateAndTimeFields(t),
+		...betaFeatureFields(t),
+	]
+}
+
+/**
+ * The administrator's own text for each notification dossiq sends
+ * (REQ-CRS-13). One field per kind, keyed `notification_text_<subject>` as
+ * `ConfigKeys::NOTIFICATION_TEXT_KEYS` lists them; the Notifier reads the key
+ * on every notification, so a saved text reaches the next one of that kind.
+ * An empty field keeps the shipped, translated wording.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/admin-settings/spec.md#requirement-an-administrator-edits-the-text-of-each-notification-req-crs-13
+ */
+export function notificationTextFields(t) {
+	const kinds = [
+		['note_mention', t('dossiq', 'You were mentioned in a note')],
+		['case_status_changed', t('dossiq', 'A case you handle changed status')],
+		['case_role_notified', t('dossiq', 'A case you handle needs your attention')],
+		['milestone_bottleneck', t('dossiq', 'A case is stuck on a milestone')],
+		['cases_reassigned', t('dossiq', 'Cases were transferred to you')],
+		['advice_requested', t('dossiq', 'Advice requested')],
+		['advies_ontvangen', t('dossiq', 'Advice received')],
+		['advies_herinnering', t('dossiq', 'Advice reminder')],
+		['woo_deadline_warning', t('dossiq', 'Woo deadline nearing')],
+		['woo_deadline_overdue', t('dossiq', 'Woo deadline passed')],
+		['dso_deadline_warning', t('dossiq', 'Permit deadline nearing')],
+		['dso_deadline_critical', t('dossiq', 'Permit deadline critical')],
+		['dso_deadline_overdue', t('dossiq', 'Permit deadline passed')],
+		['term_nearing', t('dossiq', 'Term nearing')],
+		['term_exceeded', t('dossiq', 'Term exceeded')],
+		['applicant_responded', t('dossiq', 'The applicant responded')],
+		['applicant_withdrew', t('dossiq', 'The applicant withdrew')],
+		['stuf_circuit_open', t('dossiq', 'StUF connection paused')],
+		['stuf_timeout', t('dossiq', 'StUF request timed out')],
+		['stuf_permanent_error', t('dossiq', 'StUF request refused')],
+		['background_service_account_missing', t('dossiq', 'Background account missing')],
+		['tenant_quota_soft_limit', t('dossiq', 'Quota nearly reached')],
+	]
+	return [
+		{
+			key: 'notificationTextsNote',
+			label: t('dossiq', 'Notification texts'),
+			type: 'note',
+			text: t(
+				'dossiq',
+				'The text under the title of each notification. Empty keeps the standard text. {name} is filled with the notification\'s own value of that name.',
+			),
+		},
+		...kinds.map(([subject, label]) => ({
+			key: `notification_text_${subject}`,
+			label,
+			type: 'textarea',
+		})),
+	]
+}
+
+/**
+ * The sender of dossiq's messages, the text above Mijn zaken, and where the
+ * allowed websites are set instead.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/changes/admin-message-and-portal-texts/specs/admin-settings/spec.md#requirement-an-administrator-shall-set-the-message-and-portal-texts-in-the-admin-settings
+ */
+function messageTextFields(t) {
 	return [
 		{
 			key: 'email_from_name',
@@ -89,18 +189,93 @@ export function textsAndAccessFields(t) {
 		{
 			key: 'portal_intro_text',
 			label: t('dossiq', 'Text above My cases in the portal'),
-			type: 'textarea',
-			rows: 2,
 		},
 		{
 			key: 'allowedWebsites',
 			label: t('dossiq', 'Allowed websites (CORS)'),
-			readOnly: true,
-			default: t(
+			type: 'note',
+			text: t(
 				'dossiq',
 				'Set in the portal app (portaliq) and in Nextcloud, not here.',
 			),
 		},
+	]
+}
+
+/**
+ * The time zone and the date format.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function dateAndTimeFields(t) {
+	return [
+		{
+			key: 'timezone',
+			label: t('dossiq', 'Time zone'),
+			placeholder: 'Europe/Amsterdam',
+			default: 'Europe/Amsterdam',
+		},
+		{
+			key: 'date_format',
+			label: t('dossiq', 'Date format'),
+			type: 'select',
+			options: ['DD-MM-YYYY', 'YYYY-MM-DD', 'D MMMM YYYY'].map((value) => ({ value, label: value })),
+			default: 'DD-MM-YYYY',
+			required: true,
+		},
+	]
+}
+
+/**
+ * The beta features heading and its switches.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function betaFeatureFields(t) {
+	return [
+		{
+			key: 'betaFeatures',
+			label: t('dossiq', 'Beta features'),
+			type: 'heading',
+		},
+		{
+			key: 'feature_new_case_page',
+			label: t('dossiq', 'New case page'),
+			hint: t('dossiq', 'visible to everyone at once, without waiting for the cache'),
+			type: 'switch',
+			trueValue: 'true',
+			falseValue: 'false',
+		},
+	]
+}
+
+/**
+ * The queue order on the Integrations tab: three thresholds that colour a
+ * case red, orange and grey, and two weights. Saving sends only what changed.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ */
+export function queueOrderFields(t) {
+	const field = (key, label, hint, value, max, integer) => ({
+		key,
+		label,
+		hint,
+		type: 'number',
+		integer,
+		min: 0,
+		max,
+		default: value,
+	})
+	return [
+		field('queue_critical_days', t('dossiq', 'Late within (days)'), t('dossiq', 'red'), 3, 60, true),
+		field('queue_warning_days', t('dossiq', 'Soon within (days)'), t('dossiq', 'orange'), 7, 120, true),
+		field('queue_in_sight_days', t('dossiq', 'In sight within (days)'), t('dossiq', 'grey'), 10, 180, true),
+		field('queue_idle_weight', t('dossiq', 'Weight per day waiting'), t('dossiq', 'per day without action'), 0.5, 1.5, false),
+		field('queue_resident_wait_weight', t('dossiq', 'Weight of waiting on the resident'), t('dossiq', 'from 0 to 50'), 5, 50, false),
 	]
 }
 
@@ -131,6 +306,8 @@ export function kadasterFields(t) {
 				type: 'select',
 				options: modes,
 				default: 'log',
+				// Off is one of the sources, so the choice is never empty: no clear button.
+				required: true,
 			},
 			{
 				key: `integration.${integration}.baseUrl`,
@@ -149,7 +326,8 @@ export function kadasterFields(t) {
 
 /**
  * The tone of each connection status on the integrations table: a working
- * connection is green, a failing one red, the rest neutral.
+ * connection is green, a failing one red, a simulated one purple, an
+ * unavailable one amber, the rest neutral.
  *
  * @type {Readonly<Record<string, string>>}
  * @spec openspec/specs/admin-settings/spec.md
@@ -157,6 +335,8 @@ export function kadasterFields(t) {
 export const CONNECTION_STATUS_TONES = Object.freeze({
 	configured: 'success',
 	error: 'error',
+	simulated: 'purple',
+	unavailable: 'warning',
 })
 
 /**
@@ -171,26 +351,21 @@ export function menuStructureFields(t) {
 	return [
 		{
 			key: 'menu_structure',
-			label: t('dossiq', 'Menu structure'),
-			hideLabel: true,
+			label: t('dossiq', 'Menu'),
 			type: 'radio',
 			default: 'simple',
 			options: [
 				{
 					value: 'simple',
 					label: t('dossiq', 'Simple'),
-					description: t(
-						'dossiq',
-						'Nine menu entries for daily work. Everything else is one step further, in settings or on a page.',
-					),
+					description: t('dossiq', 'Dashboard, My work, cases and relations'),
 				},
 				{
 					value: 'full',
 					label: t('dossiq', 'Full'),
-					description: t('dossiq', 'Every entry in the menu, as it was before.'),
+					description: t('dossiq', 'Also reports, administration and every module'),
 				},
 			],
-			hint: t('dossiq', 'No page is removed. Both menus open the same pages.'),
 		},
 	]
 }
@@ -236,56 +411,6 @@ export function queueUrgencyFields(t) {
 }
 
 /**
- * The mandate matrix behaviour: the Decidiq connection, the default term of a
- * stand-in assignment and whether an approved import goes live by itself.
- *
- * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
- * @return {Array<object>} The fields.
- * @spec openspec/specs/admin-settings/spec.md
- */
-export function mandateSettingsFields(t) {
-	return [
-		{
-			key: 'mandate-delivery',
-			type: 'status',
-			text: t(
-				'dossiq',
-				'The mandate matrix (Awb art. 10:3) is being delivered in the mandaat-matrix chain. This panel will host role hierarchy, Decidiq imports and waarnemer assignments.',
-			),
-		},
-		{
-			key: 'mandaat_decidesk_connection',
-			label: t('dossiq', 'Decidiq connection (Integriq)'),
-			placeholder: 'decidesk-default',
-			default: 'decidesk-default',
-			hint: t(
-				'dossiq',
-				'Identifier of the Integriq connection used to fetch mandateringsbesluiten from Decidiq.',
-			),
-		},
-		{
-			key: 'mandaat_default_extension_days',
-			label: t('dossiq', 'Default extension days for waarnemer assignments'),
-			type: 'number',
-			integer: true,
-			min: 0,
-			default: 14,
-			hint: t(
-				'dossiq',
-				'Used as a hint when a waarnemer assignment is created without an explicit end date.',
-			),
-		},
-		{
-			key: 'mandaat_auto_finalize_approved',
-			label: t('dossiq', 'Automatically activate a mandate import after approval'),
-			type: 'switch',
-			trueValue: '1',
-			falseValue: '0',
-		},
-	]
-}
-
-/**
  * The consultation behaviour: the default term, the warning offset, the base
  * of the external response links and the bottleneck threshold.
  *
@@ -295,60 +420,65 @@ export function mandateSettingsFields(t) {
  */
 export function consultationFields(t) {
 	return [
+		...consultationTermFields(t),
 		{
-			key: 'consultation-delivery',
-			type: 'status',
-			text: t(
-				'dossiq',
-				'Structured consultation (adviesaanvraag) is being delivered in consultation-management. This panel will host advisory body registry, mandatory-gate config and n8n webhook endpoints.',
-			),
+			key: 'consultation_external_response_url',
+			label: t('dossiq', 'Address for external responses'),
+			placeholder: 'https://dossiq.example.org/consultation/respond/',
+			pattern: '^https://',
+			patternMessage: t('dossiq', 'Starts with https://'),
 		},
+		consultationBottleneckField(t),
+	]
+}
+
+/**
+ * The default consultation term and how many days ahead to warn, in whole days.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function consultationTermFields(t) {
+	return [
 		{
 			key: 'consultation_default_deadline_days',
-			label: t('dossiq', 'Default deadline (days) for new consultations'),
+			label: t('dossiq', 'Standard term in days'),
 			type: 'number',
 			integer: true,
 			min: 0,
 			default: 28,
-			hint: t(
-				'dossiq',
-				'Used when an advisory body has no explicit defaultDeadlineDays configured.',
-			),
 		},
 		{
 			key: 'consultation_warning_offset_days',
-			label: t('dossiq', 'Warning offset (days before deadline)'),
+			label: t('dossiq', 'Warn, days ahead'),
 			type: 'number',
 			integer: true,
 			min: 0,
 			default: 5,
-			hint: t(
-				'dossiq',
-				'The deadline-monitor n8n workflow uses this offset to send T-X warnings.',
-			),
-		},
-		{
-			key: 'consultation_external_response_url',
-			label: t('dossiq', 'External response base URL'),
-			placeholder: 'https://dossiq.example.org/consultation/respond/',
-			hint: t(
-				'dossiq',
-				'Base URL used in secure response links sent to external advisory bodies. Must be HTTPS.',
-			),
-		},
-		{
-			key: 'consultation_bottleneck_threshold',
-			label: t('dossiq', 'Bottleneck overdue-rate threshold (0-1)'),
-			type: 'number',
-			min: 0,
-			max: 1,
-			default: 0.2,
-			hint: t(
-				'dossiq',
-				'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.',
-			),
 		},
 	]
+}
+
+/**
+ * The overdue rate from which an advisory body counts as a bottleneck.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function consultationBottleneckField(t) {
+	return {
+		key: 'consultation_bottleneck_threshold',
+		advanced: true,
+		label: t('dossiq', 'Bottleneck overdue-rate threshold (0-1)'),
+		type: 'number',
+		min: 0,
+		max: 1,
+		default: 0.2,
+		hint: t(
+			'dossiq',
+			'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.',
+		),
+	}
 }
 
 /**
@@ -404,13 +534,13 @@ export function paymentCallbackFields(t) {
 			tone: 'warning',
 			text: t(
 				'dossiq',
-				'No callback secret is configured. Every dwangsom payment-confirmation callback is currently being rejected with HTTP 401.',
+				'No callback secret is configured. Every payout confirmation callback is currently being rejected with HTTP 401.',
 			),
-			visibleWhen: { key: 'dwangsom_callback_secret', empty: true },
+			visibleWhen: { key: 'payout_callback_secret', empty: true },
 		},
 		{
-			key: 'dwangsom_callback_secret',
-			label: t('dossiq', 'Dwangsom callback secret'),
+			key: 'payout_callback_secret',
+			label: t('dossiq', 'Payout callback secret'),
 			type: 'password',
 			hint: t(
 				'dossiq',
@@ -421,7 +551,9 @@ export function paymentCallbackFields(t) {
 			key: 'generate-callback-secret',
 			label: t('dossiq', 'Generate random secret'),
 			type: 'action',
-			fill: { key: 'dwangsom_callback_secret', bytes: 32 },
+			fill: { key: 'payout_callback_secret', bytes: 32 },
+			// Beside Save, as the board draws it (nc-vue `placement: 'save'`).
+			placement: 'save',
 		},
 	]
 }
@@ -441,7 +573,7 @@ export function storeRegistryFields(t) {
 			type: 'status',
 			text: t(
 				'dossiq',
-				'A store registry is another OpenRegister instance that publishes case configuration. Leave the address empty to keep dossiq offline: nothing is requested from the network until one is set.',
+				'A marketplace registry is another OpenRegister instance that publishes case configuration. Leave the address empty to keep dossiq offline: nothing is requested from the network until one is set.',
 			),
 		},
 		{
@@ -454,17 +586,27 @@ export function storeRegistryFields(t) {
 			label: t('dossiq', 'Register on that instance'),
 			default: 'dossiq',
 		},
-		{
-			key: 'registryToken',
-			label: t('dossiq', 'Registry token'),
-			type: 'secret',
-			setKey: 'registryTokenSet',
-			hint: t(
-				'dossiq',
-				'The token is never shown again after saving. Leave it empty to keep the one already stored.',
-			),
-		},
+		registryTokenField(t),
 	]
+}
+
+/**
+ * The write-only registry token, never shown again after saving.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function registryTokenField(t) {
+	return {
+		key: 'registryToken',
+		label: t('dossiq', 'Registry token'),
+		type: 'secret',
+		setKey: 'registryTokenSet',
+		hint: t(
+			'dossiq',
+			'The token is never shown again after saving. Leave it empty to keep the one already stored.',
+		),
+	}
 }
 
 /**
@@ -514,15 +656,6 @@ export function archivalFields(t) {
  * @spec openspec/specs/admin-settings/spec.md
  */
 export function contactCentreFields(t) {
-	const number = (key, label, fallback, hint = '') => ({
-		key,
-		label,
-		type: 'number',
-		min: 0,
-		default: fallback,
-		placeholder: String(fallback),
-		...(hint ? { hint } : {}),
-	})
 	return [
 		{
 			key: 'kcc-scope',
@@ -532,54 +665,118 @@ export function contactCentreFields(t) {
 				'Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by Integriq and pipelinq respectively; only the Dossiq-side behaviour is configured here.',
 			),
 		},
-		{
-			key: 'identification_method',
-			label: t('dossiq', 'Identification method'),
-			type: 'select',
-			required: true,
-			default: 'both',
-			options: [
-				{ value: 'digid', label: 'DigiD' },
-				{ value: 'bsn_questions', label: t('dossiq', 'Identification questions') },
-				{ value: 'both', label: t('dossiq', 'Both') },
-			],
-			hint: t(
-				'dossiq',
-				'Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.',
-			),
-		},
-		{
-			...number(
-				'identification_score_threshold',
-				t('dossiq', 'Identification score threshold (0.6 - 1.0)'),
-				0.8,
-				t(
+		identificationMethodField(t),
+		identificationThresholdField(t),
+		...contactCentreNumberFields(t),
+		sentimentTriggerWordsField(t),
+	]
+}
+
+/**
+ * A number setting of the KCC bridge, its default doubling as the placeholder.
+ *
+ * @param {{key: string, label: string, hint?: string}} setting The setting, its label and an optional hint.
+ * @param {number} fallback The server's default.
+ * @return {object} The field.
+ */
+function contactCentreNumber(setting, fallback) {
+	return {
+		key: setting.key,
+		label: setting.label,
+		type: 'number',
+		min: 0,
+		default: fallback,
+		placeholder: String(fallback),
+		...(setting.hint ? { hint: setting.hint } : {}),
+	}
+}
+
+/**
+ * How a caller is identified: DigiD, identification questions, or both.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function identificationMethodField(t) {
+	return {
+		key: 'identification_method',
+		label: t('dossiq', 'Identification method'),
+		type: 'select',
+		required: true,
+		default: 'both',
+		options: [
+			{ value: 'digid', label: 'DigiD' },
+			{ value: 'bsn_questions', label: t('dossiq', 'Identification questions') },
+			{ value: 'both', label: t('dossiq', 'Both') },
+		],
+		hint: t(
+			'dossiq',
+			'Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.',
+		),
+	}
+}
+
+/**
+ * The match score from which a caller is linked and sees the full case information.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function identificationThresholdField(t) {
+	return {
+		...contactCentreNumber(
+			{
+				key: 'identification_score_threshold',
+				label: t('dossiq', 'Identification score threshold (0.6 - 1.0)'),
+				hint: t(
 					'dossiq',
 					'Minimum identificatievragen match score to link a burger and reveal full zaaksinfo. Below the threshold, only openbare zaaksinformatie is shown.',
 				),
-			),
-			max: 1,
-		},
-		number('sentiment_polling_interval', t('dossiq', 'Sentiment polling interval (seconds)'), 5),
-		number('specialist_availability_polling_interval', t('dossiq', 'Specialist availability polling interval (seconds)'), 30),
-		number('max_zaken_voorblad', t('dossiq', 'Max open zaken in voorblad'), 10),
-		number('max_contactmomenten_history', t('dossiq', 'Max contactmomenten in history'), 5),
-		number('belplan_overflow_threshold_wachttijd', t('dossiq', 'Belplan overflow threshold: wachttijd (seconds)'), 180),
-		number('belplan_overflow_threshold_wachtrij_lengte', t('dossiq', 'Belplan overflow threshold: wachtrij lengte'), 5),
-		{
-			key: 'sentiment_trigger_words',
-			label: t('dossiq', 'Sentiment trigger words (one per line)'),
-			type: 'lines',
-			saveAs: 'json',
-			rows: 6,
-			wide: true,
-			placeholder: 'klacht\nadvocaat\nwethouder\nmedia',
-			hint: t(
-				'dossiq',
-				'Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.',
-			),
-		},
+			},
+			0.8,
+		),
+		max: 1,
+	}
+}
+
+/**
+ * How often sentiment and availability are read, how much the voorblad and
+ * history show, and when a call plan overflows.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function contactCentreNumberFields(t) {
+	return [
+		contactCentreNumber({ key: 'sentiment_polling_interval', label: t('dossiq', 'Sentiment polling interval (seconds)') }, 5),
+		contactCentreNumber({ key: 'specialist_availability_polling_interval', label: t('dossiq', 'Specialist availability polling interval (seconds)') }, 30),
+		contactCentreNumber({ key: 'max_zaken_voorblad', label: t('dossiq', 'Max open zaken in voorblad') }, 10),
+		contactCentreNumber({ key: 'max_contactmomenten_history', label: t('dossiq', 'Max contactmomenten in history') }, 5),
+		contactCentreNumber({ key: 'belplan_overflow_threshold_wachttijd', label: t('dossiq', 'Belplan overflow threshold: wachttijd (seconds)') }, 180),
+		contactCentreNumber({ key: 'belplan_overflow_threshold_wachtrij_lengte', label: t('dossiq', 'Belplan overflow threshold: wachtrij lengte') }, 5),
 	]
+}
+
+/**
+ * The words that flag negative sentiment, one per line.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function sentimentTriggerWordsField(t) {
+	return {
+		key: 'sentiment_trigger_words',
+		label: t('dossiq', 'Sentiment trigger words (one per line)'),
+		type: 'lines',
+		saveAs: 'json',
+		rows: 5,
+		wide: true,
+		placeholder: 'klacht\nadvocaat\nwethouder\nmedia',
+		hint: t(
+			'dossiq',
+			'Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.',
+		),
+	}
 }
 
 /**
@@ -619,6 +816,11 @@ export function backgroundAccountFields(t) {
 			key: 'userId',
 			label: t('dossiq', 'Nextcloud user name'),
 			required: true,
+			hint: t(
+				'dossiq',
+				'The account joins the group {group}. Pick an account nobody signs in with.',
+				{ group: BACKGROUND_SERVICE_GROUP },
+			),
 		},
 	]
 }
@@ -634,7 +836,103 @@ export function backgroundAccountFields(t) {
  */
 export function aiFields(t) {
 	const on = { key: 'ai_enabled', equals: true }
+	const fields = [
+		{ key: 'ai_enabled', label: t('dossiq', 'Switch on AI-assisted processing'), type: 'switch' },
+		...aiModelFields(t, on),
+		...aiFeatureFields(t, on),
+		...aiPrivacyFields(t, on),
+		...aiConnectionTestFields(t, on),
+	]
+	// The card lays its fields out in two columns, model address beside model
+	// name as board DqBeheerinstellingen draws them; a switch or a choice
+	// keeps a row of its own.
+	return fields.map(widenOwnRowField)
+}
+
+/**
+ * A switch or a choice keeps a row of its own; any other field is left as it is.
+ *
+ * @param {object} field The field.
+ * @return {object} The field, wide when it is a switch or a choice.
+ */
+function widenOwnRowField(field) {
+	return field.type === 'switch' || field.type === 'radio' ? { ...field, wide: true } : field
+}
+
+/**
+ * The model the AI steps run on: local or cloud, its address and name, and
+ * for a cloud model the warning and the API key.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiModelFields(t, on) {
 	const cloud = { key: 'ai_model_type', equals: 'cloud' }
+	return [
+		aiModelKindField(t, on),
+		aiCloudWarningField(t, [on, cloud]),
+		{ key: 'ai_model_url', label: t('dossiq', 'Address of the model'), visibleWhen: on },
+		{ key: 'ai_model_name', label: t('dossiq', 'Model name'), placeholder: 'llama3.1', visibleWhen: on },
+		{
+			key: 'ai_api_key',
+			label: t('dossiq', 'API Key'),
+			type: 'secret',
+			setKey: 'ai_api_key_set',
+			visibleWhen: [on, cloud],
+		},
+	]
+}
+
+/**
+ * The choice between a local and a cloud model.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {object} The field.
+ */
+function aiModelKindField(t, on) {
+	return {
+		key: 'ai_model_type',
+		label: t('dossiq', 'Kind of model'),
+		type: 'radio',
+		default: 'local',
+		options: [
+			{ value: 'local', label: t('dossiq', 'Local (Ollama)'), description: t('dossiq', 'Data stays on your own servers') },
+			{ value: 'cloud', label: t('dossiq', 'Cloud'), description: t('dossiq', 'A provider outside your organisation') },
+		],
+		visibleWhen: on,
+	}
+}
+
+/**
+ * The warning that a cloud model sends case data outside the organisation.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {Array<object>} visibleWhen While AI is on and the model is a cloud one.
+ * @return {object} The field.
+ */
+function aiCloudWarningField(t, visibleWhen) {
+	return {
+		key: 'cloud-warning',
+		type: 'status',
+		tone: 'warning',
+		text: t(
+			'dossiq',
+			'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.',
+		),
+		visibleWhen,
+	}
+}
+
+/**
+ * The heading and one switch per AI feature.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiFeatureFields(t, on) {
 	const features = [
 		['ai_feature_classification', t('dossiq', 'Document classification')],
 		['ai_feature_extraction', t('dossiq', 'Data extraction')],
@@ -644,63 +942,74 @@ export function aiFields(t) {
 		['ai_feature_decision_support', t('dossiq', 'Decision support')],
 	]
 	return [
-		{ key: 'ai_enabled', label: t('dossiq', 'Enable AI-assisted processing'), type: 'switch' },
-		{ key: 'heading-model', label: t('dossiq', 'Model configuration'), type: 'heading', visibleWhen: on },
-		{
-			key: 'ai_model_type',
-			label: t('dossiq', 'Model type'),
-			type: 'radio',
-			default: 'local',
-			options: [
-				{ value: 'local', label: t('dossiq', 'Local (Ollama)') },
-				{ value: 'cloud', label: t('dossiq', 'Cloud') },
-			],
-			visibleWhen: on,
-		},
-		{
-			key: 'cloud-warning',
-			type: 'status',
-			tone: 'warning',
-			text: t(
-				'dossiq',
-				'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.',
-			),
-			visibleWhen: [on, cloud],
-		},
-		{ key: 'ai_model_url', label: t('dossiq', 'Model endpoint URL'), visibleWhen: on },
-		{ key: 'ai_model_name', label: t('dossiq', 'Model name'), placeholder: 'llama3.1', visibleWhen: on },
-		{
-			key: 'ai_api_key',
-			label: t('dossiq', 'API Key'),
-			type: 'secret',
-			setKey: 'ai_api_key_set',
-			visibleWhen: [on, cloud],
-		},
-		{ key: 'heading-features', label: t('dossiq', 'Features'), type: 'heading', visibleWhen: on },
-		...features.map(([key, label]) => ({ key, label, type: 'switch', visibleWhen: on })),
-		{ key: 'heading-privacy', label: t('dossiq', 'Privacy and compliance'), type: 'heading', visibleWhen: on },
-		{
-			key: 'ai_pii_stripping',
-			label: t('dossiq', 'Strip PII (BSN, financial data) from AI prompts'),
-			type: 'switch',
-			visibleWhen: on,
-		},
-		{
-			key: 'ai_dpia_acknowledged',
-			label: t('dossiq', 'DPIA (Data Protection Impact Assessment) has been completed'),
-			type: 'switch',
-			visibleWhen: on,
-		},
-		{
-			key: 'dpia-warning',
-			type: 'status',
-			tone: 'warning',
-			text: t(
-				'dossiq',
-				'A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.',
-			),
-			visibleWhen: [on, { key: 'ai_dpia_acknowledged', equals: false }],
-		},
+		{ key: 'heading-features', label: t('dossiq', 'Features'), type: 'heading', advanced: true, visibleWhen: on },
+		...features.map(([key, label]) => advancedSwitch({ key, label }, on)),
+	]
+}
+
+/**
+ * A switch among the advanced AI settings, shown while AI is on.
+ *
+ * @param {{key: string, label: string}} setting The setting and its label.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {object} The field.
+ */
+function advancedSwitch(setting, on) {
+	return { key: setting.key, label: setting.label, type: 'switch', advanced: true, visibleWhen: on }
+}
+
+/**
+ * Privacy and compliance: stripping personal data, the DPIA acknowledgement
+ * and the warning while it is missing.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiPrivacyFields(t, on) {
+	return [
+		{ key: 'heading-privacy', label: t('dossiq', 'Privacy and compliance'), type: 'heading', advanced: true, visibleWhen: on },
+		advancedSwitch(
+			{ key: 'ai_pii_stripping', label: t('dossiq', 'Strip PII (BSN, financial data) from AI prompts') },
+			on,
+		),
+		advancedSwitch(
+			{ key: 'ai_dpia_acknowledged', label: t('dossiq', 'DPIA (Data Protection Impact Assessment) has been completed') },
+			on,
+		),
+		aiDpiaWarningField(t, [on, { key: 'ai_dpia_acknowledged', equals: false }]),
+	]
+}
+
+/**
+ * The warning that a DPIA is required before AI meets personal data.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {Array<object>} visibleWhen While AI is on and the DPIA is not acknowledged.
+ * @return {object} The field.
+ */
+function aiDpiaWarningField(t, visibleWhen) {
+	return {
+		key: 'dpia-warning',
+		type: 'status',
+		tone: 'warning',
+		text: t(
+			'dossiq',
+			'A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.',
+		),
+		visibleWhen,
+	}
+}
+
+/**
+ * The heading and the button that tests the connection to the model.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiConnectionTestFields(t, on) {
+	return [
 		{ key: 'heading-test', label: t('dossiq', 'Connection test'), type: 'heading', visibleWhen: on },
 		{
 			key: 'test-connection',
@@ -718,7 +1027,7 @@ export function aiFields(t) {
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 export function workDigestFields(t) {
 	return [
@@ -728,32 +1037,53 @@ export function workDigestFields(t) {
 			type: 'switch',
 			default: true,
 		},
-		{
-			key: 'hour',
-			label: t('dossiq', 'Hour of the day'),
-			type: 'number',
-			integer: true,
-			min: 0,
-			max: 23,
-			default: 8,
-			visibleWhen: { key: 'enabled', equals: true },
-		},
-		{
-			key: 'source',
-			type: 'status',
-			textMap: {
-				'user-override': t('dossiq', 'You set this.'),
-				'group-default': t('dossiq', 'Your team set this. You can decide for yourself.'),
-				'schema-default': t('dossiq', 'Nobody has changed this, so it is on the setting it ships with.'),
-				'*': t('dossiq', 'This instance keeps the setting here rather than with your other notifications.'),
-			},
-		},
+		digestHourField(t),
+		digestSourceField(t),
 		{
 			key: 'nothing-waiting',
 			type: 'status',
 			text: t('dossiq', 'A day with nothing waiting sends nothing.'),
 		},
 	]
+}
+
+/**
+ * The hour of the day the digest goes out, shown while it is on.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function digestHourField(t) {
+	return {
+		key: 'hour',
+		label: t('dossiq', 'Hour of the day'),
+		type: 'select',
+		options: Array.from({ length: 24 }, (_, hour) => ({
+			value: hour,
+			label: t('dossiq', '{hour}:00', { hour: String(hour).padStart(2, '0') }),
+		})),
+		default: 8,
+		visibleWhen: { key: 'enabled', equals: true },
+	}
+}
+
+/**
+ * Who decided the digest setting: the person, their team, or nobody yet.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function digestSourceField(t) {
+	return {
+		key: 'source',
+		type: 'status',
+		textMap: {
+			'user-override': t('dossiq', 'You set this.'),
+			'group-default': t('dossiq', 'Your team set this. You can decide for yourself.'),
+			'schema-default': t('dossiq', 'Nobody has changed this, so it is on the setting it ships with.'),
+			'*': t('dossiq', 'This instance keeps the setting here rather than with your other notifications.'),
+		},
+	}
 }
 
 /**
@@ -781,191 +1111,364 @@ const CASE_MATCHING_URL = '/apps/dossiq/api/settings/email-case-matching/instanc
 const DOSSIQ_SETTINGS_URL = '/apps/dossiq/api/settings'
 
 /**
+ * Where a field kept in dossiq's own settings is read and saved.
+ *
+ * @param {string} key The settings key.
+ * @return {object} The url, value path and save method.
+ */
+function dossiqSetting(key) {
+	return {
+		url: DOSSIQ_SETTINGS_URL,
+		valuePath: `config.${key}`,
+		saveMethod: 'PUT',
+	}
+}
+
+/**
+ * The explanation above the shared mailbox fields.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function mailboxExplanationField(t) {
+	return {
+		key: 'mailbox-explanation',
+		type: 'status',
+		advanced: true,
+		foldable: true,
+		text: t(
+			'dossiq',
+			'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.',
+		),
+	}
+}
+
+/**
+ * The Mail account intake reads.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function intakeAccountField(t) {
+	return {
+		key: 'email_mail_account_id',
+		label: t('dossiq', 'Intake mail account'),
+		type: 'select',
+		optionsUrl: '/apps/dossiq/api/settings/email/mail-accounts',
+		optionsPath: 'accounts',
+		optionLabel: 'name',
+		optionValue: 'id',
+		optionDetail: 'email',
+		placeholder: t('dossiq', 'Pick the mailbox intake reads'),
+		hint: t('dossiq', 'Nextcloud Mail keeps the account and the password. Pick the mailbox dossiq reads. Dossiq stores no password of its own.'),
+	}
+}
+
+/**
+ * The warning shown while the Mail app is missing.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function mailAppMissingField(t) {
+	return {
+		key: 'mail-app-missing',
+		type: 'status',
+		tone: 'warning',
+		url: '/apps/dossiq/api/settings/email/mail-accounts',
+		valuePath: 'available',
+		textMap: {
+			false: t('dossiq', 'The Mail app is not installed, so intake reads nothing. Your messages stay in the mailbox and none are lost. Install Mail to start reading them.'),
+			'*': '',
+		},
+	}
+}
+
+/**
+ * The folder intake reads.
+ *
+ * @return {object} The field.
+ */
+function intakeFolderField() {
+	return {
+		key: 'email_imap_folder',
+		// The section translates a label itself. Translated here too, the
+		// Dutch "Map" would be read as the key "Map" and show "Kaart".
+		label: 'Folder',
+		placeholder: 'INBOX',
+		default: 'INBOX',
+	}
+}
+
+/**
+ * The case-correspondence source account.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function transportField(t) {
+	return {
+		key: 'email_transport',
+		advanced: true,
+		label: t('dossiq', 'Transport / source mailbox account'),
+		placeholder: t('dossiq', 'Nextcloud Mail account or functional mailbox id'),
+		hint: t(
+			'dossiq',
+			'Which Nextcloud Mail account or functional mailbox is the case-correspondence source. No per-user SMTP send credentials are configured here.',
+		),
+	}
+}
+
+/**
+ * How often intake fetches.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function pollIntervalField(t) {
+	return {
+		key: 'email_poll_interval',
+		label: t('dossiq', 'Fetch every (seconds)'),
+		type: 'number',
+		integer: true,
+		min: 0,
+		default: 300,
+	}
+}
+
+/**
+ * How many messages one fetch takes.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function pollBatchSizeField(t) {
+	return {
+		key: 'email_poll_batch_size',
+		label: t('dossiq', 'Messages per fetch'),
+		type: 'number',
+		integer: true,
+		min: 0,
+		default: 50,
+	}
+}
+
+/**
+ * The case type for mail nobody claims.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function fallbackCaseTypeField(t) {
+	return {
+		key: 'email_fallback_case_type',
+		label: t('dossiq', 'Case type for mail nobody claims'),
+		type: 'select',
+		optionsUrl: '/apps/openregister/api/objects/dossiq/caseType?_limit=100&isDraft=false',
+		optionsPath: 'results',
+		optionLabel: 'title',
+		optionValue: 'id',
+		placeholder: t('dossiq', 'Leave it in the mailbox'),
+		hint: t('dossiq', 'A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.'),
+	}
+}
+
+/**
+ * Whether mail is linked to cases by case number.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function caseMatchingField(t) {
+	return {
+		key: 'email_case_matching_enabled',
+		label: t('dossiq', 'Link mail to cases by case number'),
+		type: 'switch',
+		trueValue: 'yes',
+		falseValue: 'no',
+		url: CASE_MATCHING_URL,
+		saveMethod: 'PUT',
+		wide: true,
+		hint: t('dossiq', 'Each user still switches it on for their own mailbox. Until then, nothing is linked.'),
+	}
+}
+
+/**
+ * The case number pattern.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function caseMatchingPatternField(t) {
+	return {
+		key: 'email_case_matching_pattern',
+		advanced: true,
+		label: t('dossiq', 'Case number pattern'),
+		url: CASE_MATCHING_URL,
+		saveMethod: 'PUT',
+		placeholder: DEFAULT_CASE_PATTERN,
+		hint: [
+			t('dossiq', 'Leave it empty to match numbers like 2026-0042 and [ZAAK-2026-0042]. The first group in the pattern must capture the case number.'),
+			t('dossiq', 'Only the subject and the start of each message are read. A case number further down is missed.'),
+		].join(' '),
+	}
+}
+
+/**
+ * The address dossiq sends its own mail from.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function senderAddressField(t) {
+	return {
+		key: 'email_from_address',
+		advanced: true,
+		label: t('dossiq', 'Sender address'),
+		placeholder: 'zaken@gemeente.nl',
+		...dossiqSetting('email_from_address'),
+		hint: t(
+			'dossiq',
+			'The address term notices and service mail are sent from. Leave it empty and dossiq does not send them. Mail a handler writes about a case leaves from the Nextcloud Mail account.',
+		),
+	}
+}
+
+/**
+ * The name dossiq sends its own mail under.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function senderNameField(t) {
+	return {
+		key: 'email_from_name',
+		advanced: true,
+		label: t('dossiq', 'Sender name'),
+		placeholder: 'Gemeente Voorbeeld',
+		...dossiqSetting('email_from_name'),
+	}
+}
+
+/**
+ * Who dossiq may send case mail to.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function recipientAllowlistField(t) {
+	return {
+		key: 'email_recipient_allowlist',
+		advanced: true,
+		label: t('dossiq', 'Allowed recipients'),
+		placeholder: '@gemeente.nl, team@gemeente.nl',
+		...dossiqSetting('email_recipient_allowlist'),
+		hint: t(
+			'dossiq',
+			'List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.',
+		),
+	}
+}
+
+/**
+ * The group that runs intake.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function intakeRoleField(t) {
+	return {
+		key: 'email_intake_role',
+		advanced: true,
+		label: t('dossiq', 'Group that runs intake'),
+		placeholder: 'zaakbehandelaars',
+		hint: t(
+			'dossiq',
+			'Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.',
+		),
+	}
+}
+
+/**
+ * The senders that may not open a case.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function intakeBlocklistField(t) {
+	return {
+		key: 'email_intake_blocklist',
+		advanced: true,
+		label: t('dossiq', 'Senders that may not open a case'),
+		placeholder: 'spam@voorbeeld.nl, @voorbeeld.nl',
+		hint: t(
+			'dossiq',
+			'List addresses, or whole domains written as @voorbeeld.nl. A blocked sender opens no case by mail. They can still mail a colleague. The allow half of this list is Nextcloud Mail’s trusted senders.',
+		),
+	}
+}
+
+/**
+ * The junk rules.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function junkRulesField(t) {
+	return {
+		key: 'email_intake_junk_rules',
+		advanced: true,
+		label: t('dossiq', 'Junk rules'),
+		type: 'textarea',
+		rows: 3,
+		wide: true,
+		placeholder: 'X-Spam-Status: Yes',
+		hint: t(
+			'dossiq',
+			'Write one rule per line: a header name, a colon, the text to find. Plain text on its own is matched against the subject. A message a rule calls junk is held, never deleted. The intake log names the rule that held it.',
+		),
+	}
+}
+
+/**
+ * The shared mailbox field builders, in the order the card shows them.
+ *
+ * @type {Array<(t: (app: string, text: string, vars?: object) => string) => object>}
+ */
+const SHARED_MAILBOX_FIELDS = [
+	mailboxExplanationField,
+	intakeAccountField,
+	mailAppMissingField,
+	intakeFolderField,
+	transportField,
+	pollIntervalField,
+	pollBatchSizeField,
+	fallbackCaseTypeField,
+	caseMatchingField,
+	caseMatchingPatternField,
+	senderAddressField,
+	senderNameField,
+	recipientAllowlistField,
+	intakeRoleField,
+	intakeBlocklistField,
+	junkRulesField,
+]
+
+/**
  * The shared mailbox: the Mail account and folder intake reads, how often and
  * how much, what unclaimed mail becomes, matching mail to cases by number,
  * the sender of dossiq's own mail and who may receive it, and who runs and
  * may not feed intake. Intake keys live on the mailbox endpoint, matching on
- * its own endpoint, the sender on dossiq's settings.
+ * its own endpoint, the sender on dossiq's settings. The six fields
+ * DqBeheerinstellingen draws come first; the rest are `advanced`, behind one
+ * disclosure.
  *
  * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
  * @return {Array<object>} The fields.
  * @spec openspec/specs/case-email-integration/spec.md
  */
 export function sharedMailboxFields(t) {
-	const own = (key) => ({
-		url: DOSSIQ_SETTINGS_URL,
-		valuePath: `config.${key}`,
-		saveMethod: 'PUT',
-	})
-	return [
-		{
-			key: 'mailbox-explanation',
-			type: 'status',
-			foldable: true,
-			text: t(
-				'dossiq',
-				'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.',
-			),
-		},
-		{
-			key: 'email_mail_account_id',
-			label: t('dossiq', 'Intake mail account'),
-			type: 'select',
-			optionsUrl: '/apps/dossiq/api/settings/email/mail-accounts',
-			optionsPath: 'accounts',
-			optionLabel: 'name',
-			optionValue: 'id',
-			optionDetail: 'email',
-			placeholder: t('dossiq', 'Pick the mailbox intake reads'),
-			hint: t(
-				'dossiq',
-				'Nextcloud Mail keeps the account and the password. Pick the mailbox dossiq reads. Dossiq stores no password of its own.',
-			),
-		},
-		{
-			key: 'mail-app-missing',
-			type: 'status',
-			tone: 'warning',
-			url: '/apps/dossiq/api/settings/email/mail-accounts',
-			valuePath: 'available',
-			textMap: {
-				false: t(
-					'dossiq',
-					'The Mail app is not installed, so intake reads nothing. Your messages stay in the mailbox and none are lost. Install Mail to start reading them.',
-				),
-				'*': '',
-			},
-		},
-		{
-			key: 'email_imap_folder',
-			label: t('dossiq', 'Mailbox folder'),
-			placeholder: 'INBOX',
-			default: 'INBOX',
-		},
-		{
-			key: 'email_transport',
-			label: t('dossiq', 'Transport / source mailbox account'),
-			placeholder: t('dossiq', 'Nextcloud Mail account or functional mailbox id'),
-			hint: t(
-				'dossiq',
-				'Which Nextcloud Mail account or functional mailbox is the case-correspondence source. No per-user SMTP send credentials are configured here.',
-			),
-		},
-		{
-			key: 'email_poll_interval',
-			label: t('dossiq', 'Poll interval (seconds)'),
-			type: 'number',
-			integer: true,
-			min: 0,
-			default: 300,
-		},
-		{
-			key: 'email_poll_batch_size',
-			label: t('dossiq', 'Messages per run'),
-			type: 'number',
-			integer: true,
-			min: 0,
-			default: 50,
-		},
-		{
-			key: 'email_fallback_case_type',
-			label: t('dossiq', 'Case type for mail nobody claims'),
-			type: 'select',
-			optionsUrl: '/apps/openregister/api/objects/dossiq/caseType?_limit=100&isDraft=false',
-			optionsPath: 'results',
-			optionLabel: 'title',
-			optionValue: 'id',
-			placeholder: t('dossiq', 'Leave it in the mailbox'),
-			hint: t(
-				'dossiq',
-				'A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.',
-			),
-		},
-		{
-			key: 'email_case_matching_enabled',
-			label: t('dossiq', 'Link mail to cases by case number'),
-			type: 'switch',
-			trueValue: 'yes',
-			falseValue: 'no',
-			url: CASE_MATCHING_URL,
-			saveMethod: 'PUT',
-			wide: true,
-			hint: t(
-				'dossiq',
-				'Each user still switches it on for their own mailbox. Until then, nothing is linked.',
-			),
-		},
-		{
-			key: 'email_case_matching_pattern',
-			label: t('dossiq', 'Case number pattern'),
-			url: CASE_MATCHING_URL,
-			saveMethod: 'PUT',
-			placeholder: DEFAULT_CASE_PATTERN,
-			hint: `${t(
-				'dossiq',
-				'Leave it empty to match numbers like 2026-0042 and [ZAAK-2026-0042]. The first group in the pattern must capture the case number.',
-			)} ${t(
-				'dossiq',
-				'Only the subject and the start of each message are read. A case number further down is missed.',
-			)}`,
-		},
-		{
-			key: 'email_from_address',
-			label: t('dossiq', 'Sender address'),
-			placeholder: 'zaken@gemeente.nl',
-			...own('email_from_address'),
-			hint: t(
-				'dossiq',
-				'The address term notices and service mail are sent from. Leave it empty and dossiq does not send them. Mail a handler writes about a case leaves from the Nextcloud Mail account.',
-			),
-		},
-		{
-			key: 'email_from_name',
-			label: t('dossiq', 'Sender name'),
-			placeholder: 'Gemeente Voorbeeld',
-			...own('email_from_name'),
-		},
-		{
-			key: 'email_recipient_allowlist',
-			label: t('dossiq', 'Allowed recipients'),
-			placeholder: '@gemeente.nl, team@gemeente.nl',
-			...own('email_recipient_allowlist'),
-			hint: t(
-				'dossiq',
-				'List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.',
-			),
-		},
-		{
-			key: 'email_intake_role',
-			label: t('dossiq', 'Group that runs intake'),
-			placeholder: 'zaakbehandelaars',
-			hint: t(
-				'dossiq',
-				'Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.',
-			),
-		},
-		{
-			key: 'email_intake_blocklist',
-			label: t('dossiq', 'Senders that may not open a case'),
-			placeholder: 'spam@voorbeeld.nl, @voorbeeld.nl',
-			hint: t(
-				'dossiq',
-				'List addresses, or whole domains written as @voorbeeld.nl. A blocked sender opens no case by mail. They can still mail a colleague. The allow half of this list is Nextcloud Mail’s trusted senders.',
-			),
-		},
-		{
-			key: 'email_intake_junk_rules',
-			label: t('dossiq', 'Junk rules'),
-			type: 'textarea',
-			rows: 3,
-			wide: true,
-			placeholder: 'X-Spam-Status: Yes',
-			hint: t(
-				'dossiq',
-				'Write one rule per line: a header name, a colon, the text to find. Plain text on its own is matched against the subject. A message a rule calls junk is held, never deleted. The intake log names the rule that held it.',
-			),
-		},
-	]
+	return SHARED_MAILBOX_FIELDS.map((build) => build(t))
 }
 
 /**

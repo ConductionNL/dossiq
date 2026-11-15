@@ -37,7 +37,7 @@ test.describe('app chrome (ADR-114)', () => {
 		})
 	})
 
-	test('the footer reads Documentation, Store, Features & roadmap, each with a glyph', async ({
+	test('the footer reads Documentation, Marketplace, Features & roadmap, each with a glyph', async ({
 		page,
 	}) => {
 		const footer = page.locator(
@@ -55,11 +55,11 @@ test.describe('app chrome (ADR-114)', () => {
 		// LABELLED "Reports". It sits in the Advanced foldout now, so the
 		// footer must no longer carry it.
 		const seen = texts.filter((t) =>
-			/Documentation|Store|Reports|roadmap/i.test(t),
+			/Documentation|Marketplace|Reports|roadmap/i.test(t),
 		)
 		expect(seen.length).toBe(3)
 		expect(seen[0]).toMatch(/Documentation/i)
-		expect(seen[1]).toMatch(/Store/i)
+		expect(seen[1]).toMatch(/Marketplace/i)
 		expect(seen[2]).toMatch(/roadmap/i)
 
 		for (const row of await rows.all()) {
@@ -230,6 +230,7 @@ test.describe('app chrome (ADR-114)', () => {
 		)
 	})
 
+	// @e2e settings-navigation::an-administrator-opens-advanced
 	test('Case types and Map layers stay in the settings foldout', async ({
 		page,
 	}) => {
@@ -238,7 +239,7 @@ test.describe('app chrome (ADR-114)', () => {
 		// a later promotion fails here rather than in the footer-order test,
 		// where the cause would be much harder to read.
 		const nav = page.locator('[data-testid="cn-nav"]')
-		for (const id of ['CaseTypesMenu', 'WmsLayersMenu']) {
+		for (const id of ['CaseTypesMenu', 'ObjectTypesMenu', 'WmsLayersMenu']) {
 			await expect(
 				nav.locator(`[data-testid="cn-nav-entry-${id}"]`),
 			).toBeAttached({ timeout: 15_000 })

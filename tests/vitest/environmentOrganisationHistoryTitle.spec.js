@@ -5,7 +5,7 @@
  * The organisation page's history card reads "Historie", as board DqTenant
  * and the contact and organisation record pages say.
  *
- * @spec openspec/changes/r21-tenant-history-title/specs/environment-organisation-page/spec.md#requirement-the-organisation-history-card-reads-historie
+ * @spec openspec/specs/environment-organisation-page/spec.md#requirement-the-organisation-history-card-reads-historie
  */
 
 import fs from 'fs'

@@ -21,16 +21,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessPurposeService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessPurposeServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -42,24 +42,24 @@ use OCP\IUserSession;
 /**
  * Records the purpose of opening a sensitive case.
  *
- * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md
+ * @spec openspec/specs/case-access-purpose/spec.md
  */
 class CaseAccessPurposeController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest                 $request     Inbound request.
-	 * @param CaseAccessPurposeService $purposes    Records the purpose.
+	 * @param CaseAccessPurposeServiceInterface $purposes    Records the purpose.
 	 * @param IUserSession             $userSession The reader.
 	 * @param IL10N                    $l10n        The translations.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAccessPurposeService $purposes,
+		private readonly CaseAccessPurposeServiceInterface $purposes,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -70,7 +70,7 @@ class CaseAccessPurposeController extends Controller {
 	 *
 	 * @return JSONResponse 201 recorded, 200 when the case asks no purpose, else the refusal.
 	 *
-	 * @spec openspec/changes/case-access-purpose/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
 	 */
 	#[NoAdminRequired]
 	public function record(string $id): JSONResponse {
@@ -100,4 +100,34 @@ class CaseAccessPurposeController extends Controller {
 
 		return new JSONResponse($result, $status);
 	}//end record()
+
+	/**
+	 * Whether the reader must state a purpose to open this case. The case's
+	 * own handler need not: the purpose is recorded for them and the answer
+	 * is `required: false`.
+	 *
+	 * @param string $id The case uuid.
+	 *
+	 * @return JSONResponse `{ required, recorded }`, or the refusal.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 */
+	#[NoAdminRequired]
+	public function check(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$result = $this->purposes->check(caseId: $id, readerId: $user->getUID());
+		} catch (RefusedException $e) {
+			return new JSONResponse(
+				['error' => $e->getRule(), 'message' => $this->l10n->t($e->getSentence())],
+				$e->getStatus()
+			);
+		}
+
+		return new JSONResponse($result);
+	}//end check()
 }//end class

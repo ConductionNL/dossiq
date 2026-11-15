@@ -141,4 +141,45 @@ class BrcImmutabilityRulesTest extends TestCase {
 			$rules->rulesBesluitenPatch(body: ['besluittype' => 'https://new.example.com/bt/' . self::OTHER], existingObject: $stored)['valid']
 		);
 	}//end testBesluittypeIsComparedByUuid()
+	/**
+	 * The stored identificatie and organisation are also read from their fallback keys, for the
+	 * check and for carrying them forward when a PUT omits them.
+	 *
+	 * @return void
+	 */
+	public function testTheStoredValuesAreReadFromTheirFallbackKeys(): void {
+		$rules = $this->ruleGroup(class: BrcImmutabilityRules::class, objects: null);
+		$byIdentifier = ['identifier' => 'B-7', 'verantwoordelijkeOrganisatie' => '222222222'];
+		$byOwnName = ['title' => '', 'identificatie' => 'B-8'];
+
+		$this->assertSame('identificatie', $rules->rulesBesluitenPatch(body: ['identificatie' => 'B-9'], existingObject: $byIdentifier)['invalidParams'][0]['name']);
+		$this->assertSame('identificatie', $rules->rulesBesluitenPatch(body: ['identificatie' => 'B-9'], existingObject: $byOwnName)['invalidParams'][0]['name']);
+		$this->assertSame(
+			'verantwoordelijkeOrganisatie',
+			$rules->rulesBesluitenPatch(body: ['verantwoordelijkeOrganisatie' => '333333333'], existingObject: $byIdentifier)['invalidParams'][0]['name']
+		);
+		$this->assertSame(
+			['identificatie' => 'B-7', 'verantwoordelijkeOrganisatie' => '222222222'],
+			$rules->rulesBesluitenUpdate(body: [], existingObject: $byIdentifier)['enrichedBody']
+		);
+		$this->assertSame(
+			'identificatie',
+			$rules->rulesBesluitenUpdate(body: ['identificatie' => ''], existingObject: $byIdentifier)['invalidParams'][0]['name'],
+			'an emptied identificatie is a change, not an omission'
+		);
+		$this->assertSame(['identificatie' => 'B-8'], $rules->rulesBesluitenUpdate(body: [], existingObject: $byOwnName)['enrichedBody']);
+	}//end testTheStoredValuesAreReadFromTheirFallbackKeys()
+
+	/**
+	 * With nothing stored for a field, or a besluittype without uuid, the body's value is accepted.
+	 *
+	 * @return void
+	 */
+	public function testNothingStoredOrNoUuidIsNotAChange(): void {
+		$rules = $this->ruleGroup(class: BrcImmutabilityRules::class, objects: null);
+		$body = ['besluittype' => 'https://ztc.example.com/besluittypen/' . self::OTHER, 'identificatie' => 'B-2', 'verantwoordelijkeOrganisatie' => '111111111'];
+
+		$this->assertSame($body, $rules->rulesBesluitenUpdate(body: $body, existingObject: ['other' => 'x'])['enrichedBody']);
+		$this->assertTrue($rules->rulesBesluitenPatch(body: ['besluittype' => 'https://ztc.example.com/besluittypen/latest'], existingObject: self::STORED)['valid']);
+	}//end testNothingStoredOrNoUuidIsNotAChange()
 }//end class

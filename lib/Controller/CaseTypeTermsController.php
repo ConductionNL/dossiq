@@ -21,24 +21,26 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseType\CaseTypeTerms;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeTermsInterface;
+use OCA\Dossiq\Kernel\Contracts\ReadableObjectsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use Throwable;
 
 /**
  * Answers a case type's terms in words.
  *
- * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypeTermsController extends Controller {
 
@@ -47,14 +49,16 @@ class CaseTypeTermsController extends Controller {
 	 *
 	 * @param string         $appName The app name.
 	 * @param IRequest       $request The request.
-	 * @param CaseTypeTerms $terms  Groups the workflow steps under the statuses.
+	 * @param CaseTypeTermsInterface $terms  Groups the workflow steps under the statuses.
+	 * @param ReadableObjectsInterface $readable Whether a caller is signed in and may read the requested object.
 	 *
-	 * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTypeTerms $terms,
+		private readonly CaseTypeTermsInterface $terms,
+		private readonly ReadableObjectsInterface $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -62,18 +66,32 @@ class CaseTypeTermsController extends Controller {
 	/**
 	 * The terms of a case type in words.
 	 *
-	 * `#[NoAdminRequired]` with no body guard, as the blueprint read beside it:
-	 * this READS a case type, which ordinary users do on the case page, and
-	 * OpenRegister applies its own read authority underneath. Nothing is written.
+	 * Ordinary users read case types on the case page. The case type is first
+	 * read with the caller's own rights; one the caller may not read answers
+	 * 404, the same as a missing one.
 	 *
 	 * @param string $id The case type id.
 	 *
 	 * @return JSONResponse The terms, or 404 when the case type cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $id): JSONResponse {
+		if ($this->readable->hasCaller() === false) {
+			return new JSONResponse(['error' => 'Sign in to read this case type.'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$readable = $this->readable->findsAsCaller(schema: 'caseType', id: $id);
+		} catch (Throwable) {
+			return new JSONResponse(['error' => 'The case type could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		if ($readable === false) {
+			return new JSONResponse(['error' => 'Case type not found'], Http::STATUS_NOT_FOUND);
+		}
+
 		$terms = $this->terms->termsFor(caseTypeId: $id);
 		if ($terms === null) {
 			return new JSONResponse(['error' => 'Case type not found'], Http::STATUS_NOT_FOUND);

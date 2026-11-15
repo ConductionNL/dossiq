@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md
+ * @spec openspec/specs/end-of-day-manifest/spec.md
  */
 
 declare(strict_types=1);
@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Queue\EndOfDayService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\EndOfDayServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -41,7 +41,7 @@ use OCP\IUserSession;
 /**
  * The reader's day.
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md
+ * @spec openspec/specs/end-of-day-manifest/spec.md
  */
 class EndOfDayController extends Controller {
 	/**
@@ -49,16 +49,16 @@ class EndOfDayController extends Controller {
 	 *
 	 * @param IRequest        $request     The request.
 	 * @param IUserSession    $userSession The reader.
-	 * @param EndOfDayService $endOfDay    The day lists.
+	 * @param EndOfDayServiceInterface $endOfDay    The day lists.
 	 * @param IDateTimeZone   $timeZone    The reader's time zone, which decides what "today" is.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly EndOfDayService $endOfDay,
+		private readonly EndOfDayServiceInterface $endOfDay,
 		private readonly IDateTimeZone $timeZone,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -68,7 +68,7 @@ class EndOfDayController extends Controller {
 	 *
 	 * @return JSONResponse The day.
 	 *
-	 * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+	 * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
 	 */
 	#[NoAdminRequired]
 	public function show(): JSONResponse {

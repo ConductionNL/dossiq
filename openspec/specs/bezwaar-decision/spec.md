@@ -94,4 +94,4 @@ The beslissing op bezwaar SHALL be based on a complete reconsideration (heroverw
 #### Scenario: Reformatio in peius warning
 
 - **WHEN** the reconsideration could lead to a worse outcome for the bezwaarmaker than the original decision
-- **THEN** the system SHALL display a warning: "Let op: reformatio in peius -- het bezwaar mag in beginsel niet leiden tot een voor de bezwaarmaker nadeliger besluit"
+- **THEN** the system SHALL display a warning: "Let op: reformatio in peius. Het bezwaar mag in beginsel niet leiden tot een voor de bezwaarmaker nadeliger besluit."

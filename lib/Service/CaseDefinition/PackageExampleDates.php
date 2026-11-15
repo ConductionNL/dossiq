@@ -6,7 +6,9 @@
  * Example rows describe a case in flight, so their dates are written relative
  * to the day the package is installed: `{{date:-25}}` is the date 25 days ago,
  * `{{datetime:-16 10:00}}` that moment 16 days ago. A string that is not
- * exactly one such token is left as it is.
+ * exactly one such token is left as it is, except a list-of-records answer
+ * the register stores as JSON text (`"[{\"date\":\"{{date:-12}}\"}]"`):
+ * its tokens are filled inside and it is stored as JSON text again.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\CaseDefinition
@@ -94,6 +96,28 @@ final class PackageExampleDates {
 			return $day->modify("{$match[1]} days")->setTime((int)$match[2], (int)$match[3])->format(DATE_ATOM);
 		}
 
-		return $value;
+		return $this->jsonText(value: $value, today: $today);
 	}//end value()
+
+	/**
+	 * A JSON list or object stored as text, its tokens filled; any other string as it is.
+	 *
+	 * @param string            $value The string.
+	 * @param DateTimeImmutable $today The install day.
+	 *
+	 * @return string The string.
+	 */
+	private function jsonText(string $value, DateTimeImmutable $today): string {
+		$first = substr(ltrim($value), 0, 1);
+		if (($first !== '[' && $first !== '{') || str_contains($value, '{{') === false) {
+			return $value;
+		}
+
+		$decoded = json_decode($value, true);
+		if (is_array($decoded) === false) {
+			return $value;
+		}
+
+		return (string)json_encode($this->fill(rows: $decoded, today: $today), (JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+	}//end jsonText()
 }//end class

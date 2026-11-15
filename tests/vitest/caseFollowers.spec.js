@@ -27,7 +27,7 @@
  * so `"yes"` is how a rule quietly addresses nobody.
  *
  * @spec openspec/changes/case-followers/specs/case-management/spec.md
- * @spec openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-the-case-page-shows-one-follow-control-req-cm-40a
  */
 
 import axios from '@nextcloud/axios'
@@ -131,7 +131,7 @@ describe('following is declared on the case page', () => {
 
 	it('leaves no Follow strip in the banner row', () => {
 		const stack = caseDetail.config.widgets.find((w) => w.id === 'case-banner-stack')
-		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-status-declaration', 'case-attention'])
+		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-claim-banner', 'case-status-declaration', 'case-attention', 'case-special-categories'])
 		expect(fs.existsSync(path.join(ROOT, 'src', 'components', 'case', 'CaseFollowStrip.vue'))).toBe(false)
 		expect(fs.existsSync(path.join(ROOT, 'src', 'components', 'case', 'CaseFollowersPanel.vue'))).toBe(false)
 	})

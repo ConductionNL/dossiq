@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import { translate as t } from '@nextcloud/l10n'
@@ -52,13 +52,13 @@ export const SCOPE_RESULT = 'result'
  * Do not add the retired names back: they would suggest the prefix is handled,
  * and it is not.
  *
- * 🔴 NEITHER IS `_related[…]`, FOR THE SAME REASON. A filter on a case type's
- * own field narrows the result set exactly as a search term does: it is
- * openregister's related-row query over the `caseProperty` rows that hang off
- * each case, and it resolves inside the same `searchObjects()` call. Dropping
+ * 🔴 NEITHER IS `_element[…]` (or `_related[…]`), FOR THE SAME REASON. A filter
+ * on a case type's own field narrows the result set exactly as a search term
+ * does: it is openregister's array-element query over the answers in each
+ * case's `properties[]`, and it resolves inside the same `searchObjects()` call. Dropping
  * it would hand the job every case in the register while the button said
- * "Select all 43 cases matching this filter". This list is a DENY list, so a
- * `_related` key already survives; the point of saying so here is that it must
+ * "Select all 43 cases matching this filter". This list is a DENY list, so an
+ * `_element` key already survives; the point of saying so here is that it must
  * keep surviving, and the test that checks it is what makes adding it to this
  * list a change somebody has to defend.
  *
@@ -82,7 +82,7 @@ const NOT_A_FILTER = [
  * @param {object} [routeQuery] The current route query.
  *
  * @return {object} The filters, with paging and sorting dropped.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function readListFilters(routeQuery) {
 	const filters = {}
@@ -113,7 +113,7 @@ export function readListFilters(routeQuery) {
  * @param {string} [search] A query string, defaulting to the current one.
  *
  * @return {object} The filters.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function readLocationFilters(search) {
 	const raw = search === undefined ? globalThis.location?.search || '' : search
@@ -135,7 +135,7 @@ export function readLocationFilters(search) {
  * @param {object} [choice.filters]    The list's current filters.
  *
  * @return {object} `{ids: [...]}` or `{query: {...}}`.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function buildSelection({ scope, selectedIds, filters }) {
 	if (scope === SCOPE_RESULT) {
@@ -152,7 +152,7 @@ export function buildSelection({ scope, selectedIds, filters }) {
  * the Dutch dossiq already had. Each is a template the component fills.
  *
  * @return {object} The labels.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function caseJobLabels() {
 	return {
@@ -174,7 +174,7 @@ export function caseJobLabels() {
  * What CnSelectionScope says about a selection of cases, in dossiq's words.
  *
  * @return {object} The labels.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function caseScopeLabels() {
 	return {

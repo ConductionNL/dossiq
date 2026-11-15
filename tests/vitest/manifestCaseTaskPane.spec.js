@@ -205,7 +205,7 @@ describe('the case-tasks widget on the library task widget', () => {
 		// and a fifth moves the complexity rather than removing it.
 		const where = panels.caseTabOf('case-tasks')
 		expect(where, 'case-tasks is not reachable from the strip').toBeTruthy()
-		expect(where.tab).toBe('Work')
+		expect(where.tab).toBe('Tasks')
 		expect(where.label).toBe('Tasks')
 
 		// A tab child in `layout` renders twice: once in the grid and once in
@@ -314,11 +314,12 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 
 	it('carries every widget the custom view mounted', () => {
 		// The notes, appointments and history are the library cards reading
-		// the task's engine endpoints, the waiting case is a library notice;
-		// the case card is the library facts widget reading the case.
+		// the task's engine endpoints, the waiting case is a facts card on the
+		// case's next status (task-holds-up-next-status); the case card is the
+		// library facts widget reading the case.
 		const config = page('TaskDetail').config
 		const types = [...config.widgets, ...config.sideColumn].map((widget) => widget.type)
-		for (const type of ['integration', 'events', 'audit-trail', 'notice', 'checklist']) {
+		for (const type of ['integration', 'events', 'audit-trail', 'facts', 'checklist']) {
 			expect(types, `${type} must be on the page`).toContain(type)
 		}
 		const caseCard = config.sideColumn.find((widget) => widget.id === 'side-case')
@@ -330,10 +331,13 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 		// 🔴 CnLifecycleActions asks OpenRegister for an OBJECT's available
 		// transitions; an engine task is not an object, so it 404s and no
 		// button renders. The verbs come from the tasks source; Finish goes
-		// through dossiq's own completion route.
+		// through dossiq's own completion route, Cancel through its cancel route.
 		const config = page('TaskDetail').config
 		expect(config).not.toHaveProperty('lifecycleActions')
-		expect(config.verbEndpoints).toEqual({ complete: '/apps/dossiq/api/case-tasks/{id}/complete' })
+		expect(config.verbEndpoints).toEqual({
+			complete: '/apps/dossiq/api/case-tasks/{id}/complete',
+			cancel: '/apps/dossiq/api/case-tasks/{id}/cancel',
+		})
 	})
 
 	it('needs no dossiq widget for the waiting case or the case card', () => {

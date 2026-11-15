@@ -7,7 +7,7 @@
  * the four cards of Phases and tasks, the workflow canvas on a page of its
  * own, the variants, the terms in words and the side facts as labels.
  *
- * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -51,9 +51,9 @@ describe('the case type tab strip (REQ-CTB-1)', () => {
 })
 
 describe('Phases and tasks (REQ-CTB-2)', () => {
-	it('holds the board\'s four cards, in order', () => {
+	it('holds the board\'s five cards, in order', () => {
 		expect(idsOf(tab('phases'))).toEqual([
-			'case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages-editor',
+			'case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages', 'case-type-milestones',
 		])
 	})
 
@@ -63,14 +63,14 @@ describe('Phases and tasks (REQ-CTB-2)', () => {
 		]))
 	})
 
-	it('opens the workflow canvas on its own page, from the header and from every phase', () => {
+	it('opens the workflow canvas on its own page from the buttons under the card\'s subtitle (DqZaaktype)', () => {
 		const board = widget('case-type-phase-board')
-		expect(board.headerLink).toEqual({ label: 'View as flow', route: 'CaseTypeFlow', params: { id: '@objectId' } })
-		expect(board.content.groupAction).toEqual(expect.objectContaining({
-			type: 'navigate',
-			label: 'Add a task',
-			target: '/settings/case-types/@group.caseTypeId/flow',
-		}))
+		expect(board.headerLink).toBeUndefined()
+		expect(board.content.groupAction).toBeUndefined()
+		expect(board.content.actions.map((action) => action.label)).toEqual(['View as flow', 'Add a task'])
+		board.content.actions.forEach((action) => {
+			expect(action).toEqual(expect.objectContaining({ type: 'navigate', target: '/settings/case-types/@objectId/flow' }))
+		})
 		const flow = page('CaseTypeFlow')
 		expect(flow.route).toBe('/settings/case-types/:id/flow')
 		expect(flow.type).toBe('custom')
@@ -105,7 +105,7 @@ describe('terms in words (REQ-CTB-4)', () => {
 		const terms = widget('case-type-terms-written')
 		expect(terms.type).toBe('facts')
 		expect(terms.content.source).toEqual({ url: '/apps/dossiq/api/case-types/@objectId/terms' })
-		expect(terms.content.fields.map((field) => field.path)).toEqual(['decisionTerm', 'suspension', 'serviceTarget'])
+		expect(terms.content.fields.map((field) => field.path)).toEqual(['decisionTerm', 'penalty', 'suspension', 'serviceTarget'])
 	})
 
 	it('have a route', () => {
@@ -121,7 +121,7 @@ describe('the side facts (REQ-CTB-5)', () => {
 		const paths = facts.map((field) => field.path).filter(Boolean)
 		expect(paths).not.toContain('handlingModel')
 		expect(paths).not.toContain('confidentiality')
-		expect(facts.map((field) => field.label)).toEqual(['Domain', 'Origin', 'Origin', 'Form', 'Handling teams'])
+		expect(facts.map((field) => field.label).filter(Boolean)).toEqual(['Domain', 'Origin', 'Origin', 'Form', 'Handling teams', 'Running cases', 'Iv3 task field', 'Queue'])
 	})
 
 	it('name a shipped case type as shipped', () => {
@@ -131,5 +131,69 @@ describe('the side facts (REQ-CTB-5)', () => {
 			{ field: '@self.owner', op: 'neq', value: '__system__' },
 		])
 		expect(origin.map((field) => field.parts[0].text)).toEqual(['Shipped', 'Own case type'])
+	})
+})
+
+describe('card header actions (nextcloud-vue widget-header-actions)', () => {
+	it.each([
+		['case-type-statuses', 'Edit', 'statuses'],
+		['case-type-rules-summary', 'Add a rule', 'rules'],
+		['case-type-terms-written', 'Edit', 'properties'],
+	])('%s carries %s, opening the %s tab', (id, label, tabId) => {
+		expect(widget(id).headerActions).toEqual([
+			expect.objectContaining({ label, action: { type: 'navigate', target: `/settings/case-types/@objectId#${tabId}` } }),
+		])
+		expect(tab(tabId)).toBeTruthy()
+	})
+
+	it('keeps the raw terms editable on the Properties tab', () => {
+		expect(idsOf(tab('properties'))).toContain('case-type-terms')
+	})
+})
+
+describe('the side column (nextcloud-vue 24p)', () => {
+	const side = (id) => detail.config.sideColumn.find((card) => card.id === id)
+
+	it('titles the data card as a side card', () => {
+		expect(side('side-case-type-facts').titleTone).toBe('side')
+	})
+
+	it('shows what changed in the history card, not who read it, and opens the History tab', () => {
+		const history = side('side-case-type-history')
+		expect(history.title).toBe('Record history')
+		expect(history.content.excludeActions).toEqual(['read'])
+		expect(history.headerLink).toEqual({ label: 'All history', tab: 'history' })
+	})
+})
+
+describe('the choice list beside Fields (DqZaaktypeVelden, nextcloud-vue side-card-follows-row)', () => {
+	const card = detail.config.sideColumn.find((entry) => entry.id === 'side-case-type-choice-list')
+	const fieldsEditor = detail.config.widgets.find((entry) => entry.id === 'case-type-fields-editor')
+
+	it('lets the Fields table select a field', () => {
+		expect(fieldsEditor.content.rowSelection).toBe(true)
+	})
+
+	it('follows the selected field that has a choice list, beside the Fields tab', () => {
+		expect(card.tabs).toEqual(['fields'])
+		expect(card.title).toBe('Choice list: {name|fieldTitle}')
+		expect(card.follows).toEqual({
+			widget: 'case-type-fields-editor',
+			register: 'dossiq',
+			schema: 'propertyDefinition',
+			when: { field: 'enumValues', op: 'notEmpty' },
+		})
+	})
+
+	it('lists the options and adds one as a plain value', () => {
+		expect(card.type).toBe('field-list')
+		expect(card.content.field).toBe('enumValues')
+		expect(card.content.add).toEqual(expect.objectContaining({ label: 'Add option', scalar: true, unique: true }))
+		expect(card.content.add.fields).toEqual([{ key: 'value', label: 'Option', required: true }])
+	})
+
+	it('sits above the parent type card', () => {
+		const ids = detail.config.sideColumn.map((entry) => entry.id)
+		expect(ids.indexOf('side-case-type-choice-list')).toBeLessThan(ids.indexOf('side-case-type-parent'))
 	})
 })

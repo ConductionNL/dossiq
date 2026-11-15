@@ -23,6 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Assessment;
 
 use OCA\Dossiq\Service\Assessment\OutstandingDocuments;
+use OCA\Dossiq\Review\OutstandingDocuments as ReviewOutstandingDocuments;
+use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
@@ -45,6 +47,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class OutstandingDocumentsTest extends TestCase {
 
@@ -78,17 +81,24 @@ class OutstandingDocumentsTest extends TestCase {
 	 *
 	 * @return OutstandingDocuments
 	 */
-	private function service(): OutstandingDocuments {
+	private function service(?CaseDocumentDrafts $drafts = null, array $config = []): OutstandingDocuments {
+		$config = array_merge([
+			'register' => 'dossiq',
+			'document_schema' => 'document',
+			'woo_assessment_schema' => 'assessment',
+			'dossier_informatieobject_schema' => 'informatieobject',
+			'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
+		], $config);
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key, string $default = ''): string => ([
-				'register' => 'dossiq',
-				'document_schema' => 'document',
-				'woo_assessment_schema' => 'assessment',
-				'dossier_informatieobject_schema' => 'informatieobject',
-				'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
-			][$key] ?? $default)
+			static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
+		);
+
+		$caseDocuments = new WooCaseDocuments(
+			settingsService: $settings,
+			rootFolder: $this->createMock(originalClassName: IRootFolder::class),
+			logger: new NullLogger(),
 		);
 
 		return new OutstandingDocuments(
@@ -96,11 +106,8 @@ class OutstandingDocumentsTest extends TestCase {
 				settingsService: $settings,
 				userSession: $this->createMock(IUserSession::class),
 				logger: new NullLogger(),
-				caseDocuments: new WooCaseDocuments(
-					settingsService: $settings,
-					rootFolder: $this->createMock(IRootFolder::class),
-					logger: new NullLogger(),
-				),
+				caseDocuments: $caseDocuments,
+				outstanding: new ReviewOutstandingDocuments(settingsService: $settings, caseDocuments: $caseDocuments, drafts: $drafts),
 			),
 			records: new DocumentRecordStore(settingsService: $settings),
 			settings: $settings,
@@ -121,6 +128,23 @@ class OutstandingDocumentsTest extends TestCase {
 		$this->assertArrayNotHasKey('io-3', $titles, 'An assessed document is not outstanding');
 		$this->assertArrayNotHasKey('io-9', $titles, 'Another case its document is not listed');
 	}//end testItNamesTheDocumentsWithoutAnAssessment()
+
+	/**
+	 * A letter drafted from the case type's template is not a document under review.
+	 *
+	 * @return void
+	 */
+	public function testADraftedLetterIsNotADocumentToAssess(): void {
+		$this->store->seed(schema: 'informatieobject', uuid: 'io-letter', row: ['title' => 'Besluit Woo-verzoek', 'informatieobjecttype' => 'iot-besluit']);
+		$this->store->seed(schema: 'zaakinformatieobject', uuid: 'j-letter', row: ['case' => 'case-1', 'informatieobject' => 'io-letter']);
+		$drafts = $this->createMock(originalClassName: CaseDocumentDrafts::class);
+		$drafts->method('documentTypesForCase')->willReturn(['Besluit', 'iot-besluit']);
+
+		$answer = $this->service(drafts: $drafts)->forCase(caseId: 'case-1');
+
+		$this->assertSame(expected: 3, actual: $answer['count']);
+		$this->assertArrayNotHasKey(key: 'io-letter', array: array_column($answer['documents'], 'title', 'id'));
+	}//end testADraftedLetterIsNotADocumentToAssess()
 
 	/**
 	 * Without a title the file name stands in, and an earlier document is read from its own schema.
@@ -153,6 +177,12 @@ class OutstandingDocumentsTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	public function testAnEarlierDocumentHasNoTitleWithoutItsSchemaConfigured(): void {
+		$this->assertSame('Brief van 3 maart', $this->service()->titleOf(documentId: 'doc-1'));
+		$this->assertSame('', $this->service(config: ['document_schema' => ''])->titleOf(documentId: 'doc-1'));
+		$this->assertSame('Mail aannemer', $this->service(config: ['document_schema' => ''])->titleOf(documentId: 'io-3'));
+	}//end testAnEarlierDocumentHasNoTitleWithoutItsSchemaConfigured()
+
 	public function testNothingOutstandingAnswersAnEmptyList(): void {
 		$this->assertSame(['count' => 0, 'documents' => []], $this->service()->forCase(caseId: 'case-none'));
 	}//end testNothingOutstandingAnswersAnEmptyList()

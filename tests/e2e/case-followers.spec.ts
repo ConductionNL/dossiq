@@ -183,7 +183,7 @@ test.describe('Following a case', () => {
 	// BREAKS IF: the header toggle stops reading `@self.watching`, or the PUT stops
 	// landing. The reload is the point: an optimistic flip that never reached
 	// OpenRegister looks identical to one that did until the page is read back.
-	// @e2e openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md#the-case-page-shows-one-follow-control
+	// @e2e openspec/specs/case-management/spec.md#requirement-the-case-page-shows-one-follow-control-req-cm-40a
 	// @e2e case-access-control::follow-survives-a-reload
 	test('the Follow button on the case page takes the subscription, and it survives a reload', async ({
 		page,

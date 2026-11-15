@@ -27,7 +27,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Dossiq\Service\Support;
 /**
  * Prints stored dates as the days of one letter's language.
  *
- * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
  */
 class LetterDays {
 
@@ -57,7 +57,7 @@ class LetterDays {
 	 * @param string      $language The letter's declared locale.
 	 * @param ReadableDay $spelling Spells a stored date as a day.
 	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
 	public function __construct(
 		private readonly string $language,
@@ -72,7 +72,7 @@ class LetterDays {
 	 *
 	 * @return string The day, or an empty string when there is none to read.
 	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
 	public function day(string $value): string {
 		if ($this->language === self::ENGLISH) {
@@ -90,7 +90,7 @@ class LetterDays {
 	 *
 	 * @return string The day as printed, or the value itself when it is no date.
 	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
 	public function shown(string $value): string {
 		$day = $this->day(value: $value);

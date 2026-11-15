@@ -28,7 +28,14 @@
       "legalBasis": "Jeugdwet artikel 2.3",
       "initiatorDisplayName": "Huisarts, met toestemming van de ouders",
       "assignee": "fatma.kaya",
-      "deadline": "{{date:20}}"
+      "deadline": "{{date:20}}",
+      "sensitiveProperties": [
+        {
+          "propertyDefinition": "9351d74d-7824-5d7a-93f4-e78f8991ceeb",
+          "name": "onderzoeksstappen",
+          "value": "[{\"kind\": \"gesprek\", \"date\": \"{{date:-12}}\", \"by\": \"fatma.kaya\", \"withWhom\": \"Beide ouders\", \"summary\": \"Gesprek met de ouders over slaap en school.\", \"consentRef\": \"3d903a5f-7066-50c8-a952-7e1c775055bb\", \"followUp\": \"School om informatie vragen\"}, {\"kind\": \"informatie-opgevraagd\", \"date\": \"{{date:-8}}\", \"by\": \"fatma.kaya\", \"withWhom\": \"Basisschool De Linde\", \"summary\": \"Informatie opgevraagd bij school over het verzuim.\", \"consentRef\": \"3d903a5f-7066-50c8-a952-7e1c775055bb\", \"followUp\": \"Bespreken in het overleg\"}]"
+        }
+      ]
     }
   ]
 }

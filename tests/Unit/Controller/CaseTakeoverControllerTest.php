@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * Decision 168: answering a takeover is per-case mutation access; asking is read access.
  *
  * @covers \OCA\Dossiq\Controller\CaseTakeoverController
+ * @covers \OCA\Dossiq\Controller\Support\CaseCaller
  */
 class CaseTakeoverControllerTest extends TestCase {
 

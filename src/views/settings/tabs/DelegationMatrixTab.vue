@@ -7,28 +7,14 @@
 -->
 <template>
 	<div class="mandaat-matrix-tab">
-		<div class="mandaat-matrix-tab__header">
-			<p class="mandaat-matrix-tab__description">
-				{{
-					t(
-						'dossiq',
-						'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports. All changes are version-tracked.',
-					)
-				}}
-			</p>
-		</div>
-
-		<NcAppNavigationCaption :name="t('dossiq', 'Sections')" />
-		<div class="mandaat-matrix-tab__chips">
-			<NcButton
-				v-for="opt in tabOptions"
-				:key="opt.id"
-				:variant="active === opt.id ? 'primary' : 'secondary'"
-				size="small"
-				@click="active = opt.id">
-				{{ opt.label }}
-			</NcButton>
-		</div>
+		<NcSelect
+			class="mandaat-matrix-tab__sections"
+			:modelValue="activeOption"
+			:options="tabOptions"
+			:inputLabel="t('dossiq', 'Sections')"
+			:clearable="false"
+			data-testid="mandaat-matrix-sections"
+			@update:modelValue="(opt) => { if (opt) active = opt.id }" />
 
 		<div class="mandaat-matrix-tab__body">
 			<DelegationMatrixTable
@@ -66,7 +52,7 @@
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { NcAppNavigationCaption, NcButton } from '@nextcloud/vue'
+import { NcSelect } from '@nextcloud/vue'
 import MandaatEditor from '../../../modals/MandaatEditor.vue'
 import DelegationImportPanel from '../components/DelegationImportPanel.vue'
 import DelegationMatrixTable from '../components/DelegationMatrixTable.vue'
@@ -76,8 +62,7 @@ import RoleTreeManager from '../components/RoleTreeManager.vue'
 export default {
 	name: 'DelegationMatrixTab',
 	components: {
-		NcButton,
-		NcAppNavigationCaption,
+		NcSelect,
 		DelegationMatrixTable,
 		RoleTreeManager,
 		RoleAssignmentsTable,
@@ -98,7 +83,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		tabOptions() {
 			return [
 				{ id: 'besluiten', label: t('dossiq', 'Decisions') },
@@ -108,7 +93,17 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * The section shown, as the picker's value.
+		 *
+		 * @return {object} The option.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		activeOption() {
+			return this.tabOptions.find((opt) => opt.id === this.active) || this.tabOptions[0]
+		},
+
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		roleOptions() {
 			return (this.roles || []).map((r) => ({
 				id: r.id,
@@ -122,7 +117,7 @@ export default {
 			immediate: true,
 			/**
 			 * @param {string|number|boolean|object} v The new value.
-			 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+			 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 			 */
 			handler(v) {
 				if (v === 'besluiten') this.loadBesluiten()
@@ -134,7 +129,7 @@ export default {
 
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		async loadBesluiten() {
 			this.loading = true
 			try {
@@ -151,7 +146,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		async loadRoles() {
 			this.loading = true
 			try {
@@ -168,7 +163,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		async loadAssignments() {
 			this.loading = true
 			try {
@@ -187,25 +182,25 @@ export default {
 
 		/**
 		 * @param {object} mandaat The mandaat.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		openEditor(mandaat) {
 			this.editingMandaat = mandaat
 			this.editorOpen = true
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingMandaat = null
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		openImport() {
 			this.active = 'import'
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		onImported() {
 			this.active = 'besluiten'
 			this.loadBesluiten()
@@ -213,7 +208,7 @@ export default {
 
 		/**
 		 * @param {object} payload The payload.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		async onMandaatSave(payload) {
 			try {
@@ -242,23 +237,18 @@ export default {
 </script>
 
 <style scoped>
-.mandaat-matrix-tab {
-	padding: 8px 0;
+/* A section of the admin card: the section picker is a settings field, as
+   board DqBeheerGeavanceerd "Mandaatmatrix" draws it. */
+.mandaat-matrix-tab__sections {
+	width: 100%;
+	max-width: 560px;
+	margin-bottom: 14px;
 }
 
-.mandaat-matrix-tab__description {
-	color: var(--color-text-maxcontrast);
-	margin: 4px 0 12px 0;
-}
-
-.mandaat-matrix-tab__chips {
-	display: flex;
-	gap: 6px;
-	flex-wrap: wrap;
-	margin-bottom: 16px;
-}
-
+/* The board look gives a labelled settings select -4px below, which wins over
+   the picker's own margin; 18px here collapses with it to the drawn 14px. */
 .mandaat-matrix-tab__body {
-	padding: 4px 0;
+	margin-top: 18px;
+	padding: 0;
 }
 </style>

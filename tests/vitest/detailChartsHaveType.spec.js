@@ -9,7 +9,7 @@
  * detail-page chart with `chartKind` alone draws an empty area chart, which
  * is how the LHS matrix on the advice page went blank.
  *
- * @spec openspec/changes/screens-round12-enforcement-advice/specs/enforcement-advice/spec.md
+ * @spec openspec/specs/enforcement-advice/spec.md
  */
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
 import fs from 'fs'

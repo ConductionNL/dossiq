@@ -23,9 +23,15 @@
 						"title": "Inspection in the field",
 						"content": {
 							"width": 350,
+							"height": 700,
 							"status": {
 								"followConnection": true,
 								"offlineText": "Offline · synchronised earlier",
+								"offlineSyncedText": "Offline · synchronised at {time}",
+								"syncedFrom": {
+									"source": { "register": "dossiq", "schema": "syncQueue", "filter": { "status": "synced" } },
+									"field": "lastAttemptAt"
+								},
 								"onlineText": "Online"
 							},
 							"frames": [
@@ -37,12 +43,16 @@
 								{
 									"key": "checklist",
 									"title": "Checklist",
+									"titleFrom": {
+										"source": { "register": "dossiq", "schema": "fieldInspection", "filter": { "inspectorRef": "@me", "status": "in_progress" }, "sort": { "field": "startedAt", "dir": "desc" } },
+										"field": "location"
+									},
 									"widgetIds": ["checklist-run"]
 								},
 								{
 									"key": "sync",
 									"title": "Synchronise",
-									"widgetIds": ["inspection-sync-queue"]
+									"widgetIds": ["inspection-outbox-offline-note", "inspection-sync-queue", "inspection-conflict"]
 								}
 							]
 						}
@@ -61,19 +71,59 @@
 									"lt": "@today+1d"
 								}
 							},
-							"extend": ["caseRef"],
+							"extend": ["caseRef", "checklistTemplateRef"],
 							"sort": {
 								"field": "scheduledAt",
 								"dir": "asc"
 							},
 							"limit": 8,
-							"presentation": "rows",
-							"title": "{caseRef.title}",
-							"meta": "{scheduledAt|datetime}",
+							"presentation": "cards",
+							"density": "compact",
+							"title": ["{location}", "{caseRef.title}"],
+							"meta": {
+								"parts": [
+									"{scheduledAt|time}",
+									"{checklistTemplateRef.name}",
+									"{checklistTemplateRef.sections|count:items} questions"
+								]
+							},
 							"pill": {
-								"field": "status"
+								"field": "status",
+								"labels": {
+									"planned": "Planned",
+									"in_progress": "Underway",
+									"synced": "Done",
+									"conflict": "Conflict"
+								},
+								"colorMap": {
+									"in_progress": "info",
+									"synced": "success",
+									"conflict": "error"
+								}
 							},
 							"emptyText": "No inspections planned for today"
+						}
+					},
+					{
+						"id": "inspection-outbox-offline-note",
+						"type": "banner",
+						"title": "Waiting for a connection",
+						"_note": "DqInspectie outbox frame: while the device is offline, how many changes wait in the outbox (the same statuses the list shows). Shown only offline (banner connection, nextcloud-vue feat/banner-when-offline); the count is read when the page opens.",
+						"content": {
+							"variant": "warning",
+							"connection": "offline",
+							"text": "{value} changes wait for a connection. They go along on their own once you are online.",
+							"visibleWhen": {
+								"source": {
+									"register": "dossiq",
+									"schema": "syncQueue",
+									"filter": {
+										"status": ["pending", "conflict", "failed"]
+									}
+								},
+								"op": "gt",
+								"value": 0
+							}
 						}
 					},
 					{
@@ -89,7 +139,7 @@
 						"id": "checklist-run",
 						"type": "checklist-run",
 						"title": "Checklist",
-						"_note": "DqInspectie middle frame: the reader's checklist run in execution, question by question with photos, answers written into the run's responses (nextcloud-vue #1764/#1766).",
+						"_note": "DqInspectie middle frame: the reader's checklist run in execution, question by question with photos and the place each answer was given (`gpsAtAnswer`, nextcloud-vue #2070), answers written into the run's responses (nextcloud-vue #1764/#1766).",
 						"content": {
 							"record": {
 								"register": "dossiq",
@@ -130,6 +180,9 @@
 								"no": "nee",
 								"na": "nvt"
 							},
+							"noteWhen": {
+								"answers": ["nee"]
+							},
 							"photoRequiredValues": {
 								"nooit": "never",
 								"altijd": "always",
@@ -149,6 +202,11 @@
 							},
 							"recordPhotosField": "photos",
 							"pageSize": 2,
+							"startAt": "lastAnswered",
+							"captureLocation": {
+								"field": "gpsAtAnswer",
+								"goodAccuracy": 50
+							},
 							"caption": "{templateSnapshot.name} version {templateVersion}"
 						}
 					},
@@ -164,16 +222,58 @@
 							},
 							"sort": {
 								"field": "queuedAt",
-								"dir": "desc"
+								"dir": "asc"
 							},
 							"limit": 6,
-							"presentation": "rows",
-							"title": "{targetEntity}",
-							"meta": "{operationType} · {queuedAt|datetime}",
+							"presentation": "cards",
+							"density": "compact",
+							"cardPillAside": true,
+							"title": ["{label}", "{targetEntity}"],
+							"meta": ["{summary}", "{lastError}", "{operationType} · {queuedAt|datetime}"],
 							"pill": {
-								"field": "status"
+								"field": "status",
+								"labels": {
+									"pending": "Waits",
+									"syncing": "Underway",
+									"synced": "Done",
+									"conflict": "Conflict",
+									"failed": "Failed"
+								},
+								"colorMap": {
+									"pending": "warning",
+									"syncing": "info",
+									"synced": "success",
+									"conflict": "error",
+									"failed": "error"
+								}
 							},
 							"emptyText": "Nothing waits to be synchronised"
+						}
+					},
+					{
+						"id": "inspection-conflict",
+						"type": "conflict-resolve",
+						"title": "Sync conflict",
+						"_note": "DqInspectie sync frame, under the outbox: an open conflict record with the text on this device and the text at the office for each field both sides changed, and one button per text (nextcloud-vue CnConflictResolveCard). Choosing posts to SIG's resolve endpoint (openspec change inspection-conflict-card); the buttons stay off until dossiq announces the capability conflictResolution.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "conflictRecord",
+								"filter": {
+									"resolution": { "isnull": true }
+								},
+								"limit": 3
+							},
+							"title": "Conflict: which text do you keep?",
+							"localText": "On this device: \"{value}\"",
+							"officeText": "At the office: \"{value}\"",
+							"keepLocalLabel": "Keep this one",
+							"keepOfficeLabel": "The office one",
+							"unavailableText": "Choosing a text is not possible yet. Your change stays in the outbox.",
+							"resolve": {
+								"url": "/apps/dossiq/api/conflict-records/{id}/resolve",
+								"capability": "dossiq.conflictResolution"
+							}
 						}
 					}
 				],

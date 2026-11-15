@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Vth;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectArray;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -169,16 +170,8 @@ class LhsRecommendationStore {
 			throw new RuntimeException('OpenRegister is niet beschikbaar');
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('lhs_matrix_schema');
-		if ($register === '' || $schema === '') {
-			throw new RuntimeException('LHS-matrix register/schema is niet geconfigureerd');
-		}
-
-		$filters = ['active' => true];
-		if ($version !== null) {
-			$filters = ['version' => $version];
-		}
+		[$register, $schema] = $this->matrixTarget();
+		$filters = $this->matrixFilters(version: $version);
 
 		try {
 			$results = $objectService->findAll(
@@ -201,6 +194,43 @@ class LhsRecommendationStore {
 
 		return $this->toArray(value: $row);
 	}//end loadMatrix()
+
+	/**
+	 * The configured register and LHS-matrix schema.
+	 *
+	 * @return array{0: string, 1: string} The register and the schema.
+	 *
+	 * @throws RuntimeException When either is not configured.
+	 *
+	 * @spec openspec/specs/enforcement-lhs/spec.md
+	 */
+	private function matrixTarget(): array {
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('lhs_matrix_schema');
+		if ($register === '' || $schema === '') {
+			throw new RuntimeException('LHS-matrix register/schema is niet geconfigureerd');
+		}
+
+		return [$register, $schema];
+	}//end matrixTarget()
+
+	/**
+	 * The filter that picks the matrix: the active one, or an explicit version.
+	 *
+	 * @param int|null $version Explicit matrix version, or null for active
+	 *
+	 * @return array<string, mixed> The filter.
+	 *
+	 * @spec openspec/specs/enforcement-lhs/spec.md
+	 */
+	private function matrixFilters(?int $version): array {
+		$filters = ['active' => true];
+		if ($version !== null) {
+			$filters = ['version' => $version];
+		}
+
+		return $filters;
+	}//end matrixFilters()
 
 	/**
 	 * Pluck the first row from any ObjectService result shape.
@@ -238,29 +268,7 @@ class LhsRecommendationStore {
 	 * @spec openspec/specs/enforcement-lhs/spec.md
 	 */
 	public function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-
-			return (array)$value;
-		}
-
-		return [];
+		return ObjectArray::of(value: $value);
 	}//end toArray()
 
 }//end class

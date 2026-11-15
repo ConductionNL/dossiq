@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+import * as ncVue from '@conduction/nextcloud-vue'
 import {
 	buildManifest,
 	CnPageRenderer,
@@ -36,7 +37,9 @@ import registry from './registry.js'
 import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
+import { installMyTeamNameSource, installMyTeamSource } from './services/myTeamSource.js'
 import { useObjectStore } from './store/modules/object.js'
+import { withConfigLabels } from './utils/configLabels.js'
 import { withConfiguredLenses } from './utils/configLenses.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
 import { installPageTitles } from './utils/pageTitle.js'
@@ -250,7 +253,7 @@ const appConfig = loadState('dossiq', 'config', {})
 const builtManifest = markRaw(
 	translateFieldOverrideLabels(
 		translateBannerCopy(
-			translateLensLabels(withConfiguredLenses(profiledManifest, appConfig), (label) => t('dossiq', label)),
+			translateLensLabels(withConfigLabels(withConfiguredLenses(profiledManifest, appConfig), appConfig), (label) => t('dossiq', label)),
 			(label) => t('dossiq', label),
 		),
 		(label) => t('dossiq', label),
@@ -331,6 +334,10 @@ watch(() => resolvedManifest.value?.menu, retitlePage)
 // screen". See src/services/caseLiveUpdates.js for what an event does, and for
 // the one thing it deliberately does not cover.
 installCaseLiveUpdates(router, () => useObjectStore())
+// The team the team queue opens on (@myTeam). Read through the namespace so
+// a library without the hook does not stop the app from starting.
+installMyTeamSource(ncVue.registerMyTeamSource)
+installMyTeamNameSource(ncVue.registerMyTeamNameSource)
 
 tryLoadTranslations()
 

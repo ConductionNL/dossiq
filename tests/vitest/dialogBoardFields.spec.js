@@ -7,7 +7,7 @@
  * reason beside the days (DqVolgendeStap), the other acts a text area, and the
  * Woo decision's reasons are four lines (DqBesluit).
  *
- * @spec openspec/changes/dialog-board-fields/specs/dialog-board-fields/spec.md#requirement-a-dialog-s-reason-field-has-the-board-s-height
+ * @spec openspec/changes/archive/2026-10-30-dialog-board-fields/specs/dialog-board-fields/spec.md#requirement-a-dialog-s-reason-field-has-the-board-s-height
  */
 
 import fs from 'fs'

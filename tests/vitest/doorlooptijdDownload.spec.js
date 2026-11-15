@@ -5,7 +5,7 @@
  * DqDoorlooptijd's "Downloaden": a header action that GETs the metrics
  * endpoint as CSV with the period and case type the page shows.
  *
- * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+ * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
  */
 
 import fs from 'fs'

@@ -6,7 +6,7 @@
  * control, the recommendation and the deviation as side cards, and the
  * history card titled as on every other record page.
  *
- * @spec openspec/changes/r21-enforcement-advice-board/specs/enforcement-advice-page/spec.md#requirement-the-enforcement-advice-page-follows-board-dqhandhaving
+ * @spec openspec/specs/enforcement-advice-page/spec.md#requirement-the-enforcement-advice-page-follows-board-dqhandhaving
  */
 
 import fs from 'fs'
@@ -44,6 +44,14 @@ describe('enforcement advice page (DqHandhaving)', () => {
 		expect(paths('side-override')).toEqual(expect.arrayContaining(['finalIntervention', 'override', 'overrideJustification', 'overrideBy', 'overrideAuthority']))
 	})
 
+	it('stacks each override label above its value in the narrow side card', () => {
+		expect(page.config.sideColumn.find((card) => card.id === 'side-override').content.columns).toBe(1)
+	})
+
+	it('names the advice in the header pill, not the intervention applied after a deviation', () => {
+		expect(page.config.typePill.field).toBe('recommendedIntervention')
+	})
+
 	it('leaves only the matrix and the violation in the main column', () => {
 		expect(page.config.widgets.map((widget) => widget.id).sort()).toEqual(['lhs-matrix', 'lhs-violation'])
 		expect(page.config.layout.map((cell) => cell.widgetId).sort()).toEqual(['lhs-matrix', 'lhs-violation'])
@@ -55,10 +63,12 @@ describe('enforcement advice page (DqHandhaving)', () => {
 	})
 
 	it('has a Dutch string for every label and line on the side cards', () => {
+		// A one-character map value is a matrix code (2, C), the same in every language.
+		const words = (map) => Object.values(map || {}).filter((value) => value.length > 1)
 		for (const card of page.config.sideColumn) {
 			expect(nl[card.title], card.title).toBeTruthy()
 			for (const field of card.content?.fields || []) {
-				for (const text of [field.label, field.text, ...Object.values(field.map || {})].filter(Boolean)) {
+				for (const text of [field.label, field.text, ...words(field.map)].filter(Boolean)) {
 					expect(nl[text], text).toBeTruthy()
 				}
 			}
@@ -76,10 +86,29 @@ describe('the Wat nu? button on the enforcement advice (DqHandhaving)', () => {
 	it('drafts the pre-announcement or the warning, for every stage the card knows', () => {
 		for (const stage of Object.keys(stages)) {
 			const action = page.config.primaryActionByStage[stage]
-			expect(action, stage).toMatchObject({ type: 'open-modal', target: 'BeschikkingComposerDialog', props: { caseId: '@object.case' } })
+			expect(action, stage).toMatchObject({ type: 'open-modal', target: 'GenerateDocumentDialog', props: { caseId: '@object.case' } })
 			const preAnnouncement = stages[stage].title === 'What now? Pre-announcement'
 			expect(action.label, stage).toBe(preAnnouncement ? 'Draft the pre-announcement' : 'Draft the warning')
 		}
 		expect(nl['Draft the pre-announcement']).toBe('Vooraankondiging opstellen')
+	})
+
+	it('draws the button as text only, as the board does', () => {
+		for (const stage of Object.keys(page.config.primaryActionByStage)) {
+			expect(page.config.primaryActionByStage[stage].icon, stage).toBeUndefined()
+		}
+	})
+})
+
+describe('the Historie card on the enforcement advice (DqHandhaving)', () => {
+	const history = page.config.sideColumn.find((card) => card.id === 'side-history')
+
+	it('lists what happened, not who opened the advice', () => {
+		expect(history.content.excludeActions).toEqual(['read'])
+	})
+
+	it('puts who and when under the action, in words', () => {
+		expect(history.content.layout).toBe('stacked')
+		expect(nl[history.content.actionLabels.create]).toBe('Advies berekend')
 	})
 })

@@ -1,0 +1,77 @@
+{
+  "_note": "people-involved-on-a-woo-case: the roles a party holds on a Woo request case, as configuration (decision 182). SyncCaseRoleVocabulary writes them into the case schema's link roles, so OpenRegister's party model accepts a requester, a representative with a mandate, an interested party, an adviser and a reporter without an account on a Woo case. Fixed uuids, because OpenRegister refuses a slug in a uuid-format property.",
+  "components": {
+    "objects": [
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "roleType",
+          "version": "1.0.0",
+          "slug": "woo-verzoeker"
+        },
+        "id": "3c0f5a00-0000-4000-a000-0000000c0001",
+        "uuid": "3c0f5a00-0000-4000-a000-0000000c0001",
+        "name": "Verzoeker",
+        "description": "Wie het Woo-verzoek doet",
+        "genericRole": "initiator",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "roleType",
+          "version": "1.0.0",
+          "slug": "woo-gemachtigde"
+        },
+        "id": "3c0f5a00-0000-4000-a000-0000000c0002",
+        "uuid": "3c0f5a00-0000-4000-a000-0000000c0002",
+        "name": "Gemachtigde",
+        "description": "Handelt namens een partij op deze zaak, Awb 2:1",
+        "genericRole": "gemachtigde",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "roleType",
+          "version": "1.0.0",
+          "slug": "woo-belanghebbende"
+        },
+        "id": "3c0f5a00-0000-4000-a000-0000000c0003",
+        "uuid": "3c0f5a00-0000-4000-a000-0000000c0003",
+        "name": "Belanghebbende",
+        "description": "Wiens belang het besluit rechtstreeks raakt, zoals een partij in de stukken",
+        "genericRole": "stakeholder",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "roleType",
+          "version": "1.0.0",
+          "slug": "woo-adviseur"
+        },
+        "id": "3c0f5a00-0000-4000-a000-0000000c0004",
+        "uuid": "3c0f5a00-0000-4000-a000-0000000c0004",
+        "name": "Adviseur",
+        "description": "Collega of afdeling die advies geeft op het verzoek",
+        "genericRole": "advisor",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "roleType",
+          "version": "1.0.0",
+          "slug": "woo-melder"
+        },
+        "id": "3c0f5a00-0000-4000-a000-0000000c0005",
+        "uuid": "3c0f5a00-0000-4000-a000-0000000c0005",
+        "name": "Melder",
+        "description": "Meldt iets over het onderwerp van het verzoek, ook zonder account",
+        "genericRole": "contact",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+      }
+    ]
+  }
+}

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md
+ * @spec openspec/specs/doorlooptijd-csv/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service\Csv;
 /**
  * Writes rows as CSV text.
  *
- * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md
+ * @spec openspec/specs/doorlooptijd-csv/spec.md
  */
 class CsvWriter {
 
@@ -48,7 +48,7 @@ class CsvWriter {
 	 *
 	 * @return string The line, without its line ending.
 	 *
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md
 	 */
 	public function line(array $cells): string {
 		$out = [];
@@ -67,7 +67,7 @@ class CsvWriter {
 	 *
 	 * @return string The CSV text.
 	 *
-	 * @spec openspec/changes/doorlooptijd-csv/specs/doorlooptijd-csv/spec.md
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md
 	 */
 	public function document(array $header, array $rows): string {
 		$lines = [$this->line(cells: $header)];

@@ -76,7 +76,7 @@ export const ROLE_PERMISSIONS = ['privacy', 'sociaal-domein']
  *
  * @return {Array<string>} The permission strings held, always non-empty.
  * @spec openspec/specs/admin-settings/spec.md
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 export function currentPermissions() {
 	const isAdmin =

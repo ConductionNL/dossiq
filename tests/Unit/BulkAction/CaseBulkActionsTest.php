@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Support\CaseAssigneeWriter;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
+use OCA\OpenRegister\BulkAction\BulkStep;
 use OCA\OpenRegister\Db\BulkJobMember;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\IL10N;
@@ -94,9 +95,12 @@ class CaseBulkActionsTest extends TestCase {
 		$engine->expects($this->never())->method('execute');
 
 		$result = (new TransitionCasesAction(engine: $engine, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['transitionId' => 'to-decided'],
-			commit: false,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['transitionId' => 'to-decided'],
+				commit: false,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
@@ -123,9 +127,12 @@ class CaseBulkActionsTest extends TestCase {
 		]);
 
 		$result = (new TransitionCasesAction(engine: $engine, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['transitionId' => 'to-decided'],
-			commit: false,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['transitionId' => 'to-decided'],
+				commit: false,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_REFUSED, actual: $result->getOutcome());
@@ -148,9 +155,12 @@ class CaseBulkActionsTest extends TestCase {
 			->willReturn(['statusRecord' => ['id' => 'sr-1']]);
 
 		$result = (new TransitionCasesAction(engine: $engine, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['transitionId' => 'to-decided', 'comment' => 'Handled in bulk'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['transitionId' => 'to-decided', 'comment' => 'Handled in bulk'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());
@@ -171,9 +181,12 @@ class CaseBulkActionsTest extends TestCase {
 		);
 
 		$result = (new TransitionCasesAction(engine: $engine, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['transitionId' => 'to-decided'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['transitionId' => 'to-decided'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_REFUSED, actual: $result->getOutcome());
@@ -210,9 +223,12 @@ class CaseBulkActionsTest extends TestCase {
 		$lifecycle->expects($this->never())->method('suspend');
 
 		$result = (new LifecycleCasesAction(lifecycle: $lifecycle, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
@@ -235,9 +251,12 @@ class CaseBulkActionsTest extends TestCase {
 		$lifecycle->expects($this->never())->method('extend');
 
 		$result = (new LifecycleCasesAction(lifecycle: $lifecycle, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['gesture' => 'extend', 'reason' => 'Zienswijzen van derden'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['gesture' => 'extend', 'reason' => 'Zienswijzen van derden'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
@@ -260,9 +279,12 @@ class CaseBulkActionsTest extends TestCase {
 			->willReturn([]);
 
 		$result = (new LifecycleCasesAction(lifecycle: $lifecycle, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());
@@ -282,9 +304,12 @@ class CaseBulkActionsTest extends TestCase {
 		$lifecycle->expects($this->never())->method('suspend');
 
 		$result = (new LifecycleCasesAction(lifecycle: $lifecycle, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1'),
-			parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
-			commit: false,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1'),
+				parameters: ['gesture' => 'suspend', 'reason' => 'Awaiting documents', 'days' => 14],
+				commit: false,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());
@@ -346,9 +371,12 @@ class CaseBulkActionsTest extends TestCase {
 		$writer->expects($this->never())->method('reassignOne');
 
 		$result = (new ReassignCasesAction(writer: $writer, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1', data: ['assignee' => 'handler-2']),
-			parameters: ['toUser' => 'handler-2', 'reason' => 'Team reorganised'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1', data: ['assignee' => 'handler-2']),
+				parameters: ['toUser' => 'handler-2', 'reason' => 'Team reorganised'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
@@ -369,9 +397,12 @@ class CaseBulkActionsTest extends TestCase {
 		$writer->method('reassignOne')->willReturn(false);
 
 		$result = (new ReassignCasesAction(writer: $writer, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1', data: ['assignee' => 'handler-1']),
-			parameters: ['toUser' => 'handler-2', 'reason' => 'Team reorganised'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1', data: ['assignee' => 'handler-1']),
+				parameters: ['toUser' => 'handler-2', 'reason' => 'Team reorganised'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_FAILED, actual: $result->getOutcome());
@@ -438,9 +469,12 @@ class CaseBulkActionsTest extends TestCase {
 		$settings->expects($this->never())->method('getObjectService');
 
 		$result = (new SetCaseAttributeAction(settingsService: $settings, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1', data: ['confidentiality' => 'openbaar']),
-			parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1', data: ['confidentiality' => 'openbaar']),
+				parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
@@ -461,9 +495,12 @@ class CaseBulkActionsTest extends TestCase {
 		$settings->method('getConfigValue')->willReturn('3');
 
 		$result = (new SetCaseAttributeAction(settingsService: $settings, l10n: $this->l10n()))->apply(
-			object: $this->caseObject(uuid: 'case-1', data: ['confidentiality' => 'vertrouwelijk']),
-			parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
-			commit: true,
+			step: new BulkStep(
+				object: $this->caseObject(uuid: 'case-1', data: ['confidentiality' => 'vertrouwelijk']),
+				parameters: ['property' => 'confidentiality', 'value' => 'openbaar'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: BulkJobMember::OUTCOME_FAILED, actual: $result->getOutcome());
@@ -518,9 +555,12 @@ class CaseBulkActionsTest extends TestCase {
 		$move->expects($this->never())->method('move');
 
 		$result = (new MoveCaseTypeVersionAction(move: $move, l10n: $this->l10n()))->apply(
-			$this->caseObject('case-1'),
-			['target' => 'ct-2', 'reason' => 'Nieuwe regels'],
-			false,
+			step: new BulkStep(
+				object: $this->caseObject('case-1'),
+				parameters: ['target' => 'ct-2', 'reason' => 'Nieuwe regels'],
+				commit: false,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: 'applied', actual: $result->getOutcome());
@@ -547,9 +587,12 @@ class CaseBulkActionsTest extends TestCase {
 		);
 
 		$result = (new MoveCaseTypeVersionAction(move: $move, l10n: $this->l10n()))->apply(
-			$this->caseObject('case-1'),
-			['target' => 'ct-2', 'reason' => 'Nieuwe regels'],
-			false,
+			step: new BulkStep(
+				object: $this->caseObject('case-1'),
+				parameters: ['target' => 'ct-2', 'reason' => 'Nieuwe regels'],
+				commit: false,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: 'refused', actual: $result->getOutcome());
@@ -576,9 +619,12 @@ class CaseBulkActionsTest extends TestCase {
 			->willReturn(['moved' => true]);
 
 		$result = (new MoveCaseTypeVersionAction(move: $move, l10n: $this->l10n()))->apply(
-			$this->caseObject('case-1'),
-			['target' => 'ct-2', 'reason' => 'Nieuwe regels'],
-			true,
+			step: new BulkStep(
+				object: $this->caseObject('case-1'),
+				parameters: ['target' => 'ct-2', 'reason' => 'Nieuwe regels'],
+				commit: true,
+				actor: null
+			)
 		);
 
 		$this->assertSame(expected: 'applied', actual: $result->getOutcome());

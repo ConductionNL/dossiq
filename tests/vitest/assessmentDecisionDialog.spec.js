@@ -105,7 +105,7 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = nul
 				NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnChoiceCards: true,
-				BeschikkingComposerDialog: true,
+				GenerateDocumentDialog: true,
 				NcNoteCard: {
 					props: ['type', 'heading', 'showAlert'],
 					template: '<div :data-type="type" :data-heading="heading" :data-alert="String(showAlert)"><slot /></div>',
@@ -402,9 +402,9 @@ describe('the assessment-decide header action', () => {
 
 	it('is scoped to the case type that configures it', () => {
 		expect(action.visibleWhen.all).toContainEqual({
-			field: 'caseType',
+			field: 'caseTypeIdentifier',
 			op: 'eq',
-			value: '3c0f5a00-0000-4000-a000-00000000a001',
+			value: 'woo-verzoek',
 		})
 		expect(action.visibleWhen.all).toContainEqual({
 			field: '@self.archived',

@@ -111,10 +111,10 @@ describe('the dossiq copies are gone', () => {
 describe('the banner row', () => {
 	const stack = find(fullCase, 'case-banner-stack')
 
-	it('is one size-to-content row of three strips, above the panels', () => {
+	it('is one size-to-content row of five strips, above the panels', () => {
 		expect(stack.type).toBe('sections')
 		expect(stack.content.dividers).toBe(false)
-		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-status-declaration', 'case-attention'])
+		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-claim-banner', 'case-status-declaration', 'case-attention', 'case-special-categories'])
 		const row = fullCase.config.layout.find((cell) => cell.widgetId === 'case-banner-stack')
 		const panels = fullCase.config.layout.find((cell) => cell.widgetId === 'case-panels')
 		expect(row.sizeToContent).toBe(true)
@@ -162,7 +162,7 @@ describe('what is new since the reader last looked', () => {
 		const panels = find(page, 'case-panels')
 		expect(panels.content.badgeSource).toBe('readState')
 		const tabs = panels.content.tabs
-		expect(tabs.find((tab) => tab.widgetId === 'case-files').unreadKey).toBe('files')
+		expect(tabs.find((tab) => tab.widgetId === 'case-files' || (tab.widgetIds || []).includes('case-files')).unreadKey).toBe('files')
 		expect(tabs.find((tab) => tab.widgetId === 'case-notes-panel').unreadKey).toBe('notes')
 	})
 
@@ -205,7 +205,7 @@ describe('the parties', () => {
 })
 
 describe('the contact moments in the customer record', () => {
-	it.each([['full', fullCase, 'case-pipelinq-contact-moments'], ['simple', simpleCase, 'case-customer-record-card']])('keep their id, and say absent, empty and failed apart (%s)', (_name, page, id) => {
+	it.each([['full', fullCase, 'linked-contact-moments'], ['simple', simpleCase, 'case-customer-record-card']])('keep their id, and say absent, empty and failed apart (%s)', (_name, page, id) => {
 		const moments = find(page, id)
 		expect(moments.type).toBe('record-list')
 		expect(moments.content.endpointSource).toEqual({ url: '/apps/dossiq/api/cases/@objectId/pipelinq/contact-moments', responsePath: 'moments' })
@@ -216,7 +216,7 @@ describe('the contact moments in the customer record', () => {
 	})
 
 	it('files a moment on another case through the dialog and takes it off through pipelinq', () => {
-		const moments = find(fullCase, 'case-pipelinq-contact-moments')
+		const moments = find(fullCase, 'linked-contact-moments')
 		const [file, unfile] = moments.content.rowActions
 		expect(file).toMatchObject({ type: 'open-modal', target: 'FileContactMomentDialog', props: { caseId: '@objectId' } })
 		expect(unfile).toMatchObject({ endpoint: '/apps/dossiq/api/cases/@objectId/pipelinq/contact-moments/{id}', method: 'DELETE' })
@@ -226,34 +226,45 @@ describe('the contact moments in the customer record', () => {
 })
 
 describe('the family plan', () => {
-	const plan = find(fullCase, 'family-plan')
+	// Renamed from family-plan; RenamedLayoutIds rewrites stored layouts.
+	const plan = find(fullCase, 'goal-plan')
 
 	it('keeps its id and its condition, and reads the plan the case names', () => {
 		expect(plan.type).toBe('sections')
 		expect(plan.visibleWhen.any[0]).toEqual({ field: 'gezinsplanId', op: 'notEmpty' })
 		const [due, goals] = plan.content.sections.map((section) => section.widget)
 		expect(due.type).toBe('banner')
-		expect(due.content.visibleWhen).toMatchObject({ endpoint: '/apps/dossiq/api/family-plans/@object.gezinsplanId', field: 'dueForReview', value: true })
+		expect(due.content.visibleWhen).toMatchObject({ endpoint: '/apps/dossiq/api/cases/@objectId/family-plan', field: 'dueForReview', value: true })
 		expect(goals.type).toBe('grouped-cards')
-		expect(goals.content.endpointSource.url).toBe('/apps/dossiq/api/family-plans/@object.gezinsplanId')
+		expect(goals.content.endpointSource.url).toBe('/apps/dossiq/api/cases/@objectId/family-plan')
 	})
 
-	it('puts each intervention under its goal, the loose ones apart, the late ones flagged in words, and fails closed', () => {
+	it('puts each intervention under its goal, the loose ones apart, the late ones marked in words, and fails closed', () => {
 		const goals = plan.content.sections[1].widget.content
 		expect(goals).toMatchObject({ groupsPath: 'goals', itemsPath: 'interventions', itemGroupField: 'goal', ungroupedTitle: 'Not tied to a goal', columns: 1 })
-		expect(goals.itemFlag).toEqual({ field: 'overdue', label: 'Overdue' })
+		expect(goals.itemPill).toMatchObject({ overdueWhen: { field: 'overdue', op: 'eq', value: true }, overdueLabel: 'Late' })
 		expect(goals.groupLines).toContain('Met when: {metWhen}')
 		expect(goals.errorText).toBe('The family plan could not be read.')
 	})
 
 	it('is placed in the layout, so it is not dark', () => {
-		expect(fullCase.config.layout.some((cell) => cell.widgetId === 'family-plan')).toBe(true)
+		expect(fullCase.config.layout.some((cell) => cell.widgetId === 'goal-plan')).toBe(true)
 	})
 })
 
 describe('the Related cases tab', () => {
-	it.each([['full', fullCase, 'case-related'], ['simple', simpleCase, 'case-related-card']])('reads the planned follow-ups, the typed relations and the parent (%s)', (_name, page, id) => {
-		const related = find(page, id)
+	// The simple structure lists the planned follow-ups and the typed
+	// relations in case-related-cases-card (typedRelatedCasesCard.spec.js);
+	// its case-related-card keeps the parent case (caseRelatedParentOnly.spec.js).
+	it('keeps the parent case on the parent card (simple)', () => {
+		const related = find(simpleCase, 'case-related-card')
+		expect(related.type).toBe('related')
+		expect(related.content.extraSources).toBeUndefined()
+		expect(related.content.referenceSections[0]).toMatchObject({ field: 'parentCase', register: 'dossiq', schema: 'case' })
+	})
+
+	it('reads the planned follow-ups, the typed relations and the parent (full)', () => {
+		const related = find(fullCase, 'case-related')
 		expect(related.type).toBe('related')
 		expect(related.content.showObjects).toBe(false)
 		const [planned, relations] = related.content.extraSources
@@ -262,7 +273,8 @@ describe('the Related cases tab', () => {
 		expect(planned.rowActions[0].when).toEqual({ field: 'recurrence', op: 'neq', value: 'none' })
 		expect(relations).toMatchObject({ endpoint: '/apps/dossiq/api/cases/@objectId/relations', requireLabel: true })
 		expect(related.content.referenceSections[0]).toMatchObject({ field: 'parentCase', register: 'dossiq', schema: 'case' })
-		expect(related.content.footerActions[0]).toMatchObject({ type: 'open-modal', target: 'CasePlanFollowUpDialog', props: { caseId: '@objectId' } })
+		// "Link case" sits before it in the footer, so it is found by its dialog.
+		expect(related.content.footerActions.find((action) => action.target === 'CasePlanFollowUpDialog')).toMatchObject({ type: 'open-modal', props: { caseId: '@objectId' } })
 	})
 })
 

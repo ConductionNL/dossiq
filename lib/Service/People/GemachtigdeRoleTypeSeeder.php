@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\GemachtigdeRoleTypeSeederInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -59,7 +60,7 @@ use Throwable;
  *
  * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
  */
-class GemachtigdeRoleTypeSeeder {
+class GemachtigdeRoleTypeSeeder implements GemachtigdeRoleTypeSeederInterface {
 
 	use SearchesObjects;
 
@@ -109,22 +110,11 @@ class GemachtigdeRoleTypeSeeder {
 	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 	 */
 	public function seed(): array {
-		$nothing = [
-			'available' => false,
-			'created' => 0,
-			'adopted' => 0,
-			'kept' => 0,
-			'refused' => null,
-		];
+		$nothing = $this->nothingDone();
 
 		try {
 			[$objectService, $register, $schema] = $this->target();
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE],
-			);
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => self::PAGE_SIZE]);
 		} catch (Throwable $e) {
 			// \Throwable rather than \Exception: an OpenRegister that predates
 			// the slug bridge answers a PHP Error, and an upgrade must not stop
@@ -139,74 +129,110 @@ class GemachtigdeRoleTypeSeeder {
 
 		$adoptable = $this->seededRow(rows: $rows);
 
-		try {
-			return $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->write(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					adoptable: $adoptable,
-				),
-			);
-		} catch (Throwable $e) {
-			return array_merge($nothing, ['available' => true, 'refused' => $e->getMessage()]);
-		}
+		return $this->writeElevated(
+			store: new RoleTypeStore(objectService: $objectService, register: $register, schema: $schema),
+			adoptable: $adoptable,
+		);
 	}//end seed()
 
 	/**
-	 * Stamp the key onto the row that already is this role, or write the row.
-	 *
-	 * @param object                    $objectService OpenRegister's object service.
-	 * @param string                    $register      The dossiq register.
-	 * @param string                    $schema        The role type schema.
-	 * @param array<string, mixed>|null $adoptable     The shipped row, when there is one.
+	 * The answer of a seed that did nothing.
 	 *
 	 * @return array{available: bool, created: int, adopted: int, kept: int, refused: string|null}
-	 *                                                                                            What the write did.
 	 */
-	private function write(
-		object $objectService,
-		string $register,
-		string $schema,
-		?array $adoptable,
-	): array {
-		$done = [
-			'available' => true,
+	private function nothingDone(): array {
+		return [
+			'available' => false,
 			'created' => 0,
 			'adopted' => 0,
 			'kept' => 0,
 			'refused' => null,
 		];
+	}//end nothingDone()
+
+	/**
+	 * Run the write as the system user, answering a refusal instead of throwing.
+	 *
+	 * @param RoleTypeStore             $store     The object service, register and role type schema.
+	 * @param array<string, mixed>|null $adoptable The shipped row, when there is one.
+	 *
+	 * @return array{available: bool, created: int, adopted: int, kept: int, refused: string|null}
+	 *                                                                                            What the write did.
+	 */
+	private function writeElevated(RoleTypeStore $store, ?array $adoptable): array {
+		try {
+			return $this->runAsSystemIfAvailable(
+				objectService: $store->objectService,
+				operation: fn (): array => $this->write(store: $store, adoptable: $adoptable),
+			);
+		} catch (Throwable $e) {
+			return array_merge($this->nothingDone(), ['available' => true, 'refused' => $e->getMessage()]);
+		}
+	}//end writeElevated()
+
+	/**
+	 * Stamp the key onto the row that already is this role, or write the row.
+	 *
+	 * @param RoleTypeStore             $store     The object service, register and role type schema.
+	 * @param array<string, mixed>|null $adoptable The shipped row, when there is one.
+	 *
+	 * @return array{available: bool, created: int, adopted: int, kept: int, refused: string|null}
+	 *                                                                                            What the write did.
+	 */
+	private function write(RoleTypeStore $store, ?array $adoptable): array {
+		$done = array_merge($this->nothingDone(), ['available' => true]);
 
 		if ($adoptable !== null) {
-			$row = $adoptable;
-			unset($row['@self']);
-			$row['genericRole'] = self::GENERIC_ROLE;
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $row,
-				uuid: $this->uuidOf(row: $adoptable),
-			);
+			$this->adopt(store: $store, adoptable: $adoptable);
 
 			return array_merge($done, ['adopted' => 1]);
 		}
 
+		$this->create(store: $store);
+
+		return array_merge($done, ['created' => 1]);
+	}//end write()
+
+	/**
+	 * Stamp the generic role onto the shipped row.
+	 *
+	 * @param RoleTypeStore        $store     The object service, register and role type schema.
+	 * @param array<string, mixed> $adoptable The shipped row.
+	 *
+	 * @return void
+	 */
+	private function adopt(RoleTypeStore $store, array $adoptable): void {
+		$row = $adoptable;
+		unset($row['@self']);
+		$row['genericRole'] = self::GENERIC_ROLE;
 		$this->saveObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->schema,
+			object: $row,
+			uuid: $this->uuidOf(row: $adoptable),
+		);
+	}//end adopt()
+
+	/**
+	 * Write the generic role type row.
+	 *
+	 * @param RoleTypeStore $store The object service, register and role type schema.
+	 *
+	 * @return void
+	 */
+	private function create(RoleTypeStore $store): void {
+		$this->saveObjectAsArray(
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->schema,
 			object: [
 				'name' => self::NAME,
 				'description' => self::DESCRIPTION,
 				'genericRole' => self::GENERIC_ROLE,
 			],
 		);
-
-		return array_merge($done, ['created' => 1]);
-	}//end write()
+	}//end create()
 
 	/**
 	 * The rows that already are the generic representative.

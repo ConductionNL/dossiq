@@ -102,7 +102,7 @@ describe('the sentences', () => {
 	 * @param {object} row The row.
 	 * @return {Array<string>} The badge texts.
 	 */
-	const countBadges = (row) => widget('case-pipelinq-contact-moments').content.badges
+	const countBadges = (row) => widget('linked-contact-moments').content.badges
 		.filter((badge) => badge.kind === 'count')
 		.map((badge) => {
 			const raw = row[badge.field]
@@ -121,9 +121,26 @@ describe('the sentences', () => {
 	it('says an unset preference as unset, and an absent resolver as unreadable', () => {
 		const lines = widget('case-party-roles').content.extraLines[0].lines
 		expect(sentence(lines, { available: true, language: 'English', stated: true, rule: 'party' })).toBe('Writing language: English. Asked for by the party.')
-		expect(sentence(lines, { available: true, language: 'Dutch', stated: false, rule: 'instanceDefault' })).toBe('Writing language: Dutch. No preference recorded, so the default language of this instance.')
+		// DqZaakBetrokkenen draws an instance default as any unset preference: "Schrijftaal: Nederlands. Geen voorkeur vastgelegd."
+		expect(sentence(lines, { available: true, language: 'Dutch', stated: false, rule: 'instanceDefault' })).toBe('Writing language: Dutch. No preference recorded.')
 		expect(sentence(lines, { available: false, language: 'Dutch', stated: false, rule: 'unavailable' })).toBe('Writing language: Dutch. No preference can be read on this instance.')
 		expect(sentence(lines, {})).toBe('')
+	})
+
+	it('says an instance default on the simple Rollen card as the board does', () => {
+		const layout = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.simple.json'), 'utf8'))
+		const find = (node) => {
+			if (Array.isArray(node)) {
+				return node.map(find).find(Boolean)
+			}
+			if (node && typeof node === 'object') {
+				return node.id === 'case-party-roles-card' ? node : Object.values(node).map(find).find(Boolean)
+			}
+			return undefined
+		}
+		const lines = find(layout).content.extraLines[0].lines
+		expect(sentence(lines, { available: true, language: 'Dutch', stated: false, rule: 'instanceDefault' })).toBe('Writing language: Dutch. No preference recorded.')
+		expect(sentence(lines, { available: true, language: 'Dutch', stated: true, rule: 'party' })).toBe('Writing language: Dutch. Asked for by the party.')
 	})
 
 	it('names the mode beside a figure, and never draws an uncomputable one as zero', () => {
@@ -159,7 +176,8 @@ describe('the declarations', () => {
 	const json = JSON.stringify(caseDetail)
 
 	it('puts the customer record on the Communication tab and the programme on the Related tab, as library config', () => {
-		expect(json).toContain('"id":"case-pipelinq-contact-moments","type":"record-list"')
+		// Renamed from case-pipelinq-contact-moments; RenamedLayoutIds rewrites stored layouts.
+		expect(json).toContain('"id":"linked-contact-moments","type":"record-list"')
 		expect(json).toContain('"id":"case-programme","type":"facts"')
 		expect(registrySource).not.toContain("'case-pipelinq-contact-moments': {")
 		expect(registrySource).not.toContain("'case-programme': {")
@@ -302,5 +320,42 @@ describe('the case type party kinds', () => {
 		expect(
 			wrapper.find('[data-testid="case-type-party-kinds-source"]').text(),
 		).toContain('Pipelinq is not installed')
+	})
+
+
+	it('reads nothing when the route carries no case type id', async () => {
+		axios.get.mockResolvedValue({ data: {} })
+		const wrapper = mount(CaseTypePartyKindsWidget, {
+			global: { stubs, mocks: { $route: route('') } },
+		})
+		await flushPromises()
+
+		expect(axios.get).not.toHaveBeenCalled()
+		expect(wrapper.vm.loading).toBe(false)
+	})
+
+	it('shows the failed state when the kinds cannot be read', async () => {
+		axios.get.mockRejectedValue(new Error('down'))
+		const wrapper = mount(CaseTypePartyKindsWidget, {
+			global: { stubs, mocks: { $route: route('ct-1') } },
+		})
+		await flushPromises()
+
+		expect(wrapper.vm.failed).toBe(true)
+	})
+
+	it('shows the refusal sentence when the save is refused', async () => {
+		axios.get.mockResolvedValue({
+			data: { source: 'pipelinq', available: true, kinds: [{ code: 'aanvrager', label: 'Aanvrager' }], accepted: ['aanvrager'] },
+		})
+		axios.put.mockRejectedValue({ response: { data: { error: 'Pipelinq refused the party kinds.' } } })
+		const wrapper = mount(CaseTypePartyKindsWidget, {
+			global: { stubs, mocks: { $route: route('ct-1') } },
+		})
+		await flushPromises()
+
+		await wrapper.vm.save()
+
+		expect(wrapper.vm.error).toBe('Pipelinq refused the party kinds.')
 	})
 })

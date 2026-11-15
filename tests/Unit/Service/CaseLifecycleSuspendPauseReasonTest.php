@@ -13,13 +13,14 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use OCA\Dossiq\Service\CaseLifecycleService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
@@ -37,6 +38,8 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\CaseLifecycleService
  * @covers \OCA\Dossiq\Service\DeadlinePauseService
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class CaseLifecycleSuspendPauseReasonTest extends TestCase {
 
@@ -79,9 +82,11 @@ class CaseLifecycleSuspendPauseReasonTest extends TestCase {
 		return new CaseLifecycleService(
 			store: $store,
 			caseTypes: $caseTypes,
-			termService: $termService,
-			pauseService: $pauseService,
-			extensionService: $this->createMock(DeadlineExtensionService::class),
+			deadlines: new CaseDeadlineServices(
+				termService: $termService,
+				pauseService: $pauseService,
+				extensionService: $this->createMock(originalClassName: DeadlineExtensionService::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);

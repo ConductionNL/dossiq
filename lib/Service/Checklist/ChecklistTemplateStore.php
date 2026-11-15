@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Checklist;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ChecklistTemplateStoreInterface;
 use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/specs/inspection-checklists/spec.md
  */
-class ChecklistTemplateStore {
+class ChecklistTemplateStore implements ChecklistTemplateStoreInterface {
 
 	use SearchesObjects;
 
@@ -92,10 +93,7 @@ class ChecklistTemplateStore {
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
-		$params = ['_limit' => 100, '_order' => 'name'];
-		if ($caseTypeRef !== null && $caseTypeRef !== '') {
-			$params['caseType'] = $caseTypeRef;
-		}
+		$params = $this->listFilters(caseTypeRef: $caseTypeRef);
 
 		try {
 			$templates = $this->searchObjectsAsArrays(
@@ -107,13 +105,29 @@ class ChecklistTemplateStore {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Failed to list checklist templates: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return [];
 		}
 
 		return array_map(fn (array $template): array => $this->mapper->toFlat(template: $template), $templates);
 	}//end all()
+
+	/**
+	 * The search filters for the template list, narrowed to a case type when one is given.
+	 *
+	 * @param string|null $caseTypeRef Optional case type uuid to filter on.
+	 *
+	 * @return array<string, mixed> The filters.
+	 */
+	private function listFilters(?string $caseTypeRef): array {
+		$params = ['_limit' => 100, '_order' => 'name'];
+		if ($caseTypeRef !== null && $caseTypeRef !== '') {
+			$params['caseType'] = $caseTypeRef;
+		}
+
+		return $params;
+	}//end listFilters()
 
 	/**
 	 * Create a checklist template from the editor's flat payload.
@@ -179,7 +193,7 @@ class ChecklistTemplateStore {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Failed to delete checklist template ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 			return false;
 		}

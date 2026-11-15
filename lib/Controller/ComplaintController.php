@@ -23,15 +23,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\ComplaintService;
+use Closure;
+use OCA\Dossiq\Controller\Support\ComplaintMutationGate;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -40,7 +42,7 @@ use OCP\IRequest;
 /**
  * Controller for the core complaint (klacht) lifecycle.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 class ComplaintController extends Controller {
 	/**
@@ -48,16 +50,16 @@ class ComplaintController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param ComplaintService $complaintService Complaint service
-	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
+	 * @param ComplaintServiceInterface $complaintService Complaint service
+	 * @param ComplaintAccessGuardInterface $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ComplaintService $complaintService,
-		private readonly ComplaintAccessGuard $accessGuard,
+		private readonly ComplaintServiceInterface $complaintService,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -69,7 +71,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function index(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -95,7 +97,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function create(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -122,7 +124,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function show(string $id): JSONResponse {
 		$userId = $this->accessGuard->currentUid();
@@ -149,28 +151,17 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function update(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
-
-		try {
-			$data = $this->accessGuard->parseBody();
-			$result = $this->complaintService->updateComplaint($id, $data);
-			return new JSONResponse($result);
-		} catch (\RuntimeException | \InvalidArgumentException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->changed(
+			change: fn (array $data): JSONResponse => new JSONResponse($this->complaintService->updateComplaint($id, $data))
+		);
 	}//end update()
 
 	/**
@@ -182,29 +173,19 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function transition(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
-
-		try {
-			$data = $this->accessGuard->parseBody();
-			$newStatus = $data['status'] ?? '';
-			$result = $this->complaintService->transitionStatus($id, $newStatus);
-			return new JSONResponse($result);
-		} catch (\RuntimeException | \InvalidArgumentException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->changed(
+			change: fn (array $data): JSONResponse => new JSONResponse(
+				$this->complaintService->transitionStatus($id, $data['status'] ?? '')
+			)
+		);
 	}//end transition()
 
 	/**
@@ -216,29 +197,19 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function verdaging(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
-
-		try {
-			$data = $this->accessGuard->parseBody();
-			$justification = $data['justificatie'] ?? '';
-			$result = $this->complaintService->requestVerdaging($id, $justification);
-			return new JSONResponse($result);
-		} catch (\RuntimeException | \InvalidArgumentException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->changed(
+			change: fn (array $data): JSONResponse => new JSONResponse(
+				$this->complaintService->requestVerdaging($id, $data['justificatie'] ?? '')
+			)
+		);
 	}//end verdaging()
 
 	/**
@@ -250,34 +221,15 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function escalate(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
-
-		try {
-			$data = $this->accessGuard->parseBody();
-			$caseId = $data['caseId'] ?? '';
-
-			if (empty($caseId) === true) {
-				return new JSONResponse(['error' => 'caseId is required for escalation'], Http::STATUS_BAD_REQUEST);
-			}
-
-			$result = $this->complaintService->linkEscalatedCase($id, $caseId);
-			return new JSONResponse($result);
-		} catch (\RuntimeException | \InvalidArgumentException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->changed(change: fn (array $data): JSONResponse => $this->escalation(id: $id, data: $data));
 	}//end escalate()
 
 	/**
@@ -287,7 +239,7 @@ class ComplaintController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function deadlineAlerts(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {
@@ -298,4 +250,53 @@ class ComplaintController extends Controller {
 		$alerts = $this->complaintService->getDeadlineAlerts($warningDays);
 		return new JSONResponse($alerts);
 	}//end deadlineAlerts()
+
+	/**
+	 * Refuses a complaint write the caller may not make.
+	 *
+	 * @return ComplaintMutationGate
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	private function mutationGate(): ComplaintMutationGate {
+		return new ComplaintMutationGate(accessGuard: $this->accessGuard, complaintService: $this->complaintService);
+	}//end mutationGate()
+
+	/**
+	 * Apply a change from the request body; a domain refusal is a 400 with its message.
+	 *
+	 * @param Closure $change The change, given the parsed body; answers the response.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	private function changed(Closure $change): JSONResponse {
+		try {
+			return $change($this->accessGuard->parseBody());
+		} catch (\RuntimeException | \InvalidArgumentException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end changed()
+
+	/**
+	 * Link the case the body names; escalating needs one.
+	 *
+	 * @param string               $id   Complaint UUID.
+	 * @param array<string, mixed> $data The parsed body.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	private function escalation(string $id, array $data): JSONResponse {
+		$caseId = $data['caseId'] ?? '';
+
+		if (empty($caseId) === true) {
+			return new JSONResponse(['error' => 'caseId is required for escalation'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$result = $this->complaintService->linkEscalatedCase($id, $caseId);
+		return new JSONResponse($result);
+	}//end escalation()
 }//end class

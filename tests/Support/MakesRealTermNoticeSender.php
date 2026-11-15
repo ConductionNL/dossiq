@@ -33,7 +33,7 @@ namespace OCA\Dossiq\Tests\Support;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\OptOutGate;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
-use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
+use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\Mail\IMailer;

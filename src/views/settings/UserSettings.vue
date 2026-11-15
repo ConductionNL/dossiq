@@ -116,7 +116,7 @@ export default {
 		 * The daily digest: on or off, the hour, and who decided it.
 		 *
 		 * @return {Array<object>} The fields.
-		 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+		 * @spec openspec/specs/my-work/spec.md
 		 */
 		workDigestFields() {
 			return workDigestFields(this.t.bind(this))
@@ -126,8 +126,11 @@ export default {
 </script>
 
 <style scoped>
+/* A section's description sits 16px above its content, as the board draws
+   it (DqPersoonlijkeInstellingen "Meldingen"): the section content already
+   sets its children 24px apart, so the description gives 8px back. */
 .dossiq-user-settings__intro {
-	margin-bottom: calc(var(--default-grid-baseline) * 3);
+	margin-block: 0 -8px;
 	color: var(--color-text-maxcontrast);
 }
 </style>

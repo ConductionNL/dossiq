@@ -10,7 +10,7 @@
  * the case type's results, and the dialog offers them in a picker and offers
  * no free field.
  *
- * @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
  */
 
 import axios from '@nextcloud/axios'

@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
  * @uses \OCA\Dossiq\Service\Settings\RegisterStorageDeclaration
  * @uses \OCA\Dossiq\Woo\WooReportSwitches
+ * @uses \OCA\Dossiq\Service\Settings\RenamedSettingKeys
  */
 class SettingsServiceTest extends TestCase {
 
@@ -296,6 +297,29 @@ class SettingsServiceTest extends TestCase {
 	}//end testUpdateSettingsOnlyUpdatesRecognizedKeys()
 
 	/**
+	 * A renamed money key reads its legacy key until the repair carried it, and only then (REQ-DQM-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 */
+	public function testARenamedMoneyKeyFallsBackToItsLegacyKey(): void {
+		$stored = ['dwangsom_uitbetaling_schema' => '42'];
+		$this->appConfig->method('hasKey')->willReturnCallback(static function (string $app, string $key) use (&$stored): bool {
+			return array_key_exists($key, $stored);
+		});
+		$this->appConfig->method('getValueString')->willReturnCallback(static function (string $app, string $key, string $default = '') use (&$stored): string {
+			return ($stored[$key] ?? $default);
+		});
+
+		$this->assertSame(expected: '42', actual: $this->service->getConfigValue('payout_schema'));
+
+		$stored['payout_schema'] = '';
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('payout_schema'), message: 'A current key an admin cleared is not overridden by the legacy one.');
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('case_schema'), message: 'A key with no legacy name reads only itself.');
+	}//end testARenamedMoneyKeyFallsBackToItsLegacyKey()
+
+	/**
 	 * Test that getConfigValue delegates to appConfig correctly.
 	 *
 	 * @return void
@@ -465,6 +489,40 @@ class SettingsServiceTest extends TestCase {
 		$this->assertStringContainsString('Import failed', $result['message']);
 		$this->assertStringContainsString('setSearchable', $result['message']);
 	}//end testLoadConfigurationReportsAnErrorRatherThanLettingItEscape()
+
+	/**
+	 * An unreachable ConfigurationService is answered, and a success names the mapped count.
+	 *
+	 * @return void
+	 */
+	public function testLoadConfigurationAnswersAnUnreachableServiceAndCountsTheMapping(): void {
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$this->appManager->method('isInstalled')->willReturn(true);
+
+		$configurationService = $this->createMock(DossiqConfigurationServiceStub::class);
+		$configurationService->method('importFromApp')->willReturn(['registers' => [], 'schemas' => []]);
+		$reachable = false;
+		$this->container->method('get')->willReturnCallback(
+			static function (string $class) use ($configurationService, &$reachable) {
+				if ($class === 'OCA\OpenRegister\Service\ConfigurationService' && $reachable === true) {
+					return $configurationService;
+				}
+
+				throw new \RuntimeException('not resolvable: ' . $class);
+			}
+		);
+
+		$this->assertSame(
+			['success' => false, 'message' => 'Could not access ConfigurationService: not resolvable: OCA\OpenRegister\Service\ConfigurationService'],
+			$this->service->loadConfiguration()
+		);
+
+		$reachable = true;
+		$result    = $this->service->loadConfiguration(force: true);
+		$this->assertSame(['success', 'message', 'version', 'configured', 'result'], array_keys($result));
+		$this->assertSame('Configuration imported and auto-configured (' . $result['configured'] . ' schemas mapped)', $result['message']);
+		$this->assertSame(['registers' => [], 'schemas' => []], $result['result']);
+	}//end testLoadConfigurationAnswersAnUnreachableServiceAndCountsTheMapping()
 
 
 	/**

@@ -438,6 +438,101 @@ class DocumentProjectionServiceTest extends TestCase {
 	}//end testTheFirstJoinMovesAnApiFirstFileIntoTheCase()
 
 	/**
+	 * A move that changes the file id names the new id on the record as read again,
+	 * even when that read already names it, and the old id first when the record named none.
+	 *
+	 * @return void
+	 */
+	public function testAMoveThatChangesTheFileIdIsWrittenBack(): void {
+		$steps = [];
+		$reads = [['id' => self::RECORD_ID, 'fileName' => 'x.pdf', 'fileId' => 900], ['id' => self::RECORD_ID, 'fileName' => 'x.pdf', 'fileId' => 901, 'title' => 'again']];
+		$this->store->method('findRecord')->willReturnCallback(
+			static function () use (&$reads, &$steps): ?array {
+				$steps[] = 'read';
+				return array_shift($reads);
+			}
+		);
+		$moved = $this->createMock(originalClassName: File::class);
+		$moved->method('getId')->willReturn(901);
+		$node = $this->createMock(originalClassName: File::class);
+		$node->method('getId')->willReturn(900);
+		$node->method('move')->willReturnCallback(
+			static function (string $target) use (&$steps, $moved): File {
+				$steps[] = 'move to ' . $target;
+				return $moved;
+			}
+		);
+		$own = $this->createMock(originalClassName: Folder::class);
+		$own->method('nodeExists')->willReturn(true);
+		$own->method('get')->willReturn($node);
+		$caseFolder = $this->createMock(originalClassName: Folder::class);
+		$caseFolder->method('getPath')->willReturn('/case');
+		$this->folders = [self::RECORD_ID => $own, self::CASE_ID => $caseFolder];
+		$this->store->method('saveRecord')->willReturnCallback(
+			static function (array $record) use (&$steps): string {
+				$steps[] = 'save ' . json_encode($record);
+				return self::RECORD_ID;
+			}
+		);
+
+		$this->assertTrue(condition: $this->service->homeDocument(recordId: self::RECORD_ID, caseId: self::CASE_ID));
+		$this->assertSame(
+			expected: ['read', 'move to /case/x.pdf', 'read', 'save ' . json_encode(['id' => self::RECORD_ID, 'fileName' => 'x.pdf', 'fileId' => 901, 'title' => 'again'])],
+			actual: $steps
+		);
+
+		$steps = [];
+		$reads = [['id' => self::RECORD_ID, 'fileName' => 'x.pdf'], null];
+		$this->assertTrue(condition: $this->service->homeDocument(recordId: self::RECORD_ID, caseId: self::CASE_ID));
+		$this->assertSame(
+			expected: [
+				'read',
+				'save ' . json_encode(['id' => self::RECORD_ID, 'fileName' => 'x.pdf', 'fileId' => 900]),
+				'move to /case/x.pdf',
+				'read',
+				'save ' . json_encode(['id' => self::RECORD_ID, 'fileName' => 'x.pdf', 'fileId' => 901]),
+			],
+			actual: $steps
+		);
+	}//end testAMoveThatChangesTheFileIdIsWrittenBack()
+
+	/**
+	 * A record that does not name its file yet names it before the move, so the move's own file event finds that
+	 * record instead of projecting a second one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-homed-document-keeps-its-record/specs/document-projection/spec.md#requirement-a-document-names-its-file-before-the-file-moves-into-the-case
+	 */
+	public function testARecordNamesItsFileBeforeTheFileMoves(): void {
+		$steps = [];
+		$this->store->method('findRecord')->willReturn(['id' => self::RECORD_ID, 'fileName' => 'x.pdf']);
+		$node = $this->createMock(originalClassName: File::class);
+		$node->method('getId')->willReturn(900);
+		$node->expects($this->once())->method('move')->willReturnCallback(
+			static function () use (&$steps, $node): File {
+				$steps[] = 'move';
+				return $node;
+			}
+		);
+		$own = $this->createMock(originalClassName: Folder::class);
+		$own->method('nodeExists')->with('x.pdf')->willReturn(true);
+		$own->method('get')->with('x.pdf')->willReturn($node);
+		$caseFolder = $this->createMock(originalClassName: Folder::class);
+		$caseFolder->method('getPath')->willReturn('/openregister/files/Open Registers/R/' . self::CASE_ID);
+		$this->folders = [self::RECORD_ID => $own, self::CASE_ID => $caseFolder];
+		$this->store->expects($this->once())->method('saveRecord')->willReturnCallback(
+			static function (array $record) use (&$steps): string {
+				$steps[] = 'save fileId ' . (string)($record['fileId'] ?? '');
+				return self::RECORD_ID;
+			}
+		);
+
+		$this->assertTrue(condition: $this->service->homeDocument(recordId: self::RECORD_ID, caseId: self::CASE_ID));
+		$this->assertSame(expected: ['save fileId 900', 'move'], actual: $steps);
+	}//end testARecordNamesItsFileBeforeTheFileMoves()
+
+	/**
 	 * @return void
 	 */
 	public function testASecondJoinLeavesTheFileWhereItIs(): void {

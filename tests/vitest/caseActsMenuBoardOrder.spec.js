@@ -30,11 +30,12 @@ describe('the lifecycle menu order', () => {
 		expect(ids).toEqual(['t-decide', 'note', 'finish', 'suspend', 'extend', 'hold', 'resume', 'abort', 'archive', 'reopen'])
 	})
 
-	it('keeps Restore after Archive would have been, before Reopen', () => {
+	it('puts Restore where Reopen stands on an archived case, as the one last entry', () => {
 		const ids = buildActsMenu({ state: STATE, acts: { ...ACTS, archived: true } }).map((entry) => entry.id)
 
 		expect(ids.indexOf('unarchive')).toBeGreaterThan(ids.indexOf('abort'))
-		expect(ids.indexOf('unarchive')).toBeLessThan(ids.indexOf('reopen'))
+		expect(ids).not.toContain('reopen')
+		expect(ids[ids.length - 1]).toBe('unarchive')
 	})
 })
 

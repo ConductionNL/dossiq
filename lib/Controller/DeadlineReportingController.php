@@ -21,17 +21,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\DeadlineReportingService;
-use OCA\Dossiq\Service\Reporting\ReportingAudience;
-use OCA\Dossiq\Service\Term\FirstResponseOutcome;
-use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
+use OCA\Dossiq\Controller\Support\ReportingAudienceGuard;
+use OCA\Dossiq\Kernel\Contracts\DeadlineReportingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\FirstResponseOutcomeInterface;
+use OCA\Dossiq\Kernel\Contracts\PenaltyPaymentRowsInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportingAudienceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -48,29 +49,31 @@ use Throwable;
  * @spec openspec/specs/termijn-reporting/spec.md
  */
 class DeadlineReportingController extends Controller {
+	use ReportingAudienceGuard;
+
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param DeadlineReportingService $service Reporting service.
+	 * @param DeadlineReportingServiceInterface $service Reporting service.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
-	 * @param ReportingAudience $audience Who may read a figure about every case.
-	 * @param FirstResponseOutcome|null $firstResponse The first-response figures.
-	 * @param PenaltyPaymentRows|null   $penaltyPayments The forfeited penalty payments by case.
+	 * @param ReportingAudienceInterface $audience Who may read a figure about every case.
+	 * @param FirstResponseOutcomeInterface|null $firstResponse The first-response figures.
+	 * @param PenaltyPaymentRowsInterface|null   $penaltyPayments The forfeited penalty payments by case.
 	 *        Nullable so an instance that never wired it answers "not available"
 	 *        rather than failing to construct the three reports beside it.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DeadlineReportingService $service,
+		private readonly DeadlineReportingServiceInterface $service,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly ReportingAudience $audience,
-		private readonly ?FirstResponseOutcome $firstResponse = null,
-		private readonly ?PenaltyPaymentRows $penaltyPayments = null,
+		private readonly ReportingAudienceInterface $audience,
+		private readonly ?FirstResponseOutcomeInterface $firstResponse = null,
+		private readonly ?PenaltyPaymentRowsInterface $penaltyPayments = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -94,7 +97,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse The report.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 */
 	public function firstResponseReport(string $caseType = '', string $organisation = ''): JSONResponse {
 		$denied = $this->ensureMayReadReports();
@@ -145,16 +148,7 @@ class DeadlineReportingController extends Controller {
 	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function ensureMayReadReports(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
-		}
-
-		if ($this->audience->isInAudience(user: $user) === false) {
-			return new JSONResponse(['message' => ReportingAudience::REFUSAL], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
+		return $this->refuseOutsideReportingAudience(userSession: $this->userSession, audience: $this->audience);
 	}//end ensureMayReadReports()
 
 	/**
@@ -164,7 +158,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function dashboard(): JSONResponse {
 		$denied = $this->ensureMayReadReports();
@@ -212,7 +206,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function quarterlyReport(string $period = '', ?string $department = null): JSONResponse {
 		$denied = $this->ensureMayReadReports();
@@ -245,7 +239,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function annualStatement(int $year = 0): JSONResponse {
 		$denied = $this->ensureMayReadReports();
@@ -278,7 +272,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/penalty-payment-rows/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
+	 * @spec openspec/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
 	 */
 	public function penaltyPayments(int $year = 0): JSONResponse {
 		$denied = $this->ensureMayReadReports();
@@ -312,7 +306,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for dashboard(); behaviour covered by the dashboard() tests.
 	 */
@@ -332,7 +326,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for quarterlyReport(); behaviour covered by the quarterlyReport() tests.
 	 */
@@ -351,7 +345,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for annualStatement(); behaviour covered by the annualStatement() tests.
 	 */
@@ -371,7 +365,7 @@ class DeadlineReportingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 *
 	 * @contract exclude Deprecated path alias for firstResponseReport(); behaviour covered by the firstResponseReport() tests.
 	 */

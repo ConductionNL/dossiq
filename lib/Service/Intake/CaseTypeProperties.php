@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Throwable;
 
@@ -43,10 +43,10 @@ class CaseTypeProperties {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Names the propertyDefinition schema.
+	 * @param SettingsServiceInterface $settingsService Names the propertyDefinition schema.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
 

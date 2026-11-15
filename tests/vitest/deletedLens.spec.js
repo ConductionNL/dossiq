@@ -47,8 +47,21 @@ describe('the deleted lens', () => {
 		expect(page.route).toBe('/cases/deleted')
 		expect(page.type).toBe('index')
 		expect(page.config.entitySource).toBe('endpoint')
-		expect(page.config.sourceConfig).toEqual({ url: '/apps/dossiq/api/cases/deleted', rowsPath: 'results' })
+		expect(page.config.sourceConfig).toEqual({ url: '/apps/dossiq/api/cases/deleted', rowsPath: 'results', searchParam: 'search' })
 		expect(page.config.register).toBeUndefined()
+	})
+
+	// deleted-cases-read-the-case-table: the All cases page's look over this lens.
+	it('searches through the endpoint, counts its rows and keeps its own saved views', () => {
+		const config = deletedPage().config
+
+		expect(config.sourceConfig.searchParam).toBe('search')
+		expect(config.searchPlaceholder).toBe('Search by case number, title or who deleted it')
+		expect(config.sidebar).toMatchObject({ enabled: true, subtitle: { singular: '{total} deleted case', plural: '{total} deleted cases' } })
+		expect(config.allowSavedViews).toBe(true)
+		expect(config.savedViewsScope).toBe('source:cases-deleted')
+		expect(config.viewModes).toEqual(['table'])
+		expect(config.viewSwitch).toEqual(['table'])
 	})
 
 	it('restores and destroys through a confirm that shows the server\'s refusal', () => {

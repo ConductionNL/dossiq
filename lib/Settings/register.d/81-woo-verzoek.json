@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.12",
+          "version": "1.5.0",
           "slug": "woo-verzoek"
         },
         "macros": [
@@ -120,6 +120,7 @@
           "suspend-for-supplement"
         ],
         "title": "Woo-verzoek",
+        "shortName": "Woo",
         "colour": "red",
         "icon": "FileDocumentOutline",
         "description": "Behandeling van verzoeken op grond van de Wet open overheid",
@@ -127,6 +128,7 @@
         "trigger": "Ontvangst van een WOO-verzoek van een burger, journalist of organisatie",
         "subject": "Openbaarmaking van overheidsinformatie",
         "processingDeadline": "P28D",
+        "goalPrompt": "no goals yet: what does the requester want to change?",
         "handling": {
           "defaultGroup": "behandelaars"
         },
@@ -167,6 +169,12 @@
               "assigneeMay": "update"
             },
             {
+              "schemaKey": "stopping_rule_schema",
+              "caseField": "case",
+              "readers": "assignee",
+              "assigneeMay": "update"
+            },
+            {
               "schemaKey": "document_review_schema",
               "caseField": "case",
               "readers": "own",
@@ -191,6 +199,11 @@
               "caseField": "case",
               "readers": "assignee",
               "assigneeMay": "update"
+            },
+            {
+              "schemaKey": "woo_delivered_set_schema",
+              "caseField": "case",
+              "readers": "assignee"
             }
           ],
           "reviewers": [
@@ -209,6 +222,8 @@
             "templateNamespace": "dossiq",
             "format": "docx",
             "documentType": "Besluit",
+            "signing": { "nl": "Via LibreSign, na de paraaf", "en": "Through LibreSign, after the initials" },
+            "delivery": { "nl": "Berichtenbox van MijnOverheid", "en": "MijnOverheid message box" },
             "title": "Woo-besluit",
             "dataKey": "wooDecision",
             "fields": [
@@ -345,132 +360,6 @@
             ]
           }
         },
-        "recordImports": [
-          {
-            "key": "opencatalogi-woo-requests",
-            "sourceApp": "opencatalogi",
-            "sourceRegister": "publication",
-            "sourceSchema": "wooRequest",
-            "statusField": "status",
-            "statuses": {
-              "received": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b001",
-                "term": "running"
-              },
-              "in_progress": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b004",
-                "term": "running"
-              },
-              "awaiting_clarification": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b002",
-                "term": "suspended"
-              },
-              "decided": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b008",
-                "term": "closed"
-              },
-              "withdrawn": {
-                "status": "3c0f5a00-0000-4000-a000-00000000b008",
-                "term": "closed",
-                "result": "3c0f5a00-0000-4000-a000-00000000c004"
-              }
-            },
-            "fields": [
-              {
-                "to": "title",
-                "from": "requestedInformation",
-                "maxLength": 120,
-                "required": true
-              },
-              {
-                "to": "description",
-                "from": "requestedInformation"
-              },
-              {
-                "to": "startDate",
-                "from": "receivedAt",
-                "as": "date",
-                "required": true
-              },
-              {
-                "to": "receivedAt",
-                "from": "receivedAt",
-                "as": "dateTime"
-              },
-              {
-                "to": "intakeChannel",
-                "from": "channel",
-                "values": {
-                  "web": "website",
-                  "email": "email",
-                  "post": "post",
-                  "counter": "balie",
-                  "phone": "phone"
-                },
-                "default": "other"
-              },
-              {
-                "to": "extensionCount",
-                "from": "extensionCount",
-                "as": "integer"
-              },
-              {
-                "to": "endDate",
-                "from": "decidedAt",
-                "as": "date"
-              },
-              {
-                "to": "wooRequest.onderwerp",
-                "from": "requestedInformation",
-                "maxLength": 120
-              },
-              {
-                "to": "wooRequest.omschrijving",
-                "from": "requestedInformation"
-              },
-              {
-                "to": "wooRequest.origin",
-                "value": "opencatalogi"
-              },
-              {
-                "to": "wooRequest.originReference",
-                "from": "@id"
-              },
-              {
-                "to": "wooRequest.verzoekerNaam",
-                "from": "requesterName"
-              },
-              {
-                "to": "wooRequest.verzoekerEmail",
-                "from": "requesterEmail"
-              },
-              {
-                "to": "wooRequest.verzoekerTelefoon",
-                "from": "requesterPhone"
-              },
-              {
-                "to": "wooRequest.verzoekerAdres",
-                "from": "requesterAddress"
-              }
-            ],
-            "matchField": "wooRequest.originReference",
-            "formerReference": {
-              "application": "opencatalogi",
-              "from": "reference"
-            },
-            "term": {
-              "endDate": "dueAt",
-              "extensions": "extensionCount",
-              "extensionReason": "extensionReason",
-              "closedOn": "decidedAt"
-            },
-            "stamp": {
-              "caseId": "migratedTo",
-              "at": "migratedAt"
-            },
-            "sourceTimerField": "termTimer"
-          }
-        ],
         "publicationRequired": true,
         "internalOrExternal": "extern",
         "handlerAction": "Beoordelen en beslissen op WOO-verzoek",
@@ -545,6 +434,10 @@
             {
               "key": "deadline",
               "order": "asc"
+            },
+            {
+              "key": "receivedAt",
+              "order": "asc"
             }
           ],
           "quickFilters": [
@@ -588,7 +481,9 @@
               }
             }
           ]
-        }
+        },
+        "version": 1,
+        "supersededBy": "3c0f5a00-0000-4000-a000-00000000a002"
       },
       {
         "@self": {
@@ -611,6 +506,7 @@
         },
         "id": "3c0f5a00-0000-4000-a000-00000000b001",
         "uuid": "3c0f5a00-0000-4000-a000-00000000b001",
+        "phase": "Ontvangst",
         "name": "Ontvangst",
         "description": "Verzoek ontvangen, ontvangstbevestiging verzenden",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
@@ -629,6 +525,7 @@
         },
         "id": "3c0f5a00-0000-4000-a000-00000000b002",
         "uuid": "3c0f5a00-0000-4000-a000-00000000b002",
+        "phase": "Ontvangst",
         "name": "Beoordeling ontvankelijkheid",
         "description": "Controleren of het verzoek aan de formele vereisten voldoet",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
@@ -647,6 +544,7 @@
         },
         "id": "3c0f5a00-0000-4000-a000-00000000b003",
         "uuid": "3c0f5a00-0000-4000-a000-00000000b003",
+        "phase": "Beoordeling",
         "name": "Zoeken documenten",
         "description": "Zoeken en verzamelen van relevante documenten",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
@@ -665,6 +563,7 @@
         },
         "id": "3c0f5a00-0000-4000-a000-00000000b004",
         "uuid": "3c0f5a00-0000-4000-a000-00000000b004",
+        "phase": "Beoordeling",
         "name": "Beoordelen documenten",
         "description": "Per document beoordelen of openbaarmaking mogelijk is",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
@@ -683,6 +582,7 @@
         },
         "id": "3c0f5a00-0000-4000-a000-00000000b005",
         "uuid": "3c0f5a00-0000-4000-a000-00000000b005",
+        "phase": "Beoordeling",
         "name": "Lakken / Anonimiseren",
         "description": "Gevoelige informatie in documenten anonimiseren",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
@@ -701,6 +601,7 @@
         },
         "id": "3c0f5a00-0000-4000-a000-00000000b006",
         "uuid": "3c0f5a00-0000-4000-a000-00000000b006",
+        "phase": "Besluit",
         "name": "Besluit",
         "description": "Formeel besluit nemen over openbaarmaking",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
@@ -719,6 +620,7 @@
         },
         "id": "3c0f5a00-0000-4000-a000-00000000b007",
         "uuid": "3c0f5a00-0000-4000-a000-00000000b007",
+        "phase": "Verzending",
         "name": "Publicatie",
         "description": "Goedgekeurde documenten publiceren in de leeskamer",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
@@ -751,7 +653,8 @@
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-openbaar-gemaakt"
+          "slug": "woo-verzoek-openbaar-gemaakt",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c001",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c001",
@@ -759,13 +662,15 @@
         "description": "De gevraagde documenten zijn openbaar gemaakt.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P5Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/3fc7002b-31b6-4abe-82af-b6d46a9a1736"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-deels-openbaar-gemaakt"
+          "slug": "woo-verzoek-deels-openbaar-gemaakt",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c002",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c002",
@@ -773,13 +678,15 @@
         "description": "Een deel van de gevraagde informatie is openbaar gemaakt. Wat niet openbaar is, staat met de reden in het besluit.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P5Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/3fc7002b-31b6-4abe-82af-b6d46a9a1736"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-niet-openbaar-gemaakt"
+          "slug": "woo-verzoek-niet-openbaar-gemaakt",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c003",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c003",
@@ -787,13 +694,15 @@
         "description": "De gevraagde documenten zijn niet openbaar gemaakt. De reden staat in het besluit.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P1Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/9d6e6675-8764-4c55-9a47-626c2dc399f8"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "resultType",
-          "slug": "woo-verzoek-ingetrokken"
+          "slug": "woo-verzoek-ingetrokken",
+          "version": "1.1.0"
         },
         "id": "3c0f5a00-0000-4000-a000-00000000c004",
         "uuid": "3c0f5a00-0000-4000-a000-00000000c004",
@@ -801,7 +710,8 @@
         "description": "Het verzoek is ingetrokken.",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
         "archivalAction": "vernietigen",
-        "archivalPeriod": "P5Y"
+        "archivalPeriod": "P1Y",
+        "selectionListClass": "https://selectielijst.openzaak.nl/api/v1/resultaten/6f5d3859-78c5-467a-9e2f-43d71cf52a6c"
       },
       {
         "@self": {
@@ -839,7 +749,8 @@
         "name": "verzoekerType",
         "definition": "Type verzoeker",
         "description": "Categorie: burger, journalist of organisatie",
-        "propertyType": "string",
+        "propertyType": "enum",
+        "enumValues": ["burger", "journalist", "organisatie"],
         "isRequired": false
       },
       {
@@ -918,7 +829,8 @@
         "name": "gewensteVorm",
         "definition": "Gewenste vorm van verstrekking",
         "description": "Hoe de verzoeker de documenten wil ontvangen: papier, digitaal of inzage",
-        "propertyType": "string",
+        "propertyType": "enum",
+        "enumValues": ["papier", "digitaal", "inzage"],
         "isRequired": false,
         "defaultValue": "digitaal"
       }

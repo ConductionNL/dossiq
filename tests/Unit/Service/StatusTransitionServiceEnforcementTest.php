@@ -75,6 +75,8 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * The role check and the side effects, asked of one execute() call.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionStep
  * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
  * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @covers \OCA\Dossiq\Service\Transitions\TransitionAuthorizer

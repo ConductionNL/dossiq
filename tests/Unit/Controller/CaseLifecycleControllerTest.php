@@ -156,7 +156,7 @@ class CaseLifecycleControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function testSuspendPassesThePauseReasonAndRefusesAnUndeclaredOne(): void {
 		$request = $this->createMock(IRequest::class);

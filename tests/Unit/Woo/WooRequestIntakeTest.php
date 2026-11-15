@@ -167,6 +167,7 @@ class WooRequestIntakeTest extends TestCase {
 		$settings->method('getWooPublicationConfigValue')->willReturnCallback(
 			fn (string $key): string => SettingsService::WOO_PUBLICATION_DEFAULTS[$key] ?? ''
 		);
+		$settings->method('getPortalName')->willReturn('Mijn Zuiddrecht');
 
 		return $settings;
 	}//end settingsOn()
@@ -316,6 +317,33 @@ class WooRequestIntakeTest extends TestCase {
 		);
 		self::assertSame('https://gemeente.test/index.php/apps/dossiq/cases/' . $result['caseId'], $result['caseUrl']);
 	}//end testARequestOpensAWooCaseForTheResident()
+
+	/**
+	 * A portal request records how the requester logged in, by the asserted
+	 * audience, and the portal's name. An unknown audience names no means,
+	 * and a request from elsewhere names neither.
+	 *
+	 * @return void
+	 */
+	public function testThePortalCaseRecordsHowTheRequesterLoggedInAndThePortal(): void {
+		$resident = $this->intake->start($this->request(overrides: ['audience' => 'client']));
+		$case = $this->store->row(schema: 'case', uuid: $resident['caseId']);
+		self::assertSame(expected: 'digid', actual: $case['intakeIdentification']);
+		self::assertSame(expected: 'Mijn Zuiddrecht', actual: $case['intakeSourceName']);
+
+		$business = $this->intake->start($this->request(overrides: ['collectionId' => null, 'audience' => 'business']));
+		self::assertSame(expected: 'eherkenning', actual: $this->store->row(schema: 'case', uuid: $business['caseId'])['intakeIdentification']);
+
+		$unknown = $this->intake->start($this->request(overrides: ['collectionId' => null, 'audience' => 'supplier']));
+		$case = $this->store->row(schema: 'case', uuid: $unknown['caseId']);
+		self::assertArrayNotHasKey(key: 'intakeIdentification', array: $case);
+		self::assertSame(expected: 'Mijn Zuiddrecht', actual: $case['intakeSourceName']);
+
+		$converted = $this->intake->start($this->request(overrides: ['collectionId' => null, 'origin' => 'pipelinq', 'audience' => 'client']));
+		$case = $this->store->row(schema: 'case', uuid: $converted['caseId']);
+		self::assertArrayNotHasKey(key: 'intakeIdentification', array: $case);
+		self::assertArrayNotHasKey(key: 'intakeSourceName', array: $case);
+	}//end testThePortalCaseRecordsHowTheRequesterLoggedInAndThePortal()
 
 	/**
 	 * A request filed for a company branch stamps the branch on the case, so a

@@ -41,6 +41,8 @@ vi.mock('@nextcloud/axios', () => ({
 	default: { get: (...a) => mockGet(...a), post: (...a) => mockPost(...a) },
 }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
+const mockBusEmit = vi.fn()
+vi.mock('@nextcloud/event-bus', () => ({ emit: (...a) => mockBusEmit(...a), subscribe: vi.fn(), unsubscribe: vi.fn() }))
 vi.mock('@nextcloud/auth', () => ({
 	getCurrentUser: () => ({ uid: 'handler-1', displayName: 'Petra de Vries' }),
 }))
@@ -167,6 +169,19 @@ describe('PortalMessageDialog', () => {
 		expect(wrapper.emitted('close')).toBeTruthy()
 	})
 
+	it('tells the page a reply on this case was sent, so a saved draft is cleared (DqZaakContact)', async () => {
+		mockBusEmit.mockReset()
+		const wrapper = mountDialog()
+		await flushPromises()
+
+		wrapper.vm.form.subject = 'Re: Termijn'
+		wrapper.vm.form.content = 'Within two weeks.'
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(mockBusEmit).toHaveBeenCalledWith('cn:conversation:reply-sent', { objectId: 'case-1' })
+	})
+
 	it('reads the case from the route when the action passes the unresolved token', async () => {
 		const wrapper = mount(PortalMessageDialog, {
 			props: { caseId: '@objectId', open: true },
@@ -260,5 +275,48 @@ describe('Reply on a resident message in the timeline', () => {
 		})
 		expect(reply.doneEvent).toBe('sent')
 		expect(reply.closesFollowUp).toBe(true)
+	})
+
+	it('also logs the answer as a contact moment on the case when asked to', async () => {
+		mockPost.mockImplementation(async (url) => (url.endsWith('/contact-moments') ? { data: { contactmoment: { id: 'cm-1' } } } : { data: { id: 'msg-9' } }))
+		const wrapper = mountDialog({ logContactMoment: true })
+		await flushPromises()
+
+		wrapper.vm.form.content = 'We sent the documents.'
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledTimes(2)
+		const [url, moment] = mockPost.mock.calls[1]
+		expect(url).toContain('/pipelinq/contact-moments')
+		expect(moment).toMatchObject({ notificationChannel: 'webformulier', direction: 'outbound', summary: 'We sent the documents.', visibleToApplicant: true })
+		expect(typeof moment.startTime).toBe('string')
+		expect(wrapper.emitted('close')).toBeTruthy()
+	})
+
+	it('logs nothing without the option', async () => {
+		const wrapper = mountDialog()
+		await flushPromises()
+		wrapper.vm.form.content = 'Hello'
+		await wrapper.vm.send()
+		await flushPromises()
+		expect(mockPost).toHaveBeenCalledTimes(1)
+	})
+
+	it('says so when the message went but the contact moment did not, and stays open', async () => {
+		mockPost.mockImplementation(async (url) => {
+			if (url.endsWith('/contact-moments')) {
+				throw new Error('500')
+			}
+			return { data: { id: 'msg-9' } }
+		})
+		const wrapper = mountDialog({ logContactMoment: true })
+		await flushPromises()
+		wrapper.vm.form.content = 'Hello'
+		await wrapper.vm.send()
+		await flushPromises()
+		expect(wrapper.emitted('sent')[0][0]).toEqual({ id: 'msg-9' })
+		expect(wrapper.emitted('close')).toBeFalsy()
+		expect(wrapper.vm.error).toBe('The message was sent, but it could not be logged as a contact moment.')
 	})
 })

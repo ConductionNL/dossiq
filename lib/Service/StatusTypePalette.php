@@ -21,19 +21,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+ * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\StatusTypePaletteInterface;
+
 /**
  * The board colour of each shipped status name, and what each shipped row held before.
  *
- * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+ * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
  */
-final class StatusTypePalette {
+final class StatusTypePalette implements StatusTypePaletteInterface {
 
 	/**
 	 * The colour per shipped status name.
@@ -41,7 +43,10 @@ final class StatusTypePalette {
 	 * @var array<string, string>
 	 */
 	public const COLOURS = [
+		'Aangemeld' => 'blue',
+		'Aanvraag ontvangen' => 'blue',
 		'Beroep ontvangen' => 'blue',
+		'Bevestigd' => 'blue',
 		'Melding ontvangen' => 'blue',
 		'Ontvangen' => 'blue',
 		'Ontvangst' => 'blue',
@@ -53,8 +58,12 @@ final class StatusTypePalette {
 		'Beoordelen documenten' => 'purple',
 		'Beoordeling' => 'purple',
 		'Beoordeling ontvankelijkheid' => 'purple',
+		'Besluit in voorbereiding' => 'purple',
+		'Bijstand loopt' => 'purple',
 		'Constatering' => 'purple',
+		'Evaluatie' => 'purple',
 		'Hercontrole' => 'purple',
+		'Hoorgesprek' => 'purple',
 		'Hoorzitting afgerond' => 'purple',
 		'Identiteit vastgesteld' => 'purple',
 		'In behandeling' => 'purple',
@@ -68,15 +77,22 @@ final class StatusTypePalette {
 		'Inspectie fase 2' => 'purple',
 		'Inspectie fase 3' => 'purple',
 		'Investigation' => 'purple',
+		'Jeugdhulp loopt' => 'purple',
 		'Onderzoek' => 'purple',
 		'Ontvankelijkheidstoets' => 'purple',
+		'Oordeel' => 'purple',
 		'Opvolging' => 'purple',
 		'Overleg' => 'purple',
 		'Parafering' => 'purple',
+		'Plan van aanpak' => 'purple',
 		'Rapport' => 'purple',
+		'Re-integratie loopt' => 'purple',
+		'Toetsing' => 'purple',
+		'Toetsing afgerond' => 'purple',
 		'Uitvoering' => 'purple',
 		'Veiligheidstoets' => 'purple',
 		'Verweerschrift in voorbereiding' => 'purple',
+		'Voorschotten' => 'purple',
 		'Voorstel opstellen' => 'purple',
 		'Zitting afgerond' => 'purple',
 		'Zoeken documenten' => 'purple',
@@ -89,12 +105,14 @@ final class StatusTypePalette {
 		'Lakken / Anonimiseren' => 'orange',
 		'Ter goedkeuring' => 'orange',
 		'Vergadering' => 'orange',
+		'Verlenging aangevraagd' => 'orange',
 		'Verweerschrift ingediend' => 'orange',
 		'Vooraankondiging' => 'orange',
 		'Wacht op aanvulling' => 'orange',
 		'Zienswijze' => 'orange',
 		'Zitting gepland' => 'orange',
 		'Advies uitgebracht' => 'teal',
+		'Antwoordbrief' => 'teal',
 		'Beslissing op bezwaar' => 'teal',
 		'Besluit' => 'teal',
 		'Besluit genomen' => 'teal',
@@ -112,12 +130,14 @@ final class StatusTypePalette {
 		'Completed' => 'green',
 		'Gegund' => 'green',
 		'Publicatie' => 'green',
+		'Publiceren' => 'green',
 		'Schikking' => 'green',
 		'Afgewezen' => 'red',
 		'Gestrand' => 'red',
 		'Invordering' => 'red',
 		'Niet-ontvankelijk' => 'red',
 		'Verbeuring' => 'red',
+		'Beëindigd' => 'grey',
 		'Gearchiveerd' => 'grey',
 		'Ingetrokken' => 'grey',
 	];
@@ -181,7 +201,7 @@ final class StatusTypePalette {
 	 *
 	 * @return string|null The colour to write, or null.
 	 *
-	 * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
 	 */
 	public function recolour(array $row): ?string {
 		$target = $this->boardColourOf(row: $row);

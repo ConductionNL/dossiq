@@ -7,7 +7,7 @@
  * rests on under the days, and keeps the free text behind "Other". A case type
  * without reasons keeps the free-text reason alone.
  *
- * @spec openspec/changes/suspend-picks-a-pause-reason/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 import { readTransitionInputs } from '@conduction/nextcloud-vue'
@@ -58,6 +58,14 @@ describe('the pause reason choice', () => {
 
 	it('shows the picked reason\'s legal basis under the days', () => {
 		expect(input(SUSPEND, 'days').helperFrom).toEqual({ input: 'pauseReason', key: 'legalBasis' })
+	})
+
+	it('names Awb 4:5 under the days when no reason is picked (DqVolgendeStap "Awb 4:5, hersteltermijn")', () => {
+		expect(input(SUSPEND, 'days').description).toBe('Awb 4:5, recovery period')
+	})
+
+	it('fills the days with the picked reason\'s default (4.1)', () => {
+		expect(input(SUSPEND, 'days').prefillFrom).toEqual({ input: 'pauseReason', key: 'defaultDays' })
 	})
 
 	it('asks for the free text without reasons, and with them only after Other', () => {
@@ -135,6 +143,9 @@ describe('suspending from the lifecycle menu', () => {
 			context: { pauseReasons: REASONS },
 			columns: 2,
 			markRequired: false,
+			// Board DqVolgendeStap marks the inputs that are NOT required:
+			// "Dagen die de aanvrager krijgt (niet verplicht)".
+			markOptional: true,
 			'data-testid': 'case-act-fields-suspend',
 		})
 	})

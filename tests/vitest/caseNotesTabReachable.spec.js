@@ -90,3 +90,9 @@ describe('the note push is reachable from the rendered notes tab', () => {
 		wrapper.unmount()
 	})
 })
+
+describe('the case notes add form', () => {
+	it('waits behind "Add note", as DqZaakEmail draws it (nextcloud-vue notes-tab-composer-button)', () => {
+		expect(notesPanel.props.composer).toBe('button')
+	})
+})

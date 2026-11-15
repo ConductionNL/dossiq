@@ -56,9 +56,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Email\CaseEmailRepository;
-use OCA\Dossiq\Service\Email\IntakeLog;
-use OCA\Dossiq\Service\Email\UnmatchedMailIntake;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailRepositoryInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
+use OCA\Dossiq\Kernel\Contracts\UnmatchedMailIntakeInterface;
+use OCA\Dossiq\Listener\Support\EventGetters;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
@@ -114,16 +115,16 @@ class MessageReceivedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseEmailRepository      $cases          Resolves a case reference and files the message.
-	 * @param UnmatchedMailIntake      $unmatched      The fallback rule, shared with the poller.
-	 * @param IntakeLog                $log            The per-message record, and the duplicate guard.
+	 * @param CaseEmailRepositoryInterface      $cases          Resolves a case reference and files the message.
+	 * @param UnmatchedMailIntakeInterface      $unmatched      The fallback rule, shared with the poller.
+	 * @param IntakeLogInterface                $log            The per-message record, and the duplicate guard.
 	 * @param LoggerInterface          $logger         Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 */
 	public function __construct(
-		private readonly CaseEmailRepository $cases,
-		private readonly UnmatchedMailIntake $unmatched,
-		private readonly IntakeLog $log,
+		private readonly CaseEmailRepositoryInterface $cases,
+		private readonly UnmatchedMailIntakeInterface $unmatched,
+		private readonly IntakeLogInterface $log,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
@@ -167,73 +168,7 @@ class MessageReceivedListener implements IEventListener {
 		}
 
 		try {
-			$message = $this->arrayFrom(event: $event, method: 'getMessage');
-			$messageUuid = $this->stringFrom(event: $event, method: 'getMessageUuid');
-
-			$already = $this->alreadyFiled(messageUuid: $messageUuid);
-			if ($already !== null) {
-				// 🔴 THE GUARD AGAINST FILING TWICE. The poller and the event
-				// can both reach the same message on an instance running both
-				// paths. The SAME case is answered back, so integriq marks the
-				// second offer linked where the first one filed it rather than
-				// holding it; answering declined would send a message integriq
-				// already has a home for back to `unassigned`.
-				if ($already === '') {
-					$event->setOutcome(self::OUTCOME_DECLINED);
-					return;
-				}
-
-				$event->setOutcome(self::OUTCOME_LINKED, $already);
-				return;
-			}
-
-			$reference = $this->stringFrom(event: $event, method: 'getDetectedReference');
-			if ($reference !== '') {
-				$caseId = trim((string)$this->cases->findCaseIdByIdentifier($reference));
-				if ($caseId !== '') {
-					$this->file(caseId: $caseId, message: $message);
-					$this->record(
-						messageUuid: $messageUuid,
-						message: $message,
-						outcome: IntakeLog::OUTCOME_CASE,
-						reason: 'Linked to the case its reference names (' . $reference . ').',
-						caseId: $caseId
-					);
-					$event->setOutcome(self::OUTCOME_LINKED, $caseId);
-					return;
-				}
-			}
-
-			$created = trim((string)$this->unmatched->caseFor($message));
-			if ($created !== '') {
-				$this->file(caseId: $created, message: $message);
-				$this->record(
-					messageUuid: $messageUuid,
-					message: $message,
-					outcome: IntakeLog::OUTCOME_CASE,
-					reason: 'Opened as a new case of the fallback case type.',
-					caseId: $created
-				);
-				$event->setOutcome(self::OUTCOME_CREATED, $created);
-				return;
-			}
-
-			$reason = $this->declineReason(reference: $reference);
-			$this->record(
-				messageUuid: $messageUuid,
-				message: $message,
-				outcome: IntakeLog::OUTCOME_INBOX,
-				reason: $reason,
-				caseId: ''
-			);
-
-			// 🔴 THE REASON GOES IN DOSSIQ'S OWN LOG, because integriq's
-			// contract has nowhere to put one: `setOutcome()` takes an outcome
-			// and an object reference and nothing else. So the decline that
-			// reaches integriq is bare, and the sentence saying WHY is on the
-			// intake log entry this app just wrote, which is the surface a
-			// handler opens anyway.
-			$event->setOutcome(self::OUTCOME_DECLINED);
+			$this->settle(event: $event);
 		} catch (Throwable $e) {
 			// The slot STAYS EMPTY: see the class docblock. After an internal
 			// failure no decision was made, and a `declined` here would be a
@@ -244,6 +179,201 @@ class MessageReceivedListener implements IEventListener {
 			);
 		}
 	}//end answer()
+
+	/**
+	 * Answer the offer: filed before, linked by its reference, opened as a new case, or declined.
+	 *
+	 * @param Event $event The integriq event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function settle(Event $event): void {
+		$filing = $this->filingOf(event: $event);
+
+		if ($this->answerFiledBefore(event: $event, filing: $filing) === true) {
+			return;
+		}
+
+		if ($this->linkByReference(event: $event, filing: $filing) === true) {
+			return;
+		}
+
+		if ($this->openFallbackCase(event: $event, filing: $filing) === true) {
+			return;
+		}
+
+		$this->decline(event: $event, filing: $filing);
+	}//end settle()
+
+	/**
+	 * The offered message, its id and the reference integriq detected in it.
+	 *
+	 * @param Event $event The integriq event.
+	 *
+	 * @return MessageFiling
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function filingOf(Event $event): MessageFiling {
+		$getters = new EventGetters();
+
+		$filing = new MessageFiling();
+		$filing->message = $getters->arrayFrom(event: $event, method: 'getMessage');
+		$filing->messageUuid = $getters->stringFrom(event: $event, method: 'getMessageUuid');
+		$filing->reference = $getters->stringFrom(event: $event, method: 'getDetectedReference');
+
+		return $filing;
+	}//end filingOf()
+
+	/**
+	 * Answer a message this app filed before with the same case, or declined.
+	 *
+	 * 🔴 THE GUARD AGAINST FILING TWICE. The poller and the event can both
+	 * reach the same message on an instance running both paths. The SAME case
+	 * is answered back, so integriq marks the second offer linked where the
+	 * first one filed it rather than holding it; answering declined would send
+	 * a message integriq already has a home for back to `unassigned`.
+	 *
+	 * @param Event         $event  The integriq event.
+	 * @param MessageFiling $filing The offered message.
+	 *
+	 * @return bool True when the offer was answered.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function answerFiledBefore(Event $event, MessageFiling $filing): bool {
+		$already = $this->alreadyFiled(messageUuid: $filing->messageUuid);
+		if ($already === null) {
+			return false;
+		}
+
+		$filing->caseId = $already;
+		$filing->answer = self::OUTCOME_LINKED;
+		if ($already === '') {
+			$filing->answer = self::OUTCOME_DECLINED;
+		}
+
+		$this->tell(event: $event, filing: $filing);
+		return true;
+	}//end answerFiledBefore()
+
+	/**
+	 * File the message on the case its reference names, and answer linked.
+	 *
+	 * @param Event         $event  The integriq event.
+	 * @param MessageFiling $filing The offered message.
+	 *
+	 * @return bool True when the reference named a case.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function linkByReference(Event $event, MessageFiling $filing): bool {
+		if ($filing->reference === '') {
+			return false;
+		}
+
+		$caseId = trim((string)$this->cases->findCaseIdByIdentifier($filing->reference));
+		if ($caseId === '') {
+			return false;
+		}
+
+		$filing->caseId = $caseId;
+		$filing->reason = 'Linked to the case its reference names (' . $filing->reference . ').';
+		$filing->answer = self::OUTCOME_LINKED;
+		$this->fileOnCase(filing: $filing);
+		$this->tell(event: $event, filing: $filing);
+		return true;
+	}//end linkByReference()
+
+	/**
+	 * Open a case of the fallback case type for the message, and answer created.
+	 *
+	 * @param Event         $event  The integriq event.
+	 * @param MessageFiling $filing The offered message.
+	 *
+	 * @return bool True when a case was opened.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function openFallbackCase(Event $event, MessageFiling $filing): bool {
+		$created = trim((string)$this->unmatched->caseFor($filing->message));
+		if ($created === '') {
+			return false;
+		}
+
+		$filing->caseId = $created;
+		$filing->reason = 'Opened as a new case of the fallback case type.';
+		$filing->answer = self::OUTCOME_CREATED;
+		$this->fileOnCase(filing: $filing);
+		$this->tell(event: $event, filing: $filing);
+		return true;
+	}//end openFallbackCase()
+
+	/**
+	 * File the message on its case and log it there.
+	 *
+	 * @param MessageFiling $filing The message, with its case and reason.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function fileOnCase(MessageFiling $filing): void {
+		$this->file(caseId: $filing->caseId, message: $filing->message);
+		$filing->logOutcome = IntakeLogInterface::OUTCOME_CASE;
+		$this->record(filing: $filing);
+	}//end fileOnCase()
+
+	/**
+	 * Log the message to the inbox with the reason, and answer declined.
+	 *
+	 * 🔴 THE REASON GOES IN DOSSIQ'S OWN LOG, because integriq's contract has
+	 * nowhere to put one: `setOutcome()` takes an outcome and an object
+	 * reference and nothing else. So the decline that reaches integriq is
+	 * bare, and the sentence saying WHY is on the intake log entry this app
+	 * just wrote, which is the surface a handler opens anyway.
+	 *
+	 * @param Event         $event  The integriq event.
+	 * @param MessageFiling $filing The offered message.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function decline(Event $event, MessageFiling $filing): void {
+		$filing->caseId = '';
+		$filing->logOutcome = IntakeLogInterface::OUTCOME_INBOX;
+		$filing->reason = $this->declineReason(reference: $filing->reference);
+		$this->record(filing: $filing);
+
+		$filing->answer = self::OUTCOME_DECLINED;
+		$this->tell(event: $event, filing: $filing);
+	}//end decline()
+
+	/**
+	 * Tell integriq the outcome, with the case when there is one.
+	 *
+	 * @param Event         $event  The integriq event; answer() checked it can take an outcome.
+	 * @param MessageFiling $filing The message, with its answer and case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function tell(Event $event, MessageFiling $filing): void {
+		if (method_exists($event, 'setOutcome') === false) {
+			return;
+		}
+
+		if ($filing->caseId === '') {
+			$event->setOutcome($filing->answer);
+			return;
+		}
+
+		$event->setOutcome($filing->answer, $filing->caseId);
+	}//end tell()
 
 	/**
 	 * The case this message was already filed on, when it was.
@@ -287,29 +417,21 @@ class MessageReceivedListener implements IEventListener {
 	/**
 	 * Write the per-message record, which is also the duplicate guard.
 	 *
-	 * @param string               $messageUuid The integriq message uuid.
-	 * @param array<string, mixed> $message     The message.
-	 * @param string               $outcome     The log outcome.
-	 * @param string               $reason      Why, in a sentence.
-	 * @param string               $caseId      The case it became, or ''.
+	 * @param MessageFiling $filing The message, with its outcome, reason and case.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
-	private function record(
-		string $messageUuid,
-		array $message,
-		string $outcome,
-		string $reason,
-		string $caseId,
-	): void {
+	private function record(MessageFiling $filing): void {
 		$this->log->recordChannelMessage(
 			channel: self::CHANNEL,
-			channelMessageId: $messageUuid,
-			sender: $this->correspondent(message: $message),
-			subject: trim((string)($message['subject'] ?? '')),
-			outcome: $outcome,
-			reason: $reason,
-			caseId: $caseId
+			channelMessageId: $filing->messageUuid,
+			sender: $this->correspondent(message: $filing->message),
+			subject: trim((string)($filing->message['subject'] ?? '')),
+			outcome: $filing->logOutcome,
+			reason: $filing->reason,
+			caseId: $filing->caseId
 		);
 	}//end record()
 
@@ -353,48 +475,4 @@ class MessageReceivedListener implements IEventListener {
 
 		return '';
 	}//end correspondent()
-
-	/**
-	 * Read an array off the event, whatever it answers.
-	 *
-	 * @param Event  $event  The event.
-	 * @param string $method The getter.
-	 *
-	 * @return array<string, mixed> The value, or an empty array.
-	 */
-	private function arrayFrom(Event $event, string $method): array {
-		if (method_exists($event, $method) === false) {
-			return [];
-		}
-
-		$value = $event->$method();
-
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return [];
-	}//end arrayFrom()
-
-	/**
-	 * Read a string off the event, whatever it answers.
-	 *
-	 * @param Event  $event  The event.
-	 * @param string $method The getter.
-	 *
-	 * @return string The value, or ''.
-	 */
-	private function stringFrom(Event $event, string $method): string {
-		if (method_exists($event, $method) === false) {
-			return '';
-		}
-
-		$value = $event->$method();
-
-		if (is_scalar($value) === true) {
-			return trim((string)$value);
-		}
-
-		return '';
-	}//end stringFrom()
 }//end class

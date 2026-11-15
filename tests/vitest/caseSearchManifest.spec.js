@@ -40,7 +40,7 @@ describe('the Cases page and a refused search', () => {
 		// the case type's field filters from `relatedFieldFilters`, so the page
 		// mounts no slot component at all.
 		expect(casesPage.slots).toBeUndefined()
-		expect(casesPage.config.relatedFieldFilters.related.schema).toBe('caseProperty')
+		expect(casesPage.config.relatedFieldFilters.related.element).toBe('properties')
 		expect(registry).not.toContain('CaseSearchRefusal: {')
 	})
 })

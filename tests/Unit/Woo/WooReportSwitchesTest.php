@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Settings\RenamedSettingKeys;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -31,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Woo\WooReportSwitches
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Settings\RenamedSettingKeys
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  */
@@ -115,7 +117,13 @@ class WooReportSwitchesTest extends TestCase {
 		$switches->assertSaveAllowed(data: [WooReportSwitches::THROUGHPUT => true, WooReportSwitches::READERS => 'woo-leiding']);
 
 		$stillOn = $this->switches(stored: [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding']);
-		foreach ([[$switches, [WooReportSwitches::THROUGHPUT => 'true']], [$stillOn, [WooReportSwitches::READERS => '']]] as [$subject, $data]) {
+		$refusals = [
+			[$switches, [WooReportSwitches::THROUGHPUT => 'true']],
+			[$stillOn, [WooReportSwitches::READERS => '']],
+			[$switches, [WooReportSwitches::LEGACY_KEYS[WooReportSwitches::THROUGHPUT] => 'true']],
+			[$stillOn, [WooReportSwitches::LEGACY_KEYS[WooReportSwitches::READERS] => '']],
+		];
+		foreach ($refusals as [$subject, $data]) {
 			try {
 				$subject->assertSaveAllowed(data: $data);
 				$this->fail('Refusal expected for '.json_encode($data));
@@ -154,11 +162,11 @@ class WooReportSwitchesTest extends TestCase {
 	public function testASaveUnderTheEarlierKeysCarriesOntoTheCurrentOnes(): void {
 		$this->assertSame(
 			['wooCollectionPartiesReport' => 'true', WooReportSwitches::PARTIES => 'true'],
-			WooReportSwitches::withCurrentKeys(data: ['wooCollectionPartiesReport' => 'true'])
+			(new RenamedSettingKeys(earlierKeys: WooReportSwitches::LEGACY_KEYS))->carry(data: ['wooCollectionPartiesReport' => 'true'])
 		);
 		$this->assertSame(
 			[WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'],
-			WooReportSwitches::withCurrentKeys(data: [WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'])
+			(new RenamedSettingKeys(earlierKeys: WooReportSwitches::LEGACY_KEYS))->carry(data: [WooReportSwitches::PARTIES => 'false', 'wooCollectionPartiesReport' => 'true'])
 		);
 	}//end testASaveUnderTheEarlierKeysCarriesOntoTheCurrentOnes()
 }//end class

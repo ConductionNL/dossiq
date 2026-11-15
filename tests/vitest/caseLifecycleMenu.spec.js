@@ -117,7 +117,7 @@ describe('the one lifecycle menu', () => {
 		expect(entry(menu, 'resume').reason).toBe('This case is not suspended.')
 		expect(entry(menu, 'reopen').disabled).toBe(true)
 		expect(entry(menu, 'reopen').reason).toBe(
-			'Only a closed case can be reopened.',
+			'Only for a finished or archived case.',
 		)
 	})
 

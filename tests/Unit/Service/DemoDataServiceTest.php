@@ -177,6 +177,9 @@ class DemoDataServiceTest extends TestCase {
 		// description by literal lookup, so an interpolated count would leave a
 		// Dutch operator reading English.
 		$this->assertDoesNotMatchRegularExpression('/\d/', $choices[0]['description']);
+		// DqInstellen: "Zaken, contacten en organisaties, allemaal fictief". That
+		// they can be deleted afterwards is the step's own question.
+		$this->assertSame(expected: 'Cases, contacts and organisations, all fictional', actual: $choices[0]['description']);
 
 	}//end testTheShippedDatasetIsOfferedWithItsRealCount()
 

@@ -618,10 +618,10 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(routeQuery(tile)).toEqual(asQuery(chip('Cases', 'Overdue').filter))
 	})
 
-	it('the Deadlines table carries its own, wider window', () => {
-		// Not the chip's filter: this table also lists what is due within
-		// three days, so landing on overdue-only would show fewer cases than
-		// the table just listed. What must hold is that the filter survives
+	it('the deadline signals table carries its own, wider window', () => {
+		// Not the chip's filter: this table also lists cases in the last
+		// quarter of their term, so landing on overdue-only would show fewer
+		// cases than the table just listed. What must hold is that the filter survives
 		// the trip at all (triage item 4) and reaches the page as a flat
 		// bracket key rather than a JSON-stringified object.
 		const table = dashboardWidgets().deadlines
@@ -630,7 +630,7 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(table.content.viewAllRoute.name).toBe('Cases')
 		expect(query).toEqual(asQuery(flattenFilter(table.content.source.filter)))
 		expect(query.isFinalStatus).toBe('false')
-		expect(Object.keys(query)).toContain('deadline[lte]')
+		expect(Object.keys(query)).toContain('termSignalFrom[lte]')
 	})
 })
 
@@ -721,13 +721,14 @@ describe('bulk actions on the Cases index', () => {
 	 */
 	const actions = () => page('Cases').config.bulkActions
 
-	it('offers reassign plus the four lifecycle gestures', () => {
+	it('offers reassign, the four lifecycle gestures and the anonymised export', () => {
 		expect(actions().map((action) => action.id)).toEqual([
 			'reassign',
 			'transition',
 			'suspend',
 			'resume',
 			'extend-term',
+			'export-anonymised',
 		])
 	})
 
@@ -817,7 +818,7 @@ describe('what this change does NOT move', () => {
 			// in map view, and `/map` redirects there.
 			'Settings',
 			'Documentation',
-			'Store',
+			'Marketplace',
 			'Map layers',
 			'Woo refusal grounds',
 			'Case types',
@@ -825,7 +826,7 @@ describe('what this change does NOT move', () => {
 			// attribute catalogue, beside the case types it files for. It
 			// spends no top-level slot either, because it carries
 			// `section: "settings"` like `Case types` and `Flows` do.
-			'Attributes',
+			'Attributes (catalogue)',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',
@@ -840,7 +841,6 @@ describe('what this change does NOT move', () => {
 			'Offline sync conflicts',
 			'Needs assessments',
 			'Multidisciplinary consultations',
-			'Re-integration pathways',
 			'Supplier portal accounts',
 			'Data breach register',
 			'Integrations',

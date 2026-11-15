@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Service\Transitions;
 /**
  * What a transition declares: its preconditions, its explanation, its four eyes.
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class TransitionDeclarations {
 
@@ -70,7 +70,7 @@ class TransitionDeclarations {
 	 *
 	 * @return array<int, string> The reasons, in declaration order.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function withheldReasons(array $transition, array $case): array {
 		return $this->preconditions->withheldReasons(
@@ -131,7 +131,7 @@ class TransitionDeclarations {
 	 *
 	 * @return string The explanation, or the empty string.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function explanationOf(array $transition): string {
 		$explanation = trim((string)($transition['explanation'] ?? ''));
@@ -152,7 +152,7 @@ class TransitionDeclarations {
 	 * @return array{act: string, actor: string, at: string, askInstead: string}|null
 	 *         The refusal, or null when the transition is open to this person.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function fourEyesRefusal(array $transition, string $caseId, string $userId): ?array {
 		if ($this->fourEyes->declaredFor(transition: $transition) === null) {
@@ -177,7 +177,7 @@ class TransitionDeclarations {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function refusalSentence(array $refusal): string {
 		$date = substr((string)($refusal['at'] ?? ''), 0, 10);

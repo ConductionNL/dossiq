@@ -158,4 +158,30 @@ describe('RequesterProjection', () => {
 		})
 		expect(saveObject).not.toHaveBeenCalled()
 	})
+
+	it('keeps the stored number when the reader was shown the BSN masked', async () => {
+		const saveObject = vi.fn().mockResolvedValue({})
+		const fetchObject = vi.fn().mockImplementation(async (type) => {
+			if (type === 'case') {
+				return { id: 'case-1', requester: 'uuid-person-1', initiatorType: 'person', initiatorSourceId: '999990627', initiatorDisplayName: 'Stephan Janssen' }
+			}
+			return type === 'brpPerson' ? { ...PERSON_ROW, citizenServiceNumber: '*****0627' } : null
+		})
+		await mountProjection({ fetchObject, saveObject })
+		expect(saveObject).not.toHaveBeenCalled()
+	})
+
+	it('never stores a mask for a new requester', async () => {
+		const saveObject = vi.fn().mockResolvedValue({})
+		const fetchObject = vi.fn().mockImplementation(async (type) => {
+			if (type === 'case') {
+				return { id: 'case-1', requester: 'uuid-person-1' }
+			}
+			return type === 'brpPerson' ? { ...PERSON_ROW, citizenServiceNumber: '*****0627' } : null
+		})
+		await mountProjection({ fetchObject, saveObject })
+		expect(saveObject).toHaveBeenCalledTimes(1)
+		expect(saveObject.mock.calls[0][1].initiatorSourceId).toBe('')
+		expect(saveObject.mock.calls[0][1].initiatorDisplayName).toBe('Stephan Janssen')
+	})
 })

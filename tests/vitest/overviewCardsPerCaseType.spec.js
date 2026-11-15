@@ -36,6 +36,7 @@ const widget = (id) => simple.widgets.find((candidate) => candidate.id === id)
 const overview = simple.widgets.find((candidate) => candidate.id === 'case-panels').content.tabs[0].widgetIds
 const GENERIC = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
 const STEPS_ASIDE = { field: '@context.caseType.overviewCards', op: 'empty' }
+const optedIn = (id) => ({ field: '@context.caseType.overviewCards', op: 'contains', value: id })
 
 /**
  * The case types a package ships.
@@ -49,17 +50,18 @@ function packageCaseTypes(id) {
 }
 
 describe('overview cards per case type', () => {
-	it('shows every generic Overview card only while the case type lists no cards of its own', () => {
+	it('shows every generic Overview card while the case type lists no cards of its own, or where it lists that card', () => {
 		for (const id of GENERIC) {
 			expect(overview, id).toContain(id)
-			expect(widget(id).visibleWhen, id).toEqual(STEPS_ASIDE)
+			expect(widget(id).visibleWhen, id).toEqual({ any: [STEPS_ASIDE, optedIn(id)] })
 		}
 	})
 
 	it('keeps the domain cards on their own conditions', () => {
-		for (const id of overview.filter((candidate) => !GENERIC.includes(candidate))) {
+		for (const id of overview.filter((candidate) => !GENERIC.includes(candidate) && candidate !== 'case-overview-sections')) {
 			expect(JSON.stringify(widget(id).visibleWhen), id).toContain('@context.caseType.category')
 		}
+		expect(JSON.stringify(widget('case-overview-sections').visibleWhen)).toContain('@context.caseType.overviewSections')
 		expect(overview.slice(0, 3)).toEqual(['case-objection-grounds', 'case-objection-advice-card', 'case-summary'])
 	})
 
@@ -79,7 +81,9 @@ describe('overview cards per case type', () => {
 			expect(caseType.overviewCards).toBeUndefined()
 		}
 		const grant = packageCaseTypes('subsidie')[0]
-		expect(grant.overviewCards).toEqual(['case-grant-decisions-card'])
-		expect(overview).toContain('case-grant-decisions-card')
+		expect(grant.overviewCards).toEqual(['case-overview-sections', 'case-grant-decisions-card', 'case-payment-schedule', 'case-settlement'])
+		for (const id of grant.overviewCards) {
+			expect(overview).toContain(id)
+		}
 	})
 })

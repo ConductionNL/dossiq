@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-own-saved-view/specs/example-set-own-saved-view/spec.md#requirement-the-handler-the-boards-draw-owns-a-saved-view-on-the-case-list
+ * @spec openspec/specs/example-set-own-saved-view/spec.md#requirement-the-handler-the-boards-draw-owns-a-saved-view-on-the-case-list
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Pieter Jansen's own saved view on the case list.
  *
- * @spec openspec/changes/example-set-own-saved-view/specs/example-set-own-saved-view/spec.md#requirement-the-handler-the-boards-draw-owns-a-saved-view-on-the-case-list
+ * @spec openspec/specs/example-set-own-saved-view/spec.md#requirement-the-handler-the-boards-draw-owns-a-saved-view-on-the-case-list
  */
 class ZuiddrechtOwnSavedViewTest extends TestCase {
 
@@ -80,7 +80,62 @@ class ZuiddrechtOwnSavedViewTest extends TestCase {
 		}
 
 		$this->assertSame(expected: $defaults['mine-due-this-week']['filters'], actual: $view['query']['filters']);
-		$this->assertSame(expected: [['key' => 'deadline', 'order' => 'asc']], actual: $view['query']['sort']);
+		$this->assertSame(expected: [['key' => 'deadline', 'order' => 'asc'], ['key' => 'receivedAt', 'order' => 'asc']], actual: $view['query']['sort']);
 		$this->assertSame(expected: '', actual: $view['query']['search']);
 	}//end testItsConditionsAreTheShippedDefaultViews()
+
+	/**
+	 * Pieter also owns "Wacht op inwoner", the view the DqFilterBeheren, -Bewerken, -Delen and
+	 * -Verwijderen boards open; its conditions are the case list's "Waiting on the applicant" lens.
+	 *
+	 * @return void
+	 */
+	public function testPieterOwnsTheViewTheFilterBoardsOpen(): void {
+		$views = $this->views();
+		$this->assertArrayHasKey(key: 'pieter-wacht-op-inwoner', array: $views);
+
+		$view = $views['pieter-wacht-op-inwoner'];
+		$this->assertSame(expected: 'Wacht op inwoner', actual: $view['name']);
+		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $view['owner']);
+		$this->assertFalse(condition: $view['isPublic']);
+		$this->assertSame(expected: 'dossiq/case', actual: $view['query']['scope']);
+
+		$manifest = json_decode((string)file_get_contents(__DIR__.'/../../../src/manifest.json'), true);
+		$lens     = null;
+		foreach ($manifest['pages'] as $page) {
+			if (($page['id'] ?? '') !== 'Cases') {
+				continue;
+			}
+
+			foreach ($page['config']['quickFilters'] as $quickFilter) {
+				if ($quickFilter['label'] === 'Waiting on the applicant') {
+					$lens = $quickFilter;
+				}
+			}
+		}
+
+		$this->assertNotNull(actual: $lens);
+		$conditions = array_merge($view['query']['overrides']['lockedFilters'], $view['query']['filters']);
+		ksort($conditions);
+		$expected = $lens['filter'];
+		ksort($expected);
+		$this->assertSame(expected: $expected, actual: $conditions);
+	}//end testPieterOwnsTheViewTheFilterBoardsOpen()
+
+	/**
+	 * DqFilterBeheren's Active line names what the view chose, not the list's own conditions:
+	 * the view's filter is "waiting on the applicant" alone, and the conditions every case list
+	 * applies (not hidden, not a draft, still open) are locked, so they show no chip.
+	 *
+	 * @return void
+	 */
+	public function testTheFilterBoardViewShowsOnlyItsOwnCondition(): void {
+		$view = $this->views()['pieter-wacht-op-inwoner'];
+
+		$this->assertSame(expected: ['waitingOnApplicant' => true], actual: $view['query']['filters']);
+		$this->assertSame(
+			expected: ['statusHiddenInLists' => false, 'isDraft' => false, 'isFinalStatus' => false],
+			actual: $view['query']['overrides']['lockedFilters']
+		);
+	}//end testTheFilterBoardViewShowsOnlyItsOwnCondition()
 }//end class

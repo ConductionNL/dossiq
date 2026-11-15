@@ -5,7 +5,7 @@
  * The simple profile's task list says what board DqTaken says: the search
  * field reads "Zoek op taak of zaaknummer" and the due column "Deadline".
  *
- * @spec openspec/changes/r21-list-search-labels/specs/index-list-labels/spec.md#requirement-list-search-fields-and-columns-read-as-the-boards
+ * @spec openspec/specs/index-list-labels/spec.md#requirement-list-search-fields-and-columns-read-as-the-boards
  */
 
 import fs from 'fs'

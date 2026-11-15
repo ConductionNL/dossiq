@@ -1,0 +1,294 @@
+{
+    "an open case runs on the wall clock": {
+        "period": {
+            "from": "2026-01-01",
+            "to": "2026-12-31"
+        },
+        "clock": "wall-clock",
+        "caseTypeFilter": null,
+        "truncated": false,
+        "caseTypes": [
+            {
+                "id": "ct-1",
+                "title": "Omgevingsvergunning",
+                "caseVolume": "<n>",
+                "dwellTime": [
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "statusPhase": "Ontvangst",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": "<n>",
+                        "medianWorkingHours": "<n>",
+                        "p90WorkingHours": "<n>",
+                        "meanWorkingHours": "<n>",
+                        "medianHours": "<n>",
+                        "p90Hours": "<n>",
+                        "meanHours": "<n>"
+                    }
+                ],
+                "dwellTimeCompleted": [],
+                "dwellDaysHeld": [],
+                "dwellByAssignee": [
+                    {
+                        "actor": "",
+                        "visitCount": "<n>",
+                        "medianWorkingHours": "<n>",
+                        "p90WorkingHours": "<n>",
+                        "meanWorkingHours": "<n>",
+                        "medianHours": "<n>",
+                        "p90Hours": "<n>",
+                        "meanHours": "<n>"
+                    }
+                ],
+                "bottlenecks": [
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "visitCount": "<n>",
+                        "medianHours": "<n>",
+                        "score": "<n>"
+                    }
+                ],
+                "transitionMatrix": [],
+                "reworkPercent": "<n>",
+                "transitionCount": "<n>"
+            }
+        ],
+        "throughputTrend": [
+            {
+                "week": "2026-W01",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W02",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W03",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W04",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W05",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W06",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W07",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W08",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W09",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W10",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W11",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W12",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W13",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W14",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W15",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W16",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W17",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W18",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W19",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W20",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W21",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W22",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W23",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W24",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W25",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W26",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W27",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W28",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W29",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W30",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W31",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W32",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W33",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W34",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W35",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W36",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W37",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W38",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W39",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W40",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W41",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W42",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W43",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W44",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W45",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W46",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W47",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W48",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W49",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W50",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W51",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W52",
+                "count": "<n>"
+            },
+            {
+                "week": "2026-W53",
+                "count": "<n>"
+            }
+        ],
+        "phaseDays": {
+            "mean": {
+                "columns": [],
+                "rows": []
+            },
+            "median": {
+                "columns": [],
+                "rows": []
+            }
+        },
+        "stuck": [
+            {
+                "id": "ct-1:st-in",
+                "caseType": "Omgevingsvergunning",
+                "phase": "Intake",
+                "days": "<n>",
+                "visits": "<n>",
+                "level": "bottleneck"
+            }
+        ]
+    }
+}

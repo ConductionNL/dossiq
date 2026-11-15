@@ -5,16 +5,10 @@
 <template>
 	<div class="mandaat-matrix-table">
 		<div class="mandaat-matrix-table__toolbar">
-			<NcButton variant="primary" @click="$emit('edit', null)">
-				<template #icon>
-					<Plus :size="18" />
-				</template>
+			<NcButton variant="secondary" @click="$emit('edit', null)">
 				{{ t('dossiq', 'New mandaat') }}
 			</NcButton>
 			<NcButton variant="secondary" @click="$emit('import')">
-				<template #icon>
-					<Import :size="18" />
-				</template>
 				{{ t('dossiq', 'Import from Decidiq') }}
 			</NcButton>
 		</div>
@@ -51,12 +45,12 @@
 			<tbody>
 				<tr v-for="(b, idx) in matrices" :key="b.id">
 					<td>{{ idx + 1 }}</td>
-					<td>{{ b.name || b.mandateNumber || b.id }}</td>
+					<td>{{ b.name || b.decisionName || b.mandateNumber || b.id }}</td>
 					<td>
 						<span
-							class="mandaat-matrix-table__badge"
+							class="cn-status-badge"
 							:class="badgeClass(b.status)"
-							>{{ b.status || '—' }}</span
+							>{{ statusLabel(b.status) }}</span
 						>
 					</td>
 					<td>{{ b.inWerkingtreding || '—' }}</td>
@@ -76,8 +70,6 @@
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import FileDocumentMultiple from 'vue-material-design-icons/FileDocumentMultiple.vue'
-import Import from 'vue-material-design-icons/Import.vue'
-import Plus from 'vue-material-design-icons/Plus.vue'
 
 export default {
 	name: 'DelegationMatrixTable',
@@ -85,8 +77,6 @@ export default {
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,
-		Plus,
-		Import,
 		FileDocumentMultiple,
 	},
 
@@ -99,18 +89,36 @@ export default {
 	methods: {
 		t,
 		/**
+		 * A mandate's status in words; an unknown status as it is stored.
+		 *
+		 * @param {string} status The stored status.
+		 * @return {string} The label.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		statusLabel(status) {
+			const labels = {
+				active: t('dossiq', 'Active'),
+				determined: t('dossiq', 'Adopted'),
+				draft: t('dossiq', 'Draft'),
+				expired: t('dossiq', 'Expired'),
+				lapsed: t('dossiq', 'Lapsed'),
+			}
+			return labels[String(status || '').toLowerCase()] || status || '—'
+		},
+
+		/**
 		 * @param {string} status The status.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		badgeClass(status) {
 			const s = (status || '').toLowerCase()
-			if (s === 'active' || s === 'active')
-				return 'mandaat-matrix-table__badge--ok'
-			if (s === 'lapsed' || s === 'expired')
-				return 'mandaat-matrix-table__badge--alert'
-			if (s === 'draft' || s === 'draft')
-				return 'mandaat-matrix-table__badge--neutral'
-			return 'mandaat-matrix-table__badge--neutral'
+			if (s === 'active') {
+				return 'cn-status-badge--success'
+			}
+			if (s === 'lapsed' || s === 'expired') {
+				return 'cn-status-badge--error'
+			}
+			return 'cn-status-badge--default'
 		},
 	},
 }
@@ -120,7 +128,7 @@ export default {
 .mandaat-matrix-table__toolbar {
 	display: flex;
 	gap: 8px;
-	margin-bottom: 12px;
+	margin-bottom: 14px;
 }
 
 .mandaat-matrix-table__table {
@@ -138,27 +146,5 @@ export default {
 .mandaat-matrix-table__table th {
 	background: var(--color-background-dark);
 	font-weight: 500;
-}
-
-.mandaat-matrix-table__badge {
-	font-size: 11px;
-	padding: 2px 8px;
-	border-radius: 8px;
-	display: inline-block;
-}
-
-.mandaat-matrix-table__badge--ok {
-	background: var(--color-success);
-	color: var(--color-success-text);
-}
-
-.mandaat-matrix-table__badge--alert {
-	background: var(--color-error);
-	color: var(--color-error-text);
-}
-
-.mandaat-matrix-table__badge--neutral {
-	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
 }
 </style>

@@ -55,26 +55,27 @@ final class UnscopedObjectReader {
 	public function find(object $objectService, int|string $register, int|string $schema, string $id): ?array {
 		return $this->runAsSystemIfAvailable(
 			objectService: $objectService,
-			operation: fn (): ?array => $this->findUnscoped(objectService: $objectService, register: $register, schema: $schema, id: $id)
+			operation: fn (): ?array => $this->findUnscoped(
+				objectService: $objectService,
+				where: ['register' => $register, 'schema' => $schema, 'id' => $id]
+			)
 		);
 	}//end find()
 
 	/**
 	 * One object by id, without `_rbac` and `_multitenancy`.
 	 *
-	 * @param object     $objectService The OpenRegister ObjectService.
-	 * @param int|string $register      The register.
-	 * @param int|string $schema        The schema.
-	 * @param string     $id            The uuid.
+	 * @param object                                                   $objectService The OpenRegister ObjectService.
+	 * @param array{register: int|string, schema: int|string, id: string} $where         The register, the schema and the uuid.
 	 *
 	 * @return array<string, mixed>|null The object, or null when it does not exist.
 	 */
-	private function findUnscoped(object $objectService, int|string $register, int|string $schema, string $id): ?array {
+	private function findUnscoped(object $objectService, array $where): ?array {
 		try {
 			$object = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema,
+				id: $where['id'],
+				register: $where['register'],
+				schema: $where['schema'],
 				_rbac: false,
 				_multitenancy: false,
 			);

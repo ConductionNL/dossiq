@@ -17,29 +17,51 @@
 			<h2 class="case-type-flow__title">
 				{{ t('dossiq', 'Flow') }}
 			</h2>
-			<WorkflowTab :caseTypeId="caseTypeId" />
+			<WorkflowTab v-if="storesReady" :caseTypeId="caseTypeId" />
+			<NcLoadingIcon v-else data-testid="case-type-flow-loading" />
 		</div>
 	</NcAppContent>
 </template>
 
 <script>
-import { NcAppContent } from '@nextcloud/vue'
+import { NcAppContent, NcLoadingIcon } from '@nextcloud/vue'
 import WorkflowTab from './tabs/WorkflowTab.vue'
+import { initializeStores } from '../../store/store.js'
 
 export default {
 	name: 'CaseTypeFlowView',
-	components: { NcAppContent, WorkflowTab },
+	components: { NcAppContent, NcLoadingIcon, WorkflowTab },
+
+	data() {
+		return { storesReady: false }
+	},
 
 	computed: {
 		/**
 		 * The case type this page is bound to.
 		 *
 		 * @return {string} The route's id.
-		 * @spec openspec/changes/case-type-page-follows-its-boards/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		caseTypeId() {
 			return String(this.$route?.params?.id ?? '')
 		},
+	},
+
+	/**
+	 * Start the object stores before the workflow reads its versions: opened
+	 * directly, the page mounts before the app has registered the workflow
+	 * template type.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-case-type-flow-page-loads-its-workflow-when-opened-directly
+	 */
+	async created() {
+		try {
+			await initializeStores()
+		} finally {
+			this.storesReady = true
+		}
 	},
 }
 </script>

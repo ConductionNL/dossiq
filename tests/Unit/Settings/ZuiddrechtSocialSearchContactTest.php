@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-social-search-contact/specs/example-set-social-search-contact/spec.md#requirement-the-example-data-carries-what-the-social-search-and-contact-boards-draw
+ * @spec openspec/specs/example-set-social-search-contact/spec.md#requirement-the-example-data-carries-what-the-social-search-and-contact-boards-draw
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The jeugdwet example case, the saved search and Sanne's contact record.
  *
- * @spec openspec/changes/example-set-social-search-contact/specs/example-set-social-search-contact/spec.md#requirement-the-example-data-carries-what-the-social-search-and-contact-boards-draw
+ * @spec openspec/specs/example-set-social-search-contact/spec.md#requirement-the-example-data-carries-what-the-social-search-and-contact-boards-draw
  */
 class ZuiddrechtSocialSearchContactTest extends TestCase {
 
@@ -72,7 +72,8 @@ class ZuiddrechtSocialSearchContactTest extends TestCase {
 
 	/**
 	 * DqZoekresultaten: a public saved search for "Lindelaan" on the search page with the count alert at 12,
- * telling its owner, the one recipient a saver may name without being an administrator.
+ * telling its owner, the one recipient a saver may name without being an administrator. Pieter owns it: the
+	 * board's reader turns its alert on and off, and only the owner may.
 	 *
 	 * @return void
 	 */
@@ -82,11 +83,13 @@ class ZuiddrechtSocialSearchContactTest extends TestCase {
 		$this->assertArrayHasKey(key: 'zoek-lindelaan', array: $views);
 		$view = $views['zoek-lindelaan'];
 		$this->assertSame(expected: 'Lindelaan', actual: $view['query']['search']);
+		// DqZoekresultaten's saved-search card names it as the board does.
+		$this->assertSame(expected: 'Meldingen verlichting', actual: $view['name']);
 		$this->assertSame(expected: 'source:search', actual: $view['query']['scope']);
 		$this->assertSame(expected: 'gte', actual: $view['alert']['operator']);
 		$this->assertSame(expected: 12, actual: $view['alert']['threshold']);
 		$this->assertTrue(condition: $view['isPublic']);
-		$this->assertStringStartsWith(prefix: '{{cast:', string: $view['owner']);
+		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $view['owner']);
 		$this->assertSame(expected: ['user:'.$view['owner']], actual: $view['alert']['recipients']);
 	}//end testTheSavedSearchHasItsAlert()
 

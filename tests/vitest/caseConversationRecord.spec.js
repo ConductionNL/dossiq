@@ -134,10 +134,11 @@ describe('the record the case keeps of a conversation', () => {
 
 describe('the panel that shows it', () => {
 	it('shows the moment, who joined and how long, not just the moment', () => {
-		expect(panelSource).toContain('recordSummary')
-		expect(panelSource).toContain('record.startedAt')
-		expect(panelSource).toContain('record?.participants')
-		expect(panelSource).toContain('record?.durationSeconds')
+		const lineSource = read('src', 'utils', 'conversationRecordLine.js')
+		expect(panelSource).toContain('conversationSummary(record)')
+		expect(lineSource).toContain('record?.startedAt')
+		expect(lineSource).toContain('record?.participants')
+		expect(lineSource).toContain('record?.durationSeconds')
 	})
 
 	it('says why rather than offering a conversation the instance cannot hold', () => {

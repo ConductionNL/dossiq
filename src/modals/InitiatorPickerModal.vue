@@ -82,7 +82,7 @@ import { initiatorChoice } from '../services/initiatorSearch.js'
  * @type {Array<object>}
  */
 const PARTY_SOURCES_WITH_CONTACTS = Object.freeze([
-	{ id: 'person', register: 'dossiq', schema: 'brpPerson', label: 'Resident', title: '{displayName}', secondary: '{birth.date} · BSN {citizenServiceNumber}' },
+	{ id: 'person', register: 'dossiq', schema: 'brpPerson', lookup: { url: '/apps/dossiq/api/people/lookup', when: '^[0-9]{9}$' }, label: 'Resident', title: '{displayName}', secondary: '{birth.date}' },
 	{ id: 'company', register: 'dossiq', schema: 'kvkCompany', label: 'Organisation', title: '{tradeName}', secondary: 'KVK {kvkNumber}' },
 	{ id: 'contact', type: 'contacts', label: 'Contact' },
 ])

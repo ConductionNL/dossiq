@@ -5,7 +5,7 @@
  * The Case types list draws the breadcrumb row under its title with the count
  * in its note, and no count subtitle (board DqZaaktypen).
  *
- * @spec openspec/changes/case-types-header-crumb-row/specs/case-types-header-crumb-row/spec.md#requirement-the-case-types-list-keeps-its-count-in-the-breadcrumb-row
+ * @spec openspec/specs/case-types-header-crumb-row/spec.md#requirement-the-case-types-list-keeps-its-count-in-the-breadcrumb-row
  */
 
 import fs from 'fs'

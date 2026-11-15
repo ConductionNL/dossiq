@@ -5,8 +5,9 @@
   Adding a location to a case (board DqZaakLocatie).
 
   The address comes from the PDOK Locatieserver, so only a BAG address can be
-  saved: a typed string has no address designation and would put a pin
-  nowhere a later lookup can find. The map shows the chosen address with the
+  saved while the search answers. When the Locatieserver does not answer, the
+  search turns into fields to type the address in, and that address is saved
+  as a manual one (no BAG check, no pin) so the case can go on. The map shows the chosen address with the
   map layers the organisation configured; the BAG and the cadastre/WOZ cards
   show what those registers say about it, read through dossiq's own BRK and
   WOZ adapters. Saving writes one `case-location` on the case.
@@ -17,11 +18,18 @@
 	<CnDialog
 		:name="t('dossiq', 'Add location')"
 		:eyebrow="eyebrow"
-		width="wizard"
+		width="confirm"
 		data-testid="case-location-dialog"
+		v-bind="noticeProps"
 		@closing="$emit('close')">
 		<div class="case-location-dialog">
-			<CnAddressSearch data-testid="case-location-search" @select="onSelect" />
+			<CnAddressSearch
+				:inputLabel="t('dossiq', 'Search address')"
+				manualFallback
+				:unavailableTitle="t('dossiq', 'Address search is not available right now')"
+				:unavailableText="t('dossiq', 'The link with the PDOK Locatieserver does not answer. Type the address yourself; the BAG details follow later.')"
+				data-testid="case-location-search"
+				@select="onSelect" />
 			<p class="case-location-dialog__hint">
 				{{ t('dossiq', 'Searches the PDOK Locatieserver. Only addresses from the BAG can be saved.') }}
 			</p>
@@ -35,6 +43,10 @@
 						:layers="activeLayers"
 						:markers="markers"
 						height="200px"
+						:fitControl="false"
+						:locateControl="false"
+						:fullscreenControl="false"
+						:zoomControl="false"
 						:ariaLabel="t('dossiq', 'The chosen address on a map')" />
 				</div>
 				<fieldset class="case-location-dialog__layers" data-testid="case-location-layers">
@@ -75,9 +87,7 @@
 				</section>
 			</div>
 
-			<NcNoteCard v-if="error" type="error" data-testid="case-location-error">
-				{{ error }}
-			</NcNoteCard>
+			<DialogNotice :notice="notice" data-testid="case-location-error" />
 		</div>
 
 		<template #actions>
@@ -107,12 +117,15 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
+import DialogNotice from '../components/dialog/DialogNotice.vue'
 import { lookupParcel } from '../services/brkApi.js'
 import { caseLocationRecord, parcelOf, saveCaseLocation } from '../services/caseLocationApi.js'
 import { fetchCaseSummary } from '../services/caseSummary.js'
 import { lookupWozValueByNummeraanduiding } from '../services/wozApi.js'
+import { dialogNoticeProps } from '../utils/dialogNotice.js'
+import { locationSaveRefusal } from '../utils/locationSaveRefusal.js'
+import { mapLayerDefinition } from '../utils/mapLayers.js'
 
 /** The centre of the Netherlands, before an address is chosen. */
 const DEFAULT_CENTER = [52.13, 5.29]
@@ -124,10 +137,10 @@ export default {
 		CnAddressSearch,
 		CnDialog,
 		CnMapWidget,
+		DialogNotice,
 		MapMarkerOutline,
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcNoteCard,
 	},
 
 	props: {
@@ -144,7 +157,7 @@ export default {
 		return {
 			/** What the address search emitted for the chosen address, or null. */
 			chosen: null,
-			/** The configured WMS/WFS layers, `{ id, title, type, url, layerName, isDefault }`. */
+			/** The configured WMS, WFS and ArcGIS layers, `{ id, title, type, url, layerName, isDefault }`. */
 			layers: [],
 			/** The ids of the layers drawn on the map. */
 			shown: [],
@@ -153,13 +166,19 @@ export default {
 			/** The cadastral parcel for the address, or null. */
 			parcel: null,
 			saving: false,
-			error: '',
+			/** The refusal of the last save, as a dialog notice, or null. */
+			notice: null,
 			/** The case, for the eyebrow. */
 			kase: null,
 		}
 	},
 
 	computed: {
+		/** @spec openspec/specs/bag-location-save-validation/spec.md */
+		noticeProps() {
+			return dialogNoticeProps(this.notice)
+		},
+
 		/**
 		 * @return {string} The case id, from the prop or the route.
 		 *
@@ -222,11 +241,8 @@ export default {
 		activeLayers() {
 			return this.layers
 				.filter((layer) => this.shown.includes(layer.id))
-				.map((layer) => ({
-					type: layer.type === 'wfs' ? 'wfs' : 'wms',
-					url: layer.url,
-					options: { layers: layer.layerName, format: 'image/png', transparent: true },
-				}))
+				.map(mapLayerDefinition)
+				.filter((definition) => definition !== null)
 		},
 
 		/**
@@ -322,7 +338,7 @@ export default {
 		 */
 		async onSelect(chosen) {
 			this.chosen = chosen
-			this.error = ''
+			this.notice = null
 			this.woz = null
 			this.parcel = null
 			const designation = chosen?.result?.nummeraanduiding_id
@@ -345,7 +361,7 @@ export default {
 				return
 			}
 			this.saving = true
-			this.error = ''
+			this.notice = null
 			try {
 				const saved = await saveCaseLocation(caseLocationRecord(this.targetCaseId, this.chosen))
 				showSuccess(t('dossiq', 'Location added to the case.'))
@@ -353,7 +369,7 @@ export default {
 				this.$emit('saved', saved)
 				this.$emit('close')
 			} catch (error) {
-				this.error = error?.response?.data?.message || t('dossiq', 'The location could not be saved.')
+				this.notice = locationSaveRefusal(error?.response?.data)
 			} finally {
 				this.saving = false
 			}
@@ -375,23 +391,31 @@ export default {
 	font-size: 13px;
 }
 
+/* The search's hint sits 6px under the field, as the board draws it with the
+   field's label and field in one group, not a full 16px step below the search
+   (whose select keeps a margin of its own), on the normal line. */
+.case-location-dialog > .case-location-dialog__hint {
+	margin-top: -16px;
+	line-height: 1.2;
+}
+
 .case-location-dialog__map {
 	min-height: 200px;
 	border-radius: 8px;
 	overflow: hidden;
 }
 
-/* The map takes the row; the layer list beside it is 200px. */
+/* The map takes the row; the layer list beside it is 170px. */
 .case-location-dialog__map-row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 200px;
+	grid-template-columns: minmax(0, 1fr) 170px;
 	gap: 12px;
 }
 
 .case-location-dialog__layers {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 10px;
 	margin: 0;
 	border: 1px solid var(--color-border);
 	border-radius: 8px;
@@ -405,9 +429,35 @@ export default {
 	line-height: 1.2;
 }
 
+/* The board's layer toggles are plain 14px checkboxes, 8px from their
+   label and without NcCheckboxRadioSwitch's row padding. The dialog
+   sheet's own checkbox rule (padding-inline 0, gap 10px) is more
+   specific than a single class, hence the longer selector. */
+.case-location-dialog .case-location-dialog__layers :deep(.checkbox-radio-switch-checkbox .checkbox-content) {
+	gap: 8px;
+	min-height: 0;
+	padding: 0;
+	padding-inline-start: 4px;
+}
+
+/* The layer rows stand 34px apart (a 24px row and 10px), their labels at
+   regular weight, as DqZaakLocatie draws them. */
+.case-location-dialog__layers :deep(.checkbox-content__text) {
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.2;
+}
+
+.case-location-dialog :deep(.select__label) {
+	margin-bottom: 6px;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
 .case-location-dialog__facts {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	display: flex;
+	flex-direction: column;
 	gap: 12px;
 }
 
@@ -455,8 +505,7 @@ export default {
 }
 
 @media (max-width: 600px) {
-	.case-location-dialog__map-row,
-	.case-location-dialog__facts {
+	.case-location-dialog__map-row {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
