@@ -194,7 +194,7 @@ class ConsultationTerms {
 		$since = $this->today->modify('-' . self::BOTTLENECK_WINDOW_DAYS . ' days')->format('Y-m-d');
 		$today = $this->today->format('Y-m-d');
 
-		$bodies = $this->tallyBodies(consultations: $consultations, since: $since, today: $today);
+		$bodies = $this->tallyBodies(consultations: $consultations, window: ['since' => $since, 'today' => $today]);
 		$report = $this->flaggedRows(bodies: $bodies, threshold: $threshold);
 
 		return ['threshold' => $threshold, 'windowDays' => self::BOTTLENECK_WINDOW_DAYS, 'bodies' => $report];
@@ -203,13 +203,13 @@ class ConsultationTerms {
 	/**
 	 * Per advisory body, the requests created since a day and the late ones among them.
 	 *
-	 * @param array<int, array<string, mixed>> $consultations The advice requests.
-	 * @param string                           $since         The first day of the window, Y-m-d.
-	 * @param string                           $today         Today, Y-m-d.
+	 * @param array<int, array<string, mixed>>    $consultations The advice requests.
+	 * @param array{since: string, today: string} $window        The first day of the window and today, Y-m-d.
 	 *
 	 * @return array<string, array{adviceAuthority: string, total: int, late: int}> The counts, by body.
 	 */
-	private function tallyBodies(array $consultations, string $since, string $today): array {
+	private function tallyBodies(array $consultations, array $window): array {
+		['since' => $since, 'today' => $today] = $window;
 		$bodies = [];
 		foreach ($consultations as $consultation) {
 			$body = $this->windowBody(consultation: $consultation, since: $since);

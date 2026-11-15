@@ -250,4 +250,35 @@ class ZgwAuthMiddlewareScopeTest extends TestCase {
 		$this->assertSame('permission_denied', $forbidden->getData()['code']);
 		$this->assertSame(403, (new ZgwAuthException(message: 'x'))->getStatusCode());
 	}//end testAfterExceptionAnswersWithTheRefusalsStatus()
+
+	/**
+	 * A consumer whose authorization configuration is not an array grants nothing:
+	 * it is neither a superuser nor carries a scope, so the request is refused with 403.
+	 *
+	 * @return void
+	 */
+	public function testAConsumerWithoutAnArrayConfigurationIsRefused(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getMethod')->willReturn('GET');
+		$request->method('getRequestUri')->willReturn('/index.php/apps/dossiq/api/zgw/zaken/v1/items');
+
+		$consumer = new class {
+			/**
+			 * A configuration that was never set.
+			 *
+			 * @return null
+			 */
+			public function getAuthorizationConfiguration() {
+				return null;
+			}
+		};
+
+		$resolver = $this->createMock(ApiCredentialResolver::class);
+		$resolver->expects($this->once())->method('resolve')->with($request)->willReturn($consumer);
+
+		$refusal = $this->refusal(new ZgwAuthMiddleware($request, $resolver, $this->createMock(LoggerInterface::class)));
+
+		$this->assertSame(403, $refusal?->getStatusCode());
+		$this->assertSame("Scope 'zrc.lezen' is required for this operation", $refusal?->getMessage());
+	}//end testAConsumerWithoutAnArrayConfigurationIsRefused()
 }//end class

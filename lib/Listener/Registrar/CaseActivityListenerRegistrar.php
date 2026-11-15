@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener\Registrar;
 
 use OCA\Dossiq\Listener\CaseLastActivityListener;
+use OCA\Dossiq\Listener\TransferredCaseActListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
@@ -69,6 +70,8 @@ class CaseActivityListenerRegistrar {
 		];
 		foreach ($events as $event) {
 			$context->registerEventListener(event: $event, listener: CaseLastActivityListener::class);
+			// REQ-CRS-42: the same acts reach the organisation that handed the case over.
+			$context->registerEventListener(event: $event, listener: TransferredCaseActListener::class);
 		}
 	}//end register()
 }//end class

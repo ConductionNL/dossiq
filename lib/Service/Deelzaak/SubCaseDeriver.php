@@ -146,27 +146,26 @@ class SubCaseDeriver {
 			return ['ok' => false, 'reason' => 'create_failed'];
 		}
 
-		return $this->childCreated(link: $link, saved: $saved, applied: $applied);
+		return $this->childCreated(link: $link, saved: ($saved + ['inherited' => $applied['inherited']]));
 	}//end createChild()
 
 	/**
 	 * Record the child's provenance, and say it was created.
 	 *
-	 * @param SubCaseLink                         $link    What the child is derived from.
-	 * @param array{created: mixed}               $saved   The created child.
-	 * @param array{data: mixed, inherited: mixed} $applied The child that was saved and what it took.
+	 * @param SubCaseLink                             $link  What the child is derived from.
+	 * @param array{created: mixed, inherited: mixed} $saved The created child, and what it took.
 	 *
 	 * @return array{ok: bool, object: array<string, mixed>, inherited: mixed, inheritanceApplied: bool}
 	 *
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
-	private function childCreated(SubCaseLink $link, array $saved, array $applied): array {
-		$this->record(link: $link, saved: ($saved + ['inherited' => $applied['inherited']]));
+	private function childCreated(SubCaseLink $link, array $saved): array {
+		$this->record(link: $link, saved: $saved);
 
 		return [
 			'ok' => true,
 			'object' => $this->asArray(object: $saved['created']),
-			'inherited' => $applied['inherited'],
+			'inherited' => $saved['inherited'],
 			'inheritanceApplied' => ($link->relations !== null),
 		];
 	}//end childCreated()

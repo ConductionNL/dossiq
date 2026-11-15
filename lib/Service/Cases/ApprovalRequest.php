@@ -99,9 +99,9 @@ class ApprovalRequest implements ApprovalRequestInterface {
 
 		$gate = $this->gateOf(case: $case, act: $act);
 
-		$decisionRef = $this->raiseDecision(caseId: $caseId, case: $case, gate: $gate, userId: $userId);
+		$decisionRef = $this->raiseDecision(case: $case, request: $gate + ['caseId' => $caseId, 'userId' => $userId]);
 
-		return $this->recordReference(case: $case, gate: $gate, decisionRef: $decisionRef);
+		return $this->recordReference(case: $case, link: ['act' => $gate['act'], 'decisionRef' => $decisionRef]);
 	}//end raise()
 
 	/**
@@ -133,10 +133,8 @@ class ApprovalRequest implements ApprovalRequestInterface {
 	/**
 	 * Raise the decidiq decision the gate waits on.
 	 *
-	 * @param string                                                  $caseId The case UUID.
-	 * @param array<string, mixed>                                    $case   The case.
-	 * @param array{act: string, decisionType: string, label: string} $gate   The gate.
-	 * @param string                                                  $userId Who is asking.
+	 * @param array<string, mixed> $case    The case.
+	 * @param array{act: string, decisionType: string, label: string, caseId: string, userId: string} $request The gate, the case UUID and who is asking.
 	 *
 	 * @return string The decision reference.
 	 *
@@ -144,23 +142,24 @@ class ApprovalRequest implements ApprovalRequestInterface {
 	 *
 	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
-	private function raiseDecision(string $caseId, array $case, array $gate, string $userId): string {
+	private function raiseDecision(array $case, array $request): string {
+		['caseId' => $caseId, 'userId' => $userId] = $request;
 		try {
 			$decisionRef = $this->decisions->raiseDecision(
-				decisionType: $gate['decisionType'],
+				decisionType: $request['decisionType'],
 				externalReference: $caseId,
 				subject: [
 					'subjectRegister' => $this->settings->getConfigValue('register'),
 					'subjectSchema' => $this->settings->getConfigValue('case_schema'),
 					'subjectId' => $caseId,
-					'subjectLabel' => $gate['label'] . ': ' . trim((string)($case['title'] ?? $caseId)),
+					'subjectLabel' => $request['label'] . ': ' . trim((string)($case['title'] ?? $caseId)),
 				],
-				context: ['actorId' => $userId, 'act' => $gate['act']],
+				context: ['actorId' => $userId, 'act' => $request['act']],
 			);
 		} catch (RuntimeException $e) {
 			throw RefusedException::indeterminate(
 				rule: ApprovalGate::RULE_UNREADABLE,
-				sentence: 'We could not reach the approval service, so ' . $gate['label']
+				sentence: 'We could not reach the approval service, so ' . $request['label']
 					. ' was not asked for. Try again shortly.',
 				previous: $e,
 			);
@@ -172,24 +171,23 @@ class ApprovalRequest implements ApprovalRequestInterface {
 	/**
 	 * Record the decision reference on the case.
 	 *
-	 * @param array<string, mixed>                                    $case        The case.
-	 * @param array{act: string, decisionType: string, label: string} $gate        The gate.
-	 * @param string                                                  $decisionRef The decision reference.
+	 * @param array<string, mixed>                     $case The case.
+	 * @param array{act: string, decisionRef: string} $link The gated act and the decision reference.
 	 *
 	 * @return array{act: string, decisionRef: string, raisedAt: string} The link that was recorded.
 	 *
 	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
-	private function recordReference(array $case, array $gate, string $decisionRef): array {
+	private function recordReference(array $case, array $link): array {
 		$raisedAt = (new DateTimeImmutable())->format('c');
 		$case[ApprovalGateDeclaration::REFERENCES] = ApprovalGateDeclaration::withReference(
 			case: $case,
-			act: $gate['act'],
-			decisionRef: $decisionRef,
+			act: $link['act'],
+			decisionRef: $link['decisionRef'],
 			raisedAt: $raisedAt,
 		);
 		$this->store->saveCase(case: $case);
 
-		return ['act' => $gate['act'], 'decisionRef' => $decisionRef, 'raisedAt' => $raisedAt];
+		return $link + ['raisedAt' => $raisedAt];
 	}//end recordReference()
 }//end class

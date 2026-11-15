@@ -186,9 +186,8 @@ class DemoCaseloadSeedDataService implements DemoCaseloadSeedDataServiceInterfac
 
 		$run->summary['cases']++;
 		$run->summary['tasks'] += $this->createTasks(
-			caseId: $caseId,
-			tasks: (array)($caseSeed['tasks'] ?? []),
-			now: $run->now
+			run: $run,
+			seeded: ['caseId' => $caseId, 'tasks' => (array)($caseSeed['tasks'] ?? [])]
 		);
 	}//end createWithTasks()
 
@@ -245,11 +244,7 @@ class DemoCaseloadSeedDataService implements DemoCaseloadSeedDataServiceInterfac
 	 */
 	private function casePayload(DemoSeedRun $run, array $caseSeed): array {
 		$caseType = $run->caseTypes[(string)($caseSeed['caseType'] ?? '')];
-		$startDate = $this->resolveStartDate(
-			caseSeed: $caseSeed,
-			processingDeadline: (string)($caseType['processingDeadline'] ?? ''),
-			now: $run->now
-		);
+		$startDate = $this->resolveStartDate(run: $run, caseSeed: $caseSeed);
 
 		$data = $this->describedCase(caseSeed: $caseSeed, caseTypeId: (string)$caseType['id']);
 		$data['startDate'] = $startDate->format('Y-m-d');
@@ -328,21 +323,17 @@ class DemoCaseloadSeedDataService implements DemoCaseloadSeedDataServiceInterfac
 	/**
 	 * Create the tasks belonging to one case.
 	 *
-	 * @param string $caseId The parent case id.
-	 * @param array $tasks The task seed entries.
-	 * @param DateTimeImmutable $now The clock.
+	 * @param DemoSeedRun                             $run    The seed, for its clock.
+	 * @param array{caseId: string, tasks: array} $seeded The parent case id and the task seed entries.
 	 *
 	 * @return int How many tasks were created.
 	 */
-	private function createTasks(
-		string $caseId,
-		array $tasks,
-		DateTimeImmutable $now,
-	): int {
+	private function createTasks(DemoSeedRun $run, array $seeded): int {
+		$caseId = $seeded['caseId'];
 		$created = 0;
 		$actor = $this->userSession->getUser()?->getUID();
 
-		foreach ($tasks as $taskSeed) {
+		foreach ($seeded['tasks'] as $taskSeed) {
 			// `mirrorImport`, not `mirrorCreate`. The engine's create path
 			// refuses a task born in a terminal state, and it is right to:
 			// a task reaches `completed` through a lifecycle verb. Demo
@@ -350,7 +341,7 @@ class DemoCaseloadSeedDataService implements DemoCaseloadSeedDataServiceInterfac
 			// look realistic, including completed ones, and `import` is the
 			// engine's own trusted path for exactly that.
 			$id = $this->engineTask->mirrorImport(
-				task: $this->taskPayload(taskSeed: $taskSeed, caseId: $caseId, now: $now),
+				task: $this->taskPayload(taskSeed: ['case' => $caseId] + $taskSeed, now: $run->now),
 				caseId: $caseId,
 				actor: $actor
 			);
@@ -372,17 +363,16 @@ class DemoCaseloadSeedDataService implements DemoCaseloadSeedDataServiceInterfac
 	/**
 	 * Build the payload for one task.
 	 *
-	 * @param array $taskSeed The task seed entry.
-	 * @param string $caseId The parent case id.
+	 * @param array $taskSeed The task seed entry, with its parent case id as `case`.
 	 * @param DateTimeImmutable $now The clock.
 	 *
 	 * @return array The task payload.
 	 */
-	private function taskPayload(array $taskSeed, string $caseId, DateTimeImmutable $now): array {
+	private function taskPayload(array $taskSeed, DateTimeImmutable $now): array {
 		$data = [
 			'title' => (string)($taskSeed['title'] ?? ''),
 			'description' => (string)($taskSeed['description'] ?? ''),
-			'case' => $caseId,
+			'case' => $taskSeed['case'],
 			'assignee' => (string)($taskSeed['assignee'] ?? ''),
 			'status' => (string)($taskSeed['status'] ?? 'available'),
 			'priority' => (string)($taskSeed['priority'] ?? 'normal'),
@@ -410,17 +400,14 @@ class DemoCaseloadSeedDataService implements DemoCaseloadSeedDataServiceInterfac
 	 * processing deadline, because OpenRegister recomputes
 	 * `deadline = startDate + processingDeadline` on every save.
 	 *
+	 * @param DemoSeedRun $run The seed, for its clock and the case type's ISO-8601 processing deadline, e.g. "P56D".
 	 * @param array $caseSeed The case seed entry.
-	 * @param string $processingDeadline The case type's ISO-8601 duration, e.g. "P56D".
-	 * @param DateTimeImmutable $now The clock.
 	 *
 	 * @return DateTimeImmutable The start date to write.
 	 */
-	private function resolveStartDate(
-		array $caseSeed,
-		string $processingDeadline,
-		DateTimeImmutable $now,
-	): DateTimeImmutable {
+	private function resolveStartDate(DemoSeedRun $run, array $caseSeed): DateTimeImmutable {
+		$now = $run->now;
+		$processingDeadline = (string)($run->caseTypes[(string)($caseSeed['caseType'] ?? '')]['processingDeadline'] ?? '');
 		if (isset($caseSeed['startInDays']) === true) {
 			return $this->offset(now: $now, days: (int)$caseSeed['startInDays']);
 		}

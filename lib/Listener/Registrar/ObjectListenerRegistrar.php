@@ -36,6 +36,7 @@ use OCA\Dossiq\Listener\SubmissionClosingDateGuard;
 use OCA\Dossiq\Listener\WooRefusalGroundDeleteGuard;
 use OCA\Dossiq\Listener\DependentTermListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
+use OCA\Dossiq\Listener\MapLayerHostListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -80,6 +81,7 @@ class ObjectListenerRegistrar {
 		$this->registerCaseTypeDeleteGuard(context: $context);
 		$this->registerEmailTemplateVersionListener(context: $context);
 		$this->registerSubmissionClosingDateGuard(context: $context);
+		$this->registerMapLayerHostListener(context: $context);
 		$this->registerSubsystemRegistrars(context: $context);
 	}//end register()
 
@@ -159,6 +161,24 @@ class ObjectListenerRegistrar {
 			);
 		}
 	}//end registerEmailTemplateVersionListener()
+
+	/**
+	 * Register the map layer host listener on create and update.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/gis-integration/spec.md
+	 */
+	private function registerMapLayerHostListener(IRegistrationContext $context): void {
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class] as $layerEvent) {
+			$context->registerEventListener(
+				event: $layerEvent,
+				listener: MapLayerHostListener::class
+			);
+		}
+	}//end registerMapLayerHostListener()
 
 	/**
 	 * Hand the context to each subsystem's own registrar.

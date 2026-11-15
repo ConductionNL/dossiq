@@ -42,11 +42,9 @@ use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FlowTimerEngine;
 use OCA\Dossiq\Service\Term\DayCount;
-use OCA\OpenRegister\Kernel\Contracts\TimerChange;
-use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Keeps one engine timer per active bezwaar trigger in step with the trigger.
@@ -192,14 +190,7 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
 	private function arm(ArchiveTimerStart $start): string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		$config = $this->timerConfig(start: $start);
-
-		return $this->armOn(engine: $engine, config: $config, triggerId: $start->triggerId);
+		return $this->timers()->arm(config: fn (): array => $this->timerConfig(start: $start), logContext: ['trigger' => $start->triggerId]);
 	}//end arm()
 
 	/**
@@ -233,18 +224,7 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	 * @return array<int, array<string, mixed>> The escalation rules.
 	 */
 	private function escalationRules(): array {
-		return [
-			[
-				'trigger'        => 'slaBreached',
-				'offset'         => 0,
-				'offsetUnit'     => 'calendarDays',
-				'notifyRole'     => [],
-				'escalateToRole' => [],
-				'priority'       => 'normal',
-				'message'        => 'bezwaartermijn-verstreken',
-				'openIncident'   => false,
-			],
-		];
+		return [$this->timers()->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'bezwaartermijn-verstreken')];
 	}//end escalationRules()
 
 	/**
@@ -265,29 +245,6 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	}//end timerMetadata()
 
 	/**
-	 * Hand the configuration to the engine.
-	 *
-	 * @param object               $engine    The timer engine.
-	 * @param array<string, mixed> $config    The timer configuration.
-	 * @param string               $triggerId The trigger id, for the log.
-	 *
-	 * @return string ARMED, or UNAVAILABLE.
-	 */
-	private function armOn(object $engine, array $config, string $triggerId): string {
-		try {
-			$engine->arm(config: $config, actor: null);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq bezwaar: the engine refused the bezwaartermijn timer',
-				['trigger' => $triggerId, 'error' => $e->getMessage()]
-			);
-			return self::UNAVAILABLE;
-		}
-
-		return self::ARMED;
-	}//end armOn()
-
-	/**
 	 * Cancel the trigger's open timers.
 	 *
 	 * @param string $triggerId The trigger id.
@@ -296,25 +253,7 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	 * @return string|null UNAVAILABLE when the engine is absent or refused, null when done.
 	 */
 	private function cancel(string $triggerId, string $reason): ?string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		try {
-			$engine->cancelForSubject(
-				subject: new TimerSubjectRef(type: 'object', uuid: $triggerId),
-				change: new TimerChange(reason: $reason, actor: null)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq bezwaar: the engine refused to cancel the bezwaartermijn timer',
-				['trigger' => $triggerId, 'error' => $e->getMessage()]
-			);
-			return self::UNAVAILABLE;
-		}
-
-		return null;
+		return $this->timers()->cancel(subjectUuid: $triggerId, reason: $reason, logContext: ['trigger' => $triggerId]);
 	}//end cancel()
 
 	/**
@@ -334,11 +273,11 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	}//end midnight()
 
 	/**
-	 * The engine, or null when OpenRegister does not ship it.
+	 * OpenRegister's flow timer engine for this timer.
 	 *
-	 * @return object|null
+	 * @return FlowTimerEngine
 	 */
-	private function engine(): ?object {
-		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
-	}//end engine()
+	private function timers(): FlowTimerEngine {
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq bezwaar', timer: 'bezwaartermijn timer');
+	}//end timers()
 }//end class

@@ -195,7 +195,10 @@ class DeliveryConcludedListener implements IEventListener {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
-		$case = $this->concludedCase(objectService: $objectService, delivery: $delivery, register: $register, schema: $schema);
+		$case = $this->concludedCase(
+			found: $objectService->find(id: $delivery->caseId, register: $register, schema: $schema),
+			delivery: $delivery
+		);
 		if ($case === null) {
 			return;
 		}
@@ -210,17 +213,15 @@ class DeliveryConcludedListener implements IEventListener {
 	}//end projectWith()
 
 	/**
-	 * Load the delivery's case, logging when it is not found.
+	 * The delivery's case as found, logging when it is not found.
 	 *
-	 * @param object            $objectService The OpenRegister ObjectService.
-	 * @param ConcludedDelivery $delivery      The concluded delivery.
-	 * @param mixed             $register      The configured register id.
-	 * @param mixed             $schema        The configured case schema id.
+	 * @param mixed             $found    What OpenRegister found for the delivery's case id.
+	 * @param ConcludedDelivery $delivery The concluded delivery.
 	 *
 	 * @return array<string, mixed>|null The case data, or null when not found.
 	 */
-	private function concludedCase(object $objectService, ConcludedDelivery $delivery, mixed $register, mixed $schema): ?array {
-		$case = $this->loadCase(objectService: $objectService, caseId: $delivery->caseId, register: $register, schema: $schema);
+	private function concludedCase(mixed $found, ConcludedDelivery $delivery): ?array {
+		$case = $this->caseOf(obj: $found);
 		if ($case === null) {
 			$this->logger->warning(
 				'Dossiq DeliveryConcludedListener: case not found for concluded delivery',
@@ -268,17 +269,13 @@ class DeliveryConcludedListener implements IEventListener {
 	}//end publicationsWith()
 
 	/**
-	 * Load a case from OpenRegister and normalise it to its array form.
+	 * A case OpenRegister found, normalised to its array form.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $caseId The case id.
-	 * @param mixed $register The configured register id.
-	 * @param mixed $schema The configured case schema id.
+	 * @param mixed $obj What OpenRegister found, or null.
 	 *
 	 * @return array<string, mixed>|null The case data, or null when not found.
 	 */
-	private function loadCase(object $objectService, string $caseId, mixed $register, mixed $schema): ?array {
-		$obj = $objectService->find(id: $caseId, register: $register, schema: $schema);
+	private function caseOf(mixed $obj): ?array {
 		if ($obj === null) {
 			return null;
 		}
@@ -289,7 +286,7 @@ class DeliveryConcludedListener implements IEventListener {
 		}
 
 		return $case;
-	}//end loadCase()
+	}//end caseOf()
 
 	/**
 	 * Apply a terminal delivery outcome to the matching publication entry.

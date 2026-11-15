@@ -371,11 +371,10 @@ class RecallSamples implements RecallSamplesInterface {
 	 */
 	private function withEstimate(array $sample, float $confidence): array {
 		$inScope = array_filter((array)$sample['judgements'], static fn (mixed $judgement): bool => $judgement === DocumentRelevance::IN_SCOPE);
-		$k = count($inScope);
-		$estimate = $this->estimateOf(sample: $sample, k: $k, confidence: $confidence);
-
-		$sample['k'] = $k;
+		$sample['k'] = count($inScope);
 		$sample['confidence'] = $confidence;
+		$estimate = $this->estimateOf(sample: $sample);
+
 		$sample['elusionRate'] = round((float)$estimate['elusion'], 4);
 		$sample['elusionUpper'] = round((float)$estimate['elusionUpper'], 4);
 		$sample['recallEstimate'] = round((float)$estimate['estimate'], 4);
@@ -388,19 +387,18 @@ class RecallSamples implements RecallSamplesInterface {
 	/**
 	 * The estimator's answer for a judged sample.
 	 *
-	 * @param array<string, mixed> $sample     The fully judged sample.
-	 * @param int                  $k          How many sampled documents were in scope.
-	 * @param float                $confidence The confidence.
+	 * @param array<string, mixed> $sample The fully judged sample, with how many sampled documents were in scope as `k`
+	 *                                     and the confidence.
 	 *
 	 * @return array<string, mixed> The estimate.
 	 */
-	private function estimateOf(array $sample, int $k, float $confidence): array {
+	private function estimateOf(array $sample): array {
 		return $this->estimator->estimate(
 			found: (int)($sample['found'] ?? 0),
 			nullSetSize: (int)($sample['nullSetSize'] ?? 0),
-			k: $k,
+			k: $sample['k'],
 			n: count((array)$sample['documents']),
-			confidence: $confidence,
+			confidence: $sample['confidence'],
 		);
 	}//end estimateOf()
 
@@ -485,24 +483,6 @@ class RecallSamples implements RecallSamplesInterface {
 			throw $this->unstored(previous: null);
 		}
 
-		$saved = $this->storeSample(objectService: $objectService, sample: $sample, schema: $schema, uuid: $uuid);
-
-		return $this->savedRow(saved: $saved);
-	}//end save()
-
-	/**
-	 * Write the sample, refusing when the write fails.
-	 *
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param array<string, mixed> $sample        The sample, without its metadata.
-	 * @param string               $schema        The sample schema.
-	 * @param string|null          $uuid          The sample's uuid, null for a new one.
-	 *
-	 * @return mixed What the ObjectService answered.
-	 *
-	 * @throws RefusedException When it cannot be stored.
-	 */
-	private function storeSample($objectService, array $sample, string $schema, ?string $uuid): mixed {
 		try {
 			$saved = $objectService->saveObject(
 				object: $sample,
@@ -515,8 +495,8 @@ class RecallSamples implements RecallSamplesInterface {
 			throw $this->unstored(previous: $e);
 		}
 
-		return $saved;
-	}//end storeSample()
+		return $this->savedRow(saved: $saved);
+	}//end save()
 
 	/**
 	 * The stored sample as an array.

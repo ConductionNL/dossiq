@@ -264,7 +264,7 @@ class EvidenceMetadataService implements EvidenceMetadataServiceInterface {
 			'sensitivityLevel' => ((string)($extra['sensitivityLevel'] ?? 'internal')),
 		];
 
-		return $this->withGpsLocation(payload: $payload, gps: $gps, capturedAt: $capturedAt);
+		return $this->withGpsLocation(payload: $payload, gps: $gps);
 	}//end buildEvidencePayload()
 
 	/**
@@ -288,15 +288,14 @@ class EvidenceMetadataService implements EvidenceMetadataServiceInterface {
 	/**
 	 * The payload with its gpsLocation block, when the fix has coordinates.
 	 *
-	 * @param array<string, mixed> $payload    The fieldEvidence payload.
-	 * @param array<string, mixed> $gps        The classified GPS fix.
-	 * @param mixed                $capturedAt The capture timestamp.
+	 * @param array<string, mixed> $payload The fieldEvidence payload, with its capture timestamp as `capturedAt`.
+	 * @param array<string, mixed> $gps     The classified GPS fix.
 	 *
 	 * @return array<string, mixed> The fieldEvidence payload.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
-	private function withGpsLocation(array $payload, array $gps, mixed $capturedAt): array {
+	private function withGpsLocation(array $payload, array $gps): array {
 		// 🔴 A SENSORLESS CAPTURE WITH NO FALLBACK CARRIES NO LOCATION AT ALL.
 		// classifyGps() answers `lat: null, lon: null` when the device had no
 		// fix and no case address was passed, and this method wrote that block
@@ -309,7 +308,7 @@ class EvidenceMetadataService implements EvidenceMetadataServiceInterface {
 				'lat' => $gps['location']['lat'],
 				'lon' => $gps['location']['lon'],
 				'accuracy' => $gps['location']['accuracy'],
-				'timestamp' => $capturedAt,
+				'timestamp' => $payload['capturedAt'],
 			];
 		}
 

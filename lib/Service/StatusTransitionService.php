@@ -254,16 +254,15 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 		$step = $this->stepFor(ask: new TransitionAsk(caseId: $caseId, transitionId: $transitionId, userId: $actor, resultTypeId: $resultTypeId));
 		$eval = $this->assertTransitionAllowed(step: $step);
 
-		return $this->carryOut(caseId: $caseId, step: $step, evaluatedGuards: $eval, comment: $comment);
+		return $this->carryOut(step: $step, move: ['evaluatedGuards' => $eval, 'comment' => $comment]);
 	}//end execute()
 
 	/**
 	 * Write an allowed move, retime the status clocks, record it and dispatch its actions.
 	 *
-	 * @param string                           $caseId          Case UUID
-	 * @param TransitionStep                   $step            The allowed move on the loaded case
-	 * @param array<int, array<string, mixed>> $evaluatedGuards The guard evaluation results
-	 * @param string|null                      $comment         Optional comment
+	 * @param TransitionStep $step The allowed move on the loaded case, asked for its case UUID
+	 * @param array{evaluatedGuards: array<int, array<string, mixed>>, comment: string|null} $move The guard evaluation
+	 *        results, and the optional comment
 	 *
 	 * @return array{
 	 *     status: string,
@@ -277,7 +276,8 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function carryOut(string $caseId, TransitionStep $step, array $evaluatedGuards, ?string $comment): array {
+	private function carryOut(TransitionStep $step, array $move): array {
+		$caseId = $step->ask->caseId;
 		$toStatus = $step->toStatus();
 		if ($toStatus === '') {
 			throw new RuntimeException('transition_missing_to_status');
@@ -296,12 +296,12 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 		// would breach about a status the case is not in.
 		$this->declarations->retime(caseId: $caseId, toStatus: $toStatus);
 
-		[$record, $dispatched] = $this->recordAndDispatch(
+		$recorded = $this->recordAndDispatch(
 			step: $step->withCaseData(caseData: $saved),
-			move: $step->move(comment: $comment, evaluatedGuards: $evaluatedGuards)
+			move: $step->move(comment: $move['comment'], evaluatedGuards: $move['evaluatedGuards'])
 		);
 
-		return ($this->moveResult(caseId: $caseId, record: $record, dispatched: $dispatched) + ['version' => $savedVersion]);
+		return ($this->moveResult(caseId: $caseId, recorded: $recorded) + ['version' => $savedVersion]);
 	}//end carryOut()
 
 	/**
@@ -534,23 +534,23 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 			self::FREE_FORM_MOVE,
 			['fromStatus' => (string)($case['status'] ?? ''), 'toStatus' => $toStatusId, 'comment' => $comment, 'actor' => $userId],
 		);
-		$case = $this->saveFreeFormMove(caseId: $caseId, caseData: $case, toStatusId: $toStatusId);
+		$case = $this->saveFreeFormMove(moving: ['caseId' => $caseId, 'case' => $case], toStatusId: $toStatusId);
 
-		return $this->recordAndDispatchFreeForm(caseId: $caseId, caseData: $case, move: $move);
+		return $this->recordAndDispatchFreeForm(moved: ['caseId' => $caseId, 'case' => $case], move: $move);
 	}//end executeFreeForm()
 
 	/**
 	 * Save the case in its new status and retime its terms.
 	 *
-	 * @param string               $caseId     Case UUID
-	 * @param array<string, mixed> $caseData   The case.
-	 * @param string               $toStatusId Target statusType UUID
+	 * @param array{caseId: string, case: array<string, mixed>} $moving     Case UUID, and the case.
+	 * @param string                                            $toStatusId Target statusType UUID
 	 *
 	 * @return array<string, mixed> The saved case.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function saveFreeFormMove(string $caseId, array $caseData, string $toStatusId): array {
+	private function saveFreeFormMove(array $moving, string $toStatusId): array {
+		['caseId' => $caseId, 'case' => $caseData] = $moving;
 		[$case] = $this->ledger->save(
 			case: $this->declarations->stamp(case: $caseData, toStatus: $toStatusId),
 			toStatus: $toStatusId,
@@ -563,9 +563,9 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 	/**
 	 * Record the move and dispatch the target status's checklist actions.
 	 *
-	 * @param string               $caseId   Case UUID
-	 * @param array<string, mixed> $caseData The saved case.
-	 * @param array<string, mixed> $move     The move (`toStatus`, `fromStatus`, `comment`, `actor`, ...); `actor` is the acting user UID.
+	 * @param array{caseId: string, case: array<string, mixed>} $moved Case UUID, and the saved case.
+	 * @param array<string, mixed>                              $move  The move (`toStatus`, `fromStatus`, `comment`, `actor`, ...);
+	 *                                                                 `actor` is the acting user UID.
 	 *
 	 * @return array{
 	 *     status: string,
@@ -576,7 +576,8 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function recordAndDispatchFreeForm(string $caseId, array $caseData, array $move): array {
+	private function recordAndDispatchFreeForm(array $moved, array $move): array {
+		['caseId' => $caseId, 'case' => $caseData] = $moved;
 		$record = $this->ledger->record(caseId: $caseId, move: $move);
 		$dispatched = $this->ledger->dispatch(
 			actions: $this->declarations->checklistActions(statusTypeId: $move['toStatus'], case: $caseData, actor: $move['actor']),
@@ -585,15 +586,14 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 			record: $record,
 		);
 
-		return $this->moveResult(caseId: $caseId, record: $record, dispatched: $dispatched);
+		return $this->moveResult(caseId: $caseId, recorded: [$record, $dispatched]);
 	}//end recordAndDispatchFreeForm()
 
 	/**
 	 * The answer of a carried-out move; a guarded transition adds its `version`.
 	 *
-	 * @param string                           $caseId     Case UUID
-	 * @param array<string, mixed>             $record     The status record.
-	 * @param array<int, array<string, mixed>> $dispatched The dispatched actions.
+	 * @param string                                                         $caseId   Case UUID
+	 * @param array{0: array<string, mixed>, 1: array<int, array<string, mixed>>} $recorded The status record and the dispatched actions.
 	 *
 	 * @return array{
 	 *     status: string,
@@ -604,7 +604,8 @@ class StatusTransitionService implements StatusTransitionServiceInterface {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function moveResult(string $caseId, array $record, array $dispatched): array {
+	private function moveResult(string $caseId, array $recorded): array {
+		[$record, $dispatched] = $recorded;
 		$outcome = $this->actionOutcome(dispatched: $dispatched, caseId: $caseId);
 
 		return [

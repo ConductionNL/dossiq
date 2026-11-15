@@ -174,31 +174,35 @@ class OpenRegisterSharingGateway {
 			return null;
 		}
 
-		return $this->withMethods(service: $service, className: $className, methods: $methods);
-	}//end resolve()
-
-	/**
-	 * The service when it carries every method the caller will invoke, null and a warning otherwise.
-	 *
-	 * @param mixed              $service   The resolved service.
-	 * @param string             $className The fully qualified class name.
-	 * @param array<int, string> $methods   The methods the caller will invoke.
-	 *
-	 * @return object|null The service, or null.
-	 */
-	private function withMethods(mixed $service, string $className, array $methods): object|null {
-		foreach ($methods as $method) {
-			if (method_exists($service, $method) === false) {
-				$this->logger->warning(
-					'CaseSharingService: OpenRegister service is an older shape than this code calls',
-					['class' => $className, 'missing' => $method]
-				);
-				return null;
-			}
+		$missing = self::missingMethod(service: $service, methods: $methods);
+		if ($missing !== null) {
+			$this->logger->warning(
+				'CaseSharingService: OpenRegister service is an older shape than this code calls',
+				['class' => $className, 'missing' => $missing]
+			);
+			return null;
 		}
 
 		return $service;
-	}//end withMethods()
+	}//end resolve()
+
+	/**
+	 * The first method the caller will invoke that the service does not carry, or null when it carries them all.
+	 *
+	 * @param mixed              $service The resolved service.
+	 * @param array<int, string> $methods The methods the caller will invoke.
+	 *
+	 * @return string|null The missing method, or null.
+	 */
+	private static function missingMethod(mixed $service, array $methods): ?string {
+		foreach ($methods as $method) {
+			if (method_exists($service, $method) === false) {
+				return $method;
+			}
+		}
+
+		return null;
+	}//end missingMethod()
 
 	/**
 	 * Resolve OpenRegister's FederationShareService — the leaf that owns

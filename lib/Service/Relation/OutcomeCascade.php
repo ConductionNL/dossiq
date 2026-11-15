@@ -306,6 +306,21 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 	 * @throws InvalidArgumentException When an input is missing or not a scalar.
 	 */
 	private function guardInputs(string $name, array $steps, array $inputs): void {
+		foreach (array_unique(self::askedInputs(steps: $steps)) as $input) {
+			if (array_key_exists($input, $inputs) === false || is_scalar($inputs[$input]) === false) {
+				throw new InvalidArgumentException("Cascade '$name' needs the input '$input'.");
+			}
+		}
+	}//end guardInputs()
+
+	/**
+	 * Every input the steps ask for, by `{"input": name}`, possibly repeated.
+	 *
+	 * @param array<int, mixed> $steps The steps.
+	 *
+	 * @return array<int, string> The input names.
+	 */
+	private static function askedInputs(array $steps): array {
 		$asked = [];
 		array_walk_recursive(
 			$steps,
@@ -316,12 +331,8 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 			}
 		);
 
-		foreach (array_unique($asked) as $input) {
-			if (array_key_exists($input, $inputs) === false || is_scalar($inputs[$input]) === false) {
-				throw new InvalidArgumentException("Cascade '$name' needs the input '$input'.");
-			}
-		}
-	}//end guardInputs()
+		return $asked;
+	}//end askedInputs()
 
 	/**
 	 * Resolve `{"input": name}` values against the caller's inputs.

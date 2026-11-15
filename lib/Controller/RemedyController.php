@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\RemedyLodgingInterface;
@@ -79,13 +80,9 @@ class RemedyController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function lodge(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = (new CaseAccessRefusal(userSession: $this->userSession, guard: $this->accessGuard))->requireChangeAccess(caseId: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$objection = [];

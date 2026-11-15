@@ -195,22 +195,45 @@ class SubstitutionValidator {
 			return;
 		}
 
+		$this->refuseOverlap(rows: $this->substitutionsOf(absentee: $absentee), period: [$start, $end]);
+	}//end assertNoOverlappingFullScope()
+
+	/**
+	 * The stored substitutions covering the handler, none when OpenRegister is absent.
+	 *
+	 * @param string $absentee The covered handler.
+	 *
+	 * @return array<int, array<string, mixed>> The substitution rows.
+	 */
+	private function substitutionsOf(string $absentee): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('substitution_schema');
 		if ($objectService === null) {
-			return;
+			return [];
 		}
 
-		$rows = $this->searchObjectsAsArrays(
+		return $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
 			filters: ['absentee' => $absentee]
 		);
+	}//end substitutionsOf()
 
+	/**
+	 * Throw on the first active full-scope substitution overlapping the period.
+	 *
+	 * @param array<int, array<string, mixed>>               $rows   The substitution rows.
+	 * @param array{0: DateTimeImmutable, 1: DateTimeImmutable} $period New start and new end.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When one overlaps.
+	 */
+	private function refuseOverlap(array $rows, array $period): void {
 		foreach ($rows as $row) {
-			if ($this->rowOverlapsFullScope(row: $row, start: $start, end: $end) === false) {
+			if ($this->rowOverlapsFullScope(row: $row, period: $period) === false) {
 				continue;
 			}
 
@@ -220,21 +243,21 @@ class SubstitutionValidator {
 				. 'overlapping period (conflicting substitution: ' . $conflictId . ')'
 			);
 		}
-	}//end assertNoOverlappingFullScope()
+	}//end refuseOverlap()
 
 	/**
 	 * Whether one existing row is an active full-scope substitution whose period
 	 * overlaps the candidate period.
 	 *
 	 * @param array<string, mixed> $row An existing substitution row.
-	 * @param DateTimeImmutable $start Candidate start.
-	 * @param DateTimeImmutable $end Candidate end.
+	 * @param array{0: DateTimeImmutable, 1: DateTimeImmutable} $period Candidate start and candidate end.
 	 *
 	 * @return bool True when the row conflicts with the candidate period.
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function rowOverlapsFullScope(array $row, DateTimeImmutable $start, DateTimeImmutable $end): bool {
+	private function rowOverlapsFullScope(array $row, array $period): bool {
+		[$start, $end] = $period;
 		if ((string)($row['status'] ?? '') !== 'active') {
 			return false;
 		}

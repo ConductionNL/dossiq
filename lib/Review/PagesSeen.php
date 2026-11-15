@@ -73,7 +73,7 @@ class PagesSeen implements PagesSeenInterface {
 	 */
 	public function record(string $caseId, string $documentRef, array $pages, ?int $pageCount, string $userId): array {
 		$pages  = $this->displayedPages(pages: $pages);
-		$review = $this->reviewWithPageCount(caseId: $caseId, documentRef: $documentRef, pageCount: $pageCount);
+		$review = $this->withPageCount(review: $this->review(caseId: $caseId, documentRef: $documentRef), pageCount: $pageCount);
 		$review['pagesSeen'] = $this->seenWith(review: $review, pages: $pages, userId: $userId);
 
 		return $this->reviews->save(review: $review);
@@ -102,24 +102,35 @@ class PagesSeen implements PagesSeenInterface {
 	}//end displayedPages()
 
 	/**
-	 * The document's review, with the page count set by the first count heard.
+	 * The document's review, or a fresh unmarked one.
 	 *
-	 * @param string $caseId The case UUID.
+	 * @param string $caseId      The case UUID.
 	 * @param string $documentRef The document.
-	 * @param int|null $pageCount The document's page count, when the viewer knows it.
 	 *
 	 * @return array<string, mixed> The review.
 	 */
-	private function reviewWithPageCount(string $caseId, string $documentRef, ?int $pageCount): array {
+	private function review(string $caseId, string $documentRef): array {
 		$fresh = ['case' => $caseId, 'documentRef' => $documentRef, 'relevance' => DocumentRelevance::UNMARKED];
-		$review = ($this->reviews->forCase(caseId: $caseId)[$documentRef] ?? $fresh);
+
+		return ($this->reviews->forCase(caseId: $caseId)[$documentRef] ?? $fresh);
+	}//end review()
+
+	/**
+	 * The review, with the page count set by the first count heard.
+	 *
+	 * @param array<string, mixed> $review    The review.
+	 * @param int|null             $pageCount The document's page count, when the viewer knows it.
+	 *
+	 * @return array<string, mixed> The review.
+	 */
+	private function withPageCount(array $review, ?int $pageCount): array {
 		if ($pageCount !== null && $pageCount >= 1 && isset($review['pageCount']) === false) {
 			$review['pageCount'] = $pageCount;
 			$review['pagesRequired'] = $this->depth->pagesRequired(depth: (array)($review['depth'] ?? []), pageCount: $pageCount);
 		}
 
 		return $review;
-	}//end reviewWithPageCount()
+	}//end withPageCount()
 
 	/**
 	 * The review's seen pages, with each page not yet recorded for this reviewer appended.

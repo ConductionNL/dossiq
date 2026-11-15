@@ -41,6 +41,16 @@ use OCP\IL10N;
  */
 class CoveredWorkSource implements QueueSource {
 	/**
+	 * Per subject type: the route name that opens it and the property holding its date.
+	 *
+	 * @var array<string, array{route: string, dateKey: string}>
+	 */
+	private const SUBJECTS = [
+		'case' => ['route' => 'CaseDetail', 'dateKey' => 'deadline'],
+		'task' => ['route' => 'TaskDetail', 'dateKey' => 'dueAt'],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SubstitutionService $substitutions Who is away and who covers them.
@@ -114,14 +124,14 @@ class CoveredWorkSource implements QueueSource {
 
 		$items = [];
 		foreach ($this->rowsOf(work: $work, key: 'cases') as $row) {
-			$item = $this->itemOf(row: $row, subjectType: 'case', route: 'CaseDetail', dateKey: 'deadline');
+			$item = $this->itemOf(row: $row, subjectType: 'case');
 			if ($item !== null) {
 				$items[] = $item;
 			}
 		}
 
 		foreach ($this->rowsOf(work: $work, key: 'tasks') as $row) {
-			$item = $this->itemOf(row: $row, subjectType: 'task', route: 'TaskDetail', dateKey: 'dueAt');
+			$item = $this->itemOf(row: $row, subjectType: 'task');
 			if ($item !== null) {
 				$items[] = $item;
 			}
@@ -158,22 +168,20 @@ class CoveredWorkSource implements QueueSource {
 	 * whole source exists to avoid.
 	 *
 	 * @param array<string, mixed> $row         The row.
-	 * @param string               $subjectType What the item points at.
-	 * @param string               $route       The route name that opens it.
-	 * @param string               $dateKey     The property holding its date.
+	 * @param string               $subjectType What the item points at, one of SUBJECTS' keys.
 	 *
 	 * @return QueueItem|null The item, or null when the row cannot be marked.
 	 *
 	 * @spec openspec/specs/my-work/spec.md
 	 */
-	private function itemOf(array $row, string $subjectType, string $route, string $dateKey): ?QueueItem {
+	private function itemOf(array $row, string $subjectType): ?QueueItem {
 		$id = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
 		$absentee = $this->absenteeOf(row: $row);
 		if ($id === '' || $absentee === '') {
 			return null;
 		}
 
-		$due = $this->dueOf(row: $row, dateKey: $dateKey);
+		$due = $this->dueOf(row: $row, dateKey: self::SUBJECTS[$subjectType]['dateKey']);
 
 		return new QueueItem(
 			source: $this->name(),
@@ -183,7 +191,7 @@ class CoveredWorkSource implements QueueSource {
 			priority: (string)($row['priority'] ?? ''),
 			dueAt: $due,
 			coveredFor: $absentee,
-			route: ['name' => $route, 'params' => ['id' => $id]]
+			route: ['name' => self::SUBJECTS[$subjectType]['route'], 'params' => ['id' => $id]]
 		);
 	}//end itemOf()
 

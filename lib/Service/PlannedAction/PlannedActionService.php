@@ -67,6 +67,16 @@ class PlannedActionService implements PlannedActionServiceInterface {
 	public const TYPE_SCHEMA_KEY = 'planned_action_type_schema';
 
 	/**
+	 * The canonical schema slug of each schema key, used when the key is blank.
+	 *
+	 * @var array<string, string>
+	 */
+	private const SCHEMA_SLUGS = [
+		self::ACTION_SCHEMA_KEY => 'plannedAction',
+		self::TYPE_SCHEMA_KEY => 'plannedActionType',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
@@ -277,7 +287,7 @@ class PlannedActionService implements PlannedActionServiceInterface {
 	 * @return array<int, array<string, mixed>> The rows, empty when unreadable.
 	 */
 	private function readActions(array $filters): array {
-		return $this->read(schemaKey: self::ACTION_SCHEMA_KEY, slug: 'plannedAction', filters: $filters);
+		return $this->read(schemaKey: self::ACTION_SCHEMA_KEY, filters: $filters);
 	}
 
 	/**
@@ -286,11 +296,7 @@ class PlannedActionService implements PlannedActionServiceInterface {
 	 * @return array<int, array<string, mixed>> The rows, empty when unreadable.
 	 */
 	private function readTypes(): array {
-		return $this->read(
-			schemaKey: self::TYPE_SCHEMA_KEY,
-			slug: 'plannedActionType',
-			filters: ['_limit' => 200]
-		);
+		return $this->read(schemaKey: self::TYPE_SCHEMA_KEY, filters: ['_limit' => 200]);
 	}
 
 	/**
@@ -301,13 +307,13 @@ class PlannedActionService implements PlannedActionServiceInterface {
 	 * that shows none, and this is a planning aid rather than an access
 	 * decision. `CaseAccessGuard` answers the opposite way, on purpose.
 	 *
-	 * @param string $schemaKey The config key naming the schema.
-	 * @param string $slug The canonical schema slug, used when the key is blank.
+	 * @param string $schemaKey The config key naming the schema, one of SCHEMA_SLUGS' keys.
 	 * @param array<string, mixed> $filters The filters.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function read(string $schemaKey, string $slug, array $filters): array {
+	private function read(string $schemaKey, array $filters): array {
+		$slug = self::SCHEMA_SLUGS[$schemaKey];
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '') {

@@ -186,27 +186,29 @@ class OnboardingSteps {
 			'state' => self::STATE_FOR_STATUS[$status],
 		];
 
-		return $this->imported(payload: $this->withOptionalFields(payload: $payload, status: $status, metadata: $metadata), actor: $actor);
+		return $this->imported(
+			payload: $this->withOptionalFields(payload: $payload, optional: ['status' => $status, 'metadata' => $metadata]),
+			actor: $actor
+		);
 	}//end open()
 
 	/**
 	 * Add the skipped outcome and the step's metadata to an onboarding task payload.
 	 *
-	 * @param array<string, mixed> $payload  The task payload.
-	 * @param string               $status   The onboarding status it starts in.
-	 * @param array<string, mixed> $metadata Anything the step carries along.
+	 * @param array<string, mixed>                              $payload  The task payload.
+	 * @param array{status: string, metadata: array<string, mixed>} $optional The onboarding status it starts in, and anything the step carries along.
 	 *
 	 * @return array<string, mixed> The payload with its optional fields.
 	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md
 	 */
-	private function withOptionalFields(array $payload, string $status, array $metadata): array {
-		if ($status === 'skipped') {
+	private function withOptionalFields(array $payload, array $optional): array {
+		if ($optional['status'] === 'skipped') {
 			$payload['outcome'] = self::OUTCOME_SKIPPED;
 		}
 
-		if ($metadata !== []) {
-			$payload['metadata'] = ['dossiq' => $metadata];
+		if ($optional['metadata'] !== []) {
+			$payload['metadata'] = ['dossiq' => $optional['metadata']];
 		}
 
 		return $payload;

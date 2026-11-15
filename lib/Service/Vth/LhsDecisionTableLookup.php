@@ -122,20 +122,10 @@ class LhsDecisionTableLookup {
 		string $behaviour,
 		string $actorType,
 	): ?string {
-		$reference = $this->referenceFor(matrixVersion: $matrixVersion);
-		try {
-			$result = $this->tables->evaluate(
-				reference: $reference,
-				inputs: [
-					'severity' => $severity,
-					'behaviour' => $behaviour,
-					'actorType' => $actorType,
-				]
-			);
-		} catch (Throwable $e) {
-			$this->logRefusal(reference: $reference, triple: $severity . ':' . $behaviour . ':' . $actorType, failure: $e);
-			$result = null;
-		}
+		$result = $this->evaluated(
+			reference: $this->referenceFor(matrixVersion: $matrixVersion),
+			inputs: ['severity' => $severity, 'behaviour' => $behaviour, 'actorType' => $actorType]
+		);
 
 		$intervention = ($result['outputs']['intervention'] ?? null);
 		if (is_string($intervention) === true && $intervention !== '') {
@@ -146,19 +136,37 @@ class LhsDecisionTableLookup {
 	}//end intervention()
 
 	/**
+	 * The table's answer for the triple, or null (logged) when it does not answer.
+	 *
+	 * @param string                                                   $reference The stored key.
+	 * @param array{severity: string, behaviour: string, actorType: string} $inputs    The triple.
+	 *
+	 * @return array<string, mixed>|null The evaluation result.
+	 */
+	private function evaluated(string $reference, array $inputs): ?array {
+		$result = null;
+		try {
+			$result = $this->tables->evaluate(reference: $reference, inputs: $inputs);
+		} catch (Throwable $e) {
+			$this->logRefusal(failure: $e, context: ['table' => $reference, 'triple' => implode(':', $inputs)]);
+		}
+
+		return $result;
+	}//end evaluated()
+
+	/**
 	 * Log why the table did not answer.
 	 *
 	 * A missing table is the ordinary state before the projection runs, so it
 	 * is debug; anything else is a table that exists and refused.
 	 *
-	 * @param string $reference The stored key.
-	 * @param string $triple The triple.
-	 * @param Throwable $failure What the store threw.
+	 * @param Throwable                              $failure What the store threw.
+	 * @param array{table: string, triple: string} $context The stored key and the triple.
 	 *
 	 * @return void
 	 */
-	private function logRefusal(string $reference, string $triple, Throwable $failure): void {
-		$context = ['table' => $reference, 'triple' => $triple, 'exception' => $failure->getMessage()];
+	private function logRefusal(Throwable $failure, array $context): void {
+		$context['exception'] = $failure->getMessage();
 		if ($failure instanceof \UnexpectedValueException) {
 			$this->logger->debug('Dossiq: no runnable LHS decision table in OpenRegister', $context);
 			return;

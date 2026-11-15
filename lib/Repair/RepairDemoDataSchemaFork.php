@@ -451,7 +451,7 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 
 		$pruned = 0;
 		foreach ($configurations as $configuration) {
-			$pruned += $this->pruneConfiguration(configurationMapper: $configurationMapper, schemaMapper: $schemaMapper, configuration: $configuration);
+			$pruned += $this->pruneConfiguration(mappers: [$configurationMapper, $schemaMapper], configuration: $configuration);
 		}
 
 		$this->reportPruned(output: $output, pruned: $pruned);
@@ -460,13 +460,13 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 	/**
 	 * Drop the schema ids of one configuration record that no longer resolve.
 	 *
-	 * @param object $configurationMapper OpenRegister's ConfigurationMapper.
-	 * @param object $schemaMapper        OpenRegister's SchemaMapper.
-	 * @param object $configuration       The configuration record.
+	 * @param array{0: object, 1: object} $mappers       OpenRegister's ConfigurationMapper and SchemaMapper.
+	 * @param object                      $configuration The configuration record.
 	 *
 	 * @return int How many ids were dropped.
 	 */
-	private function pruneConfiguration(object $configurationMapper, object $schemaMapper, object $configuration): int {
+	private function pruneConfiguration(array $mappers, object $configuration): int {
+		[$configurationMapper, $schemaMapper] = $mappers;
 		$pruned = 0;
 		$kept = [];
 		foreach (($configuration->getSchemas() ?? []) as $id) {

@@ -581,13 +581,15 @@ class CaseEndingActs {
 			resultTypeId: $chosenResult,
 		);
 
-		return [
+		$landing = [
 			'from' => $fromStatus,
 			'status' => $target,
 			'result' => $resultId,
 			'endDate' => (new DateTimeImmutable())->format('Y-m-d'),
-			'skippedPhases' => $this->skippedPhases(caseTypeId: $caseTypeId, fromStatus: $fromStatus, toStatus: $target),
 		];
+		$landing['skippedPhases'] = $this->skippedPhases(caseTypeId: $caseTypeId, landing: $landing);
+
+		return $landing;
 	}//end landing()
 
 	/**
@@ -737,15 +739,17 @@ class CaseEndingActs {
 	 * it lands on. A case closed from its last phase skips nothing and records
 	 * nothing, which is why an ordinary close does not gain a field.
 	 *
-	 * @param string $caseTypeId The case type UUID.
-	 * @param string $fromStatus The status the case is leaving.
-	 * @param string $toStatus The terminal status it lands on.
+	 * @param string               $caseTypeId The case type UUID.
+	 * @param array<string, mixed> $landing    The status the case is leaving as `from`, and the terminal
+	 *                                         status it lands on as `status`.
 	 *
 	 * @return list<string> The skipped phase names, in process order.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function skippedPhases(string $caseTypeId, string $fromStatus, string $toStatus): array {
+	private function skippedPhases(string $caseTypeId, array $landing): array {
+		$fromStatus = (string)$landing['from'];
+		$toStatus = (string)$landing['status'];
 		$rows = $this->statuses->rowsOf(caseTypeId: $caseTypeId);
 		usort($rows, fn (array $left, array $right): int => $this->orderOf(row: $left) <=> $this->orderOf(row: $right));
 

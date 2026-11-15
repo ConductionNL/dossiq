@@ -80,6 +80,13 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 	public const ORIGIN_SHARED = 'shared';
 
 	/**
+	 * The schemas whose rows with no case type count for every case type.
+	 *
+	 * @var array<int, string>
+	 */
+	private const SHARED_ROW_SCHEMAS = ['property_definition_schema'];
+
+	/**
 	 * The fields a child falls back to its parent for when it leaves them empty.
 	 *
 	 * Only fields whose emptiness is unambiguous. `isDraft` is not here on
@@ -201,11 +208,7 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function statusTypesFor(string $caseTypeId): array {
-		return ($this->ownLifecycle(caseTypeId: $caseTypeId) ?? $this->inheritedRows(
-			caseTypeId: $caseTypeId,
-			schemaKey: 'status_type_schema',
-			includeShared: false
-		));
+		return ($this->ownLifecycle(caseTypeId: $caseTypeId) ?? $this->inheritedRows(caseTypeId: $caseTypeId, schemaKey: 'status_type_schema'));
 	}//end statusTypesFor()
 
 	/**
@@ -247,11 +250,7 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function resultTypesFor(string $caseTypeId): array {
-		return $this->inheritedRows(
-			caseTypeId: $caseTypeId,
-			schemaKey: 'result_type_schema',
-			includeShared: false
-		);
+		return $this->inheritedRows(caseTypeId: $caseTypeId, schemaKey: 'result_type_schema');
 	}//end resultTypesFor()
 
 	/**
@@ -270,11 +269,7 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 	 * @spec openspec/specs/property-definition-management/spec.md
 	 */
 	public function propertyDefinitionsFor(string $caseTypeId): array {
-		return $this->inheritedRows(
-			caseTypeId: $caseTypeId,
-			schemaKey: 'property_definition_schema',
-			includeShared: true
-		);
+		return $this->inheritedRows(caseTypeId: $caseTypeId, schemaKey: 'property_definition_schema');
 	}//end propertyDefinitionsFor()
 
 	/**
@@ -416,15 +411,16 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 	 * is the only key both ends can be authored with: ids are minted per
 	 * install, so a child could not name the parent row it is overriding.
 	 *
-	 * @param string  $caseTypeId    CaseType UUID.
-	 * @param string  $schemaKey     The settings key naming the schema.
-	 * @param boolean $includeShared Whether rows with no case type count.
+	 * Rows with no case type count for the schemas in SHARED_ROW_SCHEMAS.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 * @param string $schemaKey  The settings key naming the schema.
 	 *
 	 * @return array<int, array<string, mixed>> The merged rows.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function inheritedRows(string $caseTypeId, string $schemaKey, bool $includeShared): array {
+	private function inheritedRows(string $caseTypeId, string $schemaKey): array {
 		$chain = $this->chainFor(caseTypeId: $caseTypeId);
 		if ($chain === []) {
 			return [];
@@ -448,7 +444,7 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 			}
 		}
 
-		if ($includeShared === true) {
+		if (in_array($schemaKey, self::SHARED_ROW_SCHEMAS, true) === true) {
 			$merged = $this->withSharedRows(merged: $merged, schemaKey: $schemaKey);
 		}
 

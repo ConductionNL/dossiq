@@ -137,7 +137,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 		foreach (self::CONTRACT_DECISION_CASE_TYPES as $caseTypeSlug) {
 			foreach ($this->casesOfType(run: $run, caseTypeSlug: $caseTypeSlug) as $case) {
 				$run->count(
-					outcome: $this->linkCase(run: $run, case: $case, caseTypeSlug: $caseTypeSlug)
+					outcome: $this->linkCase(run: $run, target: ['case' => $case, 'caseTypeSlug' => $caseTypeSlug])
 				);
 			}
 		}
@@ -205,13 +205,13 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	/**
 	 * Link a single in-flight case forward to a decidesk Decision.
 	 *
-	 * @param InFlightDecisionLinkRun $run          The run: its object service and output.
-	 * @param array<string, mixed>    $case         The case row.
-	 * @param string                  $caseTypeSlug The dossiq case type slug.
+	 * @param InFlightDecisionLinkRun                                 $run    The run: its object service and output.
+	 * @param array{case: array<string, mixed>, caseTypeSlug: string} $target The case row and the dossiq case type slug.
 	 *
 	 * @return string One of the self::RESULT_* constants.
 	 */
-	private function linkCase(InFlightDecisionLinkRun $run, array $case, string $caseTypeSlug): string {
+	private function linkCase(InFlightDecisionLinkRun $run, array $target): string {
+		$case = $target['case'];
 		$output = $run->output;
 		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
 		$precheck = $this->precheckOf(case: $case);
@@ -221,33 +221,20 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 
 		// Open case with no decision yet — link forward to decidesk.
 		try {
-			$newDecisionRef = $this->raiseAndPersistDecision(objectService: $run->objectService, case: $case, caseTypeSlug: $caseTypeSlug);
+			$newDecisionRef = $this->raiseAndPersistDecision(objectService: $run->objectService, target: $target);
 			$output->info('Linked case ' . $caseUuid . ' → decidesk Decision ' . $newDecisionRef);
 		} catch (RuntimeException $e) {
 			// Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
-			$this->reportNotLinked(output: $output, caseUuid: $caseUuid, error: $e);
+			$output->warning('Could not link case ' . $caseUuid . ': ' . $e->getMessage() . ' — skipping.');
+			$this->logger->warning(
+				'LinkInFlightContractDecisionsRepair: could not link case',
+				['caseUuid' => $caseUuid, 'error' => $e->getMessage()]
+			);
 			return self::RESULT_ERROR;
 		}//end try
 
 		return self::RESULT_LINKED;
 	}//end linkCase()
-
-	/**
-	 * Report a case that could not be linked.
-	 *
-	 * @param IOutput $output The migration output interface.
-	 * @param string $caseUuid The case uuid.
-	 * @param RuntimeException $error Why it could not be linked.
-	 *
-	 * @return void
-	 */
-	private function reportNotLinked(IOutput $output, string $caseUuid, RuntimeException $error): void {
-		$output->warning('Could not link case ' . $caseUuid . ': ' . $error->getMessage() . ' — skipping.');
-		$this->logger->warning(
-			'LinkInFlightContractDecisionsRepair: could not link case',
-			['caseUuid' => $caseUuid, 'error' => $error->getMessage()]
-		);
-	}//end reportNotLinked()
 
 	/**
 	 * The outcome of a case that needs no link, or null when it must be linked.
@@ -290,15 +277,16 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	/**
 	 * Raise a decidesk Decision for a case and persist its reference on the case.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $case          The case row.
-	 * @param string               $caseTypeSlug  The dossiq case type slug.
+	 * @param object                                                  $objectService The OpenRegister ObjectService.
+	 * @param array{case: array<string, mixed>, caseTypeSlug: string} $target        The case row and the dossiq case type slug.
 	 *
 	 * @return string The new decision reference.
 	 *
 	 * @throws RuntimeException When the decidesk leaf is unavailable.
 	 */
-	private function raiseAndPersistDecision(object $objectService, array $case, string $caseTypeSlug): string {
+	private function raiseAndPersistDecision(object $objectService, array $target): string {
+		$case = $target['case'];
+		$caseTypeSlug = $target['caseTypeSlug'];
 		$caseUuid = (string)($case['uuid'] ?? $case['id'] ?? '');
 		$newDecisionRef = $this->delegationService->raiseContractDecision(
 			caseRef: $caseUuid,

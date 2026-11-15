@@ -91,7 +91,9 @@ class BeschikkingTools implements BeschikkingToolsInterface {
 			return $this->error(code: 'forbidden', message: 'You may not change this case.');
 		}
 
-		return $this->composed(caseId: $caseId, templateId: $templateId, fields: $this->fieldsOf(decisionType: $decisionType, rationale: $rationale));
+		return $this->composed(
+			draft: ['caseId' => $caseId, 'templateId' => $templateId, 'fields' => $this->fieldsOf(decisionType: $decisionType, rationale: $rationale)]
+		);
 	}//end draftBeschikking()
 
 	/**
@@ -118,13 +120,13 @@ class BeschikkingTools implements BeschikkingToolsInterface {
 	/**
 	 * Compose the draft decision, a refusal answered as the tool's error.
 	 *
-	 * @param string                $caseId     The case uuid.
-	 * @param string                $templateId The template uuid, or '' for the case type's own.
-	 * @param array<string, string> $fields     The decision fields.
+	 * @param array{caseId: string, templateId: string, fields: array<string, string>} $draft The case uuid, the template uuid
+	 *                                                                                   ('' for the case type's own) and the decision fields.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function composed(string $caseId, string $templateId, array $fields): array {
+	private function composed(array $draft): array {
+		['caseId' => $caseId, 'templateId' => $templateId, 'fields' => $fields] = $draft;
 		$template = null;
 		if (trim($templateId) !== '') {
 			$template = $templateId;

@@ -301,9 +301,7 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 			return $this->serviceAccount->runAsWhenNobodyIsSignedIn(
 				operation: fn (): bool => $this->recordStatus(
 					externalMessageId: $externalMessageId,
-					status: $status,
-					lastError: $lastError,
-					simulated: $simulated,
+					stamp: ['status' => $status, 'lastError' => $lastError, 'simulated' => $simulated]
 				)
 			);
 		} catch (ServiceAccountUnavailableException $e) {
@@ -314,15 +312,14 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 	/**
 	 * Record one status, as whoever is acting.
 	 *
-	 * @param string $externalMessageId The id integriq tracks the message by.
-	 * @param string $status            The status it moved to.
-	 * @param string $lastError         The provider's reason, when it failed.
-	 * @param bool   $simulated         Whether the binding that handled it sends nothing.
+	 * @param string                                                  $externalMessageId The id integriq tracks the message by.
+	 * @param array{status: string, lastError: string, simulated: bool} $stamp             The status it moved to, the provider's
+	 *                                                                                     reason and whether the binding sends nothing.
 	 *
 	 * @return bool True when a stored message was updated.
 	 */
-	private function recordStatus(string $externalMessageId, string $status, string $lastError, bool $simulated): bool {
-		if (trim($externalMessageId) === '' || trim($status) === '') {
+	private function recordStatus(string $externalMessageId, array $stamp): bool {
+		if (trim($externalMessageId) === '' || trim($stamp['status']) === '') {
 			return false;
 		}
 
@@ -333,11 +330,16 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 
 		[$objectService, $register, $schema, $data] = $tracked;
 
-		$data = $this->withStatus(data: $data, status: $status, lastError: $lastError, simulated: $simulated);
+		$data = $this->withStatus(data: $data, stamp: $stamp);
 
 		$objectService->saveObject(object: $data, register: $register, schema: $schema);
 
-		$this->journal->recordStatus(data: $data, externalMessageId: $externalMessageId, status: $status, lastError: $lastError);
+		$this->journal->recordStatus(
+			data: $data,
+			externalMessageId: $externalMessageId,
+			status: $stamp['status'],
+			lastError: $stamp['lastError']
+		);
 
 		return true;
 	}//end recordStatus()
@@ -358,7 +360,8 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 		$register = (int)$this->settingsService->getConfigValue('register');
 		$schema = (int)$this->settingsService->getConfigValue('berichtenbox_message_schema');
 
-		$data = $this->storedMessage(objectService: $objectService, externalMessageId: $externalMessageId, register: $register, schema: $schema);
+		$filters = ['register' => $register, 'schema' => $schema, 'externalMessageId' => $externalMessageId];
+		$data = $this->storedMessage(objectService: $objectService, filters: $filters);
 		if ($data === null) {
 			return null;
 		}
@@ -369,18 +372,16 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 	/**
 	 * The stored message with the new status stamped onto it.
 	 *
-	 * @param array<string, mixed> $data      The stored message.
-	 * @param string               $status    The status it moved to.
-	 * @param string               $lastError The provider's reason, when it failed.
-	 * @param bool                 $simulated Whether the binding that handled it sends nothing.
+	 * @param array<string, mixed>                                    $data  The stored message.
+	 * @param array{status: string, lastError: string, simulated: bool} $stamp The status, the reason and the binding kind.
 	 *
 	 * @return array<string, mixed> The message with status, lastError, simulated and readAt set.
 	 */
-	private function withStatus(array $data, string $status, string $lastError, bool $simulated): array {
-		$data['status'] = $status;
-		$data['lastError'] = $lastError;
-		$data['simulated'] = $simulated;
-		if ($status === 'read') {
+	private function withStatus(array $data, array $stamp): array {
+		$data['status'] = $stamp['status'];
+		$data['lastError'] = $stamp['lastError'];
+		$data['simulated'] = $stamp['simulated'];
+		if ($stamp['status'] === 'read') {
 			$data['readAt'] = (new DateTime())->format('c');
 		}
 
@@ -394,15 +395,12 @@ class BerichtenboxService implements BerichtenboxServiceInterface {
 	 * send is not ours to record, and it is not an error, so an absent row and
 	 * a row in a shape this cannot read both answer null.
 	 *
-	 * @param object $objectService     The OpenRegister object service.
-	 * @param string $externalMessageId The id integriq tracks the message by.
-	 * @param int    $register          The register the messages live in.
-	 * @param int    $schema            The message schema.
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $filters       The register, the message schema and the external id.
 	 *
 	 * @return array<string, mixed>|null The stored message, or null.
 	 */
-	private function storedMessage(object $objectService, string $externalMessageId, int $register, int $schema): ?array {
-		$filters = ['register' => $register, 'schema' => $schema, 'externalMessageId' => $externalMessageId];
+	private function storedMessage(object $objectService, array $filters): ?array {
 		$matches = $objectService->findAll(['filters' => $filters]);
 
 		if ($matches === []) {

@@ -240,11 +240,7 @@ class CaseNumberService implements CaseNumberServiceInterface {
 	private function nextNumberIn(array $scope, int $year): string {
 		return $this->nextNumber(
 			year: $year,
-			identifiers: $this->identifiersInUse(
-				objectService: $scope[0],
-				register: $scope[1],
-				schema: $scope[2],
-			)
+			identifiers: $this->identifiersInUse(scope: $scope)
 		);
 	}//end nextNumberIn()
 
@@ -277,21 +273,15 @@ class CaseNumberService implements CaseNumberServiceInterface {
 	 * number. A filter that silently does the WRONG thing would yield a
 	 * duplicate.
 	 *
-	 * @param object     $objectService The OpenRegister ObjectService.
-	 * @param int|string $register      Register id or slug.
-	 * @param int|string $schema        Schema id or slug.
+	 * @param array{0: object, 1: string, 2: string} $scope The OpenRegister ObjectService, register and case schema.
 	 *
 	 * @return array<string> The identifiers in use.
 	 */
-	private function identifiersInUse(
-		object $objectService,
-		int|string $register,
-		int|string $schema,
-	): array {
+	private function identifiersInUse(array $scope): array {
 		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $scope[0],
+			register: $scope[1],
+			schema: $scope[2],
 			filters: ['_limit' => 10000]
 		);
 

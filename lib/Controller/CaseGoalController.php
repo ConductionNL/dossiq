@@ -125,13 +125,9 @@ class CaseGoalController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function create(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->requireCaseEditor(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -167,13 +163,9 @@ class CaseGoalController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function close(string $caseId, string $goalId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->requireCaseEditor(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -210,4 +202,24 @@ class CaseGoalController extends Controller {
 			Http::STATUS_INTERNAL_SERVER_ERROR,
 		);
 	}//end broke()
+
+	/**
+	 * The refusal for a caller who may not change the case, else null.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function requireCaseEditor(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['message' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end requireCaseEditor()
 }//end class

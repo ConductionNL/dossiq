@@ -153,6 +153,125 @@ class ComplaintPatternsTest extends TestCase {
 	}//end testUnavailableWithoutTheComplaintSchema()
 
 	/**
+	 * Final dispositions feed the handling figures; one awaiting approval does not count.
+	 *
+	 * A numeric target replaces its default, a non-numeric one keeps the default,
+	 * and the PDF lists the handling time per category.
+	 *
+	 * @return void
+	 */
+	public function testFinalDispositionsAndConfiguredTargetsShapeTheAnswer(): void {
+		$dispositions = [
+			['complaint' => 'a1', 'closureDate' => '2026-07-11', 'opinion' => 'upheld', 'approvalStatus' => 'approved'],
+			['complaint' => 'a2', 'closureDate' => '2026-07-05', 'opinion' => 'upheld', 'approvalStatus' => 'awaiting_approval'],
+			['complaint' => 'a3', 'closureDate' => 'unknown', 'opinion' => 'upheld'],
+			['complaint' => 'a4', 'closureDate' => '2026-09-20', 'opinion' => 'rejected'],
+			['complaint' => '', 'closureDate' => '2026-09-20', 'opinion' => 'upheld'],
+		];
+		$store = new class($this->complaints(), $dispositions) {
+			/** @var list<array<string, mixed>> */
+			public array $queries = [];
+
+			/**
+			 * @param list<array<string, mixed>> $complaints   The complaints.
+			 * @param list<array<string, mixed>> $dispositions The dispositions.
+			 */
+			public function __construct(private array $complaints, private array $dispositions) {
+			}
+
+			/**
+			 * @param array<string, mixed> $query The query.
+			 * @return list<array<string, mixed>>
+			 */
+			public function searchObjects(array $query): array {
+				$this->queries[] = $query;
+				if (($query['@self']['schema'] ?? null) === 3) {
+					return $this->dispositions;
+				}
+
+				return $this->complaints;
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => [
+			'register' => '1',
+			'complaint_schema' => '2',
+			'complaint_disposition_schema' => '3',
+			'complaint_target_per_month' => ' 7 ',
+			'complaint_target_within_awb' => 'many',
+		][$key] ?? $default);
+
+		$answer = (new ComplaintPatterns(
+			settingsService: $settings,
+			l10n: $this->l10n(),
+			figures: new ComplaintPatternFigures()
+		))->forQuarter(period: new QuarterPeriod(year: 2026, quarter: 3));
+
+		$this->assertSame(expected: ['register' => 1, 'schema' => 3], actual: $store->queries[1]['@self']);
+		$this->assertSame(expected: 10000, actual: $store->queries[1]['_limit']);
+		$this->assertSame(expected: array_fill(0, 12, 7), actual: $answer['byMonth']['target']);
+		$this->assertSame(expected: 'Target: at most 7. On target', actual: $answer['kpis']['perMonthNote']);
+		$this->assertSame(
+			expected: [
+				['category' => 'Wachttijd balie', 'count' => 3, 'averageDays' => $answer['resolutionByCategory'][0]['averageDays'], 'upheldPercent' => 100],
+				['category' => 'Bejegening', 'count' => 1, 'averageDays' => $answer['resolutionByCategory'][1]['averageDays'], 'upheldPercent' => 0],
+			],
+			actual: $answer['resolutionByCategory']
+		);
+		$this->assertGreaterThan(expected: 0, actual: $answer['resolutionByCategory'][0]['averageDays']);
+		$this->assertSame(expected: 50, actual: $answer['kpis']['upheldPercent']);
+
+		$pdf = (new ComplaintPatternsPdf(l10n: $this->l10n(), writer: new PlainTextPdf()))->render(patterns: $answer);
+		$days = (string)$answer['resolutionByCategory'][1]['averageDays'];
+		$this->assertStringContainsString(needle: '(  Bejegening: 1 complaints, '.$days.' days on average, 0 % well-founded) Tj', haystack: $pdf);
+	}//end testFinalDispositionsAndConfiguredTargetsShapeTheAnswer()
+
+	/**
+	 * A quarter in which no category rose has no finding.
+	 *
+	 * @return void
+	 */
+	public function testAQuarterWithoutARiseHasNoFinding(): void {
+		$rows = [
+			['id' => 'c1', 'receiptDate' => '2026-07-02', 'category' => 'Bejegening'],
+			['id' => 'p1', 'receiptDate' => '2026-04-02', 'category' => 'Bejegening'],
+			['id' => 'p2', 'receiptDate' => '2026-05-02', 'category' => 'Bejegening'],
+		];
+		$store = new class($rows) {
+			/**
+			 * @param list<array<string, mixed>> $rows The complaints.
+			 */
+			public function __construct(private array $rows) {
+			}
+
+			/**
+			 * @param array<string, mixed> $query The query.
+			 * @return list<array<string, mixed>>
+			 */
+			public function searchObjects(array $query): array {
+				return $this->rows;
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => [
+			'register' => '1',
+			'complaint_schema' => '2',
+		][$key] ?? $default);
+
+		$answer = (new ComplaintPatterns(
+			settingsService: $settings,
+			l10n: $this->l10n(),
+			figures: new ComplaintPatternFigures()
+		))->forQuarter(period: new QuarterPeriod(year: 2026, quarter: 3));
+
+		$this->assertTrue(condition: $answer['available']);
+		$this->assertSame(expected: [], actual: $answer['findings']);
+		$this->assertSame(expected: array_fill(0, 12, 10), actual: $answer['byMonth']['target']);
+	}//end testAQuarterWithoutARiseHasNoFinding()
+
+	/**
 	 * Complaints over the third quarter of 2026 and the quarter before.
 	 *
 	 * @return list<array<string, mixed>>

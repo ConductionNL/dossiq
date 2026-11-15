@@ -276,7 +276,7 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 			return null;
 		}
 
-		return $this->locatedCase(hit: $hits[0], identifier: $identifier, uuid: $uuid, scope: $scope);
+		return $this->locatedCase(match: ['hit' => $hits[0], 'uuid' => $uuid, 'identifier' => $identifier], scope: $scope);
 	}//end resolveCase()
 
 	/**
@@ -299,14 +299,14 @@ class CaseNumberRecognizer implements CaseNumberRecognizerInterface {
 	/**
 	 * The readable case with its numeric register and schema ids, or null when either is missing.
 	 *
-	 * @param array<string, mixed> $hit The one exact match.
-	 * @param string          $identifier The candidate identifier.
-	 * @param string          $uuid       The case UUID.
-	 * @param CaseSearchScope $scope      Where to look, and the mailbox owner.
+	 * @param array{hit: array<string, mixed>, uuid: string, identifier: string} $match The one exact match, its case UUID
+	 *                                                                                  and the candidate identifier.
+	 * @param CaseSearchScope $scope Where to look, and the mailbox owner.
 	 *
 	 * @return array{uuid: string, identifier: string, registerId: int, schemaId: int}|null The case, or null.
 	 */
-	private function locatedCase(array $hit, string $identifier, string $uuid, CaseSearchScope $scope): ?array {
+	private function locatedCase(array $match, CaseSearchScope $scope): ?array {
+		['hit' => $hit, 'uuid' => $uuid, 'identifier' => $identifier] = $match;
 		$self = $this->selfOf(row: $hit);
 		$registerId = $this->numericId(fromRow: $self['register'] ?? null, fromConfig: $scope->register);
 		$schemaId = $this->numericId(fromRow: $self['schema'] ?? null, fromConfig: $scope->schema);

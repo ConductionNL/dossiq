@@ -141,7 +141,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
 	public function run(string $caseType, string $importKey = ''): array {
-		return $this->runAll(caseType: $caseType, importKey: $importKey, dryRun: false);
+		return $this->runAll(request: new RecordImportRequest(caseType: $caseType, importKey: $importKey, dryRun: false));
 	}//end run()
 
 	/**
@@ -155,7 +155,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
 	public function dryRun(string $caseType, string $importKey = ''): array {
-		return $this->runAll(caseType: $caseType, importKey: $importKey, dryRun: true);
+		return $this->runAll(request: new RecordImportRequest(caseType: $caseType, importKey: $importKey, dryRun: true));
 	}//end dryRun()
 
 	/**
@@ -196,13 +196,11 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Both runs.
 	 *
-	 * @param string $caseType  The case type.
-	 * @param string $importKey The import key, or ''.
-	 * @param bool   $dryRun    Count only.
+	 * @param RecordImportRequest $request The case type, the import key or '', and whether to count only.
 	 *
 	 * @return array{caseType: string, imports: list<array<string, mixed>>}
 	 */
-	private function runAll(string $caseType, string $importKey, bool $dryRun): array {
+	private function runAll(RecordImportRequest $request): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return ['caseType' => '', 'imports' => []];
@@ -213,8 +211,8 @@ class CaseRecordImport implements CaseRecordImportInterface {
 		// type's own declaration.
 		return (array)$this->runAsSystemIfAvailable(
 			objectService: $objectService,
-			operation: function () use ($objectService, $caseType, $importKey, $dryRun): array {
-				return $this->importAll(objectService: $objectService, caseType: $caseType, importKey: $importKey, dryRun: $dryRun);
+			operation: function () use ($objectService, $request): array {
+				return $this->importAll(objectService: $objectService, request: $request);
 			}
 		);
 	}//end runAll()
@@ -222,47 +220,29 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Run the case type's declared imports, or the one the key names.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $caseType      The case type.
-	 * @param string $importKey     The import key, or ''.
-	 * @param bool   $dryRun        Count only.
+	 * @param object              $objectService The OpenRegister ObjectService.
+	 * @param RecordImportRequest $request       The case type, the import key or '', and whether to count only.
 	 *
 	 * @return array{caseType: string, imports: list<array<string, mixed>>}
 	 */
-	private function importAll(object $objectService, string $caseType, string $importKey, bool $dryRun): array {
-		$type = $this->steps->store->caseType(objectService: $objectService, caseType: $caseType);
+	private function importAll(object $objectService, RecordImportRequest $request): array {
+		$type = $this->steps->store->caseType(objectService: $objectService, caseType: $request->caseType);
 		if ($type === null) {
 			return ['caseType' => '', 'imports' => []];
 		}
 
-		$imports = $this->runImports(objectService: $objectService, type: $type, importKey: $importKey, dryRun: $dryRun);
-
-		return ['caseType' => $this->steps->store->idOf(row: $type), 'imports' => $imports];
-	}//end importAll()
-
-	/**
-	 * Run each declared import the key selects.
-	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $type          The case type row.
-	 * @param string               $importKey     The import key, or ''.
-	 * @param bool                 $dryRun        Count only.
-	 *
-	 * @return list<array<string, mixed>>
-	 */
-	private function runImports(object $objectService, array $type, string $importKey, bool $dryRun): array {
 		$imports = [];
 		foreach ((array)($type['recordImports'] ?? []) as $import) {
 			$import = (array)$import;
-			if ($importKey !== '' && (string)($import['key'] ?? '') !== $importKey) {
+			if ($request->importKey !== '' && (string)($import['key'] ?? '') !== $request->importKey) {
 				continue;
 			}
 
-			$imports[] = $this->runOne(run: ['objectService' => $objectService, 'caseType' => $type, 'import' => $import, 'dryRun' => $dryRun]);
+			$imports[] = $this->runOne(run: ['objectService' => $objectService, 'caseType' => $type, 'import' => $import, 'dryRun' => $request->dryRun]);
 		}
 
-		return $imports;
-	}//end runImports()
+		return ['caseType' => $this->steps->store->idOf(row: $type), 'imports' => $imports];
+	}//end importAll()
 
 	/**
 	 * Run one declared import.

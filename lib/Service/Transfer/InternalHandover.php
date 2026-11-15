@@ -605,32 +605,11 @@ class InternalHandover {
 	 * @throws RefusedException When it cannot be read.
 	 */
 	private function requireCase(string $caseId): array {
-		try {
-			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				id: $caseId,
-			);
-		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so it was not handed on.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}
-
-		if ($case === null) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so it was not handed on.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
+		return $this->dossierRegister->requireCase(
+			caseId: $caseId,
+			rule: self::CASE_UNREADABLE,
+			sentence: 'We could not read that case, so it was not handed on.',
+		);
 	}//end requireCase()
 
 	/**
@@ -755,13 +734,7 @@ class InternalHandover {
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
 		try {
-			[$objectService, $register] = $this->context();
-			$objectService->saveObject(
-				object: $payload,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				uuid: $caseId,
-			);
+			$this->dossierRegister->saveCase(caseId: $caseId, payload: $payload);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq handover: the case could not be written',

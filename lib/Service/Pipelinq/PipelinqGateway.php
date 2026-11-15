@@ -182,21 +182,22 @@ class PipelinqGateway implements PipelinqGatewayInterface {
 			return null;
 		}
 
-		return $this->usableService(service: $service, class: $class, methods: $methods);
+		return $this->usableService(service: $service, wanted: ['class' => $class, 'methods' => $methods]);
 	}//end service()
 
 	/**
 	 * The resolved service, or null when it is not an object or lacks a method the caller is about to use.
 	 *
 	 * @param mixed $service What the container answered.
-	 * @param string $class One of this class's constants.
-	 * @param array<int, string> $methods The methods the caller is about to use.
+	 * @param array{class: string, methods: array<int, string>} $wanted One of this class's constants, and the methods
+	 *                                                                 the caller is about to use.
 	 *
 	 * @return object|null The service, or null.
 	 *
 	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-one-seam-names-pipelinq-and-an-absent-pipelinq-is-a-different-answer-from-an-empty-one-req-plq-01
 	 */
-	private function usableService(mixed $service, string $class, array $methods): ?object {
+	private function usableService(mixed $service, array $wanted): ?object {
+		['class' => $class, 'methods' => $methods] = $wanted;
 		if (is_object($service) === false) {
 			$this->reportOnce(class: $class, reason: 'the container answered something that is not an object');
 
@@ -243,20 +244,33 @@ class PipelinqGateway implements PipelinqGatewayInterface {
 			];
 		}
 
+		return $this->answerOf(service: $service, call: ['class' => $class, 'method' => $method, 'arguments' => $arguments, 'fallback' => $fallback]);
+	}//end ask()
+
+	/**
+	 * Make the call; a call that fails answers the fallback and logs why.
+	 *
+	 * @param object               $service The pipelinq service.
+	 * @param array<string, mixed> $call    The class constant, the method, its named arguments and the fallback.
+	 *
+	 * @return array{answered: bool, value: mixed, reason: string} The answer.
+	 */
+	private function answerOf(object $service, array $call): array {
+		['method' => $method, 'fallback' => $fallback] = $call;
 		try {
-			$value = $service->{$method}(...$arguments);
+			$value = $service->{$method}(...$call['arguments']);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq pipelinq: the call failed, so the fallback answers and nothing here is refused: '
 				. $e->getMessage(),
-				['class' => $class, 'method' => $method]
+				['class' => $call['class'], 'method' => $method]
 			);
 
 			return ['answered' => false, 'value' => $fallback, 'reason' => $e->getMessage()];
 		}
 
 		return ['answered' => true, 'value' => $value, 'reason' => ''];
-	}//end ask()
+	}//end answerOf()
 
 	/**
 	 * The open tickets of the pipelinq clients that share each master entity.

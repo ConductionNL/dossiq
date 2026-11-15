@@ -107,11 +107,7 @@ class SchemaAnnotationReconciler {
 	private function reconcileEach(object $schemaMapper, array $schemas): int {
 		$written = 0;
 		foreach ($schemas as $key => $schemaDef) {
-			$written += $this->reconcileSchemaAnnotationBlocks(
-				schemaMapper: $schemaMapper,
-				key: $key,
-				schemaDef: $schemaDef
-			);
+			$written += $this->reconcileSchemaAnnotationBlocks(schemaMapper: $schemaMapper, declared: [$key, $schemaDef]);
 		}//end foreach
 
 		$this->logger->info(
@@ -171,13 +167,13 @@ class SchemaAnnotationReconciler {
 	/**
 	 * Reconcile the declarative annotation blocks of one schema definition.
 	 *
-	 * @param object $schemaMapper The OpenRegister SchemaMapper.
-	 * @param int|string $key The schema key in the register JSON.
-	 * @param mixed $schemaDef The raw schema definition.
+	 * @param object                       $schemaMapper The OpenRegister SchemaMapper.
+	 * @param array{0: int|string, 1: mixed} $declared     The schema key in the register JSON, and the raw schema definition.
 	 *
 	 * @return int 1 when the configuration was (re)written, 0 otherwise.
 	 */
-	private function reconcileSchemaAnnotationBlocks(object $schemaMapper, int|string $key, mixed $schemaDef): int {
+	private function reconcileSchemaAnnotationBlocks(object $schemaMapper, array $declared): int {
+		[$key, $schemaDef] = $declared;
 		if (is_array($schemaDef) === false) {
 			return 0;
 		}
@@ -193,11 +189,7 @@ class SchemaAnnotationReconciler {
 			return 0;
 		}
 
-		return $this->mergeOntoLiveSchema(
-			schemaMapper: $schemaMapper,
-			slug: (string)$slug,
-			annotations: $annotations
-		);
+		return $this->mergeOntoLiveSchema(schemaMapper: $schemaMapper, owned: ['slug' => (string)$slug, 'annotations' => $annotations]);
 	}//end reconcileSchemaAnnotationBlocks()
 
 	/**
@@ -241,8 +233,7 @@ class SchemaAnnotationReconciler {
 	 * configuration already carries identical blocks.
 	 *
 	 * @param object $schemaMapper The OpenRegister SchemaMapper.
-	 * @param string $slug The schema slug (e.g. 'case').
-	 * @param array<string, mixed> $annotations The annotation blocks to merge.
+	 * @param array{slug: string, annotations: array<string, mixed>} $owned The schema slug (e.g. 'case') and the annotation blocks to merge.
 	 *
 	 * 🔴 ONE KEY IS NOT THE REGISTER JSON'S TO OVERWRITE. The states under
 	 * `x-openregister-lifecycle` on the `case` schema are keyed by statusType
@@ -258,7 +249,8 @@ class SchemaAnnotationReconciler {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function mergeOntoLiveSchema(object $schemaMapper, string $slug, array $annotations): int {
+	private function mergeOntoLiveSchema(object $schemaMapper, array $owned): int {
+		['slug' => $slug, 'annotations' => $annotations] = $owned;
 		// 🔴 RESOLVE INSIDE OUR OWN REGISTER. An unscoped slug lookup here merged
 		// Dossiq's task calculations onto ANOTHER APP'S `task` schema, so
 		// isTerminalStatus and daysUntilDue were installed where nothing read

@@ -129,11 +129,6 @@ class AcknowledgementService implements AcknowledgementServiceInterface {
 	 * @param AcknowledgementDelivery $delivery The case contacts, the portal contribution and the case field writer.
 	 * @param LoggerInterface             $logger            The logger.
 	 * @param CaseTimeline                $timeline          The one seam that writes a timeline entry.
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Eleven collaborators, each
-	 * injected rather than reached for, which is what makes the acknowledgement
-	 * testable without a running register. Bundling them into a parameter object
-	 * would hide the dependency list rather than shorten it.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,

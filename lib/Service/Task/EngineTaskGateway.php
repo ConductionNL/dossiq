@@ -420,14 +420,10 @@ class EngineTaskGateway implements EngineTaskGatewayInterface {
             // Per ITEM, not per batch. A bulk reassignment reports one row
             // per task and stays re-runnable, so one refusal must not take
             // the other ninety-nine with it.
-            $this->lastError = $e->getMessage();
-
-            $this->logger->warning(
-                'Dossiq: the engine refused a task reassignment',
-                ['exception' => $e->getMessage(), 'task' => $id]
+            return $this->engineRefused(
+                sentence: 'Dossiq: the engine refused a task reassignment',
+                context: ['exception' => $e->getMessage(), 'task' => $id]
             );
-
-            return false;
         }
     }//end reassign()
 
@@ -632,14 +628,10 @@ class EngineTaskGateway implements EngineTaskGatewayInterface {
         } catch (Throwable $e) {
             // KEPT, not swallowed: the engine's message names the verb and
             // the reason, and it is the only part a handler can act on.
-            $this->lastError = $e->getMessage();
-
-            $this->logger->warning(
-                'Dossiq: the engine refused a task completion',
-                ['exception' => $e->getMessage(), 'task' => $id]
+            return $this->engineRefused(
+                sentence: 'Dossiq: the engine refused a task completion',
+                context: ['exception' => $e->getMessage(), 'task' => $id]
             );
-
-            return false;
         }
     }//end complete()
 
@@ -674,16 +666,28 @@ class EngineTaskGateway implements EngineTaskGatewayInterface {
 
             return true;
         } catch (Throwable $e) {
-            $this->lastError = $e->getMessage();
-
-            $this->logger->warning(
-                'Dossiq: the engine refused a task cancellation',
-                ['exception' => $e->getMessage(), 'task' => $id]
+            return $this->engineRefused(
+                sentence: 'Dossiq: the engine refused a task cancellation',
+                context: ['exception' => $e->getMessage(), 'task' => $id]
             );
-
-            return false;
         }
     }//end cancel()
+
+    /**
+     * Keep the engine's reason for a refused verb, log it, and answer the refusal.
+     *
+     * @param string                                  $sentence The log line naming the refused verb.
+     * @param array{exception: string, task: string} $context  The engine's message and the task.
+     *
+     * @return boolean Always false.
+     */
+    private function engineRefused(string $sentence, array $context): bool {
+        $this->lastError = $context['exception'];
+
+        $this->logger->warning($sentence, $context);
+
+        return false;
+    }//end engineRefused()
 
     /**
      * Whether OpenRegister's task service class is declared.

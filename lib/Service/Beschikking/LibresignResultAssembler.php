@@ -165,6 +165,27 @@ class LibresignResultAssembler {
 			throw new RuntimeException('libresign_signed_file_missing');
 		}
 
+		$newFileId = $this->storeSignedCopy(original: ['fileId' => $fileId, 'signatory' => $signatory], signedFileId: $signedFileId);
+
+		return [
+			'signedBestandId' => (string)$newFileId,
+			'validationRapportId' => $uuid,
+			'certificateSerialNumber' => (string)($status['certificateSerialNumber'] ?? ('libresign-' . $uuid)),
+			'tspProviderEidasId' => 'LibreSign',
+			'signingMoment' => (new DateTimeImmutable())->format('c'),
+		];
+	}//end assembleSignedResult()
+
+	/**
+	 * Store the signed file beside the original and give it the original's readers.
+	 *
+	 * @param array{fileId: string, signatory: string} $original     The original PDF file id and the signer UID.
+	 * @param int                                       $signedFileId The signed file's id in the signer's storage.
+	 *
+	 * @return mixed The id of the stored signed copy.
+	 */
+	private function storeSignedCopy(array $original, int $signedFileId): mixed {
+		['fileId' => $fileId, 'signatory' => $signatory] = $original;
 		$content = $this->readSignedFileContent(uid: $signatory, fileId: $signedFileId);
 		$fileName = 'beschikking-' . $fileId . '-signed.pdf';
 
@@ -179,14 +200,8 @@ class LibresignResultAssembler {
 			($this->signedVersionOf)($fileId, (int)$newFileId, $signatory);
 		}
 
-		return [
-			'signedBestandId' => (string)$newFileId,
-			'validationRapportId' => $uuid,
-			'certificateSerialNumber' => (string)($status['certificateSerialNumber'] ?? ('libresign-' . $uuid)),
-			'tspProviderEidasId' => 'LibreSign',
-			'signingMoment' => (new DateTimeImmutable())->format('c'),
-		];
-	}//end assembleSignedResult()
+		return $newFileId;
+	}//end storeSignedCopy()
 
 	/**
 	 * Build the validatierapport for a resolved LibreSign status.

@@ -108,7 +108,7 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 			return [];
 		}
 
-		return $this->findingsAgainst(validator: $validator, schema: $schema, caseType: $caseType);
+		return $this->findingsAgainst(judge: [$validator, $schema], caseType: $caseType);
 	}//end findingsFor()
 
 	/**
@@ -154,15 +154,15 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 	/**
 	 * The validator's findings for the case type's mapping, plus the unmet requirements.
 	 *
-	 * @param object $validator The form destination validator.
-	 * @param object $schema The case schema.
-	 * @param array<string, mixed> $caseType The case type as it is about to be saved.
+	 * @param array{0: object, 1: object} $judge    The form destination validator and the case schema.
+	 * @param array<string, mixed>        $caseType The case type as it is about to be saved.
 	 *
 	 * @return array<int, array<string, mixed>> The findings.
 	 *
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
 	 */
-	private function findingsAgainst(object $validator, object $schema, array $caseType): array {
+	private function findingsAgainst(array $judge, array $caseType): array {
+		[$validator, $schema] = $judge;
 		$mapping = $this->binding->mappingFor(caseType: $caseType);
 		$found = $validator->validate(mapping: $mapping, schema: $schema);
 		if (is_array($found) === false) {

@@ -353,7 +353,7 @@ class TermijnController extends Controller {
 		}
 
 		try {
-			return $this->completeTermijn(id: $id, completedAt: $completedAt, documentLink: $documentLink);
+			return $this->completeTermijn(id: $id, completion: ['at' => $completedAt, 'documentLink' => $documentLink]);
 		} catch (Throwable $e) {
 			return $this->error(e: $e, log: 'Voltooi failed');
 		}
@@ -383,18 +383,18 @@ class TermijnController extends Controller {
 	 * Mark a termijn completed and answer the updated row.
 	 *
 	 * @param string $id The termijn instance.
-	 * @param \DateTimeImmutable|null $completedAt The completion date, or null.
-	 * @param string $documentLink The document the completion points at.
+	 * @param array{at: \DateTimeImmutable|null, documentLink: string} $completion The completion date, or null, and
+	 *                                                                  the document the completion points at.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @throws Throwable When completing fails.
 	 */
-	private function completeTermijn(string $id, $completedAt, string $documentLink): JSONResponse {
+	private function completeTermijn(string $id, array $completion): JSONResponse {
 		$row = $this->term->markTermijnCompleted(
 			$id,
-			$completedAt,
-			$documentLink
+			$completion['at'],
+			$completion['documentLink']
 		);
 		if ($row === null) {
 			return $this->notFound(msg: 'TermijnInstance not found: ' . $id);

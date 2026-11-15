@@ -115,16 +115,9 @@ class ComplaintCategoryController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function createCategory(): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
-		}
-
-		$this->accessGuard->requireCoordinator(userId: $userId);
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		$objectService = $this->requireCategoryWriter();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
 		}
 
 		try {
@@ -156,16 +149,9 @@ class ComplaintCategoryController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function updateCategory(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
-		}
-
-		$this->accessGuard->requireCoordinator(userId: $userId);
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		$objectService = $this->requireCategoryWriter();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
 		}
 
 		try {
@@ -183,4 +169,28 @@ class ComplaintCategoryController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end updateCategory()
+
+	/**
+	 * The object service for a coordinator writing categories, or the refusal.
+	 *
+	 * Not signed in is a 401, a non-coordinator is refused by the guard, and
+	 * without OpenRegister nothing can be written.
+	 *
+	 * @return object|JSONResponse The object service, or the refusal.
+	 */
+	private function requireCategoryWriter(): object {
+		$userId = $this->accessGuard->currentUid();
+		if ($userId === '') {
+			return $this->accessGuard->notAuthenticated();
+		}
+
+		$this->accessGuard->requireCoordinator(userId: $userId);
+
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return $objectService;
+	}//end requireCategoryWriter()
 }//end class

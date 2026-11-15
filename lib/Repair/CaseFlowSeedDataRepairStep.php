@@ -287,9 +287,10 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * @return integer The cases created.
 	 */
 	private function seedCasesOf(CaseFlowSeedRun $run, string $caseTypeId): int {
+		$run->caseTypeId = $caseTypeId;
+
 		return $this->seedCases(
 			run: $run,
-			caseTypeId: $caseTypeId,
 			statusesByName: array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId))
 		);
 	}//end seedCasesOf()
@@ -337,7 +338,8 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			return '';
 		}
 
-		$run->counts['statuses'] += $this->seedStatuses(run: $run, caseTypeId: $caseTypeId, statusTypes: $statusTypes);
+		$run->caseTypeId = $caseTypeId;
+		$run->counts['statuses'] += $this->seedStatuses(run: $run, statusTypes: $statusTypes);
 
 		return $caseTypeId;
 	}//end seedOne()
@@ -371,24 +373,22 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * 🔑 Each carries the `caseType` back-reference, which is the ONLY link the
 	 * status lookup can follow — `caseType` has no `statusTypes` property.
 	 *
-	 * @param CaseFlowSeedRun  $run         The run.
-	 * @param string           $caseTypeId  The owning case type.
+	 * @param CaseFlowSeedRun  $run         The run, with the owning case type as its `caseTypeId`.
 	 * @param array<int,mixed> $statusTypes The statuses declared in the seed.
 	 *
 	 * @return integer How many were created.
 	 *
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
-	private function seedStatuses(CaseFlowSeedRun $run, string $caseTypeId, array $statusTypes): int {
-		$present = array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId));
+	private function seedStatuses(CaseFlowSeedRun $run, array $statusTypes): int {
+		$present = array_flip($this->statuses->statusesOf(caseTypeId: $run->caseTypeId));
 
 		$created = $this->createStatuses(
 			run: $run,
-			caseTypeId: $caseTypeId,
 			statuses: $this->missingStatuses(statusTypes: $statusTypes, present: $present)
 		);
 
-		$this->backfillPhases(run: $run, caseTypeId: $caseTypeId, statusTypes: $statusTypes);
+		$this->backfillPhases(run: $run, statusTypes: $statusTypes);
 
 		return $created;
 	}//end seedStatuses()
@@ -424,18 +424,17 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	/**
 	 * Create statuses on the case type.
 	 *
-	 * @param CaseFlowSeedRun                  $run        The run.
-	 * @param string                           $caseTypeId The owning case type.
-	 * @param array<int, array<string, mixed>> $statuses   The statuses to create.
+	 * @param CaseFlowSeedRun                  $run      The run, with the owning case type as its `caseTypeId`.
+	 * @param array<int, array<string, mixed>> $statuses The statuses to create.
 	 *
 	 * @return integer How many were created.
 	 *
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
-	private function createStatuses(CaseFlowSeedRun $run, string $caseTypeId, array $statuses): int {
+	private function createStatuses(CaseFlowSeedRun $run, array $statuses): int {
 		$created = 0;
 		foreach ($statuses as $status) {
-			$status['caseType'] = $caseTypeId;
+			$status['caseType'] = $run->caseTypeId;
 			$saved = $run->objectService->saveObject(
 				object: $status,
 				register: $run->schemas['register'],
@@ -457,15 +456,15 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 * phase kept none, and the process analysis drew it as a column of its own.
 	 * A phase an administrator set is left alone: only an empty one is filled.
 	 *
-	 * @param CaseFlowSeedRun  $run         The run.
-	 * @param string           $caseTypeId  The owning case type.
+	 * @param CaseFlowSeedRun  $run         The run, with the owning case type as its `caseTypeId`.
 	 * @param array<int,mixed> $statusTypes The statuses declared in the seed.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
 	 */
-	private function backfillPhases(CaseFlowSeedRun $run, string $caseTypeId, array $statusTypes): void {
+	private function backfillPhases(CaseFlowSeedRun $run, array $statusTypes): void {
+		$caseTypeId = $run->caseTypeId;
 		$pending = $this->phaseBackfill->pending(
 			statusTypes: $statusTypes,
 			rows: $this->statuses->rowsOf(caseTypeId: $caseTypeId),
@@ -485,15 +484,15 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	/**
 	 * Create the demo cases belonging to this case type.
 	 *
-	 * @param CaseFlowSeedRun      $run            The run.
-	 * @param string               $caseTypeId     The created case type.
+	 * @param CaseFlowSeedRun      $run            The run, with the created case type as its `caseTypeId`.
 	 * @param array<string,string> $statusesByName Status ids, keyed by name.
 	 *
 	 * @return integer How many cases were created.
 	 *
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
-	private function seedCases(CaseFlowSeedRun $run, string $caseTypeId, array $statusesByName): int {
+	private function seedCases(CaseFlowSeedRun $run, array $statusesByName): int {
+		$caseTypeId = $run->caseTypeId;
 		$created = 0;
 
 		$present = $this->index->caseTitlesFor(schemas: $run->schemas, caseTypeId: $caseTypeId);

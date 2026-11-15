@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use Closure;
 use OCA\Dossiq\Kernel\Contracts\ConsultationAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\ConsultationServiceInterface;
 use OCP\AppFramework\Controller;
@@ -149,22 +150,10 @@ class ConsultationController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function updateStatus(string $id): JSONResponse {
-		$access = $this->accessGuard->authorize(consultationId: $id);
-		if ($access->error !== null) {
-			return $access->error;
-		}
-
-		try {
-			$data = $this->accessGuard->requestBody();
-			$status = $data['status'] ?? '';
-			$result = $this->consultationService->updateStatus(
-				consultationId: $id,
-				newStatus: $status,
-			);
-			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->authorizedChange(id: $id, change: fn (array $data): array => $this->consultationService->updateStatus(
+			consultationId: $id,
+			newStatus: $data['status'] ?? '',
+		));
 	}//end updateStatus()
 
 	/**
@@ -179,21 +168,10 @@ class ConsultationController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function submitResponse(string $id): JSONResponse {
-		$access = $this->accessGuard->authorize(consultationId: $id);
-		if ($access->error !== null) {
-			return $access->error;
-		}
-
-		try {
-			$data = $this->accessGuard->requestBody();
-			$result = $this->consultationService->submitResponse(
-				consultationId: $id,
-				response: $data,
-			);
-			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->authorizedChange(id: $id, change: fn (array $data): array => $this->consultationService->submitResponse(
+			consultationId: $id,
+			response: $data,
+		));
 	}//end submitResponse()
 
 	/**
@@ -252,22 +230,10 @@ class ConsultationController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function requestExtension(string $id): JSONResponse {
-		$access = $this->accessGuard->authorize(consultationId: $id);
-		if ($access->error !== null) {
-			return $access->error;
-		}
-
-		try {
-			$data = $this->accessGuard->requestBody();
-			$justification = $data['justification'] ?? '';
-			$result = $this->consultationService->requestExtension(
-				consultationId: $id,
-				justification: $justification,
-			);
-			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->authorizedChange(id: $id, change: fn (array $data): array => $this->consultationService->requestExtension(
+			consultationId: $id,
+			justification: $data['justification'] ?? '',
+		));
 	}//end requestExtension()
 
 	/**
@@ -282,22 +248,30 @@ class ConsultationController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function approveExtension(string $id): JSONResponse {
+		return $this->authorizedChange(id: $id, change: fn (array $data): array => $this->consultationService->approveExtension(
+			consultationId: $id,
+			newDeadline: $data['newDeadline'] ?? '',
+		));
+	}//end approveExtension()
+
+	/**
+	 * Apply a change to a consultation the caller may act on, with the request body.
+	 *
+	 * @param string  $id     The consultation UUID.
+	 * @param Closure $change The change, given the request body, answering the updated consultation.
+	 *
+	 * @return JSONResponse The updated consultation, the access refusal, or a 400 with the failure.
+	 */
+	private function authorizedChange(string $id, Closure $change): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
 		if ($access->error !== null) {
 			return $access->error;
 		}
 
 		try {
-			$data = $this->accessGuard->requestBody();
-			$newDeadline = $data['newDeadline'] ?? '';
-			$result = $this->consultationService->approveExtension(
-				consultationId: $id,
-				newDeadline: $newDeadline,
-			);
-			return new JSONResponse($result);
+			return new JSONResponse($change($this->accessGuard->requestBody()));
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
-	}//end approveExtension()
-
+	}//end authorizedChange()
 }//end class

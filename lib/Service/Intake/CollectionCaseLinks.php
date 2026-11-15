@@ -99,6 +99,25 @@ class CollectionCaseLinks {
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 */
 	public function owned(object $objectService, string $collectionId, string $subjectRef): ?array {
+		$collection = $this->readCollection(objectService: $objectService, collectionId: $collectionId);
+		if (is_array($collection) === false || (string)($collection['owner'] ?? '') !== $subjectRef) {
+			return null;
+		}
+
+		$collection['id'] = $collectionId;
+
+		return $collection;
+	}//end owned()
+
+	/**
+	 * The collection as the reader finds it; a failed read is logged and reads as none.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $collectionId  The collection uuid.
+	 *
+	 * @return mixed The collection, or null.
+	 */
+	private function readCollection(object $objectService, string $collectionId): mixed {
 		$collection = null;
 		try {
 			$collection = $this->reader->find(
@@ -111,14 +130,8 @@ class CollectionCaseLinks {
 			$this->logger->warning('CollectionCaseLinks: the collection could not be read', ['collection' => $collectionId, 'error' => $e->getMessage()]);
 		}
 
-		if (is_array($collection) === false || (string)($collection['owner'] ?? '') !== $subjectRef) {
-			return null;
-		}
-
-		$collection['id'] = $collectionId;
-
 		return $collection;
-	}//end owned()
+	}//end readCollection()
 
 	/**
 	 * Link the collection to the case: one case object per item, then the
@@ -171,7 +184,7 @@ class CollectionCaseLinks {
 				continue;
 			}
 
-			$object = $this->caseObjectFor(link: $link, item: $item, publication: $publication);
+			$object = $this->caseObjectFor(link: $link, item: $item);
 
 			try {
 				$this->runAsSystemIfAvailable(
@@ -205,13 +218,13 @@ class CollectionCaseLinks {
 	/**
 	 * The case object that links one collection item to the case.
 	 *
-	 * @param CollectionLink       $link        The object service and the case.
-	 * @param array<string, mixed> $item        The collection item.
-	 * @param string               $publication The publication uuid it names.
+	 * @param CollectionLink       $link The object service and the case.
+	 * @param array<string, mixed> $item The collection item, naming a publication.
 	 *
 	 * @return array<string, mixed> The case object.
 	 */
-	private function caseObjectFor(CollectionLink $link, array $item, string $publication): array {
+	private function caseObjectFor(CollectionLink $link, array $item): array {
+		$publication = $this->publicationOf(item: $item);
 		$attachment = ($item['attachment'] ?? null);
 		if ($attachment !== null) {
 			$attachment = (string)$attachment;
@@ -223,20 +236,21 @@ class CollectionCaseLinks {
 			'objectUrl' => $this->urlGenerator->getAbsoluteURL($this->publicationPath(publicationId: $publication)),
 			// The schema declares a string, so the pair travels as JSON.
 			'objectIdentification' => (string)json_encode(['publication' => $publication, 'attachment' => $attachment]),
-			'description' => $this->describe(objectService: $link->objectService, publication: $publication, note: (string)($item['note'] ?? '')),
+			'description' => $this->describe(objectService: $link->objectService, item: $item),
 		];
 	}//end caseObjectFor()
 
 	/**
 	 * What a case object says: the publication's title and the resident's note.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $publication   The publication uuid.
-	 * @param string $note          The resident's note on the item.
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $item          The collection item: the publication it names and the resident's note.
 	 *
 	 * @return string
 	 */
-	private function describe(object $objectService, string $publication, string $note): string {
+	private function describe(object $objectService, array $item): string {
+		$publication = $this->publicationOf(item: $item);
+		$note = (string)($item['note'] ?? '');
 		$title = '';
 		try {
 			$row = $this->reader->find(
@@ -314,7 +328,7 @@ class CollectionCaseLinks {
 	private function saveSource(CollectionLink $link, array $data): void {
 		$collectionId = (string)$link->collection['id'];
 		try {
-			$this->saveCollection(objectService: $link->objectService, data: $data, collectionId: $collectionId);
+			$this->saveCollection(link: $link, data: $data);
 		} catch (Throwable $e) {
 			// The case exists and is the resident's; a collection that does not
 			// learn about it loses a link, not the request.
@@ -328,15 +342,16 @@ class CollectionCaseLinks {
 	/**
 	 * Save the collection under the system identity when one is available.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $data          The collection to save.
-	 * @param string               $collectionId  The collection's id.
+	 * @param CollectionLink       $link The object service and the collection, with its id.
+	 * @param array<string, mixed> $data The collection to save.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
 	 */
-	private function saveCollection(object $objectService, array $data, string $collectionId): void {
+	private function saveCollection(CollectionLink $link, array $data): void {
+		$objectService = $link->objectService;
+		$collectionId = (string)$link->collection['id'];
 		$this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): mixed => $objectService->saveObject(

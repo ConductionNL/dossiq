@@ -120,7 +120,7 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 			'isActive' => true,
 		];
 
-		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: []));
+		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, delivery: $data));
 	}//end createTemplate()
 
 	/**
@@ -146,7 +146,7 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 
 		$payload = $this->nextVersion(existing: $existing, data: $data);
 
-		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, data: $data, existing: $existing));
+		return $this->repository->saveTemplate(payload: $this->withDelivery(payload: $payload, delivery: array_replace($existing, $data)));
 	}//end updateTemplate()
 
 	/**
@@ -203,19 +203,15 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 	 * neither names is left out.
 	 *
 	 * @param array<string, mixed> $payload  The template to save.
-	 * @param array<string, mixed> $data     The edit.
-	 * @param array<string, mixed> $existing The version it replaces, or [].
+	 * @param array<string, mixed> $delivery The edit, laid over the version it replaces when there is one.
 	 *
 	 * @return array<string, mixed> The payload with the delivery fields.
 	 *
 	 * @spec openspec/changes/case-type-messages-moment-channel/specs/case-types/spec.md
 	 */
-	private function withDelivery(array $payload, array $data, array $existing): array {
+	private function withDelivery(array $payload, array $delivery): array {
 		foreach (['moment', 'channel', 'messageCategory'] as $field) {
-			$value = $existing[$field] ?? null;
-			if (array_key_exists($field, $data) === true) {
-				$value = $data[$field];
-			}
+			$value = ($delivery[$field] ?? null);
 			if (is_string($value) === true && $value !== '') {
 				$payload[$field] = $value;
 			}
@@ -342,7 +338,7 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 		$rawBody = (string)($template['body'] ?? '');
 		$subject = $this->resolve(text: $rawSubject, vars: $vars);
 		$body = $this->resolve(text: $rawBody, vars: $vars);
-		$unresolved = $this->unresolvedIn(rawSubject: $rawSubject, rawBody: $rawBody, vars: $vars);
+		$unresolved = $this->unresolvedIn(texts: [$rawSubject, $rawBody], vars: $vars);
 
 		return [
 			'subject' => $subject,
@@ -354,23 +350,20 @@ class EmailTemplateService implements EmailTemplateServiceInterface {
 	/**
 	 * The variable names the subject and body name but the map does not hold.
 	 *
-	 * @param string                $rawSubject The template subject.
-	 * @param string                $rawBody    The template body.
-	 * @param array<string, string> $vars       Variable map.
+	 * @param array<int, string>    $texts The template subject and body.
+	 * @param array<string, string> $vars  Variable map.
 	 *
 	 * @return array<int, string> The unresolved names, each once.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
-	private function unresolvedIn(string $rawSubject, string $rawBody, array $vars): array {
-		return array_values(
-			array_unique(
-				array_merge(
-					$this->collectUnresolved(text: $rawSubject, vars: $vars),
-					$this->collectUnresolved(text: $rawBody, vars: $vars)
-				)
-			)
-		);
+	private function unresolvedIn(array $texts, array $vars): array {
+		$names = [];
+		foreach ($texts as $text) {
+			$names = array_merge($names, $this->collectUnresolved(text: $text, vars: $vars));
+		}
+
+		return array_values(array_unique($names));
 	}//end unresolvedIn()
 
 	/**

@@ -156,7 +156,7 @@ class CaseLinkController extends Controller {
 
 		return $this->answer(
 			act: function () use ($name, $targetId, $inputs, $user): array {
-				$this->guardCascadeAccess(name: $name, targetId: $targetId, user: $user);
+				$this->guardCascadeAccess(caseId: $this->cascades->caseOf(name: $name, targetId: $targetId), user: $user);
 				return $this->cascades->run(name: $name, targetId: $targetId, inputs: $inputs);
 			}
 		);
@@ -168,16 +168,14 @@ class CaseLinkController extends Controller {
 	 * A target that names no case is refused too: with no case there is no
 	 * one to ask, and an unchecked write is the thing this guard exists to stop.
 	 *
-	 * @param string $name     The cascade.
-	 * @param string $targetId The target uuid.
-	 * @param IUser  $user     The caller.
+	 * @param string $caseId The case the cascade's target belongs to, or '' when it names none.
+	 * @param IUser  $user   The caller.
 	 *
 	 * @return void
 	 *
 	 * @throws RefusedException When the caller may not.
 	 */
-	private function guardCascadeAccess(string $name, string $targetId, IUser $user): void {
-		$caseId = $this->cascades->caseOf(name: $name, targetId: $targetId);
+	private function guardCascadeAccess(string $caseId, IUser $user): void {
 		if ($caseId === '' || $this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
 			throw new RefusedException(
 				rule: 'cascade-target-not-yours',

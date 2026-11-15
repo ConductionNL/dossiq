@@ -158,7 +158,7 @@ class CaseTypePublishService implements CaseTypePublishServiceInterface {
 
 		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
 
-		return $this->published(caseTypeId: $caseTypeId, warnings: $warnings, version: $version);
+		return $this->published(caseTypeId: $caseTypeId, outcome: ['warnings' => $warnings, 'version' => $version]);
 	}//end publish()
 
 	/**
@@ -242,15 +242,15 @@ class CaseTypePublishService implements CaseTypePublishServiceInterface {
 	/**
 	 * The answer for a publish that happened, logged when it carries warnings.
 	 *
-	 * @param string             $caseTypeId CaseType UUID.
-	 * @param array<int, string> $warnings   The warnings.
-	 * @param int|null           $version    The published template version.
+	 * @param string                                             $caseTypeId CaseType UUID.
+	 * @param array{warnings: array<int, string>, version: int|null} $outcome    The warnings, and the published template version.
 	 *
 	 * @return array<string, mixed> `{published: true, findings: [], warnings: string[], version: ?int}`.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	private function published(string $caseTypeId, array $warnings, ?int $version): array {
+	private function published(string $caseTypeId, array $outcome): array {
+		['warnings' => $warnings, 'version' => $version] = $outcome;
 		if ($warnings !== []) {
 			$this->logger->warning(
 				'Case type publish: published with warnings',

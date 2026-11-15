@@ -168,7 +168,7 @@ class MigrateAiOversightToHermiq implements IRepairStep {
 			$offset += self::PAGE_SIZE;
 		}//end for
 
-		$this->report(output: $output, sent: $sent, skipped: $skipped);
+		$this->report(output: $output, counts: [$sent, $skipped]);
 
 	}//end replayAll()
 
@@ -220,15 +220,15 @@ class MigrateAiOversightToHermiq implements IRepairStep {
 	/**
 	 * Report what the replay did.
 	 *
-	 * @param IOutput $output The upgrade output.
-	 * @param integer $sent Records delegated.
-	 * @param integer $skipped Records not delegated.
+	 * @param IOutput               $output The upgrade output.
+	 * @param array{0: int, 1: int} $counts Records delegated, and records not delegated.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
 	 */
-	private function report(IOutput $output, int $sent, int $skipped): void {
+	private function report(IOutput $output, array $counts): void {
+		[$sent, $skipped] = $counts;
 		if ($sent === 0 && $skipped === 0) {
 			$output->info('AI oversight replay: no audit entries to consider.');
 			return;

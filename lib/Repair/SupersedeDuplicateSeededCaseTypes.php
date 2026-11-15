@@ -169,7 +169,7 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 		foreach ($this->duplicateGroups(rows: $rows) as $group) {
 			$current = array_pop($group);
 			foreach ($group as $older) {
-				$superseded += $this->supersedeOne(store: $store, olderId: $older['id'], currentId: $current['id']);
+				$superseded += $this->supersedeOne(store: $store, pair: ['older' => $older['id'], 'current' => $current['id']]);
 			}
 		}
 
@@ -274,15 +274,15 @@ class SupersedeDuplicateSeededCaseTypes implements IRepairStep {
 	/**
 	 * Point one older copy at the current one.
 	 *
-	 * @param CaseTypeStore $store     Where the case types live.
-	 * @param string        $olderId   The copy to supersede.
-	 * @param string        $currentId The copy that stays current.
+	 * @param CaseTypeStore                          $store Where the case types live.
+	 * @param array{older: string, current: string} $pair  The copy to supersede and the copy that stays current.
 	 *
 	 * @return integer 1 when written, 0 when the write failed.
 	 *
 	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
-	private function supersedeOne(CaseTypeStore $store, string $olderId, string $currentId): int {
+	private function supersedeOne(CaseTypeStore $store, array $pair): int {
+		['older' => $olderId, 'current' => $currentId] = $pair;
 		try {
 			$this->patchObjectAsArray(
 				objectService: $store->objectService,

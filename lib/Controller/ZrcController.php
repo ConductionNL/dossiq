@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\GuardsZgwRequests;
 use OCA\Dossiq\Exception\CaseHeldException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseRelationServiceInterface;
@@ -39,6 +40,7 @@ use OCA\Dossiq\Kernel\Contracts\DocumentJoinHomingInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZrcStatusEffectsInterface;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
+use OCA\Dossiq\Support\MapsZgwRows;
 use OCA\OpenRegister\Exception\HookStoppedException;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -63,6 +65,9 @@ use OCP\IRequest;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZrcController extends ZgwController {
+	use MapsZgwRows;
+	use GuardsZgwRequests;
+
 	/**
 	 * The ZGW API group for this controller.
 	 *
@@ -124,11 +129,17 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->requireValidJwt() ?? $this->listOf(resource: $resource);
+	}//end index()
 
+	/**
+	 * List resources of the given type once the token is valid.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return JSONResponse
+	 */
+	private function listOf(string $resource): JSONResponse {
 		$response = $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 
 		// Zrc-006a: Filter zaken results based on consumer's vertrouwelijkheidaanduiding.
@@ -139,7 +150,7 @@ class ZrcController extends ZgwController {
 		}
 
 		return $response;
-	}//end index()
+	}//end listOf()
 
 	/**
 	 * Create a resource.
@@ -185,14 +196,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse
 	 */
 	private function createFailure(\Throwable $e): JSONResponse {
-		$this->zgwService->getLogger()->error(
-			'ZRC create error: ' . $e->getMessage(),
-			['exception' => $e]
-		);
-		return new JSONResponse(
-			data: ['detail' => $e->getMessage()],
-			statusCode: Http::STATUS_BAD_REQUEST
-		);
+		return $this->loggedFailure(logPrefix: 'ZRC create error: ', e: $e);
 	}//end createFailure()
 
 	/**
@@ -341,7 +345,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null
 	 */
 	private function createRefusal(string $resource): ?JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -580,7 +584,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null
 	 */
 	private function showRefusal(string $resource, string $uuid): ?JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -630,7 +634,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null The refusal, or null when the update may go on
 	 */
 	private function updateRefusal(string $resource, bool $isPatch): ?JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -764,7 +768,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -985,7 +989,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function zaakbesluitenIndex(string $zaakUuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -1016,14 +1020,7 @@ class ZrcController extends ZgwController {
 
 			return new JSONResponse(data: $this->mapDecisionRows(rows: $rows, mappingConfig: $mappingConfig));
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'ZRC zaakbesluiten error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Internal server error'],
-				statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->loggedServerError(logPrefix: 'ZRC zaakbesluiten error: ', e: $e);
 		}//end try
 	}//end decisionsOfCaseResponse()
 
@@ -1056,18 +1053,8 @@ class ZrcController extends ZgwController {
 	 */
 	private function mapDecisionRows(array $rows, array $mappingConfig): array {
 		$baseUrl = $this->zgwService->buildBaseUrl($this->request, 'besluiten', 'besluiten');
-		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-		$mapped = [];
-		foreach ($rows as $object) {
-			$mapped[] = $this->zgwService->applyOutboundMapping(
-				objectData: $this->objectToArray(row: $object),
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
-		}
 
-		return $mapped;
+		return $this->outboundRows(rows: $rows, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
 	}//end mapDecisionRows()
 
 	/**
@@ -1113,12 +1100,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->audittrailList(resource: $resource, uuid: $uuid);
 	}//end audittrailIndex()
 
 	/**
@@ -1138,12 +1120,7 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailShow($this->request, self::ZGW_API, $resource, $uuid, $auditUuid);
+		return $this->audittrailEntry(resource: $resource, uuid: $uuid, auditUuid: $auditUuid);
 	}//end audittrailShow()
 
 	/**

@@ -228,7 +228,7 @@ class BackfillWooPublicationState implements IRepairStep {
 	 */
 	private function backfill(WooBackfillStore $store): array {
 		$read = fn (int $page): ?array => $this->readDecisionPage(store: $store, page: $page);
-		$write = fn (string $caseId, array $state): string => $this->writeOne(store: $store, caseId: $caseId, state: $state);
+		$write = fn (string $caseId, array $state): string => $this->writeOne(store: $store, change: [$caseId, $state]);
 
 		return $this->walkDecisions(read: $read, write: $write);
 	}//end backfill()
@@ -309,13 +309,13 @@ class BackfillWooPublicationState implements IRepairStep {
 	/**
 	 * Write one case when its state differs, and say which tally it belongs to.
 	 *
-	 * @param WooBackfillStore      $store  The object service, register and case schema.
-	 * @param string                $caseId The case UUID.
-	 * @param array<string, string> $state  The fields to show, before the result link.
+	 * @param WooBackfillStore                          $store  The object service, register and case schema.
+	 * @param array{0: string, 1: array<string, string>} $change The case UUID, and the fields to show before the result link.
 	 *
 	 * @return string One of written|unchanged|missing|failed.
 	 */
-	private function writeOne(WooBackfillStore $store, string $caseId, array $state): string {
+	private function writeOne(WooBackfillStore $store, array $change): string {
+		[$caseId, $state] = $change;
 		$objectService = $store->objectService;
 		$register = $store->register;
 		$caseSchema = $store->caseSchema;

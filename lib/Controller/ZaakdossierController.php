@@ -285,6 +285,29 @@ class ZaakdossierController extends Controller {
 	}//end unlinkDocument()
 
 	/**
+	 * Why the caller may not change this document, or null when they may.
+	 *
+	 * Not signed in, not allowed to write the document, or not allowed to read it.
+	 *
+	 * @param string $infoObjectId The document.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the change may go ahead.
+	 */
+	private function requireDocumentWrite(string $infoObjectId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$refusal = $this->writes->refusedWrite(user: $user, documentId: $infoObjectId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
+	}//end requireDocumentWrite()
+
+	/**
 	 * The refusal for linking a document into, or unlinking it from, a case file; null when the caller may.
 	 *
 	 * No session user is 401. The CASE is checked first, before the document
@@ -322,19 +345,9 @@ class ZaakdossierController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function updateMetadata(string $infoObjectId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$refusal = $this->writes->refusedWrite(user: $user, documentId: $infoObjectId);
+		$refusal = $this->requireDocumentWrite(infoObjectId: $infoObjectId);
 		if ($refusal !== null) {
 			return $refusal;
-		}
-
-		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-		if ($authError !== null) {
-			return $authError;
 		}
 
 		return $this->saveMetadata(infoObjectId: $infoObjectId, metadata: $this->metadataFromRequest());
@@ -457,19 +470,9 @@ class ZaakdossierController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function transitionStatus(string $infoObjectId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$refusal = $this->writes->refusedWrite(user: $user, documentId: $infoObjectId);
+		$refusal = $this->requireDocumentWrite(infoObjectId: $infoObjectId);
 		if ($refusal !== null) {
 			return $refusal;
-		}
-
-		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-		if ($authError !== null) {
-			return $authError;
 		}
 
 		$newStatus = (string)$this->request->getParam('status', '');

@@ -73,15 +73,15 @@ class OfferedTransitions {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function from(array $transitions, array $case, string $currentId, string $userId): array {
-		$caseTypeId = (string)($case['caseType'] ?? '');
+		$asked = ['case' => $case, 'caseTypeId' => (string)($case['caseType'] ?? ''), 'currentId' => $currentId, 'userId' => $userId];
 		$lists = ['transitions' => [], 'withheld' => []];
 
 		foreach ($transitions as $transition) {
-			if ($this->leadsFrom(transition: $transition, currentId: $currentId, caseTypeId: $caseTypeId) === false) {
+			if ($this->leadsFrom(transition: $transition, asked: $asked) === false) {
 				continue;
 			}
 
-			$sorted = $this->sortTransition(transition: $transition, caseRow: $case, userId: $userId);
+			$sorted = $this->sortTransition(transition: $transition, asked: $asked);
 			if ($sorted !== null) {
 				$lists[$sorted[0]][] = $sorted[1];
 			}
@@ -94,18 +94,18 @@ class OfferedTransitions {
 	 * Which list one transition out of the current status belongs on, with its entry; null when it is hidden.
 	 *
 	 * @param array<string, mixed> $transition The transition.
-	 * @param array<string, mixed> $caseRow    The case.
-	 * @param string               $userId     The acting user.
+	 * @param array<string, mixed> $asked      The case (`case`) and the acting user (`userId`).
 	 *
 	 * @return array{0: string, 1: array<string, mixed>}|null `transitions` or `withheld`, and the entry.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function sortTransition(array $transition, array $caseRow, string $userId): ?array {
+	private function sortTransition(array $transition, array $asked): ?array {
+		$caseRow = $asked['case'];
 		$eval = $this->guardRegistry->evaluateAll(
 			guards: $this->guardsFor(transition: $transition),
 			case: $caseRow,
-			userId: $userId,
+			userId: $asked['userId'],
 		);
 
 		// Drop transitions whose role guard hides them silently.
@@ -123,7 +123,7 @@ class OfferedTransitions {
 			return ['withheld', $this->withheldEntry(transition: $transition, reasons: $reasons)];
 		}
 
-		return ['transitions', $this->offeredEntry(transition: $transition, eval: $eval, case: $caseRow)];
+		return ['transitions', $this->offeredEntry(transition: $transition, evaluated: ['eval' => $eval, 'case' => $caseRow])];
 	}//end sortTransition()
 
 	/**
@@ -156,25 +156,25 @@ class OfferedTransitions {
 	 * because the case is already there, and the missing document is never
 	 * named.
 	 *
-	 * @param mixed  $transition The transition definition, in whatever shape it arrived.
-	 * @param string $currentId  The status the case is in.
-	 * @param string $caseTypeId The case type, for the derived lookup.
+	 * @param mixed                $transition The transition definition, in whatever shape it arrived.
+	 * @param array<string, mixed> $asked      The status the case is in (`currentId`) and the case type
+	 *                                         (`caseTypeId`), for the derived lookup.
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function leadsFrom(mixed $transition, string $currentId, string $caseTypeId): bool {
+	private function leadsFrom(mixed $transition, array $asked): bool {
 		if (is_array($transition) === false) {
 			return false;
 		}
 
-		if ((string)($transition['fromStatus'] ?? '') !== $currentId) {
+		if ((string)($transition['fromStatus'] ?? '') !== $asked['currentId']) {
 			return false;
 		}
 
 		return $this->statuses->isDerivedStatus(
-			caseTypeId: $caseTypeId,
+			caseTypeId: $asked['caseTypeId'],
 			statusTypeId: (string)($transition['toStatus'] ?? ''),
 		) === false;
 	}//end leadsFrom()
@@ -211,17 +211,18 @@ class OfferedTransitions {
 	/**
 	 * One offered move, as the case page reads it.
 	 *
-	 * @param array<string, mixed>             $transition The transition definition.
-	 * @param array<int, array<string, mixed>> $eval       The guard evaluation snapshots.
-	 * @param array<string, mixed>             $case       The case, for the results a closing move offers.
+	 * @param array<string, mixed> $transition The transition definition.
+	 * @param array<string, mixed> $evaluated  The guard evaluation snapshots (`eval`) and the case (`case`), for the
+	 *                                         results a closing move offers.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function offeredEntry(array $transition, array $eval, array $case): array {
+	private function offeredEntry(array $transition, array $evaluated): array {
+		$case = $evaluated['case'];
 		$failed = array_values(
-			array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false)
+			array_filter($evaluated['eval'], static fn (array $guard): bool => $guard['passed'] === false)
 		);
 
 		return [

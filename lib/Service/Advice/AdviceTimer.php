@@ -46,11 +46,9 @@ use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\AdviceTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FlowTimerEngine;
 use OCA\Dossiq\Service\Term\DayCount;
-use OCA\OpenRegister\Kernel\Contracts\TimerChange;
-use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Keeps one engine timer per open advice request in step with the request.
@@ -198,24 +196,10 @@ class AdviceTimer implements AdviceTimerInterface {
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
 	private function arm(array $advice, string $adviceId, TimerWindow $window): string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		$config = $this->timerConfig(advice: $advice, adviceId: $adviceId, window: $window);
-
-		try {
-			$engine->arm(config: $config, actor: null);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq advice: the engine refused the advice timer',
-				['advice' => $adviceId, 'error' => $e->getMessage()]
-			);
-			return self::UNAVAILABLE;
-		}
-
-		return self::ARMED;
+		return $this->timers()->arm(
+			config: fn (): array => $this->timerConfig(advice: $advice, adviceId: $adviceId, window: $window),
+			logContext: ['advice' => $adviceId]
+		);
 	}//end arm()
 
 	/**
@@ -334,25 +318,7 @@ class AdviceTimer implements AdviceTimerInterface {
 	 * @return string|null UNAVAILABLE when the engine is absent or refused, null when done.
 	 */
 	private function cancel(string $adviceId, string $reason): ?string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		try {
-			$engine->cancelForSubject(
-				subject: new TimerSubjectRef(type: 'object', uuid: $adviceId),
-				change: new TimerChange(reason: $reason, actor: null)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq advice: the engine refused to cancel the advice timer',
-				['advice' => $adviceId, 'error' => $e->getMessage()]
-			);
-			return self::UNAVAILABLE;
-		}
-
-		return null;
+		return $this->timers()->cancel(subjectUuid: $adviceId, reason: $reason, logContext: ['advice' => $adviceId]);
 	}//end cancel()
 
 	/**
@@ -370,11 +336,11 @@ class AdviceTimer implements AdviceTimerInterface {
 	}//end reminderDays()
 
 	/**
-	 * The engine, or null when OpenRegister does not ship it.
+	 * OpenRegister's flow timer engine for this timer.
 	 *
-	 * @return object|null
+	 * @return FlowTimerEngine
 	 */
-	private function engine(): ?object {
-		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
-	}//end engine()
+	private function timers(): FlowTimerEngine {
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq advice', timer: 'advice timer');
+	}//end timers()
 }//end class

@@ -102,8 +102,7 @@ class AlwaysAvailableActs {
 
 		return $this->decided(
 			declared: (new AlwaysAvailableActDeclaration())->actsOn(caseType: $caseType),
-			case: $case,
-			userId: $userId
+			asker: ['case' => $case, 'userId' => $userId]
 		);
 	}//end forCase()
 
@@ -111,15 +110,14 @@ class AlwaysAvailableActs {
 	 * Decide each act's availability for this reader.
 	 *
 	 * @param array<int, array<string, mixed>> $declared The declared acts.
-	 * @param array<string, mixed>             $case     The case.
-	 * @param string                           $userId   Who is asking.
+	 * @param array{case: array<string, mixed>, userId: string} $asker The case, and who is asking.
 	 *
 	 * @return array<int, array<string, mixed>> The acts, each carrying its verdict.
 	 */
-	private function decided(array $declared, array $case, string $userId): array {
+	private function decided(array $declared, array $asker): array {
 		$acts = [];
 		foreach ($declared as $act) {
-			[$available, $reason] = $this->roleVerdict(role: (string)$act['requiredRole'], caseData: $case, userId: $userId);
+			[$available, $reason] = $this->roleVerdict(role: (string)$act['requiredRole'], asker: $asker);
 
 			$acts[] = [
 				'id' => (string)$act['id'],
@@ -141,17 +139,16 @@ class AlwaysAvailableActs {
 	 * Whether the reader holds the act's required role, and why not when they do not.
 	 *
 	 * @param string               $role     The required role, or '' for none.
-	 * @param array<string, mixed> $caseData The case.
-	 * @param string               $userId   Who is asking.
+	 * @param array{case: array<string, mixed>, userId: string} $asker The case, and who is asking.
 	 *
 	 * @return array{0: bool, 1: string} Available, and the reason when it is not.
 	 */
-	private function roleVerdict(string $role, array $caseData, string $userId): array {
+	private function roleVerdict(string $role, array $asker): array {
 		$available = true;
 		$reason = '';
 
 		if ($role !== '') {
-			$verdict = $this->roles->evaluate(guardConfig: ['allowedRoles' => [$role]], case: $caseData, userId: $userId);
+			$verdict = $this->roles->evaluate(guardConfig: ['allowedRoles' => [$role]], case: $asker['case'], userId: $asker['userId']);
 			$available = $verdict->passed;
 			if ($available === false) {
 				$reason = (string)($verdict->failureMessage ?? '');

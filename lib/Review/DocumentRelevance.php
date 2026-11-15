@@ -205,22 +205,35 @@ class DocumentRelevance implements DocumentRelevanceInterface {
 			$reviews = $this->forCase(caseId: $caseId);
 		}
 
+		return $this->outstandingIn(documentIds: $documentIds, known: ['available' => $available, 'reviews' => $reviews, 'assessed' => $assessed]);
+	}//end outstanding()
+
+	/**
+	 * The documents still unmarked, or in scope without a verdict.
+	 *
+	 * @param array<int, int|string> $documentIds The case's documents.
+	 * @param array<string, mixed>   $known       Whether reviews can be read (`available`), the case's reviews
+	 *                                            (`reviews`) and the assessed documents as keys (`assessed`).
+	 *
+	 * @return list<string> The outstanding document ids.
+	 */
+	private function outstandingIn(array $documentIds, array $known): array {
 		$outstanding = [];
 		foreach ($documentIds as $docId) {
 			$docId = (string)$docId;
 			$relevance = self::IN_SCOPE;
-			if ($available === true) {
-				$relevance = self::relevanceOf(reviews: $reviews, documentRef: $docId);
+			if ($known['available'] === true) {
+				$relevance = self::relevanceOf(reviews: $known['reviews'], documentRef: $docId);
 			}
 
-			$needsVerdict = ($relevance === self::IN_SCOPE && isset($assessed[$docId]) === false);
+			$needsVerdict = ($relevance === self::IN_SCOPE && isset($known['assessed'][$docId]) === false);
 			if ($relevance === self::UNMARKED || $needsVerdict === true) {
 				$outstanding[] = $docId;
 			}
 		}
 
 		return $outstanding;
-	}//end outstanding()
+	}//end outstandingIn()
 
 	/**
 	 * A reviewer marks a document's relevance. Changing a rule's marking records the rule as overturned.
@@ -251,13 +264,25 @@ class DocumentRelevance implements DocumentRelevanceInterface {
 			$review['overturnedRule'] = (string)$review['rule'];
 		}
 
-		$review['relevance'] = $relevance;
+		return $this->save(review: $this->stamped(review: $review, mark: ['relevance' => $relevance, 'userId' => $userId]));
+	}//end mark()
+
+	/**
+	 * The review carrying a reviewer's mark: the relevance, who marked it and when.
+	 *
+	 * @param array<string, mixed>                    $review The review row.
+	 * @param array{relevance: string, userId: string} $mark   The relevance and the reviewer.
+	 *
+	 * @return array<string, mixed> The review, marked.
+	 */
+	private function stamped(array $review, array $mark): array {
+		$review['relevance'] = $mark['relevance'];
 		$review['relevanceSource'] = 'reviewer';
-		$review['markedBy'] = $userId;
+		$review['markedBy'] = $mark['userId'];
 		$review['markedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 
-		return $this->save(review: $review);
-	}//end mark()
+		return $review;
+	}//end stamped()
 
 	/**
 	 * A verdict says a document is about the request: mark the unmarked ones among these in scope.
@@ -289,11 +314,7 @@ class DocumentRelevance implements DocumentRelevanceInterface {
 			}
 
 			$review = ($reviews[$documentRef] ?? ['case' => $caseId, 'documentRef' => $documentRef]);
-			$review['relevance'] = self::IN_SCOPE;
-			$review['relevanceSource'] = 'reviewer';
-			$review['markedBy'] = $userId;
-			$review['markedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-			$this->save(review: $review);
+			$this->save(review: $this->stamped(review: $review, mark: ['relevance' => self::IN_SCOPE, 'userId' => $userId]));
 			$marked++;
 		}
 

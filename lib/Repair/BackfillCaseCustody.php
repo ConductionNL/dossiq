@@ -149,6 +149,22 @@ class BackfillCaseCustody implements IRepairStep {
 			return;
 		}
 
+		$tally = $this->backfillAll(rows: $rows);
+
+		$output->info(
+			'Custody backfill: ' . $tally['opened'] . ' holdings opened, '
+			. $tally['skipped'] . ' cases already had one, ' . $tally['failed'] . ' failed.'
+		);
+	}//end backfill()
+
+	/**
+	 * Open a holding for every case row that lacks one, counting what happened.
+	 *
+	 * @param array<int, mixed> $rows The case rows, as arrays or serialisable objects.
+	 *
+	 * @return array{opened: int, skipped: int, failed: int} The tally.
+	 */
+	private function backfillAll(array $rows): array {
 		$tally = ['opened' => 0, 'skipped' => 0, 'failed' => 0];
 		foreach ($rows as $row) {
 			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
@@ -158,11 +174,8 @@ class BackfillCaseCustody implements IRepairStep {
 			$tally[$this->backfillOne(case: (array)$row)] += 1;
 		}
 
-		$output->info(
-			'Custody backfill: ' . $tally['opened'] . ' holdings opened, '
-			. $tally['skipped'] . ' cases already had one, ' . $tally['failed'] . ' failed.'
-		);
-	}//end backfill()
+		return $tally;
+	}//end backfillAll()
 
 	/**
 	 * Open one case's first holding, and say which tally it belongs to.

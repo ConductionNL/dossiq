@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectSearch;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -84,8 +85,9 @@ class MandaatVerifier {
 		string $decisionType,
 		string $caseType,
 	): bool {
+		$asked = ['level' => $level, 'decisionType' => $decisionType, 'caseType' => $caseType];
 		foreach ((array)($regeling['mandateGroups'] ?? []) as $groep) {
-			if ($this->groupMatches(groep: $groep, level: $level, decisionType: $decisionType, caseType: $caseType) === false) {
+			if ($this->groupMatches(groep: $groep, asked: $asked) === false) {
 				continue;
 			}
 
@@ -100,25 +102,23 @@ class MandaatVerifier {
 	/**
 	 * Whether a mandate group is for this level, case type and decision type.
 	 *
-	 * @param mixed  $groep        The mandate group.
-	 * @param string $level        The proposed approver level.
-	 * @param string $decisionType The decision type.
-	 * @param string $caseType     The case type.
+	 * @param mixed                                                    $groep The mandate group.
+	 * @param array{level: string, decisionType: string, caseType: string} $asked The proposed approver level, the decision type and the case type.
 	 *
 	 * @return bool True when the group applies.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	private function groupMatches(mixed $groep, string $level, string $decisionType, string $caseType): bool {
-		if ((string)($groep['level'] ?? '') !== $level) {
+	private function groupMatches(mixed $groep, array $asked): bool {
+		if ((string)($groep['level'] ?? '') !== $asked['level']) {
 			return false;
 		}
 
-		if ($this->listAllows(list: (array)($groep['caseTypes'] ?? []), value: $caseType) === false) {
+		if ($this->listAllows(list: (array)($groep['caseTypes'] ?? []), value: $asked['caseType']) === false) {
 			return false;
 		}
 
-		return $this->listAllows(list: (array)($groep['decisionTypes'] ?? []), value: $decisionType);
+		return $this->listAllows(list: (array)($groep['decisionTypes'] ?? []), value: $asked['decisionType']);
 	}//end groupMatches()
 
 	/**
@@ -178,7 +178,9 @@ class MandaatVerifier {
 			return [];
 		}
 
-		$regelingen = $this->allRegelingen(objectService: $objectService, register: $register, schema: $schema);
+		$regelingen = $this->allRegelingen(
+			search: new ObjectSearch(objectService: $objectService, register: $register, schema: $schema, filters: [], scope: [])
+		);
 
 		return $this->regelingFor(regelingen: $regelingen, caseType: $caseType);
 	}//end resolveMandaatRegeling()
@@ -186,9 +188,7 @@ class MandaatVerifier {
 	/**
 	 * Every mandaatRegeling in the register.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The register id.
-	 * @param string $schema        The mandaatRegeling schema id.
+	 * @param ObjectSearch $search The OpenRegister ObjectService, the register id and the mandaatRegeling schema id.
 	 *
 	 * @return array<int, array<string, mixed>> The regelingen.
 	 *
@@ -197,13 +197,13 @@ class MandaatVerifier {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 * @spec openspec/specs/quality-gates/spec.md
 	 */
-	private function allRegelingen(object $objectService, string $register, string $schema): array {
+	private function allRegelingen(ObjectSearch $search): array {
 		try {
 			$regelingen = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: []
+				objectService: $search->objectService,
+				register: $search->register,
+				schema: $search->schema,
+				filters: $search->filters
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error('BeschikkingService: resolveMandaatRegeling failed', ['exception' => $e->getMessage()]);

@@ -197,6 +197,17 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 		$notice->documentLink = $documentLink;
 		$notice->sender = $sender;
 
+		return $this->storeNotice(notice: $notice);
+	}//end registerNotice()
+
+	/**
+	 * Store the notice, and start the penalty payment the first valid one starts.
+	 *
+	 * @param NoticeRegistration $notice The notice, its term instance and how it came in.
+	 *
+	 * @return array<string, mixed> The stored notice row.
+	 */
+	private function storeNotice(NoticeRegistration $notice): array {
 		$row = $this->noticeRow(notice: $notice);
 		$saved = $this->saveSchema(schemaConfigKey: MoneyConfigKeys::NOTICE_OF_DEFAULT_SCHEMA, object: $row);
 		$row['id'] = (string)($saved['id'] ?? '');
@@ -209,7 +220,7 @@ class AccrualNoticeService implements AccrualNoticeServiceInterface {
 		$row['penaltyPaymentCalculation'] = $this->startPenaltyPaymentCalculation(notice: $notice, noticeId: (string)$row['id']);
 
 		return $row;
-	}//end registerNotice()
+	}//end storeNotice()
 
 	/**
 	 * The stored notice: valid when the term had passed on receipt, premature otherwise.

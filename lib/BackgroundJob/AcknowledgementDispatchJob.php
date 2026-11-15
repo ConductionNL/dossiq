@@ -154,16 +154,13 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function deliver(string $caseId, int $attempt): void {
+		$job = ['caseId' => $caseId, 'attempt' => $attempt];
 		try {
 			$this->acknowledgement->acknowledge(caseId: $caseId, attempt: $attempt);
 		} catch (RefusedException $e) {
-			$this->fail(caseId: $caseId, attempt: $attempt, sentence: $e->getSentence());
+			$this->fail(job: $job, sentence: $e->getSentence());
 		} catch (Throwable $e) {
-			$this->fail(
-				caseId: $caseId,
-				attempt: $attempt,
-				sentence: 'The acknowledgement of receipt could not be delivered.',
-			);
+			$this->fail(job: $job, sentence: 'The acknowledgement of receipt could not be delivered.');
 			$this->logger->error(
 				'Dossiq acknowledgement: delivery for case {case} threw',
 				['case' => $caseId, 'attempt' => $attempt, 'reason' => $e->getMessage()],
@@ -174,17 +171,16 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	/**
 	 * Record the failed attempt, and queue the next one when one is due.
 	 *
-	 * @param string  $caseId   The case UUID.
-	 * @param integer $attempt  Which attempt failed.
-	 * @param string  $sentence What went wrong, as one sentence.
+	 * @param array{caseId: string, attempt: int} $job      The case UUID, and which attempt failed.
+	 * @param string                              $sentence What went wrong, as one sentence.
 	 *
 	 * @return void
 	 */
-	private function fail(string $caseId, int $attempt, string $sentence): void {
+	private function fail(array $job, string $sentence): void {
 		$again = $this->acknowledgement->recordFailedAttempt(
-			caseId: $caseId,
+			caseId: $job['caseId'],
 			sentence: $sentence,
-			attempt: $attempt,
+			attempt: $job['attempt'],
 		);
 
 		if ($again === false) {
@@ -193,7 +189,7 @@ class AcknowledgementDispatchJob extends QueuedJob {
 
 		$this->jobList->add(
 			self::class,
-			['caseId' => $caseId, 'attempt' => ($attempt + 1)]
+			['caseId' => $job['caseId'], 'attempt' => ($job['attempt'] + 1)]
 		);
 	}//end fail()
 }//end class

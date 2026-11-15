@@ -179,7 +179,6 @@ class CaseTaskController extends Controller {
 	public function attach(string $caseId, string $taskId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			write: true,
 			run: fn (): array => [
 				'held' => $this->attachments->bind(
 					caseId: $caseId,
@@ -210,7 +209,6 @@ class CaseTaskController extends Controller {
 	public function detach(string $caseId, string $taskId, string $fileId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			write: true,
 			run: fn (): array => [
 				'held' => $this->attachments->release(caseId: $caseId, taskId: $taskId, fileId: $fileId),
 			],
@@ -247,7 +245,7 @@ class CaseTaskController extends Controller {
 			return new JSONResponse(['message' => 'That task is not on a case', 'error' => 'case_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		return $this->guarded(caseId: $caseId, write: true, run: static fn (): array => $run($task));
+		return $this->guarded(caseId: $caseId, run: static fn (): array => $run($task));
 	}//end onTask()
 
 	/**
@@ -295,13 +293,12 @@ class CaseTaskController extends Controller {
 	 * that name in both: the message for the person, the code for the client.
 	 *
 	 * @param string                                 $caseId The case UUID.
-	 * @param boolean                                $write  Whether the gesture writes.
 	 * @param callable(): array<string, mixed>       $run    The gesture.
 	 *
 	 * @return JSONResponse The gesture's answer, or a refusal.
 	 */
-	private function guarded(string $caseId, bool $write, callable $run): JSONResponse {
-		$refused = $this->guardRefusal(caseId: $caseId, write: $write);
+	private function guarded(string $caseId, callable $run): JSONResponse {
+		$refused = $this->guardRefusal(caseId: $caseId, write: true);
 		if ($refused !== null) {
 			return $refused;
 		}

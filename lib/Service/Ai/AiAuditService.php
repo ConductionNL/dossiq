@@ -88,13 +88,11 @@ class AiAuditService implements AiAuditServiceInterface {
 		string $userId,
 		array $context = [],
 	): array {
-		$model = $this->modelOf(context: $context);
-
 		$entry = [
 			'type' => $type,
 			'action' => $userAction,
 			'caseId' => $caseId,
-			'model' => $model,
+			'model' => $this->modelOf(context: $context),
 			'suggestion' => $suggestion,
 			'userAction' => $userAction,
 			'actualValue' => ($actualValue ?? []),
@@ -103,8 +101,18 @@ class AiAuditService implements AiAuditServiceInterface {
 			'timestamp' => date('c'),
 		];
 
-		$entry = $this->withContextKeys(entry: $entry, context: $context);
+		return $this->recorded(entry: $this->withContextKeys(entry: $entry, context: $context), context: $context);
+	}//end recordUserAction()
 
+	/**
+	 * Record the entry locally and hand it to hermiq's AI oversight.
+	 *
+	 * @param array<string, mixed>  $entry   The audit entry, with its context keys.
+	 * @param array<string, string> $context The caller's context.
+	 *
+	 * @return array
+	 */
+	private function recorded(array $entry, array $context): array {
 		$this->recordAuditEntry(entry: $entry);
 
 		// Hermiq owns AI oversight (EU AI Act Art. 14); this is the moment the
@@ -116,7 +124,7 @@ class AiAuditService implements AiAuditServiceInterface {
 		$delegated = $this->oversight->delegate(entry: $this->withSuggestionRef(entry: $entry, context: $context));
 
 		return ['success' => true, 'delegated' => $delegated];
-	}//end recordUserAction()
+	}//end recorded()
 
 	/**
 	 * The model the caller named, else this instance's own model identifier.

@@ -273,6 +273,23 @@ class CaseRelationController extends Controller {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		return $this->removeReadable(
+			user: $user,
+			relation: ['caseId' => $caseId, 'targetId' => $targetId, 'natureRelationship' => $natureRelationship]
+		);
+	}//end destroy()
+
+	/**
+	 * Remove the relation when the user may read both cases.
+	 *
+	 * @param IUser                                                              $user     The signed-in user.
+	 * @param array{caseId: string, targetId: string, natureRelationship: string} $relation The origin case, the target
+	 *                                                                                     case and the relation type.
+	 *
+	 * @return JSONResponse
+	 */
+	private function removeReadable(IUser $user, array $relation): JSONResponse {
+		['caseId' => $caseId, 'targetId' => $targetId] = $relation;
 		if ($this->bothCasesReadable(caseId: $caseId, targetId: $targetId, user: $user) === false) {
 			return new JSONResponse(
 				['ok' => false, 'reason' => 'access_denied'],
@@ -283,7 +300,7 @@ class CaseRelationController extends Controller {
 		$result = $this->caseRelationService->removeRelation(
 			caseId: $caseId,
 			targetId: $targetId,
-			natureRelationship: $natureRelationship,
+			natureRelationship: $relation['natureRelationship'],
 		);
 
 		if ($result['ok'] === false) {
@@ -292,7 +309,7 @@ class CaseRelationController extends Controller {
 		}
 
 		return new JSONResponse($result);
-	}//end destroy()
+	}//end removeReadable()
 
 	/**
 	 * Whether the caller may read both ends of a relation.

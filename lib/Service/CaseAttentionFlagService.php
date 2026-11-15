@@ -330,26 +330,13 @@ class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 			return null;
 		}
 
-		return $this->historyEntry(row: $row, act: $act, reason: $reason);
-	}//end readableRow()
-
-	/**
-	 * One readable history row, trimmed.
-	 *
-	 * @param array<string, mixed> $row    The stored row.
-	 * @param string               $act    Its act.
-	 * @param string               $reason Its reason.
-	 *
-	 * @return array<string, string> The row.
-	 */
-	private function historyEntry(array $row, string $act, string $reason): array {
 		return [
 			'act' => $act,
 			'reason' => $reason,
 			'actor' => trim((string)($row['actor'] ?? '')),
 			'moment' => trim((string)($row['moment'] ?? '')),
 		];
-	}//end historyEntry()
+	}//end readableRow()
 
 	/**
 	 * Read the stored case, as the signed-in user.

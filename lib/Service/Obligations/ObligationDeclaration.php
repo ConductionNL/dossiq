@@ -224,17 +224,29 @@ class ObligationDeclaration {
 			return $isClosing;
 		}
 
+		return $this->listsStatus(blocks: $blocks, target: ['statusId' => $statusId, 'isClosing' => $isClosing]);
+	}//end blocksStatus()
+
+	/**
+	 * Whether the obligation's `blocks` list names the destination status, or closing when it closes.
+	 *
+	 * @param array<int, mixed>                        $blocks The `blocks` list.
+	 * @param array{statusId: string, isClosing: bool} $target The destination status, and whether it closes the case.
+	 *
+	 * @return bool True when the list names it.
+	 */
+	private function listsStatus(array $blocks, array $target): bool {
 		foreach ($blocks as $entry) {
 			$value = trim((string)$entry);
-			if ($value === self::BLOCKS_CLOSING && $isClosing === true) {
+			if ($value === self::BLOCKS_CLOSING && $target['isClosing'] === true) {
 				return true;
 			}
 
-			if ($value !== '' && $value === $statusId) {
+			if ($value !== '' && $value === $target['statusId']) {
 				return true;
 			}
 		}
 
 		return false;
-	}//end blocksStatus()
+	}//end listsStatus()
 }//end class

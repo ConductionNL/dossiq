@@ -77,18 +77,35 @@ class DecisionAdviceService {
 		$values = $this->declaredInputs(table: $table, inputs: $inputs);
 		$outputs = $this->evaluate(reference: $reference, values: $values);
 
+		return $this->saveRecommendation(
+			asked: ['caseId' => $caseId, 'reference' => $reference, 'table' => $table, 'userId' => $userId],
+			evaluated: ['inputs' => $values, 'outputs' => $outputs]
+		);
+	}//end recommend()
+
+	/**
+	 * Store the advice the decision table recommends.
+	 *
+	 * @param array<string, mixed> $asked     The case, the decision table's reference and the table, and who asks.
+	 * @param array<string, mixed> $evaluated The declared inputs and the table's outputs.
+	 *
+	 * @return array<string, mixed> The stored advice.
+	 */
+	private function saveRecommendation(array $asked, array $evaluated): array {
+		$outputs = $evaluated['outputs'];
+
 		return $this->store->save(
 			advice: [
-				'case' => $caseId,
-				'decisionTable' => $reference,
-				'inputs' => $values,
+				'case' => $asked['caseId'],
+				'decisionTable' => $asked['reference'],
+				'inputs' => $evaluated['inputs'],
 				'outputs' => $outputs,
-				'recommendation' => $this->recommendationOf(table: $table, outputs: $outputs),
-				'recommendedBy' => $userId,
+				'recommendation' => $this->recommendationOf(table: $asked['table'], outputs: $outputs),
+				'recommendedBy' => $asked['userId'],
 				'recommendedAt' => $this->now(),
 			]
 		);
-	}//end recommend()
+	}//end saveRecommendation()
 
 	/**
 	 * Read stored advice.
@@ -140,7 +157,7 @@ class DecisionAdviceService {
 				$inputs[] = [
 					'name' => $name,
 					'type' => (string)($definition['type'] ?? 'string'),
-					'options' => $this->entries(rules: $rules, key: 'inputEntries', index: $index),
+					'options' => $this->entries(rules: $rules, column: ['key' => 'inputEntries', 'index' => $index]),
 				];
 			}
 
@@ -151,7 +168,7 @@ class DecisionAdviceService {
 			'available' => ($inputs !== []),
 			'decisionTable' => $reference,
 			'inputs' => $inputs,
-			'outcomes' => $this->entries(rules: $rules, key: 'outputEntries', index: 0),
+			'outcomes' => $this->entries(rules: $rules, column: ['key' => 'outputEntries', 'index' => 0]),
 		];
 	}//end form()
 
@@ -159,13 +176,13 @@ class DecisionAdviceService {
 	 * The distinct literal values one column of the rules uses, in rule order.
 	 * A dash or an empty entry matches anything and is no option.
 	 *
-	 * @param array  $rules The table's rules.
-	 * @param string $key   `inputEntries` or `outputEntries`.
-	 * @param int    $index The column.
+	 * @param array                          $rules  The table's rules.
+	 * @param array{key: string, index: int} $column `inputEntries` or `outputEntries`, and the column.
 	 *
 	 * @return list<string>
 	 */
-	private function entries(array $rules, string $key, int $index): array {
+	private function entries(array $rules, array $column): array {
+		['key' => $key, 'index' => $index] = $column;
 		$values = [];
 		foreach ($rules as $rule) {
 			$entry = null;
@@ -232,8 +249,24 @@ class DecisionAdviceService {
 			throw new DecisionAdviceRefusal('Over dit advies is al besloten', Http::STATUS_CONFLICT);
 		}
 
+		return $this->saveDecision(advice: $advice, decision: ['outcome' => $outcome, 'reason' => $reason, 'userId' => $userId]);
+	}//end decide()
+
+	/**
+	 * Record the chosen outcome on the advice; a deviation from the recommendation needs a reason.
+	 *
+	 * @param array<string, mixed>                                $advice   The stored advice.
+	 * @param array{outcome: string, reason: string, userId: string} $decision The chosen outcome (trimmed), why it
+	 *                                                                     deviates, and who decides.
+	 *
+	 * @return array<string, mixed> The saved advice.
+	 *
+	 * @throws DecisionAdviceRefusal When a deviation carries no reason.
+	 */
+	private function saveDecision(array $advice, array $decision): array {
+		$outcome = $decision['outcome'];
 		$accepted = ($outcome === (string)($advice['recommendation'] ?? ''));
-		$reason = trim($reason);
+		$reason = trim($decision['reason']);
 		if ($accepted === false && $reason === '') {
 			throw new DecisionAdviceRefusal(self::REASON_REQUIRED, Http::STATUS_BAD_REQUEST);
 		}
@@ -245,12 +278,12 @@ class DecisionAdviceService {
 					'outcome' => $outcome,
 					'accepted' => $accepted,
 					'reason' => $reason,
-					'decidedBy' => $userId,
+					'decidedBy' => $decision['userId'],
 					'decidedAt' => $this->now(),
 				]
 			)
 		);
-	}//end decide()
+	}//end saveDecision()
 
 	/**
 	 * The decision table the case's type names.

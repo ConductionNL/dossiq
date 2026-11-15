@@ -61,8 +61,8 @@ class ComplaintPatternNotes {
 		$noneHandled = $this->l10n->t('No complaint was handled this quarter');
 
 		return $this->perMonthKpi(figures: $figures, targets: $targets)
-			+ $this->withinAwbKpi(handling: $handling, awbTarget: $targets[ComplaintPatterns::TARGET_WITHIN_AWB], noneHandled: $noneHandled)
-			+ $this->upheldKpi(handling: $handling, upheldTarget: $targets[ComplaintPatterns::TARGET_UPHELD], noneHandled: $noneHandled)
+			+ $this->withinAwbKpi(handling: $handling, goal: ['target' => $targets[ComplaintPatterns::TARGET_WITHIN_AWB], 'noneHandled' => $noneHandled])
+			+ $this->upheldKpi(handling: $handling, goal: ['target' => $targets[ComplaintPatterns::TARGET_UPHELD], 'noneHandled' => $noneHandled])
 			+ $this->averageDaysKpi(handling: $handling, noneHandled: $noneHandled);
 	}//end kpis()
 
@@ -90,15 +90,15 @@ class ComplaintPatternNotes {
 	/**
 	 * The share handled within the Awb term with its note.
 	 *
-	 * @param array<string, mixed> $handling    The quarter's handling figures.
-	 * @param int                  $awbTarget   The target percentage.
-	 * @param string               $noneHandled The note when nothing was handled.
+	 * @param array<string, mixed>                    $handling The quarter's handling figures.
+	 * @param array{target: int, noneHandled: string} $goal     The target percentage and the note when nothing was handled.
 	 *
 	 * @return array<string, int|string|null>
 	 *
 	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
-	private function withinAwbKpi(array $handling, int $awbTarget, string $noneHandled): array {
+	private function withinAwbKpi(array $handling, array $goal): array {
+		['target' => $awbTarget, 'noneHandled' => $noneHandled] = $goal;
 		$withinAwb = $handling['withinAwbPercent'];
 
 		return [
@@ -118,15 +118,15 @@ class ComplaintPatternNotes {
 	/**
 	 * The share upheld with its note.
 	 *
-	 * @param array<string, mixed> $handling     The quarter's handling figures.
-	 * @param int                  $upheldTarget The target percentage.
-	 * @param string               $noneHandled  The note when nothing was handled.
+	 * @param array<string, mixed>                    $handling The quarter's handling figures.
+	 * @param array{target: int, noneHandled: string} $goal     The target percentage and the note when nothing was handled.
 	 *
 	 * @return array<string, int|string|null>
 	 *
 	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
-	private function upheldKpi(array $handling, int $upheldTarget, string $noneHandled): array {
+	private function upheldKpi(array $handling, array $goal): array {
+		['target' => $upheldTarget, 'noneHandled' => $noneHandled] = $goal;
 		$upheld = $handling['upheldPercent'];
 
 		return [
