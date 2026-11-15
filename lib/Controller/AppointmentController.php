@@ -24,7 +24,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\AnswersFlaggedRefusals;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AppointmentServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -41,8 +40,6 @@ use OCP\IUserSession;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AppointmentController extends Controller {
-	use AnswersFlaggedRefusals;
-
 	/**
 	 * Constructor.
 	 *
@@ -72,7 +69,7 @@ class AppointmentController extends Controller {
 	public function index(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return $this->notAuthenticated();
+			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
 		$caseId = (string)($this->request->getParam('caseId') ?? '');
@@ -85,7 +82,10 @@ class AppointmentController extends Controller {
 
 		// Appointment records carry the citizen's name, e-mail and phone.
 		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return $this->notAuthorized();
+			return new JSONResponse(
+				['success' => false, 'error' => 'Not authorized'],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		$appointments = $this->appointmentService->getAppointmentsForCase($caseId);
@@ -104,7 +104,7 @@ class AppointmentController extends Controller {
 	public function create(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return $this->notAuthenticated();
+			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
 		$caseId = $this->request->getParam('caseId');
@@ -114,7 +114,10 @@ class AppointmentController extends Controller {
 
 		// Books onto an arbitrary case and stores citizen contact details.
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: (string)$caseId, user: $user) === false) {
-			return $this->notAuthorized();
+			return new JSONResponse(
+				['success' => false, 'error' => 'Not authorized'],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		$result = $this->appointmentService->bookAppointment($caseId, $this->requestedBooking());
@@ -204,7 +207,7 @@ class AppointmentController extends Controller {
 	 */
 	public function timeslots(): JSONResponse {
 		if ($this->userSession->getUser() === null) {
-			return $this->notAuthenticated();
+			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
 		$productId = $this->request->getParam('productId', '');
@@ -225,11 +228,14 @@ class AppointmentController extends Controller {
 	private function requireAppointmentMutator(string $appointmentId): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return $this->notAuthenticated();
+			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
 		if ($this->mayMutateAppointment(appointmentId: $appointmentId, user: $user) === false) {
-			return $this->notAuthorized();
+			return new JSONResponse(
+				['success' => false, 'error' => 'Not authorized'],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		return null;

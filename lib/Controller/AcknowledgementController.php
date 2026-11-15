@@ -39,8 +39,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
-use OCA\Dossiq\Controller\Support\FindsCaseChangers;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AcknowledgementServiceInterface;
@@ -64,8 +62,6 @@ use Throwable;
  * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementController extends Controller {
-	use AnswersSignedOutCallers;
-	use FindsCaseChangers;
 
 	/**
 	 * Constructor.
@@ -137,9 +133,16 @@ class AcknowledgementController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function recordMet(string $caseId): JSONResponse {
-		$user = $this->caseChanger(caseId: $caseId, refusal: $this->l10n->t('You cannot change this case.'));
-		if ($user instanceof JSONResponse) {
-			return $user;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(
+				['error' => $this->l10n->t('You cannot change this case.')],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		return $this->recordMetAs(caseId: $caseId, user: $user);
@@ -193,4 +196,16 @@ class AcknowledgementController extends Controller {
 			Http::STATUS_INTERNAL_SERVER_ERROR
 		);
 	}//end recordFailed()
+
+	/**
+	 * The 401 for a caller without a session.
+	 *
+	 * @return JSONResponse
+	 */
+	private function notSignedIn(): JSONResponse {
+		return new JSONResponse(
+			['error' => $this->l10n->t('You are not signed in.')],
+			Http::STATUS_UNAUTHORIZED
+		);
+	}//end notSignedIn()
 }//end class

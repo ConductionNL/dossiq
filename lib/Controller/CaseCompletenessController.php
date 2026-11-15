@@ -28,7 +28,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\FindsCaseReaders;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseCompletenessInterface;
@@ -47,8 +46,6 @@ use Throwable;
  * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 class CaseCompletenessController extends Controller {
-
-	use FindsCaseReaders;
 
 	/**
 	 * Constructor.
@@ -82,9 +79,13 @@ class CaseCompletenessController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(string $caseId): JSONResponse {
-		$user = $this->caseReader(caseId: $caseId);
-		if ($user instanceof JSONResponse) {
-			return $user;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['message' => 'You may not read this case.'], Http::STATUS_FORBIDDEN);
 		}
 
 		try {

@@ -33,7 +33,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\FindsCaseUploader;
 use OCA\Dossiq\Kernel\Contracts\CaseDocumentGenerationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
 use OCP\AppFramework\Controller;
@@ -48,8 +47,6 @@ use OCP\IUserSession;
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class CaseDocumentGenerationController extends Controller {
-	use FindsCaseUploader;
-
 	/**
 	 * Constructor.
 	 *
@@ -85,9 +82,13 @@ class CaseDocumentGenerationController extends Controller {
 	 * @spec openspec/specs/template-library/spec.md
 	 */
 	public function generateDocument(string $caseId): JSONResponse {
-		$user = $this->uploader(caseId: $caseId);
-		if ($user instanceof JSONResponse) {
-			return $user;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		$templateId = (string)$this->request->getParam('templateId', '');
