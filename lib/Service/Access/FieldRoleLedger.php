@@ -124,7 +124,7 @@ class FieldRoleLedger {
 		array $previous = []
 	): array {
 		$wanted = $this->withOwnBlocks(
-			wanted: $this->baseAndWithdrawn(base: $base, ledger: $ledger, previous: $previous),
+			wanted: $this->baseAndWithdrawn(base: $base, withdrawn: $this->withdrawn(ledger: $ledger, previous: $previous)),
 			ledger: $ledger,
 		);
 
@@ -134,22 +134,21 @@ class FieldRoleLedger {
 	/**
 	 * The base blocks, over an empty block for every field the ledger stopped owning.
 	 *
-	 * @param array<string, mixed> $base     The authorization the register JSON declares.
-	 * @param array<string, mixed> $ledger   What every case type projects now.
-	 * @param array<string, mixed> $previous What every case type projected before.
+	 * @param array<string, mixed> $base      The authorization the register JSON declares.
+	 * @param array<string, mixed> $withdrawn An empty block for every field the ledger stopped owning.
 	 *
 	 * @return array<string, mixed> The wanted blocks, by field.
 	 *
 	 * @spec openspec/specs/security-hardening/spec.md
 	 */
-	private function baseAndWithdrawn(array $base, array $ledger, array $previous): array {
+	private function baseAndWithdrawn(array $base, array $withdrawn): array {
 		// 🔴 THE FIELDS THE LEDGER HAS JUST STOPPED OWNING HAVE TO BE VISITED
 		// TOO, OR A RULE CAN BE ADDED AND NEVER TAKEN OFF. A withdrawal removes
 		// the field from the new ledger, so a loop over the new ledger alone
 		// never reaches the property and the grant written for a rule nobody
 		// declares any more stays on the schema for ever. Seeding those fields
 		// with an empty block is what makes the withdrawal a write.
-		$wanted = $this->withdrawn(ledger: $ledger, previous: $previous);
+		$wanted = $withdrawn;
 		foreach ($base as $field => $block) {
 			$wanted[$field] = $block;
 		}
