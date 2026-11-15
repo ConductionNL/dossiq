@@ -137,7 +137,7 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 		$schedule = (array)$decision['paymentSchedule'];
 		$raised   = 0;
 		foreach (array_keys((array)($schedule['instalments'] ?? [])) as $index) {
-			$payable = $this->duePayable(decision: $decision, schedule: $schedule, index: $index, today: $today);
+			$payable = $this->duePayable(run: new DecisionSchedule(decision: $decision, schedule: $schedule, today: $today), index: $index);
 			if ($payable === null) {
 				continue;
 			}
@@ -153,26 +153,24 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 	/**
 	 * Raise one instalment when it is due; null when it is not due, or finance refused or raised nothing.
 	 *
-	 * @param array<string, mixed> $decision The decision.
-	 * @param array<string, mixed> $schedule The schedule so far.
-	 * @param int|string $index The instalment's position.
-	 * @param DateTimeImmutable $today The day the run counts as.
+	 * @param DecisionSchedule $run   The decision, the schedule so far and the day the run counts as.
+	 * @param int|string       $index The instalment's position.
 	 *
 	 * @return array<string, mixed>|null The payable, or null.
 	 *
 	 * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-advances-are-a-payment-schedule-raised-with-finance-when-due-req-sub-case-02
 	 */
-	private function duePayable(array $decision, array $schedule, int|string $index, DateTimeImmutable $today): ?array {
-		$instalment = (array)$schedule['instalments'][$index];
-		if ($this->isDue(instalment: $instalment, today: $today) === false) {
+	private function duePayable(DecisionSchedule $run, int|string $index): ?array {
+		$instalment = (array)$run->schedule['instalments'][$index];
+		if ($this->isDue(instalment: $instalment, today: $run->today) === false) {
 			return null;
 		}
 
 		$payable = null;
 		try {
-			$payable = $this->raise(decision: $decision, schedule: $schedule, instalment: $instalment, index: (int)$index);
+			$payable = $this->raise(run: $run, index: $index);
 		} catch (Throwable $e) {
-			$this->logRefused(decision: $decision, index: $index, error: $e);
+			$this->logRefused(decision: $run->decision, index: $index, error: $e);
 		}
 
 		return $payable;
@@ -237,16 +235,17 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 	/**
 	 * Raise one instalment with the finance app.
 	 *
-	 * @param array<string, mixed> $decision   The decision.
-	 * @param array<string, mixed> $schedule   Its payment schedule.
-	 * @param array<string, mixed> $instalment The instalment.
-	 * @param int                  $index      Its place in the schedule.
+	 * @param DecisionSchedule $run   The decision and its payment schedule.
+	 * @param int|string       $index The instalment's place in the schedule.
 	 *
 	 * @return array{payableId: string, state: string}|null The payable, or null when no finance app answers.
 	 *
 	 * @throws \RuntimeException When the finance app refuses the payout.
 	 */
-	private function raise(array $decision, array $schedule, array $instalment, int $index): ?array {
+	private function raise(DecisionSchedule $run, int|string $index): ?array {
+		$decision = $run->decision;
+		$schedule = $run->schedule;
+		$instalment = (array)$schedule['instalments'][$index];
 		$decisionId = (string)($decision['id'] ?? $decision['uuid'] ?? '');
 
 		return $this->payouts->request(
@@ -254,7 +253,7 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 				'amountCents' => (int)$instalment['amountCents'],
 				'payeeName' => (string)($decision['addressee']['name'] ?? ''),
 				'iban' => (string)($schedule['payeeIban'] ?? ''),
-				'reference' => (string)($decision['reference'] ?? $decisionId) . '-' . ($index + 1),
+				'reference' => (string)($decision['reference'] ?? $decisionId) . '-' . ((int)$index + 1),
 				'description' => (string)($instalment['label'] ?? ''),
 				'correlationId' => $decisionId,
 				'dueOn' => substr((string)$instalment['dueOn'], 0, 10),
