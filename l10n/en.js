@@ -4061,6 +4061,7 @@ OC.L10N.register(
         "Hand it over": "Hand it over",
         "Hand over": "Hand over",
         "Hand over · {identifier}": "Hand over · {identifier}",
+        "Hand the case to the decision app as a decision of the configured type, such as the contract that follows an award.": "Hand the case to the decision app as a decision of the configured type, such as the contract that follows an award.",
         "Hand this case to another team": "Hand this case to another team",
         "Hand to another team": "Hand to another team",
         "Handed on": "Handed on",
@@ -4649,6 +4650,7 @@ OC.L10N.register(
         "Issued on outcome": "Issued on outcome",
         "Issues": "Issues",
         "Issues a permit": "Issues a permit",
+        "It is not known who asks for the redacted copy. Sign in and try again.": "It is not known who asks for the redacted copy. Sign in and try again.",
         "it is on the case or task, for whoever opens it tomorrow": "it is on the case or task, for whoever opens it tomorrow",
         "It is registered and has its own case.": "It is registered and has its own case.",
         "It is waiting on %s.": "It is waiting on %s.",
@@ -7173,6 +7175,7 @@ OC.L10N.register(
         "Raadsvoorstel": "Council proposal",
         "racial or ethnic origin. Every view is logged with its purpose.": "racial or ethnic origin. Every view is logged with its purpose.",
         "Radius in metres around lat/lng (used when source is gps or free)": "Radius in metres around lat/lng (used when source is gps or free)",
+        "Raise a decision": "Raise a decision",
         "Raised": "Raised",
         "Raised at": "Raised at",
         "Raised by": "Raised by",
@@ -12230,6 +12233,7 @@ OC.L10N.register(
         "You cannot read this case, so its report cannot be shown.": "You cannot read this case, so its report cannot be shown.",
         "You cannot read this case.": "You cannot read this case.",
         "You cannot read this document, so it cannot be added.": "You cannot read this document, so it cannot be added.",
+        "You checked these passages yourself. A colleague must make the redacted copy.": "You checked these passages yourself. A colleague must make the redacted copy.",
         "You create the first case yourself": "You create the first case yourself",
         "You currently have no active cases.": "You currently have no active cases.",
         "You do not administer that group, so its default is not yours to set.": "You do not administer that group, so its default is not yours to set.",
@@ -12612,6 +12616,7 @@ OC.L10N.register(
         "{subject.identifier} · deadline {subject.deadline|relative}.": "{subject.identifier} · deadline {subject.deadline|relative}.",
         "{subject.identifier} · {subject.caseType.title} · deadline {subject.deadline|relative}.": "{subject.identifier} · {subject.caseType.title} · deadline {subject.deadline|relative}.",
         "{subject.title}": "{subject.title}",
+        "{subject}": "{subject}",
         "{succeeded} of {total} cases were transitioned.": "{succeeded} of {total} cases were transitioned.",
         "{summary}": "{summary}",
         "{targetEntity}": "{targetEntity}",
@@ -12654,12 +12659,7 @@ OC.L10N.register(
         "{weeks} weeks": "{weeks} weeks",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years",
-        "It is not known who asks for the redacted copy. Sign in and try again.": "It is not known who asks for the redacted copy. Sign in and try again.",
-        "You checked these passages yourself. A colleague must make the redacted copy.": "You checked these passages yourself. A colleague must make the redacted copy.",
-        "{subject}": "{subject}",
-        "Raise a decision": "Raise a decision",
-        "Hand the case to the decision app as a decision of the configured type, such as the contract that follows an award.": "Hand the case to the decision app as a decision of the configured type, such as the contract that follows an award."
+        "{years} years": "{years} years"
     },
     "nplurals=2; plural=(n != 1);"
 )
