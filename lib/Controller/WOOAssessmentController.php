@@ -34,9 +34,9 @@ use OCA\Dossiq\Kernel\Contracts\ExtensionNoticeInterface;
 use OCA\Dossiq\Kernel\Contracts\HandlerActsAsSystemInterface;
 use OCA\Dossiq\Kernel\Contracts\WOOAnonymisationAssistServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODeadlineServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODecisionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
-use OCA\Dossiq\Service\WOODecisionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -74,7 +74,7 @@ class WOOAssessmentController extends Controller {
 	 * @param IRequest $request The request
 	 * @param WOODocumentAssessmentServiceInterface $assessmentService Document assessment service
 	 * @param WOODeadlineServiceInterface $deadlineService Deadline service
-	 * @param WOODecisionService $decisionService Decision service
+	 * @param WOODecisionServiceInterface $decisionService Decision service
 	 * @param WooPublicationServiceInterface $publicationService WOO publication (via OpenCatalogi) service
 	 * @param WOOAnonymisationAssistServiceInterface $anonymisationAssist LLM-assisted redaction-span proposal
 	 *                                                           service (woo-llm-anonymisation)
@@ -94,7 +94,7 @@ class WOOAssessmentController extends Controller {
 		IRequest $request,
 		private readonly WOODocumentAssessmentServiceInterface $assessmentService,
 		private readonly WOODeadlineServiceInterface $deadlineService,
-		private readonly WOODecisionService $decisionService,
+		private readonly WOODecisionServiceInterface $decisionService,
 		private readonly WooPublicationServiceInterface $publicationService,
 		private readonly WOOAnonymisationAssistServiceInterface $anonymisationAssist,
 		private readonly IUserSession $userSession,

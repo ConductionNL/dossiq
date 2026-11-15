@@ -8,7 +8,7 @@
  * (and into its `description` when the decision had no explanation). The
  * public site shows the summary under the publication's title, so a resident
  * read a code. New decisions name the request by the case's title
- * ({@see WOODecisionService::publicationSummary()}); this step gives the rows
+ * ({@see WooPublicationSummary::of()}); this step gives the rows
  * written before that fix the same words.
  *
  * Two kinds of row, one rule:
@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\WOODecisionService;
+use OCA\Dossiq\Woo\WooPublicationSummary;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -193,7 +193,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 	 *
 	 * @return array<string, string> The changes.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) WOODecisionService::publicationSummary()
+	 * @SuppressWarnings(PHPMD.StaticAccess) WooPublicationSummary::of()
 	 * is the one place the wording lives, so a repaired row and a new one cannot
 	 * come to read differently.
 	 *
@@ -205,7 +205,7 @@ class RewriteWooPublicationSummaries implements IRepairStep {
 			return [];
 		}
 
-		$summary = WOODecisionService::publicationSummary(caseTitle: $this->titleOf(caseId: strtolower($match[1])));
+		$summary = WooPublicationSummary::of(caseTitle: $this->titleOf(caseId: strtolower($match[1])));
 
 		$changes = [];
 		foreach ($fields as $field) {

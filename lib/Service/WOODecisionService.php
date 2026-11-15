@@ -30,9 +30,11 @@ namespace OCA\Dossiq\Service;
 use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODecisionServiceInterface;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
+use OCA\Dossiq\Woo\WooPublicationSummary;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -47,7 +49,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  */
-class WOODecisionService {
+class WOODecisionService implements WOODecisionServiceInterface {
 
 	/**
 	 * The seeded WOO-besluit decision type (register.d/81-woo-verzoek.json),
@@ -298,15 +300,12 @@ class WOODecisionService {
 	 *
 	 * @return string The summary.
 	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) WooPublicationSummary::of() is where the wording lives.
+	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public static function publicationSummary(string $caseTitle): string {
-		$title = trim($caseTitle);
-		if ($title === '') {
-			return 'Besluit op een Woo-verzoek';
-		}
-
-		return 'Besluit op het Woo-verzoek "' . $title . '"';
+		return WooPublicationSummary::of(caseTitle: $caseTitle);
 	}//end publicationSummary()
 
 	/**

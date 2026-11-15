@@ -467,6 +467,7 @@ use OCA\Dossiq\Kernel\Contracts\WalkthroughCompletionInterface;
 use OCA\Dossiq\Kernel\Contracts\WithheldListRecorderInterface;
 use OCA\Dossiq\Kernel\Contracts\WOOAnonymisationAssistServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODeadlineServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODecisionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WOODocumentAssessmentServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooPublicationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WorkflowDefinitionServiceInterface;
@@ -1289,6 +1290,7 @@ final class ContractBindings {
 		$context->registerServiceAlias(VaststellingServiceInterface::class, VaststellingService::class);
 		$context->registerServiceAlias(WOOAnonymisationAssistServiceInterface::class, WOOAnonymisationAssistService::class);
 		$context->registerServiceAlias(WOODeadlineServiceInterface::class, WOODeadlineService::class);
+		$context->registerServiceAlias(WOODecisionServiceInterface::class, WOODecisionService::class);
 		$context->registerServiceAlias(WOODocumentAssessmentServiceInterface::class, WOODocumentAssessmentService::class);
 		$context->registerServiceAlias(WalkthroughCompletionInterface::class, WalkthroughCompletion::class);
 		$context->registerServiceAlias(WithheldListRecorderInterface::class, WithheldListRecorder::class);
