@@ -59,6 +59,15 @@ class RepairSchemaTest extends TestCase {
 		};
 	}//end objectService()
 
+	public function testSearchIsOneReadWithTheFilters(): void {
+		$service = $this->objectService([[['id' => 'a']], [['id' => 'b']]]);
+		$target = new RepairSchema(objectService: $service, register: '4');
+		$target->schema = '12';
+
+		$this->assertSame([['id' => 'a']], $target->search(['_limit' => 50]));
+		$this->assertSame([['searchObjects', ['_limit' => 50, '@self' => ['register' => 4, 'schema' => 12]]]], $service->calls);
+	}//end testSearchIsOneReadWithTheFilters()
+
 	public function testRowsArePagedUntilAShortPage(): void {
 		$service = $this->objectService([[['id' => 'a'], ['id' => 'b']], [['id' => 'c'], ['id' => 'd']], [['id' => 'e']]]);
 		$target = new RepairSchema(objectService: $service, register: '4');
