@@ -76,7 +76,7 @@ class ConnectedSystemDocumentFiler {
 			return self::refused(reason: 'Het documenttype is niet gekoppeld aan een documenttype in dossiq.');
 		}
 
-		$metadata = $this->documentMetadata(operation: $operation, fileName: $fileName, type: $type);
+		$metadata = $this->documentMetadata(operation: $operation, type: $type);
 
 		$result = $this->upload(
 			document: new ConnectedDocumentUpload(
@@ -113,15 +113,16 @@ class ConnectedSystemDocumentFiler {
 	/**
 	 * The document metadata, without its empty fields.
 	 *
-	 * @param array<string, mixed> $operation The generic add-document operation.
-	 * @param string               $fileName  The file name.
+	 * @param array<string, mixed> $operation The generic add-document operation, naming the file.
 	 * @param string               $type      The dossiq document type id.
 	 *
 	 * @return array<string, string> The metadata.
 	 *
 	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-document-from-a-connected-system-takes-the-upload-path
 	 */
-	private function documentMetadata(array $operation, string $fileName, string $type): array {
+	private function documentMetadata(array $operation, string $type): array {
+		$fileName = basename(self::text(value: ($operation['fileName'] ?? '')));
+
 		return array_filter(
 			[
 				'title' => self::text(value: ($operation['title'] ?? $fileName)),
