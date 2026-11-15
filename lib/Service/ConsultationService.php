@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\Consultation\ConsultationRecords;
 use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -50,6 +51,7 @@ use RuntimeException;
 class ConsultationService implements ConsultationServiceInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService;
 
 	/**
 	 * Valid consultation statuses.
@@ -190,24 +192,6 @@ class ConsultationService implements ConsultationServiceInterface {
 
 		return $this->createdSummary(consultationId: $consultationId, data: $data, decisionRef: $decisionRef);
 	}//end createConsultation()
-
-	/**
-	 * The OpenRegister object service.
-	 *
-	 * @return object The object service
-	 *
-	 * @throws \RuntimeException If OpenRegister unavailable
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * The configured register and consultation schema.

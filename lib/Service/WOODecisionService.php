@@ -33,6 +33,7 @@ use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -46,6 +47,8 @@ use RuntimeException;
  * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  */
 class WOODecisionService {
+
+	use RequiresObjectService;
 
 	/**
 	 * The seeded WOO-besluit decision type (register.d/81-woo-verzoek.json),
@@ -181,24 +184,6 @@ class WOODecisionService {
 			['app' => AppIdentity::APP_ID, 'decisionRef' => $assembled->decisionRef],
 		);
 	}//end logAssembled()
-
-	/**
-	 * The OpenRegister object service, required to assemble a decision.
-	 *
-	 * @return object The object service
-	 *
-	 * @throws \RuntimeException If OpenRegister unavailable
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
-	 */
-	private function requireObjectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end requireObjectService()
 
 	/**
 	 * The configured register and decision schema.
