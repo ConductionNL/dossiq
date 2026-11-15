@@ -141,57 +141,23 @@ class AanvullingsverzoekService implements AanvullingsverzoekServiceInterface {
 		?string $question = null,
 	): array {
 		$ask = compact('caseId', 'items', 'recipient', 'durationDays', 'userId', 'pauseReason', 'rationale', 'party');
-		[$ask, $instance] = $this->sentAsk(ask: $ask, question: $question);
-
-		return $this->writeAsk(ask: $ask, instance: $instance);
-	}//end ask()
-
-	/**
-	 * Type the request, send its letter, and stamp the moment it went out.
-	 *
-	 * @param array<string, mixed> $ask      The caseId, items, recipient, durationDays, userId, pauseReason, rationale and party.
-	 * @param string|null          $question The question of a clarification, or null.
-	 *
-	 * @return array{0: array<string, mixed>, 1: array<string, mixed>} The typed request with `now`, and the term instance.
-	 *
-	 * @throws RefusedException When the act refuses.
-	 *
-	 * @spec openspec/specs/termijn-pause-extension/spec.md
-	 */
-	private function sentAsk(array $ask, ?string $question): array {
 		$ask += $this->kindOf(ask: $ask, question: $question);
 
 		$instance = $this->sentInstance(ask: $ask);
 		$ask['now'] = (new DateTimeImmutable())->format('c');
 
-		return [$ask, $instance];
-	}//end sentAsk()
-
-	/**
-	 * Write the sent request down, raise its portal task and mark the case waiting.
-	 *
-	 * @param array<string, mixed> $ask      The typed request with `now`.
-	 * @param array<string, mixed> $instance The term instance the act suspended.
-	 *
-	 * @return array<string, mixed> The written request.
-	 *
-	 * @throws RefusedException When the record cannot be written.
-	 *
-	 * @spec openspec/specs/termijn-pause-extension/spec.md
-	 */
-	private function writeAsk(array $ask, array $instance): array {
 		$request = $this->requestRow(ask: $ask, instance: $instance);
 		$written = $this->write(request: $request);
-		$written = $this->raisePortalTask(written: $written, userId: $ask['userId']);
-		$this->markCaseWaiting(caseId: $ask['caseId'], since: $ask['now']);
+		$written = $this->raisePortalTask(written: $written, userId: $userId);
+		$this->markCaseWaiting(caseId: $caseId, since: $ask['now']);
 
 		$this->logger->info(
 			'Dossiq: an aanvullingsverzoek was sent and written down',
-			['app' => AppIdentity::APP_ID, 'case' => $ask['caseId'], 'items' => count($request['missingItems'])]
+			['app' => AppIdentity::APP_ID, 'case' => $caseId, 'items' => count($request['missingItems'])]
 		);
 
 		return $written;
-	}//end writeAsk()
+	}//end ask()
 
 	/**
 	 * The kind of request and what its letter asks: the documents, or the one question of a clarification.
