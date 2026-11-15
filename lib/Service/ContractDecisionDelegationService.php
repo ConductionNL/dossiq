@@ -203,20 +203,15 @@ class ContractDecisionDelegationService implements ContractDecisionDelegationSer
 		array $subject,
 		array $mandateContext,
 	): string {
-		$request = new DelegatedDecisionRequest(decisionType: $decisionType, externalReference: $caseRef);
-		$request->subject = [
-			'subjectRegister' => (string)($subject['subjectRegister'] ?? ''),
-			'subjectSchema' => (string)($subject['subjectSchema'] ?? ''),
-			'subjectId' => (string)($subject['subjectId'] ?? $contractRef),
-			'subjectLabel' => (string)($subject['subjectLabel'] ?? ''),
-		];
-		$request->actorId = (string)($mandateContext['requestedBy'] ?? '');
-		$request->payload = [
-			'title' => (string)($subject['subjectLabel'] ?? ''),
-			'context' => $mandateContext,
-		];
-
-		return $this->dispatchDecisionRequest(request: $request);
+		return $this->dispatchFilled(
+			request: new DelegatedDecisionRequest(decisionType: $decisionType, externalReference: $caseRef),
+			fill: [
+				'subject' => $subject,
+				'subjectId' => $contractRef,
+				'actorId' => (string)($mandateContext['requestedBy'] ?? ''),
+				'context' => $mandateContext,
+			],
+		);
 	}//end raiseContractDecision()
 
 	/**
@@ -246,21 +241,39 @@ class ContractDecisionDelegationService implements ContractDecisionDelegationSer
 		array $subject,
 		array $context = [],
 	): string {
-		$request = new DelegatedDecisionRequest(decisionType: $decisionType, externalReference: $externalReference);
+		return $this->dispatchFilled(
+			request: new DelegatedDecisionRequest(decisionType: $decisionType, externalReference: $externalReference),
+			fill: ['subject' => $subject, 'subjectId' => '', 'actorId' => (string)($context['actorId'] ?? ''), 'context' => $context],
+		);
+	}//end raiseDecision()
+
+	/**
+	 * Fill the request with its subject, actor and payload, and dispatch it.
+	 *
+	 * @param DelegatedDecisionRequest                                                                     $request The request.
+	 * @param array{subject: array<string, mixed>, subjectId: string, actorId: string, context: array<string, mixed>} $fill    The
+	 *        subject fields, the subject id when the subject names none, the actor and the decision context.
+	 *
+	 * @return string The decidesk decisionRef (UUID) to persist on the case.
+	 *
+	 * @throws RuntimeException When decidesk is unavailable or the Decision could not be created.
+	 */
+	private function dispatchFilled(DelegatedDecisionRequest $request, array $fill): string {
+		$subject = $fill['subject'];
 		$request->subject = [
 			'subjectRegister' => (string)($subject['subjectRegister'] ?? ''),
 			'subjectSchema' => (string)($subject['subjectSchema'] ?? ''),
-			'subjectId' => (string)($subject['subjectId'] ?? ''),
+			'subjectId' => (string)($subject['subjectId'] ?? $fill['subjectId']),
 			'subjectLabel' => (string)($subject['subjectLabel'] ?? ''),
 		];
-		$request->actorId = (string)($context['actorId'] ?? '');
+		$request->actorId = $fill['actorId'];
 		$request->payload = [
 			'title' => (string)($subject['subjectLabel'] ?? ''),
-			'context' => $context,
+			'context' => $fill['context'],
 		];
 
 		return $this->dispatchDecisionRequest(request: $request);
-	}//end raiseDecision()
+	}//end dispatchFilled()
 
 	/**
 	 * Ask decidiq what became of a Decision this app raised.
