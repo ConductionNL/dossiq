@@ -3,7 +3,7 @@
 /**
  * Dossiq TaskKeyAt.
  *
- * Which task declares a candidate group or an effect, and where in the definition the list sits.
+ * Which task a refusal is about, and where in the definition the refused value sits.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Task
@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 /**
- * The task's name and the path a refusal of one of its declared lists names.
+ * The task's name and the path in the definition a refusal names.
  *
  * @spec openspec/specs/process-step-configuration/spec.md
  */
@@ -37,7 +37,7 @@ final class TaskKeyAt {
 	 * Constructor.
 	 *
 	 * @param string $task The task's name.
-	 * @param string $path The path of the declared list in the definition.
+	 * @param string $path The path in the definition.
 	 */
 	public function __construct(
 		public readonly string $task,

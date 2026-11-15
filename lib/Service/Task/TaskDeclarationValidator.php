@@ -135,7 +135,7 @@ class TaskDeclarationValidator {
 		}
 
 		$path = sprintf('steps[%d].%s', $index, TaskDeclaration::BLOCK);
-		$refusals = $this->misplaced(step: $step, task: $task, index: $index);
+		$refusals = $this->misplaced(step: $step, where: new TaskKeyAt(task: $task, path: sprintf('steps[%d]', $index)));
 
 		if (is_array(($step[TaskDeclaration::BLOCK] ?? null)) === false) {
 			return $refusals;
@@ -155,12 +155,11 @@ class TaskDeclarationValidator {
 	 * A declaration key written beside the block instead of inside it.
 	 *
 	 * @param array<string, mixed> $step  The step.
-	 * @param string               $task  The task's name.
-	 * @param integer              $index Its position.
+	 * @param TaskKeyAt            $where The task's name and the step's path.
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 */
-	private function misplaced(array $step, string $task, int $index): array {
+	private function misplaced(array $step, TaskKeyAt $where): array {
 		$refusals = [];
 		foreach (self::MISPLACED as $key) {
 			if (array_key_exists($key, $step) === false) {
@@ -168,11 +167,11 @@ class TaskDeclarationValidator {
 			}
 
 			$refusals[] = self::refusal(
-				path: sprintf('steps[%d].%s', $index, $key),
+				path: $where->path . '.' . $key,
 				code: 'misplaced_task_key',
 				message: sprintf(
 					'Task "%s" sets "%s" outside its task block. Nothing reads it there.',
-					$task,
+					$where->task,
 					$key
 				)
 			);
