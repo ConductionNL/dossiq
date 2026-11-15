@@ -1,0 +1,56 @@
+{
+    "no object service": {
+        "identity": [],
+        "log": []
+    },
+    "no register": {
+        "identity": [],
+        "log": []
+    },
+    "no case schema": {
+        "identity": [],
+        "log": []
+    },
+    "lookup fails": {
+        "identity": [],
+        "log": [
+            "warning: Dossiq MandaatMatrixController: could not resolve applicant identity: register offline"
+        ]
+    },
+    "case not found": {
+        "identity": [],
+        "log": []
+    },
+    "company initiator": {
+        "identity": [],
+        "log": []
+    },
+    "contact initiator": {
+        "identity": [],
+        "log": []
+    },
+    "no initiator type": {
+        "identity": [],
+        "log": []
+    },
+    "person without number": {
+        "identity": [],
+        "log": []
+    },
+    "person with empty number": {
+        "identity": [],
+        "log": []
+    },
+    "person": {
+        "identity": {
+            "applicantBsn": "123456789"
+        },
+        "log": []
+    },
+    "person with numeric number": {
+        "identity": {
+            "applicantBsn": "123456789"
+        },
+        "log": []
+    }
+}

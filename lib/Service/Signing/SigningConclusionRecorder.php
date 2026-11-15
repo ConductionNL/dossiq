@@ -34,6 +34,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\StateMachineService;
+use OCA\Dossiq\Service\Zaakdossier\RestrictedDocumentReaders;
 
 /**
  * Records filinq's signing conclusion on the decision that asked for it.
@@ -65,10 +66,12 @@ class SigningConclusionRecorder {
 	 *
 	 * @param BeschikkingRepository $repository Decision persistence.
 	 * @param StateMachineService $stateMachine The state-machine guard and its log.
+	 * @param RestrictedDocumentReaders|null $readers Gives a signed version its original's access exception.
 	 */
 	public function __construct(
 		private readonly BeschikkingRepository $repository,
 		private readonly StateMachineService $stateMachine,
+		private readonly ?RestrictedDocumentReaders $readers = null,
 	) {
 	}//end __construct()
 
@@ -133,6 +136,7 @@ class SigningConclusionRecorder {
 		$decision['currentStatus'] = 'signed';
 
 		$this->repository->save(decision: $decision);
+		$this->inheritAccessException(originalId: $fileId, signedDocumentRef: $signedDocumentRef, signatory: $signatory);
 		$this->stateMachine->logTransition(
 			$decisionId,
 			$current,
@@ -150,4 +154,28 @@ class SigningConclusionRecorder {
 
 		return true;
 	}//end record()
+
+	/**
+	 * The signed version of a document only some people may see is seen by the same people.
+	 *
+	 * @param string      $originalId        The document that was signed.
+	 * @param string|null $signedDocumentRef The signed version filinq wrote, as a file id.
+	 * @param string      $signatory         Who signed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-copy-of-a-document-carries-its-exception
+	 */
+	private function inheritAccessException(string $originalId, ?string $signedDocumentRef, string $signatory): void {
+		if ($this->readers === null
+			|| $originalId === ''
+			|| $signedDocumentRef === null
+			|| $signedDocumentRef === $originalId
+			|| ctype_digit($signedDocumentRef) === false
+		) {
+			return;
+		}
+
+		$this->readers->inheritFromId(originalId: $originalId, fileId: (int)$signedDocumentRef, madeBy: $signatory);
+	}//end inheritAccessException()
 }//end class

@@ -714,7 +714,7 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 		// 🔴 THE SIGNAL'S PAYLOAD IS NOT ASSERTED, AND THAT IS A FINDING RATHER
 		// THAN AN OVERSIGHT. Two listeners answer `TaskTerminalEvent` on any
 		// instance running both apps: dossiq's `TaskCompletionResumeListener`,
-		// which signals through the guarded `FlowRunSignalService::signalAs()`
+		// which signals through the guarded `FlowRunSignalService::answerByUuid()`
 		// with `{decision, node, taskId, completedBy}`, and OpenRegister's own
 		// `UserTaskTerminalListener`, which hands every task carrying a
 		// `runUuid` to `FlowTaskBridge::continueRun()` and signals it with an

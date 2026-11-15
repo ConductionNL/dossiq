@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pipelinq;
 
+use OCA\Dossiq\Kernel\Contracts\PipelinqGatewayInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-one-seam-names-pipelinq-and-an-absent-pipelinq-is-a-different-answer-from-an-empty-one-req-plq-01
  */
-class PipelinqGateway {
+class PipelinqGateway implements PipelinqGatewayInterface {
 
 	/**
 	 * pipelinq's contact moments leaf: list and append on a host object.
@@ -99,6 +100,11 @@ class PipelinqGateway {
 	 * @var string
 	 */
 	public const CASE_TYPE_CONTRIBUTIONS = 'OCA\\Pipelinq\\Dossiq\\CaseTypeContributionProvider';
+
+	/**
+	 * The open tickets of parties, read by master entity.
+	 */
+	public const TICKETS = 'OCA\\Pipelinq\\Integration\\TicketLeafProvider';
 
 	/**
 	 * The app id, for the one log line an absent pipelinq produces.
@@ -171,14 +177,27 @@ class PipelinqGateway {
 				$reason = 'pipelinq is not installed on this instance';
 			}
 
-			$this->reportOnce(
-				class: $class,
-				reason: $reason,
-			);
+			$this->reportOnce(class: $class, reason: $reason);
 
 			return null;
 		}
 
+		return $this->usableService(service: $service, wanted: ['class' => $class, 'methods' => $methods]);
+	}//end service()
+
+	/**
+	 * The resolved service, or null when it is not an object or lacks a method the caller is about to use.
+	 *
+	 * @param mixed $service What the container answered.
+	 * @param array{class: string, methods: array<int, string>} $wanted One of this class's constants, and the methods
+	 *                                                                 the caller is about to use.
+	 *
+	 * @return object|null The service, or null.
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-one-seam-names-pipelinq-and-an-absent-pipelinq-is-a-different-answer-from-an-empty-one-req-plq-01
+	 */
+	private function usableService(mixed $service, array $wanted): ?object {
+		['class' => $class, 'methods' => $methods] = $wanted;
 		if (is_object($service) === false) {
 			$this->reportOnce(class: $class, reason: 'the container answered something that is not an object');
 
@@ -190,17 +209,14 @@ class PipelinqGateway {
 			// hard dependency of dossiq, which is the coupling this whole seam
 			// exists to avoid (hydra ADR-046).
 			if (is_callable([$service, $method]) === false) {
-				$this->reportOnce(
-					class: $class,
-					reason: "this pipelinq has no {$method}(), so it predates the capability"
-				);
+				$this->reportOnce(class: $class, reason: "this pipelinq has no {$method}(), so it predates the capability");
 
 				return null;
 			}
 		}
 
 		return $service;
-	}//end service()
+	}//end usableService()
 
 	/**
 	 * Call one method on one pipelinq service, or answer the fallback.
@@ -228,20 +244,115 @@ class PipelinqGateway {
 			];
 		}
 
+		return $this->answerOf(service: $service, call: ['class' => $class, 'method' => $method, 'arguments' => $arguments, 'fallback' => $fallback]);
+	}//end ask()
+
+	/**
+	 * Make the call; a call that fails answers the fallback and logs why.
+	 *
+	 * @param object               $service The pipelinq service.
+	 * @param array<string, mixed> $call    The class constant, the method, its named arguments and the fallback.
+	 *
+	 * @return array{answered: bool, value: mixed, reason: string} The answer.
+	 */
+	private function answerOf(object $service, array $call): array {
+		['method' => $method, 'fallback' => $fallback] = $call;
 		try {
-			$value = $service->{$method}(...$arguments);
+			$value = $service->{$method}(...$call['arguments']);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq pipelinq: the call failed, so the fallback answers and nothing here is refused: '
 				. $e->getMessage(),
-				['class' => $class, 'method' => $method]
+				['class' => $call['class'], 'method' => $method]
 			);
 
 			return ['answered' => false, 'value' => $fallback, 'reason' => $e->getMessage()];
 		}
 
 		return ['answered' => true, 'value' => $value, 'reason' => ''];
-	}//end ask()
+	}//end answerOf()
+
+	/**
+	 * The open tickets of the pipelinq clients that share each master entity.
+	 *
+	 * Read through pipelinq's ticket leaf as the calling user, like every
+	 * other read on this seam. Null when pipelinq is absent, predates the
+	 * leaf, or has no ticket surface configured: the caller then says
+	 * "unavailable" instead of drawing zero tickets.
+	 *
+	 * @param array<int, string> $refs The master entity references.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>|null Tickets per reference, or null.
+	 *
+	 * @spec openspec/specs/pipelinq-consumption/spec.md
+	 */
+	public function openTicketsByMasterEntity(array $refs): ?array {
+		$answer = $this->ask(
+			class: self::TICKETS,
+			method: 'openByMasterEntity',
+			arguments: ['refs' => array_values($refs)],
+		);
+		return self::ticketsOf(answer: $answer);
+	}//end openTicketsByMasterEntity()
+
+	/**
+	 * The tickets of the pipelinq clients that share each master entity, by
+	 * status: `open` reads as openTicketsByMasterEntity(), `closed` and `all`
+	 * also list the handled ones. Null when pipelinq is absent, predates the
+	 * status filter, or has no ticket surface configured.
+	 *
+	 * @param array<int, string> $refs The master entity references.
+	 * @param string $status `open`, `closed` or `all`.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>|null Tickets per reference, or null.
+	 *
+	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
+	 */
+	public function ticketsByMasterEntity(array $refs, string $status): ?array {
+		if ($status === 'open') {
+			return $this->openTicketsByMasterEntity(refs: $refs);
+		}
+
+		$answer = $this->ask(
+			class: self::TICKETS,
+			method: 'byMasterEntity',
+			arguments: ['refs' => array_values($refs), 'status' => $status],
+		);
+		return self::ticketsOf(answer: $answer);
+	}//end ticketsByMasterEntity()
+
+	/**
+	 * The tickets per reference in a ticket leaf's answer, or null when it did not answer them.
+	 *
+	 * @param array{answered: bool, value: mixed, reason: string} $answer The gateway's answer.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>|null Tickets per reference, or null.
+	 */
+	private static function ticketsOf(array $answer): ?array {
+		if (self::isOkAnswer(answer: $answer) === false) {
+			return null;
+		}
+
+		$tickets = ($answer['value']['tickets'] ?? null);
+		if (is_array($tickets) === false) {
+			return null;
+		}
+
+		return $tickets;
+	}//end ticketsOf()
+
+	/**
+	 * Whether the leaf answered with a 200 status.
+	 *
+	 * @param array{answered: bool, value: mixed, reason: string} $answer The gateway's answer.
+	 *
+	 * @return bool True for an answered 200.
+	 */
+	private static function isOkAnswer(array $answer): bool {
+		$value = $answer['value'];
+
+		return ($answer['answered'] !== false && is_array($value) === true && ($value['status'] ?? null) === 200);
+	}//end isOkAnswer()
 
 	/**
 	 * Say once per request which capability is unavailable.

@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\KeepsLookupsInSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 use Throwable;
@@ -29,8 +32,17 @@ use Throwable;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class DocumentRecordStore {
+class DocumentRecordStore implements DocumentRecordStoreInterface {
+	use ReadsDossierRegister;
+	use KeepsLookupsInSchema;
 	use SearchesObjects;
+
+	/**
+	 * The register, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
 
 	/**
 	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
@@ -38,6 +50,7 @@ class DocumentRecordStore {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -306,6 +319,10 @@ class DocumentRecordStore {
 			return null;
 		}
 
+		if ($this->rowInSchema(row: $row, schema: $this->schema(key: $schemaKey)) === false) {
+			return null;
+		}
+
 		return $this->rowOf(value: $row);
 	}//end findRow()
 
@@ -320,45 +337,6 @@ class DocumentRecordStore {
 		$self = (array)($row['@self'] ?? []);
 		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
 	}//end idOf()
-
-	/**
-	 * The object service and register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The object service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister or the register is not configured.
-	 */
-	private function requireRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end requireRegister()
-
-	/**
-	 * A configured schema slug or id, or an exception when unset.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema.
-	 *
-	 * @throws RuntimeException When the key is not configured.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossier schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
 
 	/**
 	 * A saved object's uuid.

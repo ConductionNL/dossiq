@@ -37,8 +37,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\RecordTemplateReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -47,9 +49,10 @@ use RuntimeException;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
  */
-class WooSearchPlans {
+class WooSearchPlans implements WooSearchPlansInterface {
 
 	use SearchesObjects;
+	use StoresWooRows;
 
 	/**
 	 * The plan's config key.
@@ -69,17 +72,22 @@ class WooSearchPlans {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService      $settingsService The register, the schemas and OpenRegister.
-	 * @param RecordTemplateReader $templates       Reads a named template of the configuration schema.
+	 * @param SettingsServiceInterface      $settingsService The register, the schemas and OpenRegister.
+	 * @param RecordTemplateReaderInterface $templates       Reads a named template of the configuration schema.
+	 * @param CaseReviewerAccessInterface   $access          The read a rule makes, and the grants of a new plan.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly RecordTemplateReader $templates,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly RecordTemplateReaderInterface $templates,
+		private readonly CaseReviewerAccessInterface $access,
 	) {
 	}//end __construct()
 
 	/**
-	 * The case's plan, draft or recorded, or null.
+	 * The case's plan, draft or recorded, or null: the plan as the caller may read it.
+	 *
+	 * A plan is private to the people on its case, so this is the read for
+	 * what a person is shown. A rule asks planOfCase() instead.
 	 *
 	 * @param string $caseId The case uuid.
 	 *
@@ -92,6 +100,21 @@ class WooSearchPlans {
 	}//end planOf()
 
 	/**
+	 * The case's plan whoever asks, for a rule: is there a plan, was it recorded, which plan a save changes.
+	 *
+	 * Never answered to a person as it stands: a route shows planOf().
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, mixed>|null The plan row.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
+	 */
+	public function planOfCase(string $caseId): ?array {
+		return ($this->access->recordsOf(schemaKey: self::PLAN_SCHEMA, caseField: 'case', caseId: $caseId)[0] ?? null);
+	}//end planOfCase()
+
+	/**
 	 * The case's recorded plan, or null while it has none or only a draft.
 	 *
 	 * @param string $caseId The case uuid.
@@ -101,7 +124,7 @@ class WooSearchPlans {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
 	 */
 	public function recorded(string $caseId): ?array {
-		$plan = $this->planOf(caseId: $caseId);
+		$plan = $this->planOfCase(caseId: $caseId);
 		if ($plan === null || trim((string)($plan['recordedAt'] ?? '')) === '') {
 			return null;
 		}
@@ -155,8 +178,13 @@ class WooSearchPlans {
 		$plan['recordedBy'] = $userId;
 		$plan['recordedAt'] = gmdate('Y-m-d\TH:i:s\Z');
 
-		$existing = $this->planOf(caseId: $caseId);
+		// Looked up whoever asks, so a caller who cannot read the case's plan never makes a second one;
+		// the save still runs under the caller's own access.
+		$existing = $this->planOfCase(caseId: $caseId);
 		$saved = $this->save(configKey: self::PLAN_SCHEMA, row: $plan, uuid: $this->idOf(row: (array)$existing));
+		if ($existing === null) {
+			$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
+		}
 
 		$configuration = ($this->rowOfCase(configKey: self::CONFIGURATION_SCHEMA, caseId: $caseId) ?? []);
 		if ($template !== null) {
@@ -190,20 +218,62 @@ class WooSearchPlans {
 			return null;
 		}
 
+		$source = $this->sourceOf(from: $from);
+		if ($source === null) {
+			return null;
+		}
+
+		$configuration = $this->configurationFrom(source: $source, caseId: $caseId, from: $from);
+		$saved = $this->save(configKey: self::CONFIGURATION_SCHEMA, row: $configuration, uuid: '');
+
+		$this->savePlanFrom(caseId: $caseId, configuration: $configuration);
+		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
+
+		return $saved;
+	}//end startFrom()
+
+	/**
+	 * The configuration of the earlier case, or the values of the named template.
+	 *
+	 * @param string $from The earlier case uuid, or the uuid of a named template.
+	 *
+	 * @return array<string, mixed>|null Null when `$from` names neither.
+	 */
+	private function sourceOf(string $from): ?array {
 		$source = $this->rowOfCase(configKey: self::CONFIGURATION_SCHEMA, caseId: $from);
 		if ($source === null) {
 			$source = $this->templates->find(uuid: $from, schema: $this->templateSchema())['values'] ?? null;
 		}
 
-		if ($source === null) {
-			return null;
-		}
+		return $source;
+	}//end sourceOf()
 
+	/**
+	 * The copied configuration, without what is not copied, pointing at the new case.
+	 *
+	 * @param array<string, mixed> $source The configuration copied from.
+	 * @param string               $caseId The new case uuid.
+	 * @param string               $from   Where it was copied from.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function configurationFrom(array $source, string $caseId, string $from): array {
 		$configuration = array_diff_key($source, array_flip(self::NOT_COPIED));
 		$configuration['case'] = $caseId;
 		$configuration['copiedFrom'] = $from;
-		$saved = $this->save(configKey: self::CONFIGURATION_SCHEMA, row: $configuration, uuid: '');
 
+		return $configuration;
+	}//end configurationFrom()
+
+	/**
+	 * Save the new case's search plan from its configuration.
+	 *
+	 * @param string               $caseId        The new case uuid.
+	 * @param array<string, mixed> $configuration Its configuration.
+	 *
+	 * @return void
+	 */
+	private function savePlanFrom(string $caseId, array $configuration): void {
 		$this->save(
 			configKey: self::PLAN_SCHEMA,
 			row: [
@@ -214,9 +284,7 @@ class WooSearchPlans {
 			],
 			uuid: ''
 		);
-
-		return $saved;
-	}//end startFrom()
+	}//end savePlanFrom()
 
 	/**
 	 * The schema id named templates of the request configuration are kept under in OpenRegister.
@@ -262,44 +330,88 @@ class WooSearchPlans {
 	 * @throws WooCorpusRefused When a part is missing or wrong.
 	 */
 	private function validated(array $input): array {
+		$plan = [
+			'custodians' => $this->custodians(input: $input),
+			'systems' => array_values(array_unique(array_filter(array_map('strval', (array)($input['systems'] ?? [])), [WooSources::class, 'isKnown']))),
+			'periodFrom' => trim((string)($input['periodFrom'] ?? '')),
+			'periodTo' => trim((string)($input['periodTo'] ?? '')),
+			'terms' => trim((string)($input['terms'] ?? '')),
+		];
+
+		$missing = $this->missingPart(plan: $plan);
+		if ($missing !== '') {
+			throw new WooCorpusRefused(reason: 'plan_incomplete_' . $missing, status: 400);
+		}
+
+		return $plan;
+	}//end validated()
+
+	/**
+	 * The custodians the input names, each with a name.
+	 *
+	 * @param array<string, mixed> $input The input.
+	 *
+	 * @return array<int, array<string, string>> The custodians.
+	 */
+	private function custodians(array $input): array {
 		$custodians = [];
 		foreach ((array)($input['custodians'] ?? []) as $custodian) {
-			if (is_array($custodian) === false) {
-				$custodian = ['name' => $custodian];
-			}
-
-			$name = trim((string)($custodian['name'] ?? ''));
-			if ($name === '') {
+			$row = $this->custodianRow(custodian: $custodian);
+			if ($row === null) {
 				continue;
-			}
-
-			$row = ['name' => $name, 'function' => trim((string)($custodian['function'] ?? ''))];
-			$userId = trim((string)($custodian['userId'] ?? ''));
-			if ($userId !== '') {
-				$row['userId'] = $userId;
 			}
 
 			$custodians[] = $row;
 		}
 
-		$systems = array_values(array_unique(array_filter(array_map('strval', (array)($input['systems'] ?? [])), [WooSources::class, 'isKnown'])));
-		$from = trim((string)($input['periodFrom'] ?? ''));
-		$until = trim((string)($input['periodTo'] ?? ''));
-		$terms = trim((string)($input['terms'] ?? ''));
+		return $custodians;
+	}//end custodians()
 
-		$missing = match (true) {
-			$custodians === [] => 'custodians',
-			$systems === [] => 'systems',
-			$this->isDate(value: $from) === false || $this->isDate(value: $until) === false || $from > $until => 'period',
-			$terms === '' => 'terms',
-			default => '',
-		};
-		if ($missing !== '') {
-			throw new WooCorpusRefused(reason: 'plan_incomplete_' . $missing, status: 400);
+	/**
+	 * One custodian as the plan stores it, or null when it has no name.
+	 *
+	 * @param mixed $custodian A custodian row, or a bare name.
+	 *
+	 * @return array<string, string>|null The custodian.
+	 */
+	private function custodianRow(mixed $custodian): ?array {
+		if (is_array($custodian) === false) {
+			$custodian = ['name' => $custodian];
 		}
 
-		return ['custodians' => $custodians, 'systems' => $systems, 'periodFrom' => $from, 'periodTo' => $until, 'terms' => $terms];
-	}//end validated()
+		$name = trim((string)($custodian['name'] ?? ''));
+		if ($name === '') {
+			return null;
+		}
+
+		$row = ['name' => $name, 'function' => trim((string)($custodian['function'] ?? ''))];
+		$userId = trim((string)($custodian['userId'] ?? ''));
+		if ($userId !== '') {
+			$row['userId'] = $userId;
+		}
+
+		return $row;
+	}//end custodianRow()
+
+	/**
+	 * The first part of the plan that is missing or wrong, '' when none is.
+	 *
+	 * @param array<string, mixed> $plan The plan.
+	 *
+	 * @return string The part, or ''.
+	 */
+	private function missingPart(array $plan): string {
+		$from = $plan['periodFrom'];
+		$until = $plan['periodTo'];
+
+		return match (true) {
+			$plan['custodians'] === [] => 'custodians',
+			$plan['systems'] === [] => 'systems',
+			$this->isDate(value: $from) === false || $this->isDate(value: $until) === false || $from > $until => 'period',
+			$plan['terms'] === '' => 'terms',
+			default => '',
+		};
+	}//end missingPart()
 
 	/**
 	 * Whether a value is a Y-m-d date.
@@ -347,21 +459,7 @@ class WooSearchPlans {
 	 * @return array<string, mixed> The row as stored.
 	 */
 	private function save(string $configKey, array $row, string $uuid): array {
-		[$objectService, $register, $schema] = $this->target(configKey: $configKey);
-		unset($row['id'], $row['uuid'], $row['@self']);
-
-		$existing = null;
-		if ($uuid !== '') {
-			$existing = $uuid;
-		}
-
-		$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema, uuid: $existing);
-
-		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
-			$saved = $saved->jsonSerialize();
-		}
-
-		return (array)$saved;
+		return $this->storeRow(target: $this->target(configKey: $configKey), row: $row, uuid: $uuid);
 	}//end save()
 
 	/**
@@ -383,16 +481,4 @@ class WooSearchPlans {
 
 		return [$objectService, $register, $schema];
 	}//end target()
-
-	/**
-	 * A row's uuid.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or ''.
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
-	}//end idOf()
 }//end class

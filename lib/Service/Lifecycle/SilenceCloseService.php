@@ -50,6 +50,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\SilenceCloseServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -59,9 +60,9 @@ use Throwable;
 /**
  * Warns about, and then performs, the close a case type declared.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+ * @spec openspec/specs/case-status-machinery/spec.md
  */
-class SilenceCloseService {
+class SilenceCloseService implements SilenceCloseServiceInterface {
 
 	/**
 	 * The journal entry a warning writes.
@@ -84,18 +85,14 @@ class SilenceCloseService {
 	 * Constructor.
 	 *
 	 * @param CaseStatusStore $store Reads and writes the case.
-	 * @param LifecycleCaseTypeRules $rules Reads the declared period and warning.
-	 * @param CaseEndingActs $endings Performs the close as a recorded ending act.
-	 * @param CaseJournal $journal The case's own record.
+	 * @param SilenceCloseSteps $steps The case type's lifecycle rules, the ending acts and the case journal.
 	 * @param CaseDateNormaliser $dates The ONE class allowed to parse and zone a date.
 	 * @param LoggerInterface $logger Says what was warned and what was closed.
 	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
-		private readonly LifecycleCaseTypeRules $rules,
-		private readonly CaseEndingActs $endings,
-		private readonly CaseJournal $journal,
+		private readonly SilenceCloseSteps $steps,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
 		private readonly DayCount $days = new DayCount(),
@@ -115,11 +112,11 @@ class SilenceCloseService {
 	 * @return array{action: string, silentDays: int, period: int, closesOn: string}
 	 *         `action` is `none`, `warn` or `close`.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function decide(array $case, DateTimeImmutable $today): array {
 		$caseTypeId = (string)($case['caseType'] ?? '');
-		$period = $this->rules->silenceDays(caseTypeId: $caseTypeId);
+		$period = $this->steps->rules->silenceDays(caseTypeId: $caseTypeId);
 		$none = ['action' => 'none', 'silentDays' => 0, 'period' => $period, 'closesOn' => ''];
 
 		if ($period <= 0) {
@@ -133,7 +130,7 @@ class SilenceCloseService {
 
 		$silent = $this->days->between(from: $last, to: $today);
 		$closesOn = $last->modify('+'.$period.' days')->format('Y-m-d');
-		$warnAt = ($period - $this->rules->warningDays(caseTypeId: $caseTypeId));
+		$warnAt = ($period - $this->steps->rules->warningDays(caseTypeId: $caseTypeId));
 
 		if ($silent >= $period) {
 			return ['action' => 'close', 'silentDays' => $silent, 'period' => $period, 'closesOn' => $closesOn];
@@ -155,10 +152,10 @@ class SilenceCloseService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function warn(string $caseId, array $case, string $closesOn): void {
-		$case = $this->journal->append(
+		$case = $this->steps->journal->append(
 			case: $case,
 			entry: [
 				'type' => self::WARNING_TYPE,
@@ -193,16 +190,41 @@ class SilenceCloseService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function close(string $caseId, array $decision): void {
-		$reason = sprintf(
+		if ($this->abortSilent(caseId: $caseId, reason: self::reasonFor(decision: $decision)) === false) {
+			return;
+		}
+
+		$this->recordAutoClose(caseId: $caseId, decision: $decision);
+	}//end close()
+
+	/**
+	 * Why a silent case is closed: the period its case type declares.
+	 *
+	 * @param array<string, mixed> $decision The silence decision.
+	 *
+	 * @return string The reason.
+	 */
+	private static function reasonFor(array $decision): string {
+		return sprintf(
 			'Closed after %d days without activity, the period this case type declares.',
 			$decision['period'],
 		);
+	}//end reasonFor()
 
+	/**
+	 * Abort the case for its silence, or leave it open and log why when it cannot be.
+	 *
+	 * @param string $caseId The case.
+	 * @param string $reason Why it is closed.
+	 *
+	 * @return bool True when the case was aborted.
+	 */
+	private function abortSilent(string $caseId, string $reason): bool {
 		try {
-			$this->endings->abort(caseId: $caseId, reason: $reason, resultTypeId: '');
+			$this->steps->endings->abort(caseId: $caseId, reason: $reason, resultTypeId: '');
 		} catch (Throwable $e) {
 			// A case whose type offers result types and whose close therefore
 			// needs one is NOT closed automatically. Inventing a result would
@@ -213,20 +235,32 @@ class SilenceCloseService {
 				['caseId' => $caseId, 'reason' => $e->getMessage()],
 			);
 
-			return;
+			return false;
 		}
 
+		return true;
+	}//end abortSilent()
+
+	/**
+	 * Mark the aborted case as closed by the product and journal why.
+	 *
+	 * @param string               $caseId   The case.
+	 * @param array<string, mixed> $decision The silence decision.
+	 *
+	 * @return void
+	 */
+	private function recordAutoClose(string $caseId, array $decision): void {
 		$reloaded = $this->store->loadCase(caseId: $caseId);
 		if ($reloaded === null) {
 			return;
 		}
 
 		$reloaded[CaseEndingActs::ENDING_FIELD] = 'autoClose';
-		$reloaded = $this->journal->append(
+		$reloaded = $this->steps->journal->append(
 			case: $reloaded,
 			entry: [
 				'type' => 'autoClose',
-				'reason' => $reason,
+				'reason' => self::reasonFor(decision: $decision),
 				'product' => true,
 				'period' => $decision['period'],
 				'silentDays' => $decision['silentDays'],
@@ -238,7 +272,7 @@ class SilenceCloseService {
 			'SilenceCloseService: the product closed a silent case',
 			['caseId' => $caseId, 'period' => $decision['period'], 'silentDays' => $decision['silentDays']],
 		);
-	}//end close()
+	}//end recordAutoClose()
 
 	/**
 	 * When this case was last touched by anything but this service.
@@ -247,10 +281,10 @@ class SilenceCloseService {
 	 *
 	 * @return DateTimeImmutable|null The moment, or null when none can be read.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function lastActivity(array $case): ?DateTimeImmutable {
-		foreach (array_reverse($this->journal->entries(case: $case)) as $entry) {
+		foreach (array_reverse($this->steps->journal->entries(case: $case)) as $entry) {
 			if (in_array((string)($entry['type'] ?? ''), self::OWN_ENTRIES, true) === true) {
 				continue;
 			}
@@ -273,9 +307,9 @@ class SilenceCloseService {
 	 *
 	 * @return bool True when a warning stands.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	private function alreadyWarned(array $case): bool {
-		return ($this->journal->latest(case: $case, types: [self::WARNING_TYPE]) !== []);
+		return ($this->steps->journal->latest(case: $case, types: [self::WARNING_TYPE]) !== []);
 	}//end alreadyWarned()
 }//end class

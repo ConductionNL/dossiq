@@ -23,53 +23,35 @@
 	@spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="t('dossiq', 'Log contact')"
 		data-testid="log-contact-dialog"
 		@closing="$emit('close')">
 		<div v-if="saved === null" class="log-contact">
-			<fieldset class="log-contact__group">
-				<legend>{{ t('dossiq', 'Channel') }}</legend>
-				<NcCheckboxRadioSwitch
-					v-for="option in channels"
-					:key="option.value"
-					type="radio"
-					name="log-contact-channel"
-					:modelValue="channel"
-					:value="option.value"
-					:data-testid="'log-contact-channel-' + option.value"
-					@update:modelValue="channel = $event">
-					{{ option.label }}
-				</NcCheckboxRadioSwitch>
-			</fieldset>
-
-			<fieldset class="log-contact__group">
-				<legend>{{ t('dossiq', 'Direction') }}</legend>
-				<NcCheckboxRadioSwitch
-					type="radio"
-					name="log-contact-direction"
-					:modelValue="direction"
-					value="inbound"
-					data-testid="log-contact-direction-inbound"
-					@update:modelValue="direction = $event">
-					{{ t('dossiq', 'Inbound') }}
-				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch
-					type="radio"
-					name="log-contact-direction"
-					:modelValue="direction"
-					value="outbound"
-					data-testid="log-contact-direction-outbound"
-					@update:modelValue="direction = $event">
-					{{ t('dossiq', 'Outbound') }}
-				</NcCheckboxRadioSwitch>
-			</fieldset>
+			<div class="log-contact__pair">
+				<NcSelect
+					v-model="channel"
+					data-testid="log-contact-channel"
+					:inputLabel="t('dossiq', 'Channel (optional)')"
+					:options="channels"
+					:reduce="(option) => option.value"
+					:clearable="false"
+					label="label" />
+				<NcSelect
+					v-model="direction"
+					data-testid="log-contact-direction"
+					:inputLabel="t('dossiq', 'Direction (optional)')"
+					:options="directions"
+					:reduce="(option) => option.value"
+					:clearable="false"
+					label="label" />
+			</div>
 
 			<NcDateTimePicker
 				v-model="startTime"
 				data-testid="log-contact-start"
 				type="datetime"
-				:label="t('dossiq', 'Moment')" />
+				:label="t('dossiq', 'Start time (optional)')" />
 
 			<NcTextArea
 				v-model="summary"
@@ -79,7 +61,7 @@
 			<NcTextField
 				v-model="callerIdentification"
 				data-testid="log-contact-caller"
-				:label="t('dossiq', 'Who called or was called')" />
+				:label="t('dossiq', 'Who called (optional)')" />
 
 			<NcCheckboxRadioSwitch
 				:modelValue="visibleToApplicant"
@@ -140,7 +122,10 @@
 					data-testid="log-contact-confirm"
 					:disabled="!canSave"
 					@click="save">
-					{{ t('dossiq', 'Save') }}
+					<template #icon>
+						<PhoneLogOutline :size="20" />
+					</template>
+					{{ t('dossiq', 'Record it') }}
 				</NcButton>
 			</template>
 			<NcButton
@@ -151,22 +136,25 @@
 				{{ t('dossiq', 'Close') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
 import {
 	logContactMoment,
 	refusalOf,
 	refusalSentence,
 } from '../services/pipelinqCaseApi.js'
+import { portalName } from '../utils/portalName.js'
 
 export default {
 	name: 'LogContactDialog',
@@ -175,9 +163,11 @@ export default {
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcDateTimePicker,
-		NcDialog,
+		NcSelect,
+		CnDialog,
 		NcTextArea,
 		NcTextField,
+		PhoneLogOutline,
 	},
 
 	props: {
@@ -225,9 +215,18 @@ export default {
 				{ value: 'phone', label: t('dossiq', 'Phone') },
 				{ value: 'email', label: t('dossiq', 'Email') },
 				{ value: 'balie', label: t('dossiq', 'Desk') },
-				{ value: 'webformulier', label: t('dossiq', 'Web form') },
+				{ value: 'brief', label: t('dossiq', 'Letter') },
+				{ value: 'webformulier', label: portalName() || t('dossiq', 'Web form') },
 				{ value: 'chat', label: t('dossiq', 'Chat') },
 				{ value: 'social_media', label: t('dossiq', 'Social media') },
+			]
+		},
+
+		/** @spec openspec/specs/case-dialogs/spec.md#requirement-contact-vastleggen-asks-channel-and-direction-as-two-selects */
+		directions() {
+			return [
+				{ value: 'inbound', label: t('dossiq', 'Inbound') },
+				{ value: 'outbound', label: t('dossiq', 'Outbound') },
 			]
 		},
 
@@ -298,18 +297,10 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 
-	&__group {
-		border: 0;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px 12px;
-
-		legend {
-			font-weight: 600;
-			margin-bottom: 4px;
-		}
+	&__pair {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		gap: 14px 16px;
 	}
 
 	&__saved {

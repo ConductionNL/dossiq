@@ -34,6 +34,14 @@ A new draft SHALL carry the kind, the case, status `draft`, and the kind's templ
 and decision kind; fields the drafter supplies SHALL win over those defaults, except the kind, the
 case and the status.
 
+#### Scenario: The drafter's field wins, the kind does not move
+@e2e exclude A server rule on draft creation; no e2e test drives it yet.
+
+- **GIVEN** a kind whose configuration names a template and a remedy clause
+- **WHEN** a drafter starts a draft of that kind with their own remedy clause and another kind
+- **THEN** the draft SHALL carry the drafter's remedy clause and the configured template
+- **AND** it SHALL keep the configured kind, the case and status `draft`
+
 ### Requirement: Only a valid decision is approved, by someone who may decide it (REQ-DDC-003)
 
 Approval SHALL be refused with HTTP 422 and the rule `decision-document-invalid`, listing every
@@ -57,6 +65,21 @@ to sent, and sent to archived; any other move SHALL be refused with HTTP 409 and
 the rule `decision-document-unsigned` while the decision carries no signature. On signing, a
 decision of a kind with a series and without a number SHALL take the series' next number
 (REQ-NDS-001); a decision that already has one SHALL keep it.
+
+#### Scenario: Signing without a signature is refused
+@e2e exclude No e2e test drives it yet; board DqZaakBesluiten draws the refusal.
+
+- **GIVEN** an approved decision of a signed kind that carries no signature
+- **WHEN** it is marked as signed
+- **THEN** the move SHALL be refused with HTTP 422 and the rule `decision-document-unsigned`
+
+#### Scenario: Signing numbers the decision once
+@e2e exclude No e2e test drives it yet.
+
+- **GIVEN** an approved decision with a signature, of a kind with a series, and no number
+- **WHEN** it is marked as signed
+- **THEN** it SHALL take the series' next number
+- **AND** signing a decision that already has a number SHALL keep that number
 
 ### Requirement: A signed decision is a frozen record (REQ-DDC-005)
 

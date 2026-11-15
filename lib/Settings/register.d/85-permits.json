@@ -175,13 +175,15 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.1.0",
+          "version": "1.1.1",
           "slug": "parkeervergunning-bewoners"
         },
         "id": "5e7a1000-0000-4000-a000-000000000001",
         "uuid": "5e7a1000-0000-4000-a000-000000000001",
         "identifier": "parkeervergunning-bewoners",
         "title": "Parkeervergunning bewoners",
+        "colour": "blue",
+        "icon": "CardAccountDetailsOutline",
         "description": "Een parkeervergunning voor een bewoner van een vergunninggebied.",
         "processingDeadline": "P8W",
         "confidentiality": "intern",
@@ -211,13 +213,15 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.1.0",
+          "version": "1.1.1",
           "slug": "kenteken-wijzigen-parkeervergunning"
         },
         "id": "5e7a1000-0000-4000-a000-000000000002",
         "uuid": "5e7a1000-0000-4000-a000-000000000002",
         "identifier": "kenteken-wijzigen-parkeervergunning",
         "title": "Kenteken wijzigen parkeervergunning",
+        "colour": "blue",
+        "icon": "CardAccountDetailsOutline",
         "description": "Een nieuw kenteken op een parkeervergunning die u al hebt.",
         "processingDeadline": "P2W",
         "confidentiality": "intern",
@@ -251,6 +255,7 @@
         },
         "id": "5e7a1000-0000-4000-a000-000000000101",
         "uuid": "5e7a1000-0000-4000-a000-000000000101",
+        "phase": "Ontvangst",
         "name": "Ontvangen",
         "description": "Uw aanvraag is binnen.",
         "caseType": "5e7a1000-0000-4000-a000-000000000001",
@@ -258,7 +263,8 @@
         "isFinal": false,
         "role": "intake",
         "publicLabel": "Ontvangen",
-        "publicDescription": "Uw aanvraag is binnen."
+        "publicDescription": "Uw aanvraag is binnen.",
+        "colour": "blue"
       },
       {
         "@self": {
@@ -268,6 +274,7 @@
         },
         "id": "5e7a1000-0000-4000-a000-000000000102",
         "uuid": "5e7a1000-0000-4000-a000-000000000102",
+        "phase": "Beoordeling",
         "name": "In behandeling",
         "description": "Wij beoordelen uw aanvraag.",
         "caseType": "5e7a1000-0000-4000-a000-000000000001",
@@ -275,7 +282,8 @@
         "isFinal": false,
         "role": "in-progress",
         "publicLabel": "In behandeling",
-        "publicDescription": "Wij beoordelen uw aanvraag."
+        "publicDescription": "Wij beoordelen uw aanvraag.",
+        "colour": "purple"
       },
       {
         "@self": {
@@ -292,7 +300,8 @@
         "isFinal": true,
         "role": "closed",
         "publicLabel": "Afgehandeld",
-        "publicDescription": "Wij hebben op uw aanvraag besloten."
+        "publicDescription": "Wij hebben op uw aanvraag besloten.",
+        "colour": "green"
       },
       {
         "@self": {
@@ -330,6 +339,7 @@
         },
         "id": "5e7a1000-0000-4000-a000-000000000201",
         "uuid": "5e7a1000-0000-4000-a000-000000000201",
+        "phase": "Ontvangst",
         "name": "Ontvangen",
         "description": "Uw aanvraag is binnen.",
         "caseType": "5e7a1000-0000-4000-a000-000000000002",
@@ -337,7 +347,8 @@
         "isFinal": false,
         "role": "intake",
         "publicLabel": "Ontvangen",
-        "publicDescription": "Uw aanvraag is binnen."
+        "publicDescription": "Uw aanvraag is binnen.",
+        "colour": "blue"
       },
       {
         "@self": {
@@ -347,6 +358,7 @@
         },
         "id": "5e7a1000-0000-4000-a000-000000000202",
         "uuid": "5e7a1000-0000-4000-a000-000000000202",
+        "phase": "Beoordeling",
         "name": "In behandeling",
         "description": "Wij beoordelen uw aanvraag.",
         "caseType": "5e7a1000-0000-4000-a000-000000000002",
@@ -354,7 +366,8 @@
         "isFinal": false,
         "role": "in-progress",
         "publicLabel": "In behandeling",
-        "publicDescription": "Wij beoordelen uw aanvraag."
+        "publicDescription": "Wij beoordelen uw aanvraag.",
+        "colour": "purple"
       },
       {
         "@self": {
@@ -371,7 +384,8 @@
         "isFinal": true,
         "role": "closed",
         "publicLabel": "Afgehandeld",
-        "publicDescription": "Wij hebben op uw aanvraag besloten."
+        "publicDescription": "Wij hebben op uw aanvraag besloten.",
+        "colour": "green"
       },
       {
         "@self": {

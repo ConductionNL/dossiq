@@ -14,7 +14,7 @@
  * The translate used here is the Dutch catalogue itself, so a label that
  * passes through it but has no entry comes back English and fails the test.
  *
- * @spec openspec/changes/dutch-copy-on-the-case-page/specs/frontend-locale-completeness/spec.md
+ * @spec openspec/specs/frontend-locale-completeness/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

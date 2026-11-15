@@ -1,3 +1,7 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
 const webpackConfig = require('@nextcloud/webpack-vue-config')
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
@@ -27,33 +31,9 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'settings.js'),
 		filename: appId + '-settings.js',
 	},
-	casesOverviewWidget: {
-		import: path.join(__dirname, 'src', 'casesOverviewWidget.js'),
-		filename: appId + '-casesOverviewWidget.js',
-	},
-	overdueCasesWidget: {
-		import: path.join(__dirname, 'src', 'overdueCasesWidget.js'),
-		filename: appId + '-overdueCasesWidget.js',
-	},
-	myTasksWidget: {
-		import: path.join(__dirname, 'src', 'myTasksWidget.js'),
-		filename: appId + '-myTasksWidget.js',
-	},
-	deadlineAlertsWidget: {
-		import: path.join(__dirname, 'src', 'deadlineAlertsWidget.js'),
-		filename: appId + '-deadlineAlertsWidget.js',
-	},
-	taskRemindersWidget: {
-		import: path.join(__dirname, 'src', 'taskRemindersWidget.js'),
-		filename: appId + '-taskRemindersWidget.js',
-	},
-	stalledCasesWidget: {
-		import: path.join(__dirname, 'src', 'stalledCasesWidget.js'),
-		filename: appId + '-stalledCasesWidget.js',
-	},
-	startCaseWidget: {
-		import: path.join(__dirname, 'src', 'startCaseWidget.js'),
-		filename: appId + '-startCaseWidget.js',
+	dashboardWidgets: {
+		import: path.join(__dirname, 'src', 'dashboardWidgets.js'),
+		filename: appId + '-dashboardWidgets.js',
 	},
 }
 

@@ -1,0 +1,237 @@
+{
+    "filtered by a case type nobody has": {
+        "period": {
+            "from": "2026-01-01",
+            "to": "2026-12-31"
+        },
+        "clock": "wall-clock",
+        "caseTypeFilter": "ct-9",
+        "truncated": false,
+        "caseTypes": [],
+        "throughputTrend": [
+            {
+                "week": "2026-W01",
+                "count": 0
+            },
+            {
+                "week": "2026-W02",
+                "count": 0
+            },
+            {
+                "week": "2026-W03",
+                "count": 0
+            },
+            {
+                "week": "2026-W04",
+                "count": 0
+            },
+            {
+                "week": "2026-W05",
+                "count": 0
+            },
+            {
+                "week": "2026-W06",
+                "count": 0
+            },
+            {
+                "week": "2026-W07",
+                "count": 0
+            },
+            {
+                "week": "2026-W08",
+                "count": 0
+            },
+            {
+                "week": "2026-W09",
+                "count": 0
+            },
+            {
+                "week": "2026-W10",
+                "count": 0
+            },
+            {
+                "week": "2026-W11",
+                "count": 0
+            },
+            {
+                "week": "2026-W12",
+                "count": 0
+            },
+            {
+                "week": "2026-W13",
+                "count": 0
+            },
+            {
+                "week": "2026-W14",
+                "count": 0
+            },
+            {
+                "week": "2026-W15",
+                "count": 0
+            },
+            {
+                "week": "2026-W16",
+                "count": 0
+            },
+            {
+                "week": "2026-W17",
+                "count": 0
+            },
+            {
+                "week": "2026-W18",
+                "count": 0
+            },
+            {
+                "week": "2026-W19",
+                "count": 0
+            },
+            {
+                "week": "2026-W20",
+                "count": 0
+            },
+            {
+                "week": "2026-W21",
+                "count": 0
+            },
+            {
+                "week": "2026-W22",
+                "count": 0
+            },
+            {
+                "week": "2026-W23",
+                "count": 0
+            },
+            {
+                "week": "2026-W24",
+                "count": 0
+            },
+            {
+                "week": "2026-W25",
+                "count": 0
+            },
+            {
+                "week": "2026-W26",
+                "count": 0
+            },
+            {
+                "week": "2026-W27",
+                "count": 0
+            },
+            {
+                "week": "2026-W28",
+                "count": 0
+            },
+            {
+                "week": "2026-W29",
+                "count": 0
+            },
+            {
+                "week": "2026-W30",
+                "count": 0
+            },
+            {
+                "week": "2026-W31",
+                "count": 0
+            },
+            {
+                "week": "2026-W32",
+                "count": 0
+            },
+            {
+                "week": "2026-W33",
+                "count": 0
+            },
+            {
+                "week": "2026-W34",
+                "count": 0
+            },
+            {
+                "week": "2026-W35",
+                "count": 0
+            },
+            {
+                "week": "2026-W36",
+                "count": 0
+            },
+            {
+                "week": "2026-W37",
+                "count": 0
+            },
+            {
+                "week": "2026-W38",
+                "count": 0
+            },
+            {
+                "week": "2026-W39",
+                "count": 0
+            },
+            {
+                "week": "2026-W40",
+                "count": 0
+            },
+            {
+                "week": "2026-W41",
+                "count": 0
+            },
+            {
+                "week": "2026-W42",
+                "count": 0
+            },
+            {
+                "week": "2026-W43",
+                "count": 0
+            },
+            {
+                "week": "2026-W44",
+                "count": 0
+            },
+            {
+                "week": "2026-W45",
+                "count": 0
+            },
+            {
+                "week": "2026-W46",
+                "count": 0
+            },
+            {
+                "week": "2026-W47",
+                "count": 0
+            },
+            {
+                "week": "2026-W48",
+                "count": 0
+            },
+            {
+                "week": "2026-W49",
+                "count": 0
+            },
+            {
+                "week": "2026-W50",
+                "count": 0
+            },
+            {
+                "week": "2026-W51",
+                "count": 0
+            },
+            {
+                "week": "2026-W52",
+                "count": 0
+            },
+            {
+                "week": "2026-W53",
+                "count": 0
+            }
+        ],
+        "phaseDays": {
+            "mean": {
+                "columns": [],
+                "rows": []
+            },
+            "median": {
+                "columns": [],
+                "rows": []
+            }
+        },
+        "stuck": []
+    }
+}

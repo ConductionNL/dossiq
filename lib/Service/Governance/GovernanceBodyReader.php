@@ -143,7 +143,7 @@ class GovernanceBodyReader {
 
 		$reference = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 		$bodyId = trim((string)($row['governanceBodyId'] ?? ''));
-		if ($reference === '' && $bodyId === '') {
+		if ($this->namesABody(reference: $reference, bodyId: $bodyId) === false) {
 			return null;
 		}
 
@@ -158,12 +158,35 @@ class GovernanceBodyReader {
 			return null;
 		}
 
+		return $this->bodyFrom(event: $event);
+	}//end ask()
+
+	/**
+	 * The governance body a handled state event found, null when nobody answered or it was not found.
+	 *
+	 * @param object $event The dispatched state event.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function bodyFrom(object $event): ?array {
 		if ($event->isHandled() === false || $event->isFound() === false) {
 			return null;
 		}
 
 		return $event->getGovernanceBody();
-	}//end ask()
+	}//end bodyFrom()
+
+	/**
+	 * Whether the row names a governance body to ask for, by its reference or its body id.
+	 *
+	 * @param string $reference The row's id.
+	 * @param string $bodyId    The row's governanceBodyId.
+	 *
+	 * @return bool
+	 */
+	private function namesABody(string $reference, string $bodyId): bool {
+		return $reference !== '' || $bodyId !== '';
+	}//end namesABody()
 
 	/**
 	 * Rebuild the local roster fields from decidiq's members: one chair, one
@@ -175,45 +198,92 @@ class GovernanceBodyReader {
 	 * @return array<string, mixed> The row with chair, secretary and members from decidiq.
 	 */
 	private function withRoster(array $row, array $members): array {
-		$chair = '';
-		$secretary = '';
-		$plain = [];
+		$row['chair'] = '';
+		$row['secretary'] = '';
+		$row['members'] = [];
 		foreach ($members as $member) {
-			if (is_array($member) === false || trim((string)($member['uid'] ?? '')) === '') {
-				continue;
-			}
-
-			$uid = trim((string)$member['uid']);
-			$role = (string)($member['role'] ?? 'member');
-			if ($role === 'chair' && $chair === '') {
-				$chair = $uid;
-				continue;
-			}
-
-			if ($role === 'secretary' && $secretary === '') {
-				$secretary = $uid;
-				continue;
-			}
-
-			// The local member shape: {uid, displayName, role, external}, with
-			// role one of member or deputy (the chair has its own field).
-			$plainRole = 'member';
-			if ($role === 'deputy') {
-				$plainRole = 'deputy';
-			}
-
-			$plain[] = [
-				'uid' => $uid,
-				'displayName' => (string)($member['name'] ?? ''),
-				'role' => $plainRole,
-				'external' => (($member['external'] ?? false) === true),
-			];
+			$row = self::placeMember(row: $row, member: $member);
 		}
-
-		$row['chair'] = $chair;
-		$row['secretary'] = $secretary;
-		$row['members'] = $plain;
 
 		return $row;
 	}//end withRoster()
+
+	/**
+	 * Seat one of decidiq's members: the first chair and the first secretary
+	 * take their own field, everyone else joins the plain members in order.
+	 *
+	 * @param array<string, mixed> $row    The row being rebuilt.
+	 * @param mixed                $member One of decidiq's members.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private static function placeMember(array $row, mixed $member): array {
+		$uid = self::uidOf(member: $member);
+		if ($uid === '') {
+			return $row;
+		}
+
+		$seat = self::seatFor(row: $row, role: (string)($member['role'] ?? 'member'));
+		if ($seat !== null) {
+			$row[$seat] = $uid;
+			return $row;
+		}
+
+		$row['members'][] = self::plainMember(member: $member, uid: $uid);
+		return $row;
+	}//end placeMember()
+
+	/**
+	 * The uid of a member, or '' for a member that is not a row or has none.
+	 *
+	 * @param mixed $member One of decidiq's members.
+	 *
+	 * @return string The uid.
+	 */
+	private static function uidOf(mixed $member): string {
+		if (is_array($member) === false) {
+			return '';
+		}
+
+		return trim((string)($member['uid'] ?? ''));
+	}//end uidOf()
+
+	/**
+	 * The field a role takes when it is still empty: `chair` or `secretary`, or null.
+	 *
+	 * @param array<string, mixed> $row  The row being rebuilt.
+	 * @param string               $role The member's role.
+	 *
+	 * @return string|null The field, or null for a plain member.
+	 */
+	private static function seatFor(array $row, string $role): ?string {
+		if (in_array($role, ['chair', 'secretary'], true) === true && $row[$role] === '') {
+			return $role;
+		}
+
+		return null;
+	}//end seatFor()
+
+	/**
+	 * The local member shape: {uid, displayName, role, external}, with role
+	 * one of member or deputy (the chair has its own field).
+	 *
+	 * @param array<string, mixed> $member One of decidiq's members.
+	 * @param string               $uid    Its uid.
+	 *
+	 * @return array{uid: string, displayName: string, role: string, external: bool} The member.
+	 */
+	private static function plainMember(array $member, string $uid): array {
+		$plainRole = 'member';
+		if (($member['role'] ?? 'member') === 'deputy') {
+			$plainRole = 'deputy';
+		}
+
+		return [
+			'uid' => $uid,
+			'displayName' => (string)($member['name'] ?? ''),
+			'role' => $plainRole,
+			'external' => (($member['external'] ?? false) === true),
+		];
+	}//end plainMember()
 }//end class

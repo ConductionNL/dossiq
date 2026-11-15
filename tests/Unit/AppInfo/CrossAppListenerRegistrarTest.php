@@ -27,15 +27,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\CrossAppListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CrossAppListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ListenerRegistrar;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\CrossAppListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CrossAppListenerRegistrar
  */
 class CrossAppListenerRegistrarTest extends TestCase {
 

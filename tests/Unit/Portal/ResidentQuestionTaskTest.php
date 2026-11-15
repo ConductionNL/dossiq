@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
 
@@ -223,4 +224,59 @@ class ResidentQuestionTaskTest extends TestCase {
 			$register->errors(slug: 'aanvullingsverzoek', payload: ['portalTask' => '0b7c6f1e-2d4a-4c1b-9f0e-1a2b3c4d5e6f'], creating: false)
 		);
 	}//end testTheRequestSchemaTakesThePortalTask()
+
+	/**
+	 * The task carries the trimmed subject, case, id and title, and the whole task is as pinned.
+	 *
+	 * @return void
+	 */
+	public function testTheTaskCarriesTheTrimmedQuestion(): void {
+		$tasks = $this->tasks();
+		$question = $this->question();
+		$question['id'] = '  avr-1 ';
+		$question['case'] = ' case-1';
+		$question['portalSubject'] = 'person:bsn-hash-1  ';
+		$question['title'] = ' Vul uw aanvraag aan ';
+
+		$this->unit(tasks: $tasks)->raise(question: $question, actor: 'h');
+
+		$this->assertSame(
+			[
+				'title' => 'Vul uw aanvraag aan',
+				'description' => "Wij hebben nog iets van u nodig om uw zaak te behandelen:\n- Bankafschrift\n- Huurcontract\nStuur het ons uiterlijk 24-10-2026. Open de zaak om te zien hoe.",
+				'state' => 'active',
+				'performerType' => 'external',
+				'priority' => 'normal',
+				'assignee' => 'party:person:bsn-hash-1',
+				'dueAt' => '2026-10-24T23:59:59+02:00',
+				'objectUuid' => 'case-1',
+				'metadata' => [
+					'source' => 'dossiq.aanvullingsverzoek',
+					'question' => 'avr-1',
+					'case' => 'case-1',
+					'partyReference' => 'party:person:bsn-hash-1',
+				],
+			],
+			$tasks->imported[0]['data']
+		);
+	}//end testTheTaskCarriesTheTrimmedQuestion()
+
+	/**
+	 * A task that cannot be raised is logged with the question and the case.
+	 *
+	 * @return void
+	 */
+	public function testATaskThatCannotBeRaisedIsLogged(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($this->tasks(refuse: true));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq: the question to the resident stands, but its portal task could not be raised',
+			['question' => 'avr-1', 'case' => 'case-1', 'error' => 'refused']
+		);
+
+		$unit = new ResidentQuestionTask(container: $container, dates: $this->createMock(CaseDateNormaliser::class), logger: $logger);
+
+		$this->assertNull($unit->raise(question: $this->question(), actor: 'h'));
+	}//end testATaskThatCannotBeRaisedIsLogged()
 }//end class

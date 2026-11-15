@@ -1,0 +1,2 @@
+- [x] WorkQueueController::workload keeps the handlers in the reader's teams (group membership)
+- [x] Unit test: a handler outside the reader's teams is left out (red before)

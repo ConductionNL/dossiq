@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\BesluitMaterialisationServiceInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/contract-decision-delegation/spec.md
  */
-class BesluitMaterialisationService {
+class BesluitMaterialisationService implements BesluitMaterialisationServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -72,16 +73,10 @@ class BesluitMaterialisationService {
 	 * @spec openspec/specs/contract-decision-delegation/spec.md
 	 */
 	public function materialise(string $caseId, string $decisionId, array $outcome): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available; cannot materialise Besluit');
-		}
+		$objectService = $this->requireObjectService();
 
 		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('besluit_schema');
-		if ($schema === '') {
-			$schema = 'decision';
-		}
+		$schema = $this->besluitSchema();
 
 		// Build the ZGW Besluit payload from the decidesk outcome (REQ-PDCD-003).
 		$decision = $this->buildBesluitPayload(caseId: $caseId, outcome: $outcome);
@@ -108,12 +103,61 @@ class BesluitMaterialisationService {
 			throw new RuntimeException('Besluit persist failed: ' . $e->getMessage(), 0, $e);
 		}
 
+		return $this->asRecord(saved: $saved, caseId: $caseId, outcome: $outcome);
+	}//end materialise()
+
+	/**
+	 * The OpenRegister object service, required to materialise a Besluit.
+	 *
+	 * @return object The object service.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 *
+	 * @spec openspec/specs/contract-decision-delegation/spec.md
+	 */
+	private function requireObjectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available; cannot materialise Besluit');
+		}
+
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * The configured Besluit schema, `decision` when unset.
+	 *
+	 * @return string The schema.
+	 *
+	 * @spec openspec/specs/contract-decision-delegation/spec.md
+	 */
+	private function besluitSchema(): string {
+		$schema = $this->settingsService->getConfigValue('besluit_schema');
+		if ($schema === '') {
+			$schema = 'decision';
+		}
+
+		return $schema;
+	}//end besluitSchema()
+
+	/**
+	 * The persisted Besluit as an array, or the case and result when the save answered something else.
+	 *
+	 * @param mixed               $saved   What the save answered.
+	 * @param string              $caseId  The case UUID.
+	 * @param array<string,mixed> $outcome Normalised outcome.
+	 *
+	 * @return array<string,mixed> The persisted Besluit record.
+	 *
+	 * @spec openspec/specs/contract-decision-delegation/spec.md
+	 */
+	private function asRecord(mixed $saved, string $caseId, array $outcome): array {
 		if (is_array($saved) === false) {
 			$saved = ['caseId' => $caseId, 'result' => $outcome['result']];
 		}
 
 		return $saved;
-	}//end materialise()
+	}//end asRecord()
 
 	/**
 	 * Materialise the ZGW Besluit from a decidesk `DecisionConcludedEvent`.
@@ -134,7 +178,7 @@ class BesluitMaterialisationService {
 	 *
 	 * @throws RuntimeException When the case cannot be loaded or the Besluit cannot be persisted.
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function materialiseFromConcludedEvent(string $caseId, string $decisionId, array $event): array {
 		$result = (string)($event['outcome'] ?? '');

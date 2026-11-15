@@ -45,7 +45,7 @@ final class BackfillCaseStatusRoleTest extends TestCase {
 	private const NO_ROLE = 'aaaaaaaa-0000-4000-a000-000000000003';
 
 	/**
-	 * A store that answers the step's calls and keeps what it patches.
+	 * A store that refuses a changed readOnly statusRole and materialises it on save, as OpenRegister does.
 	 *
 	 * @param array<string, array<string, mixed>> $cases Cases by id.
 	 *
@@ -117,16 +117,23 @@ final class BackfillCaseStatusRoleTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 *
-			 * @throws RuntimeException When told to fail on this row.
+			 * @throws RuntimeException When told to fail on this row, or when the write changes the readOnly field.
 			 */
 			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
 				if (in_array($objectId, $this->failOn, true) === true) {
 					throw new RuntimeException('store refused');
 				}
 
+				$stored = $this->rows[(string)$schema][$objectId];
+				if (array_key_exists('statusRole', $data) === true && $data['statusRole'] !== ($stored['statusRole'] ?? null)) {
+					throw new RuntimeException('Cannot modify readOnly property: statusRole');
+				}
+
 				$this->patches[] = ['schema' => (string)$schema, 'id' => $objectId, 'data' => $data];
 				if ($this->dropsField === false) {
-					$this->rows[(string)$schema][$objectId] = array_merge($this->rows[(string)$schema][$objectId], $data);
+					$saved = array_merge($stored, $data);
+					$saved['statusRole'] = ($this->rows['9'][(string)($saved['status'] ?? '')]['role'] ?? null);
+					$this->rows[(string)$schema][$objectId] = $saved;
 				}
 
 				return $this->rows[(string)$schema][$objectId];
@@ -181,7 +188,7 @@ final class BackfillCaseStatusRoleTest extends TestCase {
 	}//end cases()
 
 	/**
-	 * It writes the two cases that need it, one field each, in system context.
+	 * It re-saves the two cases that need it, in system context.
 	 *
 	 * @return void
 	 */
@@ -192,12 +199,14 @@ final class BackfillCaseStatusRoleTest extends TestCase {
 
 		$this->assertSame(
 			[
-				['schema' => '5', 'id' => 'c-empty', 'data' => ['statusRole' => 'intake']],
-				['schema' => '5', 'id' => 'c-stale', 'data' => ['statusRole' => 'review']],
+				['schema' => '5', 'id' => 'c-empty', 'data' => []],
+				['schema' => '5', 'id' => 'c-stale', 'data' => []],
 			],
 			$store->patches,
-			'Only statusRole is written, and only where it is missing or stale.',
+			'Only the cases whose role is missing or stale are re-saved, without supplying the readOnly field.',
 		);
+		$this->assertSame(expected: 'intake', actual: $store->rows['5']['c-empty']['statusRole']);
+		$this->assertSame(expected: 'review', actual: $store->rows['5']['c-stale']['statusRole']);
 		$this->assertSame(1, $store->systemRuns, 'The backfill must run in system context.');
 		$this->assertSame(
 			['statusRole backfill: 2 filled, 0 written but not confirmed, 0 failed, 3 already right or without a role.'],

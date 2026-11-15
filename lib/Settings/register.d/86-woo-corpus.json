@@ -1,5 +1,5 @@
 {
-  "_note": "woo-request-corpus-collection (rows 19.1 to 19.4 and 19.18). The corpus of a Woo request is a record on the Woo case (decision D1): a search plan recorded before collection, the configuration a next request starts from, every exclusion with its reason, and every search as a query someone else can run again. A plan without recordedAt is a draft and counts as no plan.",
+  "_note": "woo-request-corpus-collection (rows 19.1 to 19.4 and 19.18). The corpus of a Woo request is a record on the Woo case (decision D1): a search plan recorded before collection, the configuration a next request starts from, every exclusion with its reason, and every search as a query someone else can run again. A plan without recordedAt is a draft and counts as no plan. wooSearchPlan, wooExclusion and wooCollectionQuery are private to the people on the case (woo-review-triage REQ-WRT-006): the case type lists them under reviewerAccess.records, so the assignee and the supervisors read them and nobody else on the staff does. wooRequestConfiguration is not: a next request starts from it (REQ-WRC-005), so a handler of another case must read it.",
   "components": {
     "registers": {
       "dossiq": {
@@ -15,7 +15,7 @@
       "wooSearchPlan": {
         "slug": "wooSearchPlan",
         "icon": "ClipboardSearchOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "searchable": false,
         "title": "Woo search plan",
         "description": "Whose files and which systems are searched for a Woo request, over which period and with which terms. Recorded before collection starts. A plan without a recorded date is a draft and counts as no plan.",
@@ -101,6 +101,24 @@
             "description": "When the plan was recorded. Empty for a draft.",
             "format": "date-time"
           }
+        },
+        "authorization": {
+          "scope": "private",
+          "read": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "create": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "update": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "delete": [
+            "dossiq-coordinators"
+          ]
         }
       },
       "wooRequestConfiguration": {
@@ -180,7 +198,7 @@
       "wooExclusion": {
         "slug": "wooExclusion",
         "icon": "FileAlertOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "searchable": false,
         "title": "Woo exclusion",
         "description": "A candidate document set aside before review, with the reason, so what the reviewer saw reconciles with what arrived.",
@@ -271,12 +289,30 @@
             "description": "When it was set aside.",
             "format": "date-time"
           }
+        },
+        "authorization": {
+          "scope": "private",
+          "read": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "create": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "update": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "delete": [
+            "dossiq-coordinators"
+          ]
         }
       },
       "wooCollectionQuery": {
         "slug": "wooCollectionQuery",
         "icon": "ClipboardSearchOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "searchable": false,
         "title": "Woo collection query",
         "description": "A search run from a Woo case, stored so anyone who may read the case can run it again and see what is new.",
@@ -344,6 +380,24 @@
               "maxLength": 255
             }
           }
+        },
+        "authorization": {
+          "scope": "private",
+          "read": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "create": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "update": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "delete": [
+            "dossiq-coordinators"
+          ]
         }
       },
       "case": {

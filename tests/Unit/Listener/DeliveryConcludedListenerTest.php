@@ -62,6 +62,7 @@ interface DeliveryObjectServiceStub {
  * Unit tests for DeliveryConcludedListener.
  *
  * @covers \OCA\Dossiq\Listener\DeliveryConcludedListener
+ * @covers \OCA\Dossiq\Listener\Support\ConcludedDelivery
  */
 class DeliveryConcludedListenerTest extends TestCase {
 

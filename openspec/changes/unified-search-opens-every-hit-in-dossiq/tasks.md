@@ -9,7 +9,7 @@ Tier: V1. Kind: config. Rows: 9.1, 9.12. Delivered half: openregister
 
 ## 2. Case-owned records
 
-- [ ] 2.1 (34 of 47 decided from the code on 2026-10-10; 13 wait on a read of a seeded or live object, live pass, decision 139) For every schema with a `case`, `caseId`, `caseRef` or `parentCase` property and no detail page, read one seeded or live object and record whether the field holds a bare case uuid (design D2). Write the result as a table in this file under "Findings".
+- [ ] 2.1 (34 of 47 decided from the code on 2026-10-10; 3 more linked from a live read on 2026-10-22; portaalBericht holds a non-uuid in 2 of 31 rows; 9 wait on a seeded object, as :8080 holds none, live pass, decision 139) For every schema with a `case`, `caseId`, `caseRef` or `parentCase` property and no detail page, read one seeded or live object and record whether the field holds a bare case uuid (design D2). Write the result as a table in this file under "Findings".
 - [x] 2.2 `src/manifest.json` `deepLinks`: `/apps/dossiq/cases/{<field>}` for the 31 schemas that passed 2.1, `displayName` naming the record kind ("Document on a case", "Term on a case"), English source with Dutch in `l10n/nl.json`. Needs openregister#4555 (the search formatter hands the registry the object's own properties); before it lands, these hits open with a literal `{case}`. Guard: `tests/vitest/searchableSchemas.spec.js` (every `{field}` a property of its schema, every template a manifest route).
 - [x] 2.3 `searchable: false` on each schema that failed 2.1, and on the logs in design D3. 2026-10-10: `gezinsplan` (1.2.1), `indicatiestelling` (1.2.1) and `reIntegratieTraject` (1.1.1) in `lib/Settings/register.d/50-sociaal-domein.json`; register 0.20.24, digests recorded.
 
@@ -48,7 +48,10 @@ used (decision 139).
 | deadlineInstance | case | `TermijnService::createTermijnInstance()` writes the case id it is armed for | linked |
 | zaakinformatieobject | case | `LoadDefaultZgwMappings`: `{{ zaak \| zgw_extract_uuid }}` | linked |
 | gezinsplan, indicatiestelling, reIntegratieTraject | caseId | "A reference to the youth act / social support act / participation act case": a social-domain case schema (opted out itself), not a dossiq `case` | `searchable: false` |
-| caseBerichtenboxMessage, caseCustody, caseFederatedActivity, caseFederatedShare, caseShare, caseTakeover, dispatch, fieldInspection, mailIntakeEntry, mandateEscalation, milestoneRecord, portaalBericht, toestemming | case / caseId / caseRef | plain string; no writer in dossiq's PHP shows the value | pending a seeded or live read (guard: `PENDING_CASE_LINK`) |
+| caseCustody, toestemming | caseId | live read 2026-10-22 on :8080 (`GET .../objects/dossiq/<schema>?_limit=3`): caseCustody 308 rows, toestemming 1 row; each value a uuid that `GET .../objects/dossiq/case/<uuid>` answers 200 | linked |
+| fieldInspection | caseRef | live read 2026-10-22: 4 rows, each a case uuid (200 on the case) | linked |
+| portaalBericht | caseId | live read 2026-10-22: 29 of 31 rows a case uuid, 2 hold `zaak-2026-vth-09128` (an identifier, not a uuid) | not a reliable link: opt out (`searchable: false`) or fix the writer; still pending |
+| caseBerichtenboxMessage, caseFederatedActivity, caseFederatedShare, caseShare, caseTakeover, dispatch, mailIntakeEntry, mandateEscalation, milestoneRecord | case / caseId / caseRef | plain string; no writer in dossiq's PHP shows the value; :8080 holds no rows of these on 2026-10-22 | pending a seeded or live read (guard: `PENDING_CASE_LINK`) |
 | supplierMessage, caseSupplierInvoice | caseRef | "the case OR CONTRACT" | `searchable: false` (earlier) |
 | aiAuditEntry, sociaalDomeinAuditLog, mandateUsage, zaaksysteemMapping, stateMachineLog | caseId | logs (design D3) | `searchable: false` (earlier) |
 

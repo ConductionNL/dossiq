@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks;
 use DateTime;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
@@ -44,6 +45,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
 use OCA\Dossiq\Service\UnreadTriggerService;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCA\Dossiq\Service\Email\SenderIdentity;
 use PHPUnit\Framework\TestCase;
@@ -59,6 +61,20 @@ class CaseTypePublishServiceTest extends TestCase {
 	 * @var string
 	 */
 	private const TODAY = '2026-09-16';
+
+	/**
+	 * The fields publication requires, filled, so a fixture is refused only
+	 * for what the test is about.
+	 */
+	private const DESCRIBED = [
+		'purpose'            => 'Een besluit heroverwegen.',
+		'trigger'            => 'Een bezwaarschrift.',
+		'subject'            => 'Bezwaar',
+		'processingDeadline' => 'P6W',
+		'origin'             => 'external',
+		'confidentiality'    => 'openbaar',
+		'responsibleUnit'    => 'Juridische Zaken',
+	];
 
 	/**
 	 * A clock stopped on a day the assertions can name.
@@ -95,6 +111,7 @@ class CaseTypePublishServiceTest extends TestCase {
 	 * @return CaseTypePublishService The service.
 	 */
 	private function service(array $caseTypes, array $rows = [], bool|int $saveFails = false): CaseTypePublishService {
+		$caseTypes = array_map(static fn (array $row): array => ($row + self::DESCRIBED), $caseTypes);
 		$this->objectService = new class($caseTypes, $rows, $saveFails) {
 			/**
 			 * Everything saveObject() was handed, in order.
@@ -195,11 +212,13 @@ class CaseTypePublishServiceTest extends TestCase {
 			checks: new PublicationChecks(
 				caseTypeResolver: new CaseTypeResolver(store: $store),
 				store: $store,
-				acknowledgement: new CaseTypeAcknowledgement(),
-				unreadTriggers: new UnreadTriggerService(),
-				admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
-				remedy: new RemedyClauseDeclaration(),
-				handling: new CaseTypeHandling(),
+				declarations: new CaseTypeDeclarationChecks(
+					acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+					admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+					remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
+					handling: new CaseTypeHandling(),
+				),
+				unreadTriggers: new UnreadTriggerService(l10n: new SourceL10n()),
 				reachability: new CaseTypeReachability(),
 				senders: $this->createMock(originalClassName: SenderIdentity::class),
 			),
@@ -284,6 +303,70 @@ class CaseTypePublishServiceTest extends TestCase {
 	public function testAReadyDraftHasNoFindings(): void {
 		self::assertSame([], $this->publishableService()->validate(caseTypeId: 'ct'));
 	}//end testAReadyDraftHasNoFindings()
+
+	/**
+	 * Every required field left empty is its own finding, in a fixed order.
+	 */
+	public function testEachEmptyRequiredFieldIsAFinding(): void {
+		$empty = array_fill_keys(array_keys(self::DESCRIBED), '');
+		$empty['title'] = '  ';
+
+		self::assertSame(
+			[
+				'Give the case type a title.',
+				'Give the case type a purpose.',
+				'Give the case type a trigger.',
+				'Give the case type a subject.',
+				'Give the case type a processing deadline.',
+				'Give the case type an origin.',
+				'Give the case type a confidentiality level.',
+				'Give the case type a responsible unit.',
+			],
+			$this->publishableService($empty)->validate(caseTypeId: 'ct')
+		);
+	}//end testEachEmptyRequiredFieldIsAFinding()
+
+	/**
+	 * A missing field reads the same as an empty one.
+	 */
+	public function testAMissingResponsibleUnitIsAFinding(): void {
+		$service = $this->service(
+			['ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'initialStatus' => 's1', 'responsibleUnit' => null]],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Afgehandeld', 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			]
+		);
+
+		self::assertSame(['Give the case type a responsible unit.'], $service->validate(caseTypeId: 'ct'));
+	}//end testAMissingResponsibleUnitIsAFinding()
+
+	/**
+	 * A translatable field counts as filled when one language holds text, and
+	 * as empty when no language does.
+	 */
+	public function testATranslatableFieldIsReadAcrossLanguages(): void {
+		$filled = $this->publishableService(['purpose' => ['nl' => '', 'en' => 'Reconsider a decision.']]);
+		self::assertSame([], $filled->validate(caseTypeId: 'ct'));
+
+		$blank = $this->publishableService(['subject' => ['nl' => ' ', 'en' => '']]);
+		self::assertSame(['Give the case type a subject.'], $blank->validate(caseTypeId: 'ct'));
+	}//end testATranslatableFieldIsReadAcrossLanguages()
+
+	/**
+	 * A draft with an empty required field is not published and nothing is written.
+	 */
+	public function testAnEmptyRequiredFieldStopsThePublish(): void {
+		$service = $this->publishableService(['responsibleUnit' => '']);
+
+		$result = $service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		self::assertFalse($result['published']);
+		self::assertSame(['Give the case type a responsible unit.'], $result['findings']);
+		self::assertSame([], $this->objectService->saved);
+	}//end testAnEmptyRequiredFieldStopsThePublish()
 
 	/**
 	 * A case type with no statuses cannot be published.

@@ -42,7 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
@@ -62,6 +62,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooPublicationFieldsShippedTest extends TestCase {
 

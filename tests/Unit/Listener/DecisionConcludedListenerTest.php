@@ -71,6 +71,7 @@ interface ConcludedObjectServiceStub {
  * @uses \OCA\Dossiq\Service\DecisionDocument\ConcludedDecisionRecord
  * @uses \OCA\Dossiq\Service\Flow\WaitingRunResumer
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class DecisionConcludedListenerTest extends TestCase {
 	use MakesBezwaarAuditTrail;
@@ -427,7 +428,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+	 * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
 	 */
 	public function testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus(): void {
 		foreach (['approved', 'rejected'] as $status) {
@@ -455,6 +456,148 @@ class DecisionConcludedListenerTest extends TestCase {
 		}
 	}//end testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus()
 
+
+	/**
+	 * A concluded decision whose case cannot be resolved is logged and materialises nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnresolvedCaseIsLoggedAndMaterialisesNothing(): void {
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([]);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->never())->method('materialiseFromConcludedEvent');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq DecisionConcludedListener: could not resolve a case for the concluded decision',
+			['decisionId' => 'dec-1', 'externalReference' => '']
+		);
+		$products = $this->createMock(CaseOutcomeProductIssuer::class);
+		$products->expects($this->never())->method('onConcludedDecision');
+
+		$listener = new DecisionConcludedListener(
+			settingsService: $settings,
+			decisionMaterialiser: $materialiser,
+			bacService: $this->createMock(AdvisoryCommitteeService::class),
+			logger: $logger,
+			products: $products
+		);
+		$listener->handle(
+			new DecisionConcludedEvent('dec-1', 'contract-renewal', 'approved', 'granted', false, null, [], null, 'procest', 'r', 's', '', '', 'c')
+		);
+	}//end testAnUnresolvedCaseIsLoggedAndMaterialisesNothing()
+
+	/**
+	 * Without an object service a terminal outcome is dropped silently.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAnObjectServiceNothingIsMaterialised(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->expects($this->once())->method('getObjectService')->willReturn(null);
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->never())->method('materialiseFromConcludedEvent');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
+
+		$listener = new DecisionConcludedListener(
+			$settings,
+			$materialiser,
+			$this->createMock(AdvisoryCommitteeService::class),
+			$logger
+		);
+		$listener->handle($this->event(sourceApp: 'procest', status: 'withdrawn'));
+	}//end testWithoutAnObjectServiceNothingIsMaterialised()
+
+	/**
+	 * A failing materialisation is swallowed and logged with its message.
+	 *
+	 * @return void
+	 */
+	public function testAFailingMaterialisationIsLoggedNotRaised(): void {
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')
+			->willReturn([['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2']]);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->method('materialiseFromConcludedEvent')->willThrowException(new \RuntimeException('store down'));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('info');
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq DecisionConcludedListener: could not materialise Besluit from decidesk outcome: store down'
+		);
+		$products = $this->createMock(CaseOutcomeProductIssuer::class);
+		$products->expects($this->never())->method('onConcludedDecision');
+
+		$listener = new DecisionConcludedListener(
+			settingsService: $settings,
+			decisionMaterialiser: $materialiser,
+			bacService: $this->createMock(AdvisoryCommitteeService::class),
+			logger: $logger,
+			products: $products
+		);
+		$listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
+	}//end testAFailingMaterialisationIsLoggedNotRaised()
+
+	/**
+	 * The outcome handed over carries the first signer and the signature method, and the info line names the case.
+	 *
+	 * @return void
+	 */
+	public function testTheProjectedOutcomeNamesTheFirstSignerAndTheSignature(): void {
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')
+			->willReturn([['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2']]);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->once())->method('materialiseFromConcludedEvent')->with(
+			'case-9',
+			'bes-2',
+			[
+				'status' => 'Approved',
+				'outcome' => 'granted',
+				'decidedAt' => '2026-06-15T10:00:00+00:00',
+				'signer' => 'mayor',
+				'method' => 'signature',
+				'signers' => ['mayor', ['id' => 'clerk']],
+				'signingReference' => 'sig-ref-1',
+			]
+		)->willReturn(['ok' => true]);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('info')->with(
+			'Dossiq DecisionConcludedListener: materialised ZGW Besluit from decidesk outcome',
+			['decisionId' => 'dec-1', 'caseId' => 'case-9', 'status' => 'approved']
+		);
+
+		$listener = new DecisionConcludedListener(
+			$settings,
+			$materialiser,
+			$this->createMock(AdvisoryCommitteeService::class),
+			$logger
+		);
+		$listener->handle(
+			new DecisionConcludedEvent(
+				'dec-1',
+				'contract-renewal',
+				'Approved',
+				'granted',
+				true,
+				'sig-ref-1',
+				['mayor', ['id' => 'clerk']],
+				'2026-06-15T10:00:00+00:00',
+				'procest',
+				'register-slug',
+				'supplierContract',
+				'sub-1',
+				'case-9',
+				'corr-1'
+			)
+		);
+	}//end testTheProjectedOutcomeNamesTheFirstSignerAndTheSignature()
 
 	/**
 	 * Build a DecisionConcludedEvent fixture.

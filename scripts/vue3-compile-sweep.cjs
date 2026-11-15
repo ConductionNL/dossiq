@@ -1,4 +1,8 @@
 /**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+/**
  * Vue 3 compile-readiness sweep (ADR-066, openspec vue-3-migration).
  *
  * Compiles every SFC template + script under src/ with @vue/compiler-sfc in

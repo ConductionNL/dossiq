@@ -28,30 +28,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Dashboard;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCP\Dashboard\IWidget;
-use OCP\IL10N;
-use OCP\IURLGenerator;
-use OCP\Util;
-
 /**
  * Dashboard widget showing an overview of recent cases.
  *
  * @spec openspec/specs/dashboard/spec.md
  */
-class CasesOverviewWidget implements IWidget {
-	/**
-	 * Constructor.
-	 *
-	 * @param IL10N $l10n L10N service
-	 * @param IURLGenerator $url URL generator
-	 */
-	public function __construct(
-		private IL10N $l10n,
-		private IURLGenerator $url,
-	) {
-	}//end __construct()
-
+class CasesOverviewWidget extends DashboardPageWidget {
 	/**
 	 * Get the unique identifier for this widget.
 	 *
@@ -95,47 +77,4 @@ class CasesOverviewWidget implements IWidget {
 	public function getOrder(): int {
 		return 10;
 	}//end getOrder()
-
-	/**
-	 * Get the CSS icon class for this widget.
-	 *
-	 * @inheritDoc
-	 * @return string The icon CSS class
-	 *
-	 * @spec openspec/specs/dashboard/spec.md
-	 */
-	public function getIconClass(): string {
-		return 'icon-dossiq-widget';
-	}//end getIconClass()
-
-	/**
-	 * Get the URL for the widget's full view.
-	 *
-	 * @inheritDoc
-	 * @return string|null The widget URL or null
-	 *
-	 * @spec openspec/specs/dashboard/spec.md
-	 */
-	public function getUrl(): ?string {
-		return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
-	}//end getUrl()
-
-	/**
-	 * Load the widget scripts and styles.
-	 *
-	 * @inheritDoc
-	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
-	 *
-	 * @spec openspec/specs/dashboard/spec.md
-	 */
-	public function load(): void {
-		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-vendor');
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-nc-vue');
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-casesOverviewWidget');
-		Util::addStyle(Application::APP_ID, 'dashboardWidgets');
-
-	}//end load()
 }//end class

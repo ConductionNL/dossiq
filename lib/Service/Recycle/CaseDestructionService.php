@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -43,8 +43,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Recycle;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\CaseDestructionServiceInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
+use OCA\OpenRegister\Db\AuditTrailMapper;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -54,9 +57,11 @@ use Throwable;
 /**
  * Decides whether a deleted case may be destroyed, then has it destroyed.
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class CaseDestructionService {
+class CaseDestructionService implements CaseDestructionServiceInterface {
 
 	/**
 	 * The case-type property naming the group that may destroy.
@@ -127,7 +132,7 @@ class CaseDestructionService {
 	 *
 	 * @throws RuntimeException One of {@see self::REFUSALS}.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function preview(string $caseId): array {
 		$entity = $this->requireDeleted(caseId: $caseId);
@@ -158,7 +163,7 @@ class CaseDestructionService {
 	 * SAME act with the window explicitly set aside, and a second method would
 	 * duplicate the role check, both clocks and the record to express it.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function destroy(string $caseId, bool $waiveWindow = false): array {
 		$entity = $this->requireDeleted(caseId: $caseId);
@@ -194,7 +199,7 @@ class CaseDestructionService {
 	 *
 	 * @return bool True when the caller may destroy.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function mayDestroy(array $case): bool {
 		$user = $this->userSession->getUser();
@@ -230,7 +235,7 @@ class CaseDestructionService {
 	 *
 	 * @return string The group id, or an empty string when none is declared.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function declaredRole(array $case): string {
 		return trim((string)($this->caseType(case: $case)[self::CASE_TYPE_ROLE] ?? ''));
@@ -248,7 +253,7 @@ class CaseDestructionService {
 	 *
 	 * @return int|null The window in days, or null when the case type states none.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function declaredWindowDays(array $case): ?int {
 		$days = ($this->caseType(case: $case)[self::CASE_TYPE_WINDOW] ?? null);
@@ -346,9 +351,32 @@ class CaseDestructionService {
 	 * @return array<string, mixed> The record.
 	 */
 	private function record(object $entity, array $scope, ?array $window, bool $waived): array {
+		$context = $this->destructionContext(entity: $entity, scope: $scope, window: $window, waived: $waived);
+
+		$recorded = $this->recordWithOpenRegister(entity: $entity, scope: $scope, context: $context);
+		if ($recorded !== null) {
+			return $recorded;
+		}
+
+		$this->fallbackRecord(entity: $entity, context: $context, actor: $context['destroyedBy']);
+
+		return $context;
+	}//end record()
+
+	/**
+	 * The record of the act, naming who decided it.
+	 *
+	 * @param object $entity OpenRegister's object entity.
+	 * @param array<string, mixed> $scope What the destruction took.
+	 * @param array<string, mixed>|null $window The window at the moment of the act.
+	 * @param bool $waived Whether an open window was waived.
+	 *
+	 * @return array<string, mixed> The record.
+	 */
+	private function destructionContext(object $entity, array $scope, ?array $window, bool $waived): array {
 		$user = $this->userSession->getUser();
 		$actor = ($user?->getUID() ?? 'system');
-		$context = [
+		return [
 			'destroyedBy' => $actor,
 			'destroyedAt' => (new DateTime())->format(DateTime::ATOM),
 			'objectUuid' => (string)$entity->getUuid(),
@@ -357,27 +385,29 @@ class CaseDestructionService {
 			'windowWaived' => $waived,
 			'scope' => $scope,
 		];
+	}//end destructionContext()
 
-		$recorder = $this->settingsService->getOpenRegisterClass(
-			class: 'OCA\\OpenRegister\\Service\\Deletion\\DestructionRecorder'
-		);
+	/**
+	 * Let OpenRegister's DestructionRecorder record the act.
+	 *
+	 * @param object $entity OpenRegister's object entity.
+	 * @param array<string, mixed> $scope What the destruction took.
+	 * @param array<string, mixed> $context The record.
+	 *
+	 * @return array<string, mixed>|null OpenRegister's record, or null when it has no recorder or the recorder failed.
+	 */
+	private function recordWithOpenRegister(object $entity, array $scope, array $context): ?array {
+		$recorder = $this->settingsService->getOpenRegisterClass(class: 'OCA\\OpenRegister\\Service\\Deletion\\DestructionRecorder');
 		if ($recorder !== null && method_exists($recorder, 'record') === true) {
 			try {
-				return $recorder->record(
-					object: $entity,
-					scope: $scope,
-					rule: 'case-type-destroying-role',
-					context: $context
-				);
+				return $recorder->record(object: $entity, scope: $scope, rule: 'case-type-destroying-role', context: $context);
 			} catch (Throwable $e) {
 				$this->logger->warning('Dossiq: OpenRegister could not record the destruction: ' . $e->getMessage());
 			}
 		}
 
-		$this->fallbackRecord(entity: $entity, context: $context, actor: $actor);
-
-		return $context;
-	}//end record()
+		return null;
+	}//end recordWithOpenRegister()
 
 	/**
 	 * Write the destruction record ourselves when OpenRegister has no recorder.
@@ -390,7 +420,7 @@ class CaseDestructionService {
 	 */
 	private function fallbackRecord(object $entity, array $context, string $actor): void {
 		$mapper = $this->settingsService->getOpenRegisterClass(class: CaseRecycleService::AUDIT_MAPPER);
-		if ($mapper === null || method_exists($mapper, 'createAuditTrailEntry') === false) {
+		if ($mapper instanceof AuditTrailMapper === false) {
 			$this->logger->error(
 				'Dossiq: a case was destroyed with no record, because no audit trail is available',
 				['uuid' => (string)$entity->getUuid()]
@@ -399,13 +429,13 @@ class CaseDestructionService {
 		}
 
 		try {
-			$mapper->createAuditTrailEntry(
+			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
 				object: $entity,
 				action: self::DESTROY_ACTION,
 				context: $context,
 				actorId: $actor,
 				actorName: ($this->userSession->getUser()?->getDisplayName() ?? 'System')
-			);
+			));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: could not record the destruction: ' . $e->getMessage());
 		}

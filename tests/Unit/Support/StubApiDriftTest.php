@@ -217,6 +217,9 @@ final class StubApiDriftTest extends TestCase {
 		$shortName = basename($relativePath);
 		$stub = ClassApi::fromFile($stubFile, $shortName);
 		$real = ClassApi::fromFile($realFile, $shortName);
+		if ($real !== null) {
+			$real = $this->withParents(api: $real, file: $realFile, realLib: $realLib);
+		}
 
 		self::assertNotNull($stub, 'The stub file must declare ' . $shortName . '.');
 		self::assertNotNull($real, 'The real file must declare ' . $shortName . '.');
@@ -245,6 +248,143 @@ final class StubApiDriftTest extends TestCase {
 			. $this->comparedAgainst(realLib: $realLib)
 		);
 	}//end testTheStubAgreesWithTheRealClass()
+
+	/**
+	 * The real class's API with what its parents declare.
+	 *
+	 * A method the real class inherits is a method it serves: an OpenRegister
+	 * event that moved getObject() into a shared abstract parent still answers
+	 * getObject(), and so does one that took getErrors() from a trait. Parents
+	 * and traits are followed inside OpenRegister's lib/ and into
+	 * Nextcloud's OCP from this app's vendor; a parent found in neither ends
+	 * the chain.
+	 *
+	 * @param ClassApi $api     The class's own API.
+	 * @param string   $file    The file it was read from.
+	 * @param string   $realLib Absolute path to the sibling's lib/.
+	 *
+	 * @return ClassApi
+	 */
+	private function withParents(ClassApi $api, string $file, string $realLib): ClassApi {
+		$api = $this->withTraits(api: $api, file: $file, realLib: $realLib);
+		$current = $api;
+		$currentFile = $file;
+		for ($depth = 0; $depth < 10 && $current->parent !== null; $depth++) {
+			$parentFqn = $this->resolveName(name: $current->parent, file: $currentFile);
+			$parentFile = $this->sourceOf(fqn: $parentFqn, realLib: $realLib);
+			if ($parentFile === null) {
+				break;
+			}
+
+			$parentShort = substr($parentFqn, ((int)strrpos($parentFqn, '\\') + 1));
+			$parent = ClassApi::fromFile($parentFile, $parentShort);
+			if ($parent === null) {
+				break;
+			}
+
+			$api = $api->withInherited(parent: $this->withTraits(api: $parent, file: $parentFile, realLib: $realLib));
+			$current = $parent;
+			$currentFile = $parentFile;
+		}
+
+		return $api;
+	}//end withParents()
+
+	/**
+	 * A class's API with what the traits it uses declare.
+	 *
+	 * A trait use is an indented `use` line; the file's imports are not indented.
+	 *
+	 * @param ClassApi $api     The class's API.
+	 * @param string   $file    The file it was read from.
+	 * @param string   $realLib Absolute path to the sibling's lib/.
+	 *
+	 * @return ClassApi
+	 */
+	private function withTraits(ClassApi $api, string $file, string $realLib): ClassApi {
+		$source = (string)file_get_contents($file);
+		if (preg_match_all('/^[ \t]+use\s+([\w\\\\]+(?:\s*,\s*[\w\\\\]+)*)\s*;/m', $source, $matches) === 0) {
+			return $api;
+		}
+
+		foreach ($matches[1] as $list) {
+			foreach (array_map('trim', explode(',', $list)) as $trait) {
+				$traitFqn = $this->resolveName(name: $trait, file: $file);
+				$traitFile = $this->sourceOf(fqn: $traitFqn, realLib: $realLib);
+				$traitApi = null;
+				if ($traitFile !== null) {
+					$traitApi = ClassApi::fromFile($traitFile, substr($traitFqn, ((int)strrpos($traitFqn, '\\') + 1)));
+				}
+
+				if ($traitApi !== null) {
+					$api = $api->withInherited(parent: $traitApi);
+				}
+			}
+		}
+
+		return $api;
+	}//end withTraits()
+
+	/**
+	 * A class name as written in a file, made fully qualified by that file's namespace and imports.
+	 *
+	 * @param string $name The name as written.
+	 * @param string $file The file it is written in.
+	 *
+	 * @return string
+	 */
+	private function resolveName(string $name, string $file): string {
+		if (str_starts_with($name, '\\') === true) {
+			return ltrim($name, '\\');
+		}
+
+		$source = (string)file_get_contents($file);
+		$first = explode('\\', $name)[0];
+		if (preg_match_all('/^use\s+([^;\s]+)(?:\s+as\s+(\w+))?\s*;/m', $source, $uses, PREG_SET_ORDER) > 0) {
+			foreach ($uses as $use) {
+				$alias = substr($use[1], ((int)strrpos($use[1], '\\') + 1));
+				if (($use[2] ?? '') !== '') {
+					$alias = $use[2];
+				}
+
+				if ($alias === $first) {
+					return substr($use[1], 0, (strlen($use[1]) - strlen($first))) . $name;
+				}
+			}
+		}
+
+		$namespace = '';
+		if (preg_match('/^namespace\s+([^;\s]+)\s*;/m', $source, $match) === 1) {
+			$namespace = $match[1] . '\\';
+		}
+
+		return $namespace . $name;
+	}//end resolveName()
+
+	/**
+	 * The source file of an OpenRegister or OCP class, or null when neither has it.
+	 *
+	 * @param string $fqn     Fully-qualified class name.
+	 * @param string $realLib Absolute path to the sibling's lib/.
+	 *
+	 * @return string|null
+	 */
+	private function sourceOf(string $fqn, string $realLib): ?string {
+		$roots = [
+			'OCA\\OpenRegister\\' => $realLib . '/',
+			'OCP\\' => __DIR__ . '/../../../vendor/nextcloud/ocp/OCP/',
+		];
+		foreach ($roots as $prefix => $root) {
+			if (str_starts_with($fqn, $prefix) === true) {
+				$file = $root . str_replace('\\', '/', substr($fqn, strlen($prefix))) . '.php';
+				if (is_file($file) === true) {
+					return $file;
+				}
+			}
+		}
+
+		return null;
+	}//end sourceOf()
 
 	/**
 	 * Which openregister this verdict was measured against.

@@ -39,6 +39,7 @@ use ReflectionClass;
  *
  * @covers \OCA\Dossiq\Repair\MigrateRegisterSlug
  * @covers \OCA\Dossiq\Repair\MigrateRegisterSlugDecisions
+ * @uses \OCA\Dossiq\Repair\SlugRenamePlan
  *
  * @spec exclude No canonical spec covers the `procest` -> `dossiq` register-slug
  *  migration. Pointing this at an existing spec would report conformance to a

@@ -1,0 +1,201 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"why": "The parts of a case type that have no editor of their own (result, role, document type, decision type) each get a page, opened from their list on CaseTypeDetail, so a row can be read and edited there. The page edits through the generic whole-record Edit dialog. Statuses, fields and messages are edited in their rehosted editors on CaseTypeDetail."
+	},
+	"pages": [
+		{
+			"id": "ResultTypeDetail",
+			"route": "/settings/result-types/:id",
+			"type": "detail",
+			"title": "Result",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "resultType",
+				"titleField": "name",
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "Case types",
+					"route": "CaseTypes"
+				},
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"widgets": [
+					{
+						"id": "result-type-core",
+						"type": "data",
+						"title": "Result",
+						"content": {
+							"columns": 2,
+							"include": [
+								"name",
+								"description",
+								"genericDescription",
+								"archivalAction",
+								"archivalPeriod",
+								"sourceDateArchiveProcedure",
+								"selectionListClass"
+							],
+							"hideEmpty": false
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "result-type-core",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 8,
+						"showTitle": true
+					}
+				]
+			}
+		},
+		{
+			"id": "RoleTypeDetail",
+			"route": "/settings/role-types/:id",
+			"type": "detail",
+			"title": "Role",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "roleType",
+				"titleField": "name",
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "Case types",
+					"route": "CaseTypes"
+				},
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"widgets": [
+					{
+						"id": "role-type-core",
+						"type": "data",
+						"title": "Role",
+						"content": {
+							"columns": 2,
+							"include": [
+								"name",
+								"description",
+								"genericRole",
+								"ncGroupId"
+							],
+							"hideEmpty": false
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "role-type-core",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 8,
+						"showTitle": true
+					}
+				]
+			}
+		},
+		{
+			"id": "DocumentTypeDetail",
+			"route": "/settings/document-types/:id",
+			"type": "detail",
+			"title": "Document type",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "documentType",
+				"titleField": "name",
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "Case types",
+					"route": "CaseTypes"
+				},
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"widgets": [
+					{
+						"id": "document-type-core",
+						"type": "data",
+						"title": "Document type",
+						"content": {
+							"columns": 2,
+							"include": [
+								"name",
+								"category",
+								"description",
+								"confidentiality",
+								"isRequired",
+								"allowedMimeTypes",
+								"validFrom",
+								"validUntil"
+							],
+							"hideEmpty": false
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "document-type-core",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 8,
+						"showTitle": true
+					}
+				]
+			}
+		},
+		{
+			"id": "DecisionTypeDetail",
+			"route": "/settings/decision-types/:id",
+			"type": "detail",
+			"title": "Decision type",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "decisionType",
+				"titleField": "name",
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "Case types",
+					"route": "CaseTypes"
+				},
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"widgets": [
+					{
+						"id": "decision-type-core",
+						"type": "data",
+						"title": "Decision type",
+						"content": {
+							"columns": 2,
+							"include": [
+								"name",
+								"description",
+								"publicationRequired",
+								"validFrom",
+								"validUntil"
+							],
+							"hideEmpty": false
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "decision-type-core",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 8,
+						"showTitle": true
+					}
+				]
+			}
+		}
+	]
+}

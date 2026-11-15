@@ -80,20 +80,9 @@ class AuditPacketBuilder {
 	public function build(string $decisionId, array $decision): string {
 		$logs = $this->findStateMachineLogs(decisionId: $decisionId);
 		$validationReport = self::validationReport(decision: $decision);
+		$manifest = $this->manifestOf(decisionId: $decisionId, decision: $decision);
 
-		$manifest = [
-			'decisionId' => $decisionId,
-			'reference' => (string)($decision['reference'] ?? ''),
-			'gegenereerdOp' => (new DateTimeImmutable())->format('c'),
-			'inhoud' => ['beschikking.json', 'state-machine-log.json', 'validatierapport.json', 'manifest.json'],
-		];
-
-		$entries = [
-			'beschikking.json' => json_encode($this->maskDecision(decision: $decision), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-			'state-machine-log.json' => json_encode($logs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-			'validatierapport.json' => json_encode($validationReport, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-			'manifest.json' => json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-		];
+		$entries = $this->packetEntries(decision: $decision, records: ['logs' => $logs, 'validationReport' => $validationReport, 'manifest' => $manifest]);
 
 		$zipBytes = $this->buildZip(entries: $entries);
 
@@ -140,6 +129,45 @@ class AuditPacketBuilder {
 	}//end validationReport()
 
 	/**
+	 * The manifest naming the packet's contents.
+	 *
+	 * @param string $decisionId The beschikking UUID.
+	 * @param array<string, mixed> $decision The beschikking.
+	 *
+	 * @return array<string, mixed> The manifest.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function manifestOf(string $decisionId, array $decision): array {
+		return [
+			'decisionId' => $decisionId,
+			'reference' => (string)($decision['reference'] ?? ''),
+			'gegenereerdOp' => (new DateTimeImmutable())->format('c'),
+			'inhoud' => ['beschikking.json', 'state-machine-log.json', 'validatierapport.json', 'manifest.json'],
+		];
+	}//end manifestOf()
+
+	/**
+	 * The packet's files, as JSON.
+	 *
+	 * @param array<string, mixed> $decision The beschikking.
+	 * @param array<string, array> $records The state machine logs (`logs`), the validation report
+	 *                                     (`validationReport`) and the manifest (`manifest`).
+	 *
+	 * @return array<string, string|false> The file contents by name.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function packetEntries(array $decision, array $records): array {
+		return [
+			'beschikking.json' => json_encode($this->maskDecision(decision: $decision), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+			'state-machine-log.json' => json_encode($records['logs'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+			'validatierapport.json' => json_encode($records['validationReport'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+			'manifest.json' => json_encode($records['manifest'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+		];
+	}//end packetEntries()
+
+	/**
 	 * Find all stateMachineLog records for a beschikking.
 	 *
 	 * @param string $decisionId The beschikking UUID.
@@ -149,36 +177,62 @@ class AuditPacketBuilder {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private function findStateMachineLogs(string $decisionId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$store = $this->logStore();
+		if ($store === null) {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'state_machine_log_schema');
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
+		[$objectService, $register, $schema] = $store;
 		try {
-			$logs = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['decisionId' => $decisionId]
-			);
+			$filters = ['decisionId' => $decisionId];
+			$logs = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		} catch (\Throwable $e) {
 			$this->logger->error('BeschikkingService: findStateMachineLogs failed', ['exception' => $e->getMessage()]);
 			return [];
 		}
 
+		return $this->logsAsArrays(logs: $logs);
+	}//end findStateMachineLogs()
+
+	/**
+	 * The object service, register and state machine log schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The log store, or null.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function logStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'state_machine_log_schema');
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end logStore()
+
+	/**
+	 * The found logs, each as an array.
+	 *
+	 * @param mixed $logs The found logs.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function logsAsArrays($logs): array {
 		$out = [];
 		foreach ((array)$logs as $log) {
 			$out[] = $this->toArray(value: $log);
 		}
 
 		return $out;
-	}//end findStateMachineLogs()
+	}//end logsAsArrays()
 
 	/**
 	 * Mask special-category identifiers (BSN) in an exported beschikking.
@@ -255,17 +309,6 @@ class AuditPacketBuilder {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $value) ?? []);
 	}//end toArray()
 }//end class

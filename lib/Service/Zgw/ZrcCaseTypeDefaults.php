@@ -72,6 +72,32 @@ class ZrcCaseTypeDefaults extends ZgwRulesBase {
 	 * @return mixed The default assignee, or null when there is none
 	 */
 	private function caseTypeDefaultAssignee(object $objectService, mixed $caseTypeUrl): mixed {
+		$lookup = $this->caseTypeLookup(caseTypeUrl: $caseTypeUrl);
+		if ($lookup === null) {
+			return null;
+		}
+
+		try {
+			$handler = $this->declaredHandler(objectService: $objectService, lookup: $lookup);
+			if ($handler !== '') {
+				return $handler;
+			}
+		} catch (\Throwable $e) {
+			// Zaaktype not found; skip auto-assignment.
+			return null;
+		}//end try
+
+		return null;
+	}//end zaaktypeDefaultAssignee()
+
+	/**
+	 * The zaaktype uuid with the register and schema it lives in, or null when any is missing.
+	 *
+	 * @param mixed $caseTypeUrl The `zaaktype` value from the request body
+	 *
+	 * @return array{0: string, 1: mixed, 2: string}|null The uuid, register and schema.
+	 */
+	private function caseTypeLookup(mixed $caseTypeUrl): ?array {
 		$extractedUuid = $this->extractUuid(url: $caseTypeUrl);
 		if ($extractedUuid === null) {
 			return null;
@@ -83,31 +109,36 @@ class ZrcCaseTypeDefaults extends ZgwRulesBase {
 			return null;
 		}
 
-		try {
-			$caseType = $objectService->find(
-				id: $extractedUuid,
-				register: $register,
-				schema: $schema
-			);
+		return [$extractedUuid, $register, $schema];
+	}//end caseTypeLookup()
 
-			$ztData = $caseType;
-			if (is_array($caseType) === false) {
-				$ztData = $caseType->jsonSerialize();
-			}
+	/**
+	 * The default handler the zaaktype declares, or ''.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array{0: string, 1: mixed, 2: string} $lookup The zaaktype uuid, register and schema.
+	 *
+	 * @return string The default handler, or ''.
+	 *
+	 * @throws \Throwable When the zaaktype cannot be read.
+	 */
+	private function declaredHandler(object $objectService, array $lookup): string {
+		[$extractedUuid, $register, $schema] = $lookup;
+		$caseType = $objectService->find(
+			id: $extractedUuid,
+			register: $register,
+			schema: $schema
+		);
 
-			// CaseTypeHandling is the one reader: the declared block first, the
-			// legacy `defaultAssignee` for a case type nobody has migrated.
-			$handler = (new CaseTypeHandling())->defaultHandler(caseType: (array)$ztData);
-			if ($handler !== '') {
-				return $handler;
-			}
-		} catch (\Throwable $e) {
-			// Zaaktype not found; skip auto-assignment.
-			return null;
-		}//end try
+		$ztData = $caseType;
+		if (is_array($caseType) === false) {
+			$ztData = $caseType->jsonSerialize();
+		}
 
-		return null;
-	}//end zaaktypeDefaultAssignee()
+		// CaseTypeHandling is the one reader: the declared block first, the
+		// legacy `defaultAssignee` for a case type nobody has migrated.
+		return (new CaseTypeHandling())->defaultHandler(caseType: (array)$ztData);
+	}//end declaredHandler()
 
 	/**
 	 * Derive vertrouwelijkheidaanduiding from zaaktype (zrc-009).

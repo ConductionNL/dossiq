@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Task\TaskAnswer;
 use RuntimeException;
 
 class InMemoryTaskEngine {
@@ -92,6 +93,9 @@ class InMemoryTaskEngine {
 	/**
 	 * One page of the inbox, as TaskInboxService::inbox() answers.
 	 *
+	 * A row is the task as `Task::jsonSerialize()` gives it, so the stored
+	 * `taskKey` comes back as `key`.
+	 *
 	 * @param object $criteria The criteria.
 	 * @param int    $limit    The page size.
 	 * @param int    $offset   The offset.
@@ -106,6 +110,14 @@ class InMemoryTaskEngine {
 					&& ($criteria->kind === null || $task['kind'] === $criteria->kind)
 			)
 		);
+		$rows = array_map(
+			static function (array $task): array {
+				$task['key'] = $task['taskKey'];
+				unset($task['taskKey']);
+				return $task;
+			},
+			$rows
+		);
 
 		return ['results' => array_slice($rows, $offset, $limit), 'total' => count($rows)];
 	}//end inbox()
@@ -113,16 +125,15 @@ class InMemoryTaskEngine {
 	/**
 	 * Complete a task, as TaskFormCompletion::complete() does.
 	 *
-	 * @param string               $uuid       The task.
-	 * @param string               $outcome    The outcome.
-	 * @param string|null          $resultText Unused.
-	 * @param string|null          $comment    Unused.
-	 * @param array<string, mixed> $data       Unused.
-	 * @param string|null          $actor      Who completes it.
+	 * @param string               $uuid   The task.
+	 * @param TaskAnswer           $answer The outcome.
+	 * @param array<string, mixed> $data   Unused.
+	 * @param string|null          $actor  Who completes it.
 	 *
 	 * @return array<string, mixed> The completed task.
 	 */
-	public function complete(string $uuid, string $outcome, ?string $resultText, ?string $comment, array $data, ?string $actor): array {
+	public function complete(string $uuid, TaskAnswer $answer, array $data, ?string $actor): array {
+		$outcome = $answer->outcome;
 		if (array_key_exists($uuid, $this->tasks) === false) {
 			throw new RuntimeException('no such task');
 		}

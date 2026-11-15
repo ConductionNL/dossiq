@@ -36,15 +36,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Support\CaseObjectReference;
-use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReferenceInterface;
+use OCA\Dossiq\Kernel\Contracts\GeneratedDocumentFilerInterface;
 use OCA\Filinq\Event\DocumentGeneratedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class DocumentGeneratedListener implements IEventListener {
 
@@ -71,13 +71,13 @@ class DocumentGeneratedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseObjectReference    $cases  Recognises a dossiq case.
-	 * @param GeneratedDocumentFiler $filer  Files the document on the case.
+	 * @param CaseObjectReferenceInterface    $cases  Recognises a dossiq case.
+	 * @param GeneratedDocumentFilerInterface $filer  Files the document on the case.
 	 * @param LoggerInterface        $logger Logger.
 	 */
 	public function __construct(
-		private readonly CaseObjectReference $cases,
-		private readonly GeneratedDocumentFiler $filer,
+		private readonly CaseObjectReferenceInterface $cases,
+		private readonly GeneratedDocumentFilerInterface $filer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -91,45 +91,101 @@ class DocumentGeneratedListener implements IEventListener {
 	 *
 	 * @throws RuntimeException When the document was meant for the case and could not be filed.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof DocumentGeneratedEvent) === false) {
 			return;
 		}
 
-		$object = $event->getObject();
-		$fileId = $event->getFileId();
-		$metadata = $event->getMetadata();
-		if ($object === null || $fileId === null
-			|| ($metadata[GeneratedDocumentFiler::FILED_BY_CALLER] ?? false) === true
-			|| $this->filer->wantsFiling(metadata: $metadata) === false
-			|| $this->cases->isCase(register: $object['register'], schema: $object['schema']) === false
-		) {
+		$object = $this->caseToFileOn(event: $event);
+		if ($object === null) {
 			return;
 		}
 
-		$document = $event->getDocument();
-		$title = trim((string)($event->getTemplate()['name'] ?? ''));
-		if ($title === '') {
-			$title = (string)($document['name'] ?? 'Document');
+		$this->fileOn(event: $event, object: $object);
+	}//end handle()
+
+	/**
+	 * The case the generated document is to be filed on, or null when it is not one this app files.
+	 *
+	 * Not when there is no object or file, when the caller filed it itself,
+	 * when the metadata asks for no filing, or when the object is no case.
+	 *
+	 * @param DocumentGeneratedEvent $event The generated document.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function caseToFileOn(DocumentGeneratedEvent $event): ?array {
+		$object = $event->getObject();
+		if ($object === null || $event->getFileId() === null) {
+			return null;
 		}
 
+		if ($this->filesHere(metadata: $event->getMetadata(), object: $object) === false) {
+			return null;
+		}
+
+		return $object;
+	}//end caseToFileOn()
+
+	/**
+	 * Whether this app files the document: the caller did not, the metadata asks for it, and the object is a case.
+	 *
+	 * @param array<string, mixed> $metadata The document's metadata.
+	 * @param array<string, mixed> $object   The object it was generated for.
+	 *
+	 * @return bool
+	 */
+	private function filesHere(array $metadata, array $object): bool {
+		return ($metadata[GeneratedDocumentFilerInterface::FILED_BY_CALLER] ?? false) !== true
+			&& $this->filer->wantsFiling(metadata: $metadata) === true
+			&& $this->cases->isCase(register: $object['register'], schema: $object['schema']) === true;
+	}//end filesHere()
+
+	/**
+	 * File the document in the case's dossier; a failed filing is logged and not swallowed.
+	 *
+	 * @param DocumentGeneratedEvent $event  The generated document.
+	 * @param array<string, mixed>   $object The case.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the document could not be filed.
+	 */
+	private function fileOn(DocumentGeneratedEvent $event, array $object): void {
+		$document = $event->getDocument();
 		try {
 			$this->filer->file(
 				caseId: $object['id'],
-				fileId: $fileId,
-				title: $title,
+				fileId: $event->getFileId(),
+				title: $this->titleOf(event: $event),
 				mime: (string)($document['mime'] ?? 'application/octet-stream'),
-				metadata: $metadata
+				metadata: $event->getMetadata()
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a document Filinq generated for a case could not be filed in its dossier',
-				['case' => $object['id'], 'file' => $fileId, 'requestingApp' => $event->getRequestingApp(), 'error' => $e->getMessage()]
+				['case' => $object['id'], 'file' => $event->getFileId(), 'requestingApp' => $event->getRequestingApp(), 'error' => $e->getMessage()]
 			);
 
 			throw new RuntimeException('The generated document could not be filed on the case: ' . $e->getMessage(), 0, $e);
 		}
-	}//end handle()
+	}//end fileOn()
+
+	/**
+	 * The template's name, else the document's name, else "Document".
+	 *
+	 * @param DocumentGeneratedEvent $event The generated document.
+	 *
+	 * @return string
+	 */
+	private function titleOf(DocumentGeneratedEvent $event): string {
+		$title = trim((string)($event->getTemplate()['name'] ?? ''));
+		if ($title === '') {
+			$title = (string)($event->getDocument()['name'] ?? 'Document');
+		}
+
+		return $title;
+	}//end titleOf()
 }//end class

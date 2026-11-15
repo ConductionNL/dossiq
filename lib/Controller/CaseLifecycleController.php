@@ -50,10 +50,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseLifecycleService;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseLifecycleServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTransitionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -85,6 +85,7 @@ class CaseLifecycleController extends Controller {
 		'not_suspended' => Http::STATUS_CONFLICT,
 		'case_not_closed' => Http::STATUS_CONFLICT,
 		'case_held' => Http::STATUS_CONFLICT,
+		'pause_reason_not_declared' => Http::STATUS_UNPROCESSABLE_ENTITY,
 		'openregister_unavailable' => Http::STATUS_SERVICE_UNAVAILABLE,
 	];
 
@@ -93,20 +94,20 @@ class CaseLifecycleController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param CaseLifecycleService $lifecycle The lifecycle gestures
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
-	 * @param StatusTransitionService $transitionEngine Consulted for the reopen authority
-	 * @param SettingsService $settingsService Bridge to OpenRegister, which owns the recycle state
+	 * @param CaseLifecycleServiceInterface $lifecycle The lifecycle gestures
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
+	 * @param StatusTransitionServiceInterface $transitionEngine Consulted for the reopen authority
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister, which owns the recycle state
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseLifecycleService $lifecycle,
-		private readonly CaseAccessGuard $caseAccessGuard,
-		private readonly StatusTransitionService $transitionEngine,
-		private readonly SettingsService $settingsService,
+		private readonly CaseLifecycleServiceInterface $lifecycle,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
+		private readonly StatusTransitionServiceInterface $transitionEngine,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -143,10 +144,16 @@ class CaseLifecycleController extends Controller {
 	public function suspend(string $caseId): JSONResponse {
 		$reason = (string)$this->request->getParam('reason', '');
 		$days = (int)$this->request->getParam('days', 0);
+		$pauseReason = (string)$this->request->getParam('pauseReason', '');
 
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->lifecycle->suspend(caseId: $caseId, reason: $reason, days: $days),
+			run: fn (): array => $this->lifecycle->suspend(
+				caseId: $caseId,
+				reason: $reason,
+				days: $days,
+				pauseReason: $pauseReason,
+			),
 		);
 	}//end suspend()
 
@@ -220,7 +227,7 @@ class CaseLifecycleController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function delete(string $caseId): JSONResponse {
@@ -244,7 +251,7 @@ class CaseLifecycleController extends Controller {
 	 *
 	 * @throws RuntimeException `case_held` when the guard refused.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function recycle(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -257,24 +264,35 @@ class CaseLifecycleController extends Controller {
 		try {
 			$objectService->deleteObject(uuid: $caseId, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
-			if (is_a($e, 'OCA\\OpenRegister\\Exception\\HookStoppedException') === true) {
-				$this->logger->info(
-					'CaseLifecycleController: the delete guard refused',
-					['caseId' => $caseId, 'errors' => $e->getErrors()]
-				);
-
-				throw new RuntimeException('case_held');
-			}
-
-			throw $e;
+			$this->rethrowDeleteFailure(e: $e, caseId: $caseId);
 		}
 
-		return [
-			'success' => true,
-			'caseId' => $caseId,
-			'state' => 'deleted',
-		];
+		return ['success' => true, 'caseId' => $caseId, 'state' => 'deleted'];
 	}//end recycle()
+
+	/**
+	 * Rethrow a failed delete: a refusal by the delete guard as `case_held`, anything else as it is.
+	 *
+	 * @param \Throwable $e      What the delete threw
+	 * @param string     $caseId The case UUID
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException `case_held` when the guard refused.
+	 * @throws \Throwable       Anything else the delete threw.
+	 */
+	private function rethrowDeleteFailure(\Throwable $e, string $caseId): void {
+		if (is_a($e, 'OCA\\OpenRegister\\Exception\\HookStoppedException') === true) {
+			$this->logger->info(
+				'CaseLifecycleController: the delete guard refused',
+				['caseId' => $caseId, 'errors' => $e->getErrors()]
+			);
+
+			throw new RuntimeException('case_held');
+		}
+
+		throw $e;
+	}//end rethrowDeleteFailure()
 
 	/**
 	 * Run one gesture behind the session and per-case guards.
@@ -291,6 +309,29 @@ class CaseLifecycleController extends Controller {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function guarded(string $caseId, callable $run, ?callable $gate = null): JSONResponse {
+		$refusal = $this->gestureRefusal(caseId: $caseId, gate: $gate);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		try {
+			return new JSONResponse($run());
+		} catch (RuntimeException $e) {
+			return $this->refusedGesture(e: $e, caseId: $caseId);
+		} catch (\Throwable $e) {
+			return $this->failedGesture(e: $e, caseId: $caseId);
+		}//end try
+	}//end guarded()
+
+	/**
+	 * Refuse a gesture to an anonymous caller, a user without mutation access, or one the gate turns away.
+	 *
+	 * @param string $caseId The case.
+	 * @param callable|null $gate An extra check on the user, or null.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the gesture may run.
+	 */
+	private function gestureRefusal(string $caseId, ?callable $gate): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -304,27 +345,45 @@ class CaseLifecycleController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized to reopen this case'], Http::STATUS_FORBIDDEN);
 		}
 
-		try {
-			return new JSONResponse($run());
-		} catch (RuntimeException $e) {
-			$code = $e->getMessage();
-			$status = (self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST);
-			$this->logger->info('CaseLifecycleController: gesture refused', ['code' => $code, 'caseId' => $caseId]);
+		return null;
+	}//end gestureRefusal()
 
-			return new JSONResponse(['error' => 'The case does not allow this', 'code' => $code], $status);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseLifecycleController: gesture failed',
-				['exception' => $e->getMessage(), 'caseId' => $caseId],
-			);
+	/**
+	 * Answer a gesture the case refused, with the status its refusal code maps to.
+	 *
+	 * @param RuntimeException $e The refusal.
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 */
+	private function refusedGesture(RuntimeException $e, string $caseId): JSONResponse {
+		$code = $e->getMessage();
+		$status = (self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST);
+		$this->logger->info('CaseLifecycleController: gesture refused', ['code' => $code, 'caseId' => $caseId]);
 
-			// `code` is what the page translates (`change_failed`); `error` is
-			// the English fallback, worded as the page's own msgid so a page
-			// that has no mapping for the code still shows a known sentence.
-			return new JSONResponse(
-				['error' => 'The case could not be changed.', 'code' => 'change_failed'],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end guarded()
+		return new JSONResponse(['error' => 'The case does not allow this', 'code' => $code], $status);
+	}//end refusedGesture()
+
+	/**
+	 * Answer a gesture that failed.
+	 *
+	 * @param \Throwable $e The failure.
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 */
+	private function failedGesture(\Throwable $e, string $caseId): JSONResponse {
+		$this->logger->error(
+			'CaseLifecycleController: gesture failed',
+			['exception' => $e->getMessage(), 'caseId' => $caseId],
+		);
+
+		// `code` is what the page translates (`change_failed`); `error` is
+		// the English fallback, worded as the page's own msgid so a page
+		// that has no mapping for the code still shows a known sentence.
+		return new JSONResponse(
+			['error' => 'The case could not be changed.', 'code' => 'change_failed'],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end failedGesture()
 }//end class

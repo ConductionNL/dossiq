@@ -4,13 +4,14 @@
 The contribution MUST declare a `propose-change` action on `case`, scoped by
 `portalSubject`, whose `proposable` list holds only `title` and
 `description`, and `mijnZaken` MUST name it in its row actions. The case page
-MUST place portaliq's proposal queue for the case.
+MUST place portaliq's proposal queue for the case in a Voorstellen tab with the
+count of open proposals, as board PtVoorstelBeoordelen draws it.
 
 #### Scenario: A resident proposes a better subject line
 - **GIVEN** a resident viewing their case "Lantaarnpaal kapot" in the portal
 - **WHEN** they propose the title "Lantaarnpaal kapot bij Dorpsstraat 4"
 - **THEN** a proposal MUST be queued for that case with the old and the new title
-- **AND** the handler MUST see it under "Voorgestelde wijzigingen" on the case page and accept it, after which the case carries the new title
+- **AND** the handler MUST see it on the case page's Voorstellen tab ("Voorstellen 1") and accept it, after which the case carries the new title
 
 #### Scenario: A status cannot be proposed
 - **GIVEN** the same resident
