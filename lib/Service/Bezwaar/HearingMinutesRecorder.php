@@ -76,19 +76,34 @@ class HearingMinutesRecorder {
 	 */
 	public function guardRecordingConsent(string $sessionId, array $payload, array $current, string $register, string $schema): void {
 		$session = ['id' => $sessionId, 'register' => $register, 'schema' => $schema];
-		$this->guardStoredDenial(minutes: ['payload' => $payload, 'current' => $current], session: $session);
+		$minutes = ['payload' => $payload, 'current' => $current];
+		$this->guardStoredDenial(minutes: $minutes, session: $session);
+		$this->guardAudioConsent(minutes: $minutes, session: $session);
+	}//end guardRecordingConsent()
 
-		if (self::hasAudio(payload: $payload) === false) {
+	/**
+	 * Refuse an audio recording the bezwaarmaker did not consent to.
+	 *
+	 * @param array{payload: array<string, mixed>, current: array<string, mixed>} $minutes The minutes payload and the
+	 *                                                                                    current hearingSession record.
+	 * @param array<string, string>                                                $session The session's `id`, `register` and `schema`.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the minutes carry audio without consent.
+	 */
+	private function guardAudioConsent(array $minutes, array $session): void {
+		if (self::hasAudio(payload: $minutes['payload']) === false) {
 			return;
 		}
 
-		$consent = self::consentOf(payload: $payload, current: $current);
+		$consent = self::consentOf(payload: $minutes['payload'], current: $minutes['current']);
 		if ($consent === 'granted') {
 			return;
 		}
 
 		$this->refuseAudioUpload(session: $session, consent: $consent);
-	}//end guardRecordingConsent()
+	}//end guardAudioConsent()
 
 	/**
 	 * Whether the minutes carry an audio recording.
