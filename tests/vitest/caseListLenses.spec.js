@@ -721,13 +721,14 @@ describe('bulk actions on the Cases index', () => {
 	 */
 	const actions = () => page('Cases').config.bulkActions
 
-	it('offers reassign plus the four lifecycle gestures', () => {
+	it('offers reassign, the four lifecycle gestures and the anonymised export', () => {
 		expect(actions().map((action) => action.id)).toEqual([
 			'reassign',
 			'transition',
 			'suspend',
 			'resume',
 			'extend-term',
+			'export-anonymised',
 		])
 	})
 

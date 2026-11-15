@@ -142,10 +142,21 @@
 					"plannedEndDate",
 					"assignee",
 					"confidentiality",
+					"gdprClassification",
 					"impact",
 					"urgency"
 				],
 				"fieldOverrides": {
+					"gdprClassification": {
+						"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+						"enumLabels": {
+							"health": "Health",
+							"ethnicity": "Racial or ethnic origin",
+							"religion": "Religion or belief",
+							"politicalOpinion": "Political opinions",
+							"criminal": "Criminal convictions and offences"
+						}
+					},
 					"description": {
 						"widget": "textarea"
 					},
@@ -7971,10 +7982,21 @@
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
+							"gdprClassification",
 							"impact",
 							"urgency"
 						],
 						"fieldOverrides": {
+							"gdprClassification": {
+								"_note": "social-domain-consent-and-safeguards 3.1: the special categories of personal data the case processes; see the Dashboard new-case form.",
+								"enumLabels": {
+									"health": "Health",
+									"ethnicity": "Racial or ethnic origin",
+									"religion": "Religion or belief",
+									"politicalOpinion": "Political opinions",
+									"criminal": "Criminal convictions and offences"
+								}
+							},
 							"description": {
 								"description": "",
 								"widget": "textarea",

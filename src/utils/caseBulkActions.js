@@ -225,3 +225,18 @@ export function resumeSelection({ selectedIds }) {
 export function extendTermSelection({ selectedIds }) {
 	openBulkDialog('extend', selectedIds)
 }
+
+/**
+ * Export the selected cases anonymised (social-domain-consent-and-safeguards 4.1).
+ *
+ * @param {object} args The bulk action arguments.
+ * @param {Array<string>} args.selectedIds The selected case ids.
+ * @return {Promise<boolean>} Whether a file was saved.
+ * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ */
+export async function exportAnonymisedSelection({ selectedIds } = {}) {
+	// Loaded on the click, so the dialogs and the CSV writer do not ride every
+	// import of the bulk actions.
+	const { exportCasesAnonymised } = await import('./anonymisedExport.js')
+	return exportCasesAnonymised(selectedIds)
+}
