@@ -75,16 +75,21 @@ class DossiqFlowNodeListenerTest extends TestCase {
      * registers is invisible to the flow editor and looks identical to one that
      * works.
      *
-     * @param string[] $failing Class names the container should refuse to build.
+     * @param string[] $failing  Class names the container should refuse to build.
+     * @param string[] $notNodes Class names the container answers with something that is no flow node.
      *
      * @return DossiqFlowNodeListener The listener under test.
      */
-    private function listener(array $failing=[]): DossiqFlowNodeListener {
+    private function listener(array $failing=[], array $notNodes=[]): DossiqFlowNodeListener {
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willReturnCallback(
-            function (string $class) use ($failing): IFlowNode {
+            function (string $class) use ($failing, $notNodes): object {
                 if (in_array($class, $failing, true) === true) {
                     throw new RuntimeException('cannot construct ' . $class);
+                }
+
+                if (in_array($class, $notNodes, true) === true) {
+                    return new \stdClass();
                 }
 
                 $node = $this->createMock(IFlowNode::class);
@@ -209,5 +214,23 @@ class DossiqFlowNodeListenerTest extends TestCase {
 
     }//end testOneUnbuildableNodeDoesNotCostTheRest()
 
+
+
+    /**
+     * Whatever the container answers that is not a flow node is not offered.
+     *
+     * @return void
+     */
+    public function testSomethingThatIsNotAFlowNodeIsNotRegistered(): void {
+        $registry = $this->registry();
+        $this->listener(notNodes: [DossiqTxSetStatusNode::class])->handle(new RegisterFlowNodesEvent($registry));
+
+        $ids = array_keys($registry->all());
+
+        $this->assertCount((count(self::EXPECTED_IDS) - 1), $ids);
+        $this->assertNotContains('dossiq.setStatus', $ids);
+        $this->assertContains('dossiq.createTask', $ids);
+
+    }//end testSomethingThatIsNotAFlowNodeIsNotRegistered()
 
 }//end class
