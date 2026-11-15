@@ -110,6 +110,18 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 			throw new RuntimeException(self::SET_NOT_WRITTEN, 0, $e);
 		}
 
+		return $this->sendOver(setId: $setId, send: $send);
+	}//end deliver()
+
+	/**
+	 * Send the delivery over the written set: freeze the set when it went, take it back out when it did not.
+	 *
+	 * @param string            $setId The pending set.
+	 * @param callable(): mixed $send  Sends the publication, answering its id.
+	 *
+	 * @return array{publicationId: string, setId: string} The publication and the set.
+	 */
+	private function sendOver(string $setId, callable $send): array {
 		try {
 			$publicationId = (string)$send();
 		} catch (Throwable $e) {
@@ -120,7 +132,7 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 		$this->quietly(what: 'freeze the delivered set; it stays pending', operation: fn () => $this->freeze(setId: $setId, publicationId: $publicationId));
 
 		return ['publicationId' => $publicationId, 'setId' => $setId];
-	}//end deliver()
+	}//end sendOver()
 
 	/**
 	 * Run a follow-up write whose failure is logged, never thrown.

@@ -76,14 +76,32 @@ class CatalogTransport {
 	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function deliver(string $caseId, string $decisionId, array $items, array $payload, array $disclosable, string $existingId): array {
+		return $this->deliverThroughLedger(
+			decision: ['caseId' => $caseId, 'decisionId' => $decisionId, 'items' => $items],
+			publication: ['payload' => $payload, 'disclosable' => $disclosable, 'existingId' => $existingId]
+		);
+	}//end deliver()
+
+	/**
+	 * Deliver the publication through the case's delivered-set ledger, and log it; a failure is answered, not thrown.
+	 *
+	 * @param array{caseId: string, decisionId: string, items: array<int, array<string, mixed>>} $decision    The case, the Woo
+	 *                                                                                                   decision and the
+	 *                                                                                                   manifest items.
+	 * @param array{payload: array<string, mixed>, disclosable: array<int, mixed>, existingId: string}  $publication What is sent
+	 *                                                                                                   to OpenCatalogi.
+	 *
+	 * @return array<string, mixed> The delivered publication, or the not-delivered answer.
+	 */
+	private function deliverThroughLedger(array $decision, array $publication): array {
+		$caseId = $decision['caseId'];
+		$decisionId = $decision['decisionId'];
 		try {
 			$delivered = $this->caseLedger->deliver(
 				caseId: $caseId,
 				decisionId: $decisionId,
-				items: $items,
-				send: fn (): string => $this->sendPublicationToOpenCatalogi(
-					publication: ['payload' => $payload, 'disclosable' => $disclosable, 'existingId' => $existingId]
-				),
+				items: $decision['items'],
+				send: fn (): string => $this->sendPublicationToOpenCatalogi(publication: $publication),
 			);
 		} catch (Throwable $e) {
 			return $this->notDelivered(
@@ -93,7 +111,7 @@ class CatalogTransport {
 		}
 
 		return $this->announced(delivered: $delivered, caseId: $caseId);
-	}//end deliver()
+	}//end deliverThroughLedger()
 
 	/**
 	 * Log a delivered publication, and answer it.

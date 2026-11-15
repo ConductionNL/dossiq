@@ -138,7 +138,7 @@ class OpenCatalogiApiClient {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function createPublication(string $register, string $schema, array $payload): array {
-		return $this->storeObject(target: new PublicationTarget(register: $register, schema: $schema), object: $payload, uuid: null);
+		return $this->storeObject(target: new PublicationTarget(register: $register, schema: $schema), write: ['object' => $payload, 'uuid' => null]);
 	}//end createPublication()
 
 	/**
@@ -171,11 +171,7 @@ class OpenCatalogiApiClient {
 		$target = new PublicationTarget(register: $register, schema: $schema);
 		$stored = $this->readObjectData(target: $target, id: $id);
 
-		return $this->storeObject(
-			target: $target,
-			object: array_merge($stored, $payload),
-			uuid: $id,
-		);
+		return $this->storeObject(target: $target, write: ['object' => array_merge($stored, $payload), 'uuid' => $id]);
 	}//end updatePublication()
 
 	/**
@@ -192,7 +188,7 @@ class OpenCatalogiApiClient {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function attachDocument(string $register, string $schema, array $payload): array {
-		return $this->storeObject(target: new PublicationTarget(register: $register, schema: $schema), object: $payload, uuid: null);
+		return $this->storeObject(target: new PublicationTarget(register: $register, schema: $schema), write: ['object' => $payload, 'uuid' => null]);
 	}//end attachDocument()
 
 	/**
@@ -455,9 +451,9 @@ class OpenCatalogiApiClient {
 	/**
 	 * Persist an object through the published contract and return it as an array.
 	 *
-	 * @param PublicationTarget    $target The register and schema slugs.
-	 * @param array<string, mixed> $object The object data to store.
-	 * @param string|null          $uuid   The uuid to update, or null to create.
+	 * @param PublicationTarget                                    $target The register and schema slugs.
+	 * @param array{object: array<string, mixed>, uuid: string|null} $write  The object data to store, and the uuid
+	 *                                                                      to update or null to create.
 	 *
 	 * @return array<string, mixed> The stored object, with its id.
 	 *
@@ -465,8 +461,8 @@ class OpenCatalogiApiClient {
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
-	private function storeObject(PublicationTarget $target, array $object, ?string $uuid): array {
-		$saved = $this->saveOrFail(target: $target, object: $object, uuid: $uuid);
+	private function storeObject(PublicationTarget $target, array $write): array {
+		$saved = $this->saveOrFail(target: $target, write: $write);
 
 		$data = $this->objectData(entity: $saved);
 		$identifier = $this->objectIdentifier(entity: $saved);
@@ -480,15 +476,16 @@ class OpenCatalogiApiClient {
 	/**
 	 * Save one object through OpenRegister, logging and wrapping any failure.
 	 *
-	 * @param PublicationTarget    $target The register and schema slugs.
-	 * @param array<string, mixed> $object The object data to store.
-	 * @param string|null          $uuid   The uuid to update, or null to create.
+	 * @param PublicationTarget                                    $target The register and schema slugs.
+	 * @param array{object: array<string, mixed>, uuid: string|null} $write  The object data to store, and the uuid
+	 *                                                                      to update or null to create.
 	 *
 	 * @return mixed The saved entity.
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
 	 */
-	private function saveOrFail(PublicationTarget $target, array $object, ?string $uuid): mixed {
+	private function saveOrFail(PublicationTarget $target, array $write): mixed {
+		[$object, $uuid] = [$write['object'], $write['uuid']];
 		$objectService = $this->requireObjectService();
 		$register = $target->register;
 		$schema = $target->schema;

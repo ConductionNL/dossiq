@@ -82,19 +82,31 @@ class CaseSplitPlan {
 	 */
 	public function forSelection(string $sourceId, string $newId, array $chosen): array {
 		$cases = new SplitCases(sourceId: $sourceId, newId: $newId);
-		[$moves, $references, $refused] = $this->partition(plans: $this->itemPlans(cases: $cases, chosen: $chosen));
+		return self::selectionPlan(parts: $this->partition(plans: $this->itemPlans(cases: $cases, chosen: $chosen)), cases: $cases);
+	}//end forSelection()
+
+	/**
+	 * The split plan: the moves, the references, the refusals and the relation to write.
+	 *
+	 * @param array{0: list<mixed>, 1: list<mixed>, 2: list<mixed>} $parts The moves, the references and the refusals.
+	 * @param SplitCases                                            $cases The case being split and the case being split off.
+	 *
+	 * @return array<string, mixed> The plan.
+	 */
+	private static function selectionPlan(array $parts, SplitCases $cases): array {
+		[$moves, $references, $refused] = $parts;
 
 		return [
 			'moves' => $moves,
 			'references' => $references,
 			'refused' => $refused,
 			'relation' => [
-				'from' => $sourceId,
-				'to' => $newId,
+				'from' => $cases->sourceId,
+				'to' => $cases->newId,
 				'nature' => self::RELATION,
 			],
 		];
-	}//end forSelection()
+	}//end selectionPlan()
 
 	/**
 	 * The plan of every chosen item, part by part.

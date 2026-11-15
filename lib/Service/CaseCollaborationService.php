@@ -105,17 +105,26 @@ class CaseCollaborationService implements CaseCollaborationServiceInterface {
 			return ['error' => 'Invalid, unauthorized or revoked federated share token'];
 		}
 
-		return $this->appendEntry(
-			federatedShareId: $federatedShareId,
-			entry: [
-				'actor' => $resolved['sharedWith'],
-				'actorType' => 'remote',
-				'cloudId' => $resolved['sharedWith'],
-				'message' => $message,
-				'createdAt' => (new DateTime())->format('c'),
-			],
-		);
+		return $this->appendEntry(federatedShareId: $federatedShareId, entry: $this->remoteEntry(resolved: $resolved, message: $message));
 	}//end postRemoteActivity()
+
+	/**
+	 * The activity entry a remote org posts, stamped now.
+	 *
+	 * @param array<string, mixed> $resolved The resolved share, with whom it is shared.
+	 * @param string               $message  The activity message.
+	 *
+	 * @return array<string, mixed> The entry.
+	 */
+	private function remoteEntry(array $resolved, string $message): array {
+		return [
+			'actor' => $resolved['sharedWith'],
+			'actorType' => 'remote',
+			'cloudId' => $resolved['sharedWith'],
+			'message' => $message,
+			'createdAt' => (new DateTime())->format('c'),
+		];
+	}//end remoteEntry()
 
 	/**
 	 * List the activity entries for a federated share (local, session
