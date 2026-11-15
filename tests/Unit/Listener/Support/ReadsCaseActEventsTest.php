@@ -88,7 +88,7 @@ class ReadsCaseActEventsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAddedNoteAnswersItsObject(): void {
-		$this->assertSame('case-1', $this->reader->noted($this->comment(kind: 'add', objectType: 'openregister')));
+		$this->assertSame(expected: 'case-1', actual: $this->reader->noted($this->comment(kind: 'add', objectType: 'openregister')));
 	}//end testAddedNoteAnswersItsObject()
 
 	/**
@@ -97,8 +97,8 @@ class ReadsCaseActEventsTest extends TestCase {
 	 * @return void
 	 */
 	public function testOtherNotesAnswerNothing(): void {
-		$this->assertSame('', $this->reader->noted($this->comment(kind: 'update', objectType: 'openregister')));
-		$this->assertSame('', $this->reader->noted($this->comment(kind: 'add', objectType: 'files')));
+		$this->assertSame(expected: '', actual: $this->reader->noted($this->comment(kind: 'update', objectType: 'openregister')));
+		$this->assertSame(expected: '', actual: $this->reader->noted($this->comment(kind: 'add', objectType: 'files')));
 	}//end testOtherNotesAnswerNothing()
 
 	/**
@@ -107,9 +107,9 @@ class ReadsCaseActEventsTest extends TestCase {
 	 * @return void
 	 */
 	public function testCompletedTaskAnswersItsCase(): void {
-		$this->assertSame('case-2', $this->reader->completed($this->task(state: 'completed', committed: true)));
-		$this->assertSame('', $this->reader->completed($this->task(state: 'terminated', committed: true)));
-		$this->assertSame('', $this->reader->completed($this->task(state: 'completed', committed: false)));
+		$this->assertSame(expected: 'case-2', actual: $this->reader->completed($this->task(state: 'completed', committed: true)));
+		$this->assertSame(expected: '', actual: $this->reader->completed($this->task(state: 'terminated', committed: true)));
+		$this->assertSame(expected: '', actual: $this->reader->completed($this->task(state: 'completed', committed: false)));
 	}//end testCompletedTaskAnswersItsCase()
 
 	/**

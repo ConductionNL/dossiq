@@ -44,6 +44,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Kernel\Contracts\OutcomeCascadeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -55,6 +56,9 @@ use RuntimeException;
 class OutcomeCascade implements OutcomeCascadeInterface {
 
 	use SearchesObjects;
+	use RequiresObjectService {
+		requireObjectService as private objectService;
+	}
 
 	/**
 	 * The app config key that holds the cascades.
@@ -434,22 +438,6 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 			changes: $changes
 		);
 	}//end write()
-
-	/**
-	 * The object service, or a refusal when OpenRegister is absent.
-	 *
-	 * @return object The object service.
-	 *
-	 * @throws RuntimeException When OpenRegister is not available.
-	 */
-	private function objectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end objectService()
 
 	/**
 	 * The schema behind a config key, or a refusal naming the key.

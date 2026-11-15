@@ -50,6 +50,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\AdmissibilityJudgementInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
+use OCA\Dossiq\Service\Lifecycle\LoadsCaseOrRefuses;
 use OCA\Dossiq\Service\Notification\ApplicantMessage;
 use OCA\Dossiq\Service\Support\StoredArray;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -63,6 +64,10 @@ use Throwable;
  * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
+
+	use LoadsCaseOrRefuses {
+		load as private caseOf;
+	}
 
 	/**
 	 * The case type property holding the declaration.
@@ -440,28 +445,6 @@ class AdmissibilityJudgement implements AdmissibilityJudgementInterface {
 
 		return $told;
 	}//end tellApplicant()
-
-	/**
-	 * The stored case, or a refusal when it cannot be read.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When the case cannot be found.
-	 */
-	private function caseOf(string $caseId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end caseOf()
 
 	/**
 	 * The effective case type of a case, or an empty array.

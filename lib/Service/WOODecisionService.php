@@ -33,6 +33,7 @@ use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
+use OCA\Dossiq\Service\Support\NamesTheSessionUser;
 use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
@@ -51,6 +52,9 @@ use RuntimeException;
 class WOODecisionService {
 
 	use RequiresObjectService;
+	use NamesTheSessionUser {
+		sessionActor as private resolveDecidedBy;
+	}
 
 	/**
 	 * The seeded WOO-besluit decision type (register.d/81-woo-verzoek.json),
@@ -414,18 +418,4 @@ class WOODecisionService {
 		);
 		return new RuntimeException('Decision service unavailable: ' . $exception->getMessage(), 0, $exception);
 	}//end notRaised()
-
-	/**
-	 * Resolve the user id credited with the besluit.
-	 *
-	 * @return string The current user id, or `system` when there is no session user
-	 */
-	private function resolveDecidedBy(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end resolveDecidedBy()
 }//end class
