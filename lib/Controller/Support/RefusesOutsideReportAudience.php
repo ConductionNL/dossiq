@@ -3,7 +3,9 @@
 /**
  * Dossiq RefusesOutsideReportAudience support trait.
  *
- * The 401 for a caller without a session, the 403 for one outside the reporting audience. The using class provides `$userSession` and `$audience` (ReportingAudienceInterface).
+ * The 401 for a caller without a session, the 403 for one outside the
+ * reporting audience. The using class provides `$userSession` and
+ * `$audience` (ReportingAudienceInterface).
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller\Support
