@@ -99,7 +99,7 @@ class PackageWriter {
 		} catch (\Throwable $e) {
 			// The component is all or nothing: what this run wrote for it goes
 			// back out, so a failed import leaves no half case type behind.
-			$this->rollBack(objectService: $target->objectService, register: $target->register, ids: $run['created']);
+			$this->rollBack(store: [$target->objectService, $target->register], ids: $run['created']);
 
 			return [
 				'status' => 'error',
@@ -294,7 +294,7 @@ class PackageWriter {
 
 		// A seed row may sit in another app's register; each row goes back out of its own.
 		foreach ($written as $row) {
-			$this->rollBack(objectService: $objectService, register: (string)($row['register'] ?? $register), ids: [(string)$row['id']]);
+			$this->rollBack(store: [$objectService, (string)($row['register'] ?? $register)], ids: [(string)$row['id']]);
 		}
 	}//end undo()
 

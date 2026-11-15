@@ -142,13 +142,13 @@ trait WritesPackageRows {
 	 * roll-back that itself fails must not turn one error into two, and the
 	 * response the administrator reads is already `error`.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param array<int, string> $ids The ids to remove.
+	 * @param array{0: object, 1: string} $store The OpenRegister object service and the register slug.
+	 * @param array<int, string>          $ids   The ids to remove.
 	 *
 	 * @return void
 	 */
-	private function rollBack(object $objectService, string $register, array $ids): void {
+	private function rollBack(array $store, array $ids): void {
+		[$objectService, $register] = $store;
 		foreach ($ids as $id) {
 			if ($id === '') {
 				continue;

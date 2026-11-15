@@ -153,7 +153,7 @@ class WorkflowDeployer {
 				// A workflow that cannot be read or written takes the whole
 				// deployment with it: half a set of templates is a case type
 				// whose process is missing steps nobody can see are missing.
-				$this->rollBack(objectService: $target->objectService, register: $target->register, ids: $ids['created']);
+				$this->rollBack(store: [$target->objectService, $target->register], ids: $ids['created']);
 
 				return ['status' => 'error', 'message' => $outcome['message']];
 			}
