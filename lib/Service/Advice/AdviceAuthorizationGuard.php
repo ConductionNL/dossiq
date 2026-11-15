@@ -92,14 +92,8 @@ class AdviceAuthorizationGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function assertTransitionAuthorized(array $advice, string $to): void {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new RuntimeException('Not authenticated');
-		}
-
-		$uid = $user->getUID();
-
-		if ($this->groupManager->isAdmin($uid) === true) {
+		$uid = $this->nonAdminCaller();
+		if ($uid === null) {
 			return;
 		}
 
@@ -133,14 +127,8 @@ class AdviceAuthorizationGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function assertReminderAuthorized(array $advice): void {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new RuntimeException('Not authenticated');
-		}
-
-		$uid = $user->getUID();
-
-		if ($this->groupManager->isAdmin($uid) === true) {
+		$uid = $this->nonAdminCaller();
+		if ($uid === null) {
 			return;
 		}
 
@@ -155,6 +143,28 @@ class AdviceAuthorizationGuard {
 
 		throw new RuntimeException('Advice request not accessible');
 	}//end assertReminderAuthorized()
+
+	/**
+	 * The caller's uid, or null for an administrator, who is always authorized.
+	 *
+	 * @return string|null The uid, null for an administrator.
+	 *
+	 * @throws RuntimeException When the caller is not authenticated.
+	 */
+	private function nonAdminCaller(): ?string {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new RuntimeException('Not authenticated');
+		}
+
+		$uid = $user->getUID();
+
+		if ($this->groupManager->isAdmin($uid) === true) {
+			return null;
+		}
+
+		return $uid;
+	}//end nonAdminCaller()
 
 	/**
 	 * Whether a non-admin caller may perform the given advice transition.

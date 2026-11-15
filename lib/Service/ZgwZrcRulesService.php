@@ -247,15 +247,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype — always override.
-		$caseTypeUrl = $body['caseType'] ?? '';
-		if (empty($caseTypeUrl) === false) {
-			$body = $this->typeDefaults->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
-		}
-
-		return $this->caseFields->validateCaseFields(
-			result: $this->isValid(body: $body),
-			existingObject: $existingObject
-		);
+		return $this->validatedWithCaseTypeDefaults(body: $body, existingObject: $existingObject);
 	}//end rulesZakenUpdate()
 
 	/**
@@ -286,6 +278,19 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Zrc-009: Always override from zaaktype to prevent template leakage.
+		return $this->validatedWithCaseTypeDefaults(body: $body, existingObject: $existingObject);
+	}//end rulesZakenPatch()
+
+	/**
+	 * Validate a zaak body after deriving its vertrouwelijkheidaanduiding from its zaaktype.
+	 *
+	 * @param array      $body           The ZGW request body, its zaaktype in `caseType`.
+	 * @param array|null $existingObject The existing zaak data.
+	 *
+	 * @return array The validation result
+	 */
+	private function validatedWithCaseTypeDefaults(array $body, ?array $existingObject): array {
+		$caseTypeUrl = $body['caseType'] ?? '';
 		if (empty($caseTypeUrl) === false) {
 			$body = $this->typeDefaults->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
 		}
@@ -294,7 +299,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			result: $this->isValid(body: $body),
 			existingObject: $existingObject
 		);
-	}//end rulesZakenPatch()
+	}//end validatedWithCaseTypeDefaults()
 	/**
 	 * Rules for creating a status (POST /zaken/v1/statussen): zrc-016, answered by the sub-resource rules.
 	 *
