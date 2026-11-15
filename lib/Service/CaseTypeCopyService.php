@@ -454,7 +454,7 @@ class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 			try {
 				$created = $this->saveChild(copy: $copy, child: $child);
 			} catch (\Throwable $e) {
-				$this->childNotCopied(copy: $copy, child: $child, error: $e);
+				$this->childNotCopied(copy: $copy, failure: ['child' => $child, 'error' => $e]);
 				continue;
 			}
 
@@ -486,13 +486,14 @@ class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 	/**
 	 * Log a child that could not be copied and record it as not carried.
 	 *
-	 * @param CaseTypeChildCopy    $copy  Where the child went.
-	 * @param array<string, mixed> $child The child row.
-	 * @param \Throwable           $error Why the save failed.
+	 * @param CaseTypeChildCopy                                       $copy    Where the child went.
+	 * @param array{child: array<string, mixed>, error: \Throwable} $failure The child row and why the save failed.
 	 *
 	 * @return void
 	 */
-	private function childNotCopied(CaseTypeChildCopy $copy, array $child, \Throwable $error): void {
+	private function childNotCopied(CaseTypeChildCopy $copy, array $failure): void {
+		$child = $failure['child'];
+		$error = $failure['error'];
 		$this->logger->warning(
 			'CaseTypeCopyService: failed to copy child object',
 			['schema' => $copy->target->schema, 'exception' => $error->getMessage()]
