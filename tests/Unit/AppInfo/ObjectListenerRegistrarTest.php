@@ -30,6 +30,7 @@ use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
 use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
+use OCA\Dossiq\Listener\SubmissionClosingDateGuard;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -50,6 +51,28 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Listener\Registrar\ForfeitInvoiceListenerRegistrar
  */
 class ObjectListenerRegistrarTest extends TestCase {
+
+	/**
+	 * The closing date guard runs before a submission is created, and not on its later updates.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenders-run-on-the-tender-case-type
+	 */
+	public function testTheSubmissionClosingDateGuardIsOnTheCreateOnly(): void {
+		$registered = $this->registrations();
+
+		$this->assertContains(
+			needle: SubmissionClosingDateGuard::class,
+			haystack: ($registered['OCA\OpenRegister\Event\ObjectCreatingEvent'] ?? []),
+			message: 'a late submission must be refused before it is written',
+		);
+		$this->assertNotContains(
+			needle: SubmissionClosingDateGuard::class,
+			haystack: ($registered['OCA\OpenRegister\Event\ObjectUpdatingEvent'] ?? []),
+			message: 'a submission that came in on time keeps moving through its lifecycle after the closing date',
+		);
+	}//end testTheSubmissionClosingDateGuardIsOnTheCreateOnly()
 
 	/**
 	 * The delete guard is registered on OpenRegister's pre-persist delete event.
