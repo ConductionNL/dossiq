@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\CaseCaller;
+use OCA\Dossiq\Controller\Support\FindsCaseWriter;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
@@ -59,6 +59,7 @@ use Throwable;
  * @spec openspec/specs/case-management/spec.md
  */
 class CaseHandoverController extends Controller {
+	use FindsCaseWriter;
 
 	use TranslatesRefusals;
 
@@ -253,17 +254,6 @@ class CaseHandoverController extends Controller {
 
 		return new JSONResponse(['results' => $this->transfers->outstandingHandovers(team: $team)]);
 	}//end outstanding()
-
-	/**
-	 * The caller, when they may write this case.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null when they may not.
-	 */
-	private function writerOf(string $caseId): ?IUser {
-		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
-	}//end writerOf()
 
 	/**
 	 * The teams a caller belongs to.
