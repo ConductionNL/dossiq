@@ -428,7 +428,8 @@
               "organisation",
               "service",
               "priority",
-              "caseType"
+              "caseType",
+              "caseTypePick"
             ],
             "title": "Resolved from",
             "description": "Which declaration produced this term. A term somebody disputes has to be explainable a year later, and the configuration will have changed by then, so the resolution is recorded rather than re-derived.",

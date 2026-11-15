@@ -259,6 +259,51 @@ class TermResolutionTest extends TestCase {
 	}//end testACaseTypePicksItsSecondStatutoryTerm()
 
 	/**
+	 * Every source a resolution can answer is one the term instance schema
+	 * accepts in `resolvedFrom`, so a resolved term can be saved.
+	 *
+	 * @return void
+	 */
+	public function testEveryResolutionSourceIsInTheInstanceSchemaEnum(): void {
+		$fragment = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../../lib/Settings/register.d/60-termijnbewaking.json'),
+			true,
+			flags: JSON_THROW_ON_ERROR
+		);
+		$enums = [];
+		$this->collectResolvedFromEnums(node: $fragment, enums: $enums);
+		$this->assertNotSame(expected: [], actual: $enums, message: 'no resolvedFrom enum found in the term schemas');
+
+		foreach ($enums as $enum) {
+			foreach (['organisation', 'service', 'priority', TermResolution::FALLBACK, TermResolution::PICKED] as $source) {
+				$this->assertContains(needle: $source, haystack: $enum);
+			}
+		}
+	}//end testEveryResolutionSourceIsInTheInstanceSchemaEnum()
+
+	/**
+	 * Collect every `resolvedFrom.enum` in a decoded register fragment.
+	 *
+	 * @param mixed                   $node  The node to walk.
+	 * @param array<int, array<mixed>> $enums The enums found so far.
+	 *
+	 * @return void
+	 */
+	private function collectResolvedFromEnums(mixed $node, array &$enums): void {
+		if (is_array($node) === false) {
+			return;
+		}
+
+		if (isset($node['resolvedFrom']['enum']) === true && is_array($node['resolvedFrom']['enum']) === true) {
+			$enums[] = $node['resolvedFrom']['enum'];
+		}
+
+		foreach ($node as $child) {
+			$this->collectResolvedFromEnums(node: $child, enums: $enums);
+		}
+	}//end collectResolvedFromEnums()
+
+	/**
 	 * An organisation's own norm still wins over the case type's pick, and a
 	 * pick naming nothing known falls back to the default.
 	 *
