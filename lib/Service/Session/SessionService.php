@@ -163,26 +163,57 @@ class SessionService {
 		string $reason,
 		array $payload = [],
 	): array {
-		$reason = trim($reason);
-		if ($reason === '') {
-			throw new InvalidArgumentException('Say why the session is waived.');
-		}
-
-		if (trim($caseId) === '' || trim($chairpersonId) === '') {
-			throw new InvalidArgumentException('Name the case and who records the waiver.');
-		}
-
-		$write = $this->sessionWrite(caseId: $caseId, sessionKey: $sessionKey);
-		if ($write->definition->waivable === false) {
-			throw new InvalidArgumentException("{$write->definition->label} cannot be waived.");
-		}
-
+		$reason = $this->waiverReason(reason: $reason, named: [$caseId, $chairpersonId]);
+		$write  = $this->waivableWrite(caseId: $caseId, sessionKey: $sessionKey);
 		$write->chairpersonId = $chairpersonId;
 		$write->payload = $payload;
 		$write->now = $this->timeFactory->now();
 
 		return $this->save(write: $write, record: $this->waivedRecord(write: $write, reason: $reason));
 	}//end waive()
+
+	/**
+	 * The trimmed reason of a waiver, refused when it is empty or the case or its recorder is not named.
+	 *
+	 * @param string                $reason Why it was waived.
+	 * @param array{string, string} $named  The case and who records the waiver.
+	 *
+	 * @return string The trimmed reason.
+	 *
+	 * @throws InvalidArgumentException When the reason, the case or the recorder is empty.
+	 */
+	private function waiverReason(string $reason, array $named): string {
+		$reason = trim($reason);
+		if ($reason === '') {
+			throw new InvalidArgumentException('Say why the session is waived.');
+		}
+
+		if (trim($named[0]) === '' || trim($named[1]) === '') {
+			throw new InvalidArgumentException('Name the case and who records the waiver.');
+		}
+
+		return $reason;
+	}//end waiverReason()
+
+	/**
+	 * Where a waivable session of the case is stored, and which declared session it is.
+	 *
+	 * @param string $caseId     The case uuid.
+	 * @param string $sessionKey The declared session's key, or '' for the only one.
+	 *
+	 * @return SessionWrite
+	 *
+	 * @throws InvalidArgumentException When the declared session cannot be waived.
+	 * @throws RuntimeException When the case or its case type cannot be read.
+	 */
+	private function waivableWrite(string $caseId, string $sessionKey): SessionWrite {
+		$write = $this->sessionWrite(caseId: $caseId, sessionKey: $sessionKey);
+		if ($write->definition->waivable === false) {
+			throw new InvalidArgumentException("{$write->definition->label} cannot be waived.");
+		}
+
+		return $write;
+	}//end waivableWrite()
 
 	/**
 	 * Where a session of the case is stored, and which declared session it is.
@@ -300,23 +331,20 @@ class SessionService {
 			throw new InvalidArgumentException('Give at least one attendance entry.');
 		}
 
-		[$objectService, $register, $current, $definition] = $this->loadSession(sessionId: $sessionId);
+		$session = $this->loadSession(sessionId: $sessionId);
 
 		$scheduled = $this->timeFactory->now();
-		$stored    = ($current['scheduledDate'] ?? '');
+		$stored    = ($session->current['scheduledDate'] ?? '');
 		if (is_string($stored) === true && $stored !== '') {
 			$scheduled = $this->caseDates->parse(value: $stored, field: 'scheduledDate');
 		}
 
-		$freezeAt = $definition->rules()->attendanceFreezesAt(scheduled: $scheduled);
-		$definition->rules()->assertAttendance(entries: $entries, closed: $this->timeFactory->now() > $freezeAt);
-		$merged = array_merge((array) ($current['attendance'] ?? []), $entries);
+		$freezeAt = $session->definition->rules()->attendanceFreezesAt(scheduled: $scheduled);
+		$session->definition->rules()->assertAttendance(entries: $entries, closed: $this->timeFactory->now() > $freezeAt);
+		$merged = array_merge((array) ($session->current['attendance'] ?? []), $entries);
 
 		return $this->patch(
-			objectService: $objectService,
-			register: $register,
-			sessionId: $sessionId,
-			current: $current,
+			session: $session,
 			changes: [
 				'attendance'         => $merged,
 				'attendanceFrozenAt' => $freezeAt->format(DateTimeInterface::ATOM),
@@ -342,29 +370,32 @@ class SessionService {
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-attendance-and-minutes-follow-the-session-definition-req-css-3
 	 */
 	public function addMinutes(string $sessionId, array $payload): array {
-		[$objectService, $register, $current, $definition] = $this->loadSession(sessionId: $sessionId);
-		$this->assertDenialKept(definition: $definition, current: $current, payload: $payload);
+		$session = $this->loadSession(sessionId: $sessionId);
+		$this->assertDenialKept(session: $session, payload: $payload);
 
-		$summary  = $this->field(primary: $payload, fallback: $current, key: 'minutesSummary');
-		$document = $this->field(primary: $payload, fallback: $current, key: 'minutesDocument');
-		$definition->rules()->assertMinutes(
+		$summary  = $this->field(primary: $payload, fallback: $session->current, key: 'minutesSummary');
+		$document = $this->field(primary: $payload, fallback: $session->current, key: 'minutesDocument');
+		$session->definition->rules()->assertMinutes(
 			summary: $summary,
 			document: $document,
 			audio: $this->field(primary: $payload, fallback: [], key: 'audioRecording'),
-			consent: $this->field(primary: $payload, fallback: $current, key: 'recordingConsent')
+			consent: $this->field(primary: $payload, fallback: $session->current, key: 'recordingConsent')
 		);
 
-		$changes = $this->minutesChanges(definition: $definition, payload: $payload, summary: $summary, document: $document);
+		$changes = [
+			'minutesSummary'  => $this->nullIfEmpty(value: $summary),
+			'minutesDocument' => $this->nullIfEmpty(value: $document),
+			'status'          => $session->definition->status(step: 'executed'),
+		];
 
-		return $this->patch(objectService: $objectService, register: $register, sessionId: $sessionId, current: $current, changes: $changes);
+		return $this->patch(session: $session, changes: $this->withRecordingFields(changes: $changes, payload: $payload));
 	}//end addMinutes()
 
 	/**
 	 * Refuse a payload that changes a stored recording-consent denial.
 	 *
-	 * @param SessionDefinition    $definition The session's definition.
-	 * @param array<string, mixed> $current    The stored session.
-	 * @param array<string, mixed> $payload    The minutes payload.
+	 * @param StoredSession        $session The stored session and its definition.
+	 * @param array<string, mixed> $payload The minutes payload.
 	 *
 	 * @return void
 	 *
@@ -372,31 +403,24 @@ class SessionService {
 	 *
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-attendance-and-minutes-follow-the-session-definition-req-css-3
 	 */
-	private function assertDenialKept(SessionDefinition $definition, array $current, array $payload): void {
-		$definition->rules()->assertDenialKept(
-			stored: (string)($current['recordingConsent'] ?? ''),
+	private function assertDenialKept(StoredSession $session, array $payload): void {
+		$session->definition->rules()->assertDenialKept(
+			stored: (string)($session->current['recordingConsent'] ?? ''),
 			asked: (string)($payload['recordingConsent'] ?? 'denied')
 		);
 	}//end assertDenialKept()
 
 	/**
-	 * The changes that close the session with its minutes.
+	 * The changes that close the session with its minutes, with the recording fields the payload names.
 	 *
-	 * @param SessionDefinition    $definition The session's definition.
-	 * @param array<string, mixed> $payload    The minutes payload.
-	 * @param string               $summary    The minutes summary.
-	 * @param string               $document   The minutes document.
+	 * @param array<string, mixed> $changes The minutes and the executed status.
+	 * @param array<string, mixed> $payload The minutes payload.
 	 *
 	 * @return array<string, mixed> The changes.
 	 *
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-attendance-and-minutes-follow-the-session-definition-req-css-3
 	 */
-	private function minutesChanges(SessionDefinition $definition, array $payload, string $summary, string $document): array {
-		$changes = [
-			'minutesSummary'  => $this->nullIfEmpty(value: $summary),
-			'minutesDocument' => $this->nullIfEmpty(value: $document),
-			'status'          => $definition->status(step: 'executed'),
-		];
+	private function withRecordingFields(array $changes, array $payload): array {
 		foreach (['audioRecording', 'recordingConsent'] as $key) {
 			if (array_key_exists($key, $payload) === true) {
 				$changes[$key] = $payload[$key];
@@ -404,7 +428,7 @@ class SessionService {
 		}
 
 		return $changes;
-	}//end minutesChanges()
+	}//end withRecordingFields()
 
 	/**
 	 * The session, its register context and its definition.
@@ -415,17 +439,19 @@ class SessionService {
 	 *
 	 * @param string $sessionId The session.
 	 *
-	 * @return array{0: object, 1: string, 2: array<string, mixed>, 3: SessionDefinition} The context.
+	 * @return StoredSession The session, where it is stored and its definition.
 	 *
 	 * @throws InvalidArgumentException When the session's definition cannot be told.
 	 * @throws RuntimeException When the session or its case cannot be read.
 	 */
-	private function loadSession(string $sessionId): array {
-		$objectService = $this->reads()->objectService();
-		$register      = $this->settingsService->getConfigValue(key: 'register');
-		$current       = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
+	private function loadSession(string $sessionId): StoredSession {
+		$session = new StoredSession();
+		$session->objectService = $this->reads()->objectService();
+		$session->register      = $this->settingsService->getConfigValue(key: 'register');
+		$session->id            = $sessionId;
+		$current = $this->findObjectAsArray(
+			objectService: $session->objectService,
+			register: $session->register,
 			schema: $this->reads()->schemaKey(key: 'hearing_session_schema'),
 			id: $sessionId
 		);
@@ -433,21 +459,24 @@ class SessionService {
 			throw new RuntimeException('Session not found');
 		}
 
+		$session->current = $current;
 		$definitions = $this->definitionsFor(
-			location: [$objectService, $register],
+			location: [$session->objectService, $session->register],
 			caseId: CaseRegisterReads::uuidOf(value: ($current['case'] ?? ''))
 		);
 
 		$key = ($current['sessionKey'] ?? '');
 		if (is_string($key) === true && $key !== '') {
-			return [$objectService, $register, $current, $this->declared(definitions: $definitions, sessionKey: $key)];
+			$session->definition = $this->declared(definitions: $definitions, sessionKey: $key);
+			return $session;
 		}
 
 		if (count($definitions) !== 1) {
 			throw new InvalidArgumentException('This session names no session of its case type, and the case type does not declare exactly one.');
 		}
 
-		return [$objectService, $register, $current, reset($definitions)];
+		$session->definition = reset($definitions);
+		return $session;
 	}//end loadSession()
 
 	/**
@@ -532,31 +561,22 @@ class SessionService {
 	/**
 	 * Change fields of a stored session.
 	 *
-	 * @param object               $objectService The object service.
-	 * @param string               $register      The register.
-	 * @param string               $sessionId     The session.
-	 * @param array<string, mixed> $current       The stored session.
-	 * @param array<string, mixed> $changes       The fields to change.
+	 * @param StoredSession        $session The stored session and where it is stored.
+	 * @param array<string, mixed> $changes The fields to change.
 	 *
 	 * @return array<string, mixed> The updated session.
 	 *
 	 * @throws RuntimeException When the register refuses the write.
 	 */
-	private function patch(
-		object $objectService,
-		string $register,
-		string $sessionId,
-		array $current,
-		array $changes,
-	): array {
+	private function patch(StoredSession $session, array $changes): array {
 		try {
 			return ($this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
+				objectService: $session->objectService,
+				register: $session->register,
 				schema: $this->reads()->schemaKey(key: 'hearing_session_schema'),
-				id: $sessionId,
+				id: $session->id,
 				changes: $changes
-			) ?? array_merge($current, $changes));
+			) ?? array_merge($session->current, $changes));
 		} catch (Throwable $e) {
 			throw new RuntimeException('The session could not be updated: ' . $e->getMessage(), 0, $e);
 		}
