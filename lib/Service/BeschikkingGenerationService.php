@@ -110,11 +110,25 @@ class BeschikkingGenerationService implements BeschikkingGenerationServiceInterf
 			);
 		}
 
+		return $this->generatedAnswer(documentService: $documentService, run: ['ask' => $ask, 'templateId' => $templateId, 'userId' => $userId]);
+	}//end generateBeschikking()
+
+	/**
+	 * Generate the beschikking, attach it to the zaak and answer with it; a failed generation answers with a stub.
+	 *
+	 * @param object               $documentService Filinq's document service.
+	 * @param array<string, mixed> $run             The case, outcome and motivation (`ask`), the template (`templateId`)
+	 *                                              and the user the generation runs for (`userId`).
+	 *
+	 * @return array<string,mixed> Result with keys: success, bijlageId, message.
+	 */
+	private function generatedAnswer(object $documentService, array $run): array {
+		$ask = $run['ask'];
 		try {
 			$generated = $documentService->generateDocument(
-				$templateId,
+				$run['templateId'],
 				[],
-				$this->generationOptions(ask: $ask, userId: $userId)
+				$this->generationOptions(ask: $ask, userId: $run['userId'])
 			);
 
 			return $this->savedAnswer(
@@ -124,7 +138,7 @@ class BeschikkingGenerationService implements BeschikkingGenerationServiceInterf
 		} catch (\Throwable $e) {
 			return $this->failedAnswer(ask: $ask, error: $e);
 		}//end try
-	}//end generateBeschikking()
+	}//end generatedAnswer()
 
 	/**
 	 * The configured template for an outcome: the refusal template for `refused`, the grant template otherwise.
