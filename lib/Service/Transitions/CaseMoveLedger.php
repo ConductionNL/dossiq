@@ -179,6 +179,20 @@ class CaseMoveLedger {
 	 */
 	public function save(array $case, string $toStatus, ?int $readVersion = null): array {
 		$case['status'] = $toStatus;
+		$saved = $this->store->saveCase(case: self::withReadVersion(case: $case, readVersion: $readVersion));
+
+		return [$saved, (int)(($saved['@self']['version'] ?? ($saved['version'] ?? 0)))];
+	}//end save()
+
+	/**
+	 * The case payload carrying the version it was read at, so the save is refused when the case moved meanwhile.
+	 *
+	 * @param array<string, mixed> $case        The case payload.
+	 * @param int|null             $readVersion The version it was read at, or null to save without one.
+	 *
+	 * @return array<string, mixed> The payload.
+	 */
+	private static function withReadVersion(array $case, ?int $readVersion): array {
 		if ($readVersion !== null) {
 			$self = ($case['@self'] ?? null);
 			if (is_array($self) === false) {
@@ -189,10 +203,8 @@ class CaseMoveLedger {
 			$case['@self'] = $self;
 		}
 
-		$saved = $this->store->saveCase(case: $case);
-
-		return [$saved, (int)(($saved['@self']['version'] ?? ($saved['version'] ?? 0)))];
-	}//end save()
+		return $case;
+	}//end withReadVersion()
 
 	/**
 	 * Refuse a status that is not one of the case type's.
