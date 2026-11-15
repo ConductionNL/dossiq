@@ -134,9 +134,9 @@ class ObjectReadGrants {
 		}
 
 		try {
-			$this->ownGroup(schema: $schema, object: $object, group: $group);
+			$this->ownGroup(object: $object, owner: ['schema' => $schema, 'group' => $group]);
 			$wanted = $this->wanted(readers: $readers, owner: (string)$object->getOwner());
-			$held = $this->revokeOthers(sharing: $sharing, object: $object, wanted: $wanted);
+			$held = $this->revokeOthers(record: ['sharing' => $sharing, 'object' => $object], wanted: $wanted);
 			$answer['revoked'] = $held['revoked'];
 			foreach ($this->missing(wanted: $wanted, kept: $held['kept']) as $user => $permissions) {
 				$sharing->grant($object, 'user', (string)$user, $permissions);
@@ -199,13 +199,14 @@ class ObjectReadGrants {
 	/**
 	 * Revoke every own user grant that is not wanted as it stands; keep one per wanted user.
 	 *
-	 * @param object             $sharing The sharing service.
-	 * @param object             $object  The record entity.
-	 * @param array<string, int> $wanted  The permission bits each reader is due.
+	 * @param array{sharing: object, object: object} $record The sharing service and the record entity.
+	 * @param array<string, int>                     $wanted The permission bits each reader is due.
 	 *
 	 * @return array{kept: list<string>, revoked: int}
 	 */
-	private function revokeOthers(object $sharing, object $object, array $wanted): array {
+	private function revokeOthers(array $record, array $wanted): array {
+		$sharing = $record['sharing'];
+		$object = $record['object'];
 		$kept = [];
 		$revoked = 0;
 		foreach ($sharing->listGrants($object) as $grant) {
@@ -230,13 +231,14 @@ class ObjectReadGrants {
 	/**
 	 * Set the owning group when the record does not already name it.
 	 *
-	 * @param string $schema The schema slug.
-	 * @param object $object The record entity.
-	 * @param string $group  The owning group; '' leaves it alone.
+	 * @param object                               $object The record entity.
+	 * @param array{schema: string, group: string} $owner  The schema slug, and the owning group ('' leaves it alone).
 	 *
 	 * @return void
 	 */
-	private function ownGroup(string $schema, object $object, string $group): void {
+	private function ownGroup(object $object, array $owner): void {
+		$schema = $owner['schema'];
+		$group = $owner['group'];
 		$block = (array)($object->getAuthorization() ?? []);
 		if ($group === '' || (string)($block['ownerGroup'] ?? '') === $group) {
 			return;
