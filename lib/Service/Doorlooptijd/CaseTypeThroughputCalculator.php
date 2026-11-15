@@ -70,7 +70,7 @@ class CaseTypeThroughputCalculator {
 	 *
 	 * @return string One of {@see WorkingClock}'s CLOCK_* constants.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function clock(): string {
 		if ($this->clock === null) {
@@ -93,34 +93,11 @@ class CaseTypeThroughputCalculator {
 	public function computeCaseTypeBreakdown(array $cases, array $caseTypes): array {
 		$accum = $this->accumulateThroughputByCaseType(cases: $cases);
 
-		$caseTypeIndex = [];
-		foreach ($caseTypes as $caseType) {
-			$id = (string)($caseType['id'] ?? '');
-			if ($id !== '') {
-				$caseTypeIndex[$id] = $caseType;
-			}
-		}
+		$caseTypeIndex = $this->caseTypeIndex(caseTypes: $caseTypes);
 
 		$out = [];
 		foreach ($accum as $caseTypeId => $stats) {
-			$title = $caseTypeId;
-			if (isset($caseTypeIndex[$caseTypeId]['title']) === true) {
-				$title = $this->text->textOf(value: $caseTypeIndex[$caseTypeId]['title']);
-			}
-
-			$out[] = [
-				'id' => $caseTypeId,
-				'title' => $title,
-				// The calendar days a case took, which is what the applicant
-				// waited. Kept under its old name so every chart already
-				// drawn from it keeps meaning what it meant.
-				'avgDays' => (int)round($stats['sum'] / $stats['count']),
-				// The working hours the organisation spent on the same cases.
-				// The two are reported side by side because they answer
-				// different questions and neither replaces the other.
-				'avgWorkingHours' => round(($stats['workingHours'] / $stats['count']), 1),
-				'count' => $stats['count'],
-			];
+			$out[] = $this->breakdownRow(caseTypeId: $caseTypeId, stats: $stats, caseTypeIndex: $caseTypeIndex);
 		}
 
 		usort(
@@ -130,6 +107,244 @@ class CaseTypeThroughputCalculator {
 
 		return $out;
 	}//end computeCaseTypeBreakdown()
+
+	/**
+	 * The case types keyed by id; a case type without an id is left out.
+	 *
+	 * @param array<int, array<string, mixed>> $caseTypes Indexed case-type metadata.
+	 *
+	 * @return array<string, array<string, mixed>> The case types by id.
+	 */
+	private function caseTypeIndex(array $caseTypes): array {
+		$caseTypeIndex = [];
+		foreach ($caseTypes as $caseType) {
+			$id = (string)($caseType['id'] ?? '');
+			if ($id !== '') {
+				$caseTypeIndex[$id] = $caseType;
+			}
+		}
+
+		return $caseTypeIndex;
+	}//end caseTypeIndex()
+
+	/**
+	 * One case type's average throughput, under its title.
+	 *
+	 * @param string $caseTypeId The case type id.
+	 * @param array<string, mixed> $stats The accumulated sum, working hours and count.
+	 * @param array<string, array<string, mixed>> $caseTypeIndex The case types by id.
+	 *
+	 * @return array{id: string, title: string, avgDays: int, avgWorkingHours: float, count: int}
+	 */
+	private function breakdownRow(string $caseTypeId, array $stats, array $caseTypeIndex): array {
+		$title = $caseTypeId;
+		if (isset($caseTypeIndex[$caseTypeId]['title']) === true) {
+			$title = $this->text->textOf(value: $caseTypeIndex[$caseTypeId]['title']);
+		}
+
+		return [
+			'id' => $caseTypeId,
+			'title' => $title,
+			// The calendar days a case took, which is what the applicant
+			// waited. Kept under its old name so every chart already
+			// drawn from it keeps meaning what it meant.
+			'avgDays' => (int)round($stats['sum'] / $stats['count']),
+			// The working hours the organisation spent on the same cases.
+			// The two are reported side by side because they answer
+			// different questions and neither replaces the other.
+			'avgWorkingHours' => round(($stats['workingHours'] / $stats['count']), 1),
+			'count' => $stats['count'],
+		];
+	}//end breakdownRow()
+
+	/**
+	 * The share of closed cases per case type that ended on or before their
+	 * deadline, as parallel arrays a chart reads directly, for the case types
+	 * that closed the most cases. A case without a deadline has no norm to
+	 * meet and is left out.
+	 *
+	 * @param array<int, array<string, mixed>> $cases     Enriched cases.
+	 * @param array<int, array<string, mixed>> $caseTypes Case types.
+	 * @param int                              $limit     How many case types, busiest first.
+	 *
+	 * @return array{labels: array<int, string>, shares: array<int, int>}
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function computeWithinNormByCaseType(array $cases, array $caseTypes, int $limit=5): array {
+		$titles = $this->titlesById(caseTypes: $caseTypes);
+
+		$tally = $this->withinNormTally(cases: $cases);
+
+		uasort($tally, static fn (array $left, array $right): int => ($right['total'] <=> $left['total']));
+
+		$labels = [];
+		$shares = [];
+		foreach (array_slice($tally, 0, $limit, true) as $caseTypeId => $counts) {
+			$labels[] = ($titles[$caseTypeId] ?? $caseTypeId);
+			$shares[] = (int)round(($counts['met'] / $counts['total']) * 100);
+		}
+
+		return ['labels' => $labels, 'shares' => $shares];
+	}//end computeWithinNormByCaseType()
+
+	/**
+	 * Per case type, how many closed cases had a deadline and how many met it.
+	 *
+	 * @param array<int, array<string, mixed>> $cases Enriched cases.
+	 *
+	 * @return array<string, array{met: int, total: int}> The counts by case type id.
+	 */
+	private function withinNormTally(array $cases): array {
+		$closed = array_filter(
+			$cases,
+			static fn (array $caseData): bool => $caseData['_isOpen'] !== true && $caseData['_endDate'] !== null && $caseData['_deadline'] !== null
+		);
+
+		$tally = [];
+		foreach ($closed as $caseData) {
+			$tally = $this->countWithinNorm(tally: $tally, caseData: $caseData);
+		}
+
+		return $tally;
+	}//end withinNormTally()
+
+	/**
+	 * One closed case with a deadline added to the counts of its case type.
+	 *
+	 * @param array<string, array{met: int, total: int}> $tally The counts so far.
+	 * @param array<string, mixed> $caseData The closed case.
+	 *
+	 * @return array<string, array{met: int, total: int}> The counts.
+	 */
+	private function countWithinNorm(array $tally, array $caseData): array {
+		$caseTypeId = (string)($caseData['caseType'] ?? '');
+		if ($caseTypeId === '') {
+			return $tally;
+		}
+
+		$tally[$caseTypeId] ??= ['met' => 0, 'total' => 0];
+		$tally[$caseTypeId]['total']++;
+		if ($caseData['_endDate'] <= $caseData['_deadline']) {
+			$tally[$caseTypeId]['met']++;
+		}
+
+		return $tally;
+	}//end countWithinNorm()
+
+	/**
+	 * Per case type and per month of the period: how many cases closed, the
+	 * rounded average days they took, and the share of them closed within
+	 * their deadline. A month in which a case type closed nothing is left out;
+	 * a case without a deadline counts for the average and not for the share.
+	 *
+	 * @param array<int, array<string, mixed>> $cases     Enriched cases.
+	 * @param array<int, array<string, mixed>> $caseTypes Case types.
+	 * @param int                              $months    How many months back from this one.
+	 * @param DateTimeImmutable|null           $today     The day the figures are read on; now when absent.
+	 *
+	 * @return list<array{caseType: string, month: string, closed: int, avgDays: int|null, withinNormPercent: int|null}>
+	 *
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 */
+	public function computeMonthlyByCaseType(array $cases, array $caseTypes, int $months, ?DateTimeImmutable $today=null): array {
+		$titles = $this->titlesById(caseTypes: $caseTypes);
+		$first = ($today ?? new DateTimeImmutable())->modify('first day of this month');
+		$inPeriod = [];
+		for ($i = ($months - 1); $i >= 0; $i--) {
+			$inPeriod[$first->modify('-' . $i . ' month')->format('Y-m')] = true;
+		}
+
+		$rows = [];
+		foreach ($this->bucketByCaseTypeAndMonth(cases: $cases, inPeriod: $inPeriod) as $caseTypeId => $byMonth) {
+			ksort($byMonth);
+			foreach ($byMonth as $month => $bucket) {
+				$rows[] = [
+					'caseType' => ($titles[$caseTypeId] ?? (string)$caseTypeId),
+					'month' => (string)$month,
+					'closed' => count($bucket['days']),
+					'avgDays' => (int)round(array_sum($bucket['days']) / count($bucket['days'])),
+					'withinNormPercent' => $this->share(met: $bucket['met'], judged: $bucket['judged']),
+				];
+			}
+		}
+
+		usort($rows, static fn (array $left, array $right): int => [$left['caseType'], $left['month']] <=> [$right['caseType'], $right['month']]);
+
+		return $rows;
+	}//end computeMonthlyByCaseType()
+
+	/**
+	 * The closed cases inside the period, grouped by case type and month: the
+	 * days each took, and how many of those with a deadline met it.
+	 *
+	 * @param array<int, array<string, mixed>> $cases    Enriched cases.
+	 * @param array<string, bool>              $inPeriod The months of the period, `Y-m` as key.
+	 *
+	 * @return array<string, array<string, array{days: list<int>, met: int, judged: int}>>
+	 */
+	private function bucketByCaseTypeAndMonth(array $cases, array $inPeriod): array {
+		$buckets = [];
+		foreach ($cases as $caseData) {
+			$end = ($caseData['_endDate'] ?? null);
+			$caseTypeId = (string)($caseData['caseType'] ?? '');
+			if (($caseData['_isOpen'] ?? false) === true || $end === null || ($caseData['_throughputDays'] ?? null) === null || $caseTypeId === '') {
+				continue;
+			}
+
+			$month = substr((string)$end, 0, 7);
+			if (isset($inPeriod[$month]) === false) {
+				continue;
+			}
+
+			$bucket = ($buckets[$caseTypeId][$month] ?? ['days' => [], 'met' => 0, 'judged' => 0]);
+			$bucket['days'][] = (int)$caseData['_throughputDays'];
+			$deadline = ($caseData['_deadline'] ?? null);
+			if ($deadline !== null) {
+				$bucket['judged']++;
+				$bucket['met'] += (int)($end <= $deadline);
+			}
+
+			$buckets[$caseTypeId][$month] = $bucket;
+		}//end foreach
+
+		return $buckets;
+	}//end bucketByCaseTypeAndMonth()
+
+	/**
+	 * The rounded percentage met of judged, or null when nothing was judged.
+	 *
+	 * @param int $met    How many met their deadline.
+	 * @param int $judged How many had a deadline.
+	 *
+	 * @return int|null
+	 */
+	private function share(int $met, int $judged): ?int {
+		if ($judged === 0) {
+			return null;
+		}
+
+		return (int)round(($met / $judged) * 100);
+	}//end share()
+
+	/**
+	 * The title of every case type, by its id.
+	 *
+	 * @param array<int, array<string, mixed>> $caseTypes Case types.
+	 *
+	 * @return array<string, string>
+	 */
+	private function titlesById(array $caseTypes): array {
+		$titles = [];
+		foreach ($caseTypes as $caseType) {
+			$id = (string)($caseType['id'] ?? '');
+			if ($id !== '') {
+				$titles[$id] = $this->text->textOf(value: ($caseType['title'] ?? $id));
+			}
+		}
+
+		return $titles;
+	}//end titlesById()
 
 	/**
 	 * Sum and count closed-case throughput days per case-type id.
@@ -180,7 +395,7 @@ class CaseTypeThroughputCalculator {
 	 *
 	 * @return float The working hours.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function workingHoursFor(array $caseData): float {
 		$start = ($caseData['_startDate'] ?? null);

@@ -43,6 +43,8 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Service\Drafts\CaseDraftData
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
  */
 class CaseDocumentDraftsTest extends TestCase {
 
@@ -58,6 +60,8 @@ class CaseDocumentDraftsTest extends TestCase {
 	private ?DocumentGenerationRequestedEvent $request = null;
 
 	private string $filinq = 'ok';
+
+	private bool $filerThrows = false;
 
 	/** @var list<array<string, mixed>> */
 	private array $filed = [];
@@ -87,6 +91,10 @@ class CaseDocumentDraftsTest extends TestCase {
 					$event->setResult(['fileId' => 91, 'mime' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'name' => 'Besluit.docx']);
 				}
 
+				if ($this->filinq === 'nofile') {
+					$event->setResult(['name' => 'Besluit.docx']);
+				}
+
 				if ($this->filinq === 'error') {
 					$event->setError('template not found: woo-besluit');
 				}
@@ -96,6 +104,10 @@ class CaseDocumentDraftsTest extends TestCase {
 		$filer = $this->createMock(GeneratedDocumentFiler::class);
 		$filer->method('file')->willReturnCallback(
 			function (string $caseId, int $fileId, string $title, string $mime, array $metadata): array {
+				if ($this->filerThrows === true) {
+					throw new \RuntimeException('the case folder is locked');
+				}
+
 				$this->filed[] = ['caseId' => $caseId, 'fileId' => $fileId, 'title' => $title, 'metadata' => $metadata];
 				return ['id' => 'io-1'];
 			}
@@ -187,6 +199,20 @@ class CaseDocumentDraftsTest extends TestCase {
 		self::assertSame('woo-inventarislijst', ($this->request?->getRequest() ?? [])['templateSlug']);
 	}//end testTheInventoryIsDraftedFromItsOwnTemplate()
 
+	/**
+	 * The Woo case type drafts its decision and its inventory; a case type that drafts nothing has none.
+	 *
+	 * @return void
+	 */
+	public function testTheDraftedDocumentTypesAreEveryPurposesType(): void {
+		$this->wooCaseType();
+		$types = $this->drafts->documentTypesForCase(caseId: self::CASE_ID);
+		self::assertContains(needle: 'Besluit', haystack: $types);
+
+		$this->caseType = [];
+		self::assertSame(expected: [], actual: $this->drafts->documentTypesForCase(caseId: self::CASE_ID));
+	}//end testTheDraftedDocumentTypesAreEveryPurposesType()
+
 	public function testAnUndeclaredPurposeAsksNothing(): void {
 		$this->wooCaseType();
 
@@ -214,4 +240,69 @@ class CaseDocumentDraftsTest extends TestCase {
 		self::assertSame('shared', $request['templateNamespace']);
 		self::assertSame('pdf', $request['format']);
 	}//end testWithoutADataKeyTheDataSitsBesideTheCase()
+
+	/**
+	 * A result that names no stored file is a failure, and nothing is filed.
+	 *
+	 * @return void
+	 */
+	public function testAResultWithoutAStoredFileIsFailedAndNothingIsFiled(): void {
+		$this->wooCaseType();
+		$this->filinq = 'nofile';
+
+		$answer = $this->drafts->draft(caseId: self::CASE_ID, purpose: 'decision');
+
+		self::assertSame(['status' => 'failed', 'reason' => 'filinq-stored-no-file', 'informatieobject' => '', 'fileId' => 0], $answer);
+		self::assertSame([], $this->filed);
+	}//end testAResultWithoutAStoredFileIsFailedAndNothingIsFiled()
+
+	/**
+	 * A filing that throws is a failure that still names the stored file.
+	 *
+	 * @return void
+	 */
+	public function testAFilingThatThrowsIsFailedAndKeepsTheFileId(): void {
+		$this->wooCaseType();
+		$this->filerThrows = true;
+
+		$answer = $this->drafts->draft(caseId: self::CASE_ID, purpose: 'decision');
+
+		self::assertSame(
+			['status' => 'failed', 'reason' => 'not-filed: the case folder is locked', 'informatieobject' => '', 'fileId' => 91],
+			$answer
+		);
+	}//end testAFilingThatThrowsIsFailedAndKeepsTheFileId()
+
+	/**
+	 * The declaration for a case is its case type's declaration for the
+	 * purpose; a case without a case type, a blank purpose or a declaration
+	 * without a template has none.
+	 *
+	 * @return void
+	 */
+	public function testTheDeclarationForACaseIsItsCaseTypesDeclaration(): void {
+		$letter = ['templateSlug' => 'letter', 'fields' => []];
+		$this->caseType = ['documentDrafts' => ['letter' => $letter, 'blank' => ['templateSlug' => '  ']]];
+		$this->register->seed('case', 'case-without-type', ['identifier' => 'X-1']);
+
+		self::assertSame($letter, $this->drafts->declarationForCase(caseId: self::CASE_ID, purpose: 'letter'));
+		self::assertSame([], $this->drafts->declarationForCase(caseId: self::CASE_ID, purpose: ''));
+		self::assertSame([], $this->drafts->declarationForCase(caseId: self::CASE_ID, purpose: 'blank'));
+		self::assertSame([], $this->drafts->declarationForCase(caseId: 'case-without-type', purpose: 'letter'));
+	}//end testTheDeclarationForACaseIsItsCaseTypesDeclaration()
+
+	/**
+	 * Only well-formed declarations name document types, and a case without
+	 * a case type has none.
+	 *
+	 * @return void
+	 */
+	public function testOnlyWellFormedDeclarationsNameDocumentTypes(): void {
+		$this->caseType = ['documentDrafts' => ['broken' => 'not-a-declaration', 'unnamed' => ['templateSlug' => 'x'], 'letter' => ['templateSlug' => 'letter', 'documentType' => ' Brief ']]];
+		$this->register->seed('case', 'case-without-type', ['identifier' => 'X-1']);
+
+		self::assertContains(needle: 'Brief', haystack: $this->drafts->documentTypesForCase(caseId: self::CASE_ID));
+		self::assertNotContains(needle: '', haystack: $this->drafts->documentTypesForCase(caseId: self::CASE_ID));
+		self::assertSame(expected: [], actual: $this->drafts->documentTypesForCase(caseId: 'case-without-type'));
+	}//end testOnlyWellFormedDeclarationsNameDocumentTypes()
 }//end class

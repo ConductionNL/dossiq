@@ -2,12 +2,12 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * First today draws the library's banner by its named export. Before
- * nextcloud-vue 2.81.0 the banner was only registered under the widget type
- * `banner`, a named import was undefined, Vue rendered an unknown
- * <cnbannerwidget> element and the My work grid kept an empty card for every
- * reader with a case past its term. These assertions pin that the installed
- * library exports it, and that the widget imports it.
+ * First today is the library banner, declared in the simple profile: an
+ * attention card naming the reader's own open case furthest past its
+ * deadline (the first row of an ordered query is its subject), silent when
+ * there is none. Before nextcloud-vue 2.81.0 the banner was only registered
+ * under the widget type `banner`, so this also pins that the installed
+ * library still answers that type and exports the component.
  *
  * @spec openspec/specs/dashboard/spec.md
  */
@@ -20,15 +20,54 @@ const ROOT = path.resolve(__dirname, '../..')
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8')
 const LIB = ['node_modules', '@conduction', 'nextcloud-vue', 'src']
 
-describe('First today and the library banner', () => {
-	const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
+/**
+ * Find a widget in the simple profile by id, wherever it is declared.
+ *
+ * @param {string} id The widget id.
+ * @return {object|undefined} The definition.
+ */
+function simpleWidget(id) {
+	let found
+	const walk = (node) => {
+		if (found || node === null || typeof node !== 'object') {
+			return
+		}
+		if (!Array.isArray(node) && node.id === id && node.type) {
+			found = node
+			return
+		}
+		Object.values(node).forEach(walk)
+	}
+	walk(JSON.parse(read('src', 'menu-layout.simple.json')))
+	return found
+}
 
-	it('imports the banner by name and renders it', () => {
-		expect(source).toMatch(
-			/import\s*\{[^}]*CnBannerWidget[^}]*\}\s*from '@conduction\/nextcloud-vue'/,
-		)
-		expect(source).toContain('components: { CnBannerWidget }')
-		expect(source).toContain('<CnBannerWidget')
+describe('First today and the library banner', () => {
+	const card = simpleWidget('simple-first-today')
+
+	it('is the attention card, naming the first row of the past-term query', () => {
+		expect(card.type).toBe('banner')
+		expect(card.content.layout).toBe('attention')
+		expect(card.content.kicker).toBe('First today')
+		expect(card.content.title).toBe('{subject.title}')
+		expect(card.content.visibleWhen).toMatchObject({ op: 'gt', value: 0 })
+		expect(card.content.visibleWhen.source.filter.assignee).toBe('@me')
+	})
+
+	it('offers the board\'s ways on: all cases past their term, the board, and the case itself last', () => {
+		// DqMijnWerk "Vandaag eerst": Alle zaken over termijn, Naar het
+		// werkbord, Termijn opschorten, Zaak openen (primary).
+		expect(card.content.actions.map((action) => action.label)).toEqual(['All cases past their deadline', 'Go to the board', 'Suspend the term', 'Open case'])
+		// Suspending opens the case's lifecycle menu on that act, for the case the card names.
+		expect(card.content.actions[2]).toEqual({
+			label: 'Suspend the term',
+			type: 'open-modal',
+			target: 'CaseLifecycleMenuDialog',
+			props: { caseId: '@subject.id', act: 'suspend' },
+		})
+		expect(read('src', 'registry.js')).toContain('CaseLifecycleMenuDialog: {')
+		expect(card.content.actions[1]).toEqual({ label: 'Go to the board', route: { name: 'Cases', query: { _view: 'board' } } })
+		expect(card.content.actions.filter((action) => action.primary).map((action) => action.label)).toEqual(['Open case'])
 	})
 
 	it('relies on what the installed library actually exports', () => {

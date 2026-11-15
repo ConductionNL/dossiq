@@ -309,6 +309,7 @@
 <script>
 import { NcButton } from '@nextcloud/vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import { parseJsonList } from './workflowConfigParsing.js'
 
 export default {
 	name: 'TransitionConfigPanel',
@@ -367,15 +368,7 @@ export default {
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		parseGuards(guards) {
-			if (!guards) return []
-			if (typeof guards === 'string') {
-				try {
-					return JSON.parse(guards)
-				} catch {
-					return []
-				}
-			}
-			return [...guards]
+			return parseJsonList(guards)
 		},
 
 		/**
@@ -383,15 +376,7 @@ export default {
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		parseActions(actions) {
-			if (!actions) return []
-			if (typeof actions === 'string') {
-				try {
-					return JSON.parse(actions)
-				} catch {
-					return []
-				}
-			}
-			return [...actions]
+			return parseJsonList(actions)
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */

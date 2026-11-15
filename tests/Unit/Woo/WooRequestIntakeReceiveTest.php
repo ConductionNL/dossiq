@@ -38,6 +38,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use stdClass;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The intake on an in-memory register that plays OpenRegister's part: a case
@@ -50,7 +52,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Woo\WooRequestRefused
  *
  * @uses \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
@@ -58,6 +60,9 @@ use stdClass;
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class WooRequestIntakeReceiveTest extends TestCase {
 
@@ -138,13 +143,14 @@ class WooRequestIntakeReceiveTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
-				$saved = parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
+				$saved = parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 				if ((string)$schema !== 'case' || $uuid !== null) {
 					return $saved;
 				}
@@ -268,6 +274,44 @@ class WooRequestIntakeReceiveTest extends TestCase {
 			$case['wooRequest']
 		);
 	}//end testOpencatalogisAnswerKeysBecomeAWooCase()
+
+	/**
+	 * A request is filed on the version of the Woo case type that new cases
+	 * get: the fixed id names the first version, and a newer version that
+	 * superseded it is followed, with its own first status.
+	 *
+	 * @return void
+	 */
+	public function testARequestIsFiledOnTheCurrentVersionOfTheCaseType(): void {
+		$this->store->seed(
+			schema: 'caseType',
+			uuid: WooRequestIntake::CASE_TYPE_ID,
+			row: [
+				'title'         => 'Woo-verzoek',
+				'identifier'    => 'woo-verzoek',
+				'version'       => 1,
+				'initialStatus' => '3c0f5a00-0000-4000-a000-00000000b001',
+				'supersededBy'  => 'woo-v2',
+			]
+		);
+		$this->store->seed(
+			schema: 'caseType',
+			uuid: 'woo-v2',
+			row: [
+				'title'           => 'Woo-verzoek',
+				'identifier'      => 'woo-verzoek',
+				'version'         => 2,
+				'initialStatus'   => 'woo-v2-ontvangen',
+				'previousVersion' => WooRequestIntake::CASE_TYPE_ID,
+			]
+		);
+
+		$answer = $this->intake()->receive($this->answers(overrides: []), '2026-11-27T10:15:00+01:00');
+
+		self::assertSame(expected: 'armed', actual: $answer['outcome'], message: $answer['message']);
+		$case = $this->store->row(schema: 'case', uuid: $answer['requestId']);
+		self::assertSame(expected: 'woo-v2', actual: $case['caseType']);
+	}//end testARequestIsFiledOnTheCurrentVersionOfTheCaseType()
 
 	/**
 	 * opencatalogi's channel values land in the case's own enum, and a long

@@ -11,7 +11,7 @@
  * `config.widgets` would find nothing on the landing page and pass on an
  * empty list, so the specs read through these helpers.
  *
- * @spec openspec/changes/landing-views/specs/my-work-landing/spec.md
+ * @spec openspec/specs/my-work-landing/spec.md
  */
 
 /**

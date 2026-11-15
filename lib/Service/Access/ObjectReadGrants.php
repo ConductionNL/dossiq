@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Access;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -138,11 +139,7 @@ class ObjectReadGrants {
 			$wanted = $this->wanted(readers: $readers, owner: (string)$object->getOwner());
 			$held = $this->revokeOthers(sharing: $sharing, object: $object, wanted: $wanted);
 			$answer['revoked'] = $held['revoked'];
-			foreach ($wanted as $user => $permissions) {
-				if (in_array((string)$user, $held['kept'], true) === true) {
-					continue;
-				}
-
+			foreach ($this->missing(wanted: $wanted, kept: $held['kept']) as $user => $permissions) {
 				$sharing->grant($object, 'user', (string)$user, $permissions);
 				$answer['granted']++;
 			}
@@ -156,6 +153,27 @@ class ObjectReadGrants {
 
 		return $answer;
 	}//end reconcile()
+
+	/**
+	 * The wanted grants the record does not already hold.
+	 *
+	 * @param array<string, int> $wanted Permission bits by user id.
+	 * @param array<string>      $kept   The users whose grant was kept.
+	 *
+	 * @return array<string, int>
+	 */
+	private function missing(array $wanted, array $kept): array {
+		$missing = [];
+		foreach ($wanted as $user => $permissions) {
+			if (in_array((string)$user, $kept, true) === true) {
+				continue;
+			}
+
+			$missing[$user] = $permissions;
+		}
+
+		return $missing;
+	}//end missing()
 
 	/**
 	 * The grants the record must carry: read, or read and update, per user, never for its owner.
@@ -246,7 +264,9 @@ class ObjectReadGrants {
 		}
 
 		try {
-			$object = $objectService->find($uuid, register: $register, schema: $schema);
+			// A rule read: the caller manages this record's grants and may not
+			// read it (decision 234). Nothing read here is answered to the caller.
+			$object = $objectService->find($uuid, new ObjectFindOptions(register: $register, schema: $schema), _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			return null;
 		}

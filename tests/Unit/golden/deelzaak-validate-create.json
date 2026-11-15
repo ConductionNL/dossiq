@@ -1,0 +1,137 @@
+{
+    "not signed in": {
+        "validate": {
+            "status": 401,
+            "body": {
+                "message": "unauthenticated"
+            },
+            "calls": []
+        },
+        "create": {
+            "status": 401,
+            "body": {
+                "message": "unauthenticated"
+            },
+            "calls": []
+        }
+    },
+    "no parent": {
+        "validate": {
+            "status": 400,
+            "body": {
+                "message": "parentCaseUuid and childCaseTypeId are required"
+            },
+            "calls": []
+        },
+        "create": {
+            "status": 400,
+            "body": {
+                "message": "parentCaseUuid, childCaseTypeId and object are required"
+            },
+            "calls": []
+        }
+    },
+    "no child type": {
+        "validate": {
+            "status": 400,
+            "body": {
+                "message": "parentCaseUuid and childCaseTypeId are required"
+            },
+            "calls": []
+        },
+        "create": {
+            "status": 400,
+            "body": {
+                "message": "parentCaseUuid, childCaseTypeId and object are required"
+            },
+            "calls": []
+        }
+    },
+    "an object that is not a list": {
+        "validate": {
+            "status": 200,
+            "body": {
+                "ok": true
+            },
+            "calls": [
+                "hasCaseReadAccess parent-1",
+                "validateCreate [\"parent-1\",\"type-2\"]"
+            ]
+        },
+        "create": {
+            "status": 400,
+            "body": {
+                "message": "parentCaseUuid, childCaseTypeId and object are required"
+            },
+            "calls": []
+        }
+    },
+    "no read access on the parent": {
+        "validate": {
+            "status": 403,
+            "body": {
+                "message": "forbidden"
+            },
+            "calls": [
+                "hasCaseReadAccess parent-1"
+            ]
+        },
+        "create": {
+            "status": 403,
+            "body": {
+                "message": "forbidden"
+            },
+            "calls": [
+                "hasCaseReadAccess parent-1"
+            ]
+        }
+    },
+    "the service refuses": {
+        "validate": {
+            "status": 409,
+            "body": {
+                "ok": false,
+                "reason": "type-not-allowed"
+            },
+            "calls": [
+                "hasCaseReadAccess parent-1",
+                "validateCreate [\"parent-1\",\"type-2\"]"
+            ]
+        },
+        "create": {
+            "status": 409,
+            "body": {
+                "ok": false,
+                "reason": "type-not-allowed"
+            },
+            "calls": [
+                "hasCaseReadAccess parent-1",
+                "createSubCase [\"parent-1\",\"type-2\",{\"title\":\"Deel\"}]"
+            ]
+        }
+    },
+    "allowed": {
+        "validate": {
+            "status": 200,
+            "body": {
+                "ok": true,
+                "caseId": "child-1"
+            },
+            "calls": [
+                "hasCaseReadAccess parent-1",
+                "validateCreate [\"parent-1\",\"type-2\"]"
+            ]
+        },
+        "create": {
+            "status": 201,
+            "body": {
+                "ok": true,
+                "caseId": "child-1"
+            },
+            "calls": [
+                "hasCaseReadAccess parent-1",
+                "createSubCase [\"parent-1\",\"type-2\",{\"title\":\"Deel\"}]"
+            ]
+        }
+    }
+}

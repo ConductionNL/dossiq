@@ -123,6 +123,7 @@ describe('the outbound communication record on the case', () => {
 		expect(declaration.properties.intakeChannels.default).toEqual([
 			'email',
 			'website',
+			'forms',
 			'zgw-api',
 		])
 		expect(declaration.properties.contentOnPlatform.default).toBe(false)

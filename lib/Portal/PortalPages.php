@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -31,7 +31,9 @@ namespace OCA\Dossiq\Portal;
 /**
  * Builds dossiq's declared portal pages.
  *
- * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PortalPages {
 
@@ -58,37 +60,75 @@ class PortalPages {
 	 *
 	 * @return array<int, array<string, mixed>> The pages.
 	 *
-	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
 	 */
 	public function forCollections(array $collections, array $actions, string $group, array $labels=[]): array {
 		$pages = [];
-		foreach ($collections as $collection) {
-			if (($collection['listable'] ?? true) !== true) {
-				continue;
-			}
-
+		foreach ($this->listable(collections: $collections) as $collection) {
 			$id = (string)$collection['id'];
-			$blocks = [];
-			foreach ($actions as $action) {
-				if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === ($collection['schema'] ?? '')) {
-					$blocks[] = ['type' => 'action', 'action' => (string)$action['id']];
-					break;
-				}
-			}
-
-			$blocks[] = ['type' => 'collection', 'collection' => $id];
-			$blocks[] = ['type' => 'detail', 'collection' => $id];
-
 			$pages[] = [
 				'id' => $id,
 				'label' => ($labels[$id] ?? (string)($collection['label'] ?? $id)),
 				'group' => $group,
-				'blocks' => $blocks,
+				'blocks' => $this->blocksFor(collection: $collection, actions: $actions, id: $id),
 			];
 		}
 
 		return $pages;
 	}//end forCollections()
+
+	/**
+	 * The collections that are listable, in order.
+	 *
+	 * @param array<int, array<string, mixed>> $collections The audience's collections.
+	 *
+	 * @return array<int, array<string, mixed>> The listable collections.
+	 */
+	private function listable(array $collections): array {
+		$listable = [];
+		foreach ($collections as $collection) {
+			if (($collection['listable'] ?? true) === true) {
+				$listable[] = $collection;
+			}
+		}
+
+		return $listable;
+	}//end listable()
+
+	/**
+	 * A collection page's blocks: the create action for its schema, the list, the selected row.
+	 *
+	 * @param array<string, mixed>             $collection The collection.
+	 * @param array<int, array<string, mixed>> $actions    The audience's actions.
+	 * @param string                           $id         The collection id.
+	 *
+	 * @return array<int, array<string, string>> The blocks.
+	 */
+	private function blocksFor(array $collection, array $actions, string $id): array {
+		$blocks = $this->createBlocks(collection: $collection, actions: $actions);
+		$blocks[] = ['type' => 'collection', 'collection' => $id];
+		$blocks[] = ['type' => 'detail', 'collection' => $id];
+
+		return $blocks;
+	}//end blocksFor()
+
+	/**
+	 * The first create action for the collection's schema, as a block.
+	 *
+	 * @param array<string, mixed>             $collection The collection.
+	 * @param array<int, array<string, mixed>> $actions    The audience's actions.
+	 *
+	 * @return array<int, array<string, string>> The action block, or none.
+	 */
+	private function createBlocks(array $collection, array $actions): array {
+		foreach ($actions as $action) {
+			if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === ($collection['schema'] ?? '')) {
+				return [['type' => 'action', 'action' => (string)$action['id']]];
+			}
+		}
+
+		return [];
+	}//end createBlocks()
 
 	/**
 	 * The four pages a resident reads (site-resident-portal-design D4), in
@@ -120,12 +160,9 @@ class PortalPages {
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
 	public function forResident(array $collections, array $actions, string $group, array $labels = []): array {
-		$listPages = $this->residentListPages(collections: $collections, actions: $actions, group: $group, labels: $labels);
-		$startPages = $this->startPages(
-			actions: $actions,
-			offered: $this->offeredActions(pages: $listPages),
-			group: $group
-		);
+		$portal = new ResidentPortal(collections: $collections, actions: $actions, group: $group, labels: $labels);
+		$listPages = $this->residentListPages(portal: $portal);
+		$startPages = $this->startPages(portal: $portal, offered: $this->offeredActions(pages: $listPages));
 
 		$pages = [];
 		$pages[] = [
@@ -161,16 +198,14 @@ class PortalPages {
 	/**
 	 * The two list pages that stay as they were: the messages and the requests.
 	 *
-	 * @param array<int, array<string, mixed>> $collections The citizen collections.
-	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
-	 * @param string                           $group       The group every page sits in.
-	 * @param array<string, string>            $labels      The label per page id.
+	 * @param ResidentPortal $portal The citizen collections and actions, the page group and the label per page id.
 	 *
 	 * @return array<int, array<string, mixed>> The pages, those whose collection is declared.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 */
-	private function residentListPages(array $collections, array $actions, string $group, array $labels): array {
+	private function residentListPages(ResidentPortal $portal): array {
+		$collections = $portal->collections;
 		$pages = [];
 		foreach (['berichten', 'verzoeken'] as $id) {
 			if ($this->declares(rows: $collections, id: $id) === false) {
@@ -179,12 +214,12 @@ class PortalPages {
 
 			$page = [
 				'id' => $id,
-				'label' => ($labels[$id] ?? $id),
-				'group' => $group,
+				'label' => ($portal->labels[$id] ?? $id),
+				'group' => $portal->group,
 				'menu' => false,
 				'blocks' => [],
 			];
-			foreach ($actions as $action) {
+			foreach ($portal->actions as $action) {
 				if ($this->startsOn(action: $action, page: $id, collections: $collections) === true) {
 					$page['blocks'][] = ['type' => 'action', 'action' => (string)$action['id']];
 					break;
@@ -209,17 +244,16 @@ class PortalPages {
 	 * form, as the boards draw a request form on a page of its own. Without
 	 * it an action that starts from nothing had no tile and no way in.
 	 *
-	 * @param array<int, array<string, mixed>> $actions The citizen actions.
-	 * @param array<string, true>              $offered The action ids a page already offers.
-	 * @param string                           $group   The group every page sits in.
+	 * @param ResidentPortal      $portal  The citizen actions and the group every page sits in.
+	 * @param array<string, true> $offered The action ids a page already offers.
 	 *
 	 * @return array<int, array<string, mixed>> The pages; the page id is the action id.
 	 *
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
-	private function startPages(array $actions, array $offered, string $group): array {
+	private function startPages(ResidentPortal $portal, array $offered): array {
 		$pages = [];
-		foreach ($actions as $action) {
+		foreach ($portal->actions as $action) {
 			$id = (string)($action['id'] ?? '');
 			if ($id === '' || isset($offered[$id]) === true || $this->isStartPoint(action: $action) === false) {
 				continue;
@@ -228,7 +262,7 @@ class PortalPages {
 			$pages[] = [
 				'id' => $id,
 				'label' => (string)$action['label'],
-				'group' => $group,
+				'group' => $portal->group,
 				'menu' => false,
 				'blocks' => [['type' => 'action', 'action' => $id]],
 			];
@@ -296,11 +330,11 @@ class PortalPages {
 	 *
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
 	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
-	 * @spec openspec/changes/resident-overview-reads-as-designed/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
 	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
 	private function residentOverviewBlocks(array $collections, array $labels = [], array $startPages = []): array {
@@ -313,25 +347,7 @@ class PortalPages {
 		$blocks   = [];
 		$blocks[] = ['type' => 'greeting', 'showDate' => false];
 		if ($this->declares(rows: $collections, id: 'vragenAanU') === true) {
-			// LABELLED AS THE DESIGN READS THEM. Every list block takes a
-			// `label` (portaliq ListBlockNormaliser); without one the lists
-			// ran into each other with no heading between them.
-			$blocks[] = [
-				'type' => 'tasks',
-				'collection' => 'vragenAanU',
-				'dueField' => 'hersteltermijn',
-				'titleFields' => ['summary'],
-				'label' => 'Wat u nog moet doen',
-				// THE BOARD'S CARD (portaliq#1253 board keys): one highlighted
-				// question in the warning tone, the due day in its sub line
-				// and the button that answers it. Portaliq drops a key it does
-				// not know, so these are the names in its BoardKeys and
-				// SchoolBlockKeys, read from fb7a5203.
-				'display' => 'highlight',
-				'tone' => 'warning',
-				'dueInLine' => true,
-				'buttonLabel' => 'Document toevoegen',
-			];
+			$blocks[] = $this->tasksBlock();
 		}
 
 		// WHAT THE RESIDENT CAN ARRANGE, between what they still have to do and
@@ -341,10 +357,60 @@ class PortalPages {
 			$blocks[] = ['type' => 'cta', 'page' => (string)$page['id'], 'label' => (string)$page['label']];
 		}
 
-		// The board draws the running cases compact, with "Alle zaken" beside
-		// the heading, and tags a case the resident must act on with the
-		// turn's words in the warning tone.
-		$blocks[] = [
+		$blocks[] = $this->casesBlock(labels: $labels);
+		// The messages as a plain list: a title and the day, no badge.
+		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3, 'label' => 'Nieuwe berichten', 'display' => 'list'];
+		// "Bezwaar maken" and "Klacht indienen" act on one case, so portaliq
+		// lists them on the case page through their `onCase`, not here.
+
+		return $blocks;
+	}//end residentOverviewBlocks()
+
+	/**
+	 * The questions the resident still has to answer, as the board's highlighted card.
+	 *
+	 * LABELLED AS THE DESIGN READS THEM. Every list block takes a `label`
+	 * (portaliq ListBlockNormaliser); without one the lists ran into each
+	 * other with no heading between them.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
+	 */
+	private function tasksBlock(): array {
+		return [
+			'type' => 'tasks',
+			'collection' => 'vragenAanU',
+			'dueField' => 'hersteltermijn',
+			'titleFields' => ['summary'],
+			'label' => 'Wat u nog moet doen',
+			// THE BOARD'S CARD (portaliq#1253 board keys): one highlighted
+			// question in the warning tone, the due day in its sub line
+			// and the button that answers it. Portaliq drops a key it does
+			// not know, so these are the names in its BoardKeys and
+			// SchoolBlockKeys, read from fb7a5203.
+			'display' => 'highlight',
+			'tone' => 'warning',
+			'dueInLine' => true,
+			'buttonLabel' => 'Document toevoegen',
+		];
+	}//end tasksBlock()
+
+	/**
+	 * The resident's running cases, compact.
+	 *
+	 * The board draws the running cases compact, with "Alle zaken" beside
+	 * the heading, and tags a case the resident must act on with the
+	 * turn's words in the warning tone.
+	 *
+	 * @param array<string, string> $labels The configured labels.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
+	 */
+	private function casesBlock(array $labels): array {
+		return [
 			'type' => 'cases',
 			'collection' => 'mijnZaken',
 			'open' => true,
@@ -354,18 +420,13 @@ class PortalPages {
 			'showAll' => true,
 			'yourTurn' => ['applicant'],
 		];
-		// The messages as a plain list: a title and the day, no badge.
-		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3, 'label' => 'Nieuwe berichten', 'display' => 'list'];
-		// "Bezwaar maken" and "Klacht indienen" act on one case, so they
-		// stand on the case page (residentCaseBlocks), not here.
-
-		return $blocks;
-	}//end residentOverviewBlocks()
+	}//end casesBlock()
 
 	/**
 	 * The case page's blocks, in the order the design reads them: the question
 	 * on THIS case, where it stands, the facts, its documents, what happened,
-	 * a way to write, a bezwaar or a klacht about it, and the case screen.
+	 * a way to write, and the case screen, which lists the bezwaar and the
+	 * klacht placed on the case.
 	 *
 	 * @param array<int, array<string, mixed>> $collections The citizen collections.
 	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
@@ -373,7 +434,7 @@ class PortalPages {
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
-	 * @spec openspec/changes/case-actions-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function residentCaseBlocks(array $collections, array $actions): array {
 		$blocks = [];
@@ -395,12 +456,11 @@ class PortalPages {
 		$blocks[] = ['type' => 'detail', 'collection' => 'mijnZaken', 'label' => 'Gegevens', 'timeline' => false];
 		$blocks[] = ['type' => 'documents', 'collection' => 'mijnZaken', 'label' => 'Stukken', 'upload' => true];
 		$blocks[] = ['type' => 'timeline', 'collection' => 'mijnZaken'];
-		// A way to write, and the two things a resident can start about THIS
-		// case: each lands the open case in the action's recordField.
-		foreach (['replyToMessage' => 'Bericht sturen', 'createBezwaar' => 'Bezwaar maken', 'createKlacht' => 'Klacht indienen'] as $action => $label) {
-			if ($this->declares(rows: $actions, id: $action) === true) {
-				$blocks[] = ['type' => 'cta', 'action' => $action, 'label' => $label, 'withRecord' => true];
-			}
+		// A way to write, landing the open case in the reply's recordField.
+		// The bezwaar and the klacht declare `onCase`, so portaliq lists them
+		// in the case screen below with their window.
+		if ($this->declares(rows: $actions, id: 'replyToMessage') === true) {
+			$blocks[] = ['type' => 'cta', 'action' => 'replyToMessage', 'label' => 'Bericht sturen', 'withRecord' => true];
 		}
 
 		// The case screen as the board's notice: the closed-window sentence,
@@ -459,7 +519,7 @@ class PortalPages {
 	 *
 	 * @return array<int, array<string, mixed>> The pages, the case page with the case screen.
 	 *
-	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-021-a-resident-must-open-their-own-case-on-a-page-that-can-withdraw-it
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-req-portal-021-a-resident-must-open-their-own-case-on-a-page-that-can-withdraw-it
 	 */
 	public function withCaseScreen(array $pages): array {
 		foreach ($pages as $index => $page) {

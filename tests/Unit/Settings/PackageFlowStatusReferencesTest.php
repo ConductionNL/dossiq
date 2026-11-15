@@ -34,7 +34,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @coversNothing
  *
- * @spec openspec/changes/vth-package/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-10-30-vth-package/tasks.md#task-3
  */
 class PackageFlowStatusReferencesTest extends TestCase {
 
@@ -62,10 +62,22 @@ class PackageFlowStatusReferencesTest extends TestCase {
 	 * @return array<string, array<string, string>> Case type id to status id to name.
 	 */
 	private function statusesByCaseType(string $dir): array {
+		$statuses = [];
+
+		// A package that ships only flows names a case type register.d seeds.
+		foreach (ShippedPackageCaseTypes::seededByRegister() as $caseType) {
+			foreach ((array)($caseType['statusTypes'] ?? []) as $status) {
+				$statuses[(string)($status['caseType'] ?? '')][(string)($status['id'] ?? '')] = (string)($status['name'] ?? '');
+			}
+		}
+
+		if (is_file($dir . '/case-type.json') === false) {
+			return $statuses;
+		}
+
 		$data = json_decode((string)file_get_contents($dir . '/case-type.json'), true);
 		self::assertIsArray($data, basename($dir) . '/case-type.json must parse');
 
-		$statuses = [];
 		foreach ((array)($data['statusTypes'] ?? []) as $status) {
 			$statuses[(string)($status['caseType'] ?? '')][(string)($status['id'] ?? '')] = (string)($status['name'] ?? '');
 		}

@@ -30,6 +30,8 @@ use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for ConfiguredRegistryService.
@@ -153,7 +155,9 @@ class ConfiguredRegistryServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(string $register, string $schema, array $object): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['save', $register, $schema, $object];
 				return ($object + ['id' => 'generated']);
 			}//end saveObject()
@@ -167,7 +171,10 @@ class ConfiguredRegistryServiceTest extends TestCase {
 			 *
 			 * @return bool Always true.
 			 */
-			public function deleteObject(string $uuid, string $register = '', string $schema = ''): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register ?? '';
+				$schema = $deletion->target->schema ?? '';
 				$this->calls[] = ['delete', $uuid, $register, $schema];
 				return true;
 			}//end deleteObject()

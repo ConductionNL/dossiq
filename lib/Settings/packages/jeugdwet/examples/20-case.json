@@ -1,0 +1,41 @@
+{
+  "schema": "case_schema",
+  "rows": [
+    {
+      "id": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+      "title": "Melding Jeugdwet gezin Oosthaven",
+      "description": "De huisarts meldt zorgen over een kind van 9 jaar: slaapproblemen en schoolverzuim. Ouders staan open voor ondersteuning.",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "status": "cea85ff4-c209-5d71-8a3b-c835c46ea3f1",
+      "intakeChannel": "phone",
+      "confidentiality": "vertrouwelijk",
+      "startDate": "{{date:-15}}",
+      "receivedAt": "{{datetime:-15 10:20}}",
+      "currentStatusEnteredAt": "{{datetime:-14 09:00}}",
+      "statusHistory": [
+        {
+          "status": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+          "enteredAt": "{{datetime:-15 10:20}}"
+        },
+        {
+          "status": "cea85ff4-c209-5d71-8a3b-c835c46ea3f1",
+          "enteredAt": "{{datetime:-14 09:00}}"
+        }
+      ],
+      "tags": [
+        "voorbeeld"
+      ],
+      "legalBasis": "Jeugdwet artikel 2.3",
+      "initiatorDisplayName": "Huisarts, met toestemming van de ouders",
+      "assignee": "fatma.kaya",
+      "deadline": "{{date:20}}",
+      "sensitiveProperties": [
+        {
+          "propertyDefinition": "9351d74d-7824-5d7a-93f4-e78f8991ceeb",
+          "name": "onderzoeksstappen",
+          "value": "[{\"kind\": \"gesprek\", \"date\": \"{{date:-12}}\", \"by\": \"fatma.kaya\", \"withWhom\": \"Beide ouders\", \"summary\": \"Gesprek met de ouders over slaap en school.\", \"consentRef\": \"3d903a5f-7066-50c8-a952-7e1c775055bb\", \"followUp\": \"School om informatie vragen\"}, {\"kind\": \"informatie-opgevraagd\", \"date\": \"{{date:-8}}\", \"by\": \"fatma.kaya\", \"withWhom\": \"Basisschool De Linde\", \"summary\": \"Informatie opgevraagd bij school over het verzuim.\", \"consentRef\": \"3d903a5f-7066-50c8-a952-7e1c775055bb\", \"followUp\": \"Bespreken in het overleg\"}]"
+        }
+      ]
+    }
+  ]
+}

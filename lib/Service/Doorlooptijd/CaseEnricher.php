@@ -81,16 +81,14 @@ class CaseEnricher {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function enrichCases(array $cases, array $caseTypes): array {
-		$today = new DateTimeImmutable('today');
-		$caseTypeByKey = $this->indexCaseTypesByKey(caseTypes: $caseTypes);
+		$basis = new CaseEnrichmentBasis(
+			today: new DateTimeImmutable('today'),
+			caseTypeByKey: $this->indexCaseTypesByKey(caseTypes: $caseTypes),
+		);
 
 		$enriched = [];
 		foreach ($cases as $caseData) {
-			$enriched[] = $this->enrichCase(
-				caseData: $caseData,
-				caseTypeByKey: $caseTypeByKey,
-				today: $today,
-			);
+			$enriched[] = $this->enrichCase(caseData: $caseData, basis: $basis);
 		}
 
 		return $enriched;
@@ -126,25 +124,20 @@ class CaseEnricher {
 	 * Add the derived `_`-prefixed fields to a single raw case.
 	 *
 	 * @param array<string, mixed> $caseData Raw case.
-	 * @param array<string, array<string, mixed>> $caseTypeByKey Case-types by id and slug.
-	 * @param DateTimeImmutable $today Reference date for the countdown.
+	 * @param CaseEnrichmentBasis  $basis    Case-types by id and slug, and the reference date for the countdown.
 	 *
 	 * @return array<string, mixed> The enriched case.
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
-	private function enrichCase(array $caseData, array $caseTypeByKey, DateTimeImmutable $today): array {
+	private function enrichCase(array $caseData, CaseEnrichmentBasis $basis): array {
 		$endDate = $this->dates->toCalendarDateOrNull($caseData['endDate'] ?? null);
 		$startDate = $this->dates->toCalendarDateOrNull($caseData['startDate'] ?? null);
 		$isOpen = ($endDate === null);
 
-		$caseType = null;
-		$caseTypeTitle = '';
-		$caseTypeKey = (string)($caseData['caseType'] ?? '');
-		if ($caseTypeKey !== '' && isset($caseTypeByKey[$caseTypeKey]) === true) {
-			$caseType = $caseTypeByKey[$caseTypeKey];
-			$caseTypeTitle = $this->text->textOf(value: ($caseType['title'] ?? null));
-		}
+		$typed = $this->caseTypeOf(caseData: $caseData, caseTypeByKey: $basis->caseTypeByKey);
+		$caseType = $typed['caseType'];
+		$caseTypeTitle = $typed['title'];
 
 		$deadline = $this->resolveCaseDeadline(
 			rawDeadline: $caseData['deadline'] ?? null,
@@ -153,16 +146,11 @@ class CaseEnricher {
 		);
 
 		$daysRemaining = null;
-		if ($isOpen === true && $deadline !== null) {
-			$deadlineDate = new DateTimeImmutable($deadline);
-			$daysRemaining = $this->days->signed(from: $today, to: $deadlineDate);
+		if ($isOpen === true) {
+			$daysRemaining = $this->daysRemaining(deadline: $deadline, today: $basis->today);
 		}
 
-		$throughputDays = $this->computeThroughputDays(
-			isOpen: $isOpen,
-			startDate: $startDate,
-			endDate: $endDate,
-		);
+		$throughputDays = $this->computeThroughputDays(startDate: $startDate, endDate: $endDate);
 
 		$caseData['_isOpen'] = $isOpen;
 		$caseData['_startDate'] = $startDate;
@@ -171,9 +159,72 @@ class CaseEnricher {
 		$caseData['_daysRemaining'] = $daysRemaining;
 		$caseData['_throughputDays'] = $throughputDays;
 		$caseData['_caseTypeTitle'] = $caseTypeTitle;
+		// The term the case had, start to deadline: the norm the
+		// processing-time chart draws.
+		$caseData['_normDays'] = $this->normDays(startDate: $startDate, deadline: $deadline);
 
 		return $caseData;
 	}//end enrichCase()
+
+	/**
+	 * The case's case type and its title, when the case names one that is known.
+	 *
+	 * @param array<string, mixed>                $caseData      Raw case.
+	 * @param array<string, array<string, mixed>> $caseTypeByKey Case-types by id and slug.
+	 *
+	 * @return array{caseType: array<string, mixed>|null, title: string} The case type, or null, and its title.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function caseTypeOf(array $caseData, array $caseTypeByKey): array {
+		$caseType = null;
+		$caseTypeTitle = '';
+		$caseTypeKey = (string)($caseData['caseType'] ?? '');
+		if ($caseTypeKey !== '' && isset($caseTypeByKey[$caseTypeKey]) === true) {
+			$caseType = $caseTypeByKey[$caseTypeKey];
+			$caseTypeTitle = $this->text->textOf(value: ($caseType['title'] ?? null));
+		}
+
+		return ['caseType' => $caseType, 'title' => $caseTypeTitle];
+	}//end caseTypeOf()
+
+	/**
+	 * The days left until the deadline of an open case.
+	 *
+	 * @param string|null       $deadline The `Y-m-d` deadline, or null.
+	 * @param DateTimeImmutable $today    Reference date for the countdown.
+	 *
+	 * @return int|null The signed days, or null for a case without a deadline.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function daysRemaining(?string $deadline, DateTimeImmutable $today): ?int {
+		$daysRemaining = null;
+		if ($deadline !== null) {
+			$deadlineDate = new DateTimeImmutable($deadline);
+			$daysRemaining = $this->days->signed(from: $today, to: $deadlineDate);
+		}
+
+		return $daysRemaining;
+	}//end daysRemaining()
+
+	/**
+	 * The days from start to deadline.
+	 *
+	 * @param string|null $startDate The `Y-m-d` start date, or null.
+	 * @param string|null $deadline  The `Y-m-d` deadline, or null.
+	 *
+	 * @return int|null The days, or null when either date is missing.
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function normDays(?string $startDate, ?string $deadline): ?int {
+		if ($startDate !== null && $deadline !== null) {
+			return $this->days->between(from: new DateTimeImmutable($startDate), to: new DateTimeImmutable($deadline));
+		}
+
+		return null;
+	}//end normDays()
 
 	/**
 	 * Resolve a case deadline, deriving it from the case-type when the case
@@ -202,16 +253,15 @@ class CaseEnricher {
 	/**
 	 * Throughput days for a closed case, floored at zero.
 	 *
-	 * @param bool $isOpen Whether the case is still open.
 	 * @param string|null $startDate Normalised start date.
-	 * @param string|null $endDate Normalised end date.
+	 * @param string|null $endDate   Normalised end date, null while the case is open.
 	 *
 	 * @return int|null Days between start and end, or null when not closed.
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
-	private function computeThroughputDays(bool $isOpen, ?string $startDate, ?string $endDate): ?int {
-		if ($isOpen === true || $startDate === null || $endDate === null) {
+	private function computeThroughputDays(?string $startDate, ?string $endDate): ?int {
+		if ($startDate === null || $endDate === null) {
 			return null;
 		}
 

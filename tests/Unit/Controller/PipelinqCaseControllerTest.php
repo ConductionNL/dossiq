@@ -111,7 +111,6 @@ class PipelinqCaseControllerTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new PipelinqContactMomentController(
-			'dossiq',
 			$this->request,
 			new ContactMomentBridge($this->gateway(), $this->createMock(LoggerInterface::class)),
 			$this->log,
@@ -537,4 +536,57 @@ class PipelinqCaseControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->momentsController()->logContactMoment(caseId: 'case-b')->getStatus());
 	}//end testAnInvalidMomentIsABadRequest()
+
+	/**
+	 * The record written carries every field, defaults where none was sent, and the start time only when one was.
+	 *
+	 * @return void
+	 */
+	public function testTheWrittenMomentCarriesEveryField(): void {
+		$this->access->method('hasCaseMutationAccess')->willReturn(true);
+		$params = ['startTime' => ' 2026-10-01T09:00:00+02:00 ', 'visibleToApplicant' => true, 'callerIdentification' => 'BSN 1'];
+		$this->request->method('getParam')->willReturnCallback(
+			static function (string $key, mixed $default = null) use (&$params): mixed {
+				return $params[$key] ?? $default;
+			}
+		);
+		$written = [];
+		$this->log->method('createContactMoment')->willReturnCallback(
+			static function (array $data) use (&$written): array {
+				$written[] = $data;
+				return $data;
+			}
+		);
+
+		$first = $this->momentsController()->logContactMoment(caseId: 'case-b');
+		$params = [];
+		$this->momentsController()->logContactMoment(caseId: 'case-c');
+
+		$this->assertSame(
+			[
+				[
+					'case' => 'case-b',
+					'relatedCases' => ['case-b'],
+					'notificationChannel' => '',
+					'direction' => 'inbound',
+					'summary' => '',
+					'callerIdentification' => 'BSN 1',
+					'visibleToApplicant' => true,
+					'startTime' => '2026-10-01T09:00:00+02:00',
+				],
+				[
+					'case' => 'case-c',
+					'relatedCases' => ['case-c'],
+					'notificationChannel' => '',
+					'direction' => 'inbound',
+					'summary' => '',
+					'callerIdentification' => '',
+					'visibleToApplicant' => false,
+				],
+			],
+			$written
+		);
+		$this->assertSame('', $first->getData()['pipelinqRefusal']);
+		$this->assertSame([], $first->getData()['pipelinqIndicators']);
+	}//end testTheWrittenMomentCarriesEveryField()
 }//end class

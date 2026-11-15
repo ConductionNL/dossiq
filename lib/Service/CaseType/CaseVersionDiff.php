@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use OCA\Dossiq\Service\Support\TranslatedText;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseVersionDiff {
 
@@ -81,8 +81,8 @@ class CaseVersionDiff {
 	 *
 	 * @return array<string, mixed> The differences, and whether the case can land.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function between(array $case, string $sourceId, string $targetId): array {
 		$sourceStatuses = $this->statusesByName(caseTypeId: $sourceId);
@@ -193,7 +193,7 @@ class CaseVersionDiff {
 	 *
 	 * @return array<int, string> The refusals, empty when the move is possible.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function refusalsFor(string $statusName, array $mapped): array {
 		if ($mapped !== []) {
@@ -244,8 +244,8 @@ class CaseVersionDiff {
 	 *
 	 * @return array<int, string> The ones with an answer on this case.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function answeredAmong(array $case, array $names): array {
 		$filled = [];

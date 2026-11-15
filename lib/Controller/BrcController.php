@@ -29,10 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\ZgwService;
-use OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync;
-use OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler;
+use OCA\Dossiq\Controller\Support\GuardsZgwRequests;
+use OCA\Dossiq\Kernel\Contracts\BrcCrossRegisterSyncInterface;
+use OCA\Dossiq\Kernel\Contracts\BrcDocumentLinkHandlerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Service\Zgw\BrcHelperFactory;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -54,9 +58,11 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class BrcController extends ZgwController {
+	use GuardsZgwRequests;
+
 	/**
 	 * The ZGW API identifier for the Besluiten register.
 	 *
@@ -65,18 +71,25 @@ class BrcController extends ZgwController {
 	private const ZGW_API = 'besluiten';
 
 	/**
+	 * The ZGW resource a besluit delete acts on.
+	 *
+	 * @var string
+	 */
+	private const DECISION_RESOURCE = 'besluiten';
+
+	/**
 	 * What the Besluiten API keeps in step in the Zaken and Documenten registers.
 	 *
-	 * @var BrcCrossRegisterSync
+	 * @var BrcCrossRegisterSyncInterface
 	 */
-	private readonly BrcCrossRegisterSync $sync;
+	private readonly BrcCrossRegisterSyncInterface $sync;
 
 	/**
 	 * The besluitinformatieobject routes.
 	 *
-	 * @var BrcDocumentLinkHandler
+	 * @var BrcDocumentLinkHandlerInterface
 	 */
-	private readonly BrcDocumentLinkHandler $documentLinks;
+	private readonly BrcDocumentLinkHandlerInterface $documentLinks;
 
 	/**
 	 * Constructor.
@@ -86,18 +99,19 @@ class BrcController extends ZgwController {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The incoming request.
-	 * @param ZgwService $zgwService The shared ZGW service.
-	 * @param SettingsService $settingsService The settings service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
+	 * @param SettingsServiceInterface $settingsService The settings service.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZgwService $zgwService,
-		SettingsService $settingsService,
+		private readonly ZgwServiceInterface $zgwService,
+		SettingsServiceInterface $settingsService,
 	) {
 		parent::__construct(appName: $appName, request: $request);
-		$this->sync = new BrcCrossRegisterSync(zgwService: $zgwService, settingsService: $settingsService);
-		$this->documentLinks = new BrcDocumentLinkHandler(zgwService: $zgwService, sync: $this->sync);
+		$helpers = new BrcHelperFactory();
+		$this->sync = $helpers->brcCrossRegisterSync(zgwService: $zgwService, settingsService: $settingsService);
+		$this->documentLinks = $helpers->brcDocumentLinkHandler(zgwService: $zgwService, sync: $this->sync);
 	}//end __construct()
 
 	/**
@@ -111,22 +125,28 @@ class BrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->requireValidJwt() ?? $this->listOf(resource: $resource);
+	}//end index()
 
+	/**
+	 * List resources of the given type once the token is valid.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return JSONResponse
+	 */
+	private function listOf(string $resource): JSONResponse {
 		// BesluitInformatieObjecten returns a plain array per ZGW spec.
 		if ($resource === 'besluitinformatieobjecten') {
 			return $this->documentLinks->index(request: $this->request);
 		}
 
 		return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
-	}//end index()
+	}//end listOf()
 
 	/**
 	 * Create a new resource of the given type.
@@ -142,18 +162,13 @@ class BrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate creates on besluiten.aanmaken scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.aanmaken') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.aanmaken');
+		$refusal = $this->requireWriteScope(scope: 'besluiten.aanmaken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// For besluitinformatieobjecten: use custom create with OIO sync.
@@ -181,16 +196,11 @@ class BrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->requireValidJwt() ?? $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 	}//end show()
 
 	/**
@@ -207,35 +217,11 @@ class BrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate updates on besluiten.bijwerken scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
-		}
-
-		// Brc-004a: BesluitInformatieObject is immutable — PUT returns 405.
-		if ($resource === 'besluitinformatieobjecten') {
-			return new JSONResponse(
-				data: ['detail' => 'Method not allowed'],
-				statusCode: Http::STATUS_METHOD_NOT_ALLOWED
-			);
-		}
-
-		return $this->zgwService->handleUpdate(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			false
-		);
+		return $this->updateRefusal(resource: $resource) ?? $this->zgwService->handleUpdate($this->request, self::ZGW_API, $resource, $uuid, false);
 	}//end update()
 
 	/**
@@ -252,35 +238,11 @@ class BrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate patches on besluiten.bijwerken scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
-		}
-
-		// Brc-004b: BesluitInformatieObject is immutable — PATCH returns 405.
-		if ($resource === 'besluitinformatieobjecten') {
-			return new JSONResponse(
-				data: ['detail' => 'Method not allowed'],
-				statusCode: Http::STATUS_METHOD_NOT_ALLOWED
-			);
-		}
-
-		return $this->zgwService->handleUpdate(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			true
-		);
+		return $this->updateRefusal(resource: $resource) ?? $this->zgwService->handleUpdate($this->request, self::ZGW_API, $resource, $uuid, true);
 	}//end patch()
 
 	/**
@@ -299,18 +261,13 @@ class BrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate destroys on besluiten.verwijderen scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.verwijderen') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.verwijderen');
+		$refusal = $this->requireWriteScope(scope: 'besluiten.verwijderen');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Brc-009: Cascade delete for besluiten.
@@ -343,36 +300,14 @@ class BrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
 		// Brc-009d: Verify the parent resource exists before returning audit trail.
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService !== null) {
-			$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-			if ($mappingConfig !== null) {
-				try {
-					$objectService->find(
-						$uuid,
-						register: $mappingConfig['sourceRegister'],
-						schema: $mappingConfig['sourceSchema']
-					);
-				} catch (\Throwable $e) {
-					return new JSONResponse(
-						data: ['detail' => 'Not found'],
-						statusCode: Http::STATUS_NOT_FOUND
-					);
-				}
-			}
-		}
-
-		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->requireValidJwt()
+			?? $this->missingResourceRefusal(resource: $resource, uuid: $uuid, detail: 'Not found')
+			?? $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
 	}//end audittrailIndex()
 
 	/**
@@ -388,23 +323,47 @@ class BrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
+		return $this->audittrailEntry(resource: $resource, uuid: $uuid, auditUuid: $auditUuid);
+	}//end audittrailShow()
+
+	/**
+	 * The JWT refusal, else the scope refusal for a consumer without the given besluiten scope, else null.
+	 *
+	 * The JWT is checked first and the scope only for a valid token, so a
+	 * write is refused before anything is read or written.
+	 *
+	 * @param string $scope The scope the write needs (canonical format).
+	 *
+	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
+	 */
+	private function requireWriteScope(string $scope): ?JSONResponse {
+		return $this->scopedWriteRefusal(component: 'brc', scope: $scope);
+	}//end requireWriteScope()
+
+	/**
+	 * The write refusal for an update or patch, else a 405 for a besluitinformatieobject, else null.
+	 *
+	 * Brc-004a/b: a BesluitInformatieObject is immutable, so PUT and PATCH return 405.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the update may go ahead.
+	 */
+	private function updateRefusal(string $resource): ?JSONResponse {
+		$refusal = $this->requireWriteScope(scope: 'besluiten.bijwerken');
+		if ($refusal !== null || $resource !== 'besluitinformatieobjecten') {
+			return $refusal;
 		}
 
-		return $this->zgwService->handleAudittrailShow(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			$auditUuid
+		return new JSONResponse(
+			data: ['detail' => 'Method not allowed'],
+			statusCode: Http::STATUS_METHOD_NOT_ALLOWED
 		);
-	}//end audittrailShow()
+	}//end updateRefusal()
 
 	/**
 	 * Create a besluit with zaak-besluit sync to ZRC (brc-006).
@@ -455,63 +414,106 @@ class BrcController extends ZgwController {
 			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
 		}
 
+		$refusal = $this->deleteDecision(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->notifiedDeletion(resource: $resource, uuid: $uuid);
+	}//end destroyBesluit()
+
+	/**
+	 * Publish the delete notification and answer 204.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The deleted resource's UUID.
+	 *
+	 * @return JSONResponse
+	 */
+	private function notifiedDeletion(string $resource, string $uuid): JSONResponse {
+		$this->zgwService->notifyDeleted(request: $this->request, zgwApi: self::ZGW_API, resource: $resource, uuid: $uuid);
+
+		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
+	}//end notifiedDeletion()
+
+	/**
+	 * Find a besluit and delete it, answering why not when it cannot be.
+	 *
+	 * @param object $objectService The object service.
+	 * @param array $mappingConfig The besluiten mapping.
+	 * @param string $uuid The besluit UUID.
+	 *
+	 * @return JSONResponse|null The failure, not-found or validation response, or null once deleted.
+	 */
+	private function deleteDecision(object $objectService, array $mappingConfig, string $uuid): ?JSONResponse {
+		$object = self::DECISION_RESOURCE . ' ' . $uuid;
 		try {
-			// Validate the besluit exists (will throw if not found).
 			$existingObj = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				new ObjectFindOptions(
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				)
 			);
-			$existingData = $this->objectToArray(row: $existingObj);
-
-			// Run destroy business rules.
-			$ruleResult = $this->zgwService->getBusinessRulesService()->validate(
-				zgwApi: self::ZGW_API,
-				resource: $resource,
-				action: 'destroy',
-				body: [],
-				existingObject: $existingData
-			);
-			if ($ruleResult['valid'] === false) {
-				return new JSONResponse(
-					data: $this->zgwService->buildValidationError($ruleResult),
-					statusCode: $ruleResult['status']
-				);
-			}
-
-			// Build the besluit URL for OIO cleanup.
-			$decisionUrl = $this->zgwService->buildBaseUrl(
-				$this->request,
-				self::ZGW_API,
-				'besluiten'
-			) . '/' . $uuid;
-
-			// Cascade delete of BesluitInformatieObjecten is handled by
-			// OpenRegister via onDelete: CASCADE on decisionDocument.decision.
-			// Brc-009: Sync-delete OIOs in DRC (cross-component side-effect).
-			$this->sync->deleteOiosForDecision(decisionUrl: $decisionUrl);
-
-			// Delete the besluit itself.
-			$objectService->deleteObject(uuid: $uuid);
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$this->zgwService->publishNotification(
-				self::ZGW_API,
-				$resource,
-				$baseUrl . '/' . $uuid,
-				'destroy'
-			);
-
-			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'BRC delete besluit error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
+		}
+
+		if ($existingObj === null) {
+			return $this->zgwService->notFoundResponse();
+		}
+
+		try {
+			return $this->validateAndDeleteDecision(objectService: $objectService, existingObj: $existingObj, uuid: $uuid);
+		} catch (\Throwable $e) {
+			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
 		}//end try
-	}//end destroyBesluit()
+	}//end deleteDecision()
+
+	/**
+	 * Run the destroy business rules, then sync-delete the besluit's OIOs and delete it.
+	 *
+	 * @param object $objectService The object service.
+	 * @param mixed $existingObj The stored besluit.
+	 * @param string $uuid The besluit UUID.
+	 *
+	 * @return JSONResponse|null The validation error, or null once deleted.
+	 *
+	 * @throws \Throwable When the sync or the delete fails.
+	 */
+	private function validateAndDeleteDecision(object $objectService, mixed $existingObj, string $uuid): ?JSONResponse {
+		$existingData = $this->objectToArray(row: $existingObj);
+
+		// Run destroy business rules.
+		$ruleResult = $this->zgwService->getBusinessRulesService()->validate(
+			zgwApi: self::ZGW_API,
+			resource: self::DECISION_RESOURCE,
+			action: 'destroy',
+			body: [],
+			existingObject: $existingData
+		);
+		if ($ruleResult['valid'] === false) {
+			return new JSONResponse(
+				data: $this->zgwService->buildValidationError($ruleResult),
+				statusCode: $ruleResult['status']
+			);
+		}
+
+		// Build the besluit URL for OIO cleanup.
+		$decisionUrl = $this->zgwService->buildBaseUrl(
+			$this->request,
+			self::ZGW_API,
+			'besluiten'
+		) . '/' . $uuid;
+
+		// Cascade delete of BesluitInformatieObjecten is handled by
+		// OpenRegister via onDelete: CASCADE on decisionDocument.decision.
+		// Brc-009: Sync-delete OIOs in DRC (cross-component side-effect).
+		$this->sync->deleteOiosForDecision(decisionUrl: $decisionUrl);
+
+		// Delete the besluit itself.
+		$objectService->deleteObject(new ObjectDeletion(uuid: $uuid));
+
+		return null;
+	}//end validateAndDeleteDecision()
 }//end class

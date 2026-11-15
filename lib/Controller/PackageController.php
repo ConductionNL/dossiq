@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,15 +48,15 @@ class PackageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest         $request     The request.
-	 * @param PackageInstaller $installer   Installs and lists the packages.
+	 * @param PackageInstallerInterface $installer   Installs and lists the packages.
 	 * @param IUserSession     $userSession The session, for the body-side guard.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PackageInstaller $installer,
+		private readonly PackageInstallerInterface $installer,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -98,13 +98,41 @@ class PackageController extends Controller {
 
 		$outcome = $this->installer->install(id: $id);
 		$status = match ($outcome['status']) {
-			PackageInstaller::INSTALLED, PackageInstaller::CURRENT => Http::STATUS_OK,
-			PackageInstaller::REFUSED => Http::STATUS_UNPROCESSABLE_ENTITY,
+			PackageInstallerInterface::INSTALLED, PackageInstallerInterface::CURRENT => Http::STATUS_OK,
+			PackageInstallerInterface::REFUSED => Http::STATUS_UNPROCESSABLE_ENTITY,
 			default => Http::STATUS_INTERNAL_SERVER_ERROR,
 		};
 
 		return new JSONResponse($outcome, $status);
 	}//end install()
+
+	/**
+	 * Reload the shipped templates: install every package that is installed
+	 * here or installs automatically.
+	 *
+	 * AuthorizedAdminSetting refuses a non-admin in the middleware, before
+	 * this runs; a request without a user is refused before the installer
+	 * reads or writes anything.
+	 *
+	 * @return JSONResponse `{ results: [...] }`, one outcome per package; 500 when one failed.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function reload(): JSONResponse {
+		$refusal = $this->requireUser();
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$outcomes = $this->installer->reloadInstalled();
+		$status = Http::STATUS_OK;
+		if (in_array(PackageInstallerInterface::FAILED, array_column($outcomes, 'status'), true) === true) {
+			$status = Http::STATUS_INTERNAL_SERVER_ERROR;
+		}
+
+		return new JSONResponse(['results' => $outcomes], $status);
+	}//end reload()
 
 	/**
 	 * Refuse a request without a user. AuthorizedAdminSetting decides

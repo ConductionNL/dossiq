@@ -36,6 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Throwable;
 
 /**
@@ -45,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeStore {
+class CaseTypeStore implements CaseTypeStoreInterface {
 	/**
 	 * Constructor.
 	 *
@@ -66,22 +69,39 @@ class CaseTypeStore {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function readCaseType(string $caseTypeId): array {
+		return $this->readRow(schemaKey: 'case_type_schema', id: $caseTypeId);
+	}//end readCaseType()
+
+	/**
+	 * Read one row of a configured schema by id.
+	 *
+	 * The one catch for single-row reads, as {@see self::search()} is for
+	 * lists: an unreachable store or a missing row answers the empty array.
+	 *
+	 * @param string $schemaKey The settings key naming the schema.
+	 * @param string $id        The row's id.
+	 *
+	 * @return array<string, mixed> The row, or an empty array.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function readRow(string $schemaKey, string $id): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
+		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
 
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($objectService === null || $register === '' || $schema === '' || $id === '') {
 			return [];
 		}
 
 		try {
-			$found = $objectService->find($caseTypeId, register: $register, schema: $schema);
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			return [];
 		}
 
 		return $this->asRow(value: $found);
-	}//end readCaseType()
+	}//end readRow()
 
 	/**
 	 * Rows of one schema belonging to one case type.
@@ -98,11 +118,11 @@ class CaseTypeStore {
 			return [];
 		}
 
-		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: $caseTypeId);
+		return $this->search(schemaKey: $schemaKey, filter: ['caseType' => $caseTypeId]);
 	}//end rowsOfType()
 
 	/**
-	 * The case type's active workflow template.
+	 * The case type's workflow template: the one it names, else its active one.
 	 *
 	 * Here rather than on a caller because two of them ask: publishing writes
 	 * the template out, and the publication checks walk its moves to find what
@@ -113,13 +133,30 @@ class CaseTypeStore {
 	 * A type with templates but none marked active answers the first one, which
 	 * is what an unmarked set has always meant here.
 	 *
-	 * @param string $caseTypeId CaseType UUID.
+	 * `$named` is the `workflowDefinition` of the case type being judged. A
+	 * check made while a case type is SAVED passes the incoming payload's value:
+	 * an upgraded instance can hold an older active flow (a basis template
+	 * written before the app shipped one), and judging by that refused the
+	 * shipped case type on every upgrade (Zuiddrecht, 14 Oct). A name that does
+	 * not resolve to a stored template falls back to the active one.
+	 *
+	 * @param string            $caseTypeId CaseType UUID.
+	 * @param string|array|null $named      The flow the case type names: a uuid, an expanded row, or null.
 	 *
 	 * @return array<string, mixed> The template, or an empty array when there is none.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
-	public function activeTemplate(string $caseTypeId): array {
+	public function activeTemplate(string $caseTypeId, string|array|null $named=null): array {
+		$namedId = $this->referenceId(value: $named);
+		if ($namedId !== '') {
+			$template = $this->readRow(schemaKey: 'workflow_template_schema', id: $namedId);
+			if ($template !== []) {
+				return $template;
+			}
+		}
+
 		$rows = $this->rowsOfType(schemaKey: 'workflow_template_schema', caseTypeId: $caseTypeId);
 
 		$fallback = [];
@@ -154,7 +191,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The versions, unordered.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function versionsWithIdentifier(string $identifier): array {
 		$identifier = trim($identifier);
@@ -164,8 +201,7 @@ class CaseTypeStore {
 
 		return $this->search(
 			schemaKey: 'case_type_schema',
-			filterKey: 'identifier',
-			filterValue: $identifier
+			filter: ['identifier' => $identifier]
 		);
 	}//end versionsWithIdentifier()
 
@@ -196,8 +232,8 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The case types, unordered.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function everyCaseType(array $scope=[]): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -235,7 +271,7 @@ class CaseTypeStore {
 	 * @spec openspec/specs/property-definition-management/spec.md
 	 */
 	public function sharedRows(string $schemaKey): array {
-		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: 'IS NULL');
+		return $this->search(schemaKey: $schemaKey, filter: ['caseType' => 'IS NULL']);
 	}//end sharedRows()
 
 	/**
@@ -295,13 +331,13 @@ class CaseTypeStore {
 	 * filter and would read `filter[identifier]` as the empty set, which
 	 * presents as a case type with no versions rather than as an error.
 	 *
-	 * @param string $schemaKey   The settings key naming the schema.
-	 * @param string $filterKey   The property to narrow on.
-	 * @param string $filterValue The value, or `IS NULL` for rows carrying none.
+	 * @param string                $schemaKey The settings key naming the schema.
+	 * @param array<string, string> $filter    The one property to narrow on, with its value
+	 *                                         or `IS NULL` for rows carrying none.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function search(string $schemaKey, string $filterKey, string $filterValue): array {
+	private function search(string $schemaKey, array $filter): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
@@ -312,11 +348,7 @@ class CaseTypeStore {
 
 		try {
 			$found = $objectService->searchObjects(
-				[
-					'@self' => ['register' => $register, 'schema' => $schema],
-					$filterKey => $filterValue,
-					'_limit' => 200,
-				]
+				['@self' => ['register' => $register, 'schema' => $schema]] + $filter + ['_limit' => 200]
 			);
 		} catch (Throwable $e) {
 			return [];
@@ -340,15 +372,7 @@ class CaseTypeStore {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function asRow(mixed $value): array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$value = $value->jsonSerialize();
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
+		return SerialisedResult::arrayOf(value: $value);
 	}//end asRow()
 
 	/**

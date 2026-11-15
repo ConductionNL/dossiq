@@ -138,7 +138,7 @@ class LhsInterventionTableMatchesGridTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lhs-packages/specs/enforcement-lhs/spec.md
+	 * @spec openspec/specs/enforcement-lhs/spec.md
 	 */
 	public function testTheTableAnswersWhatEachGridCellSays(): void {
 		$cells = $this->cells();
@@ -155,7 +155,7 @@ class LhsInterventionTableMatchesGridTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lhs-packages/specs/enforcement-lhs/spec.md
+	 * @spec openspec/specs/enforcement-lhs/spec.md
 	 */
 	public function testOneChangedGridCellIsNamed(): void {
 		$cells = $this->cells();
@@ -177,7 +177,7 @@ class LhsInterventionTableMatchesGridTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lhs-packages/specs/enforcement-lhs/spec.md
+	 * @spec openspec/specs/enforcement-lhs/spec.md
 	 */
 	public function testOneChangedRuleIsNamed(): void {
 		$table = $this->table();
@@ -199,7 +199,7 @@ class LhsInterventionTableMatchesGridTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lhs-packages/specs/enforcement-lhs/spec.md
+	 * @spec openspec/specs/enforcement-lhs/spec.md
 	 */
 	public function testAMissingRuleIsNamed(): void {
 		$table = $this->table();

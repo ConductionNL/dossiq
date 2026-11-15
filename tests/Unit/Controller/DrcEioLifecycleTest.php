@@ -36,28 +36,35 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The ObjectService shape the EIO paths call.
  */
 interface DrcLifecycleObjectServiceStub {
-	public function find(mixed $id, mixed $register, mixed $schema): mixed;
+	public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	public function buildSearchQuery(array $requestParams, mixed $register, mixed $schema): array;
 
 	public function searchObjectsPaginated(array $query): array;
 
-	public function deleteObject(string $uuid): mixed;
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): mixed;
 
-	public function saveObject(mixed $register, mixed $schema, array $object, ?string $uuid=null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
  * Characterisation tests for the EIO delete, update and chunked create.
  *
  * @covers \OCA\Dossiq\Controller\DrcController
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses \OCA\Dossiq\Service\Zgw\ZgwSearchScope
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Controller\EioUpdateRun
+ * @uses \OCA\Dossiq\Controller\EioRelationLookup
+ * @uses \OCA\Dossiq\Service\Zgw\RelationSearch
  */
 class DrcEioLifecycleTest extends TestCase {
 
@@ -94,7 +101,9 @@ class DrcEioLifecycleTest extends TestCase {
 	private function controller(mixed $stored, array $searches=[], array $body=[], int $destroyStatus=Http::STATUS_NO_CONTENT): DrcController {
 		$objects = $this->createMock(DrcLifecycleObjectServiceStub::class);
 		$objects->method('find')->willReturnCallback(
-			static function (mixed $id, mixed $register, mixed $schema) use ($stored): mixed {
+			static function (mixed $id, ?ObjectFindOptions $options = null) use ($stored): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($stored instanceof \Throwable) {
 					throw $stored;
 				}
@@ -106,14 +115,25 @@ class DrcEioLifecycleTest extends TestCase {
 			static fn (array $requestParams, mixed $register, mixed $schema): array => ['schema' => (string)$schema, 'params' => $requestParams]
 		);
 		$objects->method('searchObjectsPaginated')->willReturnCallback(
-			static fn (array $query): array => ['results' => $searches[$query['schema']] ?? []]
+			static function (array $query) use ($searches): array {
+				$answer = ($searches[$query['schema']] ?? []);
+				if ($answer instanceof \Throwable) {
+					throw $answer;
+				}
+
+				return ['results' => $answer];
+			}
 		);
-		$objects->method('deleteObject')->willReturnCallback(function (string $uuid): bool {
+		$objects->method('deleteObject')->willReturnCallback(function (ObjectDeletion $deletion): bool {
+			$uuid = $deletion->uuid;
 			$this->seen['deleted'][] = $uuid;
 			return true;
 		});
 		$objects->method('saveObject')->willReturnCallback(
-			function (mixed $register, mixed $schema, array $object, ?string $uuid=null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->seen['saved'][] = $object;
 				return array_merge(['id' => self::UUID], $object);
 			}
@@ -134,6 +154,9 @@ class DrcEioLifecycleTest extends TestCase {
 				$this->seen['destroyed'][] = $resource.':'.$uuid;
 				return new JSONResponse(data: [], statusCode: $destroyStatus);
 			}
+		);
+		$zgw->method('buildValidationError')->willReturnCallback(
+			static fn (array $ruleResult): array => ['detail' => $ruleResult['detail'], 'code' => ($ruleResult['code'] ?? '')]
 		);
 		$zgw->method('getRequestBody')->willReturn($body);
 		$rules = $this->createMock(ZgwBusinessRulesService::class);
@@ -174,6 +197,27 @@ class DrcEioLifecycleTest extends TestCase {
 		$this->assertSame([], $this->seen['files']);
 
 	}//end testDocumentWithARelationIsNotDeleted()
+
+	/**
+	 * A document whose relations could not be looked up is not deleted either: 503, nothing cascades.
+	 *
+	 * The besluit side fails here while the other two answer none. Control: testDeletedDocumentCascades,
+	 * where every search answers and the delete goes through.
+	 *
+	 * @return void
+	 */
+	public function testDocumentWhoseRelationsCannotBeReadIsNotDeleted(): void {
+		$response = $this->controller(stored: ['id' => self::UUID], searches: ['14' => new \RuntimeException('down'), '15' => [['id' => 'gr-1']]])
+			->destroy('enkelvoudiginformatieobjecten', self::UUID);
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame('check-not-completed', $response->getData()['code']);
+		$this->assertStringContainsString('drc-008a', $response->getData()['detail']);
+		$this->assertSame([], $this->seen['destroyed']);
+		$this->assertSame([], $this->seen['deleted']);
+		$this->assertSame([], $this->seen['files']);
+
+	}//end testDocumentWhoseRelationsCannotBeReadIsNotDeleted()
 
 	/**
 	 * A deleted document takes its gebruiksrechten and its stored files with it.

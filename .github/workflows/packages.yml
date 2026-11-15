@@ -58,7 +58,7 @@ jobs:
           --health-retries 10
     steps:
       - name: Checkout Nextcloud server
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
           repository: nextcloud/server
@@ -69,13 +69,13 @@ jobs:
         run: cd server && git submodule update --init 3rdparty
 
       - name: Checkout app
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
           path: server/apps/dossiq
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: "8.3"
           extensions: mbstring, intl, pdo_pgsql, pgsql, zip, gd, curl, xml, json
@@ -84,7 +84,10 @@ jobs:
       - name: Checkout and install the apps dossiq runs on
         run: |
           for app in openregister decidiq integriq; do
-            git clone --depth 1 --branch development "https://github.com/ConductionNL/${app}.git" "server/apps/${app}"
+            # openregister develops on main since 2026-11-09 (ADR-122); development is frozen.
+            branch=development
+            if [ "$app" = "openregister" ]; then branch=main; fi
+            git clone --depth 1 --branch "$branch" "https://github.com/ConductionNL/${app}.git" "server/apps/${app}"
             if [ -f "server/apps/${app}/composer.json" ]; then
               (cd "server/apps/${app}" && composer install --no-progress --prefer-dist --optimize-autoloader --no-dev)
             fi
@@ -144,7 +147,7 @@ jobs:
           curl -sf http://localhost:8080/status.php
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "20"
 
@@ -160,6 +163,19 @@ jobs:
           fail=0
           for collection in "${collections[@]}"; do
             echo "=== ${collection##*/}"
-            newman run "$collection" --env-var baseUrl=http://localhost:8080 || fail=1
+            # The ledger records the version the package declares, so the
+            # collection reads it from the same package.json.
+            package="$(basename "$collection" .postman_collection.json)"
+            manifest=""
+            for root in server/apps/dossiq/lib/Settings/packages server/apps/dossiq/tests/fixtures/packages; do
+              [ -f "$root/$package/package.json" ] && manifest="$root/$package/package.json"
+            done
+            if [ -z "$manifest" ]; then
+              echo "::error::No package.json for the $package collection."
+              fail=1
+              continue
+            fi
+            version="$(jq -r '.version' "$manifest")"
+            newman run "$collection" --env-var baseUrl=http://localhost:8080 --env-var "packageVersion=$version" || fail=1
           done
           exit "$fail"

@@ -15,7 +15,7 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
 
 ## 1. The stopping rule
 
-- [ ] 1.1 Add schema `stoppingRule` in `lib/Settings/register.d/88-review-recall.json` and bump the
+- [x] 1.1 Add schema `stoppingRule` in `lib/Settings/register.d/88-review-recall.json` and bump the
   register version (REQ-WRS-001). Give it the private authorization block of `woo-review-triage`
   REQ-WRT-006 and no `x-openregister-hierarchy` key (OpenRegister refuses a parent that references
   another schema, and the schema would fail to import). Add it to the grant table of
@@ -24,6 +24,13 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
   - **fails today**: `tests/Unit/Settings/WooChildSchemasTest.php`
     `testTheStoppingRuleIsPrivateAndDeclaresNoHierarchy`, and
     `tests/Unit/Woo/WooAssessmentAccessTest.php` `testTheStoppingRuleIsGrantedToTheAssigneeOnly`.
+  - Built: `stoppingRule` 1.0.2 carries the private authorization block and no hierarchy; register 0.20.95. The grant
+    table is now configuration (decision 182): both woo-verzoek versions list `stopping_rule_schema` under
+    `reviewerAccess.records` with `readers: assignee`, `assigneeMay: update`, so batch reviewers get nothing, and
+    `CaseReviewerAccess` applies it. `StoppingRules::declare()` reconciles the case after storing the rule; a failing
+    reconcile is logged and keeps the rule. The named tests became
+    `CaseTypePrivateRecordsTest::testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy` (stoppingRule now listed),
+    `CaseTypePrivateRecordsTest::testTheStoppingRuleIsGrantedToTheAssigneeOnly`, and three new `StoppingRulesTest` cases.
 - [x] 1.2 POST `/api/cases/{id}/review/stopping-rule`, case mutation guard, refused once any document is
   marked. A listener on OpenRegister's updating and deleting events refuses direct writes once review
   started; construct the real event classes in its test (REQ-WRS-001).
@@ -39,13 +46,13 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
     and `testDeclaringBeforeReviewAnswers201`. `GET /api/cases/{id}/review/recall` answers `{rule, reviewStarted, samples}`.
 ## 2. Sample and estimate
 
-- [x] 2.1 Add `lib/Woo/RecallEstimator.php` with `upperBound(int $k, int $n, float $confidence): float`
+- [x] 2.1 Add `lib/Review/RecallEstimator.php` with `upperBound(int $k, int $n, float $confidence): float`
   and `estimate(int $found, int $nullSetSize, int $k, int $n, float $confidence): array` per the
   proposal's method (REQ-WRS-002).
-  - **fails today** (class absent): `tests/Unit/Woo/RecallEstimatorTest.php`
+  - **fails today** (class absent): `tests/Unit/Review/RecallEstimatorTest.php`
     `testTheFixtureWithTwoInScope` (0.9615 and 0.8892), `testTheFixtureWithTenInScope` (0.8333 and
     0.7500), `testZeroInScopeHasAPositiveUpperBound`, `testTheBoundRisesWithConfidence`.
-  - Class and tests built ahead (`lib/Woo/RecallEstimator.php`, `tests/Unit/Woo/RecallEstimatorTest.php`,
+  - Class and tests built ahead (`lib/Review/RecallEstimator.php`, `tests/Unit/Review/RecallEstimatorTest.php`,
     all four named tests, red first: class absent). Left unticked: its caller is the samples route of 2.2,
     which waits on `woo-review-triage` batches.
   - Ticked with 2.2: `RecallSamples` is its caller. The class stays in `lib/Woo/` where #3596 landed it; moving the

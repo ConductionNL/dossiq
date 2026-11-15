@@ -35,10 +35,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\IntakeDeclarations;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
+use OCA\Dossiq\Service\Intake\SpecialCategoryClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
 use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
@@ -57,9 +59,10 @@ use Psr\Log\NullLogger;
  * Unit tests for the pre-persist enforcement of the intake declarations.
  *
  * @covers \OCA\Dossiq\Listener\IntakeRequirementsListener
- *
+ * @covers \OCA\Dossiq\Listener\IntakeDeclarations
  * @uses \OCA\Dossiq\Service\Intake\AssigneeNarrowing
  * @uses \OCA\Dossiq\Service\Intake\CaseClassification
+ * @uses \OCA\Dossiq\Service\Intake\SpecialCategoryClassification
  * @uses \OCA\Dossiq\Service\Intake\ClassificationSchemes
  * @uses \OCA\Dossiq\Service\Intake\IntakeRequirements
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -123,15 +126,17 @@ class IntakeRequirementsListenerTest extends TestCase {
 		$this->listener = new IntakeRequirementsListener(
 			settingsService: $settings,
 			caseTypeResolver: $resolver,
-			requirements: new IntakeRequirements(),
-			classification: new CaseClassification(
-				schemes: new ClassificationSchemes(appConfig: $appConfig)
-			),
-			narrowing: new AssigneeNarrowing(),
-			duplicates: new DuplicatePolicy(
-				container: $this->createMock(originalClassName: ContainerInterface::class),
-				groupManager: $this->createMock(originalClassName: IGroupManager::class),
-				logger: new NullLogger()
+			declarations: new IntakeDeclarations(
+				requirements: new IntakeRequirements(),
+				classification: new CaseClassification(
+					schemes: new ClassificationSchemes(appConfig: $appConfig)
+				),
+				narrowing: new AssigneeNarrowing(),
+				duplicates: new DuplicatePolicy(
+					container: $this->createMock(originalClassName: ContainerInterface::class),
+					groupManager: $this->createMock(originalClassName: IGroupManager::class),
+					logger: new NullLogger()
+				),
 			),
 			userSession: $this->createMock(originalClassName: IUserSession::class),
 			logger: new NullLogger(),
@@ -298,6 +303,32 @@ class IntakeRequirementsListenerTest extends TestCase {
 	}//end testASaveOfAnotherSchemaIsLeftAlone()
 
 	/**
+	 * A case whose payload cannot be read leaves the save alone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 */
+	public function testAnUnreadablePayloadLeavesTheSaveAlone(): void {
+		$entity = new class extends ObjectEntity {
+			/**
+			 * A payload that cannot be read.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function jsonSerialize(): array {
+				throw new \RuntimeException('unreadable');
+			}//end jsonSerialize()
+		};
+		$entity->setSchema(self::CASE_SCHEMA);
+		$event = new ObjectCreatingEvent($entity);
+
+		$this->listener->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testAnUnreadablePayloadLeavesTheSaveAlone()
+
+	/**
 	 * A case type that cannot be resolved leaves the save alone, on purpose.
 	 *
 	 * 🔴 THIS IS THE ONE DOOR THIS LISTENER LEAVES OPEN, AND IT IS DELIBERATE.
@@ -403,4 +434,30 @@ class IntakeRequirementsListenerTest extends TestCase {
 		$this->assertTrue($event->isPropagationStopped());
 		$this->assertStringContainsString('communicationChannel', (string)$event->getErrors()['message']);
 	}//end testSendingADraftMissingTheChannelIsStopped()
+
+	/**
+	 * A case type that requires its special categories refuses a case without them, at intake
+	 * (social-domain-consent-and-safeguards 3.1, REQ-SDC-SAFE-01), and lets a classified one through.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	public function testACaseWithoutItsSpecialCategoryIsStopped(): void {
+		$this->caseType = [
+			'intakeRequirements' => ['requiredBeforeCreation' => []],
+			'requiresSpecialCategory' => true,
+			'specialDataCategories' => ['health'],
+		];
+		$refused = new ObjectCreatingEvent($this->entity(payload: ['caseType' => 'ct-1']));
+		$this->listener->handle($refused);
+
+		$this->assertTrue($refused->isPropagationStopped());
+		$this->assertSame(SpecialCategoryClassification::RULE_REQUIRED, $refused->getErrors()['error']);
+
+		$classified = new ObjectCreatingEvent($this->entity(payload: ['caseType' => 'ct-1', 'gdprClassification' => ['health']]));
+		$this->listener->handle($classified);
+
+		$this->assertFalse($classified->isPropagationStopped());
+	}//end testACaseWithoutItsSpecialCategoryIsStopped()
 }//end class

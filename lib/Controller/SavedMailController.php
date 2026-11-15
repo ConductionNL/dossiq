@@ -39,9 +39,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Email\SavedMailImport;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\SavedMailImportInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,6 +49,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -76,21 +77,21 @@ class SavedMailController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest        $request         Inbound request.
-	 * @param SavedMailImport $import          Hands the bytes to integriq's reader.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization.
+	 * @param SavedMailImportInterface $import          Hands the bytes to integriq's reader.
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization.
 	 * @param IRootFolder     $rootFolder      Resolves the node as the caller.
 	 * @param IUserSession    $userSession     The caller.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly SavedMailImport $import,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly SavedMailImportInterface $import,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IRootFolder $rootFolder,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -110,6 +111,32 @@ class SavedMailController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$refusal = $this->readRefusal(caseId: $caseId, user: $user);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$node = $this->nodeFor(uid: $user->getUID(), fileId: $fileId);
+		if ($node === null) {
+			return new JSONResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$read = new SavedMailRead();
+		$read->caseId = $caseId;
+		$read->fileId = $fileId;
+		$read->node = $node;
+		return $this->importFile(read: $read);
+	}//end read()
+
+	/**
+	 * Refuse a read without a case (400) or on a case the caller may not change (403).
+	 *
+	 * @param string $caseId The case.
+	 * @param IUser  $user   The caller.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the file may be read onto the case.
+	 */
+	private function readRefusal(string $caseId, IUser $user): ?JSONResponse {
 		if (trim($caseId) === '') {
 			return new JSONResponse(['error' => 'A case id is required'], Http::STATUS_BAD_REQUEST);
 		}
@@ -118,43 +145,64 @@ class SavedMailController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$node = $this->nodeFor(uid: $user->getUID(), fileId: $fileId);
-		if ($node === null) {
-			return new JSONResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
-		}
+		return null;
+	}//end readRefusal()
 
-		if ($node->getSize() > self::MAX_BYTES) {
+	/**
+	 * Read the file and import it as a message on the case.
+	 *
+	 * 200 for a KEPT outcome as well as an IMPORTED one, because both are
+	 * real answers to what the handler asked. A 500 for "integriq is not
+	 * installed" would be this app reporting its own failure rather than
+	 * the file's, and the sentence is what the handler needs either way.
+	 *
+	 * @param SavedMailRead $read The case and the file.
+	 *
+	 * @return JSONResponse
+	 */
+	private function importFile(SavedMailRead $read): JSONResponse {
+		if ($read->node->getSize() > self::MAX_BYTES) {
 			return new JSONResponse(
 				[
-					'outcome' => SavedMailImport::OUTCOME_KEPT,
+					'outcome' => SavedMailImportInterface::OUTCOME_KEPT,
 					'reason' => 'This file is too large to read as a message. It is unchanged on this case.',
 				]
 			);
 		}
 
-		try {
-			$raw = (string)$node->getContent();
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'SavedMailController: a saved mail file could not be read from storage',
-				['case' => $caseId, 'file' => $fileId, 'error' => $e->getMessage()]
-			);
-
+		$raw = $this->contentOf(read: $read);
+		if ($raw === null) {
 			return new JSONResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		// 200 for a KEPT outcome as well as an IMPORTED one, because both are
-		// real answers to what the handler asked. A 500 for "integriq is not
-		// installed" would be this app reporting its own failure rather than
-		// the file's, and the sentence is what the handler needs either way.
 		return new JSONResponse(
 			$this->import->import(
-				caseId: trim($caseId),
-				fileName: $node->getName(),
+				caseId: trim($read->caseId),
+				fileName: $read->node->getName(),
 				raw: $raw
 			)
 		);
-	}//end read()
+	}//end importFile()
+
+	/**
+	 * The file's content, or null when storage will not give it up (logged).
+	 *
+	 * @param SavedMailRead $read The case and the file.
+	 *
+	 * @return string|null
+	 */
+	private function contentOf(SavedMailRead $read): ?string {
+		try {
+			return (string)$read->node->getContent();
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'SavedMailController: a saved mail file could not be read from storage',
+				['case' => $read->caseId, 'file' => $read->fileId, 'error' => $e->getMessage()]
+			);
+
+			return null;
+		}
+	}//end contentOf()
 
 	/**
 	 * The file, resolved as the caller, or null when they cannot reach it.

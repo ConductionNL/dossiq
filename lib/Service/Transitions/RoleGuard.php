@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCP\IGroupManager;
 use OCP\IUserManager;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -38,7 +39,7 @@ use Psr\Log\LoggerInterface;
  *  1. `case.roles[]` entries with `{userId, role}`.
  *  2. Membership in a Nextcloud group named after the role (lowercase).
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T05
  */
 class RoleGuard implements GuardEvaluatorInterface {
 	/**
@@ -47,11 +48,13 @@ class RoleGuard implements GuardEvaluatorInterface {
 	 * @param IGroupManager $groupManager Nextcloud group manager
 	 * @param IUserManager $userManager Nextcloud user manager
 	 * @param LoggerInterface $logger Logger
+	 * @param IL10N $l10n Translates the refusals.
 	 */
 	public function __construct(
 		private readonly IGroupManager $groupManager,
 		private readonly IUserManager $userManager,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -74,7 +77,7 @@ class RoleGuard implements GuardEvaluatorInterface {
 		}
 
 		if ($userId === '') {
-			return new GuardResult(passed: false, failureMessage: 'Niet ingelogd', details: ['silent' => true]);
+			return new GuardResult(passed: false, failureMessage: $this->l10n->t('Not logged in'), details: ['silent' => true]);
 		}
 
 		// 1. Direct role assignment on case.roles[].
@@ -92,7 +95,7 @@ class RoleGuard implements GuardEvaluatorInterface {
 		// Role mismatch — silent so the UI hides the transition entirely.
 		return new GuardResult(
 			passed: false,
-			failureMessage: 'Onvoldoende rechten',
+			failureMessage: $this->l10n->t('Insufficient permissions'),
 			details: ['silent' => true, 'allowedRoles' => array_values($allowed)],
 		);
 	}//end evaluate()

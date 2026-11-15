@@ -39,10 +39,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -67,15 +67,15 @@ class StufProviderQueryListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param StufRegisterAccess $register  The stufEndpoint rows.
-	 * @param SettingsService    $settings  The register and case schema.
-	 * @param CaseObjectReader   $caseTypes Reads a case type for its catalogue identifier.
+	 * @param StufRegisterAccessInterface $register  The stufEndpoint rows.
+	 * @param SettingsServiceInterface    $settings  The register and case schema.
+	 * @param CaseObjectReaderInterface   $caseTypes Reads a case type for its catalogue identifier.
 	 * @param LoggerInterface    $logger    The logger.
 	 */
 	public function __construct(
-		private readonly StufRegisterAccess $register,
-		private readonly SettingsService $settings,
-		private readonly CaseObjectReader $caseTypes,
+		private readonly StufRegisterAccessInterface $register,
+		private readonly SettingsServiceInterface $settings,
+		private readonly CaseObjectReaderInterface $caseTypes,
 		private readonly LoggerInterface $logger,
 	) {
 
@@ -112,7 +112,7 @@ class StufProviderQueryListener implements IEventListener {
 		}
 
 		$event->refuse(
-			appId: Application::APP_ID,
+			appId: AppIdentity::APP_ID,
 			reason: 'Dossiq neemt geen zaak- of documentwijzigingen aan via StUF; gebruik de API van dossiq.'
 		);
 	}//end handle()
@@ -128,7 +128,7 @@ class StufProviderQueryListener implements IEventListener {
 	private function answerCaseQuery(\OCA\Integriq\Event\StufCaseQueryEvent $event, array $endpoint): void {
 		$identificatie = trim((string)($event->getCriteria()['identificatie'] ?? ''));
 		if ($identificatie === '') {
-			$event->refuse(appId: Application::APP_ID, reason: 'Dossiq beantwoordt een zakLv01 alleen op identificatie.');
+			$event->refuse(appId: AppIdentity::APP_ID, reason: 'Dossiq beantwoordt een zakLv01 alleen op identificatie.');
 			return;
 		}
 
@@ -152,7 +152,7 @@ class StufProviderQueryListener implements IEventListener {
 			);
 		}
 
-		$event->answerCases(appId: Application::APP_ID, cases: $answer);
+		$event->answerCases(appId: AppIdentity::APP_ID, cases: $answer);
 	}//end answerCaseQuery()
 
 	/**
@@ -165,7 +165,7 @@ class StufProviderQueryListener implements IEventListener {
 	private function answerPersonQuery(\OCA\Integriq\Event\StufPersonQueryEvent $event): void {
 		$bsn = trim($event->getBsn());
 		if (preg_match('/^\d{9}$/', $bsn) !== 1) {
-			$event->refuse(appId: Application::APP_ID, reason: 'Een npsLv01 vraagt naar een BSN van negen cijfers.');
+			$event->refuse(appId: AppIdentity::APP_ID, reason: 'Een npsLv01 vraagt naar een BSN van negen cijfers.');
 			return;
 		}
 
@@ -182,7 +182,7 @@ class StufProviderQueryListener implements IEventListener {
 			);
 		}
 
-		$event->answerPersons(appId: Application::APP_ID, persons: $persons);
+		$event->answerPersons(appId: AppIdentity::APP_ID, persons: $persons);
 	}//end answerPersonQuery()
 
 	/**
@@ -197,7 +197,7 @@ class StufProviderQueryListener implements IEventListener {
 			return null;
 		}
 
-		return $this->register->findOne(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: ['integriqSource' => $sourceId]);
+		return $this->register->findOne(schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT, filters: ['integriqSource' => $sourceId]);
 	}//end endpointFor()
 
 	/**

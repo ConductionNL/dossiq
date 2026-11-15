@@ -42,6 +42,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * Suspend, resume, extend and reopen behind their guards.
@@ -150,6 +151,36 @@ class CaseLifecycleControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testSuspendIsRefusedWithoutCaseAccess()
+
+	/**
+	 * The picked pause reason reaches the service, and an undeclared one is a 422 naming its code.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	public function testSuspendPassesThePauseReasonAndRefusesAnUndeclaredOne(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => match ($key) {
+				'reason' => '',
+				'days' => 14,
+				'pauseReason' => 'made-up',
+				default => $default,
+			}
+		);
+		$this->request = $request;
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->lifecycle->expects($this->once())
+			->method('suspend')
+			->with(caseId: 'case-1', reason: '', days: 14, pauseReason: 'made-up')
+			->willThrowException(new \RuntimeException('pause_reason_not_declared'));
+
+		$response = $this->controller()->suspend(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('pause_reason_not_declared', $response->getData()['code']);
+	}//end testSuspendPassesThePauseReasonAndRefusesAnUndeclaredOne()
 
 	/**
 	 * The per-case guard is asked with the case from the URL and the session
@@ -335,7 +366,10 @@ class CaseLifecycleControllerTest extends TestCase {
 				 *
 				 * @throws HookStoppedException Always.
 				 */
-				public function deleteObject(string $uuid, string $register, string $schema): bool {
+				public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+					$uuid = $deletion->uuid;
+					$register = $deletion->target->register;
+					$schema = $deletion->target->schema;
 					throw new HookStoppedException(
 						'You cannot delete this case yet.',
 						['blockedBy' => ['open-term']]
@@ -423,7 +457,10 @@ class CaseLifecycleControllerTest extends TestCase {
 			 *
 			 * @return bool Always true.
 			 */
-			public function deleteObject(string $uuid, string $register, string $schema): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$this->seen = [$uuid, $register, $schema];
 				return true;
 			}

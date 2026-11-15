@@ -1,0 +1,171 @@
+{
+    "checklist": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "checklist",
+                "passed": false,
+                "failureMessage": "checklist for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "requiredField": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "requiredField",
+                "passed": false,
+                "failureMessage": "requiredField for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "requiredDocument": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "requiredDocument",
+                "passed": false,
+                "failureMessage": "requiredDocument for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "roleGuard": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "roleGuard",
+                "passed": false,
+                "failureMessage": "role for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "delegatedAuthorityGuard": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "delegatedAuthorityGuard",
+                "passed": false,
+                "failureMessage": "delegatedAuthority for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "mandaatGuard": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "mandaatGuard",
+                "passed": false,
+                "failureMessage": "delegatedAuthority with mandaatCategorie for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "statusChecklist": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "statusChecklist",
+                "passed": false,
+                "failureMessage": "statusChecklist for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "statusCapacity": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "statusCapacity",
+                "passed": false,
+                "failureMessage": "capacity for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "approvalGate": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "approvalGate",
+                "passed": false,
+                "failureMessage": "approval for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "documentAssessment": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "documentAssessment",
+                "passed": false,
+                "failureMessage": "documentAssessment for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "statusEntryRequirements": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "statusEntryRequirements",
+                "passed": false,
+                "failureMessage": "entryRequirements for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "dateReached": {
+        "knows": true,
+        "answer": [
+            {
+                "type": "dateReached",
+                "passed": false,
+                "failureMessage": "dateReached for behandelaar",
+                "details": {
+                    "case": "case-1"
+                }
+            }
+        ]
+    },
+    "nobodysGuard": {
+        "knows": false,
+        "answer": [
+            {
+                "type": "nobodysGuard",
+                "passed": false,
+                "failureMessage": "Onbekende guard",
+                "details": {
+                    "unknown": true
+                }
+            }
+        ]
+    }
+}

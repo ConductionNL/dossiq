@@ -28,7 +28,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
 use OCA\Dossiq\Portal\PortalContributionProvider;
+use OCA\Dossiq\Portal\PortalConversation;
 use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -38,6 +40,8 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Portal\PortalPages
  * @uses   \OCA\Dossiq\Portal\CitizenManifest
  * @uses   \OCA\Dossiq\Portal\PortalConversation
+ * @uses   \OCA\Dossiq\Woo\WooRequestForm
+ * @uses   \OCA\Dossiq\Woo\WooRequestRefused
  */
 class PortalContributionProviderTest extends TestCase {
 	/**
@@ -142,8 +146,8 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertSame(
 			[
 				'applicant' => 'Wacht op u',
-				'thirdParty' => 'Wij wachten op informatie van een ander',
-				'us' => 'De gemeente is aan zet',
+				'thirdParty' => 'In behandeling',
+				'us' => 'In behandeling',
 			],
 			$cases['valueLabels']['portalTurn'],
 			'the words are dossiq\'s, so a portal administrator can reword them'
@@ -283,7 +287,7 @@ class PortalContributionProviderTest extends TestCase {
 	}//end testTheCasePageAsksOnlyAboutTheCaseOnScreen()
 
 	/**
-	 * 🔴 The Woo request runs in four steps, and every field it asks sits in
+	 * 🔴 The Woo request runs in three steps, and every field it asks sits in
 	 * exactly one of them.
 	 *
 	 * Portaliq keeps a step only when every field it names is one of the
@@ -298,12 +302,12 @@ class PortalContributionProviderTest extends TestCase {
 			$action = $this->citizenAction(id: $id);
 
 			$this->assertSame(
-				['vraag', 'periode', 'gegevens', 'controleren'],
+				['vraag', 'gegevens', 'controleren'],
 				array_column($action['steps'], 'id'),
-				$id . ': the four steps of the design'
+				$id . ': the three steps of the design'
 			);
 			$this->assertSame(
-				['Uw vraag', 'Periode en documenten', 'Uw gegevens', 'Controleren en versturen'],
+				['Uw verzoek', 'Uw gegevens', 'Controleren en versturen'],
 				array_column($action['steps'], 'title')
 			);
 
@@ -331,6 +335,72 @@ class PortalContributionProviderTest extends TestCase {
 	}//end testEveryWooFieldSitsInExactlyOneStep()
 
 	/**
+	 * The period and the kinds of document are asked in the first step, with
+	 * the same input and the same checks as before.
+	 *
+	 * The boards draw three steps, so these four questions moved into "Uw
+	 * verzoek". The route checks them, not the step, so a step that held them
+	 * once must not take a check with it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-woo-request-action-declares-its-three-steps-req-sws-001
+	 */
+	public function testTheWooRequestAsksThePeriodAndDocumentsInTheFirstStep(): void {
+		$moved = ['periodeVan', 'periodeTot', 'documentSoorten', 'toelichting'];
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			$this->assertCount(3, $action['steps'], $id . ': three steps');
+			$first = $action['steps'][0];
+			$this->assertSame('Uw verzoek', $first['title']);
+			$this->assertNotSame('', trim($first['description']), $id . ': the first step says what it asks');
+			foreach ($moved as $field) {
+				$this->assertContains($field, $first['fields'], $id . ': ' . $field . ' is asked in the first step');
+				$this->assertContains($field, $action['fields'], $id . ': ' . $field . ' is still sent');
+				$this->assertNotSame('', ($action['fieldConfigs'][$field]['label'] ?? ''), $id . ': ' . $field . ' keeps its label');
+			}
+
+			$this->assertSame('choices', ($action['fieldConfigs']['documentSoorten']['widget'] ?? null), $id);
+			$this->assertSame(
+				\OCA\Dossiq\Woo\WooRequestForm::DOCUMENT_KINDS,
+				array_column($action['optionsProviders']['documentSoorten']['options'], 'value'),
+				$id . ': every choice is a kind the route keeps'
+			);
+			$this->assertSame('large', ($action['fieldConfigs']['toelichting']['size'] ?? null), $id);
+		}
+
+		$form = new \OCA\Dossiq\Woo\WooRequestForm();
+		$base = ['subjectRef' => 'bsn-1', 'origin' => 'portal', 'onderwerp' => 'Fietspad'];
+		$kept = $form->normalise(
+			request: $base + [
+				'periodeVan' => '2025-01-01',
+				'periodeTot' => '2026-09-30',
+				'documentSoorten' => ['besluiten'],
+				'toelichting' => 'Ook de adviezen.',
+			]
+		);
+		$this->assertSame('2025-01-01', $kept['periodeVan']);
+		$this->assertSame('2026-09-30', $kept['periodeTot']);
+		$this->assertSame(['besluiten'], $kept['documentSoorten']);
+		$this->assertSame('Ook de adviezen.', $kept['toelichting']);
+
+		$refusals = [
+			'periodeVan' => ['periodeVan' => '31-02-2026'],
+			'periodeTot' => ['periodeVan' => '2026-09-30', 'periodeTot' => '2025-01-01'],
+			'documentSoorten' => ['documentSoorten' => ['iets anders']],
+		];
+		foreach ($refusals as $field => $answers) {
+			try {
+				$form->normalise(request: $base + $answers);
+				$this->fail($field . ': an invalid answer must be refused');
+			} catch (\OCA\Dossiq\Woo\WooRequestRefused $refused) {
+				$this->assertSame($field, $refused->getField(), 'the refusal names the field');
+			}
+		}
+	}//end testTheWooRequestAsksThePeriodAndDocumentsInTheFirstStep()
+
+	/**
 	 * Saving halfway and the confirmation are declared, on both doors.
 	 *
 	 * @return void
@@ -342,10 +412,63 @@ class PortalContributionProviderTest extends TestCase {
 			$this->assertSame(['retentionDays' => 30], $action['draft'], $id . ': within portaliq\'s 1 to 90 days');
 			$this->assertSame('Wij hebben uw Woo-verzoek ontvangen', $action['confirmation']['title']);
 			$this->assertStringContainsString('{identifier}', $action['confirmation']['body']);
-			$this->assertStringContainsString('{deadline}', $action['confirmation']['body']);
+			// The dates as a resident reads them, never the stored moment
+			// (portal-woo-request-form-takes-dutch-input REQ-WDI-003).
+			$this->assertStringContainsString('{deadlineDay}', $action['confirmation']['body']);
+			$this->assertStringContainsString('{termStartsDay}', $action['confirmation']['body']);
+			$this->assertStringNotContainsString('{deadline}', $action['confirmation']['body']);
+			$this->assertStringNotContainsString('{termStartsAt}', $action['confirmation']['body']);
 			$this->assertNotSame('', trim($action['confirmation']['next']));
 		}
 	}//end testTheWooRequestSavesHalfwayAndNamesTheCaseWhenItIsIn()
+
+	/**
+	 * The period is asked as dates and the requester as a choice whose
+	 * Dutch words map to the values the route keeps, on both doors.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-woo-request-form-asks-dates-as-dates-and-the-requester-as-a-choice-req-wdi-004
+	 */
+	public function testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice(): void {
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			foreach (['periodeVan', 'periodeTot'] as $field) {
+				$this->assertSame('date', ($action['fieldConfigs'][$field]['input'] ?? null), $id . ': ' . $field . ' is a date');
+			}
+
+			$this->assertSame('choices', $action['fieldConfigs']['verzoekerType']['widget']);
+			$options = $action['optionsProviders']['verzoekerType']['options'];
+			$this->assertSame(
+				['burger' => 'Inwoner', 'journalist' => 'Journalist', 'organisatie' => 'Organisatie'],
+				array_column($options, 'label', 'value'),
+				$id . ': Dutch words over the stored values'
+			);
+			$this->assertSame(
+				\OCA\Dossiq\Woo\WooRequestForm::REQUESTER_KINDS,
+				array_column($options, 'value'),
+				$id . ': every choice is a value the route keeps'
+			);
+		}
+	}//end testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice()
+
+	/**
+	 * The requester's name and e-mail address start from the signed-in
+	 * resident's own details, on both doors.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-woo-request-starts-from-the-signed-in-residents-name-and-e-mail-address
+	 */
+	public function testTheWooRequestPrefillsTheRequesterFromTheProfile(): void {
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			$this->assertSame('name', ($action['fieldConfigs']['verzoekerNaam']['prefill'] ?? null), $id);
+			$this->assertSame('email', ($action['fieldConfigs']['verzoekerEmail']['prefill'] ?? null), $id);
+		}
+	}//end testTheWooRequestPrefillsTheRequesterFromTheProfile()
 
 	/**
 	 * Two doors, one route: only the dossier variant is attached to a
@@ -364,12 +487,12 @@ class PortalContributionProviderTest extends TestCase {
 			'the same questions, in the same order'
 		);
 		$this->assertSame(
-			['onderwerp', 'omschrijving'],
+			['onderwerp', 'omschrijving', 'periodeVan', 'periodeTot', 'documentSoorten', 'toelichting'],
 			$open['steps'][0]['fields'],
-			'without a dossier the first step asks only the question'
+			'without a dossier the first step asks only the request'
 		);
 		$this->assertSame(
-			['collectionId', 'onderwerp', 'omschrijving'],
+			['collectionId', 'onderwerp', 'omschrijving', 'periodeVan', 'periodeTot', 'documentSoorten', 'toelichting'],
 			$dossier['steps'][0]['fields'],
 			'the dossier rides hidden in the first step, so portaliq makes no titleless step for it'
 		);
@@ -401,6 +524,46 @@ class PortalContributionProviderTest extends TestCase {
 
 		$this->fail('the citizen contribution must declare the collection ' . $id);
 	}//end citizenCollection()
+
+	/**
+	 * The text an administrator saves above My cases reaches the portal: the
+	 * provider reads the `portal_intro_text` app setting and the My cases
+	 * collection of the citizen contribution carries it as `intro`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/admin-message-and-portal-texts/specs/admin-settings/spec.md#requirement-an-administrator-shall-set-the-message-and-portal-texts-in-the-admin-settings
+	 */
+	public function testTheSavedPortalTextIsShownAboveMyCases(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ($key === 'portal_intro_text' ? 'Hier ziet u uw lopende zaken' : $default)
+		);
+		$provider = new PortalContributionProvider(caseTypes: $this->createMock(IntakeCaseTypes::class), settings: $settings);
+
+		$intros = [];
+		foreach ($provider->getContribution(['audience' => 'citizen'])['collections'] as $collection) {
+			$intros[(string)($collection['id'] ?? '')] = ($collection['intro'] ?? null);
+		}
+
+		$this->assertSame('Hier ziet u uw lopende zaken', ($intros['mijnZaken'] ?? null));
+		$this->assertNull(($this->citizenCollectionIntro()), 'without the setting My cases carries no text');
+	}//end testTheSavedPortalTextIsShownAboveMyCases()
+
+	/**
+	 * The intro of My cases from the provider built without settings.
+	 *
+	 * @return string|null The intro, or null when there is none.
+	 */
+	private function citizenCollectionIntro(): ?string {
+		foreach ($this->provider->getContribution(['audience' => 'citizen'])['collections'] as $collection) {
+			if (($collection['id'] ?? '') === 'mijnZaken') {
+				return ($collection['intro'] ?? null);
+			}
+		}
+
+		$this->fail('the citizen contribution must declare My cases');
+	}//end citizenCollectionIntro()
 
 	/**
 	 * One citizen action by its id.
@@ -473,6 +636,58 @@ class PortalContributionProviderTest extends TestCase {
 
 			$this->assertSame($expected, $collection['scopeField']);
 		}
+	}
+
+	/**
+	 * A supplier answers a message from the inbox: the reply is an inbound
+	 * `supplierMessage` scoped to the signed-in supplier, with no case
+	 * reference the supplier could choose.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
+	 */
+	public function testASupplierRepliesToAMessageAsAnInboundSupplierMessage(): void {
+		$contribution = $this->provider->getContribution(['audience' => 'supplier']);
+
+		$this->assertSame(['replyToSupplierMessage'], array_column($contribution['actions'], 'id'));
+		$action = $contribution['actions'][0];
+		$this->assertSame('create', $action['type']);
+		$this->assertSame('dossiq', $action['register']);
+		$this->assertSame('supplierMessage', $action['schema']);
+		$this->assertSame('supplierRef', $action['scopeField'], 'the reply is the signed-in supplier\'s own');
+		$this->assertSame(['subject', 'body', 'attachmentRefs'], $action['fields']);
+		$this->assertSame(['direction' => 'inbound'], $action['defaults'], 'the server, not the supplier, says which way it goes');
+		$this->assertNotContains('direction', $action['fields']);
+		$this->assertNotContains('supplierRef', $action['fields']);
+		$this->assertNotContains('caseRef', $action['fields'], 'no supplier collection can guard a case reference');
+		$this->assertSame(['body'], $action['requiredFields']);
+		$this->assertSame(
+			PortalConversation::ATTACHMENTS_FIELD,
+			$action['fieldConfigs']['attachmentRefs'],
+			'a supplier attaches what a resident may attach'
+		);
+
+		$inbox = array_column($contribution['collections'], null, 'id')['messages'];
+		$this->assertSame(['action' => 'replyToSupplierMessage', 'subjectFrom' => 'subject'], $inbox['reply']);
+
+		$pages = array_column($contribution['pages'], null, 'id');
+		$this->assertSame(
+			[
+				['type' => 'action', 'action' => 'replyToSupplierMessage'],
+				['type' => 'collection', 'collection' => 'messages'],
+				['type' => 'detail', 'collection' => 'messages'],
+			],
+			$pages['messages']['blocks']
+		);
+		$this->assertSame(
+			[
+				['type' => 'collection', 'collection' => 'contracts'],
+				['type' => 'detail', 'collection' => 'contracts'],
+			],
+			$pages['contracts']['blocks'],
+			'only the inbox page offers the reply'
+		);
 	}
 
 	public function testCitizenContributionShape(): void {

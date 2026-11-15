@@ -139,7 +139,7 @@ test.describe('the case type carries its work instruction', () => {
 		// The CASE links nothing. The link below is the case TYPE's, followed
 		// one reference by CaseWorkInstructionPanel, which is the whole of
 		// REQ-CKB-01 and the half a declared widget could not reach.
-		const link = page.getByTestId('case-work-instruction-link')
+		const link = page.getByTestId('cn-section-case-work-instruction').getByTestId('cn-facts-link')
 		await expect(
 			link,
 			'the case shows no work instruction although its type names one',
@@ -160,7 +160,7 @@ test.describe('the case type carries its work instruction', () => {
 		await page.getByRole('tab', { name: 'Knowledge' }).click()
 
 		await expect(
-			page.getByTestId('case-work-instruction-link'),
+			page.getByTestId('cn-section-case-work-instruction').getByTestId('cn-facts-link'),
 			'a case type that names no page drew a link anyway, which points a handler at nothing',
 		).toHaveCount(0)
 	})

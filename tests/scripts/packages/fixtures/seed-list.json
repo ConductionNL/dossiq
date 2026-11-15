@@ -1,0 +1,148 @@
+{
+  "caseTypes": [
+    {
+      "id": "00000000-0000-4000-a000-000000000001",
+      "uuid": "00000000-0000-4000-a000-000000000001",
+      "identifier": "first",
+      "title": "First case type",
+      "processingDeadline": "P6W",
+      "confidentiality": "intern",
+      "initialStatus": "Received",
+      "statusTypes": [
+        {
+          "name": "Received",
+          "order": 1
+        },
+        {
+          "name": "In progress",
+          "order": 2,
+          "caseType": "stale"
+        },
+        {
+          "id": "00000000-0000-4000-a000-0000000000f1",
+          "name": "Done",
+          "order": 3,
+          "isFinal": true
+        }
+      ],
+      "roleTypes": [
+        {
+          "name": "Handler",
+          "genericRole": "behandelaar"
+        },
+        {
+          "name": "Applicant"
+        }
+      ],
+      "propertyDefinitions": [
+        {
+          "name": "amount",
+          "type": "number"
+        }
+      ],
+      "documentTypes": [
+        {
+          "name": "Request letter"
+        }
+      ],
+      "resultTypes": [
+        {
+          "name": "Granted"
+        }
+      ],
+      "workflowTemplate": {
+        "title": "First flow",
+        "lifecycleStatus": "draft",
+        "steps": [
+          {
+            "statusName": "Received",
+            "order": 1,
+            "title": "Take in"
+          },
+          {
+            "statusName": "In progress",
+            "title": "Handle"
+          }
+        ],
+        "transitions": [
+          {
+            "fromStatusName": "Received",
+            "toStatusName": "In progress",
+            "label": "Start",
+            "guards": [
+              {
+                "type": "role",
+                "config": {
+                  "roleName": "Handler"
+                }
+              },
+              {
+                "type": "field",
+                "config": {
+                  "field": "amount"
+                }
+              },
+              {
+                "type": "plain"
+              }
+            ],
+            "automaticActions": [
+              {
+                "type": "assign",
+                "config": {
+                  "roleName": "Applicant",
+                  "mode": "add"
+                }
+              }
+            ]
+          },
+          {
+            "fromStatusName": "*",
+            "toStatusName": "Done",
+            "label": "Close"
+          },
+          {
+            "fromStatusName": "*",
+            "toStatusName": "Received"
+          },
+          {
+            "fromStatusName": "Received",
+            "toStatusName": "*",
+            "label": "Anywhere"
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "second",
+      "title": "Second case type",
+      "uuid": "kept-because-it-differs",
+      "initialStatusName": "Open",
+      "statusTypes": [
+        {
+          "name": "Open"
+        },
+        {
+          "name": "Closed",
+          "isFinal": true
+        }
+      ],
+      "workflowTemplate": {
+        "title": "Second flow",
+        "steps": [],
+        "transitions": [
+          {
+            "fromStatusName": "Open",
+            "toStatusName": "Closed"
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "third",
+      "title": "Third case type, no flow",
+      "initialStatus": "not-a-status-name",
+      "workflowTemplate": "not a template"
+    }
+  ]
+}

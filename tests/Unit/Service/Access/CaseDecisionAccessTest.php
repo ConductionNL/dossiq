@@ -97,6 +97,7 @@ class CaseDecisionAccessTest extends TestCase {
 				resolver: $resolver,
 				grants: $this->createMock(ObjectReadGrants::class),
 				groupManager: $groups,
+				logger: $this->createMock(\Psr\Log\LoggerInterface::class),
 			),
 		);
 

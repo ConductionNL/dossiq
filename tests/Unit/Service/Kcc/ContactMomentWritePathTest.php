@@ -28,6 +28,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Pins what the service stores, refuses and returns, through its public methods.
@@ -41,6 +43,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  *
  * @spec openspec/changes/method-decomposition/tasks.md
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class ContactMomentWritePathTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -70,12 +74,17 @@ class ContactMomentWritePathTest extends TestCase {
 			public array $store = [];
 			public bool $findThrows = false;
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid];
 				return $object + ['id' => $uuid ?? 'new-1'];
 			}
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($this->findThrows === true) {
 					throw new \RuntimeException('gone');
 				}

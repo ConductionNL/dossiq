@@ -23,12 +23,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -41,14 +41,15 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @covers \OCA\Dossiq\Woo\WooDeliveredSetWriter
- * @covers \OCA\Dossiq\Woo\WooCaseLedger
+ * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
  *
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooPublicationDeliveredSetTest extends TestCase {
 
@@ -136,7 +137,7 @@ class WooPublicationDeliveredSetTest extends TestCase {
 			categoryMapper: new WooCategoryMapper(),
 			appManager: $apps,
 			logger: new NullLogger(),
-			caseLedger: new WooCaseLedger(settingsService: $settings, logger: new NullLogger(), deliveredSets: new WooDeliveredSetWriter(settings: $settings)),
+			caseLedger: new CasePublicationState(settingsService: $settings, logger: new NullLogger(), deliveredSets: new WooDeliveredSetWriter(settings: $settings)),
 		);
 	}//end service()
 

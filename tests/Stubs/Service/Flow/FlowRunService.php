@@ -3,8 +3,9 @@
 /**
  * Test stub for OCA\OpenRegister\Service\Flow\FlowRunService.
  *
- * Only `signal()`, the one call dossiq makes. Self-skips when the real class is
- * present.
+ * Only `signal()`, the one call dossiq makes. Its context keys come from
+ * FlowRunServiceInterface, as on the real class. Self-skips when the real class
+ * is present.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -20,22 +21,7 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunService', false) ==
     /**
      * Minimal FlowRunService stand-in.
      */
-    class FlowRunService {
-
-        /**
-         * The context key a resume payload arrives under.
-         *
-         * @var string
-         */
-        public const SIGNAL_CONTEXT_KEY = 'signal';
-
-        /**
-         * The context key the run's acting identity travels under
-         * (openregister#3332; value frozen at `runAs`).
-         *
-         * @var string
-         */
-        public const RUN_AS_CONTEXT_KEY = 'runAs';
+    class FlowRunService implements FlowRunServiceInterface {
 
         /**
          * Deliver a resume signal.

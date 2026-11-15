@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Starter\ShippedRoleSources;
 use OCA\Dossiq\Service\Starter\MunicipalRoleSetService;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCA\Dossiq\Service\Starter\ShippedFingerprint;
@@ -36,11 +37,16 @@ use Psr\Log\NullLogger;
  * Unit tests for MunicipalRoleSetService.
  *
  * @covers \OCA\Dossiq\Service\Starter\MunicipalRoleSetService
- *
+ * @covers \OCA\Dossiq\Service\Starter\ShippedRoleSources
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
  * @uses \OCA\Dossiq\Service\Starter\ShippedConfigurationService
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
  * @uses \OCA\Dossiq\Service\Starter\ShippedSets
+ * @uses \OCA\Dossiq\Service\Starter\ShippedLedgerTargets
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
+ * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
  */
 class MunicipalRoleSetTest extends TestCase {
 
@@ -73,14 +79,16 @@ class MunicipalRoleSetTest extends TestCase {
 		$session->method('getUser')->willReturn($user);
 
 		$this->roleSet = new MunicipalRoleSetService(
-			$this->harness->store,
-			new ShippedConfigurationService(
-				$this->harness->store,
-				new ShippedSets(),
-				new ShippedFingerprint(),
-				new NullLogger(),
+			new ShippedRoleSources(
+				store: $this->harness->store,
+				shipped: new ShippedConfigurationService(
+					store: $this->harness->store,
+					sets: new ShippedSets(),
+					fingerprint: new ShippedFingerprint(),
+					logger: new NullLogger(),
+				),
+				sets: new ShippedSets(),
 			),
-			new ShippedSets(),
 			$session,
 			new NullLogger(),
 		);
@@ -257,14 +265,16 @@ class MunicipalRoleSetTest extends TestCase {
 		$session->method('getUser')->willReturn($user);
 
 		$service = new MunicipalRoleSetService(
-			$blind->store,
-			new ShippedConfigurationService(
-				$blind->store,
-				new ShippedSets(),
-				new ShippedFingerprint(),
-				new NullLogger(),
+			new ShippedRoleSources(
+				store: $blind->store,
+				shipped: new ShippedConfigurationService(
+					store: $blind->store,
+					sets: new ShippedSets(),
+					fingerprint: new ShippedFingerprint(),
+					logger: new NullLogger(),
+				),
+				sets: new ShippedSets(),
 			),
-			new ShippedSets(),
 			$session,
 			new NullLogger(),
 		);
@@ -274,4 +284,64 @@ class MunicipalRoleSetTest extends TestCase {
 		self::assertFalse(condition: $refused['ok']);
 		self::assertSame(expected: 'role_in_use', actual: $refused['reason']);
 	}//end testAnUnreadableGrantStoreStopsTheUndo()
+	/**
+	 * A role type's name and description are translatable, so OpenRegister
+	 * answers them as a language map. Seeding stays idempotent by name, the
+	 * offer names each role as text, and an undo names the role in use.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	public function testTranslatableRoleNamesAreReadAsText(): void {
+		$this->roleSet->seed();
+		$this->roleSet->adopt();
+		foreach ($this->harness->register->all(schema: 'roleType') as $role) {
+			$this->harness->register->seed(
+				schema: 'roleType',
+				uuid: (string)$role['id'],
+				row: (['name' => ['nl' => $role['name']], 'description' => ['nl' => (string)($role['description'] ?? '')]] + $role),
+			);
+		}
+
+		$second = $this->roleSet->seed();
+		self::assertNotNull(actual: $second);
+		self::assertSame(expected: 0, actual: $second['seeded'], message: 'a role read back as a language map was seeded again');
+
+		$names = array_column($this->roleSet->offer()['roles'], 'name');
+		self::assertContains(needle: 'Behandelaar', haystack: $names);
+
+		$behandelaar = null;
+		foreach ($this->harness->register->all(schema: 'roleType') as $role) {
+			if ($role['name'] === ['nl' => 'Behandelaar']) {
+				$behandelaar = $role;
+			}
+		}
+
+		$this->harness->seed(
+			schema: 'role',
+			uuid: 'grant-1',
+			row: ['id' => 'grant-1', 'roleType' => (string)$behandelaar['id'], 'participant' => 'ahmed'],
+		);
+		self::assertSame(expected: 'Behandelaar', actual: $this->roleSet->undoAdoption()['roleInUse']);
+	}//end testTranslatableRoleNamesAreReadAsText()
+	/**
+	 * The shipped-configuration overview titles a seeded role by its name as
+	 * text, though the store answers the name as a language map.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	public function testTheShippedOverviewTitlesATranslatableNameAsText(): void {
+		$this->roleSet->seed();
+		foreach ($this->harness->register->all(schema: 'roleType') as $role) {
+			$this->harness->register->seed(schema: 'roleType', uuid: (string)$role['id'], row: (['name' => ['nl' => $role['name']]] + $role));
+		}
+
+		$shipped = new ShippedConfigurationService($this->harness->store, new ShippedSets(), new ShippedFingerprint(), new NullLogger());
+		$titles = array_column($shipped->overview(targetSchema: 'roleType', objectsKey: 'role_type_schema') ?? [], 'title');
+
+		self::assertContains(needle: 'Behandelaar', haystack: $titles);
+	}//end testTheShippedOverviewTitlesATranslatableNameAsText()
 }//end class

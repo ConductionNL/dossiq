@@ -13,21 +13,22 @@
               "type": "object",
               "required": ["role"],
               "properties": {
-                "role": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9-]*$", "description": "The role key."},
-                "label": {"type": "string", "description": "What the role is called on screen."},
-                "target": {"type": "string", "enum": ["case", "object"], "default": "case", "description": "Whether the role points at a case or at an object that belongs to a case."},
-                "targetSchema": {"type": "string", "description": "Config key of the target schema, for a role that points at an object."},
-                "targetCaseField": {"type": "string", "default": "case", "description": "The field on the target object that holds its case."},
-                "natureRelationship": {"type": "string", "enum": ["vervolg", "subject", "bijdrage", "samenhang", "waitsOn"], "default": "vervolg", "description": "The relation type written between the two cases."},
-                "requiredAtIntake": {"type": "boolean", "default": false, "description": "Whether intake needs this link before the case can proceed."},
+                "role": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9-]*$", "title": "Role key", "description": "The role key."},
+                "label": {"type": "string", "title": "Label", "description": "What the role is called on screen."},
+                "target": {"type": "string", "enum": ["case", "object"], "default": "case", "title": "Points at", "description": "Whether the role points at a case or at an object that belongs to a case."},
+                "targetSchema": {"type": "string", "title": "Target schema", "description": "Config key of the target schema, for a role that points at an object."},
+                "targetCaseField": {"type": "string", "default": "case", "title": "Case field on the target", "description": "The field on the target object that holds its case."},
+                "natureRelationship": {"type": "string", "enum": ["vervolg", "subject", "bijdrage", "samenhang", "waitsOn"], "default": "vervolg", "title": "Relation type", "description": "The relation type written between the two cases."},
+                "requiredAtIntake": {"type": "boolean", "default": false, "title": "Needed at intake", "description": "Whether intake needs this link before the case can proceed."},
                 "record": {
                   "type": "object",
+                  "title": "Record the link opens",
                   "description": "The record a link opens, when it opens one.",
                   "properties": {
-                    "schema": {"type": "string", "description": "Config key of the record schema."},
-                    "caseField": {"type": "string", "default": "case"},
-                    "targetField": {"type": "string", "default": "target"},
-                    "actorField": {"type": "string", "description": "Field that receives the acting user, when the record schema has one."}
+                    "schema": {"type": "string", "title": "Record schema", "description": "Config key of the record schema."},
+                    "caseField": {"type": "string", "default": "case", "title": "Case field", "description": "The field on the record that holds the case."},
+                    "targetField": {"type": "string", "default": "target", "title": "Target field", "description": "The field on the record that holds the case or object the link points at."},
+                    "actorField": {"type": "string", "title": "Actor field", "description": "Field that receives the acting user, when the record schema has one."}
                   }
                 }
               }

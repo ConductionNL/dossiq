@@ -257,11 +257,11 @@ Kinds: procedure logic moves onto a capability; standards adapter stays code; ge
 | `Service/WOOAnonymisationAssistService.php` | 442 | Service orchestrating LLM-assisted, human-reviewed redaction proposals. | procedure logic | C06 review set and triage | dossiq review core |
 | `Service/WOODocumentAssessmentService.php` | 518 | Service for WOO per-document disclosure assessments. | procedure logic | C06 review set and triage | dossiq review core |
 | `Service/WOORedactionService.php` | 256 | Service for WOO document redaction with Docudesk feature detection. | procedure logic | C06 review set and triage | filinq redaction |
-| `Service/WooPublication/OpenCatalogiApiClient.php` | 538 | Writes OpenCatalogi's publication model through OpenRegister in process. | procedure logic | C09 publication of an outcome | dossiq publisher over opencatalogi / DROP |
+| `Service/Publication/OpenCatalogiApiClient.php` | 538 | Writes OpenCatalogi's publication model through OpenRegister in process. | procedure logic | C09 publication of an outcome | dossiq publisher over opencatalogi / DROP |
 | `Service/WooPublication/WooCategoryMapper.php` | 82 | Maps dossiq WOO decisions to a DIWOO informatiecategorie. | procedure logic | C09 publication of an outcome | dossiq publisher over opencatalogi / DROP |
 | `Service/WooPublicationService.php` | 582 | Service for publishing WOO decisions through OpenCatalogi. | procedure logic | C09 publication of an outcome | dossiq publisher over opencatalogi / DROP |
 | `Woo/WooCaseDocuments.php` | 202 | Lists a case's documents and loads one with its file content. | procedure logic | C08 document collection | dossiq collection core |
-| `Woo/WooCaseLedger.php` | 150 | Reads the case's Woo decision and writes the case's publication state. | procedure logic | C09 publication of an outcome | dossiq publisher over opencatalogi / DROP |
+| `Service/Publication/CasePublicationState.php` (was `Woo/WooCaseLedger.php`) | 150 | Reads the case's Woo decision and writes the case's publication state. | procedure logic | C09 publication of an outcome | dossiq publisher over opencatalogi / DROP |
 | `Woo/WooDossierReturn.php` | 187 | Appends a published Woo decision to its source dossier, once. | procedure logic | C09 publication of an outcome | dossiq publisher over opencatalogi / DROP |
 | `Woo/WooRefusalGrounds.php` | 242 | Reads the refusal grounds as the system, and never answers an empty list. | procedure logic | C06 review set and triage | dossiq review core (grounds are seed data) |
 | `Woo/WooRefusalGroundsUnavailable.php` | 33 | Thrown instead of answering an empty list, which would read as "no grounds exist". | procedure logic | C06 review set and triage | dossiq review core (grounds are seed data) |
@@ -342,7 +342,7 @@ Kinds: procedure logic moves onto a capability; standards adapter stays code; ge
 | `Woo/WooRequestIntake.php` | 493 | Opens a Woo request case for a resident, optionally from their dossier. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
 | `Woo/WooRequestRefused.php` | 89 | A Woo request that was refused, with the reason as a code. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
 | `Woo/WooRequesterProperties.php` | 174 | The requester details as entries of a case's `properties` bag. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
-| `Woo/WooWrittenCase.php` | 128 | The id, number and deadline of a case that was just written. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
+| `Service/Intake/WrittenCase.php` (was `Woo/WooWrittenCase.php`) | 128 | The id, number and deadline of a case that was just written. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
 
 ## migration
 

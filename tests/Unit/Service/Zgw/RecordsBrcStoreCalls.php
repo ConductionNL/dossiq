@@ -22,6 +22,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * Records every read, write and delete, and fails the methods it is told to.
  */
@@ -34,7 +38,7 @@ final class RecordsBrcStoreCalls {
 	public array $calls = [];
 
 	/**
-	 * Objects find() answers, by uuid; a missing uuid throws.
+	 * Objects find() answers, by uuid; a missing uuid throws DoesNotExistException, as OpenRegister does.
 	 *
 	 * @var array<string, mixed>
 	 */
@@ -55,6 +59,13 @@ final class RecordsBrcStoreCalls {
 	public array $failOn = [];
 
 	/**
+	 * Methods that OpenRegister refuses to the caller (NotAuthorizedException).
+	 *
+	 * @var array<int, string>
+	 */
+	public array $refuseOn = [];
+
+	/**
 	 * What saveObject() answers.
 	 *
 	 * @var mixed
@@ -66,23 +77,32 @@ final class RecordsBrcStoreCalls {
 		if (in_array($method, $this->failOn, true) === true) {
 			throw new \RuntimeException($method . ' is down');
 		}
+
+		if (in_array($method, $this->refuseOn, true) === true) {
+			throw new \OCA\OpenRegister\Exception\NotAuthorizedException('may not ' . $method);
+		}
 	}//end record()
 
-	public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->record('find', [$id, $register, $schema]);
 		if (array_key_exists($id, $this->objects) === false) {
-			throw new \RuntimeException('not found');
+			throw new \OCP\AppFramework\Db\DoesNotExistException('not found');
 		}
 
 		return $this->objects[$id];
 	}//end find()
 
-	public function saveObject(mixed $register, mixed $schema, array $object): mixed {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->record('saveObject', [$register, $schema, $object]);
 		return $this->saved;
 	}//end saveObject()
 
-	public function deleteObject(string $uuid, bool $_rbac = true, bool $_multitenancy = true): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+		$uuid = $deletion->uuid;
 		$this->record('deleteObject', [$uuid, $_rbac, $_multitenancy]);
 		return true;
 	}//end deleteObject()

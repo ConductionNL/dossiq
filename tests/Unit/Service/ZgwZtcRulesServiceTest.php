@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwZtcRulesService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\ZgwZtcRulesService
@@ -38,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses   \OCA\Dossiq\Service\FieldValidator
+ * @uses \OCA\Dossiq\Service\Zgw\SchemaFilter
  */
 class ZgwZtcRulesServiceTest extends TestCase {
 	private ZgwZtcRulesService $svc;
@@ -103,11 +105,14 @@ class ZgwZtcRulesServiceTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				?array $_extend = [],
-				bool $files = false,
-				string|int|null $register = null,
-				string|int|null $schema = null,
+				?ObjectFindOptions $options = null,
+				bool $_rbac = true,
+				bool $_multitenancy = true
 			): object {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				foreach ($this->map as $rows) {
 					foreach ($rows as $row) {
 						if (($row['id'] ?? null) === (string)$id) {
@@ -220,10 +225,14 @@ class ZgwZtcRulesServiceTest extends TestCase {
 		$this->assertStringContainsString('1 closed case(s)', $r['message']);
 	}
 
-	public function testValidateDeletionReturnsDefaultWithoutObjectService(): void {
+	/**
+	 * Without an object service the delete check cannot run, so it blocks as unverified (decision 224).
+	 */
+	public function testValidateDeletionBlocksWithoutObjectService(): void {
 		$this->svc->setContext(null, []);
 		$r = $this->svc->validateDeletion('reg', 'ct-1');
-		$this->assertFalse($r['blocked']);
+		$this->assertTrue($r['blocked']);
+		$this->assertTrue($r['unverified']);
 		$this->assertFalse($r['requiresConfirmation']);
 	}
 
@@ -247,7 +256,11 @@ class ZgwZtcRulesServiceTest extends TestCase {
 				return ($this->search)($register, $schema, $filters);
 			}
 
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): mixed {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($this->find === null) {
 					throw new \OCP\AppFramework\Db\DoesNotExistException('gone');
 				}
@@ -318,22 +331,36 @@ class ZgwZtcRulesServiceTest extends TestCase {
 	}
 
 	/**
-	 * Characterisation: a delete check that cannot read the cases, or has no id, lets the delete through.
+	 * A delete check that cannot read the cases blocks the delete as unverified (decision 224).
+	 *
+	 * Controls: without an id there is nothing to check, and a read that answers no cases passes.
 	 */
-	public function testValidateDeletionPassesWhenCasesCannotBeRead(): void {
+	public function testValidateDeletionBlocksWhenCasesCannotBeRead(): void {
 		$default = ['blocked' => false, 'requiresConfirmation' => false, 'message' => ''];
 		$os = $this->scriptedObjectService(static function (): array {
 			throw new \RuntimeException('down');
 		});
 		$this->svc->setContext($os, []);
 
-		$this->assertSame($default, $this->svc->validateDeletion('reg', 'ct-1'));
+		$this->assertSame(
+			[
+				'blocked' => true,
+				'requiresConfirmation' => false,
+				'unverified' => true,
+				'message' => 'Cannot delete case type: the check for cases that use this type could not be completed. '
+					. 'Nothing was deleted. Try again later.',
+			],
+			$this->svc->validateDeletion('reg', 'ct-1')
+		);
 		$this->assertSame($default, $this->svc->validateDeletion('reg', ''));
+
+		$this->svc->setContext($this->scriptedObjectService(static fn (): array => []), []);
+		$this->assertSame($default, $this->svc->validateDeletion('reg', 'ct-1'));
 	}
 
 	/**
 	 * Characterisation: a case counts as closed only when its status is a final status type that
-	 * could be read; no status, another status, or an unreadable final list all count as active.
+	 * could be read; no status or another status counts as active. An unreadable final list is unverified.
 	 */
 	public function testValidateDeletionCountsActiveAndClosedCases(): void {
 		$cases = [['status' => 'final'], ['status' => 'open'], ['status' => ''], [], ['status' => 'final-2']];
@@ -363,7 +390,8 @@ class ZgwZtcRulesServiceTest extends TestCase {
 			throw new \RuntimeException('down');
 		};
 		$this->svc->setContext($this->scriptedObjectService($unreadable), []);
-		$this->assertStringContainsString('2 active case(s)', $this->svc->validateDeletion('reg', 'ct-1')['message']);
+		// Final statuses that cannot be read no longer count every case as active: the check did not run.
+		$this->assertTrue($this->svc->validateDeletion('reg', 'ct-1')['unverified']);
 
 		$closedOnly = static function (string $register, string $schema, array $filters): array {
 			if ($schema === 'case') {

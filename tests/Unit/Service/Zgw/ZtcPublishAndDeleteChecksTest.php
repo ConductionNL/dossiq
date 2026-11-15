@@ -24,23 +24,41 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
+use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * What a case type needs before it is published or deleted, asked of the class itself.
  *
  * @covers \OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\DeadlineMonitoringSeedDataService
+ * @uses \OCA\Dossiq\Service\Zgw\SchemaFilter
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */
 class ZtcPublishAndDeleteChecksTest extends TestCase {
 	private const DEFAULT = ['blocked' => false, 'requiresConfirmation' => false, 'message' => ''];
+
+	private const UNVERIFIED = [
+		'blocked' => true,
+		'requiresConfirmation' => false,
+		'unverified' => true,
+		'message' => 'Cannot delete case type: the check for cases that use this type could not be completed. Nothing was deleted. Try again later.',
+	];
+
+	/**
+	 * The context of every error logged.
+	 *
+	 * @var array<int, array>
+	 */
+	private array $errors = [];
 
 	/**
 	 * Build the checks over a store answering searches per schema and one case type row.
@@ -54,8 +72,14 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => $key);
 
-		$lookups = new ZgwRuleLookups(logger: $this->createMock(LoggerInterface::class), settingsService: $settings);
-		$checks  = new ZtcPublishAndDeleteChecks(lookups: $lookups, settingsService: $settings);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('error')->willReturnCallback(
+			function (string $message, array $context = []): void {
+				$this->errors[] = $context;
+			}
+		);
+		$lookups = new ZgwRuleLookups(settingsService: $settings);
+		$checks  = new ZtcPublishAndDeleteChecks(lookups: $lookups, results: new ZgwRuleResults(logger: $logger), settingsService: $settings);
 		if ($rows === null) {
 			return $checks;
 		}
@@ -81,7 +105,11 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 				return $answer;
 			}//end searchObjectsBySlug()
 
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($this->caseType === null) {
 					throw new DoesNotExistException('gone');
 				}
@@ -157,22 +185,46 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 	}//end testThePublishCheckStopsWhenItCannotRun()
 
 	/**
-	 * A case type nobody uses, or one whose use cannot be read, may be deleted.
+	 * A case type nobody uses may be deleted, and without an id there is nothing to check.
 	 *
 	 * @return void
 	 */
 	public function testAnUnusedCaseTypeMayBeDeleted(): void {
 		$this->assertSame(self::DEFAULT, $this->checks(rows: [])->validateDeletion(register: 'reg', caseTypeId: 'ct-1'));
-		$this->assertSame(self::DEFAULT, $this->checks(rows: null)->validateDeletion(register: 'reg', caseTypeId: 'ct-1'));
 		$this->assertSame(self::DEFAULT, $this->checks(rows: ['case_schema' => [['status' => 'open']]])->validateDeletion(register: 'reg', caseTypeId: ''));
-		$this->assertSame(
-			self::DEFAULT,
-			$this->checks(rows: ['case_schema' => new \RuntimeException('down')])->validateDeletion(register: 'reg', caseTypeId: 'ct-1')
-		);
+		$this->assertSame([], $this->errors);
 	}//end testAnUnusedCaseTypeMayBeDeleted()
 
 	/**
-	 * Active cases block the delete; a case is closed only on a final status that could be read.
+	 * A delete check that cannot run blocks the delete as unverified, and the log names the check and
+	 * the case type: no store, cases that cannot be read, final statuses that cannot be read.
+	 *
+	 * Control: testAnUnusedCaseTypeMayBeDeleted, where the same read answers no cases.
+	 *
+	 * @return void
+	 */
+	public function testACheckThatCannotRunBlocksTheDelete(): void {
+		$down = new \RuntimeException('down');
+
+		$this->assertSame(self::UNVERIFIED, $this->checks(rows: null)->validateDeletion(register: 'reg', caseTypeId: 'ct-1'));
+		$this->assertSame(self::UNVERIFIED, $this->checks(rows: ['case_schema' => $down])->validateDeletion(register: 'reg', caseTypeId: 'ct-1'));
+		$this->assertSame(
+			self::UNVERIFIED,
+			$this->checks(rows: ['case_schema' => [['status' => 'final']], 'status_type_schema:final' => $down])
+				->validateDeletion(register: 'reg', caseTypeId: 'ct-1')
+		);
+		$this->assertSame(
+			[
+				['rule' => 'ztc case type delete check (REQ-CT-01d)', 'object' => 'case type ct-1', 'cause' => 'No object service in the request context'],
+				['rule' => 'ztc case type delete check (REQ-CT-01d)', 'object' => 'case type ct-1', 'cause' => 'down'],
+				['rule' => 'ztc case type delete check (REQ-CT-01d)', 'object' => 'case type ct-1', 'cause' => 'down'],
+			],
+			$this->errors
+		);
+	}//end testACheckThatCannotRunBlocksTheDelete()
+
+	/**
+	 * Active cases block the delete; a case is closed only on a final status.
 	 *
 	 * @return void
 	 */
@@ -187,11 +239,6 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 			],
 			$this->checks(rows: ['case_schema' => $cases, 'status_type_schema:final' => [['id' => 'final'], 'no row', ['name' => 'no id']]])
 				->validateDeletion(register: 'reg', caseTypeId: 'ct-1')
-		);
-		$this->assertStringContainsString(
-			'4 active case(s)',
-			$this->checks(rows: ['case_schema' => $cases, 'status_type_schema:final' => new \RuntimeException('down')])
-				->validateDeletion(register: 'reg', caseTypeId: 'ct-1')['message']
 		);
 	}//end testActiveCasesBlockTheDelete()
 

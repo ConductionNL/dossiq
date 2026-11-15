@@ -1,0 +1,22 @@
+{
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.33.0",
+        "properties": {
+          "penaltyOnLateDecision": {
+            "type": "boolean",
+            "title": "Penalty for a late decision",
+            "description": "Whether a case of this type owes the applicant a penalty when the decision comes late (Wet dwangsom bij niet tijdig beslissen). It runs only after the applicant has given notice of default. Leave it empty when the case type does not say."
+          },
+          "penaltyMaxAmount": {
+            "type": "number",
+            "title": "Most the penalty can come to",
+            "description": "The most the penalty for a late decision can come to, in euros. Leave it empty to state no maximum.",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}
