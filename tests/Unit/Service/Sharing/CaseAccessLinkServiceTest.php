@@ -353,6 +353,30 @@ class CaseAccessLinkServiceTest extends TestCase {
 	}//end testAShareMintsALinkOverTheCase()
 
 	/**
+	 * A share asked for without an expiry still mints with one: OpenRegister
+	 * refuses a link with none, so the link gets the default thirty days.
+	 *
+	 * @return void
+	 */
+	public function testAShareWithoutAnExpiryMintsWithTheDefaultTtl(): void {
+		$before = new \DateTimeImmutable(CaseAccessLinkService::DEFAULT_TTL . ' -1 second');
+		$result = $this->service->createTokenShare(
+			caseId: 'case-1',
+			label: 'Brandweer',
+			createdBy: 'anja',
+			expiresAt: '  ',
+		);
+		$after = new \DateTimeImmutable(CaseAccessLinkService::DEFAULT_TTL . ' +1 second');
+
+		self::assertArrayNotHasKey('error', $result);
+		$minted = $this->links->minted[array_key_first($this->links->minted)];
+		$expires = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, (string)$minted['expiresAt']);
+		self::assertInstanceOf(\DateTimeImmutable::class, $expires, 'The default expiry is an ISO 8601 date.');
+		self::assertGreaterThanOrEqual($before->getTimestamp(), $expires->getTimestamp());
+		self::assertLessThanOrEqual($after->getTimestamp(), $expires->getTimestamp());
+	}//end testAShareWithoutAnExpiryMintsWithTheDefaultTtl()
+
+	/**
 	 * A capability that is not one refuses the whole share, and nothing is
 	 * minted.
 	 *
