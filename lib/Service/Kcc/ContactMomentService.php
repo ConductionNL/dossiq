@@ -147,16 +147,8 @@ class ContactMomentService {
 	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-contactmoment-records-capture-full-interaction-context
 	 */
 	public function update(string $id, array $data, string $agentId, bool $isPrivileged = false): array {
+		$existing = $this->get(id: $id, agentId: $agentId, isPrivileged: $isPrivileged);
 		[$objectService, $register, $schema] = $this->resolve();
-
-		$existing = $this->findOwned(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id,
-			agentId: $agentId,
-			isPrivileged: $isPrivileged,
-		);
 
 		$update = $this->payload->merged(existing: $existing, data: $data);
 
@@ -236,15 +228,8 @@ class ContactMomentService {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function related(string $id, string $agentId, bool $isPrivileged = false): array {
+		$base = $this->get(id: $id, agentId: $agentId, isPrivileged: $isPrivileged);
 		[$objectService, $register, $schema] = $this->resolve();
-		$base = $this->findOwned(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id,
-			agentId: $agentId,
-			isPrivileged: $isPrivileged,
-		);
 
 		$customerRef = (string)($base['customerRef'] ?? '');
 		if ($customerRef === '') {
