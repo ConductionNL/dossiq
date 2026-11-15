@@ -153,6 +153,56 @@ class RetiredDocumentSteps {
 	}//end filedFrom()
 
 	/**
+	 * `dossiq.action.mergeTemplate`: render text into a case field, or file it in the dossier.
+	 *
+	 * @param array<string, mixed> $config The retired configuration.
+	 *
+	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
+	 *
+	 * @throws UnmappableStep When the step has no text, or files a document without a type.
+	 *
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function merge(array $config): array {
+		$text = (string)($config['template'] ?? ($config['templateSlug'] ?? ''));
+		$targetField = trim((string)($config['targetField'] ?? ''));
+
+		if ($targetField === '') {
+			$name = trim((string)($config['templateName'] ?? ($config['name'] ?? '')));
+			if ($name === '') {
+				$name = 'Document';
+			}
+
+			return $this->filedFrom(config: $config, document: ['text' => $text, 'name' => $name]);
+		}
+
+		return $this->fieldWrite(config: $config, write: ['text' => $text, 'targetField' => $targetField]);
+	}//end merge()
+
+	/**
+	 * The generate-document step that writes rendered text into a case field and stores no file.
+	 *
+	 * @param array<string, mixed>  $config The retired configuration.
+	 * @param array<string, string> $write  The `text` and the `targetField`.
+	 *
+	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
+	 *
+	 * @throws UnmappableStep When the step has no text.
+	 */
+	private function fieldWrite(array $config, array $write): array {
+		return [
+			'type' => self::GENERATE_DOCUMENT,
+			'config' => [
+				'template' => $this->text(text: $write['text']),
+				'storeFile' => false,
+				'targetField' => $write['targetField'],
+				'requestingApp' => AppIdentity::APP_ID,
+				'output' => $this->output(config: $config),
+			],
+		];
+	}//end fieldWrite()
+
+	/**
 	 * The template text, rewritten and required.
 	 *
 	 * @param string $text The dossiq template text.
