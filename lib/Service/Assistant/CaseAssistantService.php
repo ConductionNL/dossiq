@@ -274,7 +274,7 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
-		$found = $this->findCase(objectService: $objectService, caseId: $caseId, register: $register, schema: $schema);
+		$found = $this->findCase(store: [$objectService, $register, $schema], caseId: $caseId);
 
 		return $this->casePayload(found: $found, caseId: $caseId);
 	}//end loadReadableCase()
@@ -282,16 +282,15 @@ class CaseAssistantService implements CaseAssistantServiceInterface {
 	/**
 	 * Read the case through the caller-scoped object service.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $caseId        The case id.
-	 * @param string $register      The register.
-	 * @param string $schema        The case schema.
+	 * @param array{0: object, 1: mixed, 2: mixed} $store  OpenRegister's object service, the register and the case schema.
+	 * @param string                               $caseId The case id.
 	 *
 	 * @return mixed What the object service answered.
 	 *
 	 * @throws Exception (code 404) When the read fails.
 	 */
-	private function findCase(object $objectService, string $caseId, string $register, string $schema): mixed {
+	private function findCase(array $store, string $caseId): mixed {
+		[$objectService, $register, $schema] = $store;
 		try {
 			$case = $objectService->find(id: $caseId, register: $register, schema: $schema);
 		} catch (Throwable $e) {

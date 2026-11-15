@@ -172,23 +172,21 @@ class CaseTypeVersionGuard {
 			return [];
 		}
 
-		return $this->countCaseTypes(objectService: $objectService, register: $register, schema: $schema, caseIds: $caseIds);
+		return $this->countCaseTypes(store: [$objectService, $register, $schema], caseIds: $caseIds);
 	}//end caseTypeIdsOf()
 
 	/**
 	 * Count the cases per case type.
 	 *
-	 * @param object            $objectService OpenRegister's object service.
-	 * @param string            $register      The register.
-	 * @param string            $schema        The case schema.
-	 * @param array<int, mixed> $caseIds       The case ids.
+	 * @param array{0: object, 1: string, 2: string} $store   OpenRegister's object service, the register and the case schema.
+	 * @param array<int, mixed>                      $caseIds The case ids.
 	 *
 	 * @return array<string, int> Cases per case type id.
 	 */
-	private function countCaseTypes(object $objectService, string $register, string $schema, array $caseIds): array {
+	private function countCaseTypes(array $store, array $caseIds): array {
 		$found = [];
 		foreach ($caseIds as $caseId) {
-			$caseTypeId = $this->caseTypeIdOf(objectService: $objectService, register: $register, schema: $schema, caseId: $caseId);
+			$caseTypeId = $this->caseTypeIdOf(store: $store, caseId: $caseId);
 			if ($caseTypeId === '') {
 				continue;
 			}
@@ -202,14 +200,13 @@ class CaseTypeVersionGuard {
 	/**
 	 * The case type of one case, or '' when the id is blank, the case cannot be read or names none.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $schema        The case schema.
-	 * @param mixed  $caseId        The case id.
+	 * @param array{0: object, 1: string, 2: string} $store  OpenRegister's object service, the register and the case schema.
+	 * @param mixed                                  $caseId The case id.
 	 *
 	 * @return string
 	 */
-	private function caseTypeIdOf(object $objectService, string $register, string $schema, mixed $caseId): string {
+	private function caseTypeIdOf(array $store, mixed $caseId): string {
+		[$objectService, $register, $schema] = $store;
 		$caseId = trim((string)$caseId);
 		if ($caseId === '') {
 			return '';
