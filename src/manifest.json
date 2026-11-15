@@ -5788,6 +5788,81 @@
 							"recordPhotosField": "photos",
 							"caption": "{templateSnapshot.name} version {templateVersion}"
 						}
+					},
+					{
+						"id": "case-consents",
+						"type": "object-list",
+						"title": "Consents",
+						"_note": "social-domain-consent-and-safeguards 2.1, REQ-SDC-CONSENT-01: the consents recorded on this case, as the `toestemming` objects CaseTransferConsentGate reads before a share. Shown only when the case type requires consent for sharing. Add opens ConsentRecordDialog; Revoke patches `withdrawn`, which the gate reads as a withdrawal, so the next share with that party is refused. A revoked consent stays in the list, marked, because a withdrawal is part of the record.",
+						"visibleWhen": {
+							"field": "@context.caseType.requiresConsentForSharing",
+							"op": "eq",
+							"value": true
+						},
+						"content": {
+							"register": "dossiq",
+							"schema": "toestemming",
+							"filter": {
+								"caseId": "@objectId"
+							},
+							"sort": {
+								"field": "grantedDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "recipientParties",
+									"label": "Sharing with"
+								},
+								{
+									"key": "tedoel",
+									"label": "Purpose"
+								},
+								{
+									"key": "grantedByName",
+									"label": "Given by"
+								},
+								{
+									"key": "grantedDate",
+									"label": "Valid from"
+								},
+								{
+									"key": "validTo",
+									"label": "Valid until"
+								},
+								{
+									"key": "withdrawn",
+									"label": "Revoked"
+								}
+							],
+							"createAction": {
+								"type": "open-modal",
+								"target": "ConsentRecordDialog",
+								"label": "Record consent"
+							},
+							"rowActions": [
+								{
+									"id": "revoke-consent",
+									"label": "Revoke",
+									"type": "object-op",
+									"op": "patch",
+									"values": {
+										"withdrawn": true
+									},
+									"confirm": true,
+									"confirmTitle": "Revoke consent",
+									"confirmMessage": "After revoking, a share with this party is refused until a new consent is recorded.",
+									"confirmLabel": "Revoke",
+									"visibleWhen": {
+										"field": "withdrawn",
+										"op": "neq",
+										"value": true
+									}
+								}
+							],
+							"emptyText": "No consent has been recorded on this case yet"
+						}
 					}
 				],
 				"layout": [
@@ -5933,6 +6008,15 @@
 						"gridX": 6,
 						"gridY": 27,
 						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "case-consents",
+						"widgetId": "case-consents",
+						"gridX": 0,
+						"gridY": 31,
+						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
 					}
