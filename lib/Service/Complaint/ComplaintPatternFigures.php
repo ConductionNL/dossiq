@@ -78,6 +78,22 @@ class ComplaintPatternFigures {
 	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function compute(QuarterPeriod $period, array $complaints, array $dispositions): array {
+		return $this->figuresFor(period: $period, received: ['complaints' => $complaints, 'dispositions' => $dispositions]);
+	}//end compute()
+
+	/**
+	 * The quarter's complaint figures.
+	 *
+	 * @param QuarterPeriod        $period   The quarter.
+	 * @param array<string, mixed> $received `complaints` the complaints received in the twelve months and the quarter before; `dispositions` the
+	 *                                       final disposition per complaint id.
+	 *
+	 * @return array{count: int, byCategory: array<string, list<mixed>>, byDepartment: array<string, list<mixed>>,
+	 *               byChannel: array<string, list<mixed>>, byMonth: array{labels: list<string>, counts: list<int>},
+	 *               handling: array<string, mixed>}
+	 */
+	private function figuresFor(QuarterPeriod $period, array $received): array {
+		[$complaints, $dispositions] = [$received['complaints'], $received['dispositions']];
 		$current = $this->receivedIn(period: $period, complaints: $complaints);
 		$previous = $this->receivedIn(period: $period->previous(), complaints: $complaints);
 		$channel = $this->breakdown(field: 'receiptChannel', quarters: [$current, []]);
@@ -91,7 +107,7 @@ class ComplaintPatternFigures {
 			'byMonth' => $this->byMonth(period: $period, complaints: $complaints),
 			'handling' => $this->handling(current: $current, dispositions: $dispositions),
 		];
-	}//end compute()
+	}//end figuresFor()
 
 	/**
 	 * The complaints received in one quarter.

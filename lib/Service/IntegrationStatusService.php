@@ -222,6 +222,19 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function record(string $key, string $status, string $message = ''): bool {
+		return $this->recorded(key: $key, outcome: ['status' => $status, 'message' => $message]);
+	}//end record()
+
+	/**
+	 * Record the integration's outcome.
+	 *
+	 * @param string                                 $key     One of {@see self::KEYS}.
+	 * @param array{status: string, message: string} $outcome `status` one of {@see self::STATUSES}; `message` what the probe reported.
+	 *
+	 * @return bool True when the report was sent.
+	 */
+	private function recorded(string $key, array $outcome): bool {
+		[$status, $message] = [$outcome['status'], $outcome['message']];
 		if ($this->isKnownReport(key: $key, status: $status) === false) {
 			return false;
 		}
@@ -232,7 +245,7 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 		}
 
 		return $this->sendStatus(eventClass: $eventClass, report: ['key' => $key, 'status' => $status, 'message' => $message]);
-	}//end record()
+	}//end recorded()
 
 	/**
 	 * Whether the key and status are known, logging the one that is not.

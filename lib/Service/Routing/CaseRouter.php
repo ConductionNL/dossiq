@@ -161,6 +161,20 @@ class CaseRouter implements CaseRouterInterface {
 	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
 	 */
 	public function takeBack(string $caseId, string $routedTo, string $routedAt): string {
+		return $this->takenBack(caseId: $caseId, taking: ['routedTo' => $routedTo, 'routedAt' => $routedAt]);
+	}//end takeBack()
+
+	/**
+	 * Take the case back from the routed handler.
+	 *
+	 * @param string                                    $caseId The case id.
+	 * @param array{routedTo: string, routedAt: string} $taking `routedTo` the person the window was armed for; `routedAt` the routing moment the
+	 *                                                          window was armed for (ATOM).
+	 *
+	 * @return string TAKEN_BACK, KEPT or NOT_DUE.
+	 */
+	private function takenBack(string $caseId, array $taking): string {
+		[$routedTo, $routedAt] = [$taking['routedTo'], $taking['routedAt']];
 		$case = $this->findCase(caseId: $caseId);
 		if ($case === null || $routedTo === '') {
 			return self::NOT_DUE;
@@ -171,7 +185,7 @@ class CaseRouter implements CaseRouterInterface {
 		}
 
 		return $this->handBack(dueCase: $case, routedTo: $routedTo);
-	}//end takeBack()
+	}//end takenBack()
 
 	/**
 	 * Route a due case to someone else in its pool, and record the take-back.

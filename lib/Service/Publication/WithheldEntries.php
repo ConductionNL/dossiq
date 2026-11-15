@@ -54,6 +54,20 @@ class WithheldEntries {
 	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
 	 */
 	public function fromAssessments(array $assessments, string $withheldValue, string $groundsField): array {
+		return $this->withheldIn(assessments: $assessments, reading: ['withheldValue' => $withheldValue, 'groundsField' => $groundsField]);
+	}//end fromAssessments()
+
+	/**
+	 * The entries for the documents withheld in full.
+	 *
+	 * @param array<int, array<string, mixed>>                   $assessments Every assessment of the case.
+	 * @param array{withheldValue: string, groundsField: string} $reading     `withheldValue` the classification that means withheld in full;
+	 *                                                                        `groundsField` the assessment field holding the ground codes.
+	 *
+	 * @return list<array{position: int, grounds: list<string>}>
+	 */
+	private function withheldIn(array $assessments, array $reading): array {
+		[$withheldValue, $groundsField] = [$reading['withheldValue'], $reading['groundsField']];
 		$entries = [];
 		foreach ($this->inventory(assessments: $assessments) as $index => $assessment) {
 			if ((string)($assessment['classification'] ?? '') !== $withheldValue) {
@@ -67,7 +81,7 @@ class WithheldEntries {
 		}
 
 		return $entries;
-	}//end fromAssessments()
+	}//end withheldIn()
 
 	/**
 	 * The assessments that name a document, ordered by document reference: the order the inventory numbers them in.

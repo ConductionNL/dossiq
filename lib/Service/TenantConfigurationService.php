@@ -206,6 +206,19 @@ class TenantConfigurationService {
 	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
 	 */
 	public function setFeatureFlag(string $tenantId, string $flag, bool $enabled): array {
+		return $this->withFeatureFlag(tenantId: $tenantId, flag: ['flag' => $flag, 'enabled' => $enabled]);
+	}//end setFeatureFlag()
+
+	/**
+	 * Turn one feature flag on or off for the tenant.
+	 *
+	 * @param string                             $tenantId Tenant UUID.
+	 * @param array{flag: string, enabled: bool} $flag     `flag` flag name; `enabled` true to add, false to remove.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function withFeatureFlag(string $tenantId, array $flag): array {
+		[$flag, $enabled] = [$flag['flag'], $flag['enabled']];
 		$current = $this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId, 'features' => []];
 		$features = (array)($current['features'] ?? []);
 		$features = array_values(array_unique(array_filter($features, fn ($f) => is_string($f) && $f !== '')));
@@ -216,7 +229,7 @@ class TenantConfigurationService {
 		}
 
 		return $this->mergeConfig(tenantId: $tenantId, delta: ['features' => $features]);
-	}//end setFeatureFlag()
+	}//end withFeatureFlag()
 
 	/**
 	 * Build the theming-tokens CSS-variable map from the tenant branding.

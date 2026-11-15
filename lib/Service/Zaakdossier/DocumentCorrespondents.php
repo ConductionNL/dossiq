@@ -107,6 +107,20 @@ class DocumentCorrespondents {
 	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	public function resolve(mixed $sender, mixed $recipients, array $parties, string $direction): array {
+		return $this->matched(sender: $sender, addressing: ['recipients' => $recipients, 'parties' => $parties, 'direction' => $direction]);
+	}//end resolve()
+
+	/**
+	 * The parties a document's sender and recipients name, as far as its direction allows.
+	 *
+	 * @param mixed                $sender     The submitted sender: a uuid, a contact uid, an address, or anything else.
+	 * @param array<string, mixed> $addressing `recipients` the submitted recipients: a list of the same, or one value; `parties` the party links of
+	 *                                         the case; `direction` the document's direction.
+	 *
+	 * @return array{sender: string, recipients: array<int, string>} What may be stored.
+	 */
+	private function matched(mixed $sender, array $addressing): array {
+		[$recipients, $parties, $direction] = [$addressing['recipients'], $addressing['parties'], $addressing['direction']];
 		$allowed = $this->allowedFor(direction: $direction);
 		$index = $this->indexOf(parties: $parties);
 
@@ -121,7 +135,7 @@ class DocumentCorrespondents {
 		}
 
 		return ['sender' => $one, 'recipients' => $many];
-	}//end resolve()
+	}//end matched()
 
 	/**
 	 * The submitted recipients as identifiers of parties of the case, each once, unmatched ones left out.

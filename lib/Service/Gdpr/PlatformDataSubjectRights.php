@@ -261,6 +261,21 @@ class PlatformDataSubjectRights {
 	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function requestExport(string $subject, ?string $type, ?string $requestId): array {
+		return $this->requestedExport(subject: $subject, request: ['type' => $type, 'requestId' => $requestId]);
+	}//end requestExport()
+
+	/**
+	 * Ask the platform for the data subject's export.
+	 *
+	 * @param string                                           $subject The identifier the PII index holds.
+	 * @param array{type: string|null, requestId: string|null} $request `type` optional identifier kind; `requestId` the case this export answers.
+	 *
+	 * @return array<string, mixed> The export record, including `downloadable` and `expiresAt`.
+	 *
+	 * @throws RefusedException When the platform is absent or refuses.
+	 */
+	private function requestedExport(string $subject, array $request): array {
+		[$type, $requestId] = [$request['type'], $request['requestId']];
 		$service = $this->service(name: self::EXPORT_SERVICE);
 
 		return $this->guarded(
@@ -270,7 +285,7 @@ class PlatformDataSubjectRights {
 				requestId: $requestId,
 			)->jsonSerialize()
 		);
-	}//end requestExport()
+	}//end requestedExport()
 
 	/**
 	 * Read one export's state back, including whether it can still be taken.

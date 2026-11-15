@@ -91,6 +91,21 @@ class BezwaarTermijnScheduler {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function computeTermijn(string $bekendmaking, array $definitie = [], int $termDays = 0): array {
+		return $this->termijnFrom(bekendmaking: $bekendmaking, counting: ['definitie' => $definitie, 'termDays' => $termDays]);
+	}//end computeTermijn()
+
+	/**
+	 * The bezwaartermijn end date and reminder date, rolled for non-working days.
+	 *
+	 * @param string                                                    $bekendmaking The bekendmaking date (Y-m-d).
+	 * @param array{definitie: array<string, mixed>, termDays: integer} $counting     `definitie` the term definition, when one is known;
+	 *                                                                                `rollToWorkingDay` false returns the raw dates; `termDays` the
+	 *                                                                                declared term in days, 0 for the statutory six weeks.
+	 *
+	 * @return array{endDate: string, herinnering: string} Both as `Y-m-d`.
+	 */
+	private function termijnFrom(string $bekendmaking, array $counting): array {
+		[$definitie, $termDays] = [$counting['definitie'], $counting['termDays']];
 		$span = new DateInterval('P6W');
 		if ($termDays > 0) {
 			$span = new DateInterval('P' . $termDays . 'D');
@@ -103,7 +118,7 @@ class BezwaarTermijnScheduler {
 			'endDate' => ($this->timerService?->rollTermEndFor(date: $endDate, definitie: $definitie) ?? $endDate)->format('Y-m-d'),
 			'herinnering' => ($this->timerService?->rollTermEndFor(date: $herinnering, definitie: $definitie) ?? $herinnering)->format('Y-m-d'),
 		];
-	}//end computeTermijn()
+	}//end termijnFrom()
 
 	/**
 	 * Create the BezwaarTrigger scheduling record on verzending.

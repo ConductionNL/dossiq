@@ -128,6 +128,24 @@ class StaatssteunClassifier {
 	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function classify(float $amount, float $eerdereDeMinimis, ?string $agvvArtikel = null, bool $isDaeb = false): string {
+		return $this->classified(
+			amount: $amount,
+			aid: ['eerdereDeMinimis' => $eerdereDeMinimis, 'agvvArtikel' => $agvvArtikel, 'isDaeb' => $isDaeb]
+		);
+	}//end classify()
+
+	/**
+	 * The state-aid category the amount, the earlier de-minimis aid, the AGVV article and the DAEB flag put it in.
+	 *
+	 * @param float                                                                  $amount The proposed grant amount.
+	 * @param array{eerdereDeMinimis: float, agvvArtikel: string|null, isDaeb: bool} $aid    `eerdereDeMinimis` the cumulative prior de-minimis aid;
+	 *                                                                                       `agvvArtikel` an AGVV article, when the handler asserts
+	 *                                                                                       AGVV cover; `isDaeb` whether the activity is a DAEB.
+	 *
+	 * @return string One of geen|de_minimis|agvv|daeb|notificatieplicht.
+	 */
+	private function classified(float $amount, array $aid): string {
+		[$eerdereDeMinimis, $agvvArtikel, $isDaeb] = [$aid['eerdereDeMinimis'], $aid['agvvArtikel'], $aid['isDaeb']];
 		if ($isDaeb === true) {
 			return 'daeb';
 		}
@@ -145,7 +163,7 @@ class StaatssteunClassifier {
 		}
 
 		return 'notificatieplicht';
-	}//end classify()
+	}//end classified()
 
 	/**
 	 * Build a TAM-melding payload for an AGVV-classified grant (REQ-SUB-008).

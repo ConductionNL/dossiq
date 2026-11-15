@@ -111,6 +111,20 @@ class SetStatusHandler implements ActionHandlerInterface, SetStatusHandlerInterf
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		return $this->handled(actionConfig: $actionConfig, transition: ['case' => $case, 'transitionContext' => $transitionContext]);
+	}//end handle()
+
+	/**
+	 * Move the case's status; a failure is logged and answered as a failed action.
+	 *
+	 * @param array                                        $actionConfig `{type: 'setStatus', status: '<name>'}`.
+	 * @param array{case: array, transitionContext: array} $transition   `case` the case being walked; `transitionContext` the surrounding
+	 *                                                                   transition's context.
+	 *
+	 * @return ActionResult Success with the resolved status, or a named failure.
+	 */
+	private function handled(array $actionConfig, array $transition): ActionResult {
+		[$case, $transitionContext] = [$transition['case'], $transition['transitionContext']];
 		try {
 			return $this->move(move: new StatusMove(actionConfig: $actionConfig, case: $case));
 		} catch (\Throwable $e) {
@@ -121,7 +135,7 @@ class SetStatusHandler implements ActionHandlerInterface, SetStatusHandlerInterf
 
 			return new ActionResult(succeeded: false, error: 'set_status_failed');
 		}//end try
-	}//end handle()
+	}//end handled()
 
 	/**
 	 * Check the step and the storage, then move the case.

@@ -149,6 +149,20 @@ class ChaseSchedule {
 	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function escalationDue(array $instance, array $reason, ?DateTimeImmutable $now = null): bool {
+		return $this->escalationDueAt(instance: $instance, chase: ['reason' => $reason, 'now' => $now]);
+	}//end escalationDue()
+
+	/**
+	 * Whether the silence on this pause has to be escalated.
+	 *
+	 * @param array<string, mixed>                                             $instance The TermijnInstance row.
+	 * @param array{reason: array<string, mixed>, now: DateTimeImmutable|null} $chase    `reason` the normalised reason in force; `now` the moment
+	 *                                                                                   to judge against.
+	 *
+	 * @return bool True when the handler should hear about it.
+	 */
+	private function escalationDueAt(array $instance, array $chase): bool {
+		[$reason, $now] = [$chase['reason'], $chase['now']];
 		if (PauseReason::chases(reason: $reason) === false) {
 			return false;
 		}
@@ -164,7 +178,7 @@ class ChaseSchedule {
 		$after = $this->escalationMoment(instance: $instance, reason: $reason);
 
 		return ($after !== null && $after->setTime(0, 0) <= ($now ?? new DateTimeImmutable())->setTime(0, 0));
-	}//end escalationDue()
+	}//end escalationDueAt()
 
 	/**
 	 * When the silence may be escalated: one interval after the last reminder, or null when none was sent.

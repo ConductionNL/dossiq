@@ -135,6 +135,20 @@ class ApprovalGate {
 	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public function verdictFor(array $case, string $act, string $userId): array {
+		return $this->verdictOf(case: $case, asking: ['act' => $act, 'userId' => $userId]);
+	}//end verdictFor()
+
+	/**
+	 * The approval verdict for the action.
+	 *
+	 * @param array<string, mixed>               $case   The stored case payload.
+	 * @param array{act: string, userId: string} $asking `act` the act being asked about; `userId` who is asking, for decidiq's own read guard.
+	 *
+	 * @return array{gated: bool, allowed: bool, rule: string, sentence: string, status: int,
+	 *               label: string, decisionRef: string, approvers: array<int, string>} The verdict.
+	 */
+	private function verdictOf(array $case, array $asking): array {
+		[$act, $userId] = [$asking['act'], $asking['userId']];
 		$caseType = $this->caseTypeOf(case: $case);
 		if ($caseType === null) {
 			return $this->unreadable();
@@ -146,7 +160,7 @@ class ApprovalGate {
 		}
 
 		return $this->gatedVerdict(gate: $gate, asker: ['case' => $case, 'act' => $act, 'userId' => $userId]);
-	}//end verdictFor()
+	}//end verdictOf()
 
 	/**
 	 * The refusal when the case type's approval declaration could not be read.

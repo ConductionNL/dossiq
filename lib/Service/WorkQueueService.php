@@ -164,6 +164,20 @@ class WorkQueueService implements WorkQueueServiceInterface {
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function computeQueue(string $userId, ?DateTimeImmutable $now = null, array $covered = []): array {
+		return $this->queueFor(userId: $userId, scope: ['now' => $now, 'covered' => $covered]);
+	}//end computeQueue()
+
+	/**
+	 * The user's scored and sorted queue.
+	 *
+	 * @param string               $userId The Nextcloud user id to scope to.
+	 * @param array<string, mixed> $scope  `now` optional "now" override for testing; `covered` open covered cases, each with `coveredFor`; already
+	 *                                     read-checked.
+	 *
+	 * @return array<int, array<string, mixed>> Scored, sorted queue items.
+	 */
+	private function queueFor(string $userId, array $scope): array {
+		[$now, $covered] = [$scope['now'], $scope['covered']];
 		$now = ($now ?? new DateTimeImmutable());
 
 		$source = $this->caseSource();
@@ -175,7 +189,7 @@ class WorkQueueService implements WorkQueueServiceInterface {
 			run: new QueueScoringRun(source: $source, now: $now, profile: $this->urgencySettings->profile()),
 			queue: ['userId' => $userId, 'covered' => $covered]
 		);
-	}//end computeQueue()
+	}//end queueFor()
 
 	/**
 	 * The user's case and task items and the covered cases, scored and sorted most urgent first.

@@ -129,6 +129,20 @@ class AssigneeResolver implements AssigneeResolverInterface {
 			return '';
 		}
 
+		return $this->resolvePrincipal(primary: $primary, asked: ['fallback' => $fallback, 'case' => $case]);
+	}//end resolve()
+
+	/**
+	 * The authored assignee rendered, else its fallback, else the case's handler.
+	 *
+	 * @param string                                              $primary The authored assignee, template or literal.
+	 * @param array{fallback: string, case: array<string, mixed>} $asked   `fallback` the declared second choice, or ''; `case` the case to render
+	 *                                                                     against.
+	 *
+	 * @return string The rendered principal, or '' when nothing names anybody.
+	 */
+	private function resolvePrincipal(string $primary, array $asked): string {
+		[$fallback, $case] = [$asked['fallback'], $asked['case']];
 		$json = $this->renderingContext(case: $case);
 
 		$resolved = $this->renderPrincipal(raw: $primary, json: $json);
@@ -142,7 +156,7 @@ class AssigneeResolver implements AssigneeResolverInterface {
 		}
 
 		return $this->caseHandler(case: $case);
-	}//end resolve()
+	}//end resolvePrincipal()
 
 	/**
 	 * The declared fallback, rendered, when it names anybody on this case.

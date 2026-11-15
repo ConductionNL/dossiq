@@ -105,6 +105,19 @@ class ZgwDocumentService implements ZgwDocumentServiceInterface {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function storeBase64(string $uuid, string $fileName, string $content): int {
+		return $this->storeDecoded(uuid: $uuid, file: ['fileName' => $fileName, 'content' => $content]);
+	}//end storeBase64()
+
+	/**
+	 * Decode the content and store it in the document's folder.
+	 *
+	 * @param string                                   $uuid The document UUID
+	 * @param array{fileName: string, content: string} $file `fileName` the file name; `content` the base64-encoded file content.
+	 *
+	 * @return int The file size in bytes
+	 */
+	private function storeDecoded(string $uuid, array $file): int {
+		[$fileName, $content] = [$file['fileName'], $file['content']];
 		$decoded = base64_decode(string: $content, strict: true);
 		if ($decoded === false || $decoded === '') {
 			throw new InvalidArgumentException('Invalid base64 content');
@@ -115,7 +128,7 @@ class ZgwDocumentService implements ZgwDocumentServiceInterface {
 		$file->putContent(data: $decoded);
 
 		return strlen(string: $decoded);
-	}//end storeBase64()
+	}//end storeDecoded()
 
 	/**
 	 * Store a document file from raw binary content.

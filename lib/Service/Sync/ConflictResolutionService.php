@@ -107,6 +107,19 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	 * @spec openspec/changes/inspection-conflict-card/tasks.md
 	 */
 	public function resolve(string $id, string $resolution, string $userId): ConflictResolutionOutcome {
+		return $this->openAndResolve(id: $id, choice: ['resolution' => $resolution, 'userId' => $userId]);
+	}//end resolve()
+
+	/**
+	 * Open the conflict on the configured store and apply the user's resolution.
+	 *
+	 * @param string                                    $id     The conflict record's id.
+	 * @param array{resolution: string, userId: string} $choice `resolution` `client_wins` or `server_wins`; `userId` the session user's uid.
+	 *
+	 * @return ConflictResolutionOutcome The status and body to answer with.
+	 */
+	private function openAndResolve(string $id, array $choice): ConflictResolutionOutcome {
+		[$resolution, $userId] = [$choice['resolution'], $choice['userId']];
 		$objectService = $this->settings->getObjectService();
 		$register = $this->settings->getConfigValue(key: 'register');
 		if ($objectService === null || $register === '') {
@@ -121,7 +134,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			userId: $userId
 		);
 		return $this->resolveConflict(request: $request);
-	}//end resolve()
+	}//end openAndResolve()
 
 	/**
 	 * Apply the resolution to the open conflict and mark it resolved, unless a step refuses.

@@ -120,6 +120,23 @@ class TaskAttachmentService implements TaskAttachmentServiceInterface {
 	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function bind(string $caseId, string $taskId, array $file, string $uploader): array {
+		return $this->bound(caseId: $caseId, attachment: ['taskId' => $taskId, 'file' => $file, 'uploader' => $uploader]);
+	}//end bind()
+
+	/**
+	 * Hold the file for the task on the case and answer what the task holds.
+	 *
+	 * @param string                                                              $caseId     The case.
+	 * @param array{taskId: string, file: array<string, mixed>, uploader: string} $attachment `taskId` the task the file waits on; `file` the file:
+	 *                                                                                        `file`, `title` and, optionally, `link`; `uploader`
+	 *                                                                                        who uploaded it.
+	 *
+	 * @return array<int, array<string, mixed>> The files now held against that task.
+	 *
+	 * @throws RuntimeException When the case cannot be read or written.
+	 */
+	private function bound(string $caseId, array $attachment): array {
+		[$taskId, $file, $uploader] = [$attachment['taskId'], $attachment['file'], $attachment['uploader']];
 		$fileId = trim((string)($file['file'] ?? ''));
 		if (trim($taskId) === '' || $fileId === '') {
 			throw new RuntimeException('task_attachment_incomplete');
@@ -132,7 +149,7 @@ class TaskAttachmentService implements TaskAttachmentServiceInterface {
 		$this->writeHold(caseId: $caseId, held: $held);
 
 		return $this->heldFor(case: [self::HOLD => $held], taskId: $taskId);
-	}//end bind()
+	}//end bound()
 
 	/**
 	 * One held file, as the case stores it.

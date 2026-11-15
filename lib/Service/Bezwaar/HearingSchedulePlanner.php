@@ -140,6 +140,19 @@ class HearingSchedulePlanner {
 		DateTimeImmutable $deadline,
 		DateTimeImmutable $now,
 	): DateTimeImmutable {
+		return $this->availableFrom(payload: $payload, window: ['deadline' => $deadline, 'now' => $now]);
+	}//end resolveAvailableFrom()
+
+	/**
+	 * The day inspection becomes available, at the latest the inspection deadline.
+	 *
+	 * @param array<string, mixed>                                       $payload Optional schedule extras.
+	 * @param array{deadline: DateTimeImmutable, now: DateTimeImmutable} $window  `deadline` computed inspection deadline; `now` current date-time.
+	 *
+	 * @return DateTimeImmutable The resolved availability date.
+	 */
+	private function availableFrom(array $payload, array $window): DateTimeImmutable {
+		[$deadline, $now] = [$window['deadline'], $window['now']];
 		$available = $now->setTime(0, 0, 0);
 		if (isset($payload['inspectionAvailableFrom']) === true) {
 			$available = $this->parseDate(value: (string)$payload['inspectionAvailableFrom']);
@@ -151,7 +164,7 @@ class HearingSchedulePlanner {
 		}
 
 		return $available;
-	}//end resolveAvailableFrom()
+	}//end availableFrom()
 
 	/**
 	 * Block scheduling/rescheduling that would violate the 7-day

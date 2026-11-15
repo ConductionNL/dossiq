@@ -96,6 +96,21 @@ class TaskTools implements TaskToolsInterface {
 	)]
 	#[McpToolTitle('Create a task')]
 	public function createTask(string $caseId, string $title, int $leadTimeDays = 0, string $for = 'handler'): array {
+		return $this->createFor(caseId: $caseId, task: ['title' => $title, 'leadTimeDays' => $leadTimeDays, 'for' => $for]);
+	}//end createTask()
+
+	/**
+	 * Create the task unless the input or the case refuses it.
+	 *
+	 * @param string                                               $caseId The case UUID.
+	 * @param array{title: string, leadTimeDays: int, for: string} $task   `title` what the task asks for; `leadTimeDays` working days until it is
+	 *                                                                     due; 0 for no due date; `for` `handler` (the case handler) or `me` (the
+	 *                                                                     caller).
+	 *
+	 * @return array<string, mixed> `{taskId}`, or an error envelope.
+	 */
+	private function createFor(string $caseId, array $task): array {
+		[$title, $leadTimeDays, $for] = [$task['title'], $task['leadTimeDays'], $task['for']];
 		$run = new CreateTaskRun();
 		$run->user = $this->userSession->getUser();
 		$run->caseId = trim($caseId);
@@ -109,7 +124,7 @@ class TaskTools implements TaskToolsInterface {
 		}
 
 		return $this->created(run: $run);
-	}//end createTask()
+	}//end createFor()
 
 	/**
 	 * Why the call cannot go on before the case is read: no session, or input out of bounds.

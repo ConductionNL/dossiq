@@ -73,6 +73,19 @@ class LeastLoadedStrategy implements RoutingStrategyInterface {
 	 * @spec openspec/specs/role-based-step-routing/spec.md
 	 */
 	public function resolve(array $rule, array $case, array $roles): array {
+		return $this->leastLoadedOf(rule: $rule, routing: ['case' => $case, 'roles' => $roles]);
+	}//end resolve()
+
+	/**
+	 * The least-loaded member of the pool the rule targets.
+	 *
+	 * @param array<string, mixed> $rule    The routing rule
+	 * @param array<string, mixed> $routing `case` the case object (must include `openTaskCountsByParticipant`); `roles` roles bound to the case.
+	 *
+	 * @return array<int, string>
+	 */
+	private function leastLoadedOf(array $rule, array $routing): array {
+		[$case, $roles] = [$routing['case'], $routing['roles']];
 		$target = (string)($rule['roleType'] ?? '');
 		if ($target === '') {
 			return [];
@@ -88,7 +101,7 @@ class LeastLoadedStrategy implements RoutingStrategyInterface {
 		}
 
 		return [$bestParticipant];
-	}//end resolve()
+	}//end leastLoadedOf()
 
 	/**
 	 * The members of the pool the rule targets, narrowed to its team when it names one.

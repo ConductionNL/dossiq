@@ -202,6 +202,19 @@ class MailMessageSource implements MailMessageSourceInterface {
 	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function listMessagesSince(int $accountId, int $sinceId, int $limit): array {
+		return $this->messagesSince(accountId: $accountId, page: ['sinceId' => $sinceId, 'limit' => $limit]);
+	}//end listMessagesSince()
+
+	/**
+	 * The intake mailbox's messages after the last one read.
+	 *
+	 * @param int                             $accountId The Mail account id.
+	 * @param array{sinceId: int, limit: int} $page      `sinceId` the last processed message id; `limit` the most messages to return.
+	 *
+	 * @return array<int, array{id: int, uid: string, subject: string, preview: string}> The messages.
+	 */
+	private function messagesSince(int $accountId, array $page): array {
+		[$sinceId, $limit] = [$page['sinceId'], $page['limit']];
 		try {
 			$result = $this->messagesSinceQuery(accountId: $accountId, page: ['sinceId' => $sinceId, 'limit' => $limit])->executeQuery();
 			$messages = $this->messageRows(result: $result);
@@ -211,7 +224,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 		}//end try
 
 		return $messages;
-	}//end listMessagesSince()
+	}//end messagesSince()
 
 	/**
 	 * The query for an account's messages after a cursor, oldest first, capped.

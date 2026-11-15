@@ -127,6 +127,19 @@ class WooDossierReturn {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
 	 */
 	public function append(array $case, string $publicationId, string $title): bool {
+		return $this->appended(case: $case, publication: ['publicationId' => $publicationId, 'title' => $title]);
+	}//end append()
+
+	/**
+	 * Append the publication to the case's source dossier when it may.
+	 *
+	 * @param array<string, mixed>                        $case        The case, with `wooRequest` and `portalSubject`.
+	 * @param array{publicationId: string, title: string} $publication `publicationId` the publication uuid; `title` what the item's note says.
+	 *
+	 * @return bool True when the dossier holds the publication afterwards.
+	 */
+	private function appended(array $case, array $publication): bool {
+		[$publicationId, $title] = [$publication['publicationId'], $publication['title']];
 		$collectionId = trim((string)($case['wooRequest']['collectionId'] ?? ''));
 		$objectService = $this->settingsService->getObjectService();
 		if ($this->canAppend(collectionId: $collectionId, publicationId: $publicationId, objectService: $objectService) === false) {
@@ -137,7 +150,7 @@ class WooDossierReturn {
 			target: $this->appendTarget(objectService: $objectService, collectionId: $collectionId),
 			addition: ['case' => $case, 'publicationId' => $publicationId, 'title' => $title]
 		);
-	}//end append()
+	}//end appended()
 
 	/**
 	 * Add the publication to the source dossier; a failure is logged and answers false.

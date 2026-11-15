@@ -381,6 +381,21 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function cycleFor(string $caseTypeId, string $parentCaseTypeId, string $selfTitle = ''): array {
+		return $this->cycleOf(caseTypeId: $caseTypeId, chain: ['parentCaseTypeId' => $parentCaseTypeId, 'selfTitle' => $selfTitle]);
+	}//end cycleFor()
+
+	/**
+	 * The titles from the type round to itself, or none when there is no loop.
+	 *
+	 * @param string                                             $caseTypeId The type being saved.
+	 * @param array{parentCaseTypeId: string, selfTitle: string} $chain      `parentCaseTypeId` the parent it wants; `selfTitle` the title the type
+	 *                                                                       is being saved with, when the caller has it. A new type has no stored
+	 *                                                                       row to read its title from.
+	 *
+	 * @return array<int, string> The titles from the type round to itself, or an empty array when there is no loop.
+	 */
+	private function cycleOf(string $caseTypeId, array $chain): array {
+		[$parentCaseTypeId, $selfTitle] = [$chain['parentCaseTypeId'], $chain['selfTitle']];
 		if ($this->wouldCycle(caseTypeId: $caseTypeId, parentCaseTypeId: $parentCaseTypeId) === false) {
 			return [];
 		}
@@ -391,7 +406,7 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 		}
 
 		return $this->cycleNames(title: $title, ids: [$caseTypeId, $parentCaseTypeId]);
-	}//end cycleFor()
+	}//end cycleOf()
 
 	/**
 	 * The titles from the type round its parent chain back to itself.

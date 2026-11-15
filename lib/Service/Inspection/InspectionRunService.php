@@ -98,6 +98,22 @@ class InspectionRunService implements InspectionRunServiceInterface {
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
 	 */
 	public function submit(string $caseId, string $templateId, array $payload, string $actor): array {
+		return $this->submitted(caseId: $caseId, run: ['templateId' => $templateId, 'payload' => $payload, 'actor' => $actor]);
+	}//end submit()
+
+	/**
+	 * Check the answers and complete the inspection run.
+	 *
+	 * @param string               $caseId The case uuid.
+	 * @param array<string, mixed> $run    `templateId` the template uuid, or the uuid of the older checklist it was folded from; `payload` the
+	 *                                     request body; `actor` the inspector's uid.
+	 *
+	 * @return array<string, mixed> The run, as {@see runsForCase()} answers one.
+	 *
+	 * @throws RuntimeException When the template is unknown, the run breaks a rule, or the task layer is absent.
+	 */
+	private function submitted(string $caseId, array $run): array {
+		[$templateId, $payload, $actor] = [$run['templateId'], $run['payload'], $run['actor']];
 		$template = $this->template(templateId: $templateId);
 		$answers = $this->answers->fromPayload(payload: $payload);
 		$violations = $this->answers->violations(snapshot: $template, answers: $answers);
@@ -109,7 +125,7 @@ class InspectionRunService implements InspectionRunServiceInterface {
 			start: new InspectionRunStart(caseId: $caseId, template: $template, payload: $payload, actor: $actor),
 			answers: $answers
 		);
-	}//end submit()
+	}//end submitted()
 
 	/**
 	 * Create the inspection task and complete it with the answers.

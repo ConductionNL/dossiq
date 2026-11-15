@@ -89,6 +89,22 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 		string $aangezochtGezag,
 		string $rationale,
 	): array {
+		return $this->requestCooperation(caseId: $caseId, asked: ['aangezochtGezag' => $aangezochtGezag, 'rationale' => $rationale]);
+	}//end initiateSamenwerking()
+
+	/**
+	 * Store the samenwerkverzoek for the case and announce it.
+	 *
+	 * @param string                                            $caseId The UUID of the zaak
+	 * @param array{aangezochtGezag: string, rationale: string} $asked  `aangezochtGezag` the requested authority identifier; `rationale` the reason
+	 *                                                                  for requesting cooperation.
+	 *
+	 * @return array<string,mixed> The created samenwerkverzoek object
+	 *
+	 * @throws \RuntimeException When the zaak cannot be found
+	 */
+	private function requestCooperation(string $caseId, array $asked): array {
+		[$aangezochtGezag, $rationale] = [$asked['aangezochtGezag'], $asked['rationale']];
 		$store = ['objectService' => $this->getObjectService(), 'register' => $this->configString(key: 'register', default: '')];
 		$case = $this->requireCase(store: $store, caseId: $caseId);
 
@@ -103,7 +119,7 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 				ask: ['caseId' => $caseId, 'requestedCompetentAuthority' => $aangezochtGezag, 'rationale' => $rationale]
 			)
 		);
-	}//end initiateSamenwerking()
+	}//end requestCooperation()
 
 	/**
 	 * The samenwerkverzoek row as it is stored: requested now.

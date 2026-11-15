@@ -152,6 +152,19 @@ class RestrictedDocumentReaders implements RestrictedDocumentReadersInterface {
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-copy-of-a-document-carries-its-exception
 	 */
 	public function inherit(array $original, int $fileId, string $madeBy = ''): bool {
+		return $this->inheritOnto(original: $original, copied: ['fileId' => $fileId, 'madeBy' => $madeBy]);
+	}//end inherit()
+
+	/**
+	 * Restrict the copy's file as the original is, and record the exception on the copy's record.
+	 *
+	 * @param array<string, mixed>               $original The original's record.
+	 * @param array{fileId: int, madeBy: string} $copied   `fileId` the copy's file; `madeBy` who made the copy.
+	 *
+	 * @return bool True when the original carried an exception and the copy got it.
+	 */
+	private function inheritOnto(array $original, array $copied): bool {
+		[$fileId, $madeBy] = [$copied['fileId'], $copied['madeBy']];
 		$exception = (new AccessExceptionValue())->exceptionOf(record: $original);
 		if ($exception === null || $fileId <= 0) {
 			return false;
@@ -168,7 +181,7 @@ class RestrictedDocumentReaders implements RestrictedDocumentReadersInterface {
 		$this->saveCopy(copy: $copy, restriction: ['exception' => $exception, 'history' => $history]);
 
 		return true;
-	}//end inherit()
+	}//end inheritOnto()
 
 	/**
 	 * The copy's exception history with the entry naming the original appended.

@@ -66,6 +66,22 @@ class RecordImportReferences {
 	 * @spec openspec/specs/case-record-import/spec.md
 	 */
 	public function casesByFormerReference(object $objectService, array $caseType, array $import): array {
+		return $this->casesFormerlyNamed(objectService: $objectService, lookup: ['caseType' => $caseType, 'import' => $import]);
+	}//end casesByFormerReference()
+
+	/**
+	 * The cases the former reference named.
+	 *
+	 * @param object                                                              $objectService The OpenRegister ObjectService.
+	 * @param array{caseType: array<string, mixed>, import: array<string, mixed>} $lookup        `caseType` the case type; `import` the declaration,
+	 *                                                                                           naming the former reference's application.
+	 *
+	 * @return array<string, string> Earlier number => case id.
+	 *
+	 * @throws Throwable When the cases cannot be read.
+	 */
+	private function casesFormerlyNamed(object $objectService, array $lookup): array {
+		[$caseType, $import] = [$lookup['caseType'], $lookup['import']];
 		$application = (string)($import['formerReference']['application'] ?? '');
 		$cases = $this->store->listAll(
 			objectService: $objectService,
@@ -75,7 +91,7 @@ class RecordImportReferences {
 		);
 
 		return $this->byFormerReference(cases: $cases, application: $application);
-	}//end casesByFormerReference()
+	}//end casesFormerlyNamed()
 
 	/**
 	 * Case ids keyed by the former reference each case carries for the application.

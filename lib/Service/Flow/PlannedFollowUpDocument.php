@@ -468,6 +468,20 @@ class PlannedFollowUpDocument {
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function isSpent(array $document, int $firedCount, DateTimeImmutable $today): bool {
+		return $this->spent(document: $document, recurrence: ['firedCount' => $firedCount, 'today' => $today]);
+	}//end isSpent()
+
+	/**
+	 * Whether the recurrence has no occurrence left.
+	 *
+	 * @param array<string, mixed>                                 $document   The flow document, or a stored flow's `{nodes: [...]}`.
+	 * @param array{firedCount: integer, today: DateTimeImmutable} $recurrence `firedCount` how many occurrences have been created; `today` the day
+	 *                                                                         the sweep is running on.
+	 *
+	 * @return boolean Whether the flow may be switched off.
+	 */
+	private function spent(array $document, array $recurrence): bool {
+		[$firedCount, $today] = [$recurrence['firedCount'], $recurrence['today']];
 		$series = $this->seriesOf(nodes: (array)($document['nodes'] ?? []));
 		if ($series['recurrence'] === self::RECURRENCE_NONE) {
 			return $firedCount >= 1;
@@ -478,7 +492,7 @@ class PlannedFollowUpDocument {
 		}
 
 		return $this->pastUntil(series: $series, today: $today);
-	}//end isSpent()
+	}//end spent()
 
 	/**
 	 * Whether a series that ends on a date has no occurrence left on or before it.

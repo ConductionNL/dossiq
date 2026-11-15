@@ -74,6 +74,22 @@ class FrozenRecordGuard implements FrozenRecordGuardInterface {
 	 * @spec openspec/specs/frozen-record/spec.md
 	 */
 	public function assertUpdatable(FreezeDefinition $definition, array $stored, array $incoming): void {
+		$this->assertWriteAllowed(definition: $definition, incoming: ['stored' => $stored, 'incoming' => $incoming]);
+	}//end assertUpdatable()
+
+	/**
+	 * Refuse an update the freeze does not allow.
+	 *
+	 * @param FreezeDefinition                                                    $definition The freeze entry.
+	 * @param array{stored: array<string, mixed>, incoming: array<string, mixed>} $incoming   `stored` the record as stored; `incoming` the record
+	 *                                                                                        as it would be written.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException 409 when the write touches what the freeze holds.
+	 */
+	private function assertWriteAllowed(FreezeDefinition $definition, array $incoming): void {
+		[$stored, $incoming] = [$incoming['stored'], $incoming['incoming']];
 		$write = ['stored' => $stored, 'incoming' => $incoming];
 		$this->assertWriteOnceHeld(definition: $definition, write: $write);
 
@@ -84,7 +100,7 @@ class FrozenRecordGuard implements FrozenRecordGuardInterface {
 		if ($this->movesFrozenRecord(definition: $definition, write: $write) === true) {
 			throw $this->refusal(definition: $definition);
 		}
-	}//end assertUpdatable()
+	}//end assertWriteAllowed()
 
 	/**
 	 * Whether a write to a frozen record deletes it, moves its status out of the freeze, or moves a frozen field.

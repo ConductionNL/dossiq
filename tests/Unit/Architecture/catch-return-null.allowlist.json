@@ -628,10 +628,10 @@
     },
     {
       "file": "lib/Service/Email/MailMessageSource.php",
-      "method": "listMessagesSince",
+      "method": "messagesSince",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`listMessagesSince()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: listing Mail messages failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`messagesSince()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: listing Mail messages failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Email/MailMessageSource.php",

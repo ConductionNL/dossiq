@@ -243,6 +243,22 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function getApplicableMandaten(string $decisionType, string $caseType, ?DateTimeImmutable $date = null): array {
+		return $this->applicableMandaten(decisionType: $decisionType, filter: ['caseType' => $caseType, 'date' => $date]);
+	}//end getApplicableMandaten()
+
+	/**
+	 * The mandates that apply, optionally narrowed.
+	 *
+	 * @param string                                                $decisionType Decision type slug.
+	 * @param array{caseType: string, date: DateTimeImmutable|null} $filter       `caseType` case type slug (may be empty); `date` date (default
+	 *                                                                            today).
+	 *
+	 * @return array<int, array<string, mixed>> The mandates, or an empty list when none apply.
+	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
+	 */
+	private function applicableMandaten(string $decisionType, array $filter): array {
+		[$caseType, $date] = [$filter['caseType'], $filter['date']];
 		$out = [];
 		$context = ['decisionType' => $decisionType, 'caseType' => $caseType];
 		foreach ($this->activeRows(date: ($date ?? new DateTimeImmutable()), context: $context) as $row) {
@@ -254,7 +270,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 		}
 
 		return $out;
-	}//end getApplicableMandaten()
+	}//end applicableMandaten()
 
 	/**
 	 * The active mandates whose window covers the date, whatever they apply to.
@@ -518,6 +534,22 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function getApplicableForUser(string $userId, string $caseType = '', string $decisionType = ''): array {
+		return $this->applicableForUser(userId: $userId, filter: ['caseType' => $caseType, 'decisionType' => $decisionType]);
+	}//end getApplicableForUser()
+
+	/**
+	 * The mandates the user's role holds today, optionally narrowed.
+	 *
+	 * @param string                                        $userId User id.
+	 * @param array{caseType: string, decisionType: string} $filter `caseType` case type slug (empty = no filter); `decisionType` decision type slug
+	 *                                                              (empty = list all).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
+	 */
+	private function applicableForUser(string $userId, array $filter): array {
+		[$caseType, $decisionType] = [$filter['caseType'], $filter['decisionType']];
 		$date = new DateTimeImmutable();
 		$roleId = $this->roleIdOf(userId: $userId, date: $date);
 		if ($roleId === '') {
@@ -528,7 +560,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 			rows: $this->getApplicableMandaten(decisionType: $decisionType, caseType: $caseType, date: $date),
 			roleId: $roleId
 		);
-	}//end getApplicableForUser()
+	}//end applicableForUser()
 
 	/**
 	 * The id of the user's active role on the date, or '' when they hold none.

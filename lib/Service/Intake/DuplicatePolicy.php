@@ -270,6 +270,22 @@ class DuplicatePolicy implements DuplicatePolicyInterface {
 	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	public function assertCreatable(array $case, array $caseType, ?IUser $user): void {
+		$this->assertNoBlockingDuplicate(case: $case, creating: ['caseType' => $caseType, 'user' => $user]);
+	}//end assertCreatable()
+
+	/**
+	 * Refuse a case that duplicates another unless the user may override and gave a reason.
+	 *
+	 * @param array<string, mixed>                                    $case     The case as it would be written.
+	 * @param array{caseType: array<string, mixed>, user: IUser|null} $creating `caseType` the effective case type row; `user` the account filing
+	 *                                                                          the case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case type blocks and the account may not override.
+	 */
+	private function assertNoBlockingDuplicate(array $case, array $creating): void {
+		[$caseType, $user] = [$creating['caseType'], $creating['user']];
 		if ($this->policyFor(caseType: $caseType) !== self::POLICY_BLOCK) {
 			return;
 		}
@@ -281,7 +297,7 @@ class DuplicatePolicy implements DuplicatePolicyInterface {
 
 		$this->assertMayOverride(user: $user);
 		$this->assertReasonGiven(caseRow: $case);
-	}//end assertCreatable()
+	}//end assertNoBlockingDuplicate()
 
 	/**
 	 * Refuse a blocked duplicate when the account may not override.

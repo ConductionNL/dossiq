@@ -173,6 +173,20 @@ class ConcludedDecisionRecord {
 		string $decisionId,
 		string $subjectId,
 	): void {
+		$this->recordDeviationOf(decision: $decision, refs: ['decisionId' => $decisionId, 'subjectId' => $subjectId]);
+	}//end recordCouncilDeviation()
+
+	/**
+	 * Record a council deviation from committee advice, when the decision deviates.
+	 *
+	 * @param array<string,mixed>|null                     $decision The bezwaarDecision record, when one matched.
+	 * @param array{decisionId: string, subjectId: string} $refs     `decisionId` the materialised ZGW Besluit ref, when known; `subjectId` the
+	 *                                                               bezwaarDecision UUID from the event.
+	 *
+	 * @return void
+	 */
+	private function recordDeviationOf(?array $decision, array $refs): void {
+		[$decisionId, $subjectId] = [$refs['decisionId'], $refs['subjectId']];
 		$requestId = $this->deviatedRequestId(decision: $decision);
 		if ($decision === null || $requestId === '') {
 			return;
@@ -188,7 +202,7 @@ class ConcludedDecisionRecord {
 		}
 
 		$this->writeDeviation(requestId: $requestId, deviation: ['reference' => $reference, 'rationale' => $rationale]);
-	}//end recordCouncilDeviation()
+	}//end recordDeviationOf()
 
 	/**
 	 * The advice request a decision deviates from, or '' when there is no deviation to record.

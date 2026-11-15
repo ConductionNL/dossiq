@@ -152,6 +152,21 @@ class WooReceivedAnswers implements WooReceivedAnswersInterface {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
 	 */
 	public function intake(array $answers, string $origin, string $receivedAt): array {
+		return $this->intakeOf(answers: $answers, arrival: ['origin' => $origin, 'receivedAt' => $receivedAt]);
+	}//end intake()
+
+	/**
+	 * How the request came in: its start date, moment and channel, and its subject when named.
+	 *
+	 * @param array<string, mixed>                      $answers The form answers.
+	 * @param array{origin: string, receivedAt: string} $arrival `origin` the origin; `receivedAt` when the requester sent it, ISO 8601, or ''.
+	 *
+	 * @return array<string, string> `{startDate, receivedAt, intakeChannel, portalSubject?}`.
+	 *
+	 * @throws WooRequestRefused INVALID when the channel is unknown.
+	 */
+	private function intakeOf(array $answers, array $arrival): array {
+		[$origin, $receivedAt] = [$arrival['origin'], $arrival['receivedAt']];
 		$moment = ($this->dates->tryParse(value: trim($receivedAt)) ?? $this->dates->now());
 		$intake = [
 			'startDate' => $moment->format('Y-m-d'),
@@ -165,7 +180,7 @@ class WooReceivedAnswers implements WooReceivedAnswersInterface {
 		}
 
 		return $intake;
-	}//end intake()
+	}//end intakeOf()
 
 	/**
 	 * The subject: the request itself, cut on a word boundary when it is long.

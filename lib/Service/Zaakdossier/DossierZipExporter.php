@@ -118,6 +118,22 @@ class DossierZipExporter implements DossierZipExporterInterface {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function buildZipData(IUser $user, array $documents, bool $flatLayout): string {
+		return $this->zipped(user: $user, export: ['documents' => $documents, 'flatLayout' => $flatLayout]);
+	}//end buildZipData()
+
+	/**
+	 * Build the ZIP in a temporary file and answer its bytes.
+	 *
+	 * @param IUser                                                                $user   The requesting user (clearance filtering).
+	 * @param array{documents: array<int, array<string, mixed>>, flatLayout: bool} $export `documents` the documents to include; `flatLayout` true
+	 *                                                                                     for a flat archive, false for per-type subfolders.
+	 *
+	 * @return string The archive bytes.
+	 *
+	 * @throws \Throwable When the archive cannot be written or read back.
+	 */
+	private function zipped(IUser $user, array $export): string {
+		[$documents, $flatLayout] = [$export['documents'], $export['flatLayout']];
 		$tmpPath = (string)tempnam(sys_get_temp_dir(), 'dossiq-dossier-');
 		try {
 			$this->zipBuilder->buildZip(
@@ -131,7 +147,7 @@ class DossierZipExporter implements DossierZipExporterInterface {
 		} finally {
 			$this->removeTemporary(tmpPath: $tmpPath);
 		}
-	}//end buildZipData()
+	}//end zipped()
 
 	/**
 	 * The manifest layout: flat when asked, otherwise one folder per document type.

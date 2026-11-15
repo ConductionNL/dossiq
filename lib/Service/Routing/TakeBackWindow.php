@@ -161,6 +161,19 @@ class TakeBackWindow implements TakeBackWindowInterface {
 	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
 	 */
 	public function arm(string $caseId, array $rule, string $routedTo, DateTimeImmutable $routedAt): string {
+		return $this->armFor(caseId: $caseId, routing: ['rule' => $rule, 'routedTo' => $routedTo, 'routedAt' => $routedAt]);
+	}//end arm()
+
+	/**
+	 * Re-arm the take-back timer for the routed case.
+	 *
+	 * @param string               $caseId  The case id.
+	 * @param array<string, mixed> $routing `rule` the routing rule that routed it; `routedTo` the person it was routed to; `routedAt` when.
+	 *
+	 * @return string ARMED, SKIPPED or UNAVAILABLE.
+	 */
+	private function armFor(string $caseId, array $routing): string {
+		[$rule, $routedTo, $routedAt] = [$routing['rule'], $routing['routedTo'], $routing['routedAt']];
 		$window = $this->windowOf(rule: $rule);
 		if ($caseId === '' || $routedTo === '' || $window === null) {
 			return self::SKIPPED;
@@ -175,7 +188,7 @@ class TakeBackWindow implements TakeBackWindowInterface {
 		$config = $this->takeBackConfig(routed: $routed, window: $window);
 
 		return $this->armOnEngine(config: $config, caseId: $caseId);
-	}//end arm()
+	}//end armFor()
 
 	/**
 	 * The timer configuration of a take-back window.

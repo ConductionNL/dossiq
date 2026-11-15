@@ -143,6 +143,20 @@ class ArchivalNominationDeriver {
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	public function derive(array $case, string $resultTypeId, string $endDate): array {
+		return $this->derived(case: $case, closing: ['resultTypeId' => $resultTypeId, 'endDate' => $endDate]);
+	}//end derive()
+
+	/**
+	 * The archival fields a closing case takes from its resultaattype.
+	 *
+	 * @param array<string, mixed>                         $case    The case payload, as it will be saved.
+	 * @param array{resultTypeId: string, endDate: string} $closing `resultTypeId` the chosen resultType UUID; `endDate` the case's end date
+	 *                                                              (Y-m-d), the zrc-021 einddatum.
+	 *
+	 * @return array<string, string|null> `archiveNomination`, `archiveActionDate` and/or `selectionListClass`.
+	 */
+	private function derived(array $case, array $closing): array {
+		[$resultTypeId, $endDate] = [$closing['resultTypeId'], $closing['endDate']];
 		if ($resultTypeId === '' || $endDate === '') {
 			return [];
 		}
@@ -155,7 +169,7 @@ class ArchivalNominationDeriver {
 		$derived = $this->nominationAndClass(resultType: $resultType);
 
 		return $this->withActionDate(derived: $derived, closing: ['resultType' => $resultType, 'case' => $case, 'endDate' => $endDate]);
-	}//end derive()
+	}//end derived()
 
 	/**
 	 * The resultType row, or an empty array (logged) when there is none.

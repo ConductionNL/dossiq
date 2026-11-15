@@ -262,6 +262,20 @@ class CaseMergeService implements CaseMergeServiceInterface {
 	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function requestMerge(string $mergedId, string $survivorId, string $reason, string $actor): array {
+		return $this->requestedMerge(mergedId: $mergedId, merging: ['survivorId' => $survivorId, 'reason' => $reason, 'actor' => $actor]);
+	}//end requestMerge()
+
+	/**
+	 * Hand the merge to OpenRegister unless a rule or the platform refuses it.
+	 *
+	 * @param string                                                   $mergedId The case to merge away.
+	 * @param array{survivorId: string, reason: string, actor: string} $merging  `survivorId` the case it becomes part of; `reason` what the
+	 *                                                                           caseworker typed; `actor` the acting user's uid.
+	 *
+	 * @return array{refused?: string, operation?: array<string, mixed>} The outcome.
+	 */
+	private function requestedMerge(string $mergedId, array $merging): array {
+		[$survivorId, $reason, $actor] = [$merging['survivorId'], $merging['reason'], $merging['actor']];
 		$merger = $this->settingsService->getOpenRegisterClass(class: self::MERGE_SERVICE_CLASS);
 
 		$refusal = $this->mergeRefusal(mergedId: $mergedId, survivorId: $survivorId);
@@ -277,7 +291,7 @@ class CaseMergeService implements CaseMergeServiceInterface {
 			merger: $merger,
 			instruction: ['from' => $mergedId, 'into' => $survivorId, 'reason' => $reason, 'mergedBy' => $actor]
 		);
-	}//end requestMerge()
+	}//end requestedMerge()
 
 	/**
 	 * Hand the merge to OpenRegister; a refusal is logged and answered as `platform-refused`.
