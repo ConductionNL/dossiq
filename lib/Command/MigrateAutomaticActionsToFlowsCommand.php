@@ -91,7 +91,7 @@ class MigrateAutomaticActionsToFlowsCommand extends Command {
 	 * @spec openspec/changes/page-topology-cleanup/tasks.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		$console = MigrationConsole::writingTo(output: $output, users: $this->userManager);
+		$console = (new MigrationConsole())->writingTo(output: $output, users: $this->userManager);
 		$console->command = 'dossiq:actions:migrate-to-flows';
 
 		return $console->run(

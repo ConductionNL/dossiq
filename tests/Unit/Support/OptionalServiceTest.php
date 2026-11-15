@@ -33,7 +33,7 @@ class OptionalServiceTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->expects($this->never())->method('get');
 
-		$this->assertNull(OptionalService::from(container: $container, fqn: 'OCA\\Nowhere\\Missing'));
+		$this->assertNull((new OptionalService())->from(container: $container, fqn: 'OCA\\Nowhere\\Missing'));
 	}
 
 	public function testResolvedServiceIsReturned(): void {
@@ -41,20 +41,20 @@ class OptionalServiceTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->with(stdClass::class)->willReturn($service);
 
-		$this->assertSame($service, OptionalService::from(container: $container, fqn: stdClass::class));
+		$this->assertSame($service, (new OptionalService())->from(container: $container, fqn: stdClass::class));
 	}
 
 	public function testFailingContainerAnswersNull(): void {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willThrowException(new RuntimeException('down'));
 
-		$this->assertNull(OptionalService::from(container: $container, fqn: stdClass::class));
+		$this->assertNull((new OptionalService())->from(container: $container, fqn: stdClass::class));
 	}
 
 	public function testNonObjectAnswersNull(): void {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn('not an object');
 
-		$this->assertNull(OptionalService::from(container: $container, fqn: stdClass::class));
+		$this->assertNull((new OptionalService())->from(container: $container, fqn: stdClass::class));
 	}
 }

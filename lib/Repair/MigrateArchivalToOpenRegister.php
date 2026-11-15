@@ -488,6 +488,6 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	 * @return object|null
 	 */
 	private function resolveOr(string $fqn): ?object {
-		return OptionalService::from(container: $this->container, fqn: $fqn);
+		return (new OptionalService())->from(container: $this->container, fqn: $fqn);
 	}//end resolveOr()
 }//end class

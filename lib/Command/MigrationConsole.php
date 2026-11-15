@@ -79,7 +79,7 @@ final class MigrationConsole {
 	public string $rowSeparator = ' — ';
 
 	/**
-	 * A console that resolves users through `$users` and writes to `$output`.
+	 * This console, resolving users through `$users` and writes to `$output`.
 	 *
 	 * @param OutputInterface $output Console output.
 	 * @param IUserManager    $users  Resolves the acting user.
@@ -88,12 +88,11 @@ final class MigrationConsole {
 	 *
 	 * @spec openspec/changes/page-topology-cleanup/tasks.md
 	 */
-	public static function writingTo(OutputInterface $output, IUserManager $users): self {
-		$console = new self();
-		$console->userManager = $users;
-		$console->output = $output;
+	public function writingTo(OutputInterface $output, IUserManager $users): self {
+		$this->userManager = $users;
+		$this->output = $output;
 
-		return $console;
+		return $this;
 	}//end writingTo()
 
 	/**

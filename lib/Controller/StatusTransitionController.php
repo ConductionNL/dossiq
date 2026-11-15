@@ -37,7 +37,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -95,13 +94,17 @@ class StatusTransitionController extends Controller {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function available(string $caseId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
 		// Only PARTLY unguarded before this: the transition list itself is
 		// role-filtered inside the engine, but the case's current status was
 		// emitted unconditionally, so any authenticated user could read the
 		// status of any case.
-		$refusal = (new CaseAccessRefusal(userSession: $this->userSession, guard: $this->caseAccessGuard))->requireReadAccess(caseId: $caseId);
-		if ($refusal !== null) {
-			return $refusal;
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		try {
@@ -366,9 +369,13 @@ class StatusTransitionController extends Controller {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function history(string $caseId): JSONResponse {
-		$refusal = (new CaseAccessRefusal(userSession: $this->userSession, guard: $this->caseAccessGuard))->requireReadAccess(caseId: $caseId);
-		if ($refusal !== null) {
-			return $refusal;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		try {

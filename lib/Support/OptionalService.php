@@ -46,7 +46,7 @@ final class OptionalService {
 	 *
 	 * @spec exclude container plumbing shared by a listener and a repair step
 	 */
-	public static function from(ContainerInterface $container, string $fqn): ?object {
+	public function from(ContainerInterface $container, string $fqn): ?object {
 		if (class_exists($fqn) === false) {
 			return null;
 		}
