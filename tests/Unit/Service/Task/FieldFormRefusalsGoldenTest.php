@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\Task\TaskDeclarationValidator;
+use OCA\Dossiq\Service\Task\TaskFormAt;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -21,7 +22,7 @@ class FieldFormRefusalsGoldenTest extends TestCase {
 	private function refusals(array $form): array {
 		$class     = new ReflectionClass(TaskDeclarationValidator::class);
 		$validator = $class->newInstanceWithoutConstructor();
-		return $class->getMethod('fieldFormRefusals')->invoke($validator, $form, 'Advies', 'steps[2].task.form');
+		return $class->getMethod('fieldFormRefusals')->invoke($validator, $form, new TaskFormAt(task: 'Advies', path: 'steps[2].task.form'));
 	}//end refusals()
 
 	public function testEveryRefusalWhole(): void {
