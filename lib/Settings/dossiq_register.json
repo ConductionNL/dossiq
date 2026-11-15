@@ -3402,6 +3402,11 @@
                                     "format": "email",
                                     "description": "Where the portal sent that person the link."
                                 },
+                                "holderSubject": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "The pseudonymous portal subject of that person, never a BSN. Only this subject may sign or refuse the entry from the portal; an entry without one cannot be settled there."
+                                },
                                 "dueAt": {
                                     "type": "string",
                                     "format": "date",

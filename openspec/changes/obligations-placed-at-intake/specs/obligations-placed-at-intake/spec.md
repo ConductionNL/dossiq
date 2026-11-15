@@ -15,7 +15,7 @@ When a case is received (created, or sent from draft) with entries in `intakeObl
 
 ### Requirement: The holder settles an intake obligation from the portal
 
-`POST /api/portal/obligations/settle` SHALL accept a request carrying portaliq's signed `X-Portal-Subject` assertion and `case`, `kind` and `answer`. Answer `sign` SHALL meet the obligation and record the assertion's subject and level of assurance on it; the case's entry SHALL read `signed`. A request without a valid assertion MUST be refused with 401. The case's own portal subject MUST NOT settle it (403), and an entry that is no longer awaiting MUST NOT be answered again (409).
+`POST /api/portal/obligations/settle` SHALL accept a request carrying portaliq's signed `X-Portal-Subject` assertion and `case`, `kind` and `answer`. Answer `sign` SHALL meet the obligation and record the assertion's subject and level of assurance on it; the case's entry SHALL read `signed`. A request without a valid assertion MUST be refused with 401. Each entry SHALL carry the pseudonymous portal subject of the person the form named (`holderSubject`); only that subject MAY settle it, and any other subject, or any subject for an entry without one, MUST be refused with 403. The case's own portal subject MUST NOT settle it (403), and an entry that is no longer awaiting MUST NOT be answered again (409).
 
 #### Scenario: Henk signs
 - **WHEN** Henk signs in on the portal and signs Sanne's request
@@ -23,6 +23,10 @@ When a case is received (created, or sent from draft) with entries in `intakeObl
 
 #### Scenario: Sanne tries to sign her own request
 - **WHEN** the assertion's subject is the case's portal subject
+- **THEN** dossiq answers 403 and nothing changes
+
+#### Scenario: Somebody else who knows the case id
+- **WHEN** a signed-in portal subject that is not the entry's holder subject signs or refuses
 - **THEN** dossiq answers 403 and nothing changes
 
 ### Requirement: A refused or lapsed intake obligation follows its kind's rule

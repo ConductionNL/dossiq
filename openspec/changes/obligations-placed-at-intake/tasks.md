@@ -3,7 +3,7 @@
 ### Task 1: Register
 - **spec_ref**: `openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-case-opened-with-intake-obligations-waits-on-them`
 - **files**: `lib/Settings/dossiq_register.json`, `lib/Settings/register.d/99-case-intake-obligations.json`
-- [x] `case.intakeObligations`, `obligation.holderName`, `settledBySubject`, `settledTrust`, `caseType.obligationKinds[].whenUnmet`; register 0.20.87
+- [x] `case.intakeObligations` (with the entry's `holderSubject`), `obligation.holderName`, `settledBySubject`, `settledTrust`, `caseType.obligationKinds[].whenUnmet`; register 0.20.87
 
 ### Task 2: Place on receipt
 - **spec_ref**: `openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-case-opened-with-intake-obligations-waits-on-them`
@@ -15,6 +15,7 @@
 - **spec_ref**: `openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-the-holder-settles-an-intake-obligation-from-the-portal`
 - **files**: `lib/Controller/PortalObligationController.php`, `appinfo/routes.php`, `lib/Service/Obligations/ObligationService.php`
 - [x] Implement
+- [x] Only the entry's `holderSubject` settles it; any other subject, or an entry without one, is refused 403
 - [x] Test: `tests/Unit/Service/Obligations/IntakeObligationsTest.php`, `tests/Unit/Controller/PortalObligationControllerTest.php`
 
 ### Task 4: Refusal and lapse

@@ -168,7 +168,14 @@ class IntakeObligationsTest extends TestCase {
 			'caseType' => 'type-1',
 			'portalSubject' => 'subject-applicant',
 			'intakeObligations' => [
-				['kind' => 'cosign', 'holderName' => 'Henk de Vries', 'holderEmail' => 'henk@example.nl', 'dueAt' => '2026-10-22', 'state' => $state],
+				[
+					'kind' => 'cosign',
+					'holderName' => 'Henk de Vries',
+					'holderEmail' => 'henk@example.nl',
+					'holderSubject' => 'subject-holder',
+					'dueAt' => '2026-10-22',
+					'state' => $state,
+				],
 			],
 		];
 	}//end waitingCase()
@@ -255,6 +262,34 @@ class IntakeObligationsTest extends TestCase {
 		self::assertSame(403, $result['status']);
 		self::assertSame([], $this->patches);
 	}//end testTheApplicantCannotSignForThemselves()
+
+	/**
+	 * Only the subject the entry is bound to may settle it; an entry bound to
+	 * no subject cannot be settled from the portal at all.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-the-holder-settles-an-intake-obligation-from-the-portal
+	 */
+	public function testOnlyTheEntrysHolderMaySettleIt(): void {
+		$service      = $this->service();
+		$this->stored = $this->waitingCase();
+		$this->obligations->method('idForSource')->willReturn('obligation-1');
+		$this->obligations->expects(self::never())->method('meet');
+		$this->obligations->expects(self::never())->method('withdraw');
+
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', subjectRef: 'subject-stranger', trust: 'substantial');
+		self::assertSame(expected: ['status' => 403, 'body' => ['error' => 'not_holder']], actual: $result);
+
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'refuse', subjectRef: 'subject-stranger', trust: 'substantial');
+		self::assertSame(expected: 403, actual: $result['status']);
+
+		$this->stored = $this->waitingCase();
+		unset($this->stored['intakeObligations'][0]['holderSubject']);
+		$result = $service->settle(caseId: 'case-1', kind: 'cosign', answer: 'sign', subjectRef: 'subject-holder', trust: 'substantial');
+		self::assertSame(expected: ['status' => 403, 'body' => ['error' => 'not_holder']], actual: $result);
+		self::assertSame(expected: [], actual: $this->patches);
+	}//end testOnlyTheEntrysHolderMaySettleIt()
 
 	/**
 	 * An entry that is no longer awaiting cannot be answered again.

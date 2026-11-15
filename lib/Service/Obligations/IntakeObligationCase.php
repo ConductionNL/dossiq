@@ -125,6 +125,33 @@ class IntakeObligationCase {
 	}//end stateOf()
 
 	/**
+	 * The portal subject the entry for a kind is bound to, or '' when it names none.
+	 *
+	 * The submit writes the pseudonymous portal subject of the person the form
+	 * named; only that subject may settle the entry.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 * @param string               $kind The kind.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-the-holder-settles-an-intake-obligation-from-the-portal
+	 */
+	public function holderSubjectOf(array $case, string $kind): string {
+		$index = $this->indexOf(case: $case, kind: $kind);
+		if ($index === null) {
+			return '';
+		}
+
+		$subject = ($this->entries(case: $case)[$index]['holderSubject'] ?? '');
+		if (is_string($subject) === false) {
+			return '';
+		}
+
+		return trim($subject);
+	}//end holderSubjectOf()
+
+	/**
 	 * Write the new state of the entry for a kind on the case, and nothing else.
 	 *
 	 * @param array<string, mixed> $case  The case.

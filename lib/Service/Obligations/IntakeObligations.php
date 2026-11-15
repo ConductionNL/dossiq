@@ -134,7 +134,8 @@ class IntakeObligations {
 	 * Record the holder's answer from the portal.
 	 *
 	 * Order, fail-closed: a bad answer (400), no such case or entry (404),
-	 * the applicant answering for themselves (403), an entry no longer
+	 * the applicant answering for themselves (403), anybody but the subject
+	 * the entry is bound to, or an entry bound to none (403), an entry no longer
 	 * awaiting (409), an obligation that cannot be found or written (503).
 	 *
 	 * @param string $caseId     The case.
@@ -335,6 +336,12 @@ class IntakeObligations {
 
 		if (trim((string)($case['portalSubject'] ?? '')) === trim($subjectRef)) {
 			return ['status' => 403, 'body' => ['error' => 'same_subject']];
+		}
+
+		// Fail closed: an entry bound to no subject, or to another one, is not this person's to answer.
+		$holder = $this->cases->holderSubjectOf(case: $case, kind: $kind);
+		if ($holder === '' || hash_equals($holder, trim($subjectRef)) === false) {
+			return ['status' => 403, 'body' => ['error' => 'not_holder']];
 		}
 
 		if ($state !== self::STATE_AWAITING) {
