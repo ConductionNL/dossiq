@@ -302,8 +302,7 @@ class SubstitutionService implements SubstitutionServiceInterface {
 		foreach ($rows as $row) {
 			$resolved = $this->activeRowOn(
 				row: $row,
-				refDay: $refDay,
-				objectService: $objectService
+				asOf: ['refDay' => $refDay, 'objectService' => $objectService]
 			);
 			if ($resolved !== null) {
 				$active[] = $resolved;
@@ -328,15 +327,16 @@ class SubstitutionService implements SubstitutionServiceInterface {
 	 * Applies the lazy-expiry side effect: a row past its typed end with no
 	 * leave to extend it is best-effort persisted as `ended` and excluded.
 	 *
-	 * @param array<string, mixed> $row The substitution row.
-	 * @param string $refDay Reference day (Y-m-d).
-	 * @param object $objectService The ObjectService.
+	 * @param array<string, mixed>                         $row  The substitution row.
+	 * @param array{refDay: string, objectService: object} $asOf Reference day (Y-m-d), and the ObjectService that
+	 *                                                           persists a lazy expiry.
 	 *
 	 * @return array<string, mixed>|null The applicable row, or null.
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function activeRowOn(array $row, string $refDay, object $objectService): ?array {
+	private function activeRowOn(array $row, array $asOf): ?array {
+		$refDay = $asOf['refDay'];
 		$status = (string)($row['status'] ?? '');
 		// `revoked` and the lazily persisted `ended` both land here: a
 		// substitution that is not active routes nothing, and leave does not
@@ -355,7 +355,7 @@ class SubstitutionService implements SubstitutionServiceInterface {
 			return $row;
 		}
 
-		return $this->unexpiredRow(row: $row, refDay: $refDay, objectService: $objectService);
+		return $this->unexpiredRow(row: $row, asOf: $asOf);
 	}//end activeRowOn()
 
 	/**
@@ -364,20 +364,21 @@ class SubstitutionService implements SubstitutionServiceInterface {
 	 * Applies the lazy-expiry side effect: a row past its typed end is
 	 * best-effort persisted as `ended` and excluded.
 	 *
-	 * @param array<string, mixed> $row           The substitution row.
-	 * @param string               $refDay        Reference day (Y-m-d).
-	 * @param object               $objectService The ObjectService.
+	 * @param array<string, mixed>                         $row  The substitution row.
+	 * @param array{refDay: string, objectService: object} $asOf Reference day (Y-m-d), and the ObjectService that
+	 *                                                           persists a lazy expiry.
 	 *
 	 * @return array<string, mixed>|null The applicable row, or null.
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function unexpiredRow(array $row, string $refDay, object $objectService): ?array {
+	private function unexpiredRow(array $row, array $asOf): ?array {
+		$refDay = $asOf['refDay'];
 		// Lazy expiry: past endDate and no leave behind it -> ended, excluded.
 		$end = (string)($row['endDate'] ?? '');
 		if ($end !== '' && $refDay > $end) {
 			$this->markEnded(
-				objectService: $objectService,
+				objectService: $asOf['objectService'],
 				row: $row
 			);
 

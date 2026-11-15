@@ -124,22 +124,33 @@ class ReportingTools implements ReportingToolsInterface {
 			return $refusal;
 		}
 
+		return $this->metrics(params: ['period' => $period, 'atRiskDays' => $atRiskDays], caseType: $caseType);
+	}//end getDoorlooptijdMetrics()
+
+	/**
+	 * The lead-time metrics for a checked period and at-risk window, of one case type when named.
+	 *
+	 * @param array{period: string, atRiskDays: int} $params   The period and the at-risk window.
+	 * @param string|null                            $caseType The case type UUID, or null for all.
+	 *
+	 * @return array<string, mixed> The metrics, or an error envelope.
+	 */
+	private function metrics(array $params, ?string $caseType): array {
 		// The same argument rules DoorlooptijdController::metrics() applies.
-		if (preg_match('/^\d+m$/', $period) !== 1) {
+		if (preg_match('/^\d+m$/', $params['period']) !== 1) {
 			return $this->error(code: 'invalid_argument', message: 'period must look like 12m.');
 		}
 
-		if ($atRiskDays < 0) {
+		if ($params['atRiskDays'] < 0) {
 			return $this->error(code: 'invalid_argument', message: 'atRiskDays cannot be negative.');
 		}
 
-		$params = ['period' => $period, 'atRiskDays' => $atRiskDays];
 		if ($caseType !== null && $caseType !== '') {
 			$params['caseType'] = $caseType;
 		}
 
 		return $this->leadTimes->getMetrics(params: $params);
-	}//end getDoorlooptijdMetrics()
+	}//end metrics()
 
 	/**
 	 * The caller's own KPI overview, narrowed to the widgets they may see.

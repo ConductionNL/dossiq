@@ -74,6 +74,7 @@
 
 <script>
 import { NcButton, NcDialog } from '@nextcloud/vue'
+import { caseShareDialog } from '../mixins/caseShareDialog.js'
 import {
 	FEDERATION_ALLOWED_FIELDS,
 	isFederatedShareFormValid,
@@ -87,17 +88,9 @@ export default {
 		NcButton,
 	},
 
+	mixins: [caseShareDialog],
+
 	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
-
-		caseId: {
-			type: String,
-			required: true,
-		},
-
 		/** Documents attached to the case; only these may be selected (server re-validates). */
 		documents: {
 			type: Array,
@@ -108,7 +101,6 @@ export default {
 	emits: ['update:open', 'created'],
 	data() {
 		return {
-			saving: false,
 			form: {
 				remoteCloudId: '',
 				sharedFields: [],
@@ -161,15 +153,10 @@ export default {
 		 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
 		 */
 		async createFederatedShare() {
-			this.saving = true
-			try {
-				this.$emit(
-					'created',
-					shapeFederatedSharePayload(this.form, this.caseId),
-				)
-			} finally {
-				this.saving = false
-			}
+			this.emitWhileSaving(
+				'created',
+				shapeFederatedSharePayload(this.form, this.caseId),
+			)
 		},
 	},
 }

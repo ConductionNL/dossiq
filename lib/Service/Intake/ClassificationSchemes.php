@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ClassificationSchemesInterface;
+use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCP\IAppConfig;
 
 /**
@@ -69,16 +70,7 @@ class ClassificationSchemes implements ClassificationSchemesInterface {
 	 * @var array<string, array<int, string>>
 	 */
 	public const SHIPPED = [
-		'vertrouwelijkheidaanduiding' => [
-			'openbaar',
-			'beperkt_openbaar',
-			'intern',
-			'zaakvertrouwelijk',
-			'vertrouwelijk',
-			'confidentieel',
-			'geheim',
-			'zeer_geheim',
-		],
+		'vertrouwelijkheidaanduiding' => InformatieobjectAccessGuard::HIERARCHY,
 	];
 
 	/**

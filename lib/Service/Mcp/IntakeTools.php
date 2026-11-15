@@ -108,12 +108,23 @@ class IntakeTools implements IntakeToolsInterface {
 			throw new RuntimeException(message: $e->getSentence(), previous: $e);
 		}
 
+		return self::filedAnswer(case: $case);
+	}//end fileCase()
+
+	/**
+	 * The filed case as the tool answers it: its id, identifier and title.
+	 *
+	 * @param array<string, mixed> $case The filed case.
+	 *
+	 * @return array{id: string, identifier: string, title: string}
+	 */
+	private static function filedAnswer(array $case): array {
 		return [
 			'id' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
 			'identifier' => (string)($case['identifier'] ?? ''),
 			'title' => (string)($case['title'] ?? ''),
 		];
-	}//end fileCase()
+	}//end filedAnswer()
 
 	/**
 	 * The request types a resident's conversation may be filed under.

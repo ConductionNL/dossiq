@@ -221,8 +221,7 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 				$problems,
 				$this->problemsWith(
 					declaration: $declaration,
-					named: $this->name(id: $id, index: (int)$index),
-					duplicate: ($id !== '' && in_array($id, $seen, true) === true)
+					naming: ['named' => $this->name(id: $id, index: (int)$index), 'duplicate' => ($id !== '' && in_array($id, $seen, true) === true)]
 				)
 			);
 
@@ -257,20 +256,20 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 	 * something is wrong sends an administrator through the whole list looking
 	 * for the row it meant.
 	 *
-	 * @param array<string, mixed> $declaration The declared marker.
-	 * @param string               $named       What to call it in a sentence.
-	 * @param boolean              $duplicate   Whether its id is already taken.
+	 * @param array<string, mixed>                  $declaration The declared marker.
+	 * @param array{named: string, duplicate: bool} $naming      What to call it in a sentence, and whether its id is already taken.
 	 *
 	 * @return array<int, string> The reasons, empty when the declaration is whole.
 	 */
-	private function problemsWith(array $declaration, string $named, bool $duplicate): array {
+	private function problemsWith(array $declaration, array $naming): array {
+		$named = $naming['named'];
 		$problems = [];
 
 		if (trim((string)($declaration['id'] ?? '')) === '') {
 			$problems[] = sprintf('The %s has no id.', $named);
 		}
 
-		if ($duplicate === true) {
+		if ($naming['duplicate'] === true) {
 			$problems[] = sprintf('The %s is declared twice.', $named);
 		}
 
@@ -399,7 +398,21 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 		$caseTypeId = $this->referenceId(value: ($case['caseType'] ?? null));
 		$standing = $this->standing(case: $case);
 
-		$judged = new CaseUnderJudgement(case: $case, now: $now, context: $context, standing: $standing);
+		return $this->raisedMarkers(
+			caseTypeId: $caseTypeId,
+			judged: new CaseUnderJudgement(case: $case, now: $now, context: $context, standing: $standing)
+		);
+	}//end evaluate()
+
+	/**
+	 * The markers the case type's declarations raise on the case under judgement.
+	 *
+	 * @param string             $caseTypeId The case type the declarations come from.
+	 * @param CaseUnderJudgement $judged     The case, the moment, the context and the case's standing.
+	 *
+	 * @return array<int, array<string, mixed>> The raised markers.
+	 */
+	private function raisedMarkers(string $caseTypeId, CaseUnderJudgement $judged): array {
 		$raised = [];
 		foreach ($this->declarationsFor(caseTypeId: $caseTypeId) as $declaration) {
 			$marker = $this->markerFor(declaration: $declaration, judged: $judged);
@@ -409,7 +422,7 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 		}
 
 		return $raised;
-	}//end evaluate()
+	}//end raisedMarkers()
 
 	/**
 	 * The marker one declaration raises on this case, or null when it raises none.
@@ -447,21 +460,22 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 			return null;
 		}
 
-		return $this->raisedMarker(declaration: $declaration, reason: $reason, judged: $judged);
+		return $this->raisedMarker(declaration: $declaration, raising: ['reason' => $reason, 'judged' => $judged]);
 	}//end markerFor()
 
 	/**
 	 * The marker a declaration raises for a reason.
 	 *
-	 * @param array<string, mixed> $declaration The marker declaration.
-	 * @param string               $reason      Why the marker stands.
-	 * @param CaseUnderJudgement   $judged      Today, and the raisedAt of each standing marker by id.
+	 * @param array<string, mixed>                              $declaration The marker declaration.
+	 * @param array{reason: string, judged: CaseUnderJudgement} $raising     `reason` why the marker stands; `judged` today, and the raisedAt of
+	 *                                                                       each standing marker by id.
 	 *
 	 * @return array<string, mixed> The raised marker.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function raisedMarker(array $declaration, string $reason, CaseUnderJudgement $judged): array {
+	private function raisedMarker(array $declaration, array $raising): array {
+		[$reason, $judged] = [$raising['reason'], $raising['judged']];
 		$id = (string)$declaration['id'];
 
 		return [

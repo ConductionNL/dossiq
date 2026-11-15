@@ -222,7 +222,7 @@ class CaseTeamAccessProjector implements CaseTeamAccessProjectorInterface {
 		$desired = $this->rules->block(shipped: $this->shippedBlock(), caseTypes: $caseTypes);
 		$live = ($schema->getAuthorization() ?? []);
 		$managed = $this->managedTeams(current: $caseTypes);
-		$block = $this->mergedBlock(desired: $desired, live: $live, managed: $managed);
+		$block = $this->mergedBlock(desired: $desired, against: ['live' => $live, 'managed' => $managed]);
 		$changed = ($block !== $live);
 		if ($changed === true) {
 			$this->writeBlock(schemaMapper: $schemaMapper, schema: $schema, block: $block, caseTypes: $caseTypes);
@@ -237,15 +237,16 @@ class CaseTeamAccessProjector implements CaseTeamAccessProjectorInterface {
 	/**
 	 * The merged authorization block, with kept-local and restored rules reported.
 	 *
-	 * @param array<string, mixed> $desired The block the rules ask for.
-	 * @param array<string, mixed> $live The block on the schema now.
-	 * @param array<int, string> $managed The teams the projector manages.
+	 * @param array<string, mixed>                                           $desired The block the rules ask for.
+	 * @param array{live: array<string, mixed>, managed: array<int, string>} $against `live` the block on the schema now; `managed` the teams the
+	 *                                                                                projector manages.
 	 *
 	 * @return array<string, mixed> The block to hold.
 	 *
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
-	private function mergedBlock(array $desired, array $live, array $managed): array {
+	private function mergedBlock(array $desired, array $against): array {
+		[$live, $managed] = [$against['live'], $against['managed']];
 		$merge = (new CaseAuthorizationMerge())->merge(
 			desired: $desired,
 			live: $live,

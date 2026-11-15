@@ -96,6 +96,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import DialogNotice from '../components/dialog/DialogNotice.vue'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { dialogNotice, dialogNoticeProps } from '../utils/dialogNotice.js'
 import { resolveCaseId } from '../utils/resolveCaseId.js'
@@ -111,14 +112,11 @@ export default {
 		NcTextArea,
 	},
 
+	mixins: [caseDialog],
+
 	props: {
 		// May arrive as the unresolved `@objectId` token; see targetAdviceId.
 		adviceId: {
-			type: String,
-			default: '',
-		},
-
-		caseId: {
 			type: String,
 			default: '',
 		},

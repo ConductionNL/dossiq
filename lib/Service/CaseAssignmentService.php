@@ -188,8 +188,21 @@ class CaseAssignmentService implements CaseAssignmentServiceInterface {
 			throw new RuntimeException('already_assigned');
 		}
 
-		$this->write(caseId: $caseId, assignee: $toUser);
-		$move = ['caseId' => $caseId, 'from' => $previous, 'to' => $toUser];
+		return $this->handOver(move: ['caseId' => $caseId, 'from' => $previous, 'to' => $toUser], actorId: $actorId);
+	}//end reassign()
+
+	/**
+	 * Write the new handler, tell them and log the move.
+	 *
+	 * @param array{caseId: string, from: string, to: string} $move    The case UUID, the previous handler (or empty) and the receiving one.
+	 * @param string                                          $actorId Who ordered it.
+	 *
+	 * @return array{caseId: string, assignee: string, previousAssignee: string, mine: bool, claimable: bool, releasable: bool} The new assignment.
+	 *
+	 * @throws RuntimeException With code `assignment_write_failed`.
+	 */
+	private function handOver(array $move, string $actorId): array {
+		$this->write(caseId: $move['caseId'], assignee: $move['to']);
 		$this->notifyReceiver(move: $move);
 
 		$this->logger->info(
@@ -197,8 +210,8 @@ class CaseAssignmentService implements CaseAssignmentServiceInterface {
 			['app' => AppIdentity::APP_ID, ...$move, 'actor' => $actorId]
 		);
 
-		return (['previousAssignee' => $previous] + $this->describe(caseId: $caseId, userId: $actorId, assignee: $toUser));
-	}//end reassign()
+		return (['previousAssignee' => $move['from']] + $this->describe(caseId: $move['caseId'], userId: $actorId, assignee: $move['to']));
+	}//end handOver()
 
 	/**
 	 * Tell the receiving handler a case was handed to them.

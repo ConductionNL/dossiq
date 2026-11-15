@@ -104,12 +104,25 @@ class TermTools implements TermToolsInterface {
 			return $this->error(code: 'invalid_date', message: $e->getMessage());
 		}
 
+		return $this->extended(deadlineId: $deadlineId, extension: ['rationale' => $rationale, 'endDate' => $endDate, 'documentLink' => $documentLink]);
+	}//end extendDeadline()
+
+	/**
+	 * Ask the owning service to extend the term; its refusal is answered as an error envelope.
+	 *
+	 * @param string                                                        $deadlineId The term instance id.
+	 * @param array{rationale: string, endDate: string, documentLink: string} $extension  Why, the new end date and the
+	 *                                                                                  document that grounds it.
+	 *
+	 * @return array<string, mixed> The extended term, or an error envelope.
+	 */
+	private function extended(string $deadlineId, array $extension): array {
 		try {
-			return $this->extension->requestExtension($deadlineId, $rationale, $endDate, $documentLink);
+			return $this->extension->requestExtension($deadlineId, $extension['rationale'], $extension['endDate'], $extension['documentLink']);
 		} catch (RuntimeException $e) {
 			return $this->refusal(e: $e);
 		}
-	}//end extendDeadline()
+	}//end extended()
 
 	/**
 	 * Pause a term for a number of days (opschorting).

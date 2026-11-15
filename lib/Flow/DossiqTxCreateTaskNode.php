@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Flow;
 
-use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
+use OCA\Dossiq\Flow\Support\RunsInjectedHandler;
 use OCA\Dossiq\Kernel\Contracts\CreateTaskHandlerInterface;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -32,6 +32,7 @@ use OCP\IURLGenerator;
  */
 class DossiqTxCreateTaskNode extends DossiqTransitionNode {
 
+    use RunsInjectedHandler;
 
     /**
      * Constructor.
@@ -50,17 +51,6 @@ class DossiqTxCreateTaskNode extends DossiqTransitionNode {
         parent::__construct(l10n: $l10n, urls: $urls);
 
     }//end __construct()
-
-
-    /**
-     * The handler this node runs.
-     *
-     * @return TransitionActionHandler The action handler.
-     */
-    protected function handler(): TransitionActionHandler {
-        return $this->handler;
-
-    }//end handler()
 
 
     /**

@@ -87,14 +87,43 @@ class FileRequestService implements FileRequestServiceInterface {
 			throw new RuntimeException('This person is not on this case', 404);
 		}
 
+		$request = $this->addressedRequest(person: $person, caseId: $caseId);
+		$request->expires = new DateTime('+' . $this->daysOf(days: $days) . ' days');
+		$request->note = $note;
+
+		return $this->sent(request: $request, person: $person);
+	}//end request()
+
+	/**
+	 * An upload request to the person's address, from the caller, into the case's folder.
+	 *
+	 * @param array<string, mixed> $person The party, as the case's people list holds them.
+	 * @param string               $caseId The case uuid.
+	 *
+	 * @return UploadRequest The request, without its expiry and note.
+	 *
+	 * @throws RuntimeException 403 when an indicator on the person refuses the send, 422 when they
+	 *         have no address or the case has no folder.
+	 */
+	private function addressedRequest(array $person, string $caseId): UploadRequest {
 		$request = new UploadRequest();
 		$request->email = $this->addressOf(person: $person);
 		$this->refuseWhenIndicated(person: $person);
 		$request->folder = $this->caseFolder(caseId: $caseId);
 		$request->user = $this->caller();
-		$request->expires = new DateTime('+' . $this->daysOf(days: $days) . ' days');
-		$request->note = $note;
 
+		return $request;
+	}//end addressedRequest()
+
+	/**
+	 * Create the upload share and answer who it went to, its token and when it expires.
+	 *
+	 * @param UploadRequest        $request The complete request.
+	 * @param array<string, mixed> $person  The party.
+	 *
+	 * @return array<string, mixed> The recipient, the token and when it expires.
+	 */
+	private function sent(UploadRequest $request, array $person): array {
 		$created = $this->createdShare(share: $this->uploadShare(request: $request));
 
 		return [
@@ -103,7 +132,7 @@ class FileRequestService implements FileRequestServiceInterface {
 			'token' => (string)$created->getToken(),
 			'expiresAt' => $request->expires->format('Y-m-d'),
 		];
-	}//end request()
+	}//end sent()
 
 	/**
 	 * The person's address, or a refusal when there is none.

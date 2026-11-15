@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\RefusesUnreadableCaseTypes;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeTermsInterface;
 use OCA\Dossiq\Kernel\Contracts\ReadableObjectsInterface;
 use OCP\AppFramework\Controller;
@@ -35,7 +36,6 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use Throwable;
 
 /**
  * Answers a case type's terms in words.
@@ -43,6 +43,7 @@ use Throwable;
  * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypeTermsController extends Controller {
+	use RefusesUnreadableCaseTypes;
 
 	/**
 	 * Constructor.
@@ -78,18 +79,9 @@ class CaseTypeTermsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(string $id): JSONResponse {
-		if ($this->readable->hasCaller() === false) {
-			return new JSONResponse(['error' => 'Sign in to read this case type.'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$readable = $this->readable->findsAsCaller(schema: 'caseType', id: $id);
-		} catch (Throwable) {
-			return new JSONResponse(['error' => 'The case type could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
-
-		if ($readable === false) {
-			return new JSONResponse(['error' => 'Case type not found'], Http::STATUS_NOT_FOUND);
+		$refusal = $this->caseTypeRefusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$terms = $this->terms->termsFor(caseTypeId: $id);

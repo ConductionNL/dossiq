@@ -307,15 +307,27 @@ class MailIntakeController extends Controller {
 			return $entry;
 		}
 
+		return $this->bounceEntry(entry: $entry, forward: ['entryId' => $entryId, 'address' => $address, 'reason' => $reason]);
+	}//end bounce()
+
+	/**
+	 * Send the entry's message on, and answer whether it was sent.
+	 *
+	 * @param array<string, mixed>                                $entry   The workable entry.
+	 * @param array{entryId: string, address: string, reason: string} $forward The entry, the address it goes to and why.
+	 *
+	 * @return JSONResponse Whether it was sent.
+	 */
+	private function bounceEntry(array $entry, array $forward): JSONResponse {
 		$result = $this->bounce->bounce(
 			message: $this->messageOf(entry: $entry),
-			toAddress: $address,
-			reason: $reason,
+			toAddress: $forward['address'],
+			reason: $forward['reason'],
 			actorId: $this->callerId(),
 			results: $this->resultsOf(entry: $entry)
 		);
-		return $this->bounced(result: $result, forward: ['entryId' => $entryId, 'address' => $address, 'reason' => $reason]);
-	}//end bounce()
+		return $this->bounced(result: $result, forward: $forward);
+	}//end bounceEntry()
 
 	/**
 	 * Log a sent bounce on its entry and answer it, or answer that it failed.
@@ -361,15 +373,27 @@ class MailIntakeController extends Controller {
 			return $entry;
 		}
 
+		return $this->moveEntry(entry: $entry, filing: ['entryId' => $entryId, 'target' => $target, 'note' => $note]);
+	}//end move()
+
+	/**
+	 * File the entry's message in the target folder, and answer whether the mail server confirmed it.
+	 *
+	 * @param array<string, mixed>                               $entry  The workable entry.
+	 * @param array{entryId: string, target: string, note: string} $filing The entry, the folder it goes to and why.
+	 *
+	 * @return JSONResponse Whether the mail server confirmed it.
+	 */
+	private function moveEntry(array $entry, array $filing): JSONResponse {
 		$result = $this->move->move(
 			message: $this->messageOf(entry: $entry),
-			target: $target,
-			note: $note,
+			target: $filing['target'],
+			note: $filing['note'],
 			actorId: $this->callerId(),
 			results: $this->resultsOf(entry: $entry)
 		);
-		return $this->moved(result: $result, filed: ['entryId' => $entryId, 'target' => $target]);
-	}//end move()
+		return $this->moved(result: $result, filed: ['entryId' => $filing['entryId'], 'target' => $filing['target']]);
+	}//end moveEntry()
 
 	/**
 	 * Log a confirmed move on its entry and answer it, or answer that it failed.

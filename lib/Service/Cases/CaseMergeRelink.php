@@ -89,7 +89,8 @@ class CaseMergeRelink {
 		}
 
 		$moves = [];
-		foreach ($this->moveRows(schemaId: $schemaId, field: $field, fromId: $merge['from'], toId: $merge['to']) as $id) {
+		$relink = ['from' => [$field => $merge['from']], 'to' => [$field => $merge['to']]];
+		foreach ($this->moveRows(schemaId: $schemaId, relink: $relink) as $id) {
 			$moves[] = ['schema' => $slug, 'id' => $id];
 		}
 
@@ -99,22 +100,21 @@ class CaseMergeRelink {
 	/**
 	 * Point every row of a schema that names the merged case at the survivor.
 	 *
-	 * @param string $schemaId The schema.
-	 * @param string $field    The field naming the case.
-	 * @param string $fromId   The merged case.
-	 * @param string $toId     The survivor.
+	 * @param string                                                        $schemaId The schema.
+	 * @param array{from: array<string, string>, to: array<string, string>} $relink   The field naming the case, with the
+	 *                                                                                merged case (`from`) and the survivor (`to`).
 	 *
 	 * @return array<int, string> The ids of the rows moved.
 	 */
-	private function moveRows(string $schemaId, string $field, string $fromId, string $toId): array {
+	private function moveRows(string $schemaId, array $relink): array {
 		$ids = [];
-		foreach ($this->store->rowsFor(schemaId: $schemaId, filters: [$field => $fromId]) as $row) {
+		foreach ($this->store->rowsFor(schemaId: $schemaId, filters: $relink['from']) as $row) {
 			$id = (string)($row['id'] ?? '');
 			if ($id === '') {
 				continue;
 			}
 
-			if ($this->store->patchRow(schemaId: $schemaId, id: $id, changes: [$field => $toId]) === false) {
+			if ($this->store->patchRow(schemaId: $schemaId, id: $id, changes: $relink['to']) === false) {
 				continue;
 			}
 

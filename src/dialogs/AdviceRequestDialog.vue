@@ -109,10 +109,10 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import DialogNotice from '../components/dialog/DialogNotice.vue'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { searchUsers } from '../services/userSearch.js'
 import { dialogNotice, dialogNoticeProps } from '../utils/dialogNotice.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /** Days from today the answer date starts at. */
 const DEFAULT_ANSWER_DAYS = 14
@@ -142,12 +142,9 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		caseId: {
-			type: String,
-			default: '',
-		},
+	mixins: [caseDialogTokenAware],
 
+	props: {
 		kind: {
 			type: String,
 			default: 'internal',
@@ -179,11 +176,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/specs/advice-management/spec.md */
-		targetCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
-		},
-
 		/** @spec openspec/specs/advice-management/spec.md */
 		eyebrow() {
 			return caseEyebrow(t('dossiq', 'Advice'), this.kase)
