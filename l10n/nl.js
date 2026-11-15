@@ -4069,6 +4069,7 @@ OC.L10N.register(
         "Hand it over": "Overdragen",
         "Hand over": "Overdragen",
         "Hand over · {identifier}": "Overdragen · {identifier}",
+        "Hand the case to the decision app as a decision of the configured type, such as the contract that follows an award.": "Draag de zaak over aan de besluitapp als besluit van het ingestelde type, zoals het contract dat op een gunning volgt.",
         "Hand this case to another team": "Zaak aan een ander team geven",
         "Hand to another team": "Overdragen aan ander team",
         "Handed on": "Overgedragen",
@@ -4657,6 +4658,7 @@ OC.L10N.register(
         "Issued on outcome": "Uitgegeven bij uitkomst",
         "Issues": "Problemen",
         "Issues a permit": "Geeft een vergunning af",
+        "It is not known who asks for the redacted copy. Sign in and try again.": "Het is niet bekend wie om de gelakte kopie vraagt. Log in en probeer het opnieuw.",
         "it is on the case or task, for whoever opens it tomorrow": "staat op de zaak of taak, voor wie hem morgen opent",
         "It is registered and has its own case.": "Het is geregistreerd en heeft een eigen zaak.",
         "It is waiting on %s.": "Het wacht op %s.",
@@ -7185,6 +7187,7 @@ OC.L10N.register(
         "Racial or ethnic origin": "Ras of etnische afkomst",
         "racial or ethnic origin. Every view is logged with its purpose.": "ras of etnische afkomst. Elke inzage wordt gelogd met het doel.",
         "Radius in metres around lat/lng (used when source is gps or free)": "Straal in meters rond lat en lng (gebruikt wanneer de bron gps of free is)",
+        "Raise a decision": "Besluit aanvragen",
         "Raised": "Gezet",
         "Raised at": "Gezet op",
         "Raised by": "Gezet door",
@@ -12252,6 +12255,7 @@ OC.L10N.register(
         "You cannot read this case, so its report cannot be shown.": "Je kunt deze zaak niet lezen, dus de rapportage wordt niet getoond.",
         "You cannot read this case.": "Je kunt deze zaak niet inzien.",
         "You cannot read this document, so it cannot be added.": "U kunt dit document niet lezen, dus het kan niet worden toegevoegd.",
+        "You checked these passages yourself. A colleague must make the redacted copy.": "Je hebt deze passages zelf gecontroleerd. Een collega moet de gelakte kopie maken.",
         "You create the first case yourself": "U maakt zelf de eerste zaak",
         "You currently have no active cases.": "U heeft momenteel geen actieve zaken.",
         "You do not administer that group, so its default is not yours to set.": "Je beheert die groep niet, dus je kunt de instelling ervan niet zetten.",
@@ -12634,6 +12638,7 @@ OC.L10N.register(
         "{subject.identifier} · deadline {subject.deadline|relative}.": "{subject.identifier} · termijn {subject.deadline|relative}.",
         "{subject.identifier} · {subject.caseType.title} · deadline {subject.deadline|relative}.": "{subject.identifier} · {subject.caseType.title} · termijn {subject.deadline|relative}.",
         "{subject.title}": "{subject.title}",
+        "{subject}": "{subject}",
         "{succeeded} of {total} cases were transitioned.": "{succeeded} van {total} zaken zijn overgegaan.",
         "{summary}": "{summary}",
         "{targetEntity}": "{targetEntity}",
@@ -12676,10 +12681,7 @@ OC.L10N.register(
         "{weeks} weeks": "{weeks} weken",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar",
-        "It is not known who asks for the redacted copy. Sign in and try again.": "Het is niet bekend wie om de gelakte kopie vraagt. Log in en probeer het opnieuw.",
-        "You checked these passages yourself. A colleague must make the redacted copy.": "Je hebt deze passages zelf gecontroleerd. Een collega moet de gelakte kopie maken.",
-        "{subject}": "{subject}"
+        "{years} years": "{years} jaar"
     },
     "nplurals=2; plural=(n != 1);"
 )
