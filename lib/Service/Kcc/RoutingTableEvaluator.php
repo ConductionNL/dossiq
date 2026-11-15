@@ -127,6 +127,21 @@ class RoutingTableEvaluator {
 		$table = $this->decisionTable(compiled: $compiled);
 		$inputs = $this->deriveInputs(columns: $compiled['columns'], contactMoment: $contactMoment, now: $now);
 
+		return $this->routed(table: $table, inputs: $inputs);
+	}//end route()
+
+	/**
+	 * Evaluate the decision table and read the routing result off its outputs.
+	 *
+	 * @param array<string, mixed> $table  The compiled decision table.
+	 * @param array<string, mixed> $inputs The table's inputs.
+	 *
+	 * @return array<string, mixed>|null The routing result, or null when no rule matched.
+	 *
+	 * @throws RuntimeException When OpenRegister's evaluator is unavailable.
+	 * @throws DecisionEvaluationException When the compiled table cannot be evaluated.
+	 */
+	private function routed(array $table, array $inputs): ?array {
 		try {
 			$result = $this->engine()->evaluate(decisionTable: $table, inputs: $inputs);
 		} catch (DecisionEvaluationException $e) {
@@ -143,7 +158,7 @@ class RoutingTableEvaluator {
 			'assignedTeam' => ($result['outputs']['assignedTeam'] ?? ''),
 			'escalationTeam' => ($result['outputs']['escalationTeam'] ?? ''),
 		];
-	}//end route()
+	}//end routed()
 
 	/**
 	 * The inline FIRST-hit decision table of the compiled rules.

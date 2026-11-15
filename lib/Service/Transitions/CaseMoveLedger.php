@@ -124,6 +124,21 @@ class CaseMoveLedger {
 			return $case;
 		}
 
+		return $this->closed(case: $case, move: ['caseId' => $caseId, 'resultTypeId' => $resultTypeId]);
+	}//end close()
+
+	/**
+	 * The case payload with the end date settled and, when a result resolves, the result and its archival future.
+	 *
+	 * @param array<string, mixed>                           $case The case payload about to be saved.
+	 * @param array{caseId: string, resultTypeId: string|null} $move The case uuid and the chosen result type, or null.
+	 *
+	 * @return array<string, mixed> The payload.
+	 *
+	 * @throws RuntimeException When a closing move carries no result type.
+	 */
+	private function closed(array $case, array $move): array {
+		$resultTypeId = $move['resultTypeId'];
 		$endDate = substr((string)($case['endDate'] ?? ''), 0, 10);
 		if ($endDate === '') {
 			$endDate = date('Y-m-d');
@@ -132,7 +147,7 @@ class CaseMoveLedger {
 		$case['endDate'] = $endDate;
 
 		$resultId = $this->resultWriter->resolveClosingResult(
-			caseId: $caseId,
+			caseId: $move['caseId'],
 			caseTypeId: (string)($case['caseType'] ?? ''),
 			resultTypeId: $resultTypeId,
 		);
@@ -146,7 +161,7 @@ class CaseMoveLedger {
 			$case,
 			$this->resultWriter->archivalFuture(case: $case, resultTypeId: (string)$resultTypeId, endDate: $endDate)
 		);
-	}//end close()
+	}//end closed()
 
 	/**
 	 * Save the case in the status it enters, once.
