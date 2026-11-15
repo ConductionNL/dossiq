@@ -493,7 +493,7 @@ class CaseRecordImport implements CaseRecordImportInterface {
 			return ['reason' => 'The case could not be written.'];
 		}
 
-		return $this->withTerm(run: $run, caseId: $caseId, mapped: $mapped);
+		return $this->withTerm(run: $run, written: ['caseId' => $caseId, 'mapped' => $mapped]);
 	}//end placeCase()
 
 	/**
@@ -516,18 +516,19 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Carry the record's term onto its case, unless the import carries no term.
 	 *
-	 * @param array<string, mixed> $run    The run: caseType, import.
-	 * @param string               $caseId The case.
-	 * @param array<string, mixed> $mapped The mapped record, with its `term`.
+	 * @param array<string, mixed>                                $run     The run: caseType, import.
+	 * @param array{caseId: string, mapped: array<string, mixed>} $written The case, and the mapped record with its `term`.
 	 *
 	 * @return array{caseId: string}|array{reason: string} The case, or why its term could not be armed.
 	 */
-	private function withTerm(array $run, string $caseId, array $mapped): array {
+	private function withTerm(array $run, array $written): array {
+		$caseId = $written['caseId'];
+		$mapped = $written['mapped'];
 		if (($run['import']['carriesTerm'] ?? true) === false) {
 			return ['caseId' => $caseId];
 		}
 
-		$carried = $this->carryTerm(caseType: $run['caseType'], caseId: $caseId, mapped: $mapped);
+		$carried = $this->carryTerm(caseType: $run['caseType'], onto: ['caseId' => $caseId, 'term' => $mapped['term']]);
 		if ($mapped['term']['state'] !== TermCarryOver::STATE_CLOSED && in_array($carried['outcome'], self::ARMED, true) === false) {
 			return ['reason' => 'The case ' . $caseId . ' was written, but its term could not be armed (' . $carried['outcome'] . ').'];
 		}
@@ -538,16 +539,15 @@ class CaseRecordImport implements CaseRecordImportInterface {
 	/**
 	 * Carry the mapped term onto the case.
 	 *
-	 * @param array<string, mixed> $caseType The case type.
-	 * @param string               $caseId   The case.
-	 * @param array<string, mixed> $mapped   The mapped record, with its `term`.
+	 * @param array<string, mixed>              $caseType The case type.
+	 * @param array{caseId: string, term: mixed} $onto     The case, and the mapped record's `term`.
 	 *
 	 * @return array<string, mixed> The carry result, with its `outcome`.
 	 */
-	private function carryTerm(array $caseType, string $caseId, array $mapped): array {
+	private function carryTerm(array $caseType, array $onto): array {
 		return $this->steps->term->carry(
-			caseId: $caseId,
-			term: $mapped['term'],
+			caseId: $onto['caseId'],
+			term: $onto['term'],
 			definitionSlug: (string)($caseType['identifier'] ?? ''),
 			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
 		);
