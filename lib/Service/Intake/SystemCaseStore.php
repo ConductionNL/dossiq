@@ -136,12 +136,24 @@ class SystemCaseStore {
 			return null;
 		}
 
-		$currentId = $caseTypeId;
-		$seen      = [$caseTypeId => true];
+		return $this->latestVersion(store: [$objectService, $register], first: [$caseTypeId, $current]);
+	}//end currentCaseType()
+
+	/**
+	 * The version nothing has superseded, walking `supersededBy` from the first one read.
+	 *
+	 * @param array{0: object, 1: string}              $store The OpenRegister ObjectService and the dossiq register.
+	 * @param array{0: string, 1: array<string, mixed>} $first The id the caller named, and the row it names.
+	 *
+	 * @return array<string, mixed> The current version, with its own `id`.
+	 */
+	private function latestVersion(array $store, array $first): array {
+		[$currentId, $current] = $first;
+		$seen      = [$currentId => true];
 		$next      = trim((string)($current['supersededBy'] ?? ''));
 		while ($next !== '' && isset($seen[$next]) === false) {
 			$seen[$next] = true;
-			$row = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $next);
+			$row = $this->caseType(objectService: $store[0], register: $store[1], caseTypeId: $next);
 			if ($row === null) {
 				break;
 			}
@@ -154,7 +166,7 @@ class SystemCaseStore {
 		$current['id'] = $currentId;
 
 		return $current;
-	}//end currentCaseType()
+	}//end latestVersion()
 
 	/**
 	 * A case by id, or an empty array when it is absent or cannot be read.
