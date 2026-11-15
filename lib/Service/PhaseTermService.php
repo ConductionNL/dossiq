@@ -238,20 +238,31 @@ class PhaseTermService implements PhaseTermServiceInterface {
 			return $own['termDays'];
 		}
 
-		$declared = $this->declarations->forCaseType(caseTypeId: $caseTypeId);
+		return $this->chainDays(phase: ['caseId' => $caseId, 'caseTypeId' => $caseTypeId, 'statusTypeId' => $statusTypeId]);
+	}//end daysForPhase()
+
+	/**
+	 * The phase's share of its case type's chain term, or 0 when the case type declares none.
+	 *
+	 * @param array<string, string> $phase The `caseId`, the `caseTypeId` and the phase's `statusTypeId`.
+	 *
+	 * @return int The days.
+	 */
+	private function chainDays(array $phase): int {
+		$declared = $this->declarations->forCaseType(caseTypeId: $phase['caseTypeId']);
 		if ($declared['chainTermDays'] <= 0) {
 			return 0;
 		}
 
 		$plan = $this->chainPlan(
-			caseId: $caseId,
-			caseTypeId: $caseTypeId,
+			caseId: $phase['caseId'],
+			caseTypeId: $phase['caseTypeId'],
 			chainTermDays: $declared['chainTermDays'],
-			statusTypeId: $statusTypeId
+			statusTypeId: $phase['statusTypeId']
 		);
 
 		return (int)($plan['days'] ?? 0);
-	}//end daysForPhase()
+	}//end chainDays()
 
 	/**
 	 * What is left of the chain term, and how it splits over the phases ahead.
