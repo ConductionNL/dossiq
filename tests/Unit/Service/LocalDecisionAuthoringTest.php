@@ -98,7 +98,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 		'lib/Service/Bezwaar/BezwaarCreationHook.php' => 'Resolves the decision schema for a lookup while creating the objection case; writes the objection, not a decision.',
 		'lib/Service/Mandaat/MandaatRepository.php' => 'Mandateringsbesluit rows are mandate CONFIGURATION (who may sign), imported and maintained, not deliberated.',
 		'lib/Service/MandaatImportService.php' => 'Imports the mandateringsbesluit; same configuration reasoning as MandaatRepository.',
-		'lib/Service/WOODecisionService.php' => 'BLOCKED-2 (see the change tasks): authors the Woo besluit locally because decidiq has no woo-decision type yet. The raise moves to the delegation seam when decidiq grows one; the assembly and the Art. 5.1/5.2 guard stay either way.',
+		'lib/Service/WOODecisionService.php' => 'Raises the woo-decision in decidiq through ContractDecisionDelegationService first and fails closed; only after decidiq accepts does it keep the assembled record (the per-document assessment tally and the Art. 5.1/5.2 grounds) on the case, which is case data the publication reads.',
 		'lib/Service/WooPublicationService.php' => 'Publication stamping of the Woo besluit record; grey area C-3 (publication mechanics), pending the ruling recorded in the change.',
 		'lib/Repair/BackfillWooPublicationState.php' => 'Idempotent upgrade step that reads which decision on a case carries a wooSummary and writes only the case\'s publication state from it (woo-publish-decision-from-the-case D-2); authors no decision.',
 		'lib/Service/Remedy/RemedyLodging.php' => 'Reads the latest decision of a decided case to date the lodging term (Awb 6:8) and opens the remedy case with its objection; it records a lodging, decides nothing.',

@@ -36,12 +36,121 @@ use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
  * Register-scoped schema slug resolution.
+ *
+ * @covers \OCA\Dossiq\Service\Settings\SchemaSlugResolver
  */
 final class SchemaSlugResolverTest extends TestCase {
+	/**
+	 * A schema mapper whose register-scoped lookup throws, and whose unscoped
+	 * lookup answers every slug with schema 52.
+	 *
+	 * @return object The mapper.
+	 */
+	private static function mapperWithAFailingScopedLookup(): object {
+		return new class {
+			/**
+			 * The slugs the scoped lookup was asked for.
+			 *
+			 * @var list<string>
+			 */
+			public array $scopedAsked = [];
+
+			/**
+			 * @param string $id The slug.
+			 * @param array $extend Unused.
+			 * @param boolean $rbac Must be false.
+			 * @param boolean $multitenancy Must be false.
+			 *
+			 * @return object The schema.
+			 */
+			public function find(string $id, array $extend = [], bool $rbac = true, bool $multitenancy = true): object {
+				return (object)['slug' => $id, 'id' => 52, 'rbac' => $rbac, 'multitenancy' => $multitenancy];
+			}
+
+			/**
+			 * @param string $slug The slug.
+			 * @param array $schemaIds The candidate ids.
+			 *
+			 * @return object|null Never returns.
+			 *
+			 * @throws \RuntimeException Always.
+			 */
+			public function findBySlugInIds(string $slug, array $schemaIds): ?object {
+				$this->scopedAsked[] = $slug;
+				throw new \RuntimeException('scoped lookup broke');
+			}
+		};
+	}
+
+	/**
+	 * A scoped lookup that throws is logged and the unscoped answer stands,
+	 * read with RBAC and multitenancy off.
+	 *
+	 * @return void
+	 */
+	public function testAFailingScopedLookupFallsBackToTheUnscopedAnswer(): void {
+		$register = new class {
+			/**
+			 * @return object The register with schema 173.
+			 */
+			public function find(string $id, bool $rbac = true, bool $multitenancy = true): object {
+				return new class {
+					/**
+					 * @return int[] The register's schema ids.
+					 */
+					public function getSchemas(): array {
+						return ['173', 'not-an-id', 0];
+					}
+				};
+			}
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->with('OCA\OpenRegister\Db\RegisterMapper')->willReturn($register);
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('23');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('debug')->with(
+			'Dossiq: Register-scoped schema lookup failed, falling back',
+			['slug' => 'caseTask', 'exception' => 'scoped lookup broke']
+		);
+		$mapper = self::mapperWithAFailingScopedLookup();
+
+		$schema = (new SchemaSlugResolver($appConfig, $container, $logger))->resolve(schemaMapper: $mapper, slug: 'caseTask');
+
+		$this->assertSame(['caseTask'], $mapper->scopedAsked);
+		$this->assertSame(['slug' => 'caseTask', 'id' => 52, 'rbac' => false, 'multitenancy' => false], (array)$schema);
+	}
+
+	/**
+	 * A register mapper that cannot be reached is logged once and leaves the
+	 * unscoped lookup, without trying a scoped one.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreachableRegisterKeepsTheUnscopedAnswer(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->once())->method('get')->willThrowException(new \RuntimeException('OpenRegister is not installed'));
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('23');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('debug')->with(
+			'Dossiq: Could not read the register schema list for scoping',
+			['register' => '23', 'exception' => 'OpenRegister is not installed']
+		);
+		$mapper = self::mapperWithAFailingScopedLookup();
+		$resolver = new SchemaSlugResolver($appConfig, $container, $logger);
+
+		$this->assertSame(52, $resolver->resolve(schemaMapper: $mapper, slug: 'case')->id);
+		// The empty id list is remembered: a second slug does not ask the container again.
+		$this->assertSame(52, $resolver->resolve(schemaMapper: $mapper, slug: 'caseTask')->id);
+		$this->assertSame([], $mapper->scopedAsked);
+	}
+
 	/**
 	 * Dossiq's own register carries `task` as schema 173, so that is the answer
 	 * even though the instance-wide lookup offers the foreign row 52 first.

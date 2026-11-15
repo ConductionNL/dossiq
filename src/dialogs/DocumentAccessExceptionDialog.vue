@@ -81,6 +81,27 @@ import { resolveCaseId } from '../utils/resolveCaseId.js'
 const SHARE_TYPE_USER = 0
 const SHARE_TYPE_GROUP = 1
 
+/**
+ * @param {unknown} value A value that should be an array.
+ * @return {Array} The value, or [] when it is not an array.
+ */
+function arrayOrEmpty(value) {
+	return Array.isArray(value) ? value : []
+}
+
+/**
+ * The sharee search's entries: exact people, people, exact groups, groups.
+ *
+ * @param {object} result The `ocs.data` of the sharee search.
+ * @return {Array<object>} The entries, in that order.
+ */
+function shareeEntries(result) {
+	return [
+		...(result.exact?.users || []), ...(result.users || []),
+		...(result.exact?.groups || []), ...(result.groups || []),
+	]
+}
+
 export default {
 	name: 'DocumentAccessExceptionDialog',
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect, NcTextField },
@@ -166,32 +187,62 @@ export default {
 		async load() {
 			this.loading = true
 			try {
-				const { data } = await axios.get(generateUrl(
-					'/apps/dossiq/api/cases/{caseId}/dossier',
-					{ caseId: this.resolvedCaseId },
-				))
-				const rows = Array.isArray(data?.informatieobjecten) ? data.informatieobjecten : []
-				const row = rows.find((candidate) => Number(candidate.fileId) === Number(this.fileId))
+				const row = await this.fetchDocumentRow()
 				if (!row) {
 					this.error = t('dossiq', 'This file has no document record yet, so who sees it cannot be changed.')
 					return
 				}
-				this.documentId = String(row.id || '')
-				const exception = row.accessException || null
-				const users = Array.isArray(exception?.users) ? exception.users : []
-				const groups = Array.isArray(exception?.groups) ? exception.groups : []
-				const names = Array.isArray(row.accessExceptionNames) ? row.accessExceptionNames : []
-				this.principals = [
-					...users.map((uid, index) => this.option(SHARE_TYPE_USER, uid, names[index] || uid)),
-					...groups.map((gid, index) => this.option(SHARE_TYPE_GROUP, gid, names[users.length + index] || gid)),
-				]
-				this.reason = String(exception?.reason || '')
-				this.hadException = this.principals.length > 0
+				this.applyDocumentRow(row)
 			} catch {
 				this.error = t('dossiq', 'The document could not be loaded.')
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * The case dossier's row for the selected file.
+		 *
+		 * @return {Promise<object|undefined>} The row, or undefined when the file has none.
+		 */
+		async fetchDocumentRow() {
+			const { data } = await axios.get(generateUrl(
+				'/apps/dossiq/api/cases/{caseId}/dossier',
+				{ caseId: this.resolvedCaseId },
+			))
+			return arrayOrEmpty(data?.informatieobjecten)
+				.find((candidate) => Number(candidate.fileId) === Number(this.fileId))
+		},
+
+		/**
+		 * Take the document, its exception and its reason from the dossier row.
+		 *
+		 * @param {object} row The dossier row behind the file.
+		 * @return {void}
+		 */
+		applyDocumentRow(row) {
+			this.documentId = String(row.id || '')
+			const exception = row.accessException || null
+			this.principals = this.principalsOf(row)
+			this.reason = String(exception?.reason || '')
+			this.hadException = this.principals.length > 0
+		},
+
+		/**
+		 * The people, then the groups, of the row's exception as picker options.
+		 *
+		 * @param {object} row The dossier row behind the file.
+		 * @return {Array<{id: string, label: string, type: string, value: string}>} The options.
+		 */
+		principalsOf(row) {
+			const exception = row.accessException || null
+			const users = arrayOrEmpty(exception?.users)
+			const groups = arrayOrEmpty(exception?.groups)
+			const names = arrayOrEmpty(row.accessExceptionNames)
+			return [
+				...users.map((uid, index) => this.option(SHARE_TYPE_USER, uid, names[index] || uid)),
+				...groups.map((gid, index) => this.option(SHARE_TYPE_GROUP, gid, names[users.length + index] || gid)),
+			]
 		},
 
 		/**
@@ -221,22 +272,27 @@ export default {
 			}
 			this.searching = true
 			try {
-				const { data } = await axios.get(generateOcsUrl('apps/files_sharing/api/v1/sharees'), {
-					params: { search, itemType: 'file', perPage: 20, shareType: [SHARE_TYPE_USER, SHARE_TYPE_GROUP], format: 'json' },
-				})
-				const result = data?.ocs?.data || {}
-				const entries = [
-					...(result.exact?.users || []), ...(result.users || []),
-					...(result.exact?.groups || []), ...(result.groups || []),
-				]
-				this.found = entries
-					.filter((entry) => entry?.value && [SHARE_TYPE_USER, SHARE_TYPE_GROUP].includes(entry.value.shareType))
-					.map((entry) => this.option(entry.value.shareType, String(entry.value.shareWith), String(entry.label || entry.value.shareWith)))
+				this.found = await this.searchSharees(search)
 			} catch {
 				this.found = []
 			} finally {
 				this.searching = false
 			}
+		},
+
+		/**
+		 * The people and groups Nextcloud's sharee search finds for a term.
+		 *
+		 * @param {string} search What was typed, trimmed.
+		 * @return {Promise<Array<{id: string, label: string, type: string, value: string}>>} The options.
+		 */
+		async searchSharees(search) {
+			const { data } = await axios.get(generateOcsUrl('apps/files_sharing/api/v1/sharees'), {
+				params: { search, itemType: 'file', perPage: 20, shareType: [SHARE_TYPE_USER, SHARE_TYPE_GROUP], format: 'json' },
+			})
+			return shareeEntries(data?.ocs?.data || {})
+				.filter((entry) => entry?.value && [SHARE_TYPE_USER, SHARE_TYPE_GROUP].includes(entry.value.shareType))
+				.map((entry) => this.option(entry.value.shareType, String(entry.value.shareWith), String(entry.label || entry.value.shareWith)))
 		},
 
 		/**

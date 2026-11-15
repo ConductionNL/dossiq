@@ -46,6 +46,8 @@ export function wooRefusalGroundColumns(t) {
 			label: t('dossiq', 'Active'),
 			enum: ['active', 'retired'],
 			enumLabels: { active: 'Yes', retired: 'No' },
+			widget: 'badge',
+			widgetProps: { colorMap: { active: 'success' } },
 		},
 	]
 }

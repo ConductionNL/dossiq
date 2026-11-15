@@ -22,9 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Listener\Support\OwnPageRender;
 use OCA\Dossiq\Woo\WooReportSwitches;
-use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -70,10 +69,7 @@ class WooReportsInitialStateListener implements IEventListener {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof BeforeTemplateRenderedEvent === false
-			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== Application::APP_ID
-		) {
+		if ((new OwnPageRender())->matches(event: $event) === false) {
 			return;
 		}
 

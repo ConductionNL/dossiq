@@ -154,7 +154,7 @@ class BerichtenboxJournal {
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::PORTAL_MESSAGE,
-			message: $this->statusSentence(subject: (string)($data['subject'] ?? ''), status: $status, lastError: $lastError),
+			message: $this->statusSentence(subject: (string)($data['subject'] ?? ''), outcome: ['status' => $status, 'lastError' => $lastError]),
 			fields: [
 				'subject' => (string)($data['subject'] ?? ''),
 				'messageId' => $externalMessageId,
@@ -196,13 +196,13 @@ class BerichtenboxJournal {
 	 * handler with nothing to act on, which is how a citizen goes unnotified
 	 * while the case says something happened.
 	 *
-	 * @param string $subject   The letter's subject.
-	 * @param string $status    The status it moved to.
-	 * @param string $lastError The provider's reason, when it failed.
+	 * @param string                                    $subject The letter's subject.
+	 * @param array{status: string, lastError: string} $outcome The status it moved to, and the provider's reason when it failed.
 	 *
 	 * @return string The sentence.
 	 */
-	private function statusSentence(string $subject, string $status, string $lastError): string {
+	private function statusSentence(string $subject, array $outcome): string {
+		['status' => $status, 'lastError' => $lastError] = $outcome;
 		if ($status === 'failed') {
 			$reason = $lastError;
 			if ($reason === '') {

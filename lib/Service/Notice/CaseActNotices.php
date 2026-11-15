@@ -22,21 +22,22 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+ * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Notice;
 
+use OCA\Dossiq\Kernel\Contracts\CaseActNoticesInterface;
 use OCP\IL10N;
 
 /**
  * Builds the card notices of the case page acts.
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+ * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
  */
-class CaseActNotices {
+class CaseActNotices implements CaseActNoticesInterface {
 
 	/**
 	 * Constructor.
@@ -57,7 +58,7 @@ class CaseActNotices {
 	 *
 	 * @return array{variant: string, role: string, title: string, text: string}
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	public function taskCompleted(string $task): array {
 		return $this->build(
@@ -75,7 +76,7 @@ class CaseActNotices {
 	 *
 	 * @return array{variant: string, role: string, title: string, text: string}
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	public function cancelRefused(string $task, string $reason): array {
 		return $this->build(
@@ -94,7 +95,7 @@ class CaseActNotices {
 	 *
 	 * @return array{variant: string, role: string, title: string, text: string}
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
 	 */
 	public function linkRefused(string $rule, string $target, string $other): array {
 		$text = $this->l10n->t('%1$s already hangs as the subject under %2$s. A case can hang as the subject under one case only.', [$target, $other]);
@@ -110,7 +111,7 @@ class CaseActNotices {
 	 *
 	 * @return array{variant: string, role: string, title: string, text: string}
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-case-lists-its-shares-and-a-refused-revoke-is-a-card-notice
 	 */
 	public function revokeRefused(): array {
 		return $this->build(

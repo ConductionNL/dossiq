@@ -70,6 +70,11 @@ describe('the completeness of the application (DqZaakDocumenten)', () => {
 		expect(evaluateVisibleWhenLocal(card.content.done, { present: false })).toBe(false)
 	})
 
+	it('draws the completeness rows with their source, "ontbreekt" and the verdict pill (DqZaakDocumenten)', () => {
+		expect(card.content).toMatchObject({ meta: '{evidence}', metaAt: 'end', missingText: 'missing' })
+		expect(card.content.headerPillFrom).toEqual({ path: 'verdict', labels: { incomplete: 'Not admissible yet' }, colorMap: { incomplete: 'warning' } })
+	})
+
 	it('confirms admissibility through the intake verdict route', () => {
 		const request = card.content.footerAction.props.config.confirm.request
 		expect(request).toEqual({ method: 'POST', url: '/apps/dossiq/api/cases/@objectId/admissibility', body: { verdict: 'admissible' } })
@@ -108,9 +113,18 @@ describe('the case tabs', () => {
 		expect(cases.valueLabels.aardRelatie.bijdrage).toBe('contribution')
 	})
 
+	it('reads the assistant note\'s provider and place from Hermiq, with the short note as the fallback', () => {
+		const chat = page.configAppend.widgets.find((entry) => entry.content?.noteFrom)
+		expect(chat.content.note).toBe('The assistant sees only what you see on this case. Without Hermiq this panel is off.')
+		expect(chat.content.noteFrom).toMatchObject({ url: '/apps/hermiq/api/ai-features/residency', match: { slug: 'chat-companion' }, requires: ['provider', 'location'] })
+		expect(chat.content.noteFrom.text).toContain('{provider}, {location}')
+	})
+
 	it('names the kind of each assistant suggestion (DqZaakAssistent)', () => {
 		const columns = widget('case-ai-activity').content.columns
 		expect(columns[2]).toMatchObject({ key: 'advisoryContext.suggestionType', label: 'Kind and action' })
+		expect(columns[2].secondary).toBe('advisoryContext.action')
+		expect(columns[2].enumLabels['refusal-ground']).toBe('Classification')
 	})
 })
 

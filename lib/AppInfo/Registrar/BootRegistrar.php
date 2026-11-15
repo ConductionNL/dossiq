@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\Registrar\BezwaarSubscriptionRegistrar;
 use OCP\EventDispatcher\IEventDispatcher;
 
 /**

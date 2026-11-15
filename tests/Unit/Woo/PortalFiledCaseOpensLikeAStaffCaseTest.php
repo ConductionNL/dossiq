@@ -69,6 +69,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Listener\AcknowledgementOnCreateListener
  * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class PortalFiledCaseOpensLikeAStaffCaseTest extends TestCase {
 

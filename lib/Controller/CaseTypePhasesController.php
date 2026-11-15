@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseType\CaseTypePhases;
+use OCA\Dossiq\Kernel\Contracts\CaseTypePhasesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -47,14 +47,14 @@ class CaseTypePhasesController extends Controller {
 	 *
 	 * @param string         $appName The app name.
 	 * @param IRequest       $request The request.
-	 * @param CaseTypePhases $phases  Groups the workflow steps under the statuses.
+	 * @param CaseTypePhasesInterface $phases  Groups the workflow steps under the statuses.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTypePhases $phases,
+		private readonly CaseTypePhasesInterface $phases,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

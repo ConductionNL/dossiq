@@ -29,6 +29,13 @@ describe('organisation set-up checklist (DqTenant)', () => {
 		expect(nl[setup.headerNote]).toBe('{count:status=completed} van {total} stappen klaar')
 	})
 
+	it('reads each step\'s note and marks the next step with its action, as the server answers them', () => {
+		expect(setup.meta).toBe('{note}')
+		expect(setup.next.when).toEqual({ field: 'isNext', op: 'eq', value: true })
+		expect(setup.next.action).toEqual({ labelField: 'action.label', hrefField: 'action.href' })
+		expect(nl[setup.next.label]).toBe('Volgende stap')
+	})
+
 	it('keeps every step named', () => {
 		expect(Object.keys(setup.valueLabels.step)).toHaveLength(7)
 	})

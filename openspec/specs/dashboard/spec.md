@@ -37,7 +37,7 @@ All dashboard data comes from OpenRegister queries against the `dossiq` register
 
 ## Requirements
 
-### REQ-DASH-001: KPI Cards Row [MVP]
+### Requirement: REQ-DASH-001: KPI Cards Row [MVP]
 
 The dashboard MUST display a row of five KPI cards at the top, providing headline metrics for the current user's case management workload. The fifth card shows SLA Compliance.
 
@@ -98,7 +98,7 @@ The main dashboard SHALL provide a visible navigation element to access the door
 - THEN the system MUST display a tab or button labeled "Doorlooptijd" in the dashboard header area
 - AND clicking it MUST navigate to the `/doorlooptijd` route
 
-### REQ-DASH-002: Cases by Status Chart [MVP]
+### Requirement: REQ-DASH-002: Cases by Status Chart [MVP]
 
 The dashboard MUST display a horizontal bar chart showing the distribution of open cases across status types.
 
@@ -274,7 +274,7 @@ The dashboard MUST display a feed of the last 10 case management events.
 - THEN events SHOULD be grouped under date headers ("Today", "Yesterday", date labels)
 - AND within each group events MUST be ordered by timestamp descending
 
-### REQ-DASH-007: Quick Actions [MVP]
+### Requirement: REQ-DASH-007: Quick Actions [MVP]
 
 The dashboard MUST provide quick action buttons for common case management tasks.
 
@@ -1002,50 +1002,29 @@ only. The full structure MUST keep every one of these pages as it was.
 - **THEN** the dashboard, the case page, the list and the board MUST equal what the manifest declares
 
 ### Requirement: My open work is a start page widget that any dashboard can render (REQ-DASH-023)
-dossiq MUST offer a dashboard widget "My open work" that lists the signed-in
-person's open cases and work items from the one personal queue, soonest due
-first, each linking to its case or task. The widget MUST answer through
-Nextcloud's widget item API, so a host that renders items shows it without
-dossiq's JavaScript. It MUST offer a button "Open my work" that leads to the My
-work page.
+dossiq MUST offer one dashboard widget "Mijn werk" (English source "My work") that summarises the signed-in person's open work from the one personal queue, as board DqNextcloudDashboard draws it: a row counting the open cases on their name, with how many they hold as substitute, and a row counting their open tasks, with how many are late and how many are due today. A kind with nothing open MUST be left out. Each row MUST link to the My work page. The widget MUST answer through Nextcloud's widget item API, so a host that renders items shows it without dossiq's JavaScript. It MUST offer a button "Naar Mijn werk" (English source "Go to My work") that leads to the My work page. dossiq MUST NOT offer separate My tasks or Overdue cases widgets beside it.
 
 #### Scenario: The start page shows my cases and leads to my work
 @e2e tests/e2e/my-open-work-widget.spec.ts
 
 - **GIVEN** a handler with two open cases assigned to them and one open task
-- **WHEN** they open a start page that holds the widget "My open work"
-- **THEN** the widget MUST list the two cases and the task, soonest due first
-- **AND** "Open my work" MUST open the My work page
+- **WHEN** they open a start page that holds the widget "Mijn werk"
+- **THEN** the widget MUST read "2 open zaken op uw naam" and "1 open taak"
+- **AND** "Naar Mijn werk" MUST open the My work page
 
 #### Scenario: Items reach a host without dossiq's bundle
 @e2e tests/e2e/my-open-work-widget.spec.ts
 
 - **GIVEN** the same handler
-- **WHEN** a client calls `/ocs/v2.php/apps/dashboard/api/v2/widget-items` for
-  the widget
-- **THEN** the response MUST carry the three items with their titles and links
+- **WHEN** a client calls `/ocs/v2.php/apps/dashboard/api/v2/widget-items` for the widget
+- **THEN** the response MUST carry the cases row and the tasks row, each linking to My work
 
 #### Scenario: More work than fits
-@e2e exclude Twelve items on the admin's shared queue cannot be seeded stably; covered by tests/Unit/Dashboard/QueueWidgetItemsTest.php and tests/Unit/Dashboard/MyOpenWorkWidgetTest.php.
+@e2e exclude The summary has at most two rows; tests/Unit/Dashboard/MyOpenWorkWidgetTest.php counts late, today and substitute work.
 
-- **GIVEN** a handler with twelve open items and a host that asks for seven
+- **GIVEN** a handler with twelve open items
 - **WHEN** the widget answers
-- **THEN** it MUST list six items and a seventh reading "6 more in My work"
-  that links to the My work page
-
-### Requirement: My tasks renders through the item API as well (REQ-DASH-024)
-The widget "My tasks" MUST keep its id and its dashboard rendering and MUST also
-answer its open tasks through Nextcloud's widget item API.
-
-#### Scenario: A start page that reads items shows my tasks
-@e2e tests/e2e/my-open-work-widget.spec.ts
-
-- **GIVEN** a handler with two open tasks
-- **WHEN** a client asks the widget item API for "My tasks"
-- **THEN** it MUST answer both tasks with a link to each
-<!-- Folded 2026-10-10 from archive 2026-09-20-a-dashboard-the-reader-arranges, whose archive step
-     folded nothing. That change named these REQ-DASH-023 and REQ-DASH-024; the ids now belong to
-     widgets-my-open-cases-on-the-start-page, so they are renumbered 030 and 031 here. -->
+- **THEN** it MUST still answer one row per kind, counting all twelve
 
 ### Requirement: REQ-DASH-030 A reader keeps their own arrangement of a dashboard
 
@@ -1186,6 +1165,60 @@ of `config.register` and `config.schema`.
 - **WHEN** the page renders
 - **THEN** the console holds no `declares only one of config.register / config.schema` warning
 
+<!-- BEGIN retrofit-2026-05-24-dashboard -->
+
+<!-- Widget implementation surface (retrofit) -->
+
+### Requirement: REQ-DASH-016: The Nextcloud dashboard SHALL provide CasesOverview, MyTasks and StartCase widgets
+
+@e2e exclude NC dashboard widget registration (IWidget PHP classes); widget deep-link is app-boot plumbing covered by PHPUnit.
+
+`CasesOverviewWidget`, `MyTasksWidget` and `StartCaseWidget` SHALL each implement `OCP\Dashboard\IWidget` with stable kebab-case ids (`dossiq-cases-overview`, `dossiq-my-tasks`, `dossiq-start-case`), localised titles via `IL10N::t()`, deterministic `getOrder()` return values, MDI-style `getIconClass()`, and an in-app `getUrl()` deep link. Each widget's `load()` SHALL register the corresponding webpack-built Vue bundle via `Util::addScript()` + `Util::addStyle()` — no server-side data computation in PHP.
+
+#### Scenario: StartCase widget exposes deep-link to the case-creation flow
+- **WHEN** a user clicks the Start Case widget tile
+- **THEN** the dashboard SHALL navigate to the URL returned by `StartCaseWidget::getUrl()` (which deep-links to `/cases/new`)
+
+### Requirement: REQ-DASH-017: DashboardController SHALL expose the in-app dashboard data endpoints
+
+@e2e exclude Backend PHP DashboardController spec; endpoint payload structure covered by PHPUnit controller tests.
+
+`OCA\Dossiq\Controller\DashboardController` SHALL serve the in-app dashboard surface (not the Nextcloud dashboard system, which is widget-driven and loads client-side). The controller SHALL provide endpoints for the dashboard landing-page Vue to fetch its initial state (KPIs, layout, widget data) so the SPA can render without spinning up multiple per-widget HTTP requests.
+
+#### Scenario: Initial dashboard payload
+- **WHEN** an authenticated user opens the in-app dashboard (`/dashboard`)
+- **THEN** `DashboardController` SHALL respond with a single payload containing the user's saved layout plus the data each widget needs to render its first frame
+
+### REQ-DASH-018: All three workflow widgets SHALL be registered at app boot via Application
+
+@e2e exclude NC Application::register() PHP bootstrap spec; widget picker registration covered by PHPUnit.
+
+`OCA\Dossiq\AppInfo\Application::register()` SHALL register `CasesOverviewWidget`, `MyTasksWidget`, and `StartCaseWidget` with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order SHALL match the canonical `getOrder()` return values.
+
+#### Scenario: Widgets appear in the dashboard picker
+- **WHEN** an authenticated user opens the dashboard widget picker
+- **THEN** all three workflow widgets SHALL be listed alongside the signalering widgets
+
+<!-- END retrofit-2026-05-24-dashboard -->
+
+<!-- Dashboard page render (UI surface) -->
+
+### REQ-DASH-UI-01: The in-app dashboard page SHALL render its shell on navigation
+
+The Dossiq dashboard landing page (`CnDashboardPage`, route `/`) SHALL mount and
+render a stable shell — the "Dashboard" page heading, its action controls, and the
+widget grid container — regardless of whether the underlying OpenRegister
+aggregation endpoints return data. This is a real, browser-verifiable UI surface
+and is covered by a Playwright test that navigates to the dashboard via the
+sidebar and asserts the rendered shell (data rows themselves remain
+data-dependent and are excluded above).
+
+#### Scenario: Dashboard page renders heading and widget grid
+- **GIVEN** an authenticated user on the Dossiq app
+- **WHEN** they click the "Dashboard" entry in the app sidebar
+- **THEN** the main content MUST show a level-2 "Dashboard" heading
+- **AND** the widget grid container MUST render (showing the configured widget tiles or their unavailable-placeholder shells)
+
 ## Non-Functional Requirements
 
 - **Performance**: Dashboard MUST load within 2 seconds for up to 1000 cases. Individual API calls SHOULD complete within 500ms. Data is fetched using `Promise.allSettled` with a limit of 1000 cases, 100 case types, 500 status types, and 100 tasks.
@@ -1238,57 +1271,3 @@ of `config.register` and `config.schema`.
 - **Nextcloud Activity API (`OCP\Activity\IManager`)**: Activity feed data source (mentioned in spec, `ActivityFeed.vue` component exists).
 - **GEMMA**: Dashboard follows zaakgericht werken management information patterns.
 - **Competitor reference**: Dimpact ZAC provides a dashboard with case counts, overdue warnings, and team workload views. Flowable Platform includes case KPI dashboards with SLA compliance metrics and workload distribution.
-
-<!-- BEGIN retrofit-2026-05-24-dashboard -->
-
-## Widget Implementation Surface (retrofit)
-
-### REQ-DASH-016: The Nextcloud dashboard SHALL provide CasesOverview, MyTasks and StartCase widgets
-
-@e2e exclude NC dashboard widget registration (IWidget PHP classes); widget deep-link is app-boot plumbing covered by PHPUnit.
-
-`CasesOverviewWidget`, `MyTasksWidget` and `StartCaseWidget` SHALL each implement `OCP\Dashboard\IWidget` with stable kebab-case ids (`dossiq-cases-overview`, `dossiq-my-tasks`, `dossiq-start-case`), localised titles via `IL10N::t()`, deterministic `getOrder()` return values, MDI-style `getIconClass()`, and an in-app `getUrl()` deep link. Each widget's `load()` SHALL register the corresponding webpack-built Vue bundle via `Util::addScript()` + `Util::addStyle()` — no server-side data computation in PHP.
-
-#### Scenario: StartCase widget exposes deep-link to the case-creation flow
-- **WHEN** a user clicks the Start Case widget tile
-- **THEN** the dashboard SHALL navigate to the URL returned by `StartCaseWidget::getUrl()` (which deep-links to `/cases/new`)
-
-### REQ-DASH-017: DashboardController SHALL expose the in-app dashboard data endpoints
-
-@e2e exclude Backend PHP DashboardController spec; endpoint payload structure covered by PHPUnit controller tests.
-
-`OCA\Dossiq\Controller\DashboardController` SHALL serve the in-app dashboard surface (not the Nextcloud dashboard system, which is widget-driven and loads client-side). The controller SHALL provide endpoints for the dashboard landing-page Vue to fetch its initial state (KPIs, layout, widget data) so the SPA can render without spinning up multiple per-widget HTTP requests.
-
-#### Scenario: Initial dashboard payload
-- **WHEN** an authenticated user opens the in-app dashboard (`/dashboard`)
-- **THEN** `DashboardController` SHALL respond with a single payload containing the user's saved layout plus the data each widget needs to render its first frame
-
-### REQ-DASH-018: All three workflow widgets SHALL be registered at app boot via Application
-
-@e2e exclude NC Application::register() PHP bootstrap spec; widget picker registration covered by PHPUnit.
-
-`OCA\Dossiq\AppInfo\Application::register()` SHALL register `CasesOverviewWidget`, `MyTasksWidget`, and `StartCaseWidget` with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order SHALL match the canonical `getOrder()` return values.
-
-#### Scenario: Widgets appear in the dashboard picker
-- **WHEN** an authenticated user opens the dashboard widget picker
-- **THEN** all three workflow widgets SHALL be listed alongside the signalering widgets
-
-<!-- END retrofit-2026-05-24-dashboard -->
-
-## Dashboard Page Render (UI surface)
-
-### REQ-DASH-UI-01: The in-app dashboard page SHALL render its shell on navigation
-
-The Dossiq dashboard landing page (`CnDashboardPage`, route `/`) SHALL mount and
-render a stable shell — the "Dashboard" page heading, its action controls, and the
-widget grid container — regardless of whether the underlying OpenRegister
-aggregation endpoints return data. This is a real, browser-verifiable UI surface
-and is covered by a Playwright test that navigates to the dashboard via the
-sidebar and asserts the rendered shell (data rows themselves remain
-data-dependent and are excluded above).
-
-#### Scenario: Dashboard page renders heading and widget grid
-- **GIVEN** an authenticated user on the Dossiq app
-- **WHEN** they click the "Dashboard" entry in the app sidebar
-- **THEN** the main content MUST show a level-2 "Dashboard" heading
-- **AND** the widget grid container MUST render (showing the configured widget tiles or their unavailable-placeholder shells)

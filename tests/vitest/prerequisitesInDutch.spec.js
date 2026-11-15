@@ -32,7 +32,9 @@ describe('Vereisten in Dutch', () => {
 
 	it('renders the reasons through the translation', () => {
 		expect(tab).toContain("{{ t('dossiq', row.why) }}")
-		expect(tab.match(/\{\{ t\('dossiq', row\.unlocks\) \}\}/g)).toHaveLength(2)
+		// One body template draws both the required and the optional apps.
+		expect(tab).toContain("{{ t('dossiq', row.unlocks) }}")
 		expect(tab).not.toContain('{{ row.why }}')
+		expect(tab).not.toContain('{{ row.unlocks }}')
 	})
 })

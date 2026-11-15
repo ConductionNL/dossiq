@@ -220,7 +220,10 @@ describe('check:manifest tells a lag from a defect', () => {
 		// A crumb naming the record's parent (schema 2.174.0) is derived the same way.
 		const declaresParentCrumb = Object.hasOwn(installed.$defs.breadcrumbCrumb?.properties || {}, 'parent')
 
-		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone && declaresDottedSelf && declaresParentCrumb) {
+		// The summary step's rows and button labels (schema 2.175.0) are derived the same way.
+		const declaresSummaryRows = JSON.stringify(installed).includes('summary, board look: the readiness rows')
+
+		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone && declaresDottedSelf && declaresParentCrumb && declaresSummaryRows) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
@@ -249,6 +252,9 @@ describe('check:manifest tells a lag from a defect', () => {
 		}
 		if (!declaresOptionMonths) {
 			expect(out).toMatch(/\/config\/pageFilters\/\d+\/options\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
+		}
+		if (!declaresSummaryRows) {
+			expect(out).toMatch(/\/setup\/steps\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
 		}
 	}, 30000)
 

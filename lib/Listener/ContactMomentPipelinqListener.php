@@ -42,9 +42,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Pipelinq\ContactMomentBridge;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\Dossiq\Kernel\Contracts\ContactMomentBridgeInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Listener\Support\CreatedCaseRecord;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -67,13 +67,13 @@ class ContactMomentPipelinqListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContactMomentBridge      $bridge       Appends the moment to pipelinq.
-	 * @param ObjectSchemaSlugResolver $slugResolver Which schema a created object is.
+	 * @param ContactMomentBridgeInterface      $bridge       Appends the moment to pipelinq.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Which schema a created object is.
 	 * @param LoggerInterface          $logger       Where an unexpected failure goes.
 	 */
 	public function __construct(
-		private readonly ContactMomentBridge $bridge,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ContactMomentBridgeInterface $bridge,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -88,23 +88,12 @@ class ContactMomentPipelinqListener implements IEventListener {
 	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $this->payload(event: $event);
+		$payload = (new CreatedCaseRecord(slugResolver: $this->slugResolver, schema: self::SCHEMA))->of(event: $event);
 		if ($payload === null) {
 			return;
 		}
 
-		if ($this->slugResolver->resolveFromPayload(payload: $payload) !== self::SCHEMA) {
-			return;
-		}
-
-		$caseId = trim((string)($payload['case'] ?? ''));
-		if ($caseId === '') {
-			return;
-		}
+		$caseId = trim((string)$payload['case']);
 
 		try {
 			$this->bridge->append(caseId: $caseId, moment: $payload);
@@ -115,32 +104,4 @@ class ContactMomentPipelinqListener implements IEventListener {
 			);
 		}
 	}//end handle()
-
-	/**
-	 * The created object as an array, or null when it cannot be read.
-	 *
-	 * @param Event $event The dispatched event.
-	 *
-	 * @return array<string, mixed>|null The object.
-	 */
-	private function payload(Event $event): ?array {
-		$object = null;
-
-		if (method_exists($event, 'getObject') === true) {
-			$object = $event->getObject();
-		}
-
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end payload()
 }//end class

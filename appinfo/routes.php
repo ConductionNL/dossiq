@@ -139,6 +139,7 @@ $extra = [
     ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
     ['name' => 'caseTypePhases#index',     'url' => '/api/case-types/{id}/phases',           'verb' => 'GET'],
     ['name' => 'caseTypeTerms#index',      'url' => '/api/case-types/{id}/terms',            'verb' => 'GET'],
+    ['name' => 'caseTypeRules#index',      'url' => '/api/case-types/{id}/rules',            'verb' => 'GET'],
     ['name' => 'caseTypeRights#index',     'url' => '/api/case-types/{id}/rights-by-role',   'verb' => 'GET'],
     ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
     ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
@@ -153,6 +154,8 @@ $extra = [
     ['name' => 'caseNextStatus#show',          'url' => '/api/cases/{caseId}/next-status', 'verb' => 'GET'],
     // The instalments of the payment schedules on a case's decisions, with their states and totals (grant-cases-from-application-to-settlement).
     ['name' => 'paymentSchedule#forCase', 'url' => '/api/cases/{caseId}/payment-schedule', 'verb' => 'GET'],
+    // The settlements of a case, reached through its applications and their executions (overview-cards-per-case-type).
+    ['name' => 'settlement#forCase', 'url' => '/api/cases/{caseId}/settlements', 'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],
@@ -202,6 +205,7 @@ $extra = [
     ['name' => 'sociaalDomeinPlan#closeGoal',        'url' => '/api/family-plan-goals/{goalId}/close',         'verb' => 'POST'],
     ['name' => 'caseGoal#index',                     'url' => '/api/cases/{caseId}/goals',                     'verb' => 'GET'],
     ['name' => 'caseGoal#create',                    'url' => '/api/cases/{caseId}/goals',                     'verb' => 'POST'],
+    ['name' => 'caseGoal#close',                     'url' => '/api/cases/{caseId}/goals/{goalId}/close',      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#grounds',          'url' => '/api/cross-domain/grounds',                     'verb' => 'GET'],
     ['name' => 'sociaalDomeinPlan#lookUp',           'url' => '/api/cross-domain/lookup',                      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#lookupsAbout',     'url' => '/api/cross-domain/lookups/{bsn}',               'verb' => 'GET'],
@@ -209,6 +213,9 @@ $extra = [
         // chosen ground, logged, and kept in the reader's session.
     ['name' => 'householdCases#index',  'url' => '/api/cases/{caseId}/household-cases',        'verb' => 'GET'],
     ['name' => 'householdCases#lookUp', 'url' => '/api/cases/{caseId}/household-cases/lookup', 'verb' => 'POST'],
+
+        // The OpenAPI document of dossiq's own API (ApiContract), public, served under /api/v1/ too.
+    ['name' => 'openApi#show', 'url' => '/api/openapi.json', 'verb' => 'GET'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
         // Literal routes registered before the ZGW {resource}-wildcard
@@ -616,6 +623,8 @@ $extra = [
         //
         // The two `bulk-transition` routes this replaces looped in dossiq.
     ['name' => 'bulkJobHandoff#create', 'url' => '/api/cases/bulk-jobs', 'verb' => 'POST'],
+        // The anonymised variant of the list export (social-domain-consent-and-safeguards, REQ-SDC-ANON-01).
+    ['name' => 'caseAnonymisedExport#export', 'url' => '/api/cases/anonymised-export', 'verb' => 'POST'],
 
         // The tenant CRUD + lifecycle routes retired with the tenant admin store
         // (tenancy-onto-openregister-organisation 6.9): a tenant is an OpenRegister
@@ -715,6 +724,12 @@ $extra = [
     ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
     ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
+        // Advice from the decision table a case type names (REQ-LHS-CASE-01): ask on a case, then accept or deviate with a reason.
+        // @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
+    ['name' => 'decisionAdvice#form',      'url' => '/api/decision-advice/case/{caseId}/form', 'verb' => 'GET'],
+    ['name' => 'decisionAdvice#recommend', 'url' => '/api/decision-advice/recommend', 'verb' => 'POST'],
+    ['name' => 'decisionAdvice#override',  'url' => '/api/decision-advice/override',  'verb' => 'POST'],
+
         // Checklist templates (admin).
     ['name' => 'checklistTemplate#index',   'url' => '/api/checklists',       'verb' => 'GET'],
     ['name' => 'checklistTemplate#create',  'url' => '/api/checklists',       'verb' => 'POST'],
@@ -739,6 +754,8 @@ $extra = [
         // and had no door, so a photo or a voice memo reached nobody and the
         // fieldEvidence page read a schema nothing wrote.
     ['name' => 'fieldEvidence#capture', 'url' => '/api/inspections/{inspectionRef}/evidence', 'verb' => 'POST'],
+        // The sync frame's conflict card keeps the device's text or the office's.
+    ['name' => 'conflictRecord#resolve', 'url' => '/api/conflict-records/{id}/resolve', 'verb' => 'POST'],
         // Per-case advice requests, on any case type.
     ['name' => 'advice#createForCase', 'url' => '/api/cases/{id}/advice-requests', 'verb' => 'POST'],
     ['name' => 'advice#getForCase',    'url' => '/api/cases/{id}/advice-requests', 'verb' => 'GET'],
@@ -1213,6 +1230,7 @@ $extra = [
         // (case-money-is-configuration, REQ-DQM-003). Named for what they do.
     ['name' => 'accrualNotice#register',     'url' => '/api/notices-of-default',                       'verb' => 'POST'],
     ['name' => 'accrualNotice#show',         'url' => '/api/notices-of-default/{id}',                  'verb' => 'GET'],
+    ['name' => 'caseNoticesOfDefault#index', 'url' => '/api/cases/{caseId}/notices-of-default',       'verb' => 'GET'],
     ['name' => 'accruingAmount#show',        'url' => '/api/accruing-amounts/{id}',                    'verb' => 'GET'],
     ['name' => 'accruingAmount#settle',      'url' => '/api/accruing-amounts/{id}/settle',             'verb' => 'POST'],
     ['name' => 'payout#prepare',             'url' => '/api/accruing-amounts/{id}/payout',             'verb' => 'POST'],
@@ -1308,6 +1326,13 @@ $extra = [
         // its own — discovery belongs to the engine.
     ['name' => 'store#search',       'url' => '/api/store/items',                 'verb' => 'GET'],
     ['name' => 'store#install',      'url' => '/api/store/items/{slug}/install',  'verb' => 'POST', 'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
+    ['name' => 'storePackage#index',   'url' => '/api/store/packages',              'verb' => 'GET'],
+    [
+        'name' => 'storePackage#install',
+        'url' => '/api/store/packages/{id}/install',
+        'verb' => 'POST',
+        'requirements' => ['id' => '[a-z0-9][a-z0-9-]*[a-z0-9]'],
+    ],
     ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
     ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
     // Also in OpenRegister's canonical table; declared here so it is visible
@@ -1345,7 +1370,8 @@ $extra = [
 // Preferred path: the OpenRegister AppHost owns the canonical route table.
 // `class_exists()` autoloads without fatalling when the class is unavailable.
 if (class_exists('OCA\OpenRegister\AppHost\Routes') === true) {
-    return \OCA\OpenRegister\AppHost\Routes::standard($extra);
+    // Every unversioned API route is also served under /api/v1/; see ApiPathAliases.
+    return \OCA\Dossiq\Middleware\Support\ApiPathAliases::withVersionedAliases(\OCA\OpenRegister\AppHost\Routes::standard($extra));
 }
 
 // Fallback: openregister is not installed. Reproduce `Routes::standard()`
@@ -1390,4 +1416,4 @@ foreach ($canonicalRoutes as $canonicalRoute) {
 $mergedRoutes   = array_merge($mergedRoutes, $extra);
 $mergedRoutes[] = $catchAllRoute;
 
-return ['routes' => $mergedRoutes];
+return \OCA\Dossiq\Middleware\Support\ApiPathAliases::withVersionedAliases(['routes' => $mergedRoutes]);

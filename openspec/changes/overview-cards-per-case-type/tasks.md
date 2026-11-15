@@ -8,5 +8,7 @@
 - [x] 1.6 Opt-in of single generic cards: a case type that lists its own cards also shows a generic card it names in `overviewCards` (`contains`, nextcloud-vue 2.126)
   - `tests/vitest/overviewCardsPerCaseType.spec.js`
 - [ ] 1.6b Order of the generic cards a case type opts into: the Overview tab draws its cards in the tab's order, not the list's
+  - Open: needs CnTabsWidget in nextcloud-vue to order a stack by a context list; it draws `widgetIds` in authored order only (2.180.0)
 - [x] 1.7 Grant decisions on the Overview tab of a subsidy case (DqSubsidie Beschikkingen); the subsidie package (1.2.0) lists it, with the requester and banner side cards
-- [ ] 1.8 DqSubsidie Vaststelling card: the determination hangs off the execution, which hangs off the application, two references away from the case
+- [x] 1.8 DqSubsidie Vaststelling card: the determination hangs off the execution, which hangs off the application, two references away from the case
+  - `GET /api/cases/{caseId}/settlements` (`SettlementController`, `Service/Money/SettlementOverview`) walks case → application → execution → settlement; the `case-settlement` card reads it; subsidie 1.8.0 lists it. `tests/vitest/caseSettlement.spec.js`, `SettlementOverviewTest`, `SettlementControllerTest`

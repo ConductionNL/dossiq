@@ -188,4 +188,78 @@ describe('DocumentAccessExceptionDialog', () => {
 		expect(mockGet).toHaveBeenLastCalledWith('/ocs/v2.php/apps/files_sharing/api/v1/sharees', expect.objectContaining({ params: expect.objectContaining({ search: 'an', shareType: [0, 1] }) }))
 		expect(wrapper.vm.found.map((option) => option.id)).toEqual(['user:anna', 'group:juristen'])
 	})
+
+	it('refuses to change a file without a document record, and says so', async () => {
+		mockGet.mockResolvedValue({ data: { informatieobjecten: [{ id: 'doc-verzoek', fileId: 43 }] } })
+		const wrapper = mount(Dialog, { props: { fileId: 42, caseId: 'case-0082' }, global: { mocks: { t: (app, text) => text } } })
+		await flushPromises()
+		expect(wrapper.vm.error).toBe('This file has no document record yet, so who sees it cannot be changed.')
+		expect(wrapper.vm.documentId).toBe('')
+		expect(wrapper.vm.loading).toBe(false)
+		expect(wrapper.vm.canSave).toBe(false)
+	})
+
+	it('reads a dossier without documents as no document record', async () => {
+		mockGet.mockResolvedValue({ data: {} })
+		const wrapper = mount(Dialog, { props: { fileId: 42, caseId: 'case-0082' }, global: { mocks: { t: (app, text) => text } } })
+		await flushPromises()
+		expect(wrapper.vm.error).toBe('This file has no document record yet, so who sees it cannot be changed.')
+	})
+
+	it('says the document could not be loaded when the dossier call fails', async () => {
+		mockGet.mockRejectedValue(new Error('down'))
+		const wrapper = mount(Dialog, { props: { fileId: 42, caseId: 'case-0082' }, global: { mocks: { t: (app, text) => text } } })
+		await flushPromises()
+		expect(wrapper.vm.error).toBe('The document could not be loaded.')
+		expect(wrapper.vm.loading).toBe(false)
+	})
+
+	it('falls back to the ids when the names are missing, and to no exception', async () => {
+		let wrapper = await open({ id: 'doc-offerte', fileId: '42', accessException: { users: ['pieter', 'anna'], groups: ['woo-team'] }, accessExceptionNames: ['Pieter Jansen'] })
+		expect(wrapper.vm.principals.map((option) => [option.id, option.label])).toEqual([
+			['user:pieter', 'Pieter Jansen'],
+			['user:anna', 'anna'],
+			['group:woo-team', 'woo-team'],
+		])
+		expect(wrapper.vm.reason).toBe('')
+		expect(wrapper.vm.hadException).toBe(true)
+		wrapper = await open({ fileId: 42, accessException: { users: 'pieter', groups: null, reason: 'X' }, accessExceptionNames: 'nope' })
+		expect(wrapper.vm.documentId).toBe('')
+		expect(wrapper.vm.principals).toEqual([])
+		expect(wrapper.vm.reason).toBe('X')
+		expect(wrapper.vm.hadException).toBe(false)
+	})
+
+	it('does not search on fewer than two characters, and clears the results', async () => {
+		const wrapper = await open()
+		wrapper.vm.found = [{ id: 'user:x' }]
+		mockGet.mockClear()
+		await wrapper.vm.onSearch(' a ')
+		await wrapper.vm.onSearch(null)
+		expect(mockGet).not.toHaveBeenCalled()
+		expect(wrapper.vm.found).toEqual([])
+	})
+
+	it('keeps only people and groups from the search, exact matches first', async () => {
+		const wrapper = await open()
+		mockGet.mockResolvedValue({
+			data: { ocs: { data: {
+				exact: { users: [{ label: '', value: { shareType: 0, shareWith: 'piet' } }], groups: [{ label: 'Exact', value: { shareType: 1, shareWith: 'exact' } }] },
+				users: [{ label: 'Mail', value: { shareType: 4, shareWith: 'a@b.nl' } }, { label: 'No value' }, null],
+			} } },
+		})
+		await wrapper.vm.onSearch('pi')
+		expect(wrapper.vm.found.map((option) => [option.id, option.label])).toEqual([
+			['user:piet', 'piet'],
+			['group:exact', 'Exact'],
+		])
+		expect(wrapper.vm.searching).toBe(false)
+		mockGet.mockResolvedValue({ data: {} })
+		await wrapper.vm.onSearch('pi')
+		expect(wrapper.vm.found).toEqual([])
+		mockGet.mockRejectedValue(new Error('down'))
+		await wrapper.vm.onSearch('pi')
+		expect(wrapper.vm.found).toEqual([])
+		expect(wrapper.vm.searching).toBe(false)
+	})
 })

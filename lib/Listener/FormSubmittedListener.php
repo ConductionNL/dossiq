@@ -43,7 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\FormsIntakeService;
+use OCA\Dossiq\Kernel\Contracts\FormsIntakeServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -68,10 +68,10 @@ class FormSubmittedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param FormsIntakeService $intake Decides whether a submission opens a case.
+	 * @param FormsIntakeServiceInterface $intake Decides whether a submission opens a case.
 	 */
 	public function __construct(
-		private readonly FormsIntakeService $intake,
+		private readonly FormsIntakeServiceInterface $intake,
 	) {
 	}//end __construct()
 

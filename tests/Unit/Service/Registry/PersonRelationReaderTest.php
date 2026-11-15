@@ -39,6 +39,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Registry\PersonRelationReader
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\Registry\IntegriqLeaf
  */
 class PersonRelationReaderTest extends TestCase {
 	/**

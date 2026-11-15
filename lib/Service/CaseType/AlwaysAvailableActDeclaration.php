@@ -27,7 +27,7 @@ use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
 /**
  * Normalises the {@see AlwaysAvailableActs::DECLARATION} list on a case type.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 final class AlwaysAvailableActDeclaration {
 
@@ -41,7 +41,7 @@ final class AlwaysAvailableActDeclaration {
 	 *
 	 * @return array<int, array<string, mixed>> The declared acts.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function actsOn(array $caseType): array {
 		$acts = [];

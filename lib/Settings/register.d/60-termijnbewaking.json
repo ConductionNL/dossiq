@@ -560,11 +560,11 @@
       "noticeOfDefault": {
         "slug": "noticeOfDefault",
         "icon": "EmailAlert",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "searchable": false,
         "x-schema-org": "schema:Message",
         "title": "Notice of default",
-        "description": "Burger notice that the deadline has lapsed (AWB 4:17). Validated against the TermijnInstance to start a DwangsomBerekening.",
+        "description": "Notice from the applicant that a deadline has lapsed. Checked against the deadline before an accruing amount starts.",
         "type": "object",
         "required": [
           "deadlineInstance",
@@ -641,11 +641,11 @@
       "penaltyPaymentCalculation": {
         "slug": "penaltyPaymentCalculation",
         "icon": "Calculator",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "searchable": false,
         "x-schema-org": "schema:MonetaryAmount",
-        "title": "Dwangsom Berekening",
-        "description": "Daily-accruing dwangsom calculation per AWB 4:17. Tracks current day, tariff tier, cumulative amount in EUR cents, plafond enforcement.",
+        "title": "Accruing amount",
+        "description": "Daily-accruing amount after a lapsed deadline. Tracks the current day, the rate band, the cumulative amount in EUR cents and the cap.",
         "type": "object",
         "required": [
           "noticeOfDefault",
@@ -655,7 +655,7 @@
           "noticeOfDefault": {
             "type": "string",
             "title": "Default Notice Reference",
-            "description": "Ingebrekestelling that started the calculation",
+            "description": "Notice of default that started the calculation",
             "facetable": true
           },
           "deadlineInstance": {
@@ -729,7 +729,7 @@
           "rateBands": {
             "type": "array",
             "title": "Rate bands",
-            "description": "Daily rate per band of days in EUR cents, as {upTo, rate}; empty means the Awb 4:17 bands (23, 35, 45 euro).",
+            "description": "Daily rate per band of days in EUR cents, as {upTo, rate}; empty means the statutory bands (23, 35, 45 euro).",
             "items": {
               "type": "object",
               "properties": {
@@ -985,11 +985,11 @@
       "dwangsomUitbetaling": {
         "slug": "dwangsomUitbetaling",
         "icon": "BankTransfer",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "searchable": false,
         "x-schema-org": "schema:PaymentAction",
-        "title": "Dwangsom Uitbetaling",
-        "description": "Payment signal towards the burger after the dwangsom is locked.",
+        "title": "Payout",
+        "description": "Payment towards the applicant once the accruing amount is settled.",
         "type": "object",
         "required": [
           "penaltyPaymentCalculation",

@@ -38,6 +38,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Session\SessionDefinitionReader
  * @covers \OCA\Dossiq\Service\Session\SessionDefinition
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Import\RecordMappingRun
  *
  * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md#requirement-a-complaint-is-a-case-of-the-shipped-complaint-case-type-req-cmp-ct-01
  */

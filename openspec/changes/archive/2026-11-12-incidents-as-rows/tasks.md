@@ -1,0 +1,2 @@
+- [x] 1.1 case-incidents-card as record-list rows (tests/vitest/incidentStatePillTones.spec.js)
+- [x] 1.2 Live check on DqZaakTaken after the next wave (done: case-incidents-card as record-list rows, tests/vitest/incidentStatePillTones.spec.js; closed on code by decision 399, the live check on DqZaakTaken was not run (delta corrected from MODIFIED to ADDED: case-page had no incidents requirement))

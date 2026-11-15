@@ -271,16 +271,16 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 38 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 44 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
 		}
 		// Every action is still there; the simple page orders them as DqZaakMeer lists them.
-		// The simple page adds three acts: Add location (DqZaakLocatie),
-		// Share with another organisation (DqZaakSamenwerken) and Plan a case
-		// meeting (DqSociaalDomein).
-		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids, 'add-location', 'share-with-organisation', 'plan-case-meeting'].sort())
+		// The simple page adds four acts: Add location (DqZaakLocatie),
+		// Share with another organisation (DqZaakSamenwerken), Plan a case
+		// meeting (DqSociaalDomein) and Start enforcement (DqHandhaving).
+		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids, 'add-location', 'start-enforcement', 'share-with-organisation', 'plan-case-meeting'].sort())
 		expect(simple.headerActions.map((action) => action.id).slice(0, overlay.configOrder.headerActions.length)).toEqual(overlay.configOrder.headerActions)
 
 		const placed = simple.headerActions.map((action) => {
@@ -290,10 +290,14 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(38)
+		// 43: Advice from the decision table joined Case (DqHandhaving,
+		// enforcement-intervention-from-the-case 3.2), and so did two acts
+		// of vth-cases-run-end-to-end. 44: Ask a partner joined Case
+		// (capability-rows-said-and-planned T04).
+		expect(placed).toHaveLength(44)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(23)
+		expect(count('Case')).toBe(29)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)
@@ -483,7 +487,7 @@ describe('the tabs', () => {
 		const strip = tabsOf(simple)
 		const fees = strip.tabs.find((tab) => tab.label === 'Fees and payments')
 		expect(fees.overflow).toBe(true)
-		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract'])
+		expect(fees.widgetIds).toEqual(['case-payment-requests', 'case-contract', 'case-notices-of-default'])
 		expect(strip.tabs.find((tab) => tab.label === 'Merge into one PDF').widgetId).toBe('case-merge-to-pdf')
 		const overview = strip.tabs.find((tab) => tab.label === 'Overview').widgetIds
 		expect(overview.indexOf('goal-plan')).toBe(overview.indexOf('case-household-cases-card') + 1)
@@ -568,6 +572,11 @@ describe('the tabs', () => {
 		added.push('case-consents-card')
 		added.push('case-grant-decisions-card')
 		added.push('case-payment-schedule')
+		// overview-cards-per-case-type: the settlement of a grant case, a card of the Overview tab.
+		added.push('case-settlement')
+		added.push('case-overview-sections')
+		// notice-of-default-from-the-case: the case's notices of default, a card of the Fees tab.
+		added.push('case-notices-of-default')
 		expect(others(simple)).toEqual(others(original))
 		expect(find(simple, 'case-banner-stack')).toEqual({ ...find(original, 'case-banner-stack'), title: 'Status', _note: expect.any(String) })
 		// Its attention strip asks the reason behind one button, with the board's hint.
@@ -656,7 +665,7 @@ describe('the tabs', () => {
 		// is in the side column, so its full-profile cell goes too.
 		// The fees, the contract, the family plan and the PDF merge are cards
 		// of tabs, so they keep no cell under the tab card either.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6', 'full-linked', 'money-payments', 'money-contract', 'goal-plan-panel', 'documents-merge-to-pdf']
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'presence-strip', 'case-banners', '12', '11', '7', '6', 'full-linked', 'money-payments', 'money-contract', 'goal-plan-panel', 'documents-merge-to-pdf']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)
@@ -685,7 +694,10 @@ describe('the tabs', () => {
 		const order = [...simple.layout]
 			.sort((a, b) => a.gridY - b.gridY)
 			.map((entry) => entry.id)
-		expect(order.slice(0, 2)).toEqual(['presence-strip', '5'])
+		// Who else is here is the follow row's sentence; a grid item beside it
+		// draws an empty card while somebody else has the case open.
+		expect(order[0]).toBe('5')
+		expect(order).not.toContain('presence-strip')
 		// No two cards share a cell.
 		const cells = new Set()
 		for (const entry of simple.layout) {
@@ -774,6 +786,7 @@ describe('the header and the side column', () => {
 		// and so is the case history card those case types show.
 		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen && card.type !== 'banner' && card.type !== 'audit-trail')
 		expect(gated.map((card) => card.id)).toEqual([
+			'side-enforcement',
 			'side-objection-appeal',
 			'side-payment-amounts',
 			'side-grant-application',

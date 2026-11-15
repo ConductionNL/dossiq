@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use OCA\Dossiq\Tests\Support\SiblingOpenRegister;
+use OCA\OpenRegister\Service\ShippedBaseline\ShippedDefinition;
 use PHPUnit\Framework\TestCase;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -350,14 +351,15 @@ class CaseTeamAccessProjectorTest extends TestCase {
 			}
 
 			/**
-			 * @param string               $subject    The subject reference.
-			 * @param array<string, mixed> $definition The definition.
-			 * @param string               $app        The app.
-			 * @param string               $appVersion The app version.
+			 * @param string            $subject The subject reference.
+			 * @param ShippedDefinition $shipped The definition, the app and its version.
 			 *
 			 * @return bool Whether it was recorded.
 			 */
-			public function record(string $subject, array $definition, string $app, string $appVersion): bool {
+			public function record(string $subject, ShippedDefinition $shipped): bool {
+				$definition = $shipped->definition;
+				$app = $shipped->app;
+				$appVersion = $shipped->appVersion;
 				$this->recorded[] = ['subject' => $subject, 'definition' => $definition, 'app' => $app, 'appVersion' => $appVersion];
 				if ($this->throws === 'record') {
 					throw new \RuntimeException('baseline store unavailable');
@@ -667,14 +669,36 @@ class CaseTeamAccessProjectorTest extends TestCase {
 		$flattener = new $parts();
 		$engine = new $merge(parts: $flattener, comparator: new $comparator(parts: $flattener));
 
-		$aligned = $engine->merge(baseline: $this->baselines->baseline['definition'], live: $live, incoming: $incoming);
+		$aligned = self::mergeWith(engine: $engine, baseline: $this->baselines->baseline['definition'], live: $live, incoming: $incoming);
 		self::assertSame(expected: [], actual: $aligned['conflicts']);
 		self::assertEqualsCanonicalizing(expected: ['admin', 'dossiq-beheerders'], actual: $aligned['merged']['authorization']['delete']);
 
-		$unaligned = $engine->merge(baseline: $asShipped['definition'], live: $live, incoming: $incoming);
+		$unaligned = self::mergeWith(engine: $engine, baseline: $asShipped['definition'], live: $live, incoming: $incoming);
 		self::assertNotSame(expected: [], actual: $unaligned['conflicts']);
 		self::assertEqualsCanonicalizing(expected: ['admin'], actual: $unaligned['merged']['authorization']['delete']);
 	}//end testAShippedChangeAfterARewriteMergesWithoutAConflict()
+
+	/**
+	 * Merge three revisions with whichever API the OpenRegister checkout has.
+	 *
+	 * OpenRegister main takes the three as one DescriptorRevisions; an older
+	 * checkout takes them as three arguments.
+	 *
+	 * @param object               $engine   The GuardedDescriptorMerge.
+	 * @param array<string, mixed> $baseline What the app shipped.
+	 * @param array<string, mixed> $live     What the instance runs.
+	 * @param array<string, mixed> $incoming What the app now ships.
+	 *
+	 * @return array<string, mixed> The merge result.
+	 */
+	private static function mergeWith(object $engine, array $baseline, array $live, array $incoming): array {
+		if (method_exists($engine, 'mergeRevisions') === true) {
+			$revisions = 'OCA\\OpenRegister\\Service\\ShippedBaseline\\DescriptorRevisions';
+			return $engine->mergeRevisions(revisions: new $revisions(baseline: $baseline, live: $live, incoming: $incoming));
+		}
+
+		return $engine->merge(baseline: $baseline, live: $live, incoming: $incoming);
+	}//end mergeWith()
 
 	/**
 	 * Without OpenRegister nothing is written and nothing throws.

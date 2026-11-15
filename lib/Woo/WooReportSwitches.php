@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Settings\RenamedSettingKeys;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -239,13 +239,13 @@ class WooReportSwitches {
 	 * @return string The stored value.
 	 */
 	private function stored(string $key): string {
-		$value = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		$legacy = (self::LEGACY_KEYS[$key] ?? null);
-		if ($value !== '' || $legacy === null || $this->appConfig->hasKey(Application::APP_ID, $key) === true) {
+		if ($value !== '' || $legacy === null || $this->appConfig->hasKey(AppIdentity::APP_ID, $key) === true) {
 			return $value;
 		}
 
-		return $this->appConfig->getValueString(Application::APP_ID, $legacy, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, $legacy, '');
 	}//end stored()
 
 	/**

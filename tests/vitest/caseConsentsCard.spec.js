@@ -27,6 +27,10 @@ describe('the consents card', () => {
 		expect(card.content.pill.cases[0]).toMatchObject({ when: { field: 'withdrawn', value: true }, label: 'Withdrawn' })
 	})
 
+	it('shows a consent past its end date as expired, not valid', () => {
+		expect(card.content.pill.cases[1]).toMatchObject({ when: { field: 'validTo', op: 'lt', value: '@today' }, label: 'Expired' })
+	})
+
 	it('records a consent on this case', () => {
 		expect(card.headerActions[0].action).toMatchObject({ type: 'open-form', schema: 'toestemming', props: { caseId: '@objectId' } })
 	})

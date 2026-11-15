@@ -22,26 +22,35 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\DeelzaakServiceInterface;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
  * Service for parent-child (deelzaak) case relations.
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
-class DeelzaakService {
+class DeelzaakService implements DeelzaakServiceInterface {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -57,6 +66,7 @@ class DeelzaakService {
 		private readonly CaseObjectReader $caseReader,
 		private readonly SubCaseDeriver $deriver,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -102,32 +112,19 @@ class DeelzaakService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
 	 */
 	public function listSubCases(string $parentCaseUuid): array {
 		if ($parentCaseUuid === '') {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		return $this->rows->search(
+			schemaKey: 'case_schema',
 			filters: [
 				'parentCase' => $parentCaseUuid,
 				'_limit' => 200,
-			],
+			]
 		);
 	}//end listSubCases()
 
@@ -141,7 +138,7 @@ class DeelzaakService {
 	 *
 	 * @return array<string, int>
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T03
 	 */
 	public function getSubCaseCounts(array $parentUuids): array {
 		$counts = $this->initialiseCountBuckets(parentUuids: $parentUuids);
@@ -174,6 +171,20 @@ class DeelzaakService {
 			],
 		);
 
+		return $this->tallyByParent(rows: $rows, counts: $counts);
+	}//end getSubCaseCounts()
+
+	/**
+	 * Add each sub-case row to the bucket of its parent.
+	 *
+	 * @param array<int, array<string, mixed>> $rows   The sub-case rows.
+	 * @param array<string, int>               $counts The buckets, keyed by parent UUID.
+	 *
+	 * @return array<string, int>
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T03
+	 */
+	private function tallyByParent(array $rows, array $counts): array {
 		foreach ($rows as $row) {
 			$parent = (string)($row['parentCase'] ?? '');
 			if ($parent !== '' && isset($counts[$parent]) === true) {
@@ -182,7 +193,7 @@ class DeelzaakService {
 		}
 
 		return $counts;
-	}//end getSubCaseCounts()
+	}//end tallyByParent()
 
 	/**
 	 * Seed a zero count for every usable parent UUID, dropping non-string and empty entries.
@@ -217,7 +228,7 @@ class DeelzaakService {
 	 *
 	 * @return array<string, mixed>|null The parent case, or null.
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T02
 	 */
 	public function getParentCase(string $childCaseUuid): ?array {
 		if ($childCaseUuid === '') {
@@ -254,7 +265,7 @@ class DeelzaakService {
 	 *
 	 * @return array{ok: bool, reason?: string}
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
 	 */
 	public function validateCreate(string $parentCaseUuid, string $childCaseTypeId): array {
 		// `validateCreate` receives the PARENT's own UUID (the proposed
@@ -265,31 +276,60 @@ class DeelzaakService {
 			return ['ok' => false, 'reason' => 'parent_not_found'];
 		}
 
-		if (empty($parent['parentCase']) === false) {
-			return ['ok' => false, 'reason' => 'grandparenting_forbidden'];
-		}
-
-		if (empty($parent['endDate']) === false) {
-			return ['ok' => false, 'reason' => 'parent_closed'];
-		}
-
-		$parentCaseTypeId = (string)($parent['caseType'] ?? '');
-		if ($parentCaseTypeId === '') {
-			return ['ok' => false, 'reason' => 'parent_missing_case_type'];
-		}
-
-		$parentCaseType = $this->caseReader->loadCaseType(caseTypeId: $parentCaseTypeId);
-		if ($parentCaseType === null) {
-			return ['ok' => false, 'reason' => 'parent_case_type_not_found'];
-		}
-
-		$allowed = (array)($parentCaseType['subCaseTypes'] ?? []);
-		if ($allowed === [] || in_array($childCaseTypeId, $allowed, true) === false) {
-			return ['ok' => false, 'reason' => 'case_type_not_allowed'];
+		$reason = $this->parentRefusal(parent: $parent, childCaseTypeId: $childCaseTypeId);
+		if ($reason !== '') {
+			return ['ok' => false, 'reason' => $reason];
 		}
 
 		return ['ok' => true];
 	}//end validateCreate()
+
+	/**
+	 * Why the parent cannot take this sub-case, '' when it can.
+	 *
+	 * @param array<string, mixed> $parent          The parent case.
+	 * @param string               $childCaseTypeId Child caseType id/slug.
+	 *
+	 * @return string The reason, or ''.
+	 */
+	private function parentRefusal(array $parent, string $childCaseTypeId): string {
+		if (empty($parent['parentCase']) === false) {
+			return 'grandparenting_forbidden';
+		}
+
+		if (empty($parent['endDate']) === false) {
+			return 'parent_closed';
+		}
+
+		$parentCaseTypeId = (string)($parent['caseType'] ?? '');
+		if ($parentCaseTypeId === '') {
+			return 'parent_missing_case_type';
+		}
+
+		return $this->subCaseTypeRefusal(parentCaseTypeId: $parentCaseTypeId, childCaseTypeId: $childCaseTypeId);
+	}//end parentRefusal()
+
+	/**
+	 * Why the parent's case type does not allow the child case type, '' when it does.
+	 *
+	 * @param string $parentCaseTypeId The parent's caseType id.
+	 * @param string $childCaseTypeId  Child caseType id/slug.
+	 *
+	 * @return string The reason, or ''.
+	 */
+	private function subCaseTypeRefusal(string $parentCaseTypeId, string $childCaseTypeId): string {
+		$parentCaseType = $this->caseReader->loadCaseType(caseTypeId: $parentCaseTypeId);
+		if ($parentCaseType === null) {
+			return 'parent_case_type_not_found';
+		}
+
+		$allowed = (array)($parentCaseType['subCaseTypes'] ?? []);
+		if ($allowed === [] || in_array($childCaseTypeId, $allowed, true) === false) {
+			return 'case_type_not_allowed';
+		}
+
+		return '';
+	}//end subCaseTypeRefusal()
 
 	/**
 	 * Unlink every sub-case of the given parent — used by the delete-with-children
@@ -329,12 +369,7 @@ class DeelzaakService {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function unlinkSubCases(string $parentCaseUuid): array {
-		$empty = [
-			'unlinked' => 0,
-			'failed' => 0,
-			'total' => 0,
-			'complete' => true,
-		];
+		$empty = ['unlinked' => 0, 'failed' => 0, 'total' => 0, 'complete' => true];
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -347,6 +382,23 @@ class DeelzaakService {
 			return $empty;
 		}
 
+		$progress = $this->unlinkAllPages(
+			target: new SubCaseUnlinkTarget(parentCaseUuid: $parentCaseUuid, objectService: $objectService, register: $register, schema: $schema)
+		);
+
+		return $this->unlinkResult(parentCaseUuid: $parentCaseUuid, progress: $progress);
+	}//end unlinkSubCases()
+
+	/**
+	 * Detach every sub-case of a parent, page by page, until a page brings nothing new.
+	 *
+	 * @param SubCaseUnlinkTarget $target The parent and where its sub-cases are stored.
+	 *
+	 * @return array{unlinked: int, failed: int, total: int} What was detached, what failed, and how many were seen.
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	private function unlinkAllPages(SubCaseUnlinkTarget $target): array {
 		$unlinked = 0;
 		$failed = 0;
 
@@ -359,19 +411,12 @@ class DeelzaakService {
 		// termination condition.
 		$seen = [];
 		while (true) {
-			$page = $this->listSubCases(parentCaseUuid: $parentCaseUuid);
+			$page = $this->listSubCases(parentCaseUuid: $target->parentCaseUuid);
 			if ($page === []) {
 				break;
 			}
 
-			$outcome = $this->unlinkPage(
-				page: $page,
-				parentCaseUuid: $parentCaseUuid,
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				seen: $seen
-			);
+			$outcome = $this->unlinkPage(page: $page, target: $target, seen: $seen);
 
 			$unlinked += $outcome['unlinked'];
 			$failed += $outcome['failed'];
@@ -381,8 +426,23 @@ class DeelzaakService {
 			}
 		}//end while
 
-		$total = count($seen);
+		return ['unlinked' => $unlinked, 'failed' => $failed, 'total' => count($seen)];
+	}//end unlinkAllPages()
 
+	/**
+	 * The unlink result, logged as an error when any sub-case stayed linked.
+	 *
+	 * @param string                                         $parentCaseUuid Parent UUID.
+	 * @param array{unlinked: int, failed: int, total: int} $progress       Sub-cases detached, failed and seen.
+	 *
+	 * @return array{unlinked: int, failed: int, total: int, complete: bool} The result.
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	private function unlinkResult(string $parentCaseUuid, array $progress): array {
+		$unlinked = $progress['unlinked'];
+		$failed = $progress['failed'];
+		$total = $progress['total'];
 		if ($failed > 0) {
 			$this->logger->error(
 				'Sub-case unlink did not complete; the parent must not be deleted',
@@ -396,30 +456,20 @@ class DeelzaakService {
 			'total' => $total,
 			'complete' => ($failed === 0),
 		];
-	}//end unlinkSubCases()
+	}//end unlinkResult()
 
 	/**
 	 * Detach one page of sub-cases, skipping any already attempted.
 	 *
-	 * @param array<int, array<string, mixed>> $page The page of rows.
-	 * @param string $parentCaseUuid Parent UUID, for logging.
-	 * @param object $objectService The OR object service.
-	 * @param string $register Register id.
-	 * @param string $schema Case schema id.
-	 * @param array<string, bool> $seen Ids already attempted, updated in place.
+	 * @param array<int, array<string, mixed>> $page   The page of rows.
+	 * @param SubCaseUnlinkTarget              $target The parent, for logging, and where its sub-cases are stored.
+	 * @param array<string, bool>              $seen   Ids already attempted, updated in place.
 	 *
 	 * @return array{unlinked: int, failed: int, sawSomethingNew: bool} The page outcome.
 	 *
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
-	private function unlinkPage(
-		array $page,
-		string $parentCaseUuid,
-		object $objectService,
-		string $register,
-		string $schema,
-		array &$seen,
-	): array {
+	private function unlinkPage(array $page, SubCaseUnlinkTarget $target, array &$seen): array {
 		$unlinked = 0;
 		$failed = 0;
 		$sawSomethingNew = false;
@@ -436,17 +486,17 @@ class DeelzaakService {
 			try {
 				$payload = $subCase;
 				$payload['parentCase'] = null;
-				$objectService->saveObject(
+				$target->objectService->saveObject(
 					object: $payload,
-					register: $register,
-					schema: $schema,
+					register: $target->register,
+					schema: $target->schema,
 				);
 				$unlinked++;
 			} catch (\Throwable $e) {
 				$failed++;
 				$this->logger->warning(
 					'Failed to unlink sub-case',
-					['parent' => $parentCaseUuid, 'sub' => $id, 'error' => $e->getMessage()]
+					['parent' => $target->parentCaseUuid, 'sub' => $id, 'error' => $e->getMessage()]
 				);
 			}
 		}//end foreach

@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.93"
+        "version": "0.20.97"
     },
     "x-openregister": {
         "type": "application",
@@ -694,7 +694,7 @@
                     },
                     "iv3TaskField": {
                         "type": "string",
-                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
+                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type (e.g. \"8.1\" Ruimtelijke ordening, or a 2023 refinement code such as \"6.71a\", stored as given). The code list is Shillinq's BbvTaakveld catalogue; without Shillinq the code is typed. Dossiq reports nothing from this field: costs per taakveld are Shillinq's Iv3 report.",
                         "title": "IV3 Task Field"
                     },
                     "obligationKinds": {
@@ -1866,7 +1866,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.53.0",
+                "version": "1.54.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -3502,6 +3502,20 @@
                         "title": "Team",
                         "facetable": true,
                         "order": 6
+                    },
+                    "routingNote": {
+                        "type": "object",
+                        "description": "The facts of the case's last routing event: a refused handover, or an intake fan-out that opened siblings or missed a destination. Facts and no sentence, so each reader gets it in their own language. Cleared when someone picks the case up.",
+                        "title": "Routing note",
+                        "properties": {
+                            "kind": { "type": "string", "enum": ["handover-refused", "intake-split"], "title": "Kind", "description": "What happened: a refused handover, or an intake that opened more than one case." },
+                            "level": { "type": "string", "enum": ["error", "info"], "title": "Level", "description": "How the note reads in a list: an error needs action, info only says what happened." },
+                            "team": { "type": "string", "title": "Team", "description": "The team the handover was addressed to." },
+                            "reason": { "type": "string", "title": "Reason", "description": "Why the receiving team refused the handover." },
+                            "submission": { "type": "string", "title": "Submission", "description": "The submission that opened the cases of an intake." },
+                            "siblings": { "type": "array", "items": { "type": "string" }, "title": "Sibling cases", "description": "The other cases the same submission opened." },
+                            "failed": { "type": "array", "items": { "type": "object" }, "title": "Missed destinations", "description": "The destinations of the submission that did not get a case." }
+                        }
                     },
                     "handoverPending": {
                         "type": "boolean",
@@ -7405,15 +7419,14 @@
             "wmsLayer": {
                 "slug": "wmsLayer",
                 "icon": "LayersOutline",
-                "version": "1.0.0",
-                "title": "WMS/WFS Layer",
-                "description": "Tenant-configurable OGC WMS/WFS overlay layer for case maps. A case type subscribes to it through caseType.layerIds. All outbound traffic runs through the GIS proxy.",
+                "version": "1.1.0",
+                "title": "Map Layer",
+                "description": "Tenant-configurable overlay layer for case maps: an OGC WMS or WFS service, or an ArcGIS map service drawn from its cached tiles. A case type subscribes to it through caseType.layerIds. All outbound traffic runs through the GIS proxy.",
                 "type": "object",
                 "required": [
                     "title",
                     "type",
-                    "url",
-                    "layerName"
+                    "url"
                 ],
                 "properties": {
                     "title": {
@@ -7426,9 +7439,10 @@
                         "type": "string",
                         "enum": [
                             "WMS",
-                            "WFS"
+                            "WFS",
+                            "ArcGIS"
                         ],
-                        "description": "OGC service type (WMS for raster overlays, WFS for vector features)",
+                        "description": "Service type: WMS for raster overlays, WFS for vector features, ArcGIS for an ArcGIS MapServer drawn from its cached tiles ({url}/tile/{z}/{y}/{x})",
                         "title": "Type"
                     },
                     "url": {
@@ -7439,7 +7453,7 @@
                     },
                     "layerName": {
                         "type": "string",
-                        "description": "WMS LAYERS parameter or WFS typeName",
+                        "description": "WMS LAYERS parameter or WFS typeName; required for WMS and WFS, unused for ArcGIS",
                         "title": "Layer Name"
                     },
                     "srs": {
@@ -9987,7 +10001,7 @@
             "casetransfer": {
                 "slug": "casetransfer",
                 "icon": "SwapHorizontal",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Case transfer",
                 "description": "Hand-off of a case, to another organisation or to another team inside this one (initiate / accept / reject). One record shape answers where a case has been.",
@@ -10172,6 +10186,39 @@
                         },
                         "description": "Append-only custody-change audit trail",
                         "title": "Custody Audit Trail"
+                    },
+                    "senderActivity": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "act": {
+                                    "type": "string",
+                                    "enum": [
+                                        "document added",
+                                        "contact moment added",
+                                        "note added",
+                                        "task completed",
+                                        "status changed"
+                                    ],
+                                    "description": "What the receiver did on the case",
+                                    "title": "Act"
+                                },
+                                "actor": {
+                                    "type": "string",
+                                    "description": "Who did it: the user id, or empty for the system",
+                                    "title": "Actor"
+                                },
+                                "recordedAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the act was recorded",
+                                    "title": "Recorded at"
+                                }
+                            }
+                        },
+                        "description": "Each act recorded on the case after the transfer was accepted, so the sending organisation follows the case it handed over. Append-only; set on an accepted organisation transfer only.",
+                        "title": "Sender Activity"
                     }
                 }
             },
@@ -12923,6 +12970,79 @@
                     "slug": "klacht-behandeling"
                 },
                 "title": "Klacht behandeling",
+                "overviewCards": ["case-overview-sections"],
+                "overviewSections": [
+                  {
+                    "id": "gegevens",
+                    "title": "Gegevens",
+                    "columns": 2,
+                    "rows": [
+                      {
+                        "label": "Klager",
+                        "field": "klager"
+                      },
+                      {
+                        "label": "Ontvangen",
+                        "field": "receivedAt"
+                      },
+                      {
+                        "label": "Onderwerp",
+                        "field": "klachtOnderwerp"
+                      },
+                      {
+                        "label": "Afdeling",
+                        "field": "afdeling"
+                      },
+                      {
+                        "label": "Gaat over",
+                        "field": "gaatOver"
+                      },
+                      {
+                        "label": "Categorie",
+                        "field": "klachtCategorie"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "hoorgesprek",
+                    "title": "Hoorgesprek",
+                    "columns": 2,
+                    "pillField": "hoorgesprekStatus",
+                    "rows": [
+                      {
+                        "label": "Wanneer",
+                        "field": "hoorgesprekWanneer"
+                      },
+                      {
+                        "label": "Soort",
+                        "field": "hoorgesprekSoort"
+                      },
+                      {
+                        "label": "Waar",
+                        "field": "hoorgesprekWaar"
+                      },
+                      {
+                        "label": "Aanwezig",
+                        "field": "hoorgesprekAanwezig"
+                      },
+                      {
+                        "label": "Verslag",
+                        "field": "hoorgesprekVerslag"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "oordeel",
+                    "title": "Oordeel",
+                    "intro": "Na het hoorgesprek kies je een oordeel. Het gaat eerst ter goedkeuring naar de klachtencoördinator, de termijn loopt intussen door. Daarna maak je de antwoordbrief voor de klager.",
+                    "rows": [
+                      {
+                        "label": "Oordeel",
+                        "field": "oordeel"
+                      }
+                    ]
+                  }
+                ],
                 "colour": "orange",
                 "icon": "MessageAlertOutline",
                 "category": "Klachten en meldingen",
@@ -13132,6 +13252,9 @@
                         },
                         "term": {
                             "endDate": "afhandelDeadline"
+                        },
+                        "stamp": {
+                            "caseId": "escalatedCase"
                         },
                         "runOnUpgrade": true
                     }

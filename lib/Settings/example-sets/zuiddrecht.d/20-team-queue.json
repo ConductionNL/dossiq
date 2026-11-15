@@ -77,6 +77,13 @@
 				"statusHistory"
 			],
 			"data": {
+				"routingNote": {
+					"kind": "intake-split",
+					"level": "info",
+					"submission": "webinzending 2026-311",
+					"siblings": ["2026-4873 bij Financiën"],
+					"failed": [{ "destination": "Belastingen", "reason": "zaaktype onbekend" }]
+				},
 				"title": "Kosten nieuw zwembad",
 				"description": "De heer De Wit vraagt de ramingen, offertes en raadsstukken over de kosten van het nieuwe zwembad.",
 				"caseType": "{{lookup:caseType}}",

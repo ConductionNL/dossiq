@@ -1,0 +1,20 @@
+{
+    "an unrelated event, signed in": [],
+    "a created object, nobody signed in": [],
+    "a created object, first time": [
+        "get dossiq_kpis_alice_ver",
+        "set dossiq_kpis_alice_ver = 2"
+    ],
+    "an updated object": [
+        "get dossiq_kpis_alice_ver",
+        "set dossiq_kpis_alice_ver = 4"
+    ],
+    "a deleted object, version stored as text": [
+        "get dossiq_kpis_alice_ver",
+        "set dossiq_kpis_alice_ver = 8"
+    ],
+    "the cache fails": [
+        "get dossiq_kpis_alice_ver",
+        "debug: [KpiCacheInvalidationListener] Failed to increment version key {\"key\":\"dossiq_kpis_alice_ver\",\"error\":\"cache down\"}"
+    ]
+}

@@ -2059,13 +2059,14 @@ values, 8px 16px apart, without an inset of its own inside the card.
 
 ### Requirement: Status and result names are strong text, a status with its colour dot
 
-The Statussen and Resultaten tables SHALL draw their names as strong text without an underline, the Statussen names
-with a dot in the status colour, and the archival action in sentence case.
+The Statussen and Resultaten tables SHALL draw their names as links without an underline (14px, the link colour), the
+Statussen names with a dot in the status colour, and the archival action in sentence case.
 
 #### Scenario: DqZaaktypeStatussen
 
 - **WHEN** an administrator opens the Statussen tab
-- **THEN** "Ontvangen" has a blue dot and no underline, and a result's archival action reads "Vernietigen"
+- **THEN** "Ontvangen" has a blue dot and reads in the link colour without an underline, and a result's archival
+  action reads "Vernietigen"
 
 ### Requirement: The Rules tab is headed and adds a rule from the start
 
@@ -2206,6 +2207,34 @@ The app SHALL answer `GET /api/packages` with every shipped package, its version
 - **GIVEN** a package id that is not shipped
 - **WHEN** an administrator posts to `/api/packages/{id}/install`
 - **THEN** the response SHALL be 422 with the installer's message
+
+### Requirement: A case type's side history shows what people changed
+
+The side History card of a case type SHALL leave out the entries System wrote (refreshes, upgrades, example-set upkeep). The case type's All history tab SHALL keep every entry.
+
+#### Scenario: DqZaaktype after a window refresh
+- GIVEN Lars de Koning published version 4 and changed the variants, and the daily refresh saved the case type as System since
+- WHEN the case type opens on Fasen en taken
+- THEN its History card lists "Versie 4 gepubliceerd" and "Varianten gewijzigd" by Lars de Koning, and no System edit
+
+### Requirement: An adopted case type gets the fields it lacks and keeps the ones it has (REQ-CT-ADOPT-01)
+
+When a package adopts a case type the instance already holds, the installer SHALL add each case-type field the package ships that the stored row does not have (no such key, or null), with references pointed at this instance's ids. It SHALL NOT change a field the stored row has, an empty one included. The fields SHALL be written only after the install is recorded, so a failed install leaves the adopted row as it was. Other adopted rows (statuses, roles, results, flows) SHALL stay as they are.
+
+#### Scenario: A seeded case type gets the record import the package adds
+
+- **GIVEN** an instance holding the case type `wmo-melding` without `recordImports`, written by the register seed
+- **WHEN** the Wmo-melding package is installed or upgraded
+- **THEN** the stored case type SHALL carry the package's `recordImports`
+- **AND** its title and every other field it already had SHALL be unchanged
+- @e2e exclude installer behaviour, asserted in PHPUnit
+
+#### Scenario: A field the administrator emptied stays empty
+
+- **GIVEN** an adopted case type whose `description` is an empty string
+- **WHEN** a package that ships a description is installed
+- **THEN** the description SHALL stay empty
+- @e2e exclude installer behaviour, asserted in PHPUnit
 
 ## UI References
 

@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Woo\WooCaseLedger;
 use Psr\Log\LoggerInterface;
@@ -73,7 +73,7 @@ class CatalogTransport {
 	 *
 	 * @return array{publicationId: string, setId: string}|array{reason: string} The publication and set, or why not.
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function deliver(string $caseId, string $decisionId, array $items, array $payload, array $disclosable, string $existingId): array {
 		try {
@@ -81,28 +81,42 @@ class CatalogTransport {
 				caseId: $caseId,
 				decisionId: $decisionId,
 				items: $items,
-				send: fn (): string => $this->sendPublicationToOpenCatalogi(payload: $payload, disclosable: $disclosable, existingId: $existingId),
+				send: fn (): string => $this->sendPublicationToOpenCatalogi(
+					publication: ['payload' => $payload, 'disclosable' => $disclosable, 'existingId' => $existingId]
+				),
 			);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'WooPublicationService::publish failed',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
+			return $this->notDelivered(
+				error: $e,
+				context: ['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()]
 			);
-			$reason = 'opencatalogi_api_error';
-			if ($e->getMessage() === WooCaseLedger::SET_NOT_WRITTEN) {
-				$reason = 'delivered_set_not_written';
-			}
-
-			return ['reason' => $reason];
 		}
 
 		$this->logger->info(
 			'WOO decision published to OpenCatalogi: ' . $delivered['publicationId'] . ' for case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return $delivered;
 	}//end deliver()
+
+	/**
+	 * Log a failed delivery and say why it failed.
+	 *
+	 * @param Throwable            $error   What the delivery threw.
+	 * @param array<string, mixed> $context The log context.
+	 *
+	 * @return array{reason: string} Why the publication was not delivered.
+	 */
+	private function notDelivered(Throwable $error, array $context): array {
+		$this->logger->error('WooPublicationService::publish failed', $context);
+		$reason = 'opencatalogi_api_error';
+		if ($error->getMessage() === WooCaseLedger::SET_NOT_WRITTEN) {
+			$reason = 'delivered_set_not_written';
+		}
+
+		return ['reason' => $reason];
+	}//end notDelivered()
 
 	/**
 	 * End public read access to a publication.
@@ -126,14 +140,14 @@ class CatalogTransport {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'WooPublicationService::withdraw failed',
-				['app' => Application::APP_ID, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
 			return 'opencatalogi_api_error';
 		}
 
 		$this->logger->info(
 			'WOO publication withdrawn: ' . $publicationId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return '';
@@ -143,15 +157,15 @@ class CatalogTransport {
 	 * Create-or-update the publication in OpenCatalogi and attach every
 	 * disclosable document to it.
 	 *
-	 * @param array<string, mixed> $payload The publication payload.
-	 * @param array<int, array<string, mixed>> $disclosable The disclosable documents.
-	 * @param string $existingId A prior publication id, or '' to create new.
+	 * @param array<string, mixed> $publication The publication `payload`, the `disclosable` documents and a prior
+	 *                                          publication id as `existingId` ('' to create new).
 	 *
 	 * @return string The publication id.
 	 *
 	 * @throws Throwable Propagated from the API client on any transport failure.
 	 */
-	private function sendPublicationToOpenCatalogi(array $payload, array $disclosable, string $existingId): string {
+	private function sendPublicationToOpenCatalogi(array $publication): string {
+		['payload' => $payload, 'disclosable' => $disclosable, 'existingId' => $existingId] = $publication;
 		$ocRegister = $this->settingsService->getWooPublicationConfigValue('woo_publication_register');
 		$ocSchema = $this->settingsService->getWooPublicationConfigValue('woo_publication_schema');
 
@@ -168,13 +182,9 @@ class CatalogTransport {
 
 		// Documents are files on the publication itself (attachments-are-files):
 		// opencatalogi's register has no `document` schema to create rows in.
+		$target = ['register' => $ocRegister, 'schema' => $ocSchema, 'id' => $publicationId];
 		foreach ($disclosable as $document) {
-			$this->attachDisclosableFile(
-				ocRegister: $ocRegister,
-				ocSchema: $ocSchema,
-				publicationId: $publicationId,
-				document: $document,
-			);
+			$this->attachDisclosableFile(target: $target, document: $document);
 		}
 
 		return $publicationId;
@@ -185,16 +195,15 @@ class CatalogTransport {
 	 *
 	 * A document without content has nothing to attach and is skipped.
 	 *
-	 * @param string $ocRegister The OpenCatalogi register slug.
-	 * @param string $ocSchema The OpenCatalogi publication schema slug.
-	 * @param string $publicationId The publication the file is attached to.
-	 * @param array<string, mixed> $document The disclosable document (dossiq shape).
+	 * @param array{register: string, schema: string, id: string} $target   The OpenCatalogi register and publication schema
+	 *                                                                   slugs, and the publication the file is attached to.
+	 * @param array<string, mixed>                                $document The disclosable document (dossiq shape).
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
-	private function attachDisclosableFile(string $ocRegister, string $ocSchema, string $publicationId, array $document): void {
+	private function attachDisclosableFile(array $target, array $document): void {
 		$content = ($document['content'] ?? null);
 		if (empty($content) === true) {
 			return;
@@ -202,9 +211,9 @@ class CatalogTransport {
 
 		$title = (string)($document['title'] ?? $document['fileName'] ?? 'document');
 		$this->apiClient->attachFile(
-			register: $ocRegister,
-			schema: $ocSchema,
-			objectId: $publicationId,
+			register: $target['register'],
+			schema: $target['schema'],
+			objectId: $target['id'],
 			fileName: (string)($document['fileName'] ?? $title),
 			base64Content: (string)$content,
 			mimeType: (string)($document['format'] ?? 'application/octet-stream'),

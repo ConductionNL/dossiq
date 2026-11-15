@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * The read guard runs before anything about the case is read.
  *
  * @covers \OCA\Dossiq\Controller\CaseCompletenessController
+ * @uses \OCA\Dossiq\Service\Intake\CaseCompleteness
  */
 class CaseCompletenessControllerTest extends TestCase {
 

@@ -123,30 +123,67 @@ class ZgwRuleLookups {
 			return null;
 		}
 
+		return $this->firstIdBy(where: ['register' => $register, 'schema' => $schema], match: [$field => $value]);
+	}//end findObjectByField()
+
+	/**
+	 * The id of the first object carrying one field value. A search that fails throws.
+	 *
+	 * @param array{register: string, schema: string} $where The OpenRegister register and schema IDs.
+	 * @param array<string, string>                   $match The one field to search by and its value.
+	 *
+	 * @return string|null The object UUID, or null when none carries it.
+	 *
+	 * @throws LookupNotCompleted When the search fails.
+	 */
+	private function firstIdBy(array $where, array $match): ?string {
+		$field = (string)array_key_first($match);
+		$value = $match[$field];
 		try {
 			$query = $this->objectService->buildSearchQuery(
 				requestParams: [$field => $value, '_limit' => 1],
-				register: $register,
-				schema: $schema
+				register: $where['register'],
+				schema: $where['schema']
 			);
 			$result = $this->objectService->searchObjectsPaginated(query: $query);
 
-			$results = $result['results'] ?? [];
-			if (empty($results) === true) {
-				return null;
-			}
-
-			$obj = $results[0];
-			$data = $obj;
-			if (is_array($obj) === false) {
-				$data = $obj->jsonSerialize();
-			}
-
-			return $data['id'] ?? ($data['@self']['id'] ?? null);
+			return $this->firstHitId(results: ($result['results'] ?? []));
 		} catch (\Throwable $e) {
 			throw new LookupNotCompleted(lookup: "reference {$field} \"{$value}\"", cause: $e);
 		}//end try
-	}//end findObjectByField()
+	}//end firstIdBy()
+
+	/**
+	 * The UUID of the first hit of a search, or null when there is none.
+	 *
+	 * @param mixed $results The hits, arrays or entities.
+	 *
+	 * @return string|null
+	 */
+	private function firstHitId(mixed $results): ?string {
+		if (empty($results) === true) {
+			return null;
+		}
+
+		$data = $this->rowData(row: $results[0]);
+
+		return $data['id'] ?? ($data['@self']['id'] ?? null);
+	}//end firstHitId()
+
+	/**
+	 * One hit as an array: the array itself, or what the entity serialises to.
+	 *
+	 * @param mixed $row The hit.
+	 *
+	 * @return mixed The row, an array for every hit OpenRegister answers.
+	 */
+	private function rowData(mixed $row): mixed {
+		if (is_array($row) === true) {
+			return $row;
+		}
+
+		return $row->jsonSerialize();
+	}//end rowData()
 
 	/**
 	 * Find all objects matching a field value.
@@ -208,15 +245,22 @@ class ZgwRuleLookups {
 			throw new RuntimeException('No object service in the request context');
 		}
 
-		$query = $this->objectService->buildSearchQuery(
-			requestParams: [$field => $value, '_limit' => 100],
-			register: $register,
-			schema: $schema
-		);
+		$query = $this->objectService->buildSearchQuery(requestParams: [$field => $value, '_limit' => 100], register: $register, schema: $schema);
 		$result = $this->objectService->searchObjectsPaginated(query: $query);
 
+		return $this->idsOf(rows: ($result['results'] ?? []));
+	}//end idsByField()
+
+	/**
+	 * The ids of the rows, as arrays or serialisable objects.
+	 *
+	 * @param iterable<mixed> $rows The search results.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function idsOf(iterable $rows): array {
 		$ids = [];
-		foreach (($result['results'] ?? []) as $obj) {
+		foreach ($rows as $obj) {
 			$data = $obj;
 			if (is_array($obj) === false) {
 				$data = $obj->jsonSerialize();
@@ -229,7 +273,7 @@ class ZgwRuleLookups {
 		}
 
 		return $ids;
-	}//end idsByField()
+	}//end idsOf()
 
 	/**
 	 * Look up an object in OpenRegister by UUID and schema key.
@@ -275,12 +319,25 @@ class ZgwRuleLookups {
 			throw new LookupNotCompleted(lookup: "{$schemaKey} object {$uuid}", cause: $e);
 		}//end try
 
+		return $this->asArray(obj: $obj);
+	}//end findBySchemaKey()
+
+	/**
+	 * A found object as an array.
+	 *
+	 * @param mixed $obj The object as the store answered it.
+	 *
+	 * @return array|null The object data, or null when there is none
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function asArray(mixed $obj): ?array {
 		if ($obj === null || is_array($obj) === true) {
 			return $obj;
 		}
 
 		return $obj->jsonSerialize();
-	}//end findBySchemaKey()
+	}//end asArray()
 
 	/**
 	 * Whether a read failed because the caller may not see the object.
@@ -326,12 +383,29 @@ class ZgwRuleLookups {
 			return false;
 		}
 
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->mappingConfig['sourceSchema'] ?? '';
-		if (empty($register) === true || empty($schema) === true) {
+		$scope = $this->mappedScope();
+		if ($scope === []) {
 			return false;
 		}
 
+		return $this->pairMatches(
+			scope: $scope,
+			pair: ['field1Search' => $field1Search, 'field1Value' => $field1Value, 'field2Search' => $field2Search, 'field2Value' => $field2Value]
+		);
+	}//end fieldPairExists()
+
+	/**
+	 * Whether a hit on the first field also carries the second field's value.
+	 *
+	 * @param array{register: int|string, schema: int|string} $scope The mapped register and schema.
+	 * @param array{field1Search: string, field1Value: string, field2Search: string, field2Value: string} $pair The
+	 *        two OpenRegister fields and the values searched for.
+	 *
+	 * @return bool True if a combination exists
+	 *
+	 * @throws LookupNotCompleted When the search fails.
+	 */
+	private function pairMatches(array $scope, array $pair): bool {
 		try {
 			// Build query directly to avoid buildSearchQuery's underscore-splitting
 			// which breaks camelCase field names like sourceOrganisation.
@@ -340,10 +414,10 @@ class ZgwRuleLookups {
 			// exact-match search for field2 (sourceOrganisation).
 			$query = [
 				'@self' => [
-					'register' => (int)$register,
-					'schema' => (int)$schema,
+					'register' => (int)$scope['register'],
+					'schema' => (int)$scope['schema'],
 				],
-				$field1Search => $field1Value,
+				$pair['field1Search'] => $pair['field1Value'],
 			];
 
 			$result = $this->objectService->searchObjectsPaginated(
@@ -358,18 +432,16 @@ class ZgwRuleLookups {
 			// as integer 0, which the magic mapper may serialize to empty string.
 			// When the stored value is empty but field2 was provided, we still
 			// count it as a match (conservative: assume coercion happened).
-			$matchCount = 0;
-			foreach (($result['results'] ?? []) as $obj) {
-				if ($this->storedValueMatches(row: $obj, field: $field2Search, value: $field2Value) === true) {
-					$matchCount++;
-				}
-			}
+			$matches = array_filter(
+				($result['results'] ?? []),
+				fn (mixed $obj): bool => $this->storedValueMatches(row: $obj, wanted: [$pair['field2Search'] => $pair['field2Value']])
+			);
 
-			return ($matchCount > 0);
+			return (count($matches) > 0);
 		} catch (\Throwable $e) {
-			throw new LookupNotCompleted(lookup: "uniqueness of {$field1Search} \"{$field1Value}\"", cause: $e);
+			throw new LookupNotCompleted(lookup: "uniqueness of {$pair['field1Search']} \"{$pair['field1Value']}\"", cause: $e);
 		}//end try
-	}//end fieldPairExists()
+	}//end pairMatches()
 
 	/**
 	 * Whether one hit carries the same second-field value (uniqueness check).
@@ -380,22 +452,45 @@ class ZgwRuleLookups {
 	 * coercion happened), and no second value matches every hit.
 	 *
 	 * @param mixed $row The hit, an array or an entity.
-	 * @param string $field The OpenRegister field of the second value.
-	 * @param string $value The second value.
+	 * @param array<string, string> $wanted The OpenRegister field of the second value, and the second value.
 	 *
 	 * @return bool
 	 */
-	private function storedValueMatches(mixed $row, string $field, string $value): bool {
-		$data = $row;
-		if (is_array($row) === false) {
-			$data = $row->jsonSerialize();
-		}
-
-		$storedStr = (string)($data[$field] ?? null);
+	private function storedValueMatches(mixed $row, array $wanted): bool {
+		$field = (string)array_key_first($wanted);
+		$value = $wanted[$field];
+		$storedStr = (string)($this->rowData(row: $row)[$field] ?? null);
 
 		return ($value === '')
 			|| ($storedStr === $value)
-			|| ($storedStr === '')
-			|| ($storedStr === '0' && preg_match('/^0+$/', $value) === 1);
+			|| $this->looksCoerced(stored: $storedStr, value: $value);
 	}//end storedValueMatches()
+
+	/**
+	 * Whether a stored value looks like OpenRegister's coercion of the given one: empty, or "0" for a run of zeros.
+	 *
+	 * @param string $stored The stored value as text.
+	 * @param string $value  The value looked for.
+	 *
+	 * @return bool
+	 */
+	private function looksCoerced(string $stored, string $value): bool {
+		return ($stored === '')
+			|| ($stored === '0' && preg_match('/^0+$/', $value) === 1);
+	}//end looksCoerced()
+
+	/**
+	 * The register and schema of the mapping, empty when either is missing.
+	 *
+	 * @return array{register: mixed, schema: mixed}|array{}
+	 */
+	private function mappedScope(): array {
+		$register = $this->mappingConfig['sourceRegister'] ?? '';
+		$schema = $this->mappingConfig['sourceSchema'] ?? '';
+		if (empty($register) === true || empty($schema) === true) {
+			return [];
+		}
+
+		return ['register' => $register, 'schema' => $schema];
+	}//end mappedScope()
 }//end class

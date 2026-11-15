@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCA\Dossiq\Service\Term\TermLetter;
 /**
  * The wording of every term notification.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 class TermLetters {
 
@@ -59,7 +59,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string, locale:string}
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
 	 */
 	public function render(string $type, array $instance, array $context): array {
@@ -70,13 +70,7 @@ class TermLetters {
 		// The caller's `case` is the number read from the case itself; the term's
 		// link is the fallback for a caller that knows nothing else. Written
 		// without branches on purpose: this class sits at its complexity limit.
-		$named = array_values(
-			array_filter(
-				[trim((string)($context['case'] ?? '')), trim((string)($instance['case'] ?? ''))],
-				static fn (string $value): bool => ($value !== '')
-			)
-		);
-		$case = ($named[0] ?? '–');
+		$case = self::referenceOf(instance: $instance, context: $context);
 		$days = new LetterDays(language: $locale);
 		$end = $days->shown(value: (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–')));
 
@@ -89,6 +83,25 @@ class TermLetters {
 
 		return ['subject' => $rendered['subject'], 'body' => $rendered['body'], 'locale' => $locale];
 	}//end render()
+
+	/**
+	 * The case reference a letter names: the caller's number, else the term's link, else a dash.
+	 *
+	 * @param array<string, mixed> $instance TermijnInstance (may be empty).
+	 * @param array<string, mixed> $context  Extra context.
+	 *
+	 * @return string The reference.
+	 */
+	private static function referenceOf(array $instance, array $context): string {
+		$named = array_values(
+			array_filter(
+				[trim((string)($context['case'] ?? '')), trim((string)($instance['case'] ?? ''))],
+				static fn (string $value): bool => ($value !== '')
+			)
+		);
+
+		return ($named[0] ?? '–');
+	}//end referenceOf()
 
 	/**
 	 * What writes each letter type; a type not listed renders empty.
@@ -119,7 +132,7 @@ class TermLetters {
 	 *
 	 * @return array{subject: string, body: string}
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	private function noticeOfDefaultReceipt(TermLetter $letter): array {
 		$graceEnd = (new LetterDays(language: 'nl'))->shown(value: (string)($letter->context['graceEnd'] ?? '–'));
@@ -140,7 +153,7 @@ class TermLetters {
 	 *
 	 * @return array{subject: string, body: string}
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	private function penaltyPayment(TermLetter $letter): array {
 		$amountCents = (int)($letter->context['bedragCents'] ?? 0);
@@ -198,7 +211,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function informationRequest(TermLetter $letter): array {
 		$items = array_values(array_filter(array_map('strval', (array)($letter->context['items'] ?? []))));
@@ -247,41 +260,72 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function informationReminder(TermLetter $letter): array {
 		$english = ($letter->locale === 'en');
 		$due = (new LetterDays(language: $letter->locale))->shown(value: (string)($letter->context['pauseDeadline'] ?? '-'));
-		$declared = trim((string)($letter->context['chaseText'] ?? ''));
 
 		if ($english === true) {
-			$body = "Dear applicant,\n\n"
-				. 'We are still waiting for what we asked you for on case ' . $letter->reference . ".\n";
-			if ($declared !== '') {
-				$body .= $declared . "\n";
-			}
-
-			return [
-				'subject' => 'A reminder about case ' . $letter->reference,
-				'body' => $body
-					. "\nWe need this by " . $due . ".\n"
-					. 'The term for your case stays paused until your answer arrives (Awb 4:5).',
-			];
+			return $this->englishInformationReminder(letter: $letter, due: $due);
 		}
 
-		$body = "Beste aanvrager,\n\n"
-			. 'Wij wachten nog op wat wij u gevraagd hebben voor zaak ' . $letter->reference . ".\n";
+		return $this->dutchInformationReminder(letter: $letter, due: $due);
+	}//end informationReminder()
+
+	/**
+	 * The information reminder in English.
+	 *
+	 * @param TermLetter $letter The case reference, and the case type's words for this reason as `chaseText`.
+	 * @param string     $due    The date the information is needed by, as shown.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function englishInformationReminder(TermLetter $letter, string $due): array {
+		$reference = $letter->reference;
+		$declared = trim((string)($letter->context['chaseText'] ?? ''));
+		$body = "Dear applicant,\n\n"
+			. 'We are still waiting for what we asked you for on case ' . $reference . ".\n";
 		if ($declared !== '') {
 			$body .= $declared . "\n";
 		}
 
 		return [
-			'subject' => 'Herinnering over zaak ' . $letter->reference,
+			'subject' => 'A reminder about case ' . $reference,
+			'body' => $body
+				. "\nWe need this by " . $due . ".\n"
+				. 'The term for your case stays paused until your answer arrives (Awb 4:5).',
+		];
+	}//end englishInformationReminder()
+
+	/**
+	 * The information reminder in Dutch.
+	 *
+	 * @param TermLetter $letter The case reference, and the case type's words for this reason as `chaseText`.
+	 * @param string     $due    The date the information is needed by, as shown.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	private function dutchInformationReminder(TermLetter $letter, string $due): array {
+		$reference = $letter->reference;
+		$declared = trim((string)($letter->context['chaseText'] ?? ''));
+		$body = "Beste aanvrager,\n\n"
+			. 'Wij wachten nog op wat wij u gevraagd hebben voor zaak ' . $reference . ".\n";
+		if ($declared !== '') {
+			$body .= $declared . "\n";
+		}
+
+		return [
+			'subject' => 'Herinnering over zaak ' . $reference,
 			'body' => $body
 				. "\nWij ontvangen dit graag voor " . $due . ".\n"
 				. 'De termijn van uw zaak staat stil tot uw antwoord binnen is (Awb 4:5).',
 		];
-	}//end informationReminder()
+	}//end dutchInformationReminder()
 
 	/**
 	 * The acknowledgement of receipt, Awb 4:3a.
@@ -303,7 +347,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function acknowledgement(TermLetter $letter): array {
 		if (($letter->context['contentWithheld'] ?? false) === true) {
@@ -447,7 +491,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
 	 */
 	private function doorzending(TermLetter $letter): array {
 		$destination = trim((string)($letter->context['destination'] ?? ''));
@@ -492,7 +536,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	private function inadmissible(TermLetter $letter): array {
 		$reason = rtrim(trim((string)($letter->context['reason'] ?? '')), '.');
@@ -534,7 +578,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function acknowledgementInEnglish(TermLetter $letter): array {
 		$term = "No statutory decision period applies to this application.\n";
@@ -569,7 +613,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function acknowledgementWaiting(bool $english): array {
 		if ($english === true) {

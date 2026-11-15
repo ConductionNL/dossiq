@@ -116,19 +116,21 @@
 						class="case-custody__request"
 						:data-status="request.status"
 						data-testid="case-custody-request">
-						<span class="case-custody__asker">{{
-							request.requestedBy
+						<span class="case-custody__mark" aria-hidden="true">{{
+							initialsOf(request.requestedBy)
 						}}</span>
-						<span class="case-custody__request-reason">{{
-							request.reason
-						}}</span>
-						<span class="case-custody__status">{{
-							statusOf(request)
-						}}</span>
-						<span
-							v-if="request.refusalReason"
-							class="case-custody__refusal">
-							{{ request.refusalReason }}
+						<span class="case-custody__text">
+							<span class="case-custody__unit">{{
+								t('dossiq', '{asker} asks for this case', { asker: request.requestedBy })
+							}}</span>
+							<span class="case-custody__meta">{{
+								requestMetaOf(request)
+							}}</span>
+							<span
+								v-if="request.refusalReason"
+								class="case-custody__meta">
+								{{ request.refusalReason }}
+							</span>
 						</span>
 
 						<span v-if="isOpen(request)" class="case-custody__answer">
@@ -139,6 +141,19 @@
 								@click="accept(request)">
 								{{ t('dossiq', 'Hand it over') }}
 							</NcButton>
+							<NcButton
+								variant="secondary"
+								:disabled="answering"
+								:aria-expanded="isKeeping(request) ? 'true' : 'false'"
+								data-testid="case-custody-keep"
+								@click="startKeeping(request)">
+								{{ t('dossiq', 'Keep, with a reason') }}
+							</NcButton>
+						</span>
+
+						<span
+							v-if="isOpen(request) && isKeeping(request)"
+							class="case-custody__keep">
 							<NcTextField
 								v-model="refusalReasons[request.id]"
 								:label="t('dossiq', 'Why you are keeping it')"
@@ -214,6 +229,8 @@ export default {
 			takeovers: [],
 			/** The reason typed against each open request, keyed by request id. */
 			refusalReasons: {},
+			/** The request whose reason field is open. */
+			keepingId: null,
 		}
 	},
 
@@ -331,6 +348,30 @@ export default {
 		 *
 		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 		 */
+		/**
+		 * Whether the reason field of a request is open.
+		 *
+		 * @param {object} request The takeover request.
+		 *
+		 * @return {boolean} True while the holder is writing why they keep it.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		isKeeping(request) {
+			return this.keepingId !== null && this.keepingId === request?.id
+		},
+
+		/**
+		 * Open the reason field of a request, or close it again.
+		 *
+		 * @param {object} request The takeover request.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		startKeeping(request) {
+			this.keepingId = this.isKeeping(request) ? null : request.id
+		},
+
 		async accept(request) {
 			await this.answer(() => acceptTakeover(this.caseId, request.id))
 		},
@@ -417,7 +458,7 @@ export default {
 		 * @param {object} holding The holding row.
 		 * @return {string} The line.
 		 *
-		 * @spec openspec/changes/custody-board-rows/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		metaOf(holding) {
 			const reason = String(holding?.reason ?? '')
@@ -436,8 +477,26 @@ export default {
 		 * @param {string} name The unit.
 		 * @return {string} The initials.
 		 *
-		 * @spec openspec/changes/custody-board-rows/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
+		/**
+		 * The line under a request: since when, why, and what became of it.
+		 * A request still waiting says nothing more: its buttons say that.
+		 *
+		 * @param {object} request The takeover request.
+		 *
+		 * @return {string} The line.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		requestMetaOf(request) {
+			return [
+				request?.requestedAt ? t('dossiq', 'Since {date}', { date: this.dateOf(request.requestedAt) }) : '',
+				request?.reason ? t('dossiq', 'reason: {reason}', { reason: request.reason }) : '',
+				request?.status === 'pending' ? '' : this.statusOf(request),
+			].filter((part) => part !== '').join(' · ')
+		},
+
 		initialsOf(name) {
 			return String(name ?? '')
 				.split(/[\s_-]+/)
@@ -457,7 +516,6 @@ export default {
 		 */
 		statusOf(request) {
 			const sentences = {
-				pending: t('dossiq', 'Waiting for the holder'),
 				accepted: t('dossiq', 'Handed over'),
 				refused: t('dossiq', 'Kept by the holder'),
 				escalated: t(
@@ -499,7 +557,7 @@ export default {
 		 * @param {string} raw The stored moment.
 		 * @return {string} The moment, or the raw value when it cannot be read.
 		 *
-		 * @spec openspec/changes/custody-board-rows/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		momentOf(raw) {
 			const moment = new Date(raw)
@@ -534,14 +592,9 @@ export default {
 .case-custody__requests {
 	display: flex;
 	flex-direction: column;
-	gap: var(--default-grid-baseline, 4px);
 	list-style: none;
 	margin: 0;
 	padding: 0;
-}
-
-.case-custody__chain {
-	gap: 0;
 }
 
 /* A holding is a row as DqZaakArchivering draws it: a round mark with the
@@ -606,20 +659,24 @@ export default {
 .case-custody__request {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: baseline;
-	gap: calc(var(--default-grid-baseline, 4px) * 2);
-}
-
-.case-custody__status,
-.case-custody__refusal {
-	color: var(--color-text-maxcontrast);
-	font-size: 0.9em;
+	align-items: center;
+	gap: 8px 12px;
+	padding: 12px 0;
+	border-top: 1px solid var(--color-border);
 }
 
 .case-custody__answer {
 	display: flex;
+	flex: none;
 	flex-wrap: wrap;
 	align-items: center;
+	gap: calc(var(--default-grid-baseline, 4px) * 2);
+}
+
+.case-custody__keep {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
 	gap: calc(var(--default-grid-baseline, 4px) * 2);
 	width: 100%;
 }

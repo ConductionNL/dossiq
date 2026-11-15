@@ -170,6 +170,120 @@ const FUNCTION = 'function'
  */
 const custodianRow = (name = '', role = '') => ({ name, [FUNCTION]: role })
 
+/**
+ * The form's custodian rows for a plan's custodians: one empty row when it names none.
+ *
+ * @param {unknown} custodians The plan's custodians.
+ * @return {Array<{name: string, function: string}>} The rows.
+ */
+function planCustodianRows(custodians) {
+	const list = Array.isArray(custodians) ? custodians : []
+	return list.length > 0
+		? list.map((custodian) => custodianRow(custodian.name ?? '', custodian.function ?? ''))
+		: [custodianRow()]
+}
+
+/**
+ * One custodian of a template, which may be a bare name, as a trimmed row.
+ *
+ * @param {object|string|null} custodian The template's custodian.
+ * @return {{name: string, function: string}} The row.
+ */
+function templateCustodianRow(custodian) {
+	return custodianRow(
+		String(custodian?.name ?? custodian ?? '').trim(),
+		String(custodian?.function ?? '').trim(),
+	)
+}
+
+/**
+ * The form's custodian rows for a template's custodians: the named ones, or one empty row.
+ *
+ * @param {unknown} custodians The template's custodians.
+ * @return {Array<{name: string, function: string}>} The rows.
+ */
+function templateCustodianRows(custodians) {
+	const rows = (Array.isArray(custodians) ? custodians : [])
+		.map(templateCustodianRow)
+		.filter((custodian) => custodian.name !== '')
+	return rows.length > 0 ? rows : [custodianRow()]
+}
+
+/**
+ * One row of the plan's history from an audit trail entry.
+ *
+ * @param {object} row The audit trail entry.
+ * @param {number} index Its place in the trail.
+ * @return {{id: string, when: string, who: string, what: string}} The history row.
+ */
+function historyRow(row, index) {
+	return {
+		id: String(row.id ?? index),
+		when: String(row.created ?? '')
+			.slice(0, 16)
+			.replace('T', ' '),
+		who: row.userName || row.user || '',
+		what: historyAction(row.action),
+	}
+}
+
+/**
+ * @param {string} action The audit trail action.
+ * @return {string} What the history says happened.
+ */
+function historyAction(action) {
+	return action === 'create'
+		? t('dossiq', 'created')
+		: t('dossiq', 'changed')
+}
+
+/**
+ * What recording the plan sends: the named custodians, the systems, the period, the terms and, when
+ * the plan started from a template, which one.
+ *
+ * @param {object} dialog The search plan dialog.
+ * @return {object} The body.
+ */
+function planBody(dialog) {
+	const body = {
+		custodians: dialog.custodians
+			.filter((custodian) => custodian.name.trim() !== '')
+			.map((custodian) => custodianRow(custodian.name.trim(), custodian.function.trim())),
+
+		systems: dialog.systems,
+		periodFrom: dialog.periodFrom,
+		periodTo: dialog.periodTo,
+		terms: dialog.terms.trim(),
+	}
+	if (dialog.startedFrom !== '') {
+		body.startedFrom = dialog.startedFrom
+	}
+	return body
+}
+
+/**
+ * Keep the recorded plan, forget the template it started from, and refresh the page.
+ *
+ * @param {object} dialog The search plan dialog.
+ * @param {object|null} data The answer.
+ * @return {void}
+ */
+function keepPlan(dialog, data) {
+	dialog.startedFrom = ''
+	dialog.fill(data?.plan ?? null)
+	emit(PAGE_REFRESH, {})
+}
+
+/**
+ * The sentence for a plan that was not recorded: the server's, or the plain one.
+ *
+ * @param {Error} error The failure.
+ * @return {string} The sentence.
+ */
+function planRefusal(error) {
+	return error?.response?.data?.message || t('dossiq', 'The search plan was not recorded.')
+}
+
 export default {
 	name: 'SearchPlanDialog',
 
@@ -218,13 +332,31 @@ export default {
 		/** @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001 */
 		complete() {
 			return (
-				this.custodians.some((custodian) => custodian.name.trim() !== '')
-				&& this.systems.length > 0
-				&& DATE.test(this.periodFrom)
-				&& DATE.test(this.periodTo)
-				&& this.periodFrom <= this.periodTo
+				this.custodianAndSystemNamed
+				&& this.periodComplete
 				&& this.terms.trim() !== ''
 			)
+		},
+
+		/**
+		 * Whether the plan names someone whose files are searched, and a system.
+		 *
+		 * @return {boolean} True when both are given.
+		 */
+		custodianAndSystemNamed() {
+			return this.custodians.some((custodian) => custodian.name.trim() !== '')
+				&& this.systems.length > 0
+		},
+
+		/**
+		 * Whether the period is two dates and does not end before it starts.
+		 *
+		 * @return {boolean} True when the period is complete.
+		 */
+		periodComplete() {
+			return DATE.test(this.periodFrom)
+				&& DATE.test(this.periodTo)
+				&& this.periodFrom <= this.periodTo
 		},
 
 		/** @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001 */
@@ -295,18 +427,24 @@ export default {
 			if (!plan) {
 				return
 			}
-			const custodians = Array.isArray(plan.custodians) ? plan.custodians : []
-			this.custodians =
-				custodians.length > 0
-					? custodians.map((custodian) => custodianRow(custodian.name ?? '', custodian.function ?? ''))
-					: [custodianRow()]
+			this.custodians = planCustodianRows(plan.custodians)
 			this.systems = Array.isArray(plan.systems) ? [...plan.systems] : []
-			this.periodFrom = plan.periodFrom ?? ''
-			this.periodTo = plan.periodTo ?? ''
-			this.terms = plan.terms ?? ''
+			this.fillPeriodAndTerms(plan)
 			if (plan.id) {
 				this.loadHistory(plan.id)
 			}
+		},
+
+		/**
+		 * Put a plan's period and terms into the form.
+		 *
+		 * @param {object} plan The plan.
+		 * @return {void}
+		 */
+		fillPeriodAndTerms(plan) {
+			this.periodFrom = plan.periodFrom ?? ''
+			this.periodTo = plan.periodTo ?? ''
+			this.terms = plan.terms ?? ''
 		},
 
 		/**
@@ -322,17 +460,17 @@ export default {
 			if (!template) {
 				return
 			}
-			const values = template.values ?? {}
-			const custodians = (
-				Array.isArray(values.custodians) ? values.custodians : []
-			)
-				.map((custodian) => custodianRow(
-					String(custodian?.name ?? custodian ?? '').trim(),
-					String(custodian?.function ?? '').trim(),
-				))
-				.filter((custodian) => custodian.name !== '')
-			this.custodians =
-				custodians.length > 0 ? custodians : [custodianRow()]
+			this.applyTemplateValues(template.values ?? {})
+		},
+
+		/**
+		 * Put a template's custodians, systems and terms into the form.
+		 *
+		 * @param {object} values The template's values.
+		 * @return {void}
+		 */
+		applyTemplateValues(values) {
+			this.custodians = templateCustodianRows(values.custodians)
 			this.systems = Array.isArray(values.systems)
 				? values.systems.map(String)
 				: []
@@ -354,17 +492,7 @@ export default {
 					),
 				)
 				const rows = Array.isArray(data) ? data : (data?.results ?? [])
-				this.history = rows.map((row, index) => ({
-					id: String(row.id ?? index),
-					when: String(row.created ?? '')
-						.slice(0, 16)
-						.replace('T', ' '),
-					who: row.userName || row.user || '',
-					what:
-						row.action === 'create'
-							? t('dossiq', 'created')
-							: t('dossiq', 'changed'),
-				}))
+				this.history = rows.map(historyRow)
 			} catch {
 				this.history = []
 			}
@@ -410,27 +538,9 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
-				const body = {
-					custodians: this.custodians
-						.filter((custodian) => custodian.name.trim() !== '')
-						.map((custodian) => custodianRow(custodian.name.trim(), custodian.function.trim())),
-
-					systems: this.systems,
-					periodFrom: this.periodFrom,
-					periodTo: this.periodTo,
-					terms: this.terms.trim(),
-				}
-				if (this.startedFrom !== '') {
-					body.startedFrom = this.startedFrom
-				}
-				const { data } = await axios.put(this.url('/woo/plan'), body)
-				this.startedFrom = ''
-				this.fill(data?.plan ?? null)
-				emit(PAGE_REFRESH, {})
+				keepPlan(this, (await axios.put(this.url('/woo/plan'), planBody(this))).data)
 			} catch (error) {
-				this.error =
-					error?.response?.data?.message
-					|| t('dossiq', 'The search plan was not recorded.')
+				this.error = planRefusal(error)
 			} finally {
 				this.busy = false
 			}

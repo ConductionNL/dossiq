@@ -38,6 +38,14 @@
 			:fields="textsAndAccessFields">
 		</CnSettingsFieldsSection>
 
+		<CnSettingsFieldsSection
+			id="section-notification-texts"
+			appId="dossiq"
+			:name="t('dossiq', 'Notification texts')"
+			:columns="1"
+			valuesPath="config"
+			:fields="notificationTextFields" />
+
 		<CnSettingsSection
 			id="section-working-days"
 			:actionsInTitle="true"
@@ -178,15 +186,15 @@
 				:description="
 					t(
 						'dossiq',
-						'A connection stays off until you choose a source. Off means: not one request goes outside.',
+						'A connection stays off until you choose a source. Off means: not one request goes outside. The rows come from one dossiq file, in this order; integriq keeps them in its register and measures the status. A row without Settings has nothing to set here.',
 					)
 				">
-				<div v-if="ownerApps.integriq" class="dq-settings-action-row">
+				<div v-if="ownerApps.integriq" class="dq-settings-action-row cn-settings-row-actions">
 					<NcButton :href="integriqConnectionsUrl" variant="secondary" data-testid="dossiq-add-connection">
 						{{ t('dossiq', 'Add connection in integriq') }}
 					</NcButton>
 					<span class="dq-settings-action-row__note">
-						{{ t('dossiq', 'Opens integriq, Connections, filtered on app dossiq.') }}
+						{{ t('dossiq', 'Opens integriq, Connections, filtered on app dossiq. There is no general Add button, and dossiq\'s app menu shows no Integrations.') }}
 					</span>
 				</div>
 				<NcNoteCard v-if="!ownerApps.integriq" type="info">
@@ -247,6 +255,7 @@
 			<CnSettingsSection
 				id="section-term-definitions"
 				:actionsInTitle="true"
+				:footerLink="{ label: t('dossiq', 'All term definitions'), href: allTermDefinitionsUrl }"
 				:name="t('dossiq', 'Term definitions (Awb)')"
 				:description="
 					t(
@@ -256,17 +265,16 @@
 				"
 				:loading="!storesReady">
 				<template v-if="storesReady" #actions>
-					<NcButton variant="secondary" data-testid="dossiq-add-term-definition" @click="$refs.termSummary.openNew()">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('dossiq', 'Add definition') }}
-					</NcButton>
+					<span class="cn-settings-row-actions">
+						<NcButton variant="secondary" data-testid="dossiq-add-term-definition" @click="$refs.termSummary.openNew()">
+							{{ t('dossiq', 'Add definition') }}
+						</NcButton>
+					</span>
 				</template>
 				<DeadlineDefinitionsTab v-if="storesReady" ref="termSummary" :summary="true" />
 			</CnSettingsSection>
 
-			<div class="dq-settings-pair">
+			<div class="dq-settings-pair cn-settings-cards">
 				<CnSettingsFieldsSection
 					id="section-queue-order"
 					appId="dossiq"
@@ -277,6 +285,7 @@
 							'Decides the order of the team queue and Assigned to me. Save sends only what changed; an unchanged form sends nothing.',
 						)
 					"
+					:columns="2"
 					valuesPath="config"
 					:fields="queueOrderFields" />
 
@@ -304,12 +313,11 @@
 					)
 				">
 				<template #actions>
-					<NcButton :href="wooRefusalGroundsUrl" variant="secondary" data-testid="dossiq-add-refusal-ground">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('dossiq', 'Add ground') }}
-					</NcButton>
+					<span class="cn-settings-row-actions">
+						<NcButton :href="wooRefusalGroundsUrl" variant="secondary" data-testid="dossiq-add-refusal-ground">
+							{{ t('dossiq', 'Add ground') }}
+						</NcButton>
+					</span>
 				</template>
 				<CnWidgetObjectTable
 					:hideWrapper="true"
@@ -351,7 +359,9 @@
 			</CnSettingsSection>
 		</template>
 
-		<template #tab-vth>
+		<template v-for="pkg in packageTabs" :key="pkg.id" #[`tab-${pkg.id}`]>
+			<PackageAdminTab :pkg="pkg" />
+			<template v-if="pkg.id === 'vth'">
 			<CnSettingsSection
 				id="section-intake-activities"
 				:actionsInTitle="true"
@@ -421,13 +431,13 @@
 					:emptyText="t('dossiq', 'No fee rules for dossiq yet.')" />
 			</CnSettingsSection>
 
-			<div class="dq-settings-trio">
+			<div class="dq-settings-trio cn-settings-cards">
 				<CnSettingsSection
 					:actionsInTitle="true"
 					:name="t('dossiq', 'Inspection checklists')"
 					:loading="!storesReady">
 					<template v-if="storesReady" #actions>
-						<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">
+						<NcButton variant="secondary" @click="openNewChecklist">
 							<template #icon>
 								<Plus :size="20" />
 							</template>
@@ -483,6 +493,7 @@
 						:emptyText="t('dossiq', 'No enforcement matrix yet.')" />
 				</CnSettingsSection>
 			</div>
+			</template>
 		</template>
 
 		<template #tab-substitution>
@@ -668,6 +679,7 @@
 			</CnSettingsSection>
 
 			<CnSettingsSection
+				id="section-term-definitions-all"
 				:name="t('dossiq', 'AWB term definitions')"
 				:description="
 					t(
@@ -698,6 +710,43 @@
 				:columns="2"
 				valuesPath="config"
 				:fields="queueUrgencyFields" />
+
+			<CnSettingsSection
+				id="section-role-acts"
+				:name="t('dossiq', 'What each role may do')"
+				:description="
+					t(
+						'dossiq',
+						'The groups dossiq creates, with what membership allows. A member who holds only that role is refused anything not listed.',
+					)
+				">
+				<table class="dq-role-acts" data-testid="dossiq-role-acts">
+					<thead>
+						<tr>
+							<th scope="col">
+								{{ t('dossiq', 'Group') }}
+							</th>
+							<th scope="col">
+								{{ t('dossiq', 'Allows') }}
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="row in roleActRows" :key="row.group">
+							<th scope="row">
+								<code>{{ row.group }}</code>
+							</th>
+							<td>
+								<ul class="dq-role-acts__list">
+									<li v-for="act in row.acts" :key="act">
+										{{ act }}
+									</li>
+								</ul>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</CnSettingsSection>
 
 			<CnSettingsSection
 				:name="t('dossiq', 'Mandate matrix: administration')"
@@ -767,6 +816,7 @@ import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
 import AdviceSettingsFacts from './components/AdviceSettingsFacts.vue'
 import DependencyAppsList from './components/DependencyAppsList.vue'
+import PackageAdminTab from './components/PackageAdminTab.vue'
 import SearchIndexFacts from './components/SearchIndexFacts.vue'
 import SettingsFactsList from './components/SettingsFactsList.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
@@ -785,6 +835,7 @@ import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import { feeRuleBasis, feeRuleCalculation, feeRuleName } from '../../utils/feeRules.js'
 import { INTEGRIQ_CONNECTIONS_PATH } from '../../utils/integriqConnections.js'
+import { packageTabsOf } from '../../utils/packageAdminTab.js'
 import { activityOverviewFormatters } from './activityOverviewFormatters.js'
 import {
 	aiFields,
@@ -796,6 +847,7 @@ import {
 	houseStyleFields,
 	kadasterFields,
 	menuStructureFields,
+	notificationTextFields,
 	paymentCallbackFields,
 	queueOrderFields,
 	queueUrgencyFields,
@@ -811,6 +863,7 @@ import {
 	wooRefusalGroundColumns,
 	wooRefusalGroundSource,
 } from './adminSettingsBlocks.js'
+import { roleActRows } from './roleActs.js'
 
 export default {
 	name: 'AdminRoot',
@@ -840,6 +893,7 @@ export default {
 		SubstitutionAdmin,
 		AdviceSettingsFacts,
 		DependencyAppsList,
+		PackageAdminTab,
 		SearchIndexFacts,
 		SettingsFactsList,
 	},
@@ -889,10 +943,23 @@ export default {
 			}),
 
 			publicationSettings: loadState('dossiq', 'publicationSettings', {}),
+			/** The installed packages that declare an admin tab, with what each installed. */
+			packageTabs: loadState('dossiq', 'packageAdminTabs', []),
+			roleActs: loadState('dossiq', 'roleActs', []),
 		}
 	},
 
 	computed: {
+		/**
+		 * The roles card's rows: each provisioned group with its acts in words.
+		 *
+		 * @return {Array<{group: string, acts: Array<string>}>} The rows.
+		 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/case-access-control/spec.md#requirement-each-application-role-states-what-its-members-may-do-req-crs-14
+		 */
+		roleActRows() {
+			return roleActRows(this.t, this.roleActs)
+		},
+
 		/**
 		 * The tabs of the page, in the order the board draws them. Every
 		 * section the page had before sits on one of them. Integrations and
@@ -900,6 +967,7 @@ export default {
 		 *
 		 * @return {Array<{id: string, label: string, count?: number}>} The tabs.
 		 * @spec openspec/specs/admin-settings/spec.md
+		 * @spec openspec/changes/vth-cases-run-end-to-end
 		 */
 		adminTabs() {
 			return this.withCounts([
@@ -911,7 +979,9 @@ export default {
 				},
 				{ id: 'mail', label: this.t('dossiq', 'Mail') },
 				{ id: 'map-layers', label: this.t('dossiq', 'Map layers') },
-				{ id: 'vth', label: this.t('dossiq', 'VTH') },
+				// One tab per installed package that declares one (package.json
+				// `adminTab`); a package not installed here has none.
+				...packageTabsOf(this.packageTabs),
 				{ id: 'substitution', label: this.t('dossiq', 'Substitution') },
 				// The settings set once or by a specialist: ZGW, KCC, StUF, Store,
 				// first run, prerequisites, terms, mandates, archiving, reports.
@@ -1211,6 +1281,16 @@ export default {
 		},
 
 		/**
+		 * The administrator's own text per notification kind (REQ-CRS-13).
+		 *
+		 * @return {Array<object>} The fields.
+		 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/admin-settings/spec.md#requirement-an-administrator-edits-the-text-of-each-notification-req-crs-13
+		 */
+		notificationTextFields() {
+			return notificationTextFields(this.t.bind(this))
+		},
+
+		/**
 		 * The menu structure choice.
 		 *
 		 * @return {Array<object>} The fields.
@@ -1432,6 +1512,16 @@ export default {
 		},
 
 		/**
+		 * The full term table on the Advanced tab.
+		 *
+		 * @return {string} The address.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		allTermDefinitionsUrl() {
+			return generateUrl('/settings/admin/dossiq') + '?tab=advanced#section-term-definitions-all'
+		},
+
+		/**
 		 * Integriq's Connections, filtered on dossiq, with the link dialog open.
 		 *
 		 * @return {string} The URL.
@@ -1517,7 +1607,7 @@ export default {
 
 	/**
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-admin-settings/tasks.md
 	 */
 	async created() {
 		fetchAdminTabCounts().then((counts) => {
@@ -1529,6 +1619,18 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Open the checklist editor on a new checklist. The checklist card sits
+		 * in a package tab drawn per package, so its ref is a list.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/vth-cases-run-end-to-end
+		 */
+		openNewChecklist() {
+			const editor = [].concat(this.$refs.checklists ?? [])[0]
+			editor?.openEditor(null)
+		},
+
 		/**
 		 * Add the known counts to the tabs.
 		 *
@@ -1591,7 +1693,7 @@ export default {
 		/**
 		 * Refresh the app stores after the shell re-imports the OpenRegister configuration.
 		 *
-		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async onReimported() {
 			this.storesReady = false
@@ -1603,6 +1705,26 @@ export default {
 </script>
 
 <style>
+/* The roles card (REQ-CRS-14): a group per row, its acts as a list. */
+.dq-role-acts {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.dq-role-acts th,
+.dq-role-acts td {
+	padding: calc(var(--default-grid-baseline) * 2);
+	border-bottom: 1px solid var(--color-border);
+	text-align: start;
+	vertical-align: top;
+}
+
+.dq-role-acts__list {
+	margin: 0;
+	padding-inline-start: calc(var(--default-grid-baseline) * 4);
+	list-style: disc;
+}
+
 /* A card whose text is its body, drawn as body text 16px under the title
    (DqBeheerGeavanceerd "Beslistabellen (DMN)"); the card's gap is 14px. */
 .dq-settings-body-text {
@@ -1624,15 +1746,16 @@ export default {
 }
 
 .dq-settings-trio {
-	grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+	align-items: stretch;
 }
 
-/* A button with its note under a card's description (Koppelingen). */
+/* A button with its note under it, below a card's description (Koppelingen). */
 .dq-settings-action-row {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 10px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
 }
 
 .dq-settings-action-row__note {

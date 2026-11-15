@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  *
  * @spec openspec/changes/method-decomposition/tasks.md
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  */
 class ContactMomentWritePathTest extends TestCase {
 	use MakesCaseDateNormaliser;

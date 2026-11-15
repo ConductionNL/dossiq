@@ -62,7 +62,7 @@ describe('the Integrations tab blocks', () => {
 	})
 
 	it('adds a connection on integriq, and only when integriq is there', () => {
-		expect(admin).toContain('<div v-if="ownerApps.integriq" class="dq-settings-action-row">')
+		expect(admin).toContain('<div v-if="ownerApps.integriq" class="dq-settings-action-row cn-settings-row-actions">')
 		expect(admin).toContain('generateUrl(INTEGRIQ_CONNECTIONS_PATH)')
 	})
 
@@ -86,6 +86,7 @@ describe('the Integrations tab blocks', () => {
 
 	it('lists a refusal ground by code, label, article, kind and whether it is active', () => {
 		expect(wooRefusalGroundColumns(t).map((column) => column.key)).toEqual(['code', 'label', 'article', 'kind', 'status'])
+		expect(wooRefusalGroundColumns(t).at(-1)).toMatchObject({ widget: 'badge', widgetProps: { colorMap: { active: 'success' } } })
 	})
 })
 
@@ -98,12 +99,12 @@ describe('the General tab', () => {
 
 describe('the VTH tab', () => {
 	it('lays checklists, advice, public notices and enforcement out three abreast', () => {
-		const trio = admin.slice(admin.indexOf('<div class="dq-settings-trio">'))
+		const trio = admin.slice(admin.indexOf('<div class="dq-settings-trio cn-settings-cards">'))
 		const order = ["'Inspection checklists'", 'id="section-advice"', 'id="section-publications"', 'id="section-enforcement-strategy"']
 		const at = order.map((needle) => trio.indexOf(needle))
 		expect(at.every((index) => index > 0)).toBe(true)
 		expect([...at].sort((a, b) => a - b)).toEqual(at)
-		expect(admin).toMatch(/\.dq-settings-trio \{\s*grid-template-columns: repeat\(auto-fit, minmax\(360px, 1fr\)\);/)
+		expect(admin).toMatch(/\.dq-settings-trio \{\s*grid-template-columns: repeat\(auto-fit, minmax\(340px, 1fr\)\);/)
 	})
 
 	it('names the advisers with how they are reached', () => {
@@ -122,6 +123,35 @@ describe('the VTH tab', () => {
 		const rows = publicationRows(t, {})
 		expect(rows[0]).toMatchObject({ value: 'Not set', muted: true })
 		expect(rows[1]).toMatchObject({ value: 'Not set', muted: true })
+	})
+})
+
+describe('the card rows', () => {
+	it('keep their own box on the admin grid, so the cards sit side by side', () => {
+		expect(admin).toContain('<div class="dq-settings-pair cn-settings-cards">')
+		expect(admin).toContain('<div class="dq-settings-trio cn-settings-cards">')
+	})
+
+	it('fit three cards in the 1119px content column, each as tall as the row', () => {
+		const rule = admin.slice(admin.lastIndexOf('.dq-settings-trio {'))
+		expect(rule).toContain('minmax(340px, 1fr)')
+		expect(rule).toContain('align-items: stretch')
+	})
+})
+
+describe('the facts list', () => {
+	it('takes back the dt and dd padding and column that server.css sets', () => {
+		const list = read('src', 'views', 'settings', 'components', 'SettingsFactsList.vue')
+		const dt = list.slice(list.indexOf('.settings-facts__row dt {'))
+		expect(dt).toMatch(/width: auto;\s+padding: 0;/)
+		expect(dt).toContain('text-align: start')
+		expect(list.slice(list.indexOf('.settings-facts__row dd {'))).toContain('padding: 0')
+	})
+
+	it('draws the rows of the Advanced search index card as read-only boxes', () => {
+		const facts = read('src', 'views', 'settings', 'components', 'SearchIndexFacts.vue')
+		expect(facts).toContain(":layout=\"variant === 'run' ? 'inline' : 'boxes'\"")
+		expect(read('src', 'views', 'settings', 'components', 'SettingsFactsList.vue')).toContain('class="settings-facts__box"')
 	})
 })
 

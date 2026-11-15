@@ -21,6 +21,7 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
@@ -49,6 +50,27 @@ class AssignOpenCasesTheirCaseTypeTeamTest extends TestCase {
 	public array $patches = [];
 
 	/**
+	 * Schemas whose listing throws.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $failingSchemas = [];
+
+	/**
+	 * Case ids whose write throws.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $failingWrites = [];
+
+	/**
+	 * Every error logged, as [message, context].
+	 *
+	 * @var array<int, array{0: string, 1: array<string, mixed>}>
+	 */
+	public array $errors = [];
+
+	/**
 	 * Seed a case type with a handling team, one without, and their cases.
 	 *
 	 * @return void
@@ -68,6 +90,9 @@ class AssignOpenCasesTheirCaseTypeTeamTest extends TestCase {
 			],
 		];
 		$this->patches = [];
+		$this->failingSchemas = [];
+		$this->failingWrites = [];
+		$this->errors = [];
 	}//end setUp()
 
 	/**
@@ -91,6 +116,10 @@ class AssignOpenCasesTheirCaseTypeTeamTest extends TestCase {
 			 * @return array<int, array<string, mixed>> The matching rows.
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				if (in_array($schema, $this->test->failingSchemas, true) === true) {
+					throw new \RuntimeException('listing ' . $schema . ' failed');
+				}
+
 				$rows = array_values($this->test->rows[$schema] ?? []);
 				if (isset($filters['caseType']) === true) {
 					$rows = array_values(array_filter($rows, static fn (array $row): bool => ($row['caseType'] ?? '') === $filters['caseType']));
@@ -108,6 +137,10 @@ class AssignOpenCasesTheirCaseTypeTeamTest extends TestCase {
 			 * @return array<string, mixed> The saved row.
 			 */
 			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+				if (in_array($objectId, $this->test->failingWrites, true) === true) {
+					throw new \RuntimeException('writing ' . $objectId . ' failed');
+				}
+
 				$this->test->rows[(string)$schema][$objectId] = array_merge($this->test->rows[(string)$schema][$objectId], $data);
 				$this->test->patches[] = [(string)$schema, $objectId, $data];
 
@@ -125,7 +158,14 @@ class AssignOpenCasesTheirCaseTypeTeamTest extends TestCase {
 			][$key] ?? '')
 		);
 
-		return new AssignOpenCasesTheirCaseTypeTeam(settingsService: $settings, handling: new CaseTypeHandling(), logger: new NullLogger());
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('error')->willReturnCallback(
+			function (string $message, array $context = []): void {
+				$this->errors[] = [$message, $context];
+			}
+		);
+
+		return new AssignOpenCasesTheirCaseTypeTeam(settingsService: $settings, handling: new CaseTypeHandling(), logger: $logger);
 	}//end repair()
 
 	/**
@@ -206,4 +246,87 @@ class AssignOpenCasesTheirCaseTypeTeamTest extends TestCase {
 
 		$this->assertSame(expected: [], actual: $this->patches);
 	}//end testWithoutOpenRegisterNothingHappens()
+
+	/**
+	 * The run reports how many cases it gave a team.
+	 *
+	 * @return void
+	 */
+	public function testTheRunReportsHowManyCasesItFilled(): void {
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')->with('Case team fill: 2 open case(s) given the handling team of their case type.');
+
+		$this->repair()->run($output);
+	}//end testTheRunReportsHowManyCasesItFilled()
+
+	/**
+	 * A case type listing that fails writes nothing and logs why.
+	 *
+	 * @return void
+	 */
+	public function testAFailingCaseTypeListingWritesNothing(): void {
+		$this->failingSchemas = ['caseType'];
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')->with('Case team fill: 0 open case(s) given the handling team of their case type.');
+
+		$this->repair()->run($output);
+
+		$this->assertSame(expected: [], actual: $this->patches);
+		$this->assertSame(
+			expected: [['Dossiq: the case team fill could not list case types', ['app' => 'dossiq', 'exception' => 'listing caseType failed']]],
+			actual: $this->errors
+		);
+	}//end testAFailingCaseTypeListingWritesNothing()
+
+	/**
+	 * A case listing that fails skips that case type and logs it.
+	 *
+	 * @return void
+	 */
+	public function testAFailingCaseListingSkipsTheCaseType(): void {
+		$this->failingSchemas = ['case'];
+
+		$this->repair()->run($this->createMock(IOutput::class));
+
+		$this->assertSame(expected: [], actual: $this->patches);
+		$this->assertSame(
+			expected: [['Dossiq: the case team fill could not list cases', ['app' => 'dossiq', 'caseType' => self::HANDLED, 'exception' => 'listing case failed']]],
+			actual: $this->errors
+		);
+	}//end testAFailingCaseListingSkipsTheCaseType()
+
+	/**
+	 * One case that cannot be written is logged and the rest still get their team.
+	 *
+	 * @return void
+	 */
+	public function testAFailingWriteDoesNotStopTheRest(): void {
+		$this->failingWrites = ['open-no-team'];
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')->with('Case team fill: 1 open case(s) given the handling team of their case type.');
+
+		$this->repair()->run($output);
+
+		$this->assertSame(expected: [['case', 'open-empty-team', ['assignedGroup' => 'behandelaars']]], actual: $this->patches);
+		$this->assertSame(
+			expected: [['Dossiq: the case team fill could not write a case', ['app' => 'dossiq', 'caseId' => 'open-no-team', 'exception' => 'writing open-no-team failed']]],
+			actual: $this->errors
+		);
+	}//end testAFailingWriteDoesNotStopTheRest()
+
+	/**
+	 * A case without an id is passed over.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutAnIdIsPassedOver(): void {
+		$this->rows['case'] = [
+			'x' => ['caseType' => self::HANDLED, 'isFinalStatus' => false],
+			'y' => ['@self' => ['id' => 'y'], 'caseType' => self::HANDLED, 'isFinalStatus' => false],
+		];
+
+		$this->repair()->run($this->createMock(IOutput::class));
+
+		$this->assertSame(expected: [['case', 'y', ['assignedGroup' => 'behandelaars']]], actual: $this->patches);
+	}//end testACaseWithoutAnIdIsPassedOver()
 }//end class

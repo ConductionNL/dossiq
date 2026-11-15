@@ -98,7 +98,6 @@ vi.mock('@nextcloud/l10n', () => ({
 	translatePlural: (app, one, many, count) => (count === 1 ? one : many),
 }))
 
-vi.mock('@nextcloud/vue/components/NcDialog', () => ({ default: box('NcDialog') }))
 vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({
 	default: box('NcLoadingIcon'),
 }))
@@ -115,9 +114,6 @@ vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
 }))
 vi.mock('@nextcloud/vue/components/NcSelect', () => ({
 	default: field('NcSelect'),
-}))
-vi.mock('@nextcloud/vue/components/NcTextArea', () => ({
-	default: field('NcTextArea'),
 }))
 vi.mock('@nextcloud/vue/components/NcTextField', () => ({
 	default: field('NcTextField'),
@@ -364,11 +360,61 @@ describe('BulkTransitionDialog, the rehearsal is not the act', () => {
 })
 
 describe('BulkTransitionDialog, the transition mode', () => {
-	it('still asks the first case for its available transitions', async () => {
-		await open('transition')
+	it('asks every selected case what it offers and keeps what all of them offer', async () => {
+		axios.get = vi.fn((url) => Promise.resolve({
+			data: url.includes('available-transitions')
+				? { transitions: url.includes('case-1') ? [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }] : [{ id: 'b', label: 'B' }], current: { statusName: 'Received' } }
+				: { title: 'A case', identifier: '2026-1', deadline: '2026-10-31' },
+		}))
+		const wrapper = await open('transition')
 
-		expect(axios.get).toHaveBeenCalledTimes(1)
-		expect(String(axios.get.mock.calls[0][0])).toContain('case-1')
+		expect(wrapper.vm.transitionOptions).toEqual([{ id: 'b', label: 'B' }])
+		const rows = wrapper.findAll('[data-testid="bulk-change-row"]')
+		expect(rows).toHaveLength(2)
+		expect(rows[0].text()).toContain('A case')
+		expect(rows[0].text()).toContain('Received')
+	})
+
+	it('rehearses first and leaves the commit to the reader, even with every case ready', async () => {
+		const wrapper = await open('transition')
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		await typeReason(wrapper, 'Complete')
+		expect(rehearse(wrapper).text()).toBe('See what would happen')
+		await rehearse(wrapper).trigger('click')
+		await flush()
+
+		expect(previewBulkJob).toHaveBeenCalledTimes(1)
+		const handed = JSON.parse(
+			wrapper.get('[data-testid="bulk-job-progress"]').attributes('data-props'),
+		)
+		expect(handed.job.state).toBe('previewed')
+	})
+
+	it('leaves out the table for a selection widened to the whole result', async () => {
+		const wrapper = await open('transition', { matchingTotal: 40 })
+		wrapper.findComponent({ name: 'CnSelectionScope' }).vm.$emit('update:scope', 'result')
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('[data-testid="bulk-changes"]').exists()).toBe(false)
+	})
+
+	it('names every changed case once the job finished clean', async () => {
+		const wrapper = await open('transition')
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		wrapper.vm.job = { ...PREVIEWED, state: 'completed', processed: 2 }
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('[data-testid="bulk-result"]').text()).toContain('2 of 2 cases changed')
+		expect(wrapper.findAll('[data-testid="bulk-result-row"]')).toHaveLength(2)
+	})
+
+	it('keeps the progress panel when a case did not change', async () => {
+		const wrapper = await open('transition')
+		wrapper.vm.job = { ...PREVIEWED, state: 'completed', counts: { applied: 1, skipped: 0, refused: 0, failed: 1 } }
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('[data-testid="bulk-result"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="bulk-job-progress"]').exists()).toBe(true)
 	})
 
 	it('needs a transition as well as a reason', async () => {
@@ -417,5 +463,43 @@ describe('BulkTransitionDialog, the transition mode', () => {
 		expect(previewBulkJob.mock.calls[0][0].selection).toEqual({
 			query: { caseType: 'bezwaar' },
 		})
+	})
+})
+
+describe('BulkTransitionDialog, the sentences and the gate', () => {
+	it('words every refusal, with the details it has', async () => {
+		const wrapper = await open('resume')
+		const refuse = (data, extra = {}) => wrapper.vm.refusalSentence({ response: { data }, ...extra })
+		expect(refuse({ reason: 'case-type-versions', details: { versions: [2, 3], caseType: 'Bezwaar' } }))
+			.toBe('These cases run on versions 2 and 3 of Bezwaar. A field means something different on each, so pick one version and try again.')
+		expect(refuse({ reason: 'case-type-versions' }))
+			.toBe('These cases run on versions  of . A field means something different on each, so pick one version and try again.')
+		expect(refuse({ reason: 'ceiling', details: { ceiling: 500, count: 900 } }))
+			.toBe('This act takes at most 500 cases at a time, and you selected 900.')
+		expect(refuse({ reason: 'ceiling' })).toBe('This act takes at most 0 cases at a time, and you selected 0.')
+		expect(refuse({ reason: 'other', error: 'Nee' }, { message: 'axios' })).toBe('Nee')
+		expect(refuse({ reason: 'toString' }, { message: 'Network Error' })).toBe('Network Error')
+		expect(wrapper.vm.refusalSentence(null)).toBe('The act could not be started.')
+	})
+
+	it('offers the rehearsal only once the mode fields and the reason are given', async () => {
+		const wrapper = await open('extend')
+		const gate = async (fields) => {
+			Object.assign(wrapper.vm.$data, fields)
+			await wrapper.vm.$nextTick()
+			return wrapper.vm.canRehearse
+		}
+		expect(await gate({ reason: 'x', newEndDate: '2026-12-01', starting: false })).toBe(true)
+		expect(await gate({ starting: true })).toBe(false)
+		expect(await gate({ starting: false, reason: '  ' })).toBe(false)
+		expect(await gate({ reason: 'x', newEndDate: '' })).toBe(false)
+
+		const transition = await open('transition')
+		Object.assign(transition.vm.$data, { reason: 'x', selectedTransition: null })
+		await transition.vm.$nextTick()
+		expect(transition.vm.canRehearse).toBe(false)
+		transition.vm.selectedTransition = { id: 'to-decided' }
+		await transition.vm.$nextTick()
+		expect(transition.vm.canRehearse).toBe(true)
 	})
 })

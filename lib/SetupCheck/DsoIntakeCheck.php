@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\SetupCheck;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -97,7 +97,7 @@ class DsoIntakeCheck implements ISetupCheck {
 	 */
 	public function run(): SetupResult {
 		$schema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: self::KEY,
 			default: ''
 		);

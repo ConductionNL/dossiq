@@ -38,16 +38,18 @@ describe('DqAanMijToegewezen', () => {
 		expect(menu.items).toEqual(['header-actions', 'export', 'copy-selected', 'delete-selected'])
 	})
 
-	it('opens as one list of rows, with the same list as cards one click away and no table', () => {
-		expect(overrides.viewMode).toBe('list')
-		expect(overrides.viewModes).toEqual(['list', 'cards'])
+	it('opens as cards, with the table, board and map as the other view modes', () => {
+		expect(overrides.viewMode).toBe('cards')
+		expect(overrides.viewModes).toEqual(['table', 'cards', 'board', 'map'])
 	})
 
-	it('puts the urgency pill first, the case type, requester and cover line under the title, the status and term last', () => {
-		const list = overrides.listConfig
-		expect(list.leading).toMatchObject({ key: 'deadlineTier', formatter: 'deadlineTierLabel', widget: 'badge' })
-		expect(list.subtitleTemplate).toBe('{identifier} · {caseType|caseTypeName} · {initiatorDisplayName} · {coveredFor|coveredFor}')
-		expect(list.trailing.map((cell) => cell.key)).toEqual(['status', 'deadline'])
+	it('draws the urgency pill and number on top, the case type, requester and cover line under the title, the status and term last', () => {
+		const card = overrides.cardLayout
+		expect(card.headPill.field).toBe('deadlineTier')
+		expect(card.number).toBe('identifier')
+		expect(card.note).toMatchObject({ field: 'coveredFor', tone: 'purple' })
+		expect(card.footerPill.field).toBe('status')
+		expect(card.footerDate.field).toBe('deadline')
 	})
 
 	it('counts once, in the note after the breadcrumb', () => {

@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/changes/method-decomposition/tasks.md
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class QueueCaseFactsTest extends TestCase {
 	use MakesCaseDateNormaliser;

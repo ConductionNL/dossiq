@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\PartyIndicatorReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -34,7 +35,7 @@ use Throwable;
  *
  * @spec openspec/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
  */
-class PartyIndicatorReader {
+class PartyIndicatorReader implements PartyIndicatorReaderInterface {
 
 	/**
 	 * OpenRegister's guard. Resolved through the generic class resolver, the
@@ -150,12 +151,23 @@ class PartyIndicatorReader {
 			return null;
 		}
 
+		return $this->labelOf(label: $label);
+	}//end sendRefusalFor()
+
+	/**
+	 * The refusal label OpenRegister gave, null when it gave none.
+	 *
+	 * @param mixed $label What the guard answered.
+	 *
+	 * @return string|null
+	 */
+	private function labelOf(mixed $label): ?string {
 		if (is_string($label) === false || trim($label) === '') {
 			return null;
 		}
 
 		return $label;
-	}//end sendRefusalFor()
+	}//end labelOf()
 
 	/**
 	 * The party uuid a person link names, '' when it names none.

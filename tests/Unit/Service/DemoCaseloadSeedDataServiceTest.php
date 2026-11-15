@@ -40,6 +40,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\DemoCaseloadGateway;
 use OCA\Dossiq\Service\DemoCaseloadSeedDataService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\App\IAppManager;
@@ -52,6 +53,8 @@ use Psr\Log\NullLogger;
  * Demo caseload seeding.
  */
 final class DemoCaseloadSeedDataServiceTest extends TestCase {
+	use MatchesGoldenFiles;
+
 	/**
 	 * The shipped dataset, decoded once.
 	 *
@@ -236,6 +239,21 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 		}
 
 		$this->assertFalse(condition: $ran);
+	}
+
+	/**
+	 * Every save, every engine task and the summary of one whole seed, with the
+	 * first case already present, compared with the recorded run.
+	 *
+	 * @return void
+	 */
+	public function testAWholeSeedMatchesItsRecordedRun(): void {
+		$existingTitle = (string)$this->seedFile['cases'][0]['title'];
+
+		$service = $this->service(existingCaseTitles: [$existingTitle], saved: $saved);
+		$result = $service->seed(new DateTimeImmutable('2026-09-02'));
+
+		$this->assertMatchesGolden('demo-caseload-seed-run', ['result' => $result, 'saved' => $saved, 'tasks' => $this->engineTasks]);
 	}
 
 	/**

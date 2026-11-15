@@ -29,9 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\FileSet\FileSetItemFiles;
-use OCA\Dossiq\Woo\WooDeliveredSetVerifier;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FileSetItemFilesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetVerifierInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -53,18 +53,18 @@ class WooDeliveredSetController extends Controller {
 	 *
 	 * @param string                  $appName     The app name.
 	 * @param IRequest                $request     The request.
-	 * @param WooDeliveredSetVerifier $verifier    Recomputes the hashes.
-	 * @param CaseAccessGuard         $guard       Case read access.
+	 * @param WooDeliveredSetVerifierInterface $verifier    Recomputes the hashes.
+	 * @param CaseAccessGuardInterface         $guard       Case read access.
 	 * @param IUserSession            $userSession The caller.
-	 * @param FileSetItemFiles        $files       Reads both files of an item.
+	 * @param FileSetItemFilesInterface        $files       Reads both files of an item.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly WooDeliveredSetVerifier $verifier,
-		private readonly CaseAccessGuard $guard,
+		private readonly WooDeliveredSetVerifierInterface $verifier,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
-		private readonly FileSetItemFiles $files,
+		private readonly FileSetItemFilesInterface $files,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

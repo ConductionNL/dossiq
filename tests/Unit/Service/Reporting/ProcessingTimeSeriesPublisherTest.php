@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Reporting;
 
 use OCA\Dossiq\Service\Reporting\ProcessingTimeSeriesPublisher;
+use OCA\OpenRegister\Service\AnalyticsSeriesDraft;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -105,6 +106,52 @@ class ProcessingTimeSeriesPublisherTest extends TestCase {
 	}//end testSeriesShapes()
 
 	/**
+	 * Every field of every series, and a report holding only some blocks.
+	 *
+	 * @return void
+	 */
+	public function testSeriesInFull(): void {
+		$publisher = $this->publisher(service: null);
+
+		self::assertSame(
+			[
+				[
+					'seriesKey' => 'dossiq-sla-compliance-by-type',
+					'title'     => 'Compliance by Case Type',
+					'chartType' => 'doughnut',
+					'labels'    => ['Permit', 'Objection'],
+					'datasets'  => [3, 1],
+				],
+				[
+					'seriesKey' => 'dossiq-sla-processing-time-distribution',
+					'title'     => 'Processing Time Distribution',
+					'chartType' => 'bar',
+					'labels'    => ['0-7', '8-14'],
+					'datasets'  => [['name' => 'Cases', 'data' => [2, 0]]],
+				],
+				[
+					'seriesKey' => 'dossiq-sla-monthly-trend',
+					'title'     => 'Monthly SLA Trend',
+					'chartType' => 'line',
+					'labels'    => ['2026-05', '2026-06'],
+					'datasets'  => [['name' => 'SLA Compliance %', 'data' => [null, 50]]],
+				],
+				[
+					'seriesKey' => 'dossiq-sla-weekly-throughput',
+					'title'     => 'Throughput (cases closed per week)',
+					'chartType' => 'line',
+					'labels'    => ['W23 2026'],
+					'datasets'  => [['name' => 'Cases closed', 'data' => [4]]],
+				],
+			],
+			$publisher->seriesOf(report: $this->report())
+		);
+
+		$partial = $publisher->seriesOf(report: ['trend' => [['month' => '2026-06', 'rate' => 50]], 'throughput' => [['weekLabel' => 'W1', 'count' => 1]]]);
+		self::assertSame(['dossiq-sla-monthly-trend', 'dossiq-sla-weekly-throughput'], array_column($partial, 'seriesKey'));
+	}//end testSeriesInFull()
+
+	/**
 	 * Empty blocks publish nothing.
 	 *
 	 * @return void
@@ -128,17 +175,24 @@ class ProcessingTimeSeriesPublisherTest extends TestCase {
 			public array $keys = [];
 
 			/**
+			 * The visibility each series was registered with.
+			 *
+			 * @var string[]
+			 */
+			public array $visibility = [];
+
+			/**
 			 * Record a registration.
 			 *
-			 * @param string $seriesKey The key.
-			 * @param mixed  ...$rest   The other arguments.
+			 * @param AnalyticsSeriesDraft $draft The series.
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function register(string $seriesKey, mixed ...$rest): array {
-				$this->keys[] = $seriesKey;
-				return $rest;
-			}//end register()
+			public function registerSeries(AnalyticsSeriesDraft $draft): array {
+				$this->keys[] = $draft->seriesKey;
+				$this->visibility[] = $draft->visibility();
+				return ['seriesKey' => $draft->seriesKey];
+			}//end registerSeries()
 		};
 
 		$this->publisher(service: $service)->publish(report: $this->report());
@@ -157,6 +211,7 @@ class ProcessingTimeSeriesPublisherTest extends TestCase {
 			$service->keys,
 			'Each series is published under its new key and, for one release, its old one.'
 		);
+		$this->assertSame(['private'], array_values(array_unique($service->visibility)));
 	}//end testPublishRegistersEachSeries()
 
 	/**
