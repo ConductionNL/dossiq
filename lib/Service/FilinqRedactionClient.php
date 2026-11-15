@@ -178,19 +178,42 @@ class FilinqRedactionClient {
 		$service = $this->service(relative: self::ANONYMIZATION_SERVICE);
 		$options = $this->anonymizeOptions(userId: $userId, wooCase: $wooCase);
 
+		return $this->anonymized(
+			request: ['fileId' => $fileId, 'entities' => $entities],
+			call: ['service' => $service, 'options' => $options, 'userId' => $userId]
+		);
+	}//end anonymize()
+
+	/**
+	 * Run filinq's anonymiser on the file and answer what it completed, or its refusal.
+	 *
+	 * @param array{fileId: int, entities: array<int, array<string, mixed>>} $request The Nextcloud file id and the checked entity set.
+	 * @param array{service: object, options: object|null, userId: string}   $call    Filinq's service, its options (null on a filinq
+	 *                                                                                without them) and the acting user.
+	 *
+	 * @return array<string, mixed> `{status, sourceFileId, entityCount, anonymizedFileId, detectionBackend, ...}`.
+	 *
+	 * @throws RuntimeException When filinq fails for a reason that is not an outcome.
+	 */
+	private function anonymized(array $request, array $call): array {
+		$fileId = $request['fileId'];
+		$entities = $request['entities'];
+		$service = $call['service'];
+		$options = $call['options'];
+
 		try {
 			if ($options === null) {
 				// A filinq from before AnonymizeOptions takes the format and the user positionally.
-				$result = (array)$service->anonymizeDocument($fileId, $entities, 'pdf-only', [], [], $userId);
+				$result = (array)$service->anonymizeDocument($fileId, $entities, 'pdf-only', [], [], $call['userId']);
 			} else {
 				$result = (array)$service->anonymizeDocument($fileId, $entities, $options);
 			}
 		} catch (Throwable $e) {
-			return $this->refusedOrThrow(error: $e, request: ['fileId' => $fileId, 'entities' => $entities]);
+			return $this->refusedOrThrow(error: $e, request: $request);
 		}
 
-		return $this->completed(result: $result, request: ['fileId' => $fileId, 'entities' => $entities]);
-	}//end anonymize()
+		return $this->completed(result: $result, request: $request);
+	}//end anonymized()
 
 	/**
 	 * Filinq's options for one anonymise call: the PDF output, the acting user
