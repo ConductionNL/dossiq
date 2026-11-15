@@ -119,6 +119,17 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			resolution: $resolution,
 			userId: $userId
 		);
+		return $this->resolveConflict(request: $request);
+	}//end resolve()
+
+	/**
+	 * Apply the resolution to the open conflict and mark it resolved, unless a step refuses.
+	 *
+	 * @param ConflictResolutionRequest $request The store, the conflict id, the resolution and the user.
+	 *
+	 * @return ConflictResolutionOutcome The outcome.
+	 */
+	private function resolveConflict(ConflictResolutionRequest $request): ConflictResolutionOutcome {
 		$data = $this->openConflict(request: $request);
 		if ($data instanceof ConflictResolutionOutcome) {
 			return $data;
@@ -127,7 +138,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		$refusal = $this->applyResolution(request: $request, data: $data);
 
 		return ($refusal ?? $this->markResolved(request: $request, data: $data));
-	}//end resolve()
+	}//end resolveConflict()
 
 	/**
 	 * Read the conflict record, refusing when it is missing or already resolved.

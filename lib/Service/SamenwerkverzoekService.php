@@ -96,17 +96,33 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 
 		$store['schema'] = $this->configString(key: 'dso_samenwerkverzoek_schema', default: 'samenwerkverzoek');
 
-		$samenwerkverzoek = [
-			'caseId' => $caseId,
+		return $this->saveAndAnnounce(
+			store: $store,
+			samenwerkverzoek: $this->requestRow(
+				requestRef: $requestRef,
+				ask: ['caseId' => $caseId, 'requestedCompetentAuthority' => $aangezochtGezag, 'rationale' => $rationale]
+			)
+		);
+	}//end initiateSamenwerking()
+
+	/**
+	 * The samenwerkverzoek row as it is stored: requested now.
+	 *
+	 * @param string                $requestRef The vergunningaanvraag the case came from.
+	 * @param array<string, string> $ask        The case id, the requested competent authority and the rationale.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function requestRow(string $requestRef, array $ask): array {
+		return [
+			'caseId' => $ask['caseId'],
 			'permitApplicationRef' => $requestRef,
-			'requestedCompetentAuthority' => $aangezochtGezag,
-			'rationale' => $rationale,
+			'requestedCompetentAuthority' => $ask['requestedCompetentAuthority'],
+			'rationale' => $ask['rationale'],
 			'status' => 'requested',
 			'requestedOn' => date('c'),
 		];
-
-		return $this->saveAndAnnounce(store: $store, samenwerkverzoek: $samenwerkverzoek);
-	}//end initiateSamenwerking()
+	}//end requestRow()
 
 	/**
 	 * Store a new samenwerkverzoek and announce it.
