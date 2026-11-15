@@ -1,0 +1,3 @@
+- [x] containsLabel formatter
+- [x] Mandaten and Facturatie columns through label + enumLabels and containsLabel
+- [x] vitest

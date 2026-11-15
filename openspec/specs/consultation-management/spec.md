@@ -11,6 +11,7 @@ note: Implemented and archived 2026-06-13 (change consultation-management). Sche
 @e2e exclude Consultation management is V1; consultation lifecycle endpoints are backend-only in the current build.
 
 Provide first-class lifecycle management for inter-departmental consultations (adviesaanvragen) — separate entities linked to a parent zaak, with their own create/list/status-transition/advice-submission/overdue-detection surface — so that a casehandler can request structured advice from another department, the advising department can respond with one of four codified outcomes, and the system can highlight requests that have passed their deadline.
+
 ## Requirements
 
 ### REQ-001: Consultation REST endpoints (index, create, updateStatus, submitResponse, overdue)
@@ -389,3 +390,94 @@ The system SHALL support both parallel and sequential consultation patterns, as 
 - **AND** each consultation MUST be listed with: number, department, status, advice outcome (if completed), and deadline
 - **AND** a visual indicator MUST show the overall consultation progress
 
+### Requirement: An obligation is one declared mechanism (REQ-OBL-01)
+
+An obligation placed on another person or unit SHALL be one declared thing
+with three parts: what is placed and on whom, what settles it, and what it
+blocks while it is open. Meeting it SHALL release what it blocked. A new
+kind of obligation SHALL be a declaration, not a new service. The advice
+request SHALL be the first obligation of this kind and SHALL keep its
+current behaviour.
+
+#### Scenario: An obligation blocks and then releases
+@e2e tests/e2e/what-a-transition-declares.spec.ts
+
+- **GIVEN** a case type declaring an inspection as an obligation that blocks closing
+- **WHEN** the inspection is requested
+- **THEN** a task SHALL reach the inspecting unit
+- **AND** the closing transitions SHALL be withheld
+- **AND** recording the inspection SHALL release them
+
+#### Scenario: The advice request behaves as it does today
+@e2e exclude unit, behaviour parity over the existing service; ConsultationServiceTest
+
+- **GIVEN** a case with an advice request
+- **WHEN** the request is placed, chased and answered
+- **THEN** the case SHALL block and release exactly as it does today
+- **AND** the behaviour SHALL come from the declared obligation
+
+#### Scenario: An obligation with a term of its own
+@e2e exclude time-dependent; unit over the timer-fired listener, ObligationReleaseTest
+
+- **GIVEN** an obligation declaring a term of ten working days
+- **WHEN** the term passes unmet
+- **THEN** the obligation SHALL be reported as overdue
+- **AND** the case SHALL stay blocked until it is settled or withdrawn
+
+#### Scenario: Withdrawing an obligation releases the case and says so
+@e2e tests/e2e/what-a-transition-declares.spec.ts
+
+- **GIVEN** an open obligation a handler withdraws with a reason
+- **WHEN** the withdrawal is recorded
+- **THEN** the case SHALL be released
+- **AND** the withdrawal and its reason SHALL stay readable on the case
+
+### Requirement: An advice request without a deadline gets the default term
+
+`createConsultation` SHALL set `latestResponseDate` to today plus `consultation_default_deadline_days` (28 when unset or not a positive whole number) when the request carries no deadline. A given deadline SHALL be kept.
+
+#### Scenario: No deadline given
+- GIVEN the default term is 21 days and today is 2026-10-24
+- WHEN an advice request is created without `latestResponseDate`
+- THEN it is stored with `latestResponseDate` 2026-11-14
+
+### Requirement: Advice requests due within the warning offset are listed
+
+`GET /api/consultations/due-soon` SHALL list the open and in-handling advice requests whose deadline is today or within `consultation_warning_offset_days` (5 when unset), with the offset it used.
+
+#### Scenario: Offset 5
+- GIVEN today is 2026-10-24 and deadlines 2026-10-26, 2026-10-30 and 2026-10-20
+- THEN only the 2026-10-26 request is listed
+
+### Requirement: The external invitation uses the configured response address
+
+When `consultation_external_response_url` is an https address, inviting an external advisory body SHALL answer `responseUrl` = that address (one slash) plus the last path segment of the access link, and a `message` naming the subject, the deadline and that address. Without the setting the access link is the address.
+
+#### Scenario: Loket address
+- GIVEN the setting `https://loket.zuiddrecht.nl/advies` and the link `https://cloud.zuiddrecht.nl/l/abc`
+- THEN `responseUrl` is `https://loket.zuiddrecht.nl/advies/abc`
+
+### Requirement: Advisory bodies past the bottleneck threshold are flagged
+
+`GET /api/consultations/bottlenecks` SHALL give per advisory body, over requests created in the last 30 days, the total, the late ones (deadline passed while not answered, or answered after it), the late share, and `flagged` when the share is above `consultation_bottleneck_threshold` (0.2 when unset).
+
+#### Scenario: Three of ten late
+- GIVEN an advisory body with 10 requests in 30 days, 3 late, threshold 0.2
+- THEN it is flagged with share 0.3
+
+### Requirement: A consultation list shows only requests on cases the caller may read
+
+`GET /api/consultations/due-soon` and `GET /api/consultations/overdue` SHALL keep only the advice requests whose parent case the caller may read, by the case pages' own check (`CaseAccessGuard::hasCaseReadAccess`), asked of each request before the list is built. The configured background service account, in its group `dossiq-background-service`, SHALL see every request: it is the account the scheduled consultation workflows call as. A request without a case SHALL never be listed.
+
+#### Scenario: A reader without access
+- GIVEN a user who may read neither case of two advice requests
+- WHEN they ask for the due-soon list
+- THEN the list is empty
+
+### Requirement: The bottleneck report is for coordinators
+
+`GET /api/consultations/bottlenecks` aggregates across every case and SHALL answer only administrators, members of `dossiq-coordinators` and the background service account; any other signed-in user SHALL get 403 before the report is computed, an anonymous caller 401.
+
+#### Scenario: A plain user
+- GIVEN a signed-in user outside those groups
+- THEN the report answers 403

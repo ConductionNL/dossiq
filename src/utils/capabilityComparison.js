@@ -2,10 +2,15 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Presentation logic for the capability comparison on the Features & roadmap
- * page. Pure functions over `openspec/parity/capabilities.json`, kept out of
- * the .vue file so the grouping and the tallies are unit-testable in the node
- * environment (vitest.config.js: component specs need jsdom, these do not).
+ * Presentation logic for the capability comparison. Pure functions over
+ * `openspec/parity/capabilities.json`, unit-testable in the node environment
+ * (vitest.config.js: component specs need jsdom, these do not).
+ *
+ * THE APP BUNDLE DOES NOT IMPORT THIS ANY MORE. The comparison was a tab on
+ * the in-app Features & roadmap page until 2026-10-07 and is now the
+ * "How dossiq compares" page on dossiq.conduction.nl, which imports this file
+ * from `docs/src/components/CapabilityComparison`. It stays here, beside the
+ * data and its tests, so the docs page and the data have one set of helpers.
  *
  * ROWS AND PROPOSALS ARE TWO LISTS, AND ONLY ONE OF THEM IS SCORED.
  * `data.capabilities` holds the rows: every system has been read against each
@@ -57,21 +62,36 @@ export const RATING_COLUMNS = Object.freeze([...RATINGS, 'unknown'])
  * so a half-translated file degrades to English rather than to a blank cell.
  *
  * @param {{name: string, name_nl?: string}} entry Labelled entry from the data file.
- * @param {string} [locale] BCP 47 locale, e.g. `nl`, `nl_NL`, `en-GB`.
+ * @param {string} [locale] BCP 47 locale, e.g. `nl`, `nl_NL`, `en-GB`; English when absent.
  * @return {string} The label to render.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-every-user-visible-string-must-exist-in-dutch
  */
-export function labelFor(entry, locale = 'en') {
+export function labelFor(entry, locale) {
 	if (!entry) {
 		return ''
 	}
-	const dutch = String(locale || '')
-		.toLowerCase()
-		.startsWith('nl')
-	if (dutch && typeof entry.name_nl === 'string' && entry.name_nl.trim() !== '') {
+	if (isDutchLocale(locale) && hasDutchName(entry)) {
 		return entry.name_nl
 	}
 	return entry.name ?? ''
+}
+
+/**
+ * @param {string} [locale] BCP 47 locale.
+ * @return {boolean} Whether the locale is a Dutch one (`nl`, `nl_NL`, `nl-BE`).
+ */
+function isDutchLocale(locale) {
+	return String(locale || '')
+		.toLowerCase()
+		.startsWith('nl')
+}
+
+/**
+ * @param {{name_nl?: string}} entry Labelled entry from the data file.
+ * @return {boolean} Whether the entry carries a non-blank Dutch name.
+ */
+function hasDutchName(entry) {
+	return typeof entry.name_nl === 'string' && entry.name_nl.trim() !== ''
 }
 
 /**
@@ -186,17 +206,36 @@ export function formatComparedOn(iso, locale = 'en') {
 	if (typeof iso !== 'string' || iso.trim() === '') {
 		return ''
 	}
+	return longUtcDateOrRaw(iso, locale)
+}
+
+/**
+ * Intl options for a long date read in UTC: `7 september 2026`.
+ *
+ * @type {object}
+ */
+const LONG_UTC_DATE = {
+	day: 'numeric',
+	month: 'long',
+	year: 'numeric',
+	timeZone: 'UTC',
+}
+
+/**
+ * An ISO date as a long UTC date in the locale, or the ISO string itself when
+ * it is not a date or the runtime has no `Intl` data for the locale.
+ *
+ * @param {string} iso ISO 8601 date, e.g. `2026-09-07`.
+ * @param {string} locale BCP 47 locale.
+ * @return {string} A human-readable date.
+ */
+function longUtcDateOrRaw(iso, locale) {
 	const parsed = new Date(`${iso}T00:00:00Z`)
 	if (Number.isNaN(parsed.getTime())) {
 		return iso
 	}
 	try {
-		return new Intl.DateTimeFormat(locale.replace('_', '-'), {
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric',
-			timeZone: 'UTC',
-		}).format(parsed)
+		return new Intl.DateTimeFormat(locale.replace('_', '-'), LONG_UTC_DATE).format(parsed)
 	} catch {
 		// No Intl data for this locale in this runtime. The ISO string is
 		// still a date a reader can act on, which is the whole job here.

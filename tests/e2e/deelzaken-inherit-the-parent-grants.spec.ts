@@ -134,7 +134,7 @@ test.describe('A deelzaak inherits its parent grants', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#access-to-a-case-reaches-its-deelzaak
+	// @e2e openspec/specs/deelzaak-support/spec.md#access-to-a-case-reaches-its-deelzaak
 	// @e2e deelzaak-support::access-to-a-case-reaches-its-deelzaak
 	// @e2e case-access-control::the-hierarchy-edge-reached-the-instance
 	test('the hierarchy declaration reached the instance', async () => {
@@ -168,7 +168,7 @@ test.describe('A deelzaak inherits its parent grants', () => {
 		expect(hierarchy.inheritedVerbs).toEqual(['read'])
 	})
 
-	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#access-to-a-case-reaches-its-deelzaak
+	// @e2e openspec/specs/deelzaak-support/spec.md#access-to-a-case-reaches-its-deelzaak
 	// @e2e deelzaak-support::access-to-a-case-reaches-its-deelzaak
 	test('the chain the grant travels down is written and read back', async () => {
 		// The edge itself, end to end. A `parentCase` that did not survive the
@@ -182,7 +182,7 @@ test.describe('A deelzaak inherits its parent grants', () => {
 		expect(grandchild.parentCase).toBe(childId)
 	})
 
-	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#read-does-not-become-write
+	// @e2e openspec/specs/deelzaak-support/spec.md#read-does-not-become-write
 	// @e2e deelzaak-support::read-does-not-become-write
 	// @e2e case-access-control::a-colleague-with-no-grant-is-refused-the-write
 	test('a principal with no grant is refused a write on the deepest deelzaak', async ({
@@ -215,7 +215,7 @@ test.describe('A deelzaak inherits its parent grants', () => {
 		expect(unchanged.title).toBe(`${RUN_PREFIX} Deelzaak of the deelzaak`)
 	})
 
-	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#a-related-case-is-not-a-parent
+	// @e2e openspec/specs/deelzaak-support/spec.md#a-related-case-is-not-a-parent
 	// @e2e deelzaak-support::a-related-case-is-not-a-parent
 	test('a related case is not a parent, so nothing hangs under it', async () => {
 		// `relatedCases` is a peer link written symmetrically. The assertion is
@@ -237,7 +237,7 @@ test.describe('A deelzaak inherits its parent grants', () => {
 		expect(readBack.parentCase ?? '').toBe('')
 	})
 
-	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#sharing-a-parent-warns-first
+	// @e2e openspec/specs/deelzaak-support/spec.md#sharing-a-parent-warns-first
 	// @e2e deelzaak-support::sharing-a-parent-warns-first
 	test('the Sharing tab of a parent says a share reaches its deelzaken', async ({
 		page,
@@ -263,7 +263,7 @@ test.describe('A deelzaak inherits its parent grants', () => {
 		await expect(warning).toContainText(/sub-case|deelza/i)
 	})
 
-	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#the-handler-can-see-why-a-colleague-is-there
+	// @e2e openspec/specs/deelzaak-support/spec.md#the-handler-can-see-why-a-colleague-is-there
 	// @e2e deelzaak-support::the-handler-can-see-why-a-colleague-is-there
 	test('the deelzaak Access tab never prints a bare identifier as a source', async ({
 		page,

@@ -1,0 +1,19 @@
+{
+	"$comment": "The location of the open Lindelaan Woo request (Openbare verlichting fietspad Lindelaan), so its Locaties card on DqZaak and DqZaakMeer reads \"1 location\" with a point on the short map and the address under it, as the boards draw it (locations-card-board task 2.1). The point is on the Lindelaan in Zuiddrecht, beside the waste report there; the closed copy of the request carries its own location (63-closed-lindelaan-woo.json).",
+	"objects": [
+		{
+			"key": "woo-fietspad-besluitklaar-locatie",
+			"register": "dossiq",
+			"schema": "case-location",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"label": "Fietspad Lindelaan",
+				"formattedAddress": "Lindelaan, Zuiddrecht",
+				"latitude": 51.8104,
+				"longitude": 4.6566,
+				"accuracyRadius": 250,
+				"source": "free"
+			}
+		}
+	]
+}

@@ -35,14 +35,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/tasks.md#task-1.2
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-decision-schema-declares-the-woo-fields-its-writers-send-req-wpi-006
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
@@ -58,6 +58,11 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Woo\WooCaseLedger
+ * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooPublicationFieldsShippedTest extends TestCase {
 
@@ -198,7 +203,7 @@ class WooPublicationFieldsShippedTest extends TestCase {
 		$this->assertSame('pub-001', ($this->rows['decision']['decision-001']['wooPublication']['publicationId'] ?? null), 'the publication reference did not survive the save');
 
 		$withdrawn = $service->withdraw('decision-001');
-		$this->assertSame(['available' => true], $withdrawn, 'withdraw found no publication on the decision');
+		$this->assertTrue($withdrawn['available'], 'withdraw found no publication on the decision');
 		$this->assertSame('withdrawn', ($this->rows['decision']['decision-001']['wooPublication']['status'] ?? null));
 	}//end testAPublishedDecisionCanBeWithdrawn()
 

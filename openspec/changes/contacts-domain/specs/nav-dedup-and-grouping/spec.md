@@ -9,12 +9,15 @@ after the My work group and before the footer. `menu-layout.json` SHALL NOT
 relocate, remove or lift it into the settings foldout. The entry SHALL have
 no children and SHALL be the only entry whose route leads to the `Contacts`
 page. The effective top level SHALL count Dashboard, My work and Contacts,
-which stays inside the ADR-097 ceiling of six.
+which stays inside the ADR-097 ceiling of six. This is the full structure
+(`menu_structure` = `full`). In the default simple structure (REQ-PNDG-007)
+Contacts stands with Organisations under the Relations caption, as board
+DqZijbalk draws it.
 
 #### Scenario: Contacts is a top-level entry
 @e2e tests/e2e/contacts-domain.spec.ts
 
-- **GIVEN** a signed-in handler
+- **GIVEN** a signed-in handler on the full structure
 - **WHEN** you open dossiq
 - **THEN** the navigation SHALL show a link labelled Contacts after My work
 - **AND** the link SHALL open the Contacts index at `/contacts`
@@ -22,7 +25,8 @@ which stays inside the ADR-097 ceiling of six.
 #### Scenario: Contacts stays alone at the top level
 @e2e tests/e2e/contacts-domain.spec.ts
 
-- **GIVEN** the effective menu after `menu-layout.json` is applied
+- **GIVEN** the full structure
+- **AND** the effective menu after `menu-layout.json` is applied
 - **WHEN** you count the top-level entries outside the footer and the settings foldout
 - **THEN** they SHALL be Dashboard, My work and Contacts and nothing else
 - **AND** Contacts SHALL render as a leaf, not a group

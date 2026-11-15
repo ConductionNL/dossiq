@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -25,7 +25,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use Exception;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SamenwerkverzoekServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\EventDispatcher\GenericEvent;
@@ -43,9 +44,9 @@ use RuntimeException;
  * aangevraagd → geaccepteerd / geweigerd transitions. Authorization
  * is admin-only per VTH policy.
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
  */
-class SamenwerkverzoekService {
+class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 
 	use SearchesObjects;
 
@@ -81,44 +82,19 @@ class SamenwerkverzoekService {
 	 *
 	 * @throws \RuntimeException When the zaak cannot be found
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
 	 */
 	public function initiateSamenwerking(
 		string $caseId,
 		string $aangezochtGezag,
 		string $rationale,
 	): array {
-		$objectService = $this->getObjectService();
-
-		$register = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'register',
-			default: ''
-		);
-		$caseSchema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'case_schema',
-			default: ''
-		);
-
-		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			id: $caseId
-		);
-
-		if ($case === null) {
-			throw new RuntimeException('Zaak not found: ' . $caseId);
-		}
+		$store = ['objectService' => $this->getObjectService(), 'register' => $this->configString(key: 'register', default: '')];
+		$case = $this->requireCase(store: $store, caseId: $caseId);
 
 		$requestRef = (string)($case['permitApplicationRef'] ?? '');
 
-		$requestSchema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'dso_samenwerkverzoek_schema',
-			default: 'samenwerkverzoek'
-		);
+		$store['schema'] = $this->configString(key: 'dso_samenwerkverzoek_schema', default: 'samenwerkverzoek');
 
 		$samenwerkverzoek = [
 			'caseId' => $caseId,
@@ -129,39 +105,33 @@ class SamenwerkverzoekService {
 			'requestedOn' => date('c'),
 		];
 
+		return $this->saveAndAnnounce(store: $store, samenwerkverzoek: $samenwerkverzoek);
+	}//end initiateSamenwerking()
+
+	/**
+	 * Store a new samenwerkverzoek and announce it.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store            The OpenRegister
+	 *                                                                                         ObjectService, register
+	 *                                                                                         and samenwerkverzoek schema.
+	 * @param array<string,mixed>                                             $samenwerkverzoek The samenwerkverzoek as submitted.
+	 *
+	 * @return array<string,mixed> The created samenwerkverzoek object
+	 */
+	private function saveAndAnnounce(array $store, array $samenwerkverzoek): array {
 		// The saveObject() call returns an ObjectEntityInterface (which extends
 		// JsonSerializable), never an array — returning it straight out of a
 		// method declared `: array` is a TypeError.
-		$created = $objectService->saveObject(
-			register: $register,
-			schema: $requestSchema,
+		$created = $store['objectService']->saveObject(
+			register: $store['register'],
+			schema: $store['schema'],
 			object: $samenwerkverzoek
 		)->jsonSerialize();
 
-		$event = new GenericEvent(
-			subject: $created,
-			arguments: [
-				'caseId' => $caseId,
-				'permitApplicationRef' => $requestRef,
-				'requestedCompetentAuthority' => $aangezochtGezag,
-			]
-		);
-		$this->eventDispatcher->dispatch(
-			eventName: 'OCA\Dossiq\Event\SamenwerkverzoekInitiated',
-			event: $event
-		);
-
-		$this->logger->info(
-			'Dossiq SamenwerkverzoekService: samenwerking initiated',
-			[
-				'app' => Application::APP_ID,
-				'caseId' => $caseId,
-				'requestedCompetentAuthority' => $aangezochtGezag,
-			]
-		);
+		$this->announceInitiated(created: $created, samenwerkverzoek: $samenwerkverzoek);
 
 		return $created;
-	}//end initiateSamenwerking()
+	}//end saveAndAnnounce()
 
 	/**
 	 * Respond to a pending samenwerkverzoek.
@@ -177,21 +147,13 @@ class SamenwerkverzoekService {
 	 *
 	 * @throws \RuntimeException When the verzoek cannot be found or is not in 'requested' status
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
 	 */
 	public function respondToSamenwerking(string $samenwerkId, bool $accept, string $advies): array {
 		$objectService = $this->getObjectService();
 
-		$register = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'register',
-			default: ''
-		);
-		$requestSchema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'dso_samenwerkverzoek_schema',
-			default: 'samenwerkverzoek'
-		);
+		$register = $this->configString(key: 'register', default: '');
+		$requestSchema = $this->configString(key: 'dso_samenwerkverzoek_schema', default: 'samenwerkverzoek');
 
 		$request = $this->findObjectAsArray(
 			objectService: $objectService,
@@ -200,6 +162,139 @@ class SamenwerkverzoekService {
 			id: $samenwerkId
 		);
 
+		$request = $this->requirePending(request: $request, samenwerkId: $samenwerkId);
+		$request = $this->withResponse(request: $request, response: ['accept' => $accept, 'advies' => $advies]);
+
+		return $this->saveResponse(
+			store: ['objectService' => $objectService, 'register' => $register, 'schema' => $requestSchema, 'samenwerkId' => $samenwerkId],
+			request: $request
+		);
+	}//end respondToSamenwerking()
+
+	/**
+	 * Store the answered samenwerkverzoek and log the response.
+	 *
+	 * @param array<string, mixed> $store   The OpenRegister ObjectService, the register, the samenwerkverzoek schema
+	 *                                      and the samenwerkverzoek's UUID (`samenwerkId`).
+	 * @param array<string, mixed> $request The samenwerkverzoek with its response.
+	 *
+	 * @return array<string,mixed> The updated samenwerkverzoek object
+	 */
+	private function saveResponse(array $store, array $request): array {
+		// See initiateSamenwerking() — saveObject() returns an entity, not an
+		// array.
+		$updated = $store['objectService']->saveObject(
+			register: $store['register'],
+			schema: $store['schema'],
+			object: $request
+		)->jsonSerialize();
+
+		$this->logger->info(
+			'Dossiq SamenwerkverzoekService: samenwerking responded',
+			[
+				'app' => AppIdentity::APP_ID,
+				'samenwerkId' => $store['samenwerkId'],
+				'newStatus' => $request['status'],
+			]
+		);
+
+		return $updated;
+	}//end saveResponse()
+
+	/**
+	 * Read a string value from this app's config.
+	 *
+	 * @param string $key     The config key
+	 * @param string $default The value when the key is unset
+	 *
+	 * @return string The configured value
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
+	 */
+	private function configString(string $key, string $default): string {
+		return $this->appConfig->getValueString(
+			app: AppIdentity::APP_ID,
+			key: $key,
+			default: $default
+		);
+	}//end configString()
+
+	/**
+	 * Load the zaak a samenwerkverzoek is initiated for.
+	 *
+	 * @param array{objectService: object, register: string} $store  The OpenRegister ObjectService and the register id
+	 * @param string                                         $caseId The UUID of the zaak
+	 *
+	 * @return array<string,mixed> The zaak
+	 *
+	 * @throws \RuntimeException When the zaak cannot be found
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
+	 */
+	private function requireCase(array $store, string $caseId): array {
+		$caseSchema = $this->configString(key: 'case_schema', default: '');
+
+		$case = $this->findObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $caseSchema,
+			id: $caseId
+		);
+
+		if ($case === null) {
+			throw new RuntimeException('Zaak not found: ' . $caseId);
+		}
+
+		return $case;
+	}//end requireCase()
+
+	/**
+	 * Dispatch the SamenwerkverzoekInitiated event and log the initiation.
+	 *
+	 * @param array<string,mixed> $created          The stored samenwerkverzoek
+	 * @param array<string,mixed> $samenwerkverzoek The samenwerkverzoek as submitted
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
+	 */
+	private function announceInitiated(array $created, array $samenwerkverzoek): void {
+		$event = new GenericEvent(
+			subject: $created,
+			arguments: [
+				'caseId' => $samenwerkverzoek['caseId'],
+				'permitApplicationRef' => $samenwerkverzoek['permitApplicationRef'],
+				'requestedCompetentAuthority' => $samenwerkverzoek['requestedCompetentAuthority'],
+			]
+		);
+		$this->eventDispatcher->dispatch(
+			eventName: 'OCA\Dossiq\Event\SamenwerkverzoekInitiated',
+			event: $event
+		);
+
+		$this->logger->info(
+			'Dossiq SamenwerkverzoekService: samenwerking initiated',
+			[
+				'app' => AppIdentity::APP_ID,
+				'caseId' => $samenwerkverzoek['caseId'],
+				'requestedCompetentAuthority' => $samenwerkverzoek['requestedCompetentAuthority'],
+			]
+		);
+	}//end announceInitiated()
+
+	/**
+	 * Return the samenwerkverzoek when it exists and still awaits a response.
+	 *
+	 * @param array<string,mixed>|null $request     The stored samenwerkverzoek, or null
+	 * @param string                   $samenwerkId The UUID of the samenwerkverzoek
+	 *
+	 * @return array<string,mixed> The samenwerkverzoek
+	 *
+	 * @throws \RuntimeException When the verzoek cannot be found or is not in 'requested' status
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
+	 */
+	private function requirePending(?array $request, string $samenwerkId): array {
 		if ($request === null) {
 			throw new RuntimeException('Samenwerkverzoek not found: ' . $samenwerkId);
 		}
@@ -211,33 +306,30 @@ class SamenwerkverzoekService {
 			);
 		}
 
+		return $request;
+	}//end requirePending()
+
+	/**
+	 * Stamp the response onto a samenwerkverzoek.
+	 *
+	 * @param array<string,mixed>                  $request  The pending samenwerkverzoek
+	 * @param array{accept: bool, advies: string} $response True to accept, false to reject, and the advies/reasoning text
+	 *
+	 * @return array<string,mixed> The samenwerkverzoek with status, advice and respondedOn set
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
+	 */
+	private function withResponse(array $request, array $response): array {
 		$request['status'] = 'refused';
-		if ($accept === true) {
+		if ($response['accept'] === true) {
 			$request['status'] = 'accepted';
 		}
 
-		$request['advice'] = $advies;
+		$request['advice'] = $response['advies'];
 		$request['respondedOn'] = date('c');
 
-		// See initiateSamenwerking() — saveObject() returns an entity, not an
-		// array.
-		$updated = $objectService->saveObject(
-			register: $register,
-			schema: $requestSchema,
-			object: $request
-		)->jsonSerialize();
-
-		$this->logger->info(
-			'Dossiq SamenwerkverzoekService: samenwerking responded',
-			[
-				'app' => Application::APP_ID,
-				'samenwerkId' => $samenwerkId,
-				'newStatus' => $request['status'],
-			]
-		);
-
-		return $updated;
-	}//end respondToSamenwerking()
+		return $request;
+	}//end withResponse()
 
 	/**
 	 * Authorise a samenwerkverzoek mutation.
@@ -252,7 +344,7 @@ class SamenwerkverzoekService {
 	 *
 	 * @throws \Exception When the user is not an administrator
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $samenwerk reserved for future ACL
 	 */
@@ -265,7 +357,7 @@ class SamenwerkverzoekService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq SamenwerkverzoekService: could not resolve IGroupManager: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 

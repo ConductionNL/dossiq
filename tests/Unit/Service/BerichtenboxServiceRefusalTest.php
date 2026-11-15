@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxService;
-use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCP\App\IAppManager;
@@ -50,7 +50,6 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\BerichtenboxService
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface
  * @uses \OCA\Dossiq\Service\SettingsService
- * @uses \OCA\Dossiq\Service\Support\OwningCaseResolver
  * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
  * @uses   \OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal
  */
@@ -173,18 +172,30 @@ class BerichtenboxServiceRefusalTest extends TestCase {
 			$appManager,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			$this->getMockBuilder(OwningCaseResolver::class)
-				->disableOriginalConstructor()
-				->onlyMethods(['resolve'])
-				->getMock(),
 			$this->adapter,
 			// A REAL journal wrapping the SAME CaseTimeline double. The
 			// assertions below still watch `$this->timeline`, so what this test
 			// observes did not move when the journal was split out of the
 			// service: only the wiring line did.
-			new BerichtenboxJournal($this->timeline)
+			new BerichtenboxJournal($this->timeline),
+			$this->passThroughAccount()
 		);
 	}//end service()
+
+	/**
+	 * An account that runs the operation as it comes.
+	 *
+	 * This test is about what a send records, not who writes it;
+	 * BerichtenboxServiceAccountTest covers the writer.
+	 *
+	 * @return BackgroundServiceAccount The double.
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 
 	/**
 	 * A tracked message id is recorded as sent, on the public timeline.

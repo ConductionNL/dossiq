@@ -6,7 +6,7 @@
  * OpenRegister throws this when a write does not satisfy the schema, with a
  * message that already names the offending property -- `Property 'checklist'
  * should match format 'uuid' but 'e2e-checklist' does not`. Dossiq catches it
- * BY TYPE in InspectionChecklistController::submitResult() to answer 400
+ * BY TYPE in TaskChecklistController::submit() to answer 400
  * instead of 500, and a catch clause cannot be exercised by a unit test
  * without a class to throw.
  *

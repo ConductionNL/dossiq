@@ -50,13 +50,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+ * @spec openspec/specs/intake-from-a-channel/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Kernel\Contracts\ChannelIntakeInterface;
+use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -66,9 +68,9 @@ use Throwable;
 /**
  * Opens a case for a routed channel message, or refuses it in writing.
  *
- * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+ * @spec openspec/specs/intake-from-a-channel/spec.md
  */
-class ChannelIntake {
+class ChannelIntake implements ChannelIntakeInterface {
 
 	use SearchesObjects;
 
@@ -122,7 +124,7 @@ class ChannelIntake {
 	 *
 	 * @return boolean True when it names this app's case schema.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function isForACase(string $targetSchema): bool {
 		$target = strtolower(trim($targetSchema));
@@ -144,26 +146,65 @@ class ChannelIntake {
 	 *
 	 * @return string The case id, or '' when no case was opened.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function caseFor(array $message, array $targetPayload, string $ruleName = ''): string {
 		$channel = trim((string)($message['channelId'] ?? ''));
 		$externalId = trim((string)($message['externalId'] ?? ''));
+		$routed = new RoutedMessage(
+			message: $message,
+			payload: $targetPayload,
+			ruleName: $ruleName,
+			channel: $channel,
+			externalId: $externalId
+		);
+
+		return $this->openOnce(routed: $routed);
+	}//end caseFor()
+
+	/**
+	 * Open the case of a message once: a message that cannot be recognised is refused, a second delivery answers the first case.
+	 *
+	 * @param RoutedMessage $routed The message, the rule's mapped payload, its channel and its own id.
+	 *
+	 * @return string The case id, or '' when none was opened.
+	 */
+	private function openOnce(RoutedMessage $routed): string {
+		$channel = $routed->channel;
+		$externalId = $routed->externalId;
 
 		// A message with no channel or no id of its own cannot be recognised
 		// on a second delivery. Opening a case for it means accepting that a
 		// retry opens another one, so it is refused instead, in writing.
 		if ($channel === '' || $externalId === '') {
 			$this->refuse(
-				channel: $channel,
-				externalId: $externalId,
-				message: $message,
+				routed: $routed,
 				reason: 'The message carries no channel or no id of its own, so a second delivery of it '
 					. 'could not be told apart from a new message.'
 			);
 			return '';
 		}
 
+		$duplicate = $this->duplicateAnswer(channel: $channel, externalId: $externalId);
+		if ($duplicate !== null) {
+			return $duplicate;
+		}
+
+		return $this->openCase(routed: $routed);
+	}//end openOnce()
+
+	/**
+	 * The answer for a message this intake cannot or need not open a case for.
+	 *
+	 * @param string $channel    The channel the message came in on.
+	 * @param string $externalId The message's own id on that channel.
+	 *
+	 * @return string|null '' when the log cannot answer, the existing case id when
+	 *                     the message was already handled, null to open a case.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function duplicateAnswer(string $channel, string $externalId): ?string {
 		// 🔴 THE DUPLICATE CHECK COMES BEFORE EVERYTHING, AND IT NEEDS A PLACE
 		// TO READ. An unprovisioned log cannot answer "have I seen this", and
 		// opening a case on an unanswerable question is how a retry silently
@@ -191,66 +232,70 @@ class ChannelIntake {
 			return $existing;
 		}
 
-		$caseTypeId = $this->caseTypeIdIn(payload: $targetPayload);
+		return null;
+	}//end duplicateAnswer()
+
+	/**
+	 * Open a case for a message not seen before, or say why not.
+	 *
+	 * @param RoutedMessage $routed The message, its mapped payload, rule, channel and id.
+	 *
+	 * @return string The case id, or '' when no case was opened.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function openCase(RoutedMessage $routed): string {
+		$caseTypeId = $this->caseTypeIdIn(payload: $routed->payload);
 		if ($caseTypeId === '') {
 			$this->refuse(
-				channel: $channel,
-				externalId: $externalId,
-				message: $message,
-				reason: 'The routing rule "' . $ruleName . '" names no case type this instance has. '
+				routed: $routed,
+				reason: 'The routing rule "' . $routed->ruleName . '" names no case type this instance has. '
 					. 'A dossiq rule maps a case type id onto `caseType`.'
 			);
 			return '';
 		}
 
-		$caseId = $this->write(caseTypeId: $caseTypeId, message: $message, payload: $targetPayload);
+		$caseId = $this->write(caseTypeId: $caseTypeId, routed: $routed);
 		if ($caseId === '') {
 			$this->refuse(
-				channel: $channel,
-				externalId: $externalId,
-				message: $message,
+				routed: $routed,
 				reason: 'The case could not be written. The reason is in the log beside this entry.'
 			);
 			return '';
 		}
 
 		$this->log->recordChannelMessage(
-			channel: $channel,
-			channelMessageId: $externalId,
-			sender: $this->facts->correspondent(message: $message),
-			subject: $this->facts->titleFor(message: $message, payload: $targetPayload),
+			channel: $routed->channel,
+			channelMessageId: $routed->externalId,
+			sender: $this->facts->correspondent(message: $routed->message),
+			subject: $this->facts->titleFor(message: $routed->message, payload: $routed->payload),
 			outcome: IntakeLog::OUTCOME_CASE,
-			reason: 'Opened by routing rule "' . $ruleName . '".',
+			reason: 'Opened by routing rule "' . $routed->ruleName . '".',
 			caseId: $caseId
 		);
 
 		return $caseId;
-	}//end caseFor()
+	}//end openCase()
 
 	/**
 	 * Write the case, elevated, from fields this app chose.
 	 *
-	 * @param string               $caseTypeId The case type, already resolved.
-	 * @param array<string, mixed> $message    The message.
-	 * @param array<string, mixed> $payload    The rule's mapped payload.
+	 * @param string        $caseTypeId The case type, already resolved.
+	 * @param RoutedMessage $routed     The message and the rule's mapped payload.
 	 *
 	 * @return string The new case's id, or '' when nothing was written.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
-	private function write(string $caseTypeId, array $message, array $payload): string {
+	private function write(string $caseTypeId, RoutedMessage $routed): string {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $caseSchema === '') {
-			$this->logger->warning(
-				'ChannelIntake: the register is not configured, so a routed message opened no case',
-				['caseType' => $caseTypeId]
-			);
+		if ($this->registerMissing(store: [$objectService, $register, $caseSchema], caseTypeId: $caseTypeId) === true) {
 			return '';
 		}
 
-		$object = $this->caseObjectFor(caseTypeId: $caseTypeId, message: $message, payload: $payload);
+		$object = $this->caseObjectFor(caseTypeId: $caseTypeId, routed: $routed);
 
 		try {
 			$created = $this->runAsSystemIfAvailable(
@@ -269,6 +314,44 @@ class ChannelIntake {
 			return '';
 		}
 
+		return $this->writtenCaseId(created: $created, caseTypeId: $caseTypeId);
+	}//end write()
+
+	/**
+	 * Whether the register is unconfigured, logging a warning when it is.
+	 *
+	 * @param array{0: object|null, 1: string, 2: string} $store      OpenRegister's ObjectService (or null), the
+	 *                                                         configured register and the configured case schema.
+	 * @param string                                       $caseTypeId The case type, for the log line.
+	 *
+	 * @return bool True when no case can be written.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function registerMissing(array $store, string $caseTypeId): bool {
+		[$objectService, $register, $caseSchema] = $store;
+		if ($objectService === null || $register === '' || $caseSchema === '') {
+			$this->logger->warning(
+				'ChannelIntake: the register is not configured, so a routed message opened no case',
+				['caseType' => $caseTypeId]
+			);
+			return true;
+		}
+
+		return false;
+	}//end registerMissing()
+
+	/**
+	 * The id the written case answered, or '' (logged) when it answered none.
+	 *
+	 * @param mixed  $created    What the save returned.
+	 * @param string $caseTypeId The case type, for the log line.
+	 *
+	 * @return string The new case's id, or ''.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function writtenCaseId(mixed $created, string $caseTypeId): string {
 		$row = $this->objectAsArray(value: $created);
 		$caseId = (string)($row['@self']['id'] ?? ($row['id'] ?? ''));
 		if ($caseId === '') {
@@ -280,18 +363,19 @@ class ChannelIntake {
 		}
 
 		return $caseId;
-	}//end write()
+	}//end writtenCaseId()
 
 	/**
 	 * The case a routed message opens, before it is written.
 	 *
-	 * @param string               $caseTypeId The case type the message routed to.
-	 * @param array<string, mixed> $message    The message as the channel delivered it.
-	 * @param array<string, mixed> $payload    What the channel parsed out of it.
+	 * @param string        $caseTypeId The case type the message routed to.
+	 * @param RoutedMessage $routed     The message and what the channel parsed out of it.
 	 *
 	 * @return array<string, mixed> The case object.
 	 */
-	private function caseObjectFor(string $caseTypeId, array $message, array $payload): array {
+	private function caseObjectFor(string $caseTypeId, RoutedMessage $routed): array {
+		$message = $routed->message;
+		$payload = $routed->payload;
 		$object = [
 			'title' => $this->facts->titleFor(message: $message, payload: $payload),
 			'caseType' => $caseTypeId,
@@ -300,8 +384,31 @@ class ChannelIntake {
 			// dateAdd(startDate, caseType.processingDeadline), so a startDate
 			// left out means no deadline at all.
 			'startDate' => $this->facts->receivedDate(message: $message),
-		];
+		] + $this->facts->receivedAtField(message: $message);
 
+		$object = $this->withAcceptedFields(object: $object, payload: $payload);
+
+		// Decision 171: the channel is a slug enum, so a message's words
+		// ("E-mail", "brief") become their slug and the words are kept. A word
+		// that names no channel writes no channel, never a value the schema
+		// refuses, which would lose the whole case.
+		$object = $this->withChannelSlug(object: $object);
+
+		return $this->withInitialStatus(
+			object: $this->withCorrespondent(object: $object, message: $message),
+			caseTypeId: $caseTypeId,
+		);
+	}//end caseObjectFor()
+
+	/**
+	 * The case object with the accepted payload fields copied onto it.
+	 *
+	 * @param array<string, mixed> $object  The case object.
+	 * @param array<string, mixed> $payload What the channel parsed out of the message.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function withAcceptedFields(array $object, array $payload): array {
 		foreach (self::ACCEPTED_FIELDS as $field) {
 			$value = ($payload[$field] ?? null);
 			if (is_scalar($value) === false) {
@@ -309,11 +416,25 @@ class ChannelIntake {
 			}
 
 			$text = trim((string)$value);
-			if ($text !== '') {
-				$object[$field] = $text;
+			if ($text === '') {
+				continue;
 			}
+
+			$object[$field] = $text;
 		}
 
+		return $object;
+	}//end withAcceptedFields()
+
+	/**
+	 * The case object with its description and correspondent filled from the message.
+	 *
+	 * @param array<string, mixed> $object  The case object.
+	 * @param array<string, mixed> $message The message as the channel delivered it.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function withCorrespondent(array $object, array $message): array {
 		$description = trim((string)($message['text'] ?? ''));
 		if (($object['description'] ?? '') === '' && $description !== '') {
 			$object['description'] = $description;
@@ -333,6 +454,18 @@ class ChannelIntake {
 			$object['initiatorType'] = 'contact';
 		}
 
+		return $object;
+	}//end withCorrespondent()
+
+	/**
+	 * The case object with the case type's initial status.
+	 *
+	 * @param array<string, mixed> $object     The case object.
+	 * @param string               $caseTypeId The case type the message routed to.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function withInitialStatus(array $object, string $caseTypeId): array {
 		// A case with no status is off every status-filtered lens, has no
 		// available transitions and reads as Unknown in the header. The status
 		// comes from the case TYPE and never from the message.
@@ -340,8 +473,27 @@ class ChannelIntake {
 		if ($initial !== '') {
 			$object['status'] = $initial;
 		}
+
 		return $object;
-	}//end caseObjectFor()
+	}//end withInitialStatus()
+
+	/**
+	 * The case object with its channel words turned into a slug, the words
+	 * kept beside it (decision 171). An object without a channel is unchanged.
+	 *
+	 * @param array<string, mixed> $object The case object.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function withChannelSlug(array $object): array {
+		$fields = array_filter(
+			(new CommunicationChannel())->normalise(value: ($object['communicationChannel'] ?? null)),
+			static fn ($value): bool => $value !== null
+		);
+		unset($object['communicationChannel']);
+
+		return array_merge($object, $fields);
+	}//end withChannelSlug()
 
 	/**
 	 * The case type the rule mapped, when this instance has it.
@@ -350,7 +502,7 @@ class ChannelIntake {
 	 *
 	 * @return string The case type id, or '' when it names none or none resolves.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	private function caseTypeIdIn(array $payload): string {
 		$caseTypeId = trim((string)($payload['caseType'] ?? ''));
@@ -416,33 +568,28 @@ class ChannelIntake {
 	/**
 	 * Record a refusal where the intake worker reads it.
 	 *
-	 * @param string               $channel    The channel id.
-	 * @param string               $externalId The channel's id for the message.
-	 * @param array<string, mixed> $message    The message.
-	 * @param string               $reason     Why, in a sentence a handler can read.
+	 * @param RoutedMessage $routed The message, its channel and its id.
+	 * @param string        $reason Why, in a sentence a handler can read.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
-	private function refuse(string $channel, string $externalId, array $message, string $reason): void {
+	private function refuse(RoutedMessage $routed, string $reason): void {
 		$this->logger->warning(
 			'ChannelIntake: a routed message opened no case',
-			['channel' => $channel, 'message' => $externalId, 'reason' => $reason]
+			['channel' => $routed->channel, 'message' => $routed->externalId, 'reason' => $reason]
 		);
 
 		$this->log->recordChannelMessage(
-			channel: $channel,
-			channelMessageId: $externalId,
-			sender: $this->facts->correspondent(message: $message),
-			subject: $this->facts->titleFor(message: $message, payload: []),
+			channel: $routed->channel,
+			channelMessageId: $routed->externalId,
+			sender: $this->facts->correspondent(message: $routed->message),
+			subject: $this->facts->titleFor(message: $routed->message, payload: []),
 			outcome: IntakeLog::OUTCOME_REFUSED,
 			reason: $reason
 		);
 	}//end refuse()
-
-
-
 
 	/**
 	 * Coerce whatever the object service answered into an array.
@@ -452,17 +599,6 @@ class ChannelIntake {
 	 * @return array<string, mixed> The row, or an empty array.
 	 */
 	private function objectAsArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $value) ?? []);
 	}//end objectAsArray()
 }//end class

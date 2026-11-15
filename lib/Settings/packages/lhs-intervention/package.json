@@ -1,0 +1,11 @@
+{
+  "id": "lhs-intervention",
+  "title": "Landelijke Handhavingsstrategie: interventietabel",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": [
+    "seed"
+  ],
+  "install": "auto",
+  "description": "The intervention table of the Landelijke Handhavingsstrategie as a decision table in OpenRegister's decision-tables register, under the key dossiq.lhs-intervention: the recommended intervention for a behaviour row (A to D) and a consequence column (1 to 4). Installed on every install and upgrade. It needs an OpenRegister that ships the decision-tables register; on an older OpenRegister the package is refused, says so, and is installed by the first upgrade after OpenRegister's. A table the instance already holds under that key is kept as it is."
+}

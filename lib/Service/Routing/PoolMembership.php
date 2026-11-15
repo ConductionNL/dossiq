@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ namespace OCA\Dossiq\Service\Routing;
 /**
  * Reads a routing pool out of the role rows bound to a case.
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 class PoolMembership {
 	/**
@@ -80,7 +80,7 @@ class PoolMembership {
 	 * @return array<int, array{participant: string, weight: float, team: string}>
 	 *         The pool, deduplicated by participant, first binding winning.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-rule-may-target-a-position-inside-a-team-req-rtp-02
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-rule-may-target-a-position-inside-a-team-req-rtp-02
 	 */
 	public function membersOf(array $roles, string $roleType, string $team = ''): array {
 		if ($roleType === '') {
@@ -88,32 +88,71 @@ class PoolMembership {
 		}
 
 		$members = [];
-		$seen = [];
+		$target = ['roleType' => $roleType, 'team' => $team];
 		foreach ($roles as $role) {
-			if (is_array($role) === false || (string)($role['roleType'] ?? '') !== $roleType) {
+			$member = $this->member(role: $role, target: $target);
+			if ($member === null || isset($members[$member['participant']]) === true) {
 				continue;
 			}
 
-			$participant = (string)($role['participant'] ?? '');
-			if ($participant === '' || isset($seen[$participant]) === true) {
-				continue;
-			}
-
-			$memberTeam = trim((string)($role['team'] ?? ''));
-			if ($team !== '' && $memberTeam !== $team) {
-				continue;
-			}
-
-			$seen[$participant] = true;
-			$members[] = [
-				'participant' => $participant,
-				'weight' => $this->weightOf(role: $role),
-				'team' => $memberTeam,
-			];
+			$members[$member['participant']] = $member;
 		}
 
-		return $members;
+		return array_values($members);
 	}//end membersOf()
+
+	/**
+	 * One role row as a pool member, or null when it does not hold the roleType or the team.
+	 *
+	 * @param mixed                                 $role   The role row bound to the case.
+	 * @param array{roleType: string, team: string} $target The roleType the rule targets, and the team it narrows to
+	 *                                                      ('' for all of them).
+	 *
+	 * @return array{participant: string, weight: float, team: string}|null
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-rule-may-target-a-position-inside-a-team-req-rtp-02
+	 */
+	private function member(mixed $role, array $target): ?array {
+		if ($this->holdsRoleType(role: $role, roleType: $target['roleType']) === false) {
+			return null;
+		}
+
+		$participant = (string)($role['participant'] ?? '');
+		if ($participant === '') {
+			return null;
+		}
+
+		$memberTeam = trim((string)($role['team'] ?? ''));
+		if ($this->inTeam(memberTeam: $memberTeam, team: $target['team']) === false) {
+			return null;
+		}
+
+		return ['participant' => $participant, 'weight' => $this->weightOf(role: $role), 'team' => $memberTeam];
+	}//end member()
+
+	/**
+	 * Whether a member's team is the one the rule narrows to, every team passing when it names none.
+	 *
+	 * @param string $memberTeam The member's team.
+	 * @param string $team       The team the rule narrows to, or '' for all of them.
+	 *
+	 * @return bool
+	 */
+	private function inTeam(string $memberTeam, string $team): bool {
+		return $team === '' || $memberTeam === $team;
+	}//end inTeam()
+
+	/**
+	 * Whether a role row is an array binding this roleType.
+	 *
+	 * @param mixed  $role     The role row bound to the case.
+	 * @param string $roleType The roleType the rule targets.
+	 *
+	 * @return bool
+	 */
+	private function holdsRoleType(mixed $role, string $roleType): bool {
+		return is_array($role) === true && (string)($role['roleType'] ?? '') === $roleType;
+	}//end holdsRoleType()
 
 	/**
 	 * The weight one membership declares.
@@ -127,7 +166,7 @@ class PoolMembership {
 	 *
 	 * @return float The weight, never negative.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	public function weightOf(array $role): float {
 		$raw = ($role['weight'] ?? null);
@@ -151,7 +190,7 @@ class PoolMembership {
 	 *
 	 * @return bool True when no weight was declared anywhere.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	public function isUnweighted(array $members): bool {
 		foreach ($members as $member) {
@@ -180,7 +219,7 @@ class PoolMembership {
 	 *
 	 * @return array<int, string> The rotation, empty when nobody may take work.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	public function rotation(array $members): array {
 		if ($members === []) {
@@ -217,7 +256,7 @@ class PoolMembership {
 	 *
 	 * @return float|null The smallest weight above zero, or null when every member is at zero.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	private function smallestWeight(array $members): ?float {
 		$smallest = null;
@@ -247,7 +286,7 @@ class PoolMembership {
 	 *
 	 * @psalm-return list<string>
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	private function dealSlots(array $slots): array {
 		$rotation = [];
@@ -280,7 +319,7 @@ class PoolMembership {
 	 *
 	 * @return float The relative load; INF for a member who takes no new work.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	public function relativeLoad(float $count, float $weight): float {
 		if ($weight <= 0.0) {

@@ -7,8 +7,7 @@
  * carries only a child id can still be authorised per case.
  *
  * Several `#[NoAdminRequired]` routes name a child object rather than a case —
- * `POST /api/appointments/{appointmentId}/no-show`,
- * `GET /api/berichtenbox/messages/{messageId}`,
+ * `POST /api/appointments/{appointmentId}/no-show` and
  * `POST /api/bezwaar/hearings/{sessionId}/attendance`. There is nothing in
  * those signatures to authorise against, so each one first resolves the owning
  * case and then applies the ordinary `CaseAccessGuard` check. Three services
@@ -40,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\Dossiq\Kernel\Contracts\OwningCaseResolverInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -49,7 +49,7 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class OwningCaseResolver {
+class OwningCaseResolver implements OwningCaseResolverInterface {
 	/**
 	 * Constructor.
 	 *

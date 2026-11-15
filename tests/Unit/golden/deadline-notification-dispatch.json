@@ -1,0 +1,26 @@
+{
+    "not an array": [
+        "warning: DeadlineNotificationDispatchJob: invalid argument []"
+    ],
+    "no type": [
+        "warning: DeadlineNotificationDispatchJob: missing required argument keys {\"termijnInstanceId\":\"ti-1\",\"recipientUserId\":\"alice\"}"
+    ],
+    "no instance": [
+        "warning: DeadlineNotificationDispatchJob: missing required argument keys {\"type\":\"warning\",\"recipientUserId\":\"alice\"}"
+    ],
+    "no recipient": [
+        "warning: DeadlineNotificationDispatchJob: missing required argument keys {\"type\":\"warning\",\"termijnInstanceId\":\"ti-1\"}"
+    ],
+    "sent": [
+        "send [\"warning\",\"ti-1\",\"alice\",{\"days\":3},[]]",
+        "info: DeadlineNotificationDispatchJob: delivered {\"type\":\"warning\",\"recipient\":\"alice\",\"instance\":\"ti-1\"}"
+    ],
+    "sent without context": [
+        "send [\"expired\",\"ti-2\",\"bob\",[],[]]",
+        "info: DeadlineNotificationDispatchJob: delivered {\"type\":\"expired\",\"recipient\":\"bob\",\"instance\":\"ti-2\"}"
+    ],
+    "sending fails": [
+        "send [\"warning\",\"ti-1\",\"alice\",{\"days\":3},[]]",
+        "error: DeadlineNotificationDispatchJob: delivery failed {\"error\":\"mailer down\",\"type\":\"warning\",\"recipient\":\"alice\"}"
+    ]
+}

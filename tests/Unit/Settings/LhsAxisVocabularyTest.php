@@ -70,6 +70,18 @@ class LhsAxisVocabularyTest extends TestCase {
 	}//end settingsJson()
 
 	/**
+	 * The matrix the `lhs-matrix` package ships.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function shippedMatrix(): array {
+		$rows = $this->settingsJson('packages/lhs-matrix/seed/matrix.json')['rows'];
+		$this->assertCount(1, $rows, 'The lhs-matrix package ships one matrix.');
+
+		return $rows[0];
+	}//end shippedMatrix()
+
+	/**
 	 * The `actorType` enum a register descriptor offers for a recommendation.
 	 *
 	 * @param string $register The register descriptor filename.
@@ -96,7 +108,7 @@ class LhsAxisVocabularyTest extends TestCase {
 	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
 	 */
 	public function testEveryRecommendableActorTypeExistsOnTheMatrixAxis(): void {
-		$axis = $this->settingsJson('seed/lhs-matrix-2024.json')['actorTypeAxis'];
+		$axis = $this->shippedMatrix()['actorTypeAxis'];
 
 		foreach (['dossiq_register.json', 'dossiq_mock_register.json'] as $register) {
 			foreach ($this->recommendationActorTypes($register) as $actorType) {
@@ -120,7 +132,7 @@ class LhsAxisVocabularyTest extends TestCase {
 	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
 	 */
 	public function testEveryMatrixAxisValueIsRecommendable(): void {
-		$axis = $this->settingsJson('seed/lhs-matrix-2024.json')['actorTypeAxis'];
+		$axis = $this->shippedMatrix()['actorTypeAxis'];
 		$enum = $this->recommendationActorTypes('dossiq_register.json');
 
 		foreach ($axis as $actorType) {
@@ -145,7 +157,7 @@ class LhsAxisVocabularyTest extends TestCase {
 	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
 	 */
 	public function testEverySeededCellKeysOnItsOwnAxes(): void {
-		$matrix = $this->settingsJson('seed/lhs-matrix-2024.json');
+		$matrix = $this->shippedMatrix();
 
 		$axes = [
 			'severity' => $matrix['severityAxis'],
@@ -179,7 +191,7 @@ class LhsAxisVocabularyTest extends TestCase {
 	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
 	 */
 	public function testTheRenameMapLeavesTheActorTypeAxisAlone(): void {
-		$axis = $this->settingsJson('seed/lhs-matrix-2024.json')['actorTypeAxis'];
+		$axis = $this->shippedMatrix()['actorTypeAxis'];
 		$renames = \OCA\Dossiq\Repair\RenameDutchValueDecisions::VALUE_MAP['actorType'] ?? [];
 
 		foreach (array_keys($renames) as $from) {
@@ -208,7 +220,7 @@ class LhsAxisVocabularyTest extends TestCase {
 	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
 	 */
 	public function testDemoRecommendationsUseTheAxisVocabulary(): void {
-		$axis = $this->settingsJson('seed/lhs-matrix-2024.json')['actorTypeAxis'];
+		$axis = $this->shippedMatrix()['actorTypeAxis'];
 		$mock = $this->settingsJson('dossiq_mock_register.json');
 
 		$checked = 0;

@@ -1,0 +1,36 @@
+{
+  "_note": "screens-round12-domain-lists, board DqContracten: a contract states where it stands, so the Contracts list can show it and filter on it. Renewing and terminating are decisions taken in decidiq; the status records that one is pending and the outcome comes back onto the contract. Version moves so the schema re-imports on an existing instance. 1.3.0 adds `oneOf` with the same titles as `x-enum-labels`: the Active line and pills name a value by its `oneOf` title (example-set-supplier-contracts).",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "supplierContract": {
+        "version": "1.3.0",
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Where the contract stands. Renewing or terminating waits on a decision.",
+            "enum": ["active", "renewal-decision", "termination-decision", "ending"],
+            "x-enum-labels": {
+              "active": "Active",
+              "renewal-decision": "Renewal: decision pending",
+              "termination-decision": "Termination: decision pending",
+              "ending": "Ended, winding down"
+            },
+            "oneOf": [
+              { "const": "active", "title": "Active" },
+              { "const": "renewal-decision", "title": "Renewal: decision pending" },
+              { "const": "termination-decision", "title": "Termination: decision pending" },
+              { "const": "ending", "title": "Ended, winding down" }
+            ],
+            "default": "active",
+            "facetable": true
+          }
+        }
+      }
+    }
+  }
+}

@@ -25,10 +25,10 @@ namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseType\CaseVersionMove;
+use OCA\Dossiq\Kernel\Contracts\CaseVersionMoveInterface;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
-use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
 use OCP\IUser;
 use Throwable;
@@ -55,7 +55,7 @@ use Throwable;
  * REQ-ZV-02, and one performed across a selection with no reason recorded is
  * unauditable afterwards.
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) `BulkActionResult` is a value object
  * whose constructor is PRIVATE: `applied()`, `skipped()`, `refused()` and
@@ -72,22 +72,22 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public const ID = 'dossiq:move-case-type-version';
 
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseVersionMove $move The one answer to what a move changes.
+	 * @param CaseVersionMoveInterface $move The one answer to what a move changes.
 	 * @param IL10N           $l10n Localisation, for the label an operator reads.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
-		private readonly CaseVersionMove $move,
+		private readonly CaseVersionMoveInterface $move,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
@@ -97,7 +97,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -108,7 +108,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Move the cases to another version of their case type');
@@ -119,7 +119,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return string The description.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t(
@@ -132,7 +132,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return bool True.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return true;
@@ -147,7 +147,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return array<int, string> The homogeneity guard.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function getGuards(): array {
 		return [BulkActionInterface::GUARD_HOMOGENEITY];
@@ -166,7 +166,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @throws InvalidArgumentException When no target version or no reason is named.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		if (trim((string)($parameters['target'] ?? '')) === '') {
@@ -185,43 +185,67 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 * a code, because that sentence names the status that does not exist in the
 	 * target version, and the name is the only thing an operator can act on.
 	 *
-	 * @param ObjectEntity         $object     The case the job is walking.
-	 * @param array<string, mixed> $parameters The job parameters.
-	 * @param bool                 $commit     False to rehearse, true to write.
-	 * @param IUser|null           $actor      The user the job runs as.
+	 * @param BulkStep $step The member object, the parameters, whether to commit and who started the job.
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult {
-		$caseId = $this->caseId(object: $object);
+	public function apply(BulkStep $step): BulkActionResult {
+		$caseId = $this->caseId(object: $step->object);
 		if ($caseId === '') {
 			return BulkActionResult::skipped(reason: 'no_case_id');
 		}
 
+		return $this->attempt(step: $step, caseId: $caseId);
+	}//end apply()
+
+	/**
+	 * Rehearse or perform the move for a case that has an id.
+	 *
+	 * @param BulkStep $step   The member object, the parameters, whether to commit and who started the job.
+	 * @param string   $caseId The case uuid.
+	 *
+	 * @return BulkActionResult What happened, or what would.
+	 */
+	private function attempt(BulkStep $step, string $caseId): BulkActionResult {
+		$parameters = $step->parameters;
 		$target = trim((string)($parameters['target'] ?? ''));
 		$reason = trim((string)($parameters['reason'] ?? ''));
 
 		try {
-			if ($commit === false) {
+			if ($step->commit === false) {
 				return $this->rehearse(caseId: $caseId, target: $target);
 			}
 
-			$this->move->move(
-				caseId: $caseId,
-				targetCaseTypeId: $target,
-				reason: $reason,
-				actorUid: $this->uidOf(actor: $actor),
-			);
-
-			return BulkActionResult::applied();
+			return $this->commitMove(caseId: $caseId, target: $target, reason: $reason, actor: $step->actor);
 		} catch (RefusedException $e) {
 			return BulkActionResult::refused(rule: $e->getSentence());
 		} catch (Throwable $e) {
 			return BulkActionResult::failed(message: $e->getMessage());
 		}//end try
-	}//end apply()
+	}//end attempt()
+
+	/**
+	 * Move the case to the target version.
+	 *
+	 * @param string     $caseId The case uuid.
+	 * @param string     $target The target case type version.
+	 * @param string     $reason Why the case moves.
+	 * @param IUser|null $actor  Who started the job.
+	 *
+	 * @return BulkActionResult Applied.
+	 */
+	private function commitMove(string $caseId, string $target, string $reason, ?IUser $actor): BulkActionResult {
+		$this->move->move(
+			caseId: $caseId,
+			targetCaseTypeId: $target,
+			reason: $reason,
+			actorUid: $this->uidOf(actor: $actor),
+		);
+
+		return BulkActionResult::applied();
+	}//end commitMove()
 
 	/**
 	 * What the move would do to this case, without writing it.
@@ -233,7 +257,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @throws RefusedException When the case or the target cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rehearse(string $caseId, string $target): BulkActionResult {
 		$preview = $this->move->preview(caseId: $caseId, targetCaseTypeId: $target);

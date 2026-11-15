@@ -20,8 +20,8 @@
  * the sibling the surface is missing rather than empty. That is why no
  * placement declares `requiredApp` (see hoursLeafManifest.spec.js).
  *
- * @spec openspec/changes/projects-from-planninq-on-the-case/tasks.md
- * @spec openspec/changes/merge-case-documents-via-filinq-leaf/tasks.md
+ * @spec openspec/specs/case-linked-projects/spec.md
+ * @spec openspec/specs/case-documents-merge-via-filinq-leaf/spec.md
  */
 
 import fs from 'fs'
@@ -85,15 +85,33 @@ describe('sibling leaves on the case page', () => {
 		expect(caseDetail.config.schema).toBe('case')
 	})
 
-	// @spec openspec/changes/projects-from-planninq-on-the-case/specs/case-linked-projects/spec.md#a-handler-starts-a-project-from-a-case
-	it('places planninq-projects on the case page, in the grid', () => {
-		expect(placedInTheGrid('planninq-projects').title).toBe('Projects')
+	// @spec openspec/specs/case-linked-card/spec.md#requirement-the-case-page-lists-its-links-in-one-side-card
+	it('lists planninq-projects in the Linked side card, not as a grid widget', () => {
+		expect(
+			allWidgets().filter((w) => w.integrationId === 'planninq-projects'),
+		).toHaveLength(0)
 	})
 
-	// @spec openspec/changes/merge-case-documents-via-filinq-leaf/specs/case-documents-merge-via-filinq-leaf/spec.md#a-handler-merges-a-cases-documents-into-one-pdf
+	// @spec openspec/specs/case-documents-merge-via-filinq-leaf/spec.md#a-handler-merges-a-cases-documents-into-one-pdf
 	it('places filinq-merge-to-pdf on the case page, in the grid', () => {
 		expect(placedInTheGrid('filinq-merge-to-pdf').title).toBe(
 			'Merge into one PDF',
 		)
+	})
+
+	// @spec openspec/changes/portal-change-proposals-on-the-case/specs/portal-contribution/spec.md
+	it('places portaliq-change-proposal-queue as the Proposals tab of the case panels', () => {
+		const widget = caseDetail.config.widgets.find(
+			(w) => w.integrationId === 'portaliq-change-proposal-queue',
+		)
+		expect(widget.type).toBe('integration')
+		expect(widget.requiredApp).toBeUndefined()
+		const panels = caseDetail.config.widgets.find((w) => w.id === 'case-panels')
+		const tab = panels.content.tabs.find((t) => t.widgetId === widget.id)
+		expect(tab.label).toBe('Proposals')
+		expect(
+			caseDetail.config.layout.find((l) => l.widgetId === widget.id),
+			'a tab, not a grid panel',
+		).toBeUndefined()
 	})
 })

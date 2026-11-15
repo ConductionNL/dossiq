@@ -50,6 +50,27 @@ OpenRegister → Registers → Dossiq → schema `case`**, of in
 - Municipality-edits die vóór de migratie als `BewaarTermijnRegel`-objecten
   bestonden, worden door de repair-stap bewaard; pas ze na verificatie hier aan.
 
+### Selectielijstklasse: elke omgeving heeft een selectielijstregister nodig
+
+Een zaak neemt de selectielijstklasse van haar resultaattype over zodra het
+resultaat is gezet (`case.selectionListClass`, uit
+`resultType.selectionListClass`). Het zaakschema wijst dat veld aan als
+archiefcategorie:
+
+```json
+"x-openregister-archival": {
+  "retention": { "default": "P10Y" },
+  "categoryProperty": "selectionListClass"
+}
+```
+
+OpenRegister zoekt die klasse op in het selectielijstregister van de omgeving.
+Een zaak met een klasse die daar niet in staat, weigert OpenRegister op te
+slaan. Richt daarom op elke omgeving een selectielijstregister in voordat je
+resultaattypen een selectielijstklasse geeft. Een resultaattype zonder klasse
+zet niets op de zaak, en een klasse die een beheerder met de hand op de zaak
+zette, blijft dan staan.
+
 OpenRegister berekent hieruit de `archiefactiedatum` en nomineert de zaak in
 zijn archivist-workflow (V-lijst / overbrenging). Zaaktypen zónder regel
 verschijnen in OpenRegister's archivist-view als *unconfigured* — dossiq houdt

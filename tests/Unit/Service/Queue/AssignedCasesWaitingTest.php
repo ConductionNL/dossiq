@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Queue\Source\AssignedCasesSource
  * @uses \OCA\Dossiq\Service\Queue\Source\RegisterBackedSource
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class AssignedCasesWaitingTest extends TestCase {
 	/**

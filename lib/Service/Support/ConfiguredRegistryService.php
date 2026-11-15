@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\Dossiq\Kernel\Contracts\ConfiguredRegistryServiceInterface;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class ConfiguredRegistryService {
+class ConfiguredRegistryService implements ConfiguredRegistryServiceInterface {
 
 	use SearchesObjects;
 
@@ -186,7 +187,7 @@ class ConfiguredRegistryService {
 	 * ⚠️ The identifier parameter is named `$uuid`, NOT `$id`. Passing `id:` as
 	 * a named argument raises `Unknown named parameter $id` at runtime, which
 	 * the caller then reports as a generic save/delete failure. This is not
-	 * hypothetical: `InspectionChecklistService::deleteChecklist()` shipped with
+	 * hypothetical: `ChecklistTemplateStore::delete()` (then InspectionChecklistService) shipped with
 	 * exactly that mistake and its admin Delete button 500'd on every use.
 	 *
 	 * @param string $schemaConfigKey Config key naming the schema.

@@ -54,7 +54,7 @@ Dossiq is a Nextcloud case management app (zaaksysteem) for Dutch municipalities
 | VTH Workflow Configuration | Inspection checklists, enforcement wizard, LHS matrix, and VTH seed data | GEMMA VTH Fysieke Leefomgeving, LHS | Implemented | [vth-workflow-configuration.md](vth-workflow-configuration.md) |
 | Bezwaar/Beroep Workflow | AWB-compliant objection and appeal case types with pre-seeded workflows and timelines | GEMMA Bezwaar/Beroep, Awb Hoofdstuk 7 | Implemented | [bezwaar-beroep-workflow.md](bezwaar-beroep-workflow.md) |
 | B&W Besluitvorming Workflow | Formal B&W decision-making with parafering (sign-off) chain and notifications | GEMMA Bestuurlijk activiteiten | Implemented | [besluitvorming-workflow.md](besluitvorming-workflow.md) |
-| B&W Parafering | Digital approval routing through mandate-verified sign-off chains | GEMMA Bestuurlijk activiteiten | Planned | [bw-parafering.md](bw-parafering.md) |
+| B&W Parafering | Digital approval routing through mandate-verified sign-off chains | GEMMA Bestuurlijk activiteiten | Planned | not yet documented |
 | Sub-case Support (Deelzaken) | Hierarchical cases with parent-child linking, roll-up indicators, and ZGW hoofdzaak/deelzaken mapping | ZGW ZRC-013, CMMN | Implemented | [deelzaak-support.md](deelzaak-support.md) |
 | Doorlooptijd Dashboard | SLA adherence analytics with processing time distribution, compliance rate, trends, and at-risk cases | Awb, Woo, TEC BPM 6.3–6.4 | Implemented | [doorlooptijd-dashboard.md](doorlooptijd-dashboard.md) |
 | Signalering Widgets | Six Nextcloud Dashboard widgets for deadline alerts, overdue cases, stalled cases, and task reminders | Nextcloud Dashboard API | Implemented | [signalering-widgets.md](signalering-widgets.md) |

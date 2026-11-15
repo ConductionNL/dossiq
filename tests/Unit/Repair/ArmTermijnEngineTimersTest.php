@@ -51,6 +51,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\TermTimerFields
+ * @uses \OCA\Dossiq\Service\TimerArmRun
  */
 class ArmTermijnEngineTimersTest extends TestCase {
 	use MakesCaseDateNormaliser;

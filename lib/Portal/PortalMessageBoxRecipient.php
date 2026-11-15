@@ -17,14 +17,14 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/portal-message-box-recipient/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -46,16 +46,17 @@ use Throwable;
  * Anything else answers null, and portaliq sends nothing.
  *
  * NO DOUBLE SEND. Dossiq's own message box letters (the compose dialog through
- * BerichtenboxService, decisions and term notices through
- * BerichtenboxRoutingService) go out directly and write no portaalBericht, so
- * no inbox message is one dossiq already delivered. A path that ever writes
- * both must make this method answer null for its messages.
+ * BerichtenboxService) go out directly and write no portaalBericht. Decisions
+ * and term notices go through RequesterNoticeSender, which writes a
+ * portaalBericht OR sends digital post, never both, so no inbox message is one
+ * dossiq already delivered. A path that ever writes both must make this method
+ * answer null for its messages.
  *
  * THE READ RUNS AS THE SYSTEM. Portaliq calls this from a background job with
  * no Nextcloud user, where OpenRegister's RBAC would answer nothing. The
  * message id is the only input.
  *
- * @spec openspec/changes/portal-message-box-recipient/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalMessageBoxRecipient {
 	use SearchesObjects;
@@ -63,11 +64,11 @@ class PortalMessageBoxRecipient {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register and schemas.
 	 * @param LoggerInterface $logger          Logger; never given the identity.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -79,25 +80,50 @@ class PortalMessageBoxRecipient {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-message-box-recipient/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function forMessage(string $messageId): ?string {
+		$source = $this->messageSource();
+		if ($messageId === '' || $source === null) {
+			return null;
+		}
+
+		return $this->readRecipient(source: $source, messageId: $messageId);
+	}//end forMessage()
+
+	/**
+	 * The object service and the register, message and case schemas, when all are configured.
+	 *
+	 * @return array{objectService: object, schemas: array<string, string>}|null Null when one is missing.
+	 */
+	private function messageSource(): array|null {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$messageSchema = $this->settingsService->getConfigValue('portaal_bericht_schema');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if ($messageId === '' || $objectService === null || $register === '' || $messageSchema === '' || $caseSchema === '') {
+		if ($objectService === null || $register === '' || $messageSchema === '' || $caseSchema === '') {
 			return null;
 		}
 
+		return [
+			'objectService' => $objectService,
+			'schemas' => ['register' => $register, 'message' => $messageSchema, 'case' => $caseSchema],
+		];
+	}//end messageSource()
+
+	/**
+	 * Read the recipient of one message as the system, or null when it cannot be read.
+	 *
+	 * @param array{objectService: object, schemas: array<string, string>} $source    The object service and schemas.
+	 * @param string                                                       $messageId The portaalBericht uuid.
+	 *
+	 * @return string|null
+	 */
+	private function readRecipient(array $source, string $messageId): string|null {
 		try {
 			$recipient = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?string => $this->recipientOf(
-					objectService: $objectService,
-					schemas: ['register' => $register, 'message' => $messageSchema, 'case' => $caseSchema],
-					messageId: $messageId
-				)
+				objectService: $source['objectService'],
+				operation: fn (): ?string => $this->recipientOf(source: $source, messageId: $messageId)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the message box recipient could not be read', ['exception' => get_class($e)]);
@@ -109,18 +135,19 @@ class PortalMessageBoxRecipient {
 		}
 
 		return $recipient;
-	}//end forMessage()
+	}//end readRecipient()
 
 	/**
 	 * Read the message and its case, inside the system context.
 	 *
-	 * @param object                $objectService The OpenRegister object service.
-	 * @param array<string, string> $schemas       `register`, `message` and `case`.
-	 * @param string                $messageId     The portaalBericht uuid.
+	 * @param array<string, mixed> $source    The OpenRegister object service (`objectService`) and the `register`,
+	 *                                        `message` and `case` schemas (`schemas`).
+	 * @param string               $messageId The portaalBericht uuid.
 	 *
 	 * @return string|null
 	 */
-	private function recipientOf(object $objectService, array $schemas, string $messageId): ?string {
+	private function recipientOf(array $source, string $messageId): ?string {
+		['objectService' => $objectService, 'schemas' => $schemas] = $source;
 		$message = $this->findObjectAsArray(objectService: $objectService, register: $schemas['register'], schema: $schemas['message'], id: $messageId);
 		if ($message === null || ($message['direction'] ?? '') !== 'handler_to_citizen') {
 			return null;

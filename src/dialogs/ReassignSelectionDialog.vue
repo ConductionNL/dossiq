@@ -18,7 +18,7 @@
   SPDX-License-Identifier: EUPL-1.2
   SPDX-FileCopyrightText: 2026 Conduction B.V.
 
-  @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<NcDialog
@@ -29,7 +29,8 @@
 		@update:open="$emit('update:open', $event)">
 		<div class="reassign">
 			<template v-if="job === null">
-				<BulkSelectionScope
+				<CnSelectionScope
+					:labels="scopeLabels"
 					:selectedIds="selectedIds"
 					:total="matchingTotal"
 					:scope="scope"
@@ -54,9 +55,10 @@
 				</NcNoteCard>
 			</template>
 
-			<BulkJobProgress
+			<CnBulkJobProgress
 				v-else
 				:job="job"
+				:labels="jobLabels"
 				:busy="busy"
 				@update:job="job = $event"
 				@finished="$emit('reassigned', $event)" />
@@ -79,6 +81,7 @@
 </template>
 
 <script>
+import { CnBulkJobProgress, CnSelectionScope } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import {
 	NcButton,
@@ -87,21 +90,19 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
-import BulkJobProgress from '../components/bulk/BulkJobProgress.vue'
-import BulkSelectionScope from '../components/bulk/BulkSelectionScope.vue'
 import {
 	ACTION_REASSIGN,
 	previewBulkJob,
 	readRefusal,
 } from '../services/bulkJobApi.js'
-import { buildSelection, SCOPE_PAGE } from '../utils/selectionScope.js'
+import { buildSelection, caseJobLabels, caseScopeLabels, SCOPE_PAGE } from '../utils/selectionScope.js'
 
 export default {
 	name: 'ReassignSelectionDialog',
 
 	components: {
-		BulkJobProgress,
-		BulkSelectionScope,
+		CnBulkJobProgress,
+		CnSelectionScope,
 		NcButton,
 		NcDialog,
 		NcNoteCard,
@@ -127,6 +128,8 @@ export default {
 			handler: '',
 			justification: '',
 			scope: SCOPE_PAGE,
+			jobLabels: caseJobLabels(),
+			scopeLabels: caseScopeLabels(),
 			busy: false,
 			error: '',
 			job: null,
@@ -137,7 +140,7 @@ export default {
 		/**
 		 * @return {string} The dialog title.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		title() {
 			return t('dossiq', 'Give the cases to another handler')
@@ -148,7 +151,7 @@ export default {
 		 *
 		 * @return {boolean} Whether the act can be rehearsed.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		canRehearse() {
 			return (
@@ -171,7 +174,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the job has been rehearsed.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async rehearse() {
 			this.busy = true

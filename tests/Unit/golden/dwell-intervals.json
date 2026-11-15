@@ -1,0 +1,98 @@
+[
+    {
+        "caseId": "open",
+        "statusId": "intake",
+        "actor": "ann",
+        "hours": 24.0,
+        "workingHours": 24.0,
+        "open": false
+    },
+    {
+        "caseId": "open",
+        "statusId": "review",
+        "actor": "",
+        "hours": 0.0,
+        "workingHours": 0.0,
+        "open": false
+    },
+    {
+        "caseId": "open",
+        "statusId": "decide",
+        "actor": "bob",
+        "hours": 0.0,
+        "workingHours": 0.0,
+        "open": false
+    },
+    {
+        "caseId": "open",
+        "statusId": "decide",
+        "actor": "",
+        "hours": 0.0,
+        "workingHours": 0.0,
+        "open": false
+    },
+    {
+        "caseId": "open",
+        "statusId": "wait",
+        "actor": "",
+        "hours": 4260.0,
+        "workingHours": 4260.0,
+        "open": false
+    },
+    {
+        "caseId": "open",
+        "statusId": "last",
+        "actor": "",
+        "hours": 12.0,
+        "workingHours": 12.0,
+        "open": true
+    },
+    {
+        "caseId": "closed",
+        "statusId": "intake",
+        "actor": "",
+        "hours": 24.0,
+        "workingHours": 24.0,
+        "open": false
+    },
+    {
+        "caseId": "closed",
+        "statusId": "done",
+        "actor": "",
+        "hours": 72.0,
+        "workingHours": 72.0,
+        "open": false
+    },
+    {
+        "caseId": "closed-garbled",
+        "statusId": "intake",
+        "actor": "",
+        "hours": 0.0,
+        "workingHours": 0.0,
+        "open": false
+    },
+    {
+        "caseId": "closed-empty-end",
+        "statusId": "intake",
+        "actor": "",
+        "hours": 0.0,
+        "workingHours": 0.0,
+        "open": false
+    },
+    {
+        "caseId": "blank-end",
+        "statusId": "intake",
+        "actor": "",
+        "hours": 24.0,
+        "workingHours": 24.0,
+        "open": true
+    },
+    {
+        "caseId": "no-row",
+        "statusId": "intake",
+        "actor": "",
+        "hours": 3600.0,
+        "workingHours": 3600.0,
+        "open": true
+    }
+]

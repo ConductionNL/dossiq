@@ -99,7 +99,7 @@ test.describe('Merge two cases into one', () => {
 			.map((row: any) => String(row?.name ?? ''))
 			.sort()
 
-	// @e2e openspec/changes/case-merge/specs/case-management/spec.md#scenario-a-duplicate-is-merged
+	// @e2e openspec/specs/case-management/spec.md#a-duplicate-is-merged
 	test('The duplicate is merged and the survivor carries both parties', async ({
 		page,
 		playwright,
@@ -113,25 +113,29 @@ test.describe('Merge two cases into one', () => {
 		})
 
 		await clickHeaderAction(page, 'cn-action-case-merge')
-		await expect(page.getByTestId('case-merge-dialog')).toBeVisible({
-			timeout: 30_000,
-		})
+		const dialog = page.getByTestId('cn-action-dialog')
+		await expect(dialog).toBeVisible({ timeout: 30_000 })
 
 		// The survivor is searched for and picked. Nothing is preselected, so a
 		// confirm without a pick is refused by the button itself.
-		await expect(page.getByTestId('case-merge-confirm')).toBeDisabled()
-		await page
-			.getByTestId('case-merge-search')
+		await expect(dialog.getByTestId('cn-action-dialog-confirm')).toBeDisabled()
+		await dialog
+			.getByTestId('cn-action-dialog-field-into')
 			.locator('input')
+			.first()
 			.fill(`${RUN_PREFIX} Merge survivor`)
 		await page
-			.getByTestId(`case-merge-option-${cases.survivor}`)
+			.getByRole('option')
+			.filter({ hasText: `${RUN_PREFIX} Merge survivor` })
+			.first()
 			.click({ timeout: 30_000 })
-		await page
-			.getByTestId('case-merge-reason')
+		// The reason is the dialog's only text area.
+		await dialog
 			.locator('textarea')
+			.first()
 			.fill('Dezelfde aanvraag, twee keer ingediend.')
-		await page.getByTestId('case-merge-confirm').click()
+		await dialog.getByTestId('cn-action-dialog-confirm').click()
+		await expect(dialog.getByTestId('cn-action-dialog-done')).toBeVisible({ timeout: 30_000 })
 
 		const api = await playwright.request.newContext({ baseURL })
 
@@ -154,7 +158,7 @@ test.describe('Merge two cases into one', () => {
 		expect(errors, errors.join('\n')).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-merge/specs/case-management/spec.md#scenario-the-old-public-link
+	// @e2e openspec/specs/case-management/spec.md#the-old-public-link
 	test('The merged case’s public link shows the survivor’s status', async ({
 		page,
 		playwright,

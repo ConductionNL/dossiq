@@ -344,6 +344,7 @@ class DsoControllerRequestStub implements IRequest {
  * @uses \OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier
  * @uses \OCA\Dossiq\Service\Dso\DsoObjectRepository
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
  */
 class DsoControllerTest extends TestCase {
 

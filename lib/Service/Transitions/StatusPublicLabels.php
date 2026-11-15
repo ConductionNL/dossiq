@@ -44,12 +44,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
+
+use OCA\Dossiq\Service\Support\LanguageMapText;
 
 /**
  * What a status says to the applicant.
@@ -58,7 +60,7 @@ namespace OCA\Dossiq\Service\Transitions;
  * provider (which must stay constructible with `new`, hydra ADR-046) can name
  * the case fields from here instead of keeping a second spelling of them.
  *
- * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 final class StatusPublicLabels {
 	/**
@@ -86,7 +88,7 @@ final class StatusPublicLabels {
 	 *
 	 * @return string The public label, the name when there is none, or ''.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public static function publicLabelOf(array $statusType): string {
 		$label = self::textOf(value: ($statusType['publicLabel'] ?? null));
@@ -108,7 +110,7 @@ final class StatusPublicLabels {
 	 *
 	 * @return string The public description, or ''.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public static function publicDescriptionOf(array $statusType): string {
 		return self::textOf(value: ($statusType['publicDescription'] ?? null));
@@ -125,36 +127,22 @@ final class StatusPublicLabels {
 	 * "Array", which is how every step on a resident's case read "Array" and
 	 * then folded into one, because eight labels of "Array" are equal.
 	 *
-	 * Dutch first, the language these labels are written in, then the first
-	 * non-empty text in the map.
+	 * The reader's language first when one is given (`en_GB` also accepts
+	 * `en`), then Dutch, the language these labels are written in, then the
+	 * first non-empty text in the map.
 	 *
-	 * @param mixed $value A string, a language map, or anything else.
+	 * @param mixed  $value    A string, a language map, or anything else.
+	 * @param string $language The reader's language code, or '' for none.
 	 *
 	 * @return string The text, trimmed, or '' when there is none.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	public static function textOf(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === false) {
-			return '';
-		}
-
-		$candidates = $value;
-		if (array_key_exists('nl', $value) === true) {
-			$candidates = (['nl' => $value['nl']] + $value);
-		}
-
-		foreach ($candidates as $text) {
-			if (is_string($text) === true && trim($text) !== '') {
-				return trim($text);
-			}
-		}
-
-		return '';
+	public static function textOf(mixed $value, string $language = ''): string {
+		// The one reading lives in LanguageMapText, which classes that need it
+		// receive by injection; this static form stays for the row helpers here.
+		return (new LanguageMapText())->textOf(value: $value, language: $language);
 	}//end textOf()
 
 	/**
@@ -169,7 +157,7 @@ final class StatusPublicLabels {
 	 *
 	 * @return string The label, or ''.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public static function labelOnCase(array $case): string {
 		return trim((string)($case[self::CASE_LABEL_FIELD] ?? ''));
@@ -182,7 +170,7 @@ final class StatusPublicLabels {
 	 *
 	 * @return string The description, or ''.
 	 *
-	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public static function descriptionOnCase(array $case): string {
 		return trim((string)($case[self::CASE_DESCRIPTION_FIELD] ?? ''));

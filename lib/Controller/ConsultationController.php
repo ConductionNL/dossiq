@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -32,8 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
-use OCA\Dossiq\Service\ConsultationService;
+use Closure;
+use OCA\Dossiq\Kernel\Contracts\ConsultationAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ConsultationServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -45,7 +46,7 @@ use OCP\IRequest;
  * Every endpoint carries the NoAdminRequired annotation and applies the
  * ConsultationAccessGuard (OWASP A01:2021, ADR-005 Rule 3).
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
 class ConsultationController extends Controller {
 	/**
@@ -53,14 +54,14 @@ class ConsultationController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param ConsultationService $consultationService The consultation service
-	 * @param ConsultationAccessGuard $accessGuard The authorization/body-decoding guard
+	 * @param ConsultationServiceInterface $consultationService The consultation service
+	 * @param ConsultationAccessGuardInterface $accessGuard The authorization/body-decoding guard
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConsultationService $consultationService,
-		private readonly ConsultationAccessGuard $accessGuard,
+		private readonly ConsultationServiceInterface $consultationService,
+		private readonly ConsultationAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -74,7 +75,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function index(string $caseId): JSONResponse {
 		$authError = $this->accessGuard->requireUser();
@@ -95,7 +96,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function show(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -113,7 +114,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function create(): JSONResponse {
 		$authError = $this->accessGuard->requireUser();
@@ -146,25 +147,13 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function updateStatus(string $id): JSONResponse {
-		$access = $this->accessGuard->authorize(consultationId: $id);
-		if ($access->error !== null) {
-			return $access->error;
-		}
-
-		try {
-			$data = $this->accessGuard->requestBody();
-			$status = $data['status'] ?? '';
-			$result = $this->consultationService->updateStatus(
-				consultationId: $id,
-				newStatus: $status,
-			);
-			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->authorizedChange(id: $id, change: fn (array $data): array => $this->consultationService->updateStatus(
+			consultationId: $id,
+			newStatus: $data['status'] ?? '',
+		));
 	}//end updateStatus()
 
 	/**
@@ -176,24 +165,13 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function submitResponse(string $id): JSONResponse {
-		$access = $this->accessGuard->authorize(consultationId: $id);
-		if ($access->error !== null) {
-			return $access->error;
-		}
-
-		try {
-			$data = $this->accessGuard->requestBody();
-			$result = $this->consultationService->submitResponse(
-				consultationId: $id,
-				response: $data,
-			);
-			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->authorizedChange(id: $id, change: fn (array $data): array => $this->consultationService->submitResponse(
+			consultationId: $id,
+			response: $data,
+		));
 	}//end submitResponse()
 
 	/**
@@ -205,7 +183,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function delete(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -228,7 +206,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function overdue(): JSONResponse {
 		$authError = $this->accessGuard->requireUser();
@@ -236,7 +214,7 @@ class ConsultationController extends Controller {
 			return $authError;
 		}
 
-		$overdue = $this->consultationService->getOverdueConsultations();
+		$overdue = $this->consultationService->getOverdueConsultations(mayRead: $this->accessGuard->readableFilter());
 		return new JSONResponse(['results' => $overdue]);
 	}//end overdue()
 
@@ -249,25 +227,13 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function requestExtension(string $id): JSONResponse {
-		$access = $this->accessGuard->authorize(consultationId: $id);
-		if ($access->error !== null) {
-			return $access->error;
-		}
-
-		try {
-			$data = $this->accessGuard->requestBody();
-			$justification = $data['justification'] ?? '';
-			$result = $this->consultationService->requestExtension(
-				consultationId: $id,
-				justification: $justification,
-			);
-			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
+		return $this->authorizedChange(id: $id, change: fn (array $data): array => $this->consultationService->requestExtension(
+			consultationId: $id,
+			justification: $data['justification'] ?? '',
+		));
 	}//end requestExtension()
 
 	/**
@@ -279,25 +245,33 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function approveExtension(string $id): JSONResponse {
+		return $this->authorizedChange(id: $id, change: fn (array $data): array => $this->consultationService->approveExtension(
+			consultationId: $id,
+			newDeadline: $data['newDeadline'] ?? '',
+		));
+	}//end approveExtension()
+
+	/**
+	 * Apply a change to a consultation the caller may act on, with the request body.
+	 *
+	 * @param string  $id     The consultation UUID.
+	 * @param Closure $change The change, given the request body, answering the updated consultation.
+	 *
+	 * @return JSONResponse The updated consultation, the access refusal, or a 400 with the failure.
+	 */
+	private function authorizedChange(string $id, Closure $change): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
 		if ($access->error !== null) {
 			return $access->error;
 		}
 
 		try {
-			$data = $this->accessGuard->requestBody();
-			$newDeadline = $data['newDeadline'] ?? '';
-			$result = $this->consultationService->approveExtension(
-				consultationId: $id,
-				newDeadline: $newDeadline,
-			);
-			return new JSONResponse($result);
+			return new JSONResponse($change($this->accessGuard->requestBody()));
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
-	}//end approveExtension()
-
+	}//end authorizedChange()
 }//end class

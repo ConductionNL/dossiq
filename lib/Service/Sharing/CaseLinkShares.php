@@ -26,13 +26,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Sharing;
 
+use OCA\Dossiq\Kernel\Contracts\CaseLinkSharesInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -41,20 +42,11 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class CaseLinkShares {
-
-	/**
-	 * The failure is this instance's own configuration, not OpenRegister.
-	 *
-	 * Carried on the error array so {@see \OCA\Dossiq\Controller\CaseSharingController}
-	 * can answer 503 and name the gap, instead of 502 and a bare
-	 * "Service unavailable" that points at an app which did nothing wrong.
-	 *
-	 * @var string
-	 */
-	public const REASON_NOT_CONFIGURED = 'not-configured';
+class CaseLinkShares implements CaseLinkSharesInterface {
 
 	/**
 	 * The share record could not be written, so the minted links were pulled.
@@ -86,7 +78,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, array<string, mixed>> The shares.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function listForCase(string $caseId): array {
 		$found = $this->readRecords(caseId: $caseId);
@@ -116,7 +108,7 @@ class CaseLinkShares {
 	 *
 	 * @return bool True when the case carries a share holding that link.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function belongsToCase(int $linkId, string $caseId): bool {
 		if ($linkId <= 0) {
@@ -142,7 +134,7 @@ class CaseLinkShares {
 	 *
 	 * @return bool True when OpenRegister revoked it.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function revokeLink(int $linkId, string $userId): bool {
 		return $this->accessLinks->revokeLink(linkId: $linkId, userId: $userId);
@@ -157,7 +149,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<string, mixed>|null The updated link, or null.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function pauseLink(int $linkId, string $userId, bool $paused): ?array {
 		return $this->accessLinks->setPaused(linkId: $linkId, userId: $userId, paused: $paused);
@@ -175,7 +167,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<string, mixed>|null The body a holder is served, or null.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function holderPreview(int $linkId, string $caseId): ?array {
 		foreach ($this->listForCase(caseId: $caseId) as $share) {
@@ -205,16 +197,15 @@ class CaseLinkShares {
 	 *
 	 * @return bool True when the share was updated.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function markCollected(string $shareId, int $noteId): bool {
-		$objectService = $this->gateway->objectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
-		if ($objectService === null || empty($register) === true || empty($shareSchema) === true) {
+		$store = $this->shareStore();
+		if ($store === null) {
 			return false;
 		}
 
+		[$objectService, $register, $shareSchema] = $store;
 		try {
 			$share = $this->gateway->toArray(
 				$objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema)
@@ -237,6 +228,22 @@ class CaseLinkShares {
 	}//end markCollected()
 
 	/**
+	 * The object service, register and share schema, when all three are there.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The store, or null when it is not configured.
+	 */
+	private function shareStore(): array|null {
+		$objectService = $this->gateway->objectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
+		if ($objectService === null || empty($register) === true || empty($shareSchema) === true) {
+			return null;
+		}
+
+		return [$objectService, $register, $shareSchema];
+	}//end shareStore()
+
+	/**
 	 * Write the share record that points at a minted link.
 	 *
 	 * @param string $caseId The case UUID.
@@ -248,7 +255,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<string, mixed> The stored share, or an error array.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function store(
 		string $caseId,
@@ -258,6 +265,27 @@ class CaseLinkShares {
 		array $documents,
 		array $extra,
 	): array {
+		$share = new MintedShare(
+			caseId: $caseId,
+			label: $label,
+			createdBy: $createdBy,
+			link: $link,
+			capabilities: (array)($link['capabilities'] ?? []),
+			documents: $documents,
+			extra: $extra
+		);
+
+		return $this->storeShare(share: $share);
+	}//end store()
+
+	/**
+	 * Write the share record of a minted link, when the share store is configured.
+	 *
+	 * @param MintedShare $share The minted share.
+	 *
+	 * @return array<string, mixed> The stored share, or an error array.
+	 */
+	private function storeShare(MintedShare $share): array {
 		$objectService = $this->gateway->objectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];
@@ -266,63 +294,82 @@ class CaseLinkShares {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_share_schema');
 		if (empty($register) === true || empty($schema) === true) {
-			// 🔴 NAME WHAT IS UNAVAILABLE. This branch is reached when this
-			// instance never finished configuring dossiq, which is a LOCAL
-			// gap and not OpenRegister refusing anything. It used to answer
-			// a bare "Service unavailable", which the controller then mapped
-			// to 502. An e2e lane spent a batch on that 502 before the cause
-			// turned out to be an unwritten app-config key. The `reason` is
-			// what lets the controller answer 503 rather than 502.
-			$this->logger->error(
-				'CaseLinkShares: the case share schema is not configured, so no share can be recorded',
-				['caseId' => $caseId, 'register' => $register, 'schema' => $schema]
-			);
-			return [
-				'error' => 'Sharing is not configured on this instance yet. '
-					. 'An administrator reloads the dossiq configuration to map the case share schema.',
-				'reason' => self::REASON_NOT_CONFIGURED,
-			];
+			return $this->notConfiguredError(caseId: $share->caseId, register: $register, schema: $schema);
 		}
-
-		$capabilities = (array)($link['capabilities'] ?? []);
 
 		try {
 			$result = $objectService->saveObject(
-				object: $this->recordFor(
-					caseId: $caseId,
-					label: $label,
-					createdBy: $createdBy,
-					link: $link,
-					capabilities: $capabilities,
-					documents: $documents,
-					extra: $extra
-				),
+				object: $this->recordFor(share: $share),
 				register: (int)$register,
 				schema: (int)$schema,
 			);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseLinkShares: the link was minted and the share record was not written',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
-			);
-			return [
-				'error' => 'The link could not be recorded on the case, so it was withdrawn again.',
-				'reason' => self::REASON_ROLLED_BACK,
-			];
+			return $this->rolledBackError(caseId: $share->caseId, exception: $e);
 		}
 
 		$this->logger->info(
 			'Dossiq: case access link minted',
 			[
-				'caseId' => $caseId,
-				'createdBy' => $createdBy,
-				'capabilities' => $capabilities,
-				'documents' => count($documents),
+				'caseId' => $share->caseId,
+				'createdBy' => $share->createdBy,
+				'capabilities' => $share->capabilities,
+				'documents' => count($share->documents),
 			]
 		);
 
 		return $this->gateway->toArray($result);
-	}//end store()
+	}//end storeShare()
+
+	/**
+	 * Log and describe a share that cannot be recorded because the case share schema is not configured.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $register The configured register, possibly empty.
+	 * @param string $schema The configured case share schema, possibly empty.
+	 *
+	 * @return array<string, string> The error array.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function notConfiguredError(string $caseId, string $register, string $schema): array {
+		// 🔴 NAME WHAT IS UNAVAILABLE. This branch is reached when this
+		// instance never finished configuring dossiq, which is a LOCAL
+		// gap and not OpenRegister refusing anything. It used to answer
+		// a bare "Service unavailable", which the controller then mapped
+		// to 502. An e2e lane spent a batch on that 502 before the cause
+		// turned out to be an unwritten app-config key. The `reason` is
+		// what lets the controller answer 503 rather than 502.
+		$this->logger->error(
+			'CaseLinkShares: the case share schema is not configured, so no share can be recorded',
+			['caseId' => $caseId, 'register' => $register, 'schema' => $schema]
+		);
+		return [
+			'error' => 'Sharing is not configured on this instance yet. '
+				. 'An administrator reloads the dossiq configuration to map the case share schema.',
+			'reason' => self::REASON_NOT_CONFIGURED,
+		];
+	}//end notConfiguredError()
+
+	/**
+	 * Log and describe a share record that could not be written after the link was minted.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param \Throwable $exception Why the write failed.
+	 *
+	 * @return array<string, string> The error array.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function rolledBackError(string $caseId, \Throwable $exception): array {
+		$this->logger->error(
+			'CaseLinkShares: the link was minted and the share record was not written',
+			['caseId' => $caseId, 'exception' => $exception->getMessage()]
+		);
+		return [
+			'error' => 'The link could not be recorded on the case, so it was withdrawn again.',
+			'reason' => self::REASON_ROLLED_BACK,
+		];
+	}//end rolledBackError()
 
 	/**
 	 * Pull the links a failed mint already published.
@@ -344,7 +391,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, int> The link ids OpenRegister refused to revoke.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function revokeMinted(array $link, array $documents, string $userId): array {
 		return $this->revokeLinksOf(
@@ -370,7 +417,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, int> The link ids that were not revoked.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
 	 */
 
 	public function revokeLinksOf(array $share, string $userId): array {
@@ -391,7 +438,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, int> The link ids.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
 	 */
 	private function linkIdsOf(array $share): array {
 		$ids = [];
@@ -426,7 +473,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, mixed> The records.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	private function readRecords(string $caseId): array {
 		$objectService = $this->gateway->objectService();
@@ -459,52 +506,66 @@ class CaseLinkShares {
 	/**
 	 * The share record to write for one minted link.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $label What the share is called.
-	 * @param string $createdBy Who minted it.
-	 * @param array<string, mixed> $link The minted link.
-	 * @param array<int, string> $capabilities What the link grants.
-	 * @param array<int, array<string, mixed>> $documents The file links minted beside it.
-	 * @param array<string, mixed> $extra Extra fields to record.
+	 * @param MintedShare $share The minted share.
 	 *
 	 * @return array<string, mixed> The record.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
-	private function recordFor(
-		string $caseId,
-		string $label,
-		string $createdBy,
-		array $link,
-		array $capabilities,
-		array $documents,
-		array $extra,
-	): array {
+	private function recordFor(MintedShare $share): array {
+		return array_merge(
+			$share->extra,
+			$this->ownFields(share: $share),
+			$this->linkFields(share: $share)
+		);
+	}//end recordFor()
+
+	/**
+	 * The share record's own fields: the case, the grant level, the label and who minted it.
+	 *
+	 * @param MintedShare $share The minted share.
+	 *
+	 * @return array<string, mixed> The fields.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function ownFields(MintedShare $share): array {
 		// The permission level is the zaak-domain word for the same grant, kept
 		// because the partner surface and the stored rows already speak it.
 		$permissionLevel = 'bekijken';
-		if (in_array('comment', $capabilities, true) === true) {
+		if (in_array('comment', $share->capabilities, true) === true) {
 			$permissionLevel = 'bekijken_reageren';
 		}
 
-		return array_merge(
-			$extra,
-			[
-				'caseId' => $caseId,
-				'shareType' => 'link',
-				'permissionLevel' => $permissionLevel,
-				'label' => $label,
-				'status' => 'active',
-				'createdBy' => $createdBy,
-				'accessLinkId' => (int)($link['id'] ?? 0),
-				'accessLinkUuid' => (string)($link['uuid'] ?? ''),
-				'accessLinkUrl' => (string)($link['url'] ?? ''),
-				'capabilities' => implode(',', $capabilities),
-				'expiresAt' => (string)($link['expiresAt'] ?? ''),
-				'sharedDocuments' => json_encode($documents),
-			]
-		);
-	}//end recordFor()
+		return [
+			'caseId' => $share->caseId,
+			'shareType' => 'link',
+			'permissionLevel' => $permissionLevel,
+			'label' => $share->label,
+			'status' => 'active',
+			'createdBy' => $share->createdBy,
+		];
+	}//end ownFields()
+
+	/**
+	 * The share record's fields that describe the minted link and the files beside it.
+	 *
+	 * @param MintedShare $share The minted share.
+	 *
+	 * @return array<string, mixed> The fields.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function linkFields(MintedShare $share): array {
+		return [
+			'accessLinkId' => (int)($share->link['id'] ?? 0),
+			'accessLinkUuid' => (string)($share->link['uuid'] ?? ''),
+			'accessLinkUrl' => (string)($share->link['url'] ?? ''),
+			'capabilities' => implode(',', $share->capabilities),
+			'expiresAt' => (string)($share->link['expiresAt'] ?? ''),
+			'sharedDocuments' => json_encode($share->documents),
+		];
+	}//end linkFields()
 
 	/**
 	 * The anchor at the end of a link address.
@@ -513,7 +574,7 @@ class CaseLinkShares {
 	 *
 	 * @return string The anchor, or an empty string.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	private function anchorOf(string $url): string {
 		$url = trim($url);

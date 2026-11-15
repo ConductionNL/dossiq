@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Flow;
 
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCP\IL10N;
@@ -149,9 +150,7 @@ abstract class DossiqFlowNodeBase implements IFlowNode {
      * absent — and a downstream router would then take its default branch as
      * though the action had succeeded.
      *
-     * @param array<int, array<string, mixed>> $items   The items to act on.
-     * @param array<string, mixed>             $config  The step config.
-     * @param array<string, mixed>             $context The run context.
+     * @param FlowNodeCall $call The items, the step config and the run context.
      *
      * @return array<int, array<string, mixed>> The items, each carrying the result.
      *
@@ -159,7 +158,10 @@ abstract class DossiqFlowNodeBase implements IFlowNode {
      *
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
-    public function execute(array $items, array $config, array $context): array {
+    public function execute(FlowNodeCall $call): array {
+        $items = $call->items;
+        $config = $call->config;
+        $context = $call->context;
         // ValidateConfig() only runs when a flow is SAVED; a flow imported or
         // seeded through another path reaches execute() unvalidated. Same shape
         // of defect hermiq's agent node documents, so the same guard.

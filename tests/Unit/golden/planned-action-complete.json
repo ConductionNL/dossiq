@@ -1,0 +1,67 @@
+{
+    "not signed in": {
+        "status": 401,
+        "body": {
+            "error": "Not authenticated"
+        },
+        "calls": []
+    },
+    "no write access on the case": {
+        "status": 403,
+        "body": {
+            "error": "Not authorized"
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1"
+        ]
+    },
+    "an action on the case": {
+        "status": 200,
+        "body": {
+            "next": {
+                "id": "next-1"
+            }
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "plannedOn case-1",
+            "complete [{\"id\":\"act-1\",\"title\":\"Call back\"},\"behandelaar\",[]]"
+        ]
+    },
+    "an action named by its uuid": {
+        "status": 200,
+        "body": {
+            "next": {
+                "id": "next-1"
+            }
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "plannedOn case-1",
+            "complete [{\"uuid\":\"act-2\",\"title\":\"Visit\"},\"behandelaar\",[]]"
+        ]
+    },
+    "an action of another case": {
+        "status": 404,
+        "body": {
+            "error": "No such planned action on this case"
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "plannedOn case-1"
+        ]
+    },
+    "an empty action id": {
+        "status": 200,
+        "body": {
+            "next": {
+                "id": "next-1"
+            }
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "plannedOn case-1",
+            "complete [{\"title\":\"No id\"},\"behandelaar\",[]]"
+        ]
+    }
+}

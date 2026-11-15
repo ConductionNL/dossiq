@@ -1,0 +1,179 @@
+<?php
+
+/**
+ * Dossiq Woo review reports: every read of the throughput report is recorded.
+ *
+ * @category Woo
+ * @package  OCA\Dossiq\Woo
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Woo;
+
+use DateTimeImmutable;
+use DateTimeInterface;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Writes one entry on OpenRegister's audit trail of each Woo case a throughput read covered.
+ *
+ * The throughput report is a per-person figure, so a read of it is a read of
+ * personal data and is recorded where dossiq records its other acts on a
+ * case: OpenRegister's hash-chained audit trail, anchored to the case. The
+ * entry holds the reader, the time and the scope (one case, or a period).
+ *
+ * It fails closed. When an entry cannot be written, the read is refused:
+ * an unrecorded read of these numbers is exactly what the report may not do.
+ * A read that covered no case answered no one's numbers, so there is nothing
+ * to anchor and nothing to refuse.
+ *
+ * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+ */
+class WooReportReadLog implements WooReportReadLogInterface {
+
+	/**
+	 * The audit action of a throughput read.
+	 */
+	public const ACTION_THROUGHPUT = 'dossiq.woo.report.throughput-read';
+
+	/**
+	 * OpenRegister's audit trail mapper.
+	 */
+	private const AUDIT_MAPPER = 'OCA\\OpenRegister\\Db\\AuditTrailMapper';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsServiceInterface $settingsService The settings and OpenRegister access.
+	 * @param LoggerInterface $logger The logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * Record a throughput read on every case it covered.
+	 *
+	 * @param string $readerId The user who read.
+	 * @param array<string, string> $scope What was read: `case`, or `from` and `to`.
+	 * @param list<string> $caseIds The Woo cases whose assessments the answer counted.
+	 *
+	 * @return int The number of entries written.
+	 *
+	 * @throws RefusedException When an entry cannot be written.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 */
+	public function recordThroughputRead(string $readerId, array $scope, array $caseIds): int {
+		$caseIds = array_values(array_unique(array_filter($caseIds, static fn (string $id): bool => $id !== '')));
+		if ($caseIds === []) {
+			return 0;
+		}
+
+		$target = $this->auditTarget();
+
+		$context = [
+			'reader' => $readerId,
+			'at' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+			'scope' => $scope,
+		];
+		$written = 0;
+		foreach ($caseIds as $caseId) {
+			$this->recordOn(target: $target, read: ['caseId' => $caseId, 'context' => $context]);
+
+			$written++;
+		}
+
+		return $written;
+	}//end recordThroughputRead()
+
+	/**
+	 * The object service, audit mapper, register and case schema a read is recorded with.
+	 *
+	 * @return array{0: object, 1: object, 2: string, 3: string} The audit target.
+	 *
+	 * @throws RefusedException When any of them is missing.
+	 */
+	private function auditTarget(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $mapper === null || $register === '' || $schema === '') {
+			throw $this->notRecorded(previous: null);
+		}
+
+		return [$objectService, $mapper, $register, $schema];
+	}//end auditTarget()
+
+	/**
+	 * Record the throughput read on one case.
+	 *
+	 * @param array{0: object, 1: object, 2: string, 3: string}       $target The audit target.
+	 * @param array{caseId: string, context: array<string, mixed>} $read   The case read, and the reader, the moment
+	 *                                                                    and the scope.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the entry cannot be written.
+	 */
+	private function recordOn(array $target, array $read): void {
+		[$objectService, $mapper, $register, $schema] = $target;
+		['caseId' => $caseId, 'context' => $context] = $read;
+		$readerId = $context['reader'];
+		try {
+			$case = $objectService->find($caseId, register: $register, schema: $schema);
+			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
+				object: $case,
+				action: self::ACTION_THROUGHPUT,
+				context: $context,
+				actorId: $readerId,
+				actorName: $readerId,
+			));
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: a Woo throughput read could not be recorded, so it is refused',
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'exception' => $e->getMessage()]
+			);
+			throw $this->notRecorded(previous: $e);
+		}
+	}//end recordOn()
+
+	/**
+	 * The refusal when a read cannot be recorded.
+	 *
+	 * @param Throwable|null $previous The cause.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function notRecorded(?Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: 'woo-throughput-not-recorded',
+			sentence: 'This read cannot be recorded, so the report is not shown.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end notRecorded()
+}//end class

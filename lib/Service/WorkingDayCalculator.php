@@ -61,6 +61,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Weekend, holiday and working-day arithmetic for the Dutch calendar.
@@ -123,6 +124,14 @@ class WorkingDayCalculator {
 	 * @var boolean
 	 */
 	private bool $degradationLogged = false;
+
+	/**
+	 * The longest run of non-working days a search crosses before it says the
+	 * calendar has no working day at all.
+	 *
+	 * @var int
+	 */
+	private const MAX_NON_WORKING_RUN = 366;
 
 	/**
 	 * Constructor.
@@ -234,7 +243,7 @@ class WorkingDayCalculator {
 	 * @return bool True when the organisation's administered calendar is
 	 *              answering, false when the built-in Dutch list is.
 	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function readsAdministeredCalendar(): bool {
 		return ($this->administered?->isAvailable() === true);
@@ -270,17 +279,14 @@ class WorkingDayCalculator {
 	 *
 	 * @return DateTimeImmutable The resulting date-time.
 	 *
+	 * @throws RuntimeException When the calendar has no working day in a year.
+	 *
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
 	public function addWorkingDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
 		$result = $start;
-		$remaining = max(0, $days);
-
-		while ($remaining > 0) {
-			$result = $result->modify('+1 day');
-			if ($this->isWorkingDay(date: $result) === true) {
-				$remaining--;
-			}
+		for ($remaining = max(0, $days); $remaining > 0; $remaining--) {
+			$result = $this->nextWorkingDay(date: $result->modify('+1 day'));
 		}
 
 		return $result;
@@ -300,11 +306,19 @@ class WorkingDayCalculator {
 	 *
 	 * @return DateTimeImmutable The first working day on or after the date.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @throws RuntimeException When the calendar has no working day in a year.
+	 *
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function nextWorkingDay(DateTimeImmutable $date): DateTimeImmutable {
 		$cursor = $date;
-		while ($this->isWorkingDay(date: $cursor) === false) {
+		for ($step = 0; $this->isWorkingDay(date: $cursor) === false; $step++) {
+			if ($step >= self::MAX_NON_WORKING_RUN) {
+				throw new RuntimeException(
+					'The calendar has no working day in the '.self::MAX_NON_WORKING_RUN.' days from '.$date->format('Y-m-d').'.'
+				);
+			}
+
 			$cursor = $cursor->modify('+1 day');
 		}
 
@@ -382,25 +396,23 @@ class WorkingDayCalculator {
 	 * @return DateTimeImmutable Easter Sunday, at midnight in the default zone.
 	 *
 	 * @spec openspec/specs/milestone-tracking/spec.md
-	 *
-	 * @SuppressWarnings(PHPMD.ShortVariable)
 	 */
 	public function easterSunday(int $year): DateTimeImmutable {
-		$a = ($year % 19);
-		$b = intdiv($year, 100);
-		$c = ($year % 100);
-		$d = intdiv($b, 4);
-		$e = ($b % 4);
-		$f = intdiv(($b + 8), 25);
-		$g = intdiv((($b - $f) + 1), 3);
-		$h = ((((19 * $a) + $b - $d - $g) + 15) % 30);
-		$i = intdiv($c, 4);
-		$k = ($c % 4);
-		$l = (((32 + (2 * $e) + (2 * $i)) - $h - $k) % 7);
-		$m = intdiv(($a + (11 * $h) + (22 * $l)), 451);
+		$goldenNumber    = ($year % 19);
+		$century         = intdiv($year, 100);
+		$yearInCentury   = ($year % 100);
+		$leapCenturies   = intdiv($century, 4);
+		$centuryRest     = ($century % 4);
+		$lunarCorrection = intdiv(($century + 8), 25);
+		$moonCorrection  = intdiv((($century - $lunarCorrection) + 1), 3);
+		$epact           = ((((19 * $goldenNumber) + $century - $leapCenturies - $moonCorrection) + 15) % 30);
+		$leapYears       = intdiv($yearInCentury, 4);
+		$yearRest        = ($yearInCentury % 4);
+		$weekdayOffset   = (((32 + (2 * $centuryRest) + (2 * $leapYears)) - $epact - $yearRest) % 7);
+		$lateCorrection  = intdiv(($goldenNumber + (11 * $epact) + (22 * $weekdayOffset)), 451);
 
-		$month = intdiv((($h + $l) - (7 * $m) + 114), 31);
-		$day = (((($h + $l) - (7 * $m) + 114) % 31) + 1);
+		$month = intdiv((($epact + $weekdayOffset) - (7 * $lateCorrection) + 114), 31);
+		$day   = (((($epact + $weekdayOffset) - (7 * $lateCorrection) + 114) % 31) + 1);
 
 		return (new DateTimeImmutable())->setDate($year, $month, $day)->setTime(0, 0);
 	}//end easterSunday()

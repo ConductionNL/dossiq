@@ -1,0 +1,2 @@
+- [x] 1.1 Rollen `note` from the role description, full and simple structure (tests/vitest/caseRolesRoleLineAndPartyKinds.spec.js)
+- [x] 1.2 Partijen `labels.kindLabels`, full and simple structure, Dutch words in l10n/nl.json (same spec)

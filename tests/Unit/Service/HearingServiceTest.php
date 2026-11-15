@@ -93,6 +93,7 @@ interface HearingObjectServiceStub {
  * @uses \OCA\Dossiq\Service\HearingCalendarService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\AppInfo\Application
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class HearingServiceTest extends TestCase {
 
