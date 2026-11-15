@@ -206,7 +206,10 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 			return $requirements;
 		}
 
-		return array_merge($this->validatorFindings(validator: $validator, schema: $schema, mapping: $mapping, audience: $audience), $requirements);
+		return array_merge(
+			$this->validatorFindings(validator: $validator, check: ['schema' => $schema, 'mapping' => $mapping, 'audience' => $audience]),
+			$requirements
+		);
 	}//end findingsOfMapping()
 
 	/**
@@ -227,13 +230,13 @@ class IntakeFormBindingCheck implements IntakeFormBindingCheckInterface {
 	 * What OpenRegister's validator finds wrong with a mapping against the case schema.
 	 *
 	 * @param object               $validator OpenRegister's form destination validator.
-	 * @param object               $schema    The case schema.
-	 * @param array<string, mixed> $mapping   The normalised mapping.
-	 * @param string|null          $audience  `public` or `authenticated` for a form that is not internal.
+	 * @param array<string, mixed> $check     The case schema (`schema`), the normalised mapping (`mapping`) and the
+	 *                                        `audience`: `public` or `authenticated` for a form that is not internal, else null.
 	 *
 	 * @return array<int, array<string, mixed>> The findings.
 	 */
-	private function validatorFindings(object $validator, object $schema, array $mapping, string|null $audience): array {
+	private function validatorFindings(object $validator, array $check): array {
+		[$schema, $mapping, $audience] = [$check['schema'], $check['mapping'], $check['audience']];
 		$options = [];
 		if ($audience !== null) {
 			$options['audience'] = $audience;
