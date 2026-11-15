@@ -203,7 +203,7 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 		}
 
 		try {
-			return [$this->copyRecord(copy: $copy, uuid: $uuid, entries: array_values($entries)), null];
+			return [$this->copyRecord(copy: $copy, record: [$uuid, array_values($entries)]), null];
 		} catch (Throwable $e) {
 			$this->reportNotCopied(copy: $copy, uuid: $uuid, error: $e);
 			return [0, $uuid];
@@ -230,15 +230,15 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	/**
 	 * Copy one record's entries that are not on its trail yet, in order.
 	 *
-	 * @param BezwaarAuditCopy                 $copy    The register and the schema.
-	 * @param string                           $uuid    The record.
-	 * @param array<int, array<string, mixed>> $entries The embedded entries, in array order.
+	 * @param BezwaarAuditCopy                                     $copy   The register and the schema.
+	 * @param array{0: string, 1: array<int, array<string, mixed>>} $record The record, and its embedded entries in array order.
 	 *
 	 * @return int How many entries were copied.
 	 *
 	 * @throws RuntimeException When an entry names no event or cannot be written.
 	 */
-	private function copyRecord(BezwaarAuditCopy $copy, string $uuid, array $entries): int {
+	private function copyRecord(BezwaarAuditCopy $copy, array $record): int {
+		[$uuid, $entries] = $record;
 		$done = $this->copiedIndexes(objectUuid: $uuid);
 		$copied = 0;
 		foreach ($entries as $index => $entry) {
