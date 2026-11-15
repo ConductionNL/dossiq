@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersRuleRefusals;
 use OCA\Dossiq\Controller\Support\GuardsZgwRequests;
 use OCA\Dossiq\Kernel\Contracts\BrcCrossRegisterSyncInterface;
 use OCA\Dossiq\Kernel\Contracts\BrcDocumentLinkHandlerInterface;
@@ -59,6 +60,7 @@ use OCP\IRequest;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class BrcController extends ZgwController {
+	use AnswersRuleRefusals;
 	use GuardsZgwRequests;
 
 	/**
