@@ -84,7 +84,7 @@ class AuditPacketBuilder {
 		$validationReport = $this->validationReportOf(decision: $decision);
 		$manifest = $this->manifestOf(decisionId: $decisionId, decision: $decision);
 
-		$entries = $this->packetEntries(decision: $decision, logs: $logs, validationReport: $validationReport, manifest: $manifest);
+		$entries = $this->packetEntries(decision: $decision, records: ['logs' => $logs, 'validationReport' => $validationReport, 'manifest' => $manifest]);
 
 		$zipBytes = $this->buildZip(entries: $entries);
 
@@ -144,20 +144,19 @@ class AuditPacketBuilder {
 	 * The packet's files, as JSON.
 	 *
 	 * @param array<string, mixed> $decision The beschikking.
-	 * @param array<int, array<string, mixed>> $logs The state machine logs.
-	 * @param array<string, mixed> $validationReport The validation report.
-	 * @param array<string, mixed> $manifest The manifest.
+	 * @param array<string, array> $records The state machine logs (`logs`), the validation report
+	 *                                     (`validationReport`) and the manifest (`manifest`).
 	 *
 	 * @return array<string, string|false> The file contents by name.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	private function packetEntries(array $decision, array $logs, array $validationReport, array $manifest): array {
+	private function packetEntries(array $decision, array $records): array {
 		return [
 			'beschikking.json' => json_encode($this->maskDecision(decision: $decision), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-			'state-machine-log.json' => json_encode($logs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-			'validatierapport.json' => json_encode($validationReport, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-			'manifest.json' => json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+			'state-machine-log.json' => json_encode($records['logs'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+			'validatierapport.json' => json_encode($records['validationReport'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+			'manifest.json' => json_encode($records['manifest'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
 		];
 	}//end packetEntries()
 

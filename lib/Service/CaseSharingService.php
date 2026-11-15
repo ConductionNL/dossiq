@@ -160,16 +160,30 @@ class CaseSharingService implements CaseSharingServiceInterface {
 			'extra' => $extra,
 		];
 
-		$link = $this->mintCaseLink(share: $share, capabilities: $capabilities);
+		return $this->mintTokenShare(share: $share, grant: ['capabilities' => $capabilities, 'documents' => $sharedDocuments]);
+	}//end createTokenShare()
+
+	/**
+	 * Mint the link and the document links of a token share, then record it.
+	 *
+	 * @param array<string, mixed>                                                  $share The share being created.
+	 * @param array{capabilities: array<int, string>, documents: array<int, string>} $grant What the holder may do,
+	 *                                                                                     and the file ids to share
+	 *                                                                                     beside the case.
+	 *
+	 * @return array<string, mixed> The recorded share, or `{error}`.
+	 */
+	private function mintTokenShare(array $share, array $grant): array {
+		$link = $this->mintCaseLink(share: $share, capabilities: $grant['capabilities']);
 		if (isset($link['error']) === true) {
 			return $link;
 		}
 
 		$share['link'] = $link;
-		$share['documents'] = $this->documentLinks(share: $share, fileIds: $sharedDocuments);
+		$share['documents'] = $this->documentLinks(share: $share, fileIds: $grant['documents']);
 
 		return $this->recordTokenShare(share: $share);
-	}//end createTokenShare()
+	}//end mintTokenShare()
 
 	/**
 	 * Mint the access link over the case itself.
@@ -341,24 +355,37 @@ class CaseSharingService implements CaseSharingServiceInterface {
 	 */
 	public function createPartnerShare(string $caseId, string $partnerId, string $permissionLevel, string $createdBy,
 		string $message='', array $fieldExclusions=[]): array {
-		$store = $this->configuredStoreOrError();
+		$request = ['caseId' => $caseId, 'partnerId' => $partnerId, 'permissionLevel' => $permissionLevel, 'createdBy' => $createdBy,
+			'message' => $message, 'excluded' => $fieldExclusions];
+
+		return $this->sharePartnerWithKnownFields(store: $this->configuredStoreOrError(), request: $request);
+	}//end createPartnerShare()
+
+	/**
+	 * Share with the partner when the store is configured and every excluded field is one the allow-list names.
+	 *
+	 * @param ShareStore|array<string, string> $store   The configured share register, or the error answer.
+	 * @param array<string, mixed>             $request The share request, `excluded` as the caller gave it.
+	 *
+	 * @return array<string, mixed> The share, or `{error}`.
+	 */
+	private function sharePartnerWithKnownFields(ShareStore|array $store, array $request): array {
 		if (is_array($store) === true) {
 			return $store;
 		}
 
 		// A field the allow-list does not name is refused, never dropped: a
 		// handler who meant to hide it must not find it shared after all.
-		$excluded = array_values(array_unique(array_map('strval', $fieldExclusions)));
+		$excluded = array_values(array_unique(array_map('strval', $request['excluded'])));
 		$unknown  = array_values(array_diff($excluded, self::FEDERATION_ALLOWED_FIELDS));
 		if ($unknown !== []) {
 			return ['error' => 'Unknown case field: '.implode(', ', $unknown)];
 		}
 
-		$request = ['caseId' => $caseId, 'partnerId' => $partnerId, 'permissionLevel' => $permissionLevel, 'createdBy' => $createdBy,
-			'message' => $message, 'excluded' => $excluded];
+		$request['excluded'] = $excluded;
 
 		return $this->sharePartner(store: $store, request: $request);
-	}//end createPartnerShare()
+	}//end sharePartnerWithKnownFields()
 
 	/**
 	 * The configured share register, or the error that says why there is none.

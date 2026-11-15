@@ -113,7 +113,7 @@ class ShipAssistantPrompts implements IRepairStep {
 		$this->withSystemIdentity(
 			objectService: $this->settings?->getObjectService(),
 			work: function () use ($library, $prompts, $output): void {
-				$this->seedLibrary(library: $library, prompts: $prompts, output: $output);
+				$this->seedLibrary(shipment: ['library' => $library, 'prompts' => $prompts], output: $output);
 			}
 		);
 	}//end run()
@@ -149,15 +149,15 @@ class ShipAssistantPrompts implements IRepairStep {
 	/**
 	 * Seed the prompts into the library and report the outcome.
 	 *
-	 * @param object                           $library The prompt library.
-	 * @param array<int, array<string, mixed>> $prompts The shipped prompts.
-	 * @param IOutput                          $output  The upgrade output.
+	 * @param array{library: object, prompts: array<int, array<string, mixed>>} $shipment The prompt library and the
+	 *                                                                          shipped prompts.
+	 * @param IOutput                                                           $output   The upgrade output.
 	 *
 	 * @return void
 	 */
-	private function seedLibrary(object $library, array $prompts, IOutput $output): void {
+	private function seedLibrary(array $shipment, IOutput $output): void {
 		try {
-			$result = $library->seed('dossiq', $prompts);
+			$result = $shipment['library']->seed('dossiq', $shipment['prompts']);
 		} catch (Throwable $e) {
 			$output->warning('Could not ship the assistant prompts: ' . $e->getMessage());
 			return;

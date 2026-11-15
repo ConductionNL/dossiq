@@ -316,6 +316,18 @@ class CaseActionList {
 			return $actions;
 		}
 
+		return self::allBlocked(actions: $actions, sentence: $sentence);
+	}//end honourPaymentRule()
+
+	/**
+	 * Every action blocked, carrying the sentence that says why.
+	 *
+	 * @param array<int, array<string, mixed>> $actions  The actions.
+	 * @param string                           $sentence Why they are blocked.
+	 *
+	 * @return array<int, array<string, mixed>> The actions, blocked.
+	 */
+	private static function allBlocked(array $actions, string $sentence): array {
 		$disabled = [];
 		foreach ($actions as $action) {
 			$action['blocked'] = true;
@@ -324,7 +336,7 @@ class CaseActionList {
 		}
 
 		return $disabled;
-	}//end honourPaymentRule()
+	}//end allBlocked()
 
 	/**
 	 * The payment rule's verdict on this case, as a sentence or an empty string.

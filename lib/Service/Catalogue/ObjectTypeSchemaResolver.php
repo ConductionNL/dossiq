@@ -201,19 +201,19 @@ class ObjectTypeSchemaResolver {
 			return self::UNREADABLE;
 		}
 
-		return $this->described(entity: $entity, pair: $pair, schema: $schema);
+		return $this->described(entity: $entity, where: ['register' => ($pair['register'] ?? null), 'schema' => $schema]);
 	}//end read()
 
 	/**
 	 * A resolved schema as the catalogue row shows it.
 	 *
 	 * @param object               $entity The schema entity.
-	 * @param array<string, mixed> $pair   The resolved register and schema.
-	 * @param string               $schema The schema id or slug the URL names.
+	 * @param array<string, mixed> $where  The resolved register, and the schema id or slug the URL names.
 	 *
 	 * @return array{id: string, title: string, properties: int, views: array<int, string>, objects: int|null} The schema.
 	 */
-	private function described($entity, array $pair, string $schema): array {
+	private function described($entity, array $where): array {
+		$schema = $where['schema'];
 		$properties = (array)$entity->getProperties();
 
 		$schemaId = '';
@@ -226,7 +226,7 @@ class ObjectTypeSchemaResolver {
 			'title'      => (string)($entity->getTitle() ?? $schema),
 			'properties' => count($properties),
 			'views'      => self::viewsOf(properties: $properties),
-			'objects'    => $this->objectCount(register: ($pair['register'] ?? null), schema: $entity),
+			'objects'    => $this->objectCount(register: $where['register'], schema: $entity),
 		];
 	}//end described()
 

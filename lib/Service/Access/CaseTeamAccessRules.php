@@ -132,7 +132,7 @@ class CaseTeamAccessRules {
 				continue;
 			}
 
-			$byTeam = $this->withTeams(byTeam: $byTeam, id: $id, teams: $caseType['teams']);
+			$byTeam = $this->withTeams(byTeam: $byTeam, caseType: ['id' => $id, 'teams' => $caseType['teams']]);
 		}
 
 		return $byTeam;
@@ -142,15 +142,15 @@ class CaseTeamAccessRules {
 	 * The teams map with one case type added under each of its non-empty teams.
 	 *
 	 * @param array<string, array<string, true>> $byTeam Case type ids by team so far.
-	 * @param string                             $id     The case type id.
-	 * @param array<int, string>                 $teams  Its handling teams.
+	 * @param array{id: string, teams: array<int, string>} $caseType The case type id and its handling teams.
 	 *
 	 * @return array<string, array<string, true>> Case type ids by team.
 	 *
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
-	private function withTeams(array $byTeam, string $id, array $teams): array {
-		foreach ($teams as $team) {
+	private function withTeams(array $byTeam, array $caseType): array {
+		$id = $caseType['id'];
+		foreach ($caseType['teams'] as $team) {
 			$team = trim($team);
 			if ($team === '') {
 				continue;

@@ -215,7 +215,7 @@ class CasePlanGoals implements CasePlanGoalsInterface {
 	public function close(string $goalId, string $state, string $observation, string $onDate = ''): array {
 		$goal = self::found(goal: $this->store->read(schema: self::SCHEMA, id: $goalId));
 
-		return $this->closeRead(goal: $goal, state: $state, observation: $observation, onDate: $onDate);
+		return $this->closeRead(goal: $goal, closing: ['state' => $state, 'observation' => $observation, 'onDate' => $onDate]);
 	}//end close()
 
 	/**
@@ -241,16 +241,16 @@ class CasePlanGoals implements CasePlanGoalsInterface {
 			$goal = null;
 		}
 
-		return $this->closeRead(goal: self::found(goal: $goal), state: $state, observation: $observation, onDate: '');
+		return $this->closeRead(goal: self::found(goal: $goal), closing: ['state' => $state, 'observation' => $observation, 'onDate' => '']);
 	}//end closeOfCase()
 
 	/**
 	 * Close a goal already read.
 	 *
 	 * @param array<string, mixed> $goal        The goal.
-	 * @param string               $state       `met`, `not-met` or `withdrawn`.
-	 * @param string               $observation What was seen.
-	 * @param string               $onDate      The day, `Y-m-d`, or '' for today.
+	 * @param array{state: string, observation: string, onDate: string} $closing `met`, `not-met` or `withdrawn`;
+	 *                                                                          what was seen; the day, `Y-m-d`, or ''
+	 *                                                                          for today.
 	 *
 	 * @return array<string, mixed> The closed goal.
 	 *
@@ -258,9 +258,10 @@ class CasePlanGoals implements CasePlanGoalsInterface {
 	 *
 	 * @spec openspec/changes/case-goals/tasks.md#2.1
 	 */
-	private function closeRead(array $goal, string $state, string $observation, string $onDate): array {
+	private function closeRead(array $goal, array $closing): array {
+		['state' => $state, 'onDate' => $onDate] = $closing;
 		self::refuseUnlessClosing(state: $state);
-		$observation = trim($observation);
+		$observation = trim($closing['observation']);
 		self::refuseWithoutObservation(goal: $goal, observation: $observation);
 
 		$goal['state'] = $state;

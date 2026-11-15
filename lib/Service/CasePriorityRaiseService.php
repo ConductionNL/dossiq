@@ -142,8 +142,7 @@ class CasePriorityRaiseService {
 		try {
 			$stored = $this->patchAsSystem(
 				store: $store,
-				caseId: $raise->caseId,
-				changes: ['priorityFloor' => $raise->floor, 'priorityRaisedBy' => $raise->rule]
+				patch: ['id' => $raise->caseId, 'changes' => ['priorityFloor' => $raise->floor, 'priorityRaisedBy' => $raise->rule]]
 			);
 		} catch (Throwable $e) {
 			$this->logRaiseFailed(raise: $raise, error: $e);
@@ -176,12 +175,11 @@ class CasePriorityRaiseService {
 	 * Patch the case as the system, so the write does not depend on the acting user.
 	 *
 	 * @param array{0: object, 1: string, 2: string} $store   The object service, register and case schema.
-	 * @param string                                 $caseId  The case.
-	 * @param array<string, string>                  $changes The fields to write.
+	 * @param array{id: string, changes: array<string, string>} $patch The case and the fields to write.
 	 *
 	 * @return mixed The case as the patch answered it.
 	 */
-	private function patchAsSystem(array $store, string $caseId, array $changes): mixed {
+	private function patchAsSystem(array $store, array $patch): mixed {
 		[$objectService, $register, $schema] = $store;
 
 		return $this->runAsSystemIfAvailable(
@@ -190,8 +188,8 @@ class CasePriorityRaiseService {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				id: $caseId,
-				changes: $changes,
+				id: $patch['id'],
+				changes: $patch['changes'],
 			)
 		);
 	}//end patchAsSystem()

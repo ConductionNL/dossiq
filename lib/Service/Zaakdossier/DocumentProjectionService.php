@@ -184,25 +184,28 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 		}
 
 		if (dirname($sourcePath) === dirname($node->getPath())) {
-			$this->renameRecord(record: $record, node: $node, previousName: basename($sourcePath));
+			$this->renameRecord(record: $record, names: ['previous' => basename($sourcePath), 'current' => $node->getName()]);
 			return;
 		}
 
-		$this->moveBetweenCases(record: $record, node: $node, sourcePath: $sourcePath);
+		$this->moveBetweenCases(move: ['record' => $record, 'sourceCaseId' => $this->caseIdFromPath(path: $sourcePath)], node: $node);
 	}//end rehomeNode()
 
 	/**
 	 * Move a record that changed folder: drop the source case's join, then project or retire it.
 	 *
-	 * @param array<string, mixed> $record     The document record.
-	 * @param File                 $node       The moved file.
-	 * @param string               $sourcePath Where the file was.
+	 * The file is projected into the case it now sits in; a record no case joins any more is retired.
+	 *
+	 * @param array{record: array<string, mixed>, sourceCaseId: string} $move The document record and the case the file
+	 *                                                                        was in, or ''.
+	 * @param File                                                       $node The moved file.
 	 *
 	 * @return void
 	 */
-	private function moveBetweenCases(array $record, File $node, string $sourcePath): void {
+	private function moveBetweenCases(array $move, File $node): void {
+		$record = $move['record'];
 		$recordId = (string)$record['id'];
-		$sourceCaseId = $this->caseIdFromPath(path: $sourcePath);
+		$sourceCaseId = $move['sourceCaseId'];
 		$targetCase = $this->resolveCaseForNode(node: $node);
 		$targetCaseId = '';
 		if ($targetCase !== null) {
@@ -213,19 +216,6 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 			$this->store->deleteJoins(recordId: $recordId, caseId: $sourceCaseId);
 		}
 
-		$this->settle(record: $record, node: $node, targetCase: $targetCase);
-	}//end moveBetweenCases()
-
-	/**
-	 * Project the file into its new case, or retire a record no case joins any more.
-	 *
-	 * @param array<string, mixed>      $record     The document record.
-	 * @param File                      $node       The moved file.
-	 * @param array<string, mixed>|null $targetCase The case the file now sits in, if any.
-	 *
-	 * @return void
-	 */
-	private function settle(array $record, File $node, ?array $targetCase): void {
 		if ($targetCase !== null) {
 			$this->projectNode(node: $node);
 			return;
@@ -234,7 +224,7 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 		if ($this->store->joinsFor(recordId: (string)$record['id']) === []) {
 			$this->retireRecord(record: $record);
 		}
-	}//end settle()
+	}//end moveBetweenCases()
 
 	/**
 	 * Move an API-first document's file into the case's folder on its first join.
@@ -372,8 +362,7 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$folder = $this->folderWhenUnlocked(fileService: $fileService, objectId: $objectId, register: $register);
+		$folder = $this->folderWhenUnlocked(fileService: $fileService, objectId: $objectId);
 		if (($folder instanceof Folder) === false) {
 			return null;
 		}
@@ -394,8 +383,7 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 	 * answer as 503: busy, try again, not broken.
 	 *
 	 * @param object $fileService OpenRegister's FileService.
-	 * @param string $objectId    The object uuid.
-	 * @param string $register    The register.
+	 * @param string $objectId    The object uuid, in the configured register.
 	 *
 	 * @return mixed What the file service answered.
 	 *
@@ -403,7 +391,8 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 	 *
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
-	private function folderWhenUnlocked(object $fileService, string $objectId, string $register): mixed {
+	private function folderWhenUnlocked(object $fileService, string $objectId): mixed {
+		$register = $this->settingsService->getConfigValue('register');
 		$attempt = 0;
 		while (true) {
 			$attempt++;
@@ -494,16 +483,15 @@ class DocumentProjectionService implements DocumentProjectionServiceInterface {
 	/**
 	 * Follow a rename: the file name, and the title when it was still derived.
 	 *
-	 * @param array<string, mixed> $record The stored record.
-	 * @param File $node The file under its new name.
-	 * @param string $previousName The file name before.
+	 * @param array<string, mixed>                     $record The stored record.
+	 * @param array{previous: string, current: string} $names  The file name before and the file's new name.
 	 *
 	 * @return void
 	 */
-	private function renameRecord(array $record, File $node, string $previousName): void {
-		$record['fileName'] = $node->getName();
-		if ((string)($record['title'] ?? '') === pathinfo($previousName, PATHINFO_FILENAME)) {
-			$record['title'] = pathinfo($node->getName(), PATHINFO_FILENAME);
+	private function renameRecord(array $record, array $names): void {
+		$record['fileName'] = $names['current'];
+		if ((string)($record['title'] ?? '') === pathinfo($names['previous'], PATHINFO_FILENAME)) {
+			$record['title'] = pathinfo($names['current'], PATHINFO_FILENAME);
 		}
 
 		$this->store->saveRecord(record: $record);

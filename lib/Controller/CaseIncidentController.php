@@ -132,7 +132,7 @@ class CaseIncidentController extends Controller {
 		}
 
 		try {
-			return new JSONResponse($this->storeIncident(caseId: $caseId, eventDate: $fields[0], description: $fields[1]));
+			return new JSONResponse($this->storeIncident(caseId: $caseId, fields: $fields));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'incident record', e: $e);
 		}
@@ -171,8 +171,7 @@ class CaseIncidentController extends Controller {
 	 * Store one report on the case, with its reporter and assignee from the request.
 	 *
 	 * @param string $caseId The case uuid.
-	 * @param string $eventDate When it happened.
-	 * @param string $description What happened.
+	 * @param array{0: string, 1: string} $fields When it happened, and what happened.
 	 *
 	 * @return array<string, mixed> The stored incident.
 	 *
@@ -180,11 +179,11 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
-	private function storeIncident(string $caseId, string $eventDate, string $description): array {
+	private function storeIncident(string $caseId, array $fields): array {
 		return $this->incidents->record(
 			caseId: $caseId,
-			eventDate: $eventDate,
-			description: $description,
+			eventDate: $fields[0],
+			description: $fields[1],
 			reporter: trim((string)$this->request->getParam('reporter', '')),
 			assignee: trim((string)$this->request->getParam('assignee', '')),
 		);

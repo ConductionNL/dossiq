@@ -162,7 +162,7 @@ class TransitionMatrixBuilder {
 
 		$visited = $this->firstVisited(sortedRecords: $sortedRecords);
 
-		return $this->transitionsFrom(sortedRecords: $sortedRecords, count: $count, visited: $visited);
+		return $this->transitionsFrom(sortedRecords: $sortedRecords, visited: $visited);
 	}//end computeCaseTransitions()
 
 	/**
@@ -186,12 +186,12 @@ class TransitionMatrixBuilder {
 	 * Pair each status with the one before it, flagging a return to a visited status.
 	 *
 	 * @param array<int, array<string, mixed>> $sortedRecords Chronologically sorted statusRecords for one case.
-	 * @param int                              $count         How many records there are.
 	 * @param array<string, bool>              $visited       The statuses visited so far.
 	 *
 	 * @return array<int, array{from: string, to: string, isRework: bool}>
 	 */
-	private function transitionsFrom(array $sortedRecords, int $count, array $visited): array {
+	private function transitionsFrom(array $sortedRecords, array $visited): array {
+		$count = count($sortedRecords);
 		$transitions = [];
 		for ($i = 1; $i < $count; $i++) {
 			$from = (string)($sortedRecords[$i - 1]['statusType'] ?? '');

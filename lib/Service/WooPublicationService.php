@@ -305,7 +305,7 @@ class WooPublicationService implements WooPublicationServiceInterface {
 			return ['available' => false, 'reason' => $delivered['reason']];
 		}
 
-		return $this->recordPublication(caseId: $caseId, source: $source, payload: $payload, delivered: $delivered);
+		return $this->recordPublication(source: ['caseId' => $caseId, 'payload' => $payload] + $source, delivered: $delivered);
 	}//end publish()
 
 	/**
@@ -388,26 +388,26 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	/**
 	 * Record a delivered publication on the decision, the case and the dossier.
 	 *
-	 * @param string               $caseId    The case UUID.
-	 * @param array<string, mixed> $source    The publication source.
-	 * @param array<string, mixed> $payload   The publication payload.
+	 * @param array<string, mixed> $source    The publication source, with the case UUID (`caseId`) and the
+	 *                                        publication payload (`payload`).
 	 * @param array<string, mixed> $delivered The delivery result.
 	 *
 	 * @return array<string, mixed> The publish result.
 	 */
-	private function recordPublication(string $caseId, array $source, array $payload, array $delivered): array {
+	private function recordPublication(array $source, array $delivered): array {
 		$publicationId = $delivered['publicationId'];
 		$publicationUrl = $this->buildPublicationUrl(publicationId: $publicationId);
+		$published = ['caseId' => $source['caseId'], 'publicationId' => $publicationId, 'publicationUrl' => $publicationUrl];
 
 		$this->saveDecisionPublication(
 			source: $source,
-			record: $this->wooPublicationRecord(publicationId: $publicationId, publicationUrl: $publicationUrl, category: $payload['wooCategory']),
+			record: $this->wooPublicationRecord(published: $published, category: $source['payload']['wooCategory']),
 		);
 
 		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: $source['delivery']['assessments']);
-		$this->writePublishedCaseState(caseId: $caseId, publicationUrl: $publicationUrl, withheldNote: $withheld['note']);
+		$this->writePublishedCaseState(published: $published, withheldNote: $withheld['note']);
 
-		$this->returnToDossier(caseId: $caseId, source: $source, payload: $payload, publicationId: $publicationId);
+		$this->returnToDossier(source: $source, publicationId: $publicationId);
 
 		return [
 			'available' => true,
@@ -441,16 +441,15 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	/**
 	 * The publication record kept on the decision.
 	 *
-	 * @param mixed  $publicationId  The publication id.
-	 * @param string $publicationUrl The publication URL.
-	 * @param mixed  $category       The Woo category.
+	 * @param array<string, mixed> $published The publication id and URL.
+	 * @param mixed                $category  The Woo category.
 	 *
 	 * @return array<string, mixed> The record.
 	 */
-	private function wooPublicationRecord(mixed $publicationId, string $publicationUrl, mixed $category): array {
+	private function wooPublicationRecord(array $published, mixed $category): array {
 		return [
-			'publicationId' => $publicationId,
-			'publicationUrl' => $publicationUrl,
+			'publicationId' => $published['publicationId'],
+			'publicationUrl' => $published['publicationUrl'],
 			'status' => self::STATUS_PUBLISHED,
 			'category' => $category,
 			'publishedAt' => date('c'),
@@ -460,18 +459,17 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	/**
 	 * Write the published state onto the case.
 	 *
-	 * @param string $caseId         The case UUID.
-	 * @param string $publicationUrl The publication URL.
-	 * @param mixed  $withheldNote   The note on what was withheld.
+	 * @param array<string, mixed> $published    The case UUID and the publication URL.
+	 * @param mixed                $withheldNote The note on what was withheld.
 	 *
 	 * @return void
 	 */
-	private function writePublishedCaseState(string $caseId, string $publicationUrl, mixed $withheldNote): void {
+	private function writePublishedCaseState(array $published, mixed $withheldNote): void {
 		$this->caseLedger->writeCaseState(
-			caseId: $caseId,
+			caseId: $published['caseId'],
 			changes: [
 				'wooPublicationStatus' => self::STATUS_PUBLISHED,
-				'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl),
+				'wooPublicationUrl' => $this->caseLedger->absolute(path: $published['publicationUrl']),
 				'wooWithheldNote' => $withheldNote,
 			],
 		);
@@ -480,17 +478,15 @@ class WooPublicationService implements WooPublicationServiceInterface {
 	/**
 	 * Return the publication to the dossier and tell the resident.
 	 *
-	 * @param string               $caseId        The case UUID.
-	 * @param array<string, mixed> $source        The publication source.
-	 * @param array<string, mixed> $payload       The publication payload.
+	 * @param array<string, mixed> $source        The publication source, with the case UUID and the payload.
 	 * @param mixed                $publicationId The publication id.
 	 *
 	 * @return void
 	 */
-	private function returnToDossier(string $caseId, array $source, array $payload, mixed $publicationId): void {
-		$this->dossierReturn?->append(case: $source['case'], publicationId: $publicationId, title: (string)$payload['title']);
+	private function returnToDossier(array $source, mixed $publicationId): void {
+		$this->dossierReturn?->append(case: $source['case'], publicationId: $publicationId, title: (string)$source['payload']['title']);
 
-		$this->dossierReturn?->tellTheResident(case: $source['case'], caseId: $caseId, publicationId: $publicationId);
+		$this->dossierReturn?->tellTheResident(case: $source['case'], caseId: $source['caseId'], publicationId: $publicationId);
 	}//end returnToDossier()
 
 	/**

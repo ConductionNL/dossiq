@@ -222,6 +222,19 @@ class CaseRelationCodec {
 			}
 		}
 
+		return self::stripped(links: $links, strip: ['only' => $only, 'targetId' => $targetId]);
+	}//end withoutTypedLink()
+
+	/**
+	 * The typed lists without the target, in the one list named or in every list.
+	 *
+	 * @param array<string, array<int, string>>          $links Typed lists.
+	 * @param array{only: string|null, targetId: string} $strip The one list to strip, or null for all, and the case.
+	 *
+	 * @return array<string, array<int, string>> The lists.
+	 */
+	private static function stripped(array $links, array $strip): array {
+		['only' => $only, 'targetId' => $targetId] = $strip;
 		foreach ($links as $property => $uuids) {
 			if ($only !== null && $property !== $only) {
 				continue;
@@ -233,7 +246,7 @@ class CaseRelationCodec {
 		}
 
 		return $links;
-	}//end withoutTypedLink()
+	}//end stripped()
 
 	/**
 	 * Build a single relation entry, carrying the optional clarification.
@@ -295,16 +308,28 @@ class CaseRelationCodec {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function hasPair(array $relations, string $caseId, string $natureRelationship): bool {
+		$pair = ['caseId' => $caseId, 'aardRelatie' => $natureRelationship];
 		foreach ($relations as $relation) {
-			if ((string)($relation['caseId'] ?? '') === $caseId
-				&& (string)($relation['aardRelatie'] ?? '') === $natureRelationship
-			) {
+			if (self::isPair(relation: $relation, pair: $pair) === true) {
 				return true;
 			}
 		}
 
 		return false;
 	}//end hasPair()
+
+	/**
+	 * Whether a relation entry links this case with this relation type.
+	 *
+	 * @param array<string, mixed>                       $relation The relation entry.
+	 * @param array{caseId: string, aardRelatie: string} $pair     The case and the relation type.
+	 *
+	 * @return bool
+	 */
+	private static function isPair(array $relation, array $pair): bool {
+		return (string)($relation['caseId'] ?? '') === $pair['caseId']
+			&& (string)($relation['aardRelatie'] ?? '') === $pair['aardRelatie'];
+	}//end isPair()
 
 	/**
 	 * Return a copy of the relation list with the given pair removed.
@@ -318,15 +343,9 @@ class CaseRelationCodec {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function removePair(array $relations, string $caseId, string $natureRelationship): array {
-		return array_values(
-			array_filter(
-				$relations,
-				static fn (array $relation): bool => (
-					(string)($relation['caseId'] ?? '') !== $caseId
-					|| (string)($relation['aardRelatie'] ?? '') !== $natureRelationship
-				)
-			)
-		);
+		$pair = ['caseId' => $caseId, 'aardRelatie' => $natureRelationship];
+
+		return array_values(array_filter($relations, static fn (array $relation): bool => self::isPair(relation: $relation, pair: $pair) === false));
 	}//end removePair()
 
 	/**

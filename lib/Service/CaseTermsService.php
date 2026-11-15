@@ -130,7 +130,7 @@ class CaseTermsService implements CaseTermsServiceInterface {
 		$binding->plannedDefinition = $plannedDefinition;
 
 		$bound = [
-			$this->bindStatutory(caseId: $caseId, declared: $binding->declared, start: $binding->start),
+			$this->bindStatutory(binding: $binding),
 			$this->bindPlanned(binding: $binding),
 			$this->bindInternalTarget(binding: $binding),
 		];
@@ -196,28 +196,26 @@ class CaseTermsService implements CaseTermsServiceInterface {
 	 * the case. A late application to a closed round is a real case with a real
 	 * answer, and refusing to create it would lose the application.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param array<string, mixed> $declared The case type's declarations.
-	 * @param DateTimeImmutable $start When the clock starts.
+	 * @param CaseTermBinding $binding The case, its type's declarations and when the clock starts.
 	 *
 	 * @return array<string, mixed>|null The instance, or null when no fixed date is declared.
 	 *
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
-	private function bindStatutory(string $caseId, array $declared, DateTimeImmutable $start): ?array {
-		$fixed = (string)$declared['fixedEndDate'];
+	private function bindStatutory(CaseTermBinding $binding): ?array {
+		$fixed = (string)$binding->declared['fixedEndDate'];
 		if ($fixed === '') {
 			return null;
 		}
 
 		$end = $this->sources->timers->rollTermEndFor(date: new DateTimeImmutable($fixed))->format('Y-m-d');
-		$existing = $this->sources->termService->getTermijnInstanceForZaak(caseId: $caseId);
+		$existing = $this->sources->termService->getTermijnInstanceForZaak(caseId: $binding->caseId);
 
 		if ($existing !== null && TermKind::ofInstance($existing) === TermKind::STATUTORY) {
 			return $this->restateStatutoryEnd(existing: $existing, end: $end);
 		}
 
-		return $this->saveStatutory(caseId: $caseId, start: $start, end: $end);
+		return $this->saveStatutory(binding: $binding, end: $end);
 	}//end bindStatutory()
 
 	/**
@@ -244,28 +242,43 @@ class CaseTermsService implements CaseTermsServiceInterface {
 	/**
 	 * Save a new statutory term ending on the fixed closing date.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param DateTimeImmutable $start When the clock starts.
+	 * @param CaseTermBinding $binding The case and when the clock starts.
 	 * @param string $end The end date, as `Y-m-d`.
 	 *
 	 * @return array<string, mixed>|null The instance.
 	 *
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
-	private function saveStatutory(string $caseId, DateTimeImmutable $start, string $end): ?array {
+	private function saveStatutory(CaseTermBinding $binding, string $end): ?array {
 		return $this->sources->termService->saveTermInstance(
-			instance: [
-				'case' => $caseId,
-				'kind' => TermKind::STATUTORY,
-				'startDate' => $start->format('Y-m-d\TH:i:sP'),
-				'endDateCalculated' => $end,
-				'endDateCurrent' => $end,
-				'status' => 'lopend',
-				'countExtensions' => 0,
-				'notificatiesVerstuurd' => [],
-			]
+			instance: $this->runningInstance(
+				clock: ['case' => $binding->caseId, 'kind' => TermKind::STATUTORY, 'start' => $binding->start, 'end' => $end]
+			)
 		);
 	}//end saveStatutory()
+
+	/**
+	 * A new running term instance, as the term service saves it.
+	 *
+	 * @param array{case: string, kind: string, start: DateTimeImmutable, end: string} $clock The case, the kind,
+	 *        when it starts and the end date as `Y-m-d`.
+	 *
+	 * @return array<string, mixed> The instance.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function runningInstance(array $clock): array {
+		return [
+			'case' => $clock['case'],
+			'kind' => $clock['kind'],
+			'startDate' => $clock['start']->format('Y-m-d\TH:i:sP'),
+			'endDateCalculated' => $clock['end'],
+			'endDateCurrent' => $clock['end'],
+			'status' => 'lopend',
+			'countExtensions' => 0,
+			'notificatiesVerstuurd' => [],
+		];
+	}//end runningInstance()
 
 	/**
 	 * Bind one lead-time clock, on the administered calendar.
@@ -297,21 +310,9 @@ class CaseTermsService implements CaseTermsServiceInterface {
 
 		$end = $this->endAfter(start: $start, days: $days, mode: $mode);
 
-		return $this->sources->termService->saveTermInstance(
-			instance: array_merge(
-				[
-					'case' => $caseId,
-					'kind' => $kind,
-					'startDate' => $start->format('Y-m-d\TH:i:sP'),
-					'endDateCalculated' => $end,
-					'endDateCurrent' => $end,
-					'status' => 'lopend',
-					'countExtensions' => 0,
-					'notificatiesVerstuurd' => [],
-				],
-				$extra
-			)
-		);
+		$clock = ['case' => $caseId, 'kind' => $kind, 'start' => $start, 'end' => $end];
+
+		return $this->sources->termService->saveTermInstance(instance: array_merge($this->runningInstance(clock: $clock), $extra));
 	}//end bindLeadTime()
 
 	/**
@@ -431,16 +432,15 @@ class CaseTermsService implements CaseTermsServiceInterface {
 		$terms = $this->termsForCase(caseId: $caseId, now: $today);
 		$phases = $this->sources->declarations->phasesOf(caseTypeId: $caseTypeId);
 
-		return $this->progressOf(terms: $terms, phases: $phases, statusTypeId: $statusTypeId, today: $today);
+		return $this->progressOf(terms: $terms, reading: ['phases' => $phases, 'statusTypeId' => $statusTypeId, 'today' => $today]);
 	}//end progressFor()
 
 	/**
 	 * The progress figures of a case's terms and phases.
 	 *
 	 * @param array<int, array<string, mixed>> $terms The case's terms.
-	 * @param array<int, mixed> $phases The case type's phases.
-	 * @param string $statusTypeId The phase the case is in now.
-	 * @param DateTimeImmutable $today The day to judge against.
+	 * @param array{phases: array<int, mixed>, statusTypeId: string, today: DateTimeImmutable} $reading The case type's
+	 *        phases, the phase the case is in now and the day to judge against.
 	 *
 	 * @return array{progress: int, daysLeft: int, phasesDone: int, phasesTotal: int,
 	 *               termConsumed: int, phaseOverdue: bool, plannedOverdue: bool,
@@ -448,13 +448,14 @@ class CaseTermsService implements CaseTermsServiceInterface {
 	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
-	private function progressOf(array $terms, array $phases, string $statusTypeId, DateTimeImmutable $today): array {
+	private function progressOf(array $terms, array $reading): array {
+		['phases' => $phases, 'statusTypeId' => $statusTypeId, 'today' => $today] = $reading;
 		$statutory = $this->firstOfKind(terms: $terms, kind: TermKind::STATUTORY);
 		$consumed = $this->consumedPercent(term: $statutory, today: $today);
 		$done = $this->phasesDone(phases: $phases, statusTypeId: $statusTypeId);
 		$total = count($phases);
 
-		$byPhases = $this->progressByPhases(done: $done, total: $total, consumed: $consumed);
+		$byPhases = $this->progressByPhases(phases: ['done' => $done, 'total' => $total], consumed: $consumed);
 
 		return [
 			'progress' => max(0, min(100, (int)round(((($byPhases + $consumed) / 2))))),
@@ -468,18 +469,17 @@ class CaseTermsService implements CaseTermsServiceInterface {
 	/**
 	 * The share of phases done, as a percentage, or the term consumed without phases.
 	 *
-	 * @param int $done The phases done.
-	 * @param int $total The phases declared.
+	 * @param array{done: int, total: int} $phases The phases done and the phases declared.
 	 * @param int $consumed The share of the statutory term consumed.
 	 *
 	 * @return int The percentage.
 	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
-	private function progressByPhases(int $done, int $total, int $consumed): int {
+	private function progressByPhases(array $phases, int $consumed): int {
 		$byPhases = $consumed;
-		if ($total > 0) {
-			$byPhases = (int)round((($done / $total) * 100));
+		if ($phases['total'] > 0) {
+			$byPhases = (int)round((($phases['done'] / $phases['total']) * 100));
 		}
 
 		return $byPhases;

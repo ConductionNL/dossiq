@@ -61,7 +61,7 @@ trait OpensInTheInitialState {
 	protected function createThenMove(object $objectService, array $write): array {
 		[$object, $field, $state] = self::withoutLifecycleValue(write: $write);
 
-		$created = $this->createInInitialState(objectService: $objectService, write: $write, object: $object);
+		$created = $this->createInInitialState(objectService: $objectService, write: ['object' => $object] + $write);
 		if ($state === null || ($created[$field] ?? null) === $state) {
 			return ($created ?? $object);
 		}
@@ -69,7 +69,7 @@ trait OpensInTheInitialState {
 		$uuid = self::movedUuid(created: $created, state: $state);
 
 		try {
-			$moved = $this->moveIntoState(objectService: $objectService, write: $write, uuid: $uuid, state: $state);
+			$moved = $this->moveIntoState(objectService: $objectService, move: ['uuid' => $uuid, 'state' => $state] + $write);
 			return ($moved ?? array_merge((array)$created, [$field => $state]));
 		} catch (Throwable $e) {
 			$leftOver = $this->deleteAgain(objectService: $objectService, created: $write + ['uuid' => $uuid]);
@@ -99,19 +99,18 @@ trait OpensInTheInitialState {
 	 * Create the record without its lifecycle value.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $write         `register` and `schema`.
-	 * @param array<string, mixed> $object        The record, without its lifecycle value.
+	 * @param array<string, mixed> $write         `register`, `schema` and the `object`, without its lifecycle value.
 	 *
 	 * @return array<string, mixed>|null The created record.
 	 *
 	 * @spec openspec/specs/bezwaar-hearing/spec.md#requirement-hearing-waiver-afzien-van-hoorrecht
 	 */
-	private function createInInitialState(object $objectService, array $write, array $object): ?array {
+	private function createInInitialState(object $objectService, array $write): ?array {
 		return $this->saveObjectAsArray(
 			objectService: $objectService,
 			register: (string)$write['register'],
 			schema: (string)$write['schema'],
-			object: $object
+			object: $write['object']
 		);
 	}//end createInInitialState()
 
@@ -140,21 +139,20 @@ trait OpensInTheInitialState {
 	 * Move a created record into the state it carries.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
-	 * @param array<string, mixed> $write         `register`, `schema` and the lifecycle `field`.
-	 * @param string               $uuid          The created record.
-	 * @param mixed                $state         The state it is moved into.
+	 * @param array<string, mixed> $move          `register`, `schema`, the lifecycle `field`, the created record
+	 *                                            (`uuid`) and the state it is moved into (`state`).
 	 *
 	 * @return array<string, mixed>|null The moved record, or null when the patch answered none.
 	 *
 	 * @spec openspec/specs/bezwaar-hearing/spec.md#requirement-hearing-waiver-afzien-van-hoorrecht
 	 */
-	private function moveIntoState(object $objectService, array $write, string $uuid, mixed $state): ?array {
+	private function moveIntoState(object $objectService, array $move): ?array {
 		return $this->patchObjectAsArray(
 			objectService: $objectService,
-			register: (string)$write['register'],
-			schema: (string)$write['schema'],
-			id: $uuid,
-			changes: [(string)$write['field'] => $state]
+			register: (string)$move['register'],
+			schema: (string)$move['schema'],
+			id: $move['uuid'],
+			changes: [(string)$move['field'] => $move['state']]
 		);
 	}//end moveIntoState()
 

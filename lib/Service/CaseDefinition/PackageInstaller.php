@@ -307,7 +307,7 @@ class PackageInstaller implements PackageInstallerInterface {
 			return $this->failed(run: $run, message: $result['message']);
 		}
 
-		return $this->recordAndComplete(run: $run, result: $result, settings: $plan['settings']);
+		return $this->recordAndComplete(run: $run, done: ['result' => $result, 'settings' => $plan['settings']]);
 	}//end write()
 
 	/**
@@ -345,12 +345,13 @@ class PackageInstaller implements PackageInstallerInterface {
 	 * Record every written row, taking them all back when one cannot be recorded, and answer the outcome.
 	 *
 	 * @param PackageInstallRun    $run      The install.
-	 * @param array<string, mixed> $result   The writer's result.
-	 * @param array<string, mixed> $settings The plan's settings.
+	 * @param array{result: array<string, mixed>, settings: array<string, mixed>} $done The writer's result and the
+	 *                                                                              plan's settings.
 	 *
 	 * @return array<string, mixed> The outcome.
 	 */
-	private function recordAndComplete(PackageInstallRun $run, array $result, array $settings): array {
+	private function recordAndComplete(PackageInstallRun $run, array $done): array {
+		$result = $done['result'];
 		if ($this->recordAll(run: $run, result: $result) === false) {
 			$this->writer->undo(written: $result['written']);
 
@@ -360,7 +361,7 @@ class PackageInstaller implements PackageInstallerInterface {
 			);
 		}
 
-		return $this->complete(run: $run, done: ['result' => $result, 'settings' => $settings]);
+		return $this->complete(run: $run, done: $done);
 	}//end recordAndComplete()
 
 	/**

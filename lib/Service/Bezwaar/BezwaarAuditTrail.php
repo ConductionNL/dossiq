@@ -194,42 +194,23 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function write(string $register, string $schema, string $objectUuid, string $action, array $context, ?string $actorId = null): void {
-		$this->assertOpenRegister(action: $action, objectUuid: $objectUuid, context: $context);
+		$row = [
+			'register' => $register,
+			'schema' => $schema,
+			'objectUuid' => $objectUuid,
+			'action' => $action,
+			'context' => $context,
+			'actorId' => $actorId,
+		];
 
-		[$object, $cause] = $this->findRecord(register: $register, schema: $schema, objectUuid: $objectUuid);
-
-		if (is_object($object) === false) {
-			throw new BezwaarEntryNotWrittenException(
-				action: $action,
-				objectUuid: $objectUuid,
-				entry: $context,
-				reason: 'The bezwaar record '.$objectUuid.' could not be resolved for '.$action,
-				previous: $cause,
-			);
-		}
-
-		try {
-			$this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper')
-				->recordObjectEvent(
-					event: ObjectAuditEvents::of(object: $object, action: $action, context: $context, actorId: $actorId, actorName: $actorId)
-				);
-		} catch (Throwable $e) {
-			throw new BezwaarEntryNotWrittenException(
-				action: $action,
-				objectUuid: $objectUuid,
-				entry: $context,
-				reason: 'The bezwaar entry '.$action.' could not be written',
-				previous: $e,
-			);
-		}
+		$this->assertOpenRegister(row: $row);
+		$this->writeEvent(object: $this->resolvedRecord(row: $row), row: $row);
 	}//end write()
 
 	/**
 	 * Throw when OpenRegister is not installed.
 	 *
-	 * @param string               $action     The full action.
-	 * @param string               $objectUuid The record's uuid.
-	 * @param array<string, mixed> $context    The row's context.
+	 * @param array<string, mixed> $row The register, schema, record uuid, full action, context and actor of the row.
 	 *
 	 * @return void
 	 *
@@ -237,40 +218,86 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 	 *
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
-	private function assertOpenRegister(string $action, string $objectUuid, array $context): void {
+	private function assertOpenRegister(array $row): void {
 		if (in_array('openregister', (array)$this->appManager->getInstalledApps(), true) === false) {
 			throw new BezwaarEntryNotWrittenException(
-				action: $action,
-				objectUuid: $objectUuid,
-				entry: $context,
-				reason: 'OpenRegister is not available, so the bezwaar entry '.$action.' cannot be written',
+				action: $row['action'],
+				objectUuid: $row['objectUuid'],
+				entry: $row['context'],
+				reason: 'OpenRegister is not available, so the bezwaar entry '.$row['action'].' cannot be written',
 			);
 		}
 	}//end assertOpenRegister()
 
 	/**
-	 * Look the record up, keeping the lookup's failure as the cause.
+	 * Look the record up; throw, with the lookup's failure as the cause, when it does not resolve.
 	 *
-	 * @param string $register   The register the record lives in.
-	 * @param string $schema     The record's schema.
-	 * @param string $objectUuid The record's uuid.
+	 * @param array<string, mixed> $row The register, schema, record uuid, full action, context and actor of the row.
 	 *
-	 * @return array{0: mixed, 1: Throwable|null} The found record (or null) and the failure, if any.
+	 * @return object The found record.
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the record does not resolve.
 	 *
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
-	private function findRecord(string $register, string $schema, string $objectUuid): array {
+	private function resolvedRecord(array $row): object {
 		$object = null;
 		$cause = null;
 		try {
 			$object = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService')
-				->find($objectUuid, register: $register, schema: $schema);
+				->find($row['objectUuid'], register: $row['register'], schema: $row['schema']);
 		} catch (Throwable $e) {
 			$cause = $e;
 		}
 
-		return [$object, $cause];
-	}//end findRecord()
+		if (is_object($object) === false) {
+			throw new BezwaarEntryNotWrittenException(
+				action: $row['action'],
+				objectUuid: $row['objectUuid'],
+				entry: $row['context'],
+				reason: 'The bezwaar record '.$row['objectUuid'].' could not be resolved for '.$row['action'],
+				previous: $cause,
+			);
+		}
+
+		return $object;
+	}//end resolvedRecord()
+
+	/**
+	 * Write the row on the found record's audit trail.
+	 *
+	 * @param object               $object The record the row describes.
+	 * @param array<string, mixed> $row    The record uuid, full action, context and actor of the row.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the write fails.
+	 *
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 */
+	private function writeEvent(object $object, array $row): void {
+		$action = $row['action'];
+		try {
+			$this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper')
+				->recordObjectEvent(
+					event: ObjectAuditEvents::of(
+						object: $object,
+						action: $action,
+						context: $row['context'],
+						actorId: $row['actorId'],
+						actorName: $row['actorId']
+					)
+				);
+		} catch (Throwable $e) {
+			throw new BezwaarEntryNotWrittenException(
+				action: $action,
+				objectUuid: $row['objectUuid'],
+				entry: $row['context'],
+				reason: 'The bezwaar entry '.$action.' could not be written',
+				previous: $e,
+			);
+		}
+	}//end writeEvent()
 
 	/**
 	 * Record the entry of a record this act just created, or undo the act.
@@ -302,25 +329,63 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 		array $payload,
 		string $tag = '',
 	): void {
+		$command = new BezwaarEntryCommand(
+			register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag
+		);
+
+		$this->recordOrDelete(objectService: $objectService, command: $command);
+	}//end recordForNewRecord()
+
+	/**
+	 * Write the entry of a record just created; on a failed entry delete the record and raise.
+	 *
+	 * @param object              $objectService OpenRegister's ObjectService, the one the record was saved through.
+	 * @param BezwaarEntryCommand $command       The entry of the record just created.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; the record is deleted first.
+	 */
+	private function recordOrDelete(object $objectService, BezwaarEntryCommand $command): void {
 		try {
-			$this->record(register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag);
+			$this->recordCommand(command: $command);
 		} catch (BezwaarEntryNotWrittenException $notWritten) {
 			$this->logger->error(
 				'Dossiq bezwaar: entry not written, so the record it describes is deleted and the act refused',
 				$notWritten->logContext()
 			);
 			try {
-				$objectService->deleteObject(register: $register, schema: $schema, uuid: $objectUuid);
+				$objectService->deleteObject(register: $command->register, schema: $command->schema, uuid: $command->objectUuid);
 			} catch (Throwable $e) {
 				$this->logger->error(
 					'Dossiq bezwaar: the record without an entry could not be deleted',
-					['object' => $objectUuid, 'exception' => $e->getMessage()]
+					['object' => $command->objectUuid, 'exception' => $e->getMessage()]
 				);
 			}
 
 			throw $notWritten;
 		}//end try
-	}//end recordForNewRecord()
+	}//end recordOrDelete()
+
+	/**
+	 * Write one entry as {@see self::record()} does.
+	 *
+	 * @param BezwaarEntryCommand $command The entry.
+	 *
+	 * @return void
+	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written.
+	 */
+	private function recordCommand(BezwaarEntryCommand $command): void {
+		$this->record(
+			register: $command->register,
+			schema: $command->schema,
+			objectUuid: $command->objectUuid,
+			event: $command->event,
+			payload: $command->payload,
+			tag: $command->tag
+		);
+	}//end recordCommand()
 
 	/**
 	 * Record the entry first, then apply the change it records.
@@ -395,14 +460,7 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 	 */
 	private function recordOrRefuseTheChange(BezwaarEntryCommand $command): void {
 		try {
-			$this->record(
-				register: $command->register,
-				schema: $command->schema,
-				objectUuid: $command->objectUuid,
-				event: $command->event,
-				payload: $command->payload,
-				tag: $command->tag
-			);
+			$this->recordCommand(command: $command);
 		} catch (BezwaarEntryNotWrittenException $notWritten) {
 			$this->logger->error(
 				'Dossiq bezwaar: entry not written, so the change it records is not made',

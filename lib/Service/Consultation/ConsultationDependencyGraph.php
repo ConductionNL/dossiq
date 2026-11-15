@@ -76,14 +76,9 @@ class ConsultationDependencyGraph {
 			return true;
 		}
 
-		$visited = [];
+		$walk = ['startId' => $consultationId, 'visited' => []];
 		foreach ($dependsOn as $depId) {
-			if ($this->hasCycleDfs(
-				startId: $consultationId,
-				currentId: $depId,
-				visited: $visited,
-			) === true
-			) {
+			if ($this->hasCycleDfs(currentId: $depId, walk: $walk) === true) {
 				return true;
 			}
 		}
@@ -94,22 +89,22 @@ class ConsultationDependencyGraph {
 	/**
 	 * Depth-first search helper for cycle detection in dependency graph.
 	 *
-	 * @param string $startId The original consultation ID (cycle target)
 	 * @param string $currentId The current node being visited
-	 * @param string[] $visited Already-visited node IDs (prevents re-traversal)
+	 * @param array{startId: string, visited: string[]} $walk The original consultation ID (cycle target) and the
+	 *                                                        already-visited node IDs (prevents re-traversal)
 	 *
 	 * @return bool True if startId is reachable from currentId (cycle detected)
 	 */
-	private function hasCycleDfs(string $startId, string $currentId, array &$visited): bool {
-		if ($currentId === $startId) {
+	private function hasCycleDfs(string $currentId, array &$walk): bool {
+		if ($currentId === $walk['startId']) {
 			return true;
 		}
 
-		if (in_array($currentId, $visited, true) === true) {
+		if (in_array($currentId, $walk['visited'], true) === true) {
 			return false;
 		}
 
-		$visited[] = $currentId;
+		$walk['visited'][] = $currentId;
 
 		$consultation = $this->repository->getConsultation(consultationId: $currentId);
 		if ($consultation === null) {
@@ -122,7 +117,7 @@ class ConsultationDependencyGraph {
 		}
 
 		foreach ($deps as $depId) {
-			if ($this->hasCycleDfs(startId: $startId, currentId: $depId, visited: $visited) === true) {
+			if ($this->hasCycleDfs(currentId: $depId, walk: $walk) === true) {
 				return true;
 			}
 		}

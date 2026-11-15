@@ -141,31 +141,28 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 			return ['matched' => false, 'suggestedAgents' => []];
 		}
 
-		$team = (string)($routing['assignedTeam'] ?? '');
-		$agents = $this->listAgents();
-		$ranked = $this->rankPrimaryTeam(agents: $agents, team: $team, contactMoment: $contactMoment, routing: $routing);
+		$call = ['agents' => $this->listAgents(), 'contactMoment' => $contactMoment, 'routing' => $routing];
+		$ranked = $this->rankPrimaryTeam(call: $call);
 
-		[$ranked, $escalated] = $this->withEscalation(ranked: $ranked, agents: $agents, contactMoment: $contactMoment, routing: $routing);
+		[$ranked, $escalated] = $this->withEscalation(ranked: $ranked, call: $call);
 
-		return $this->routingDecision(routing: $routing, team: $team, escalated: $escalated, ranked: $ranked);
+		return $this->routingDecision(routing: $routing, ranking: ['escalated' => $escalated, 'ranked' => $ranked]);
 	}//end route()
 
 	/**
 	 * Rank the agents of the routed team for the contact moment.
 	 *
-	 * @param array<int, array<string, mixed>> $agents The agents.
-	 * @param string $team The routed team.
-	 * @param array<string, mixed> $contactMoment The contact moment.
-	 * @param array<string, mixed> $routing The routing decision.
+	 * @param array<string, mixed> $call The agents, the contact moment and the routing decision, naming the team.
 	 *
 	 * @return array<int, array<string, mixed>> The ranked agents.
 	 *
 	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
 	 */
-	private function rankPrimaryTeam(array $agents, string $team, array $contactMoment, array $routing): array {
+	private function rankPrimaryTeam(array $call): array {
+		['agents' => $agents, 'contactMoment' => $contactMoment, 'routing' => $routing] = $call;
 		return $this->routingEngine->rankAgents(
 			agents: $agents,
-			team: $team,
+			team: (string)($routing['assignedTeam'] ?? ''),
 			contactMoment: array_merge($contactMoment, ['assignedDomain' => ($routing['assignedDomain'] ?? '')]),
 		);
 	}//end rankPrimaryTeam()
@@ -174,15 +171,14 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 	 * Fall back to the escalation team when nobody in the primary team is available.
 	 *
 	 * @param array<int, array<string, mixed>> $ranked The primary team's ranking.
-	 * @param array<int, array<string, mixed>> $agents The agents.
-	 * @param array<string, mixed> $contactMoment The contact moment.
-	 * @param array<string, mixed> $routing The routing decision.
+	 * @param array<string, mixed> $call The agents, the contact moment and the routing decision.
 	 *
 	 * @return array{0: array<int, array<string, mixed>>, 1: bool} The ranking, and whether it escalated.
 	 *
 	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
 	 */
-	private function withEscalation(array $ranked, array $agents, array $contactMoment, array $routing): array {
+	private function withEscalation(array $ranked, array $call): array {
+		['agents' => $agents, 'contactMoment' => $contactMoment, 'routing' => $routing] = $call;
 		// Escalation: if no agent is available in the primary team, fall back
 		// to the configured escalation team.
 		$escalated = false;
@@ -202,22 +198,21 @@ class RoutingRuleService implements RoutingRuleServiceInterface {
 	 * The routing decision with its agent suggestions.
 	 *
 	 * @param array<string, mixed> $routing The routing decision.
-	 * @param string $team The routed team.
-	 * @param bool $escalated Whether the escalation team was used.
-	 * @param array<int, array<string, mixed>> $ranked The ranked agents.
+	 * @param array{escalated: bool, ranked: array<int, array<string, mixed>>} $ranking Whether the escalation team was
+	 *                                                                                 used, and the ranked agents.
 	 *
 	 * @return array<string, mixed> The routing decision plus agent suggestions.
 	 *
 	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
 	 */
-	private function routingDecision(array $routing, string $team, bool $escalated, array $ranked): array {
+	private function routingDecision(array $routing, array $ranking): array {
 		return [
 			'matched' => true,
 			'assignedDomain' => ($routing['assignedDomain'] ?? ''),
-			'assignedTeam' => $team,
+			'assignedTeam' => (string)($routing['assignedTeam'] ?? ''),
 			'rule' => ($routing['rule'] ?? ''),
-			'escalated' => $escalated,
-			'suggestedAgents' => $ranked,
+			'escalated' => $ranking['escalated'],
+			'suggestedAgents' => $ranking['ranked'],
 		];
 	}//end routingDecision()
 

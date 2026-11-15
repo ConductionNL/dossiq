@@ -203,9 +203,9 @@ class DsoController extends Controller {
 		}
 
 		try {
-			return $this->applyStatusTransition(caseId: $caseId, user: $user, body: $body);
+			return $this->applyStatusTransition(user: $user, request: ['caseId' => $caseId, 'body' => $body]);
 		} catch (\Exception $e) {
-			return $this->failure(exception: $e, action: 'transitionStatus', message: 'Could not transition status');
+			return $this->failure(exception: $e, endpoint: ['action' => 'transitionStatus', 'message' => 'Could not transition status']);
 		}//end try
 	}//end transitionStatus()
 
@@ -231,15 +231,15 @@ class DsoController extends Controller {
 	/**
 	 * Move a case the user may change to a new DSO status.
 	 *
-	 * @param string $caseId The case.
 	 * @param IUser $user The current user.
-	 * @param array $body The request body, with the requested status.
+	 * @param array{caseId: string, body: array} $request The case, and the request body with the requested status.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @throws \Exception When reading or transitioning the case fails.
 	 */
-	private function applyStatusTransition(string $caseId, IUser $user, array $body): JSONResponse {
+	private function applyStatusTransition(IUser $user, array $request): JSONResponse {
+		['caseId' => $caseId, 'body' => $body] = $request;
 		$case = $this->mutableCase(caseId: $caseId, user: $user);
 		if ($case === null) {
 			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
@@ -293,8 +293,7 @@ class DsoController extends Controller {
 		} catch (\Exception $e) {
 			return $this->failure(
 				exception: $e,
-				action: 'generateBeschikking',
-				message: 'Could not generate beschikking'
+				endpoint: ['action' => 'generateBeschikking', 'message' => 'Could not generate beschikking']
 			);
 		}//end try
 	}//end generateBeschikking()
@@ -335,8 +334,7 @@ class DsoController extends Controller {
 		} catch (\Exception $e) {
 			return $this->failure(
 				exception: $e,
-				action: 'initiateSamenwerking',
-				message: 'Could not initiate samenwerking'
+				endpoint: ['action' => 'initiateSamenwerking', 'message' => 'Could not initiate samenwerking']
 			);
 		}//end try
 	}//end initiateSamenwerking()
@@ -381,8 +379,7 @@ class DsoController extends Controller {
 		} catch (\Exception $e) {
 			return $this->failure(
 				exception: $e,
-				action: 'respondSamenwerking',
-				message: 'Could not respond to samenwerking'
+				endpoint: ['action' => 'respondSamenwerking', 'message' => 'Could not respond to samenwerking']
 			);
 		}//end try
 	}//end respondSamenwerking()
@@ -417,24 +414,25 @@ class DsoController extends Controller {
 		}
 
 		try {
-			return $this->forwardCase(caseId: $caseId, user: $user, body: $body);
+			return $this->forwardCase(user: $user, request: ['caseId' => $caseId, 'body' => $body]);
 		} catch (\Exception $e) {
-			return $this->failure(exception: $e, action: 'doorsturen', message: 'Could not doorsturen');
+			return $this->failure(exception: $e, endpoint: ['action' => 'doorsturen', 'message' => 'Could not doorsturen']);
 		}//end try
 	}//end doorsturen()
 
 	/**
 	 * Forward a case the user may change to another bevoegd gezag.
 	 *
-	 * @param string $caseId The case.
 	 * @param IUser $user The current user.
-	 * @param array $body The request body: the bevoegd gezag to forward to and why.
+	 * @param array{caseId: string, body: array} $request The case, and the request body: the bevoegd gezag to
+	 *                                                    forward to and why.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @throws \Exception When reading the case or dispatching fails.
 	 */
-	private function forwardCase(string $caseId, IUser $user, array $body): JSONResponse {
+	private function forwardCase(IUser $user, array $request): JSONResponse {
+		['caseId' => $caseId, 'body' => $body] = $request;
 		$targetBevoegdGezag = (string)($body['targetBevoegdGezag'] ?? '');
 		$case = $this->mutableCase(caseId: $caseId, user: $user);
 		if ($case === null) {
@@ -459,14 +457,15 @@ class DsoController extends Controller {
 	 * reported as a 500 with the endpoint's own message.
 	 *
 	 * @param \Exception $exception The caught exception.
-	 * @param string $action The endpoint name, for the log line.
-	 * @param string $message The 500 message for this endpoint.
+	 * @param array{action: string, message: string} $endpoint The endpoint name, for the log line, and the 500
+	 *                                                        message for this endpoint.
 	 *
 	 * @return JSONResponse The mapped error response.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
-	private function failure(\Exception $exception, string $action, string $message): JSONResponse {
+	private function failure(\Exception $exception, array $endpoint): JSONResponse {
+		['action' => $action, 'message' => $message] = $endpoint;
 		if ($exception->getMessage() === 'Not authorized') {
 			return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
 		}

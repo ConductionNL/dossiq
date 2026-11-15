@@ -161,7 +161,7 @@ class ExampleDataFragments {
 		$who = array_merge($who, $this->storedReferences(objects: $fresh, siblings: $raw));
 
 		return array_map(
-			fn (array $object): array => $this->resolve(value: $object, who: $who, now: $now),
+			fn (array $object): array => $this->resolve(value: $object, tokens: ['who' => $who, 'now' => $now]),
 			array_values($fresh)
 		);
 	}//end objects()
@@ -276,15 +276,15 @@ class ExampleDataFragments {
 	 * Fill the tokens in one value, recursively.
 	 *
 	 * @param array<array-key, mixed> $value The object, or a nested object or list.
-	 * @param array<string, string> $who   `@me`, `@myGroup` and stored references, '' when unknown.
-	 * @param DateTimeImmutable     $now   The moment of loading.
+	 * @param array{who: array<string, string>, now: DateTimeImmutable} $tokens `@me`, `@myGroup` and stored
+	 *        references ('' when unknown), and the moment of loading.
 	 *
 	 * @return array<array-key, mixed> The value with tokens filled in.
 	 */
-	private function resolve(array $value, array $who, DateTimeImmutable $now): array {
+	private function resolve(array $value, array $tokens): array {
 		$isList = array_is_list($value);
 		foreach (array_keys($value) as $key) {
-			$value = $this->resolvedEntry(value: $value, key: $key, who: $who, now: $now);
+			$value = $this->resolvedEntry(value: $value, entry: ['key' => $key] + $tokens);
 		}
 
 		// A dropped list element must not leave a gap: a list with a gap
@@ -301,16 +301,16 @@ class ExampleDataFragments {
 	 * user (dropped when that user is empty), anything else as a date token.
 	 *
 	 * @param array                 $value The value being resolved.
-	 * @param int|string            $key   The entry's key.
-	 * @param array<string, string> $who   The person tokens and the users they resolve to.
-	 * @param DateTimeImmutable     $now   The moment date tokens are relative to.
+	 * @param array{key: int|string, who: array<string, string>, now: DateTimeImmutable} $entry The entry's key, the
+	 *        person tokens and the users they resolve to, and the moment date tokens are relative to.
 	 *
 	 * @return array The value with this entry resolved.
 	 */
-	private function resolvedEntry(array $value, int|string $key, array $who, DateTimeImmutable $now): array {
+	private function resolvedEntry(array $value, array $entry): array {
+		['key' => $key, 'who' => $who, 'now' => $now] = $entry;
 		$item = $value[$key];
 		if (is_array($item) === true) {
-			$value[$key] = $this->resolve(value: $item, who: $who, now: $now);
+			$value[$key] = $this->resolve(value: $item, tokens: ['who' => $who, 'now' => $now]);
 			return $value;
 		}
 
@@ -319,7 +319,7 @@ class ExampleDataFragments {
 		}
 
 		if (array_key_exists($item, $who) === true) {
-			return $this->withPerson(value: $value, key: $key, who: $who);
+			return $this->withPerson(value: $value, entry: $entry);
 		}
 
 		$value[$key] = $this->date(token: $item, now: $now);
@@ -331,12 +331,13 @@ class ExampleDataFragments {
 	 * Resolve a person token entry to its user, dropping the entry when that user is empty.
 	 *
 	 * @param array                 $value The value being resolved.
-	 * @param int|string            $key   The entry's key, holding a person token.
-	 * @param array<string, string> $who   The person tokens and the users they resolve to.
+	 * @param array{key: int|string, who: array<string, string>} $entry The entry's key, holding a person token, and
+	 *        the person tokens and the users they resolve to.
 	 *
 	 * @return array The value with this entry resolved.
 	 */
-	private function withPerson(array $value, int|string $key, array $who): array {
+	private function withPerson(array $value, array $entry): array {
+		['key' => $key, 'who' => $who] = $entry;
 		$item = $value[$key];
 		$value[$key] = $who[$item];
 		if ($who[$item] === '') {

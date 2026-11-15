@@ -322,6 +322,20 @@ class PlannedFollowUpDocument {
 			return ['until' => '', 'count' => 0];
 		}
 
+		return $this->boundedEnd(date: $date, count: $count);
+	}//end endOf()
+
+	/**
+	 * The end of a recurring series: a date or a count, never both.
+	 *
+	 * @param string  $date  The end date as `Y-m-d`, trimmed, or the empty string.
+	 * @param integer $count The number of occurrences, or 0.
+	 *
+	 * @return array{until: string, count: int} The end to store.
+	 *
+	 * @throws RuntimeException When both are given, the date does not parse, or the count is negative.
+	 */
+	private function boundedEnd(string $date, int $count): array {
 		if ($date !== '' && $count > 0) {
 			throw new RuntimeException('invalid_end');
 		}
@@ -339,7 +353,7 @@ class PlannedFollowUpDocument {
 		}
 
 		return ['until' => '', 'count' => $count];
-	}//end endOf()
+	}//end boundedEnd()
 
 	/**
 	 * What one planned flow says it will create, read off its own graph.
@@ -463,6 +477,18 @@ class PlannedFollowUpDocument {
 			return $firedCount >= $series['count'];
 		}
 
+		return $this->pastUntil(series: $series, today: $today);
+	}//end isSpent()
+
+	/**
+	 * Whether a series that ends on a date has no occurrence left on or before it.
+	 *
+	 * @param array<string, mixed> $series The series: its recurrence, anchor and end date.
+	 * @param DateTimeImmutable    $today  The day the sweep is running on.
+	 *
+	 * @return bool True when the series is spent.
+	 */
+	private function pastUntil(array $series, DateTimeImmutable $today): bool {
 		if ($series['until'] === '') {
 			return false;
 		}
@@ -480,7 +506,7 @@ class PlannedFollowUpDocument {
 		);
 
 		return $next === null || $next->format('Y-m-d') > $series['until'];
-	}//end isSpent()
+	}//end pastUntil()
 
 	/**
 	 * The create-node config and the schedule cron, from one node list.
