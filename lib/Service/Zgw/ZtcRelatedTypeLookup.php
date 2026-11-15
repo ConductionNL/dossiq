@@ -163,20 +163,37 @@ class ZtcRelatedTypeLookup {
 			return [];
 		}
 
-		$iotUrls = [];
-		$caseTypeLinks = new MappedObjects(objectService: $objectService, mapping: $ziotMapping);
-		$documentTypes = new MappedObjects(objectService: $objectService, mapping: $iotMapping);
-		foreach ($this->searchRowsOrNone(objects: $caseTypeLinks, params: ['caseType' => $uuid]) as $ziotData) {
-			$iotRef = $ziotData['informatieobjecttype'] ?? '';
-			if ($iotRef !== '') {
-				foreach ($this->sameNameDocumentTypeIds(documentTypes: $documentTypes, iotRef: $iotRef) as $id) {
-					$iotUrls[] = $baseUrl.'/informatieobjecttypen/'.$id;
-				}
-			}
-		}
+		$iotUrls = array_map(
+			static fn (mixed $id): string => $baseUrl.'/informatieobjecttypen/'.$id,
+			$this->documentTypeIds(
+				caseTypeLinks: new MappedObjects(objectService: $objectService, mapping: $ziotMapping),
+				lookup: ['uuid' => $uuid, 'documentTypes' => new MappedObjects(objectService: $objectService, mapping: $iotMapping)]
+			)
+		);
 
 		return array_values(array_unique($iotUrls));
 	}//end caseTypeDocumentTypeUrls()
+
+	/**
+	 * The informatieobjecttype ids of a zaaktype's ZIOT records, each expanded to every type with the same name.
+	 *
+	 * @param MappedObjects                                     $caseTypeLinks The object service with the ZIOT mapping
+	 * @param array{uuid: string, documentTypes: MappedObjects} $lookup        The zaaktype uuid, and the object service with
+	 *                                                                         the informatieobjecttypen mapping
+	 *
+	 * @return array<mixed> The ids, in order, possibly repeated
+	 */
+	private function documentTypeIds(MappedObjects $caseTypeLinks, array $lookup): array {
+		$ids = [];
+		foreach ($this->searchRowsOrNone(objects: $caseTypeLinks, params: ['caseType' => $lookup['uuid']]) as $ziotData) {
+			$iotRef = $ziotData['informatieobjecttype'] ?? '';
+			if ($iotRef !== '') {
+				array_push($ids, ...$this->sameNameDocumentTypeIds(documentTypes: $lookup['documentTypes'], iotRef: $iotRef));
+			}
+		}
+
+		return $ids;
+	}//end documentTypeIds()
 
 	/**
 	 * The ids of every informatieobjecttype named like the referenced one.
