@@ -136,20 +136,36 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 			return false;
 		}
 
-		$write = new ApplicantWrite(caseId: $caseId, act: $act, fields: $fields, occurredAt: $occurredAt, mandate: $mandate);
+		$this->recordApplicantWrite(
+			case: $case,
+			write: new ApplicantWrite(caseId: $caseId, act: $act, fields: $fields, occurredAt: $occurredAt, mandate: $mandate)
+		);
+
+		return true;
+	}//end recordWrite()
+
+	/**
+	 * Record the write on the timeline, tell the represented party and the assignee.
+	 *
+	 * @param array<string, mixed> $case  The case data.
+	 * @param ApplicantWrite       $write The case, the act, the fields it touched, its moment and mandate.
+	 *
+	 * @return void
+	 */
+	private function recordApplicantWrite(array $case, ApplicantWrite $write): void {
 		$this->recordOnTimeline(write: $write);
 
 		$this->tellTheRepresented(write: $write);
 
 		$this->notifyAssignee(
 			case: $case,
-			caseId: $caseId,
-			subject: NotifierInterface::SUBJECT_APPLICANT_RESPONDED,
-			parameters: ['act' => $act],
+			notice: [
+				'caseId' => $write->caseId,
+				'subject' => NotifierInterface::SUBJECT_APPLICANT_RESPONDED,
+				'parameters' => ['act' => $write->act],
+			],
 		);
-
-		return true;
-	}//end recordWrite()
+	}//end recordApplicantWrite()
 
 	/**
 	 * Whether the act is one this app records, warning when it is not.
@@ -251,28 +267,42 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 			return false;
 		}
 
+		$this->recordWithdrawn(case: $case, withdrawal: ['caseId' => $caseId, 'status' => $status, 'reason' => $reason, 'occurredAt' => $occurredAt]);
+
+		return true;
+	}//end recordWithdrawal()
+
+	/**
+	 * Record the withdrawal on the internal timeline and tell the assignee.
+	 *
+	 * @param array<string, mixed>                                                  $case       The case data.
+	 * @param array{caseId: string, status: string, reason: string, occurredAt: string} $withdrawal The withdrawal.
+	 *
+	 * @return void
+	 */
+	private function recordWithdrawn(array $case, array $withdrawal): void {
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: $withdrawal['caseId'],
 			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
 			message: 'The applicant withdrew the request in the portal',
 			fields: [
 				'act' => self::ACT_WITHDRAWAL,
-				'status' => $status,
-				'reason' => $reason,
-				'occurredAt' => $occurredAt,
+				'status' => $withdrawal['status'],
+				'reason' => $withdrawal['reason'],
+				'occurredAt' => $withdrawal['occurredAt'],
 			],
 			visibility: CaseTimelineInterface::INTERNAL,
 		);
 
 		$this->notifyAssignee(
 			case: $case,
-			caseId: $caseId,
-			subject: NotifierInterface::SUBJECT_APPLICANT_WITHDREW,
-			parameters: ['reason' => $reason],
+			notice: [
+				'caseId' => $withdrawal['caseId'],
+				'subject' => NotifierInterface::SUBJECT_APPLICANT_WITHDREW,
+				'parameters' => ['reason' => $withdrawal['reason']],
+			],
 		);
-
-		return true;
-	}//end recordWithdrawal()
+	}//end recordWithdrawn()
 
 	/**
 	 * The case in dossiq's own register and case schema, or null when it is not ours.
@@ -312,14 +342,14 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 	 * A case nobody is assigned to notifies nobody; the follow-up the entry
 	 * opened is what surfaces it then.
 	 *
-	 * @param array<string, mixed> $case       The case data.
-	 * @param string               $caseId     The case id.
-	 * @param string               $subject    The Notifier subject key.
-	 * @param array<string, mixed> $parameters The act-specific subject parameters.
+	 * @param array<string, mixed>                                                      $case   The case data.
+	 * @param array{caseId: string, subject: string, parameters: array<string, mixed>} $notice The case id, the Notifier subject key
+	 *                                                                                         and the act-specific subject parameters.
 	 *
 	 * @return void
 	 */
-	private function notifyAssignee(array $case, string $caseId, string $subject, array $parameters): void {
+	private function notifyAssignee(array $case, array $notice): void {
+		$caseId = $notice['caseId'];
 		$assignee = trim((string)($case['assignee'] ?? ''));
 		if ($assignee === '') {
 			return;
@@ -331,13 +361,13 @@ class ApplicantPortalActs implements ApplicantPortalActsInterface {
 			->setDateTime(new DateTime())
 			->setObject('case', $caseId)
 			->setSubject(
-				$subject,
+				$notice['subject'],
 				array_merge(
 					[
 						'caseId' => $caseId,
 						'identifier' => (string)($case['identifier'] ?? ''),
 					],
-					$parameters,
+					$notice['parameters'],
 				)
 			);
 
