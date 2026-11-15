@@ -594,3 +594,10 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Characterisation: the existing `ZtcCrossReferenceTest` (8), `ZtcRelatedTypeLookupTest` and
         `ZtcWriteGateGoldenTest`, green before and after. Own test: `ZtcStoredUuidUrlsTest` (2).
         Whole unit suite: 19 failures before and after, all in classes this slice does not touch.
+  - [x] 8n Six stale suppressions (PHPMD reports nothing without them, measured one at a time
+        against `phpmd.xml`): CouplingBetweenObjects on `StufController`, `PauseChaseService` and
+        `IntakeRequirementsListener`, ExcessiveParameterList on `InboundMailIntake` and on
+        `AcknowledgementService::__construct`, and TooManyMethods on `DeadlineReportingService`
+        (after 8j moved the payout statement out). Docblocks only; no code moved. phpmd, phpcs and
+        `tests/Unit/Architecture` green on the six files. The other 98 complexity-type suppressions
+        in `lib/` still report their rule when lifted, so they need a split, not a deletion.

@@ -74,11 +74,6 @@ use Throwable;
  *
  * @spec openspec/specs/termijn-pause-extension/spec.md
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The act joins five things that
- * already exist: the term store, the outbound route, the reason vocabulary, the
- * schedule and the case timeline. Splitting it would put the count that keeps
- * two triggers apart in one class and the send that increments it in another.
- *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PauseChaseService implements PauseChaseServiceInterface {

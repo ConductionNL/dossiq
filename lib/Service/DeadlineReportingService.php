@@ -55,7 +55,6 @@ use RuntimeException;
  * puts the reports together.
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/specs/termijn-reporting/spec.md
  */
