@@ -83,23 +83,19 @@ class SigningConclusionRecorder {
 	 * status as it was, and let it be asked for again. A conclusion for a request
 	 * the decision is not waiting on changes nothing.
 	 *
-	 * @param string $decisionId The beschikking UUID (filinq's subject id).
-	 * @param string $requestId Filinq's signing request id.
-	 * @param string $status Filinq's terminal status: signed, declined, expired or cancelled.
-	 * @param string|null $signedDocumentRef The signed document, when signed.
-	 * @param string|null $signedAt When it was signed.
+	 * @param SigningConclusion $conclusion The decision, filinq's request id and how it ended.
 	 *
 	 * @return bool Whether the decision took the conclusion.
 	 *
 	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-signing-request-that-ends-unsigned-is-shown-as-not-concluded
 	 */
-	public function record(
-		string $decisionId,
-		string $requestId,
-		string $status,
-		?string $signedDocumentRef,
-		?string $signedAt,
-	): bool {
+	public function record(SigningConclusion $conclusion): bool {
+		$decisionId        = $conclusion->decisionId;
+		$requestId         = $conclusion->requestId;
+		$status            = $conclusion->status;
+		$signedDocumentRef = $conclusion->signedDocumentRef;
+		$signedAt          = $conclusion->signedAt;
+
 		$decision = $this->repository->find(decisionId: $decisionId);
 		$signing = (array)($decision['signing'] ?? []);
 		if ($decision === null

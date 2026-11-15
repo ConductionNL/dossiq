@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 use OCA\Dossiq\Listener\SigningConcludedListener;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
+use OCA\Dossiq\Service\Signing\SigningConclusion;
 use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
 use OCA\Filinq\Event\SigningConcludedEvent;
 use OCA\Filinq\Event\SigningProvenance;
@@ -98,11 +99,13 @@ final class SigningConcludedListenerTest extends TestCase {
 		foreach (['signed', 'expired', 'declined', 'cancelled'] as $status) {
 			$listener = $this->listener();
 			$this->decisions->expects($this->once())->method('record')->with(
-				'decision-1',
-				'sr-1',
-				$status,
-				$status === 'signed' ? '9001' : null,
-				$status === 'signed' ? '2026-10-14T10:00:00+02:00' : null,
+				new SigningConclusion(
+					decisionId: 'decision-1',
+					requestId: 'sr-1',
+					status: $status,
+					signedDocumentRef: $status === 'signed' ? '9001' : null,
+					signedAt: $status === 'signed' ? '2026-10-14T10:00:00+02:00' : null,
+				)
 			)->willReturn(true);
 
 			$listener->handle(self::concluded(sourceApp: 'dossiq', status: $status));

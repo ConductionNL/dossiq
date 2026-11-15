@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Signing\DocumentSigningRequester;
+use OCA\Dossiq\Service\Signing\SigningConclusion;
 use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
 use OCA\Filinq\Event\DocumentSigningRequestedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -164,6 +165,7 @@ class FakeObjectService {
  * @uses \OCA\Dossiq\Service\Beschikking\MandaatVerifier
  * @uses \OCA\Dossiq\Service\Signing\DocumentSigningRequester
  * @uses \OCA\Dossiq\Service\Signing\SigningConclusionRecorder
+ * @uses \OCA\Dossiq\Service\Signing\SigningConclusion
  * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter
  * @uses \OCA\Dossiq\Service\StateMachineService
@@ -894,11 +896,13 @@ class BeschikkingServiceTest extends TestCase {
 		$waiting = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
 		$this->assertTrue(
 			$this->recorder->record(
-				decisionId: $id,
-				requestId: (string)$waiting['signing']['requestId'],
-				status: 'signed',
-				signedDocumentRef: '9001',
-				signedAt: '2026-10-14T10:00:00+02:00',
+				new SigningConclusion(
+					decisionId: $id,
+					requestId: (string)$waiting['signing']['requestId'],
+					status: 'signed',
+					signedDocumentRef: '9001',
+					signedAt: '2026-10-14T10:00:00+02:00',
+				)
 			)
 		);
 
@@ -977,7 +981,7 @@ class BeschikkingServiceTest extends TestCase {
 			$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
 			$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
 
-			$this->assertTrue($this->recorder->record(decisionId: $id, requestId: 'sr-1', status: $status, signedDocumentRef: null, signedAt: null));
+			$this->assertTrue($this->recorder->record(new SigningConclusion(decisionId: $id, requestId: 'sr-1', status: $status, signedDocumentRef: null, signedAt: null)));
 
 			$stored = (array)$this->repository->find(decisionId: $id);
 			$this->assertSame('not-concluded', $stored['signing']['state'], $status);
@@ -1003,8 +1007,8 @@ class BeschikkingServiceTest extends TestCase {
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
 		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
 
-		$this->assertFalse($this->recorder->record(decisionId: $id, requestId: 'sr-other', status: 'signed', signedDocumentRef: '1', signedAt: null));
-		$this->assertFalse($this->recorder->record(decisionId: 'no-such-decision', requestId: 'sr-1', status: 'signed', signedDocumentRef: '1', signedAt: null));
+		$this->assertFalse($this->recorder->record(new SigningConclusion(decisionId: $id, requestId: 'sr-other', status: 'signed', signedDocumentRef: '1', signedAt: null)));
+		$this->assertFalse($this->recorder->record(new SigningConclusion(decisionId: 'no-such-decision', requestId: 'sr-1', status: 'signed', signedDocumentRef: '1', signedAt: null)));
 
 		$stored = (array)$this->repository->find(decisionId: $id);
 		$this->assertSame('requested', $stored['signing']['state']);

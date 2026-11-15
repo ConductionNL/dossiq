@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
+use OCA\Dossiq\Service\Signing\SigningConclusion;
 use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
 use OCA\Filinq\Event\SigningConcludedEvent;
 use OCP\EventDispatcher\Event;
@@ -104,11 +105,13 @@ class SigningConcludedListener implements IEventListener {
 		try {
 			$taken = $this->serviceAccount->runAs(
 				operation: fn (): bool => $this->recorder->record(
-					decisionId: $decisionId,
-					requestId: $requestId,
-					status: $event->getStatus(),
-					signedDocumentRef: $event->getSignedDocumentRef(),
-					signedAt: $event->getSignedAt(),
+					conclusion: new SigningConclusion(
+						decisionId: $decisionId,
+						requestId: $requestId,
+						status: $event->getStatus(),
+						signedDocumentRef: $event->getSignedDocumentRef(),
+						signedAt: $event->getSignedAt(),
+					)
 				)
 			);
 		} catch (ServiceAccountUnavailableException $e) {
