@@ -192,7 +192,10 @@ class CaseConversationService implements CaseConversationServiceInterface {
 			return ['ok' => false, 'reason' => self::REASON_NO_CASE];
 		}
 
-		[$conversations, $found] = $this->ended(caseData: $case, roomId: $roomId, participants: $participants, durationSeconds: $durationSeconds);
+		[$conversations, $found] = $this->ended(
+			caseData: $case,
+			end: ['roomId' => $roomId, 'participants' => $participants, 'durationSeconds' => $durationSeconds]
+		);
 
 		if ($found === null) {
 			return ['ok' => false, 'reason' => self::REASON_UNKNOWN_ROOM];
@@ -206,25 +209,24 @@ class CaseConversationService implements CaseConversationServiceInterface {
 	/**
 	 * The case's conversations with the room's conversation completed, and that conversation.
 	 *
-	 * @param array<string, mixed>                    $caseData        The case.
-	 * @param string                                  $roomId          The Talk conversation id.
-	 * @param array<string>                           $participants    User ids or display names that joined.
-	 * @param int                                     $durationSeconds How long it lasted.
+	 * @param array<string, mixed> $caseData The case.
+	 * @param array<string, mixed> $end      The Talk conversation's `roomId`, the `participants` (user ids or display
+	 *                                       names that joined) and how long it lasted in `durationSeconds`.
 	 *
 	 * @return array{0: array<int|string, array<string, mixed>>, 1: array<string, mixed>|null} The conversations, and the completed one or null.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function ended(array $caseData, string $roomId, array $participants, int $durationSeconds): array {
+	private function ended(array $caseData, array $end): array {
 		$conversations = $this->cases->conversationsOf(case: $caseData);
 		$found = null;
 		foreach ($conversations as $index => $conversation) {
-			if (($conversation['roomId'] ?? '') !== $roomId) {
+			if (($conversation['roomId'] ?? '') !== $end['roomId']) {
 				continue;
 			}
 
-			$conversation['participants'] = array_values($participants);
-			$conversation['durationSeconds'] = max(0, $durationSeconds);
+			$conversation['participants'] = array_values($end['participants']);
+			$conversation['durationSeconds'] = max(0, $end['durationSeconds']);
 			$conversation['endedAt'] = $this->cases->now();
 			$conversations[$index] = $conversation;
 			$found = $conversation;

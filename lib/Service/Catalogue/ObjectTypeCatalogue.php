@@ -175,7 +175,7 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 		[$casesByType, $urlByType] = $collected;
 		$rows = [];
 		foreach ($casesByType as $type => $cases) {
-			$row = $this->rowFor(type: (string)$type, cases: count($cases), objectUrl: ($urlByType[$type] ?? ''));
+			$row = $this->rowFor(type: (string)$type, usage: ['cases' => count($cases), 'objectUrl' => ($urlByType[$type] ?? '')]);
 			$row['caseTypes'] = $this->caseTypeCount(cases: array_keys($cases), caseTypeOf: $caseTypeOf);
 			$rows[] = $row;
 		}
@@ -235,9 +235,8 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 	 * object count, with the line under the type ("Bomenregister · 5
 	 * objecten"). A free-text type leaves the schema columns empty.
 	 *
-	 * @param string $type      The object type.
-	 * @param int    $cases     The cases that link one.
-	 * @param string $objectUrl A link URL naming the schema, or ''.
+	 * @param string                               $type  The object type.
+	 * @param array{cases: int, objectUrl: string} $usage The cases that link one, and a link URL naming the schema or ''.
 	 *
 	 * @return array{
 	 *     id: string, title: string, cases: int, schema: string, schemaLine: string,
@@ -245,7 +244,8 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 	 *     views: array<int, string>, schemaId: string
 	 * } The row.
 	 */
-	private function rowFor(string $type, int $cases, string $objectUrl): array {
+	private function rowFor(string $type, array $usage): array {
+		$objectUrl = $usage['objectUrl'];
 		$schema = null;
 		if ($objectUrl !== '') {
 			$schema = $this->schemas->describe(objectUrl: $objectUrl);
@@ -254,7 +254,7 @@ class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 		return [
 			'id'         => $type,
 			'title'      => $type,
-			'cases'      => $cases,
+			'cases'      => $usage['cases'],
 			'schema'     => ($schema['title'] ?? ''),
 			'schemaLine' => $this->schemaLine(title: ($schema['title'] ?? ''), objects: ($schema['objects'] ?? null)),
 			'schemaName' => $this->schemaName(title: ($schema['title'] ?? '')),
