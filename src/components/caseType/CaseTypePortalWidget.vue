@@ -182,6 +182,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 import {
 	identityKinds,
 	portalStateFrom,
@@ -202,6 +203,8 @@ export default {
 		NcTextField,
 	},
 
+	mixins: [caseTypeWidget],
+
 	data() {
 		return {
 			loading: true,
@@ -215,16 +218,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The case type this page is bound to.
-		 *
-		 * @return {string} The route's id.
-		 * @spec openspec/specs/portal-contribution/spec.md
-		 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * @return {string[]} The fields the applicant may be allowed to change.
 		 * @spec openspec/specs/portal-contribution/spec.md
