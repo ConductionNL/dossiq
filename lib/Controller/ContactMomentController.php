@@ -140,6 +140,26 @@ class ContactMomentController extends Controller {
 	}//end kccCaller()
 
 	/**
+	 * The KCC caller for a lookup that names a citizen; a 400 when it names none.
+	 *
+	 * @param string $burgerId The citizen reference.
+	 *
+	 * @return \OCP\IUser|JSONResponse The caller, or the refusal.
+	 */
+	private function kccCallerForCitizen(string $burgerId): \OCP\IUser|JSONResponse {
+		$user = $this->kccCaller(burgerId: $burgerId);
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		if ($burgerId === '') {
+			return new JSONResponse(['error' => 'burgerId is required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return $user;
+	}//end kccCallerForCitizen()
+
+	/**
 	 * Record a lookup that was answered.
 	 *
 	 * @param \OCP\IUser $user     The caller.
@@ -298,13 +318,9 @@ class ContactMomentController extends Controller {
 		// `$burgerId` is a citizen identifier taken straight off the query
 		// string; without this the whole contact history of any citizen was
 		// readable by every authenticated account (PROC-IDOR-01).
-		$user = $this->kccCaller(burgerId: $burgerId);
+		$user = $this->kccCallerForCitizen(burgerId: $burgerId);
 		if ($user instanceof JSONResponse) {
 			return $user;
-		}
-
-		if ($burgerId === '') {
-			return new JSONResponse(['error' => 'burgerId is required'], Http::STATUS_BAD_REQUEST);
 		}
 
 		$records = $this->contactMomentService->listForBurger($burgerId, $limit);
@@ -339,13 +355,9 @@ class ContactMomentController extends Controller {
 		// open cases and recent contact history. Reproduced live at HTTP 200
 		// for an unrelated authenticated account before this guard existed
 		// (PROC-IDOR-01) — iterating BSN-shaped ids walked the population.
-		$user = $this->kccCaller(burgerId: $burgerId);
+		$user = $this->kccCallerForCitizen(burgerId: $burgerId);
 		if ($user instanceof JSONResponse) {
 			return $user;
-		}
-
-		if ($burgerId === '') {
-			return new JSONResponse(['error' => 'burgerId is required'], Http::STATUS_BAD_REQUEST);
 		}
 
 		$voorblad = $this->caseVoorbladService->getCaseVoorblad($burgerId);
