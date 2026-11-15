@@ -36,20 +36,23 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The ObjectService shape the EIO paths call.
  */
 interface DrcLifecycleObjectServiceStub {
-	public function find(mixed $id, mixed $register, mixed $schema): mixed;
+	public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	public function buildSearchQuery(array $requestParams, mixed $register, mixed $schema): array;
 
 	public function searchObjectsPaginated(array $query): array;
 
-	public function deleteObject(string $uuid): mixed;
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): mixed;
 
-	public function saveObject(mixed $register, mixed $schema, array $object, ?string $uuid=null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -98,7 +101,9 @@ class DrcEioLifecycleTest extends TestCase {
 	private function controller(mixed $stored, array $searches=[], array $body=[], int $destroyStatus=Http::STATUS_NO_CONTENT): DrcController {
 		$objects = $this->createMock(DrcLifecycleObjectServiceStub::class);
 		$objects->method('find')->willReturnCallback(
-			static function (mixed $id, mixed $register, mixed $schema) use ($stored): mixed {
+			static function (mixed $id, ?ObjectFindOptions $options = null) use ($stored): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($stored instanceof \Throwable) {
 					throw $stored;
 				}
@@ -119,12 +124,16 @@ class DrcEioLifecycleTest extends TestCase {
 				return ['results' => $answer];
 			}
 		);
-		$objects->method('deleteObject')->willReturnCallback(function (string $uuid): bool {
+		$objects->method('deleteObject')->willReturnCallback(function (ObjectDeletion $deletion): bool {
+			$uuid = $deletion->uuid;
 			$this->seen['deleted'][] = $uuid;
 			return true;
 		});
 		$objects->method('saveObject')->willReturnCallback(
-			function (mixed $register, mixed $schema, array $object, ?string $uuid=null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->seen['saved'][] = $object;
 				return array_merge(['id' => self::UUID], $object);
 			}

@@ -31,6 +31,8 @@ use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An in-memory object store with the four calls the effects make.
@@ -48,7 +50,9 @@ class ZrcEffectsObjectStore {
 	/** @var array<string, bool> schemas whose find() throws */
 	public array $findThrows = [];
 
-	public function find(mixed $id, mixed $register=null, mixed $schema=null): mixed {
+	public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		if (isset($this->findThrows[(string)$schema]) === true) {
 			throw new \RuntimeException('find failed');
 		}
@@ -92,7 +96,10 @@ class ZrcEffectsObjectStore {
 		return ['results' => $hits, 'total' => count($hits)];
 	}
 
-	public function saveObject(mixed $register=null, mixed $schema=null, array $object=[], ?string $uuid=null): array {
+	public function saveObject(array $object=[], ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$this->saved[] = ['schema' => (string)$schema, 'uuid' => (string)$uuid, 'object' => $object];
 		$this->rows[(string)$schema][(string)$uuid] = $object;
 		return $object;

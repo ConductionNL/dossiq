@@ -82,19 +82,31 @@ class CaseSplitPlan {
 	 */
 	public function forSelection(string $sourceId, string $newId, array $chosen): array {
 		$cases = new SplitCases(sourceId: $sourceId, newId: $newId);
-		[$moves, $references, $refused] = $this->partition(plans: $this->itemPlans(cases: $cases, chosen: $chosen));
+		return self::selectionPlan(parts: $this->partition(plans: $this->itemPlans(cases: $cases, chosen: $chosen)), cases: $cases);
+	}//end forSelection()
+
+	/**
+	 * The split plan: the moves, the references, the refusals and the relation to write.
+	 *
+	 * @param array{0: list<mixed>, 1: list<mixed>, 2: list<mixed>} $parts The moves, the references and the refusals.
+	 * @param SplitCases                                            $cases The case being split and the case being split off.
+	 *
+	 * @return array<string, mixed> The plan.
+	 */
+	private static function selectionPlan(array $parts, SplitCases $cases): array {
+		[$moves, $references, $refused] = $parts;
 
 		return [
 			'moves' => $moves,
 			'references' => $references,
 			'refused' => $refused,
 			'relation' => [
-				'from' => $sourceId,
-				'to' => $newId,
+				'from' => $cases->sourceId,
+				'to' => $cases->newId,
 				'nature' => self::RELATION,
 			],
 		];
-	}//end forSelection()
+	}//end selectionPlan()
 
 	/**
 	 * The plan of every chosen item, part by part.
@@ -108,7 +120,7 @@ class CaseSplitPlan {
 		$plans = [];
 		foreach (CaseSplitPolicy::PARTS as $part) {
 			foreach (($chosen[$part] ?? []) as $item) {
-				$plans[] = $this->itemPlan(part: $part, item: $item, cases: $cases);
+				$plans[] = $this->itemPlan(chosen: ['part' => $part, 'item' => $item], cases: $cases);
 			}
 		}
 
@@ -143,9 +155,8 @@ class CaseSplitPlan {
 	/**
 	 * What one chosen item becomes: a move with its reference, a refusal, or nothing.
 	 *
-	 * @param string     $part  The part the item was chosen from.
-	 * @param mixed      $item  The chosen item.
-	 * @param SplitCases $cases The case being split and the case being split off.
+	 * @param array{part: string, item: mixed} $chosen The part the item was chosen from, and the chosen item.
+	 * @param SplitCases                       $cases  The case being split and the case being split off.
 	 *
 	 * @return array{
 	 *     refused: array<string, string>|null,
@@ -155,7 +166,9 @@ class CaseSplitPlan {
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
-	private function itemPlan(string $part, mixed $item, SplitCases $cases): array {
+	private function itemPlan(array $chosen, SplitCases $cases): array {
+		$part = $chosen['part'];
+		$item = $chosen['item'];
 		if (is_array($item) === false) {
 			return ['refused' => null, 'move' => null, 'reference' => null];
 		}
@@ -179,19 +192,21 @@ class CaseSplitPlan {
 			return ['refused' => ['part' => $part, 'id' => $id, 'case' => $owner], 'move' => null, 'reference' => null];
 		}
 
-		return $this->movePlan(part: $part, item: $item, newId: $cases->newId);
+		return $this->movePlan(chosen: $chosen, newId: $cases->newId);
 	}//end itemPlan()
 
 	/**
 	 * The plan that moves an item of this case to the new one.
 	 *
-	 * @param string               $part  The part the item was chosen from.
-	 * @param array<string, mixed> $item  The chosen item, with its id.
-	 * @param string               $newId The case being split off.
+	 * @param array{part: string, item: array<string, mixed>} $chosen The part the item was chosen from, and the chosen item
+	 *                                                                with its id.
+	 * @param string                                          $newId  The case being split off.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function movePlan(string $part, array $item, string $newId): array {
+	private function movePlan(array $chosen, string $newId): array {
+		$part = $chosen['part'];
+		$item = $chosen['item'];
 		$id = trim((string)($item['id'] ?? ''));
 		return [
 			'refused' => null,

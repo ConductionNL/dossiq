@@ -271,7 +271,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 44 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 45 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -293,11 +293,12 @@ describe('the actions', () => {
 		// 43: Advice from the decision table joined Case (DqHandhaving,
 		// enforcement-intervention-from-the-case 3.2), and so did two acts
 		// of vth-cases-run-end-to-end. 44: Ask a partner joined Case
-		// (capability-rows-said-and-planned T04).
-		expect(placed).toHaveLength(44)
+		// (capability-rows-said-and-planned T04). 45: Register bid joined
+		// Case (tenders-run-on-the-tender-case-type 3.2).
+		expect(placed).toHaveLength(45)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(29)
+		expect(count('Case')).toBe(30)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)
@@ -574,6 +575,8 @@ describe('the tabs', () => {
 		// overview-cards-per-case-type: the settlement of a grant case, a card of the Overview tab.
 		added.push('case-settlement')
 		added.push('case-overview-sections')
+		// tenders-run-on-the-tender-case-type: the lots and questions tabs, and the evaluation and award cards of Overview.
+		added.push('case-tender-lots', 'case-tender-questions', 'case-tender-ranking', 'case-tender-award')
 		// notice-of-default-from-the-case: the case's notices of default, a card of the Fees tab.
 		added.push('case-notices-of-default')
 		expect(others(simple)).toEqual(others(original))
@@ -819,6 +822,8 @@ describe('the header and the side column', () => {
 			'case-objection-decision',
 			'case-social-indications',
 			'case-social-meetings',
+			'case-tender-lots',
+			'case-tender-questions',
 			'case-tender-bids',
 			'case-grant-decisions',
 			'case-grant-advances',

@@ -35,6 +35,9 @@ use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 /**
  * The cross-register side effects of the Besluiten API.
  *
@@ -159,9 +162,8 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 			];
 
 			$write->objectService->saveObject(
-				register: $write->register,
-				schema: $write->zbSchema,
-				object: $zbData
+				object: $zbData,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $write->register, schema: $write->zbSchema))
 			);
 
 			$this->zgwService->getLogger()->info(
@@ -204,9 +206,11 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 			];
 
 			$objectService->saveObject(
-				register: $oioMappingConfig['sourceRegister'],
-				schema: $oioMappingConfig['sourceSchema'],
-				object: $oioData
+				object: $oioData,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(
+						register: $oioMappingConfig['sourceRegister'],
+						schema: $oioMappingConfig['sourceSchema']
+					))
 			);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
@@ -353,7 +357,7 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 			$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
 			if ($oioUuid !== '') {
 				$objectService->deleteObject(
-					uuid: $oioUuid,
+					new ObjectDeletion(uuid: $oioUuid),
 					_rbac: false,
 					_multitenancy: false
 				);

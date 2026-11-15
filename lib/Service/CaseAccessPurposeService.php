@@ -35,6 +35,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessPurposeServiceInterface;
 use OCA\Dossiq\Service\People\CaseRoleHolder;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -383,7 +384,7 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 	private function find(array $target, array $lookup): object {
 		$refusal = $lookup['refusal'];
 		try {
-			$found = $target['objectService']->find($lookup['id'], register: $target['register'], schema: $lookup['schema']);
+			$found = $target['objectService']->find($lookup['id'], new ObjectFindOptions(register: $target['register'], schema: $lookup['schema']));
 		} catch (Throwable $e) {
 			throw $refusal;
 		}

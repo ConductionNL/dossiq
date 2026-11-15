@@ -30,6 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -156,9 +158,8 @@ class DemoCaseloadGateway {
 	): string {
 		try {
 			$created = $objectService->saveObject(
-				register: $registerId,
-				schema: $schemaId,
 				object: $data,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $registerId, schema: $schemaId))
 			);
 		} catch (\Exception $e) {
 			$this->logger->error(

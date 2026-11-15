@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersNotOnTheCase;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
@@ -53,6 +54,7 @@ use Throwable;
  * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 class CaseApprovalController extends Controller {
+	use AnswersNotOnTheCase;
 
 	use TranslatesRefusals;
 
@@ -93,10 +95,7 @@ class CaseApprovalController extends Controller {
 		}
 
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
-				Http::STATUS_FORBIDDEN,
-			);
+			return $this->notOnTheCase();
 		}
 
 		try {

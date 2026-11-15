@@ -32,6 +32,7 @@ use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for ExampleDataFragments.
@@ -261,7 +262,9 @@ class ExampleDataFragmentsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function find(string $id, mixed $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (isset($this->stored[$schema . ':' . $id]) === false) {
 					throw new DoesNotExistException('not stored');
 				}
@@ -339,7 +342,9 @@ class ExampleDataFragmentsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function find(string $id, mixed $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($id === 'broken') {
 					throw new \RuntimeException('database unavailable');
 				}

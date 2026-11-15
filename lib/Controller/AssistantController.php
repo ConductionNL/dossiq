@@ -279,9 +279,9 @@ class AssistantController extends Controller {
 
 			return new JSONResponse($result);
 		} catch (HermiqAssistantException $e) {
-			return $this->mapFailure(statusCode: $e->getStatusCode(), message: $e->getMessage(), errorCode: $e->getErrorCode());
+			return $this->mapFailure(statusCode: $e->getStatusCode(), failure: ['message' => $e->getMessage(), 'errorCode' => $e->getErrorCode()]);
 		} catch (Exception $e) {
-			return $this->mapFailure(statusCode: $this->errorStatusOf(exception: $e), message: $e->getMessage(), errorCode: null);
+			return $this->mapFailure(statusCode: $this->errorStatusOf(exception: $e), failure: ['message' => $e->getMessage(), 'errorCode' => null]);
 		}//end try
 	}//end converse()
 
@@ -318,13 +318,15 @@ class AssistantController extends Controller {
 	 * level matching its severity (client 4xx as a warning without a stack
 	 * trace; 5xx at error).
 	 *
-	 * @param int $statusCode The HTTP status to return.
-	 * @param string $message The detail message.
-	 * @param string|null $errorCode A stable machine-readable code, when present.
+	 * @param int                                            $statusCode The HTTP status to return.
+	 * @param array{message: string, errorCode: string|null} $failure    The detail message, and a stable machine-readable
+	 *                                                                   code when present.
 	 *
 	 * @return JSONResponse
 	 */
-	private function mapFailure(int $statusCode, string $message, ?string $errorCode): JSONResponse {
+	private function mapFailure(int $statusCode, array $failure): JSONResponse {
+		$message = $failure['message'];
+		$errorCode = $failure['errorCode'];
 		$this->logFailure(statusCode: $statusCode, message: $message);
 
 		$data = ['error' => $this->errorTypeOf(statusCode: $statusCode), 'message' => $message];

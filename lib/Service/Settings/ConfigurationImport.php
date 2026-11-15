@@ -152,19 +152,20 @@ class ConfigurationImport {
 			return $effective['error'];
 		}
 
-		return $this->importAnswer(configurationService: $configurationService, configData: $effective['data'], force: $force);
+		return $this->importAnswer(configurationService: $configurationService, import: ['data' => $effective['data'], 'force' => $force]);
 	}//end loadConfiguration()
 
 	/**
 	 * Import the effective configuration through OpenRegister, and answer the import or why it failed.
 	 *
-	 * @param object $configurationService OpenRegister's ConfigurationService.
-	 * @param array $configData The effective configuration.
-	 * @param bool $force Whether to force re-import regardless of version
+	 * @param object                          $configurationService OpenRegister's ConfigurationService.
+	 * @param array{data: array, force: bool} $import               The effective configuration, and whether to force
+	 *                                                              re-import regardless of version.
 	 *
 	 * @return array Import result
 	 */
-	private function importAnswer($configurationService, array $configData, bool $force): array {
+	private function importAnswer($configurationService, array $import): array {
+		$configData = $import['data'];
 		$configVersion = ($configData['info']['version'] ?? '0.0.0');
 
 		try {
@@ -172,7 +173,7 @@ class ConfigurationImport {
 				appId: AppIdentity::APP_ID,
 				data: $configData,
 				version: $configVersion,
-				force: $force,
+				force: $import['force'],
 			);
 
 			return $this->reconciledAnswer(importResult: $importResult, configVersion: $configVersion);

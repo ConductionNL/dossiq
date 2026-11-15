@@ -32,6 +32,7 @@ use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZtcUrlValidityFilterInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 /**
  * Drops the cross-reference URLs of ZTC types that do not point at a published, current type.
  *
@@ -205,7 +206,7 @@ class ZtcUrlValidityFilter implements ZtcUrlValidityFilterInterface {
 	 */
 	private function findIn(?object $objectService, array $mapping, string $id): array {
 		return $this->objectToArray(
-			row: $objectService->find(id: $id, register: $mapping['sourceRegister'], schema: $mapping['sourceSchema'])
+			row: $objectService->find(id: $id, options: new ObjectFindOptions(register: $mapping['sourceRegister'], schema: $mapping['sourceSchema']))
 		);
 	}//end findIn()
 }//end class

@@ -41,6 +41,8 @@ namespace OCA\Dossiq\Service\CaseType;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionWindowInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -272,7 +274,10 @@ class CaseTypeVersionWindow implements CaseTypeVersionWindowInterface {
 		}
 
 		try {
-			$objectService->saveObject(object: $object, register: $register, schema: $schema);
+			$objectService->saveObject(
+				object: $object,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Case type version window: save failed',

@@ -22,6 +22,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Any lookup that cannot be completed resolves to no case, so the access check that asks denies.
@@ -57,7 +58,9 @@ final class OwningCaseResolverTest extends TestCase {
 			public function __construct(private array $objects, private array &$finds) {
 			}
 
-			public function find(string $id, int $register = 0, int $schema = 0): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register ?? 0;
+				$schema = $options?->schema ?? 0;
 				$this->finds[] = [$id, $register, $schema];
 				$value = ($this->objects[$id] ?? null);
 				if ($value instanceof \Throwable) {

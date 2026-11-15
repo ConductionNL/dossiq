@@ -176,21 +176,34 @@ class OnboardingSteps {
 			return '';
 		}
 
+		$task = ['key' => $step, 'title' => $title, 'organisation' => $tenantId];
+
+		return $this->imported(payload: $this->payloadFor(task: $task, optional: ['status' => $status, 'metadata' => $metadata]), actor: $actor);
+	}//end open()
+
+	/**
+	 * The engine task payload of one onboarding step.
+	 *
+	 * @param array{key: string, title: string, organisation: string} $task         The step, what the task says and the Organisation's uuid.
+	 * @param array{status: string, metadata: array<string, mixed>} $optional The onboarding status it starts in, and anything the step carries along.
+	 *
+	 * @return array<string, mixed> The task payload.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md
+	 */
+	private function payloadFor(array $task, array $optional): array {
 		$payload = [
-			'key' => $step,
-			'title' => $title,
+			'key' => $task['key'],
+			'title' => $task['title'],
 			'kind' => self::KIND,
 			'appId' => 'dossiq',
-			'organisation' => $tenantId,
-			'objectUuid' => $tenantId,
-			'state' => self::STATE_FOR_STATUS[$status],
+			'organisation' => $task['organisation'],
+			'objectUuid' => $task['organisation'],
+			'state' => self::STATE_FOR_STATUS[$optional['status']],
 		];
 
-		return $this->imported(
-			payload: $this->withOptionalFields(payload: $payload, optional: ['status' => $status, 'metadata' => $metadata]),
-			actor: $actor
-		);
-	}//end open()
+		return $this->withOptionalFields(payload: $payload, optional: $optional);
+	}//end payloadFor()
 
 	/**
 	 * Add the skipped outcome and the step's metadata to an onboarding task payload.

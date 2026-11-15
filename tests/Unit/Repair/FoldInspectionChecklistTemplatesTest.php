@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Tests for {@see FoldInspectionChecklistTemplates}.
@@ -195,7 +196,10 @@ final class FoldInspectionChecklistTemplatesTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				unset($register, $uuid);
 				if ($this->refuse !== '' && ($object['name'] ?? '') === $this->refuse) {
 					throw new \RuntimeException('store said no');

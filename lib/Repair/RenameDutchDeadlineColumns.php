@@ -274,18 +274,9 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 	 * @return array<int, string>
 	 */
 	private function shardTables(): array {
-		$ids = $this->registerIdsOrNone(warning: 'could not resolve the dossiq registers; skipping.');
-		if ($ids === []) {
-			return [];
-		}
-
-		$markers = $this->shardMarkers(ids: $ids);
-		$tables = [];
-		foreach ($this->openRegisterTableNames() as $name) {
-			if ($this->isShardOf(table: $name, markers: $markers) === true) {
-				$tables[] = $name;
-			}
-		}
+		$tables = $this->shardTablesWhere(
+			isShard: fn (string $table, array $markers): bool => $this->isShardOf(table: $table, markers: $markers)
+		);
 
 		return array_values(array_unique($tables));
 	}//end shardTables()

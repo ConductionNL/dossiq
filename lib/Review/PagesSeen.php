@@ -74,7 +74,7 @@ class PagesSeen implements PagesSeenInterface {
 	public function record(string $caseId, string $documentRef, array $pages, ?int $pageCount, string $userId): array {
 		$pages  = $this->displayedPages(pages: $pages);
 		$review = $this->withPageCount(review: $this->review(caseId: $caseId, documentRef: $documentRef), pageCount: $pageCount);
-		$review['pagesSeen'] = $this->seenWith(review: $review, pages: $pages, userId: $userId);
+		$review['pagesSeen'] = $this->seenWith(review: $review, viewed: ['pages' => $pages, 'by' => $userId]);
 
 		return $this->reviews->save(review: $review);
 	}//end record()
@@ -135,13 +135,13 @@ class PagesSeen implements PagesSeenInterface {
 	/**
 	 * The review's seen pages, with each page not yet recorded for this reviewer appended.
 	 *
-	 * @param array<string, mixed> $review The review.
-	 * @param list<int> $pages The pages displayed.
-	 * @param string $userId The reviewer.
+	 * @param array<string, mixed>              $review The review.
+	 * @param array{pages: list<int>, by: string} $viewed The pages displayed, and the reviewer.
 	 *
 	 * @return list<array<string, mixed>> The seen pages.
 	 */
-	private function seenWith(array $review, array $pages, string $userId): array {
+	private function seenWith(array $review, array $viewed): array {
+		$userId = $viewed['by'];
 		$seen = array_values((array)($review['pagesSeen'] ?? []));
 		$known = [];
 		foreach ($seen as $entry) {
@@ -149,7 +149,7 @@ class PagesSeen implements PagesSeenInterface {
 		}
 
 		$now = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-		foreach ($pages as $page) {
+		foreach ($viewed['pages'] as $page) {
 			if (isset($known[$userId.':'.$page]) === false) {
 				$seen[] = ['page' => $page, 'by' => $userId, 'at' => $now];
 			}

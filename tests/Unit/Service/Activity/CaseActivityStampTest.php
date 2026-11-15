@@ -32,6 +32,8 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * Unit tests for the case activity stamp.
@@ -97,7 +99,9 @@ class CaseActivityStampTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($id !== 'case-1') {
 					throw new DoesNotExistException('no such object');
 				}
@@ -115,7 +119,11 @@ class CaseActivityStampTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The patched object.
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->test->patches[] = compact('objectId', 'data', 'register', 'schema');
 				return array_merge(['id' => $objectId], $data);
 			}
@@ -177,7 +185,9 @@ class CaseActivityStampTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id];
 			}
 
@@ -191,7 +201,11 @@ class CaseActivityStampTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				throw new RuntimeException('locked');
 			}
 		};

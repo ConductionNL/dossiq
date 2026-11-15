@@ -140,10 +140,11 @@ import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
 import SendIcon from 'vue-material-design-icons/Send.vue'
 import MessageTemplateSelect from '../components/case/MessageTemplateSelect.vue'
 import DialogNotice from '../components/dialog/DialogNotice.vue'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { openable } from '../mixins/openable.js'
 import { sendMessage } from '../services/berichtenboxApi.js'
 import { caseEyebrow } from '../services/caseSummary.js'
 import { dialogNotice, dialogNoticeProps } from '../utils/dialogNotice.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * Whether an answer refused the letter: a 200 is not a delivery.
@@ -198,17 +199,9 @@ export default {
 		NcNoteCard,
 	},
 
+	mixins: [caseDialogResolved, openable],
+
 	props: {
-		/**
-		 * The case this letter is about.
-		 *
-		 * NOT `required`, and it may arrive as the unresolved `@objectId`
-		 * token: `open-modal` forwards an action's props verbatim with no
-		 * token resolution, exactly as it does for GenerateDocumentDialog
-		 * and DocumentMetadataDialog. `resolvedCaseId` reads the route in that
-		 * case.
-		 */
-		caseId: { type: String, default: '' },
 		bsn: { type: String, default: '' },
 
 		/**
@@ -219,7 +212,6 @@ export default {
 		 * the wrong one of the two would mount a dialog that renders nothing.
 		 */
 		show: { type: Boolean, default: false },
-		open: { type: Boolean, default: false },
 	},
 
 	emits: ['close', 'sent'],
@@ -310,17 +302,6 @@ export default {
 		 */
 		shownBsn() {
 			return this.bsnFromCase && !this.bsnEditing ? this.maskedCaseBsn : this.form.bsn
-		},
-
-		/**
-		 * The case this letter is about, resolved the same defensive way as
-		 * every other open-modal on the case page.
-		 *
-		 * @return {string} The case id, or ''.
-		 * @spec openspec/specs/berichtenbox-integration/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**

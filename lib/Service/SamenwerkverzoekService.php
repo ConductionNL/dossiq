@@ -29,6 +29,8 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SamenwerkverzoekServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\EventDispatcher\GenericEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -123,9 +125,8 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 		// JsonSerializable), never an array — returning it straight out of a
 		// method declared `: array` is a TypeError.
 		$created = $store['objectService']->saveObject(
-			register: $store['register'],
-			schema: $store['schema'],
-			object: $samenwerkverzoek
+			object: $samenwerkverzoek,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store['register'], schema: $store['schema']))
 		)->jsonSerialize();
 
 		$this->announceInitiated(created: $created, samenwerkverzoek: $samenwerkverzoek);
@@ -184,9 +185,8 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 		// See initiateSamenwerking() — saveObject() returns an entity, not an
 		// array.
 		$updated = $store['objectService']->saveObject(
-			register: $store['register'],
-			schema: $store['schema'],
-			object: $request
+			object: $request,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store['register'], schema: $store['schema']))
 		)->jsonSerialize();
 
 		$this->logger->info(

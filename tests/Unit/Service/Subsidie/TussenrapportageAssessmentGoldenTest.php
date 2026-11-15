@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
 use Stringable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 class TussenrapportageAssessmentGoldenTest extends TestCase {
 
@@ -82,7 +83,11 @@ class TussenrapportageAssessmentGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The stored row.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): ?array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($this->store === 'boom') {
 					throw new RuntimeException('store down');
 				}

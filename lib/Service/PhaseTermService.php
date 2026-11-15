@@ -111,16 +111,32 @@ class PhaseTermService implements PhaseTermServiceInterface {
 			return null;
 		}
 
-		$moment = ($when ?? new DateTimeImmutable());
+		return $this->clockPhase(
+			phase: ['caseId' => $caseId, 'caseTypeId' => $caseTypeId, 'statusTypeId' => $statusTypeId],
+			moment: ($when ?? new DateTimeImmutable())
+		);
+	}//end enterPhase()
+
+	/**
+	 * Stop the other running phases and start this phase's clock, when it has days of its own.
+	 *
+	 * @param array<string, string> $phase  The `caseId`, the `caseTypeId` and the phase's `statusTypeId`.
+	 * @param DateTimeImmutable     $moment The moment the case enters it.
+	 *
+	 * @return array<string, mixed>|null The started clock, or null when the phase has no term.
+	 */
+	private function clockPhase(array $phase, DateTimeImmutable $moment): ?array {
+		$caseId = $phase['caseId'];
+		$statusTypeId = $phase['statusTypeId'];
 		$this->stopRunningPhases(caseId: $caseId, when: $moment, except: $statusTypeId);
 
-		$days = $this->daysForPhase(caseId: $caseId, caseTypeId: $caseTypeId, statusTypeId: $statusTypeId);
+		$days = $this->daysForPhase(caseId: $caseId, caseTypeId: $phase['caseTypeId'], statusTypeId: $statusTypeId);
 		if ($days <= 0) {
 			return null;
 		}
 
 		return $this->startPhaseClock(clock: ['case' => $caseId, 'phase' => $statusTypeId, 'days' => $days], moment: $moment);
-	}//end enterPhase()
+	}//end clockPhase()
 
 	/**
 	 * Start a phase's clock on a case.
@@ -160,18 +176,30 @@ class PhaseTermService implements PhaseTermServiceInterface {
 	public function stopRunningPhases(string $caseId, ?DateTimeImmutable $when = null, string $except = ''): int {
 		$moment = ($when ?? new DateTimeImmutable());
 
+		return $this->stopRunning(rows: $this->termService->instancesForCase(caseId: $caseId), stop: ['moment' => $moment, 'except' => $except]);
+	}//end stopRunningPhases()
+
+	/**
+	 * Complete every running phase clock among the term rows, except the named phase's own.
+	 *
+	 * @param iterable<array<string, mixed>>                   $rows The case's term instances.
+	 * @param array{moment: DateTimeImmutable, except: string} $stop The moment they stop, and the status type left running.
+	 *
+	 * @return int How many were stopped.
+	 */
+	private function stopRunning(iterable $rows, array $stop): int {
 		$stopped = 0;
-		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			if ($this->isRunningPhase(row: $row, except: $except) === false) {
+		foreach ($rows as $row) {
+			if ($this->isRunningPhase(row: $row, except: $stop['except']) === false) {
 				continue;
 			}
 
-			$this->completePhase(row: $row, moment: $moment);
+			$this->completePhase(row: $row, moment: $stop['moment']);
 			$stopped++;
 		}
 
 		return $stopped;
-	}//end stopRunningPhases()
+	}//end stopRunning()
 
 	/**
 	 * Whether a term instance is a running phase clock other than the one to leave running.
@@ -238,20 +266,31 @@ class PhaseTermService implements PhaseTermServiceInterface {
 			return $own['termDays'];
 		}
 
-		$declared = $this->declarations->forCaseType(caseTypeId: $caseTypeId);
+		return $this->chainDays(phase: ['caseId' => $caseId, 'caseTypeId' => $caseTypeId, 'statusTypeId' => $statusTypeId]);
+	}//end daysForPhase()
+
+	/**
+	 * The phase's share of its case type's chain term, or 0 when the case type declares none.
+	 *
+	 * @param array<string, string> $phase The `caseId`, the `caseTypeId` and the phase's `statusTypeId`.
+	 *
+	 * @return int The days.
+	 */
+	private function chainDays(array $phase): int {
+		$declared = $this->declarations->forCaseType(caseTypeId: $phase['caseTypeId']);
 		if ($declared['chainTermDays'] <= 0) {
 			return 0;
 		}
 
 		$plan = $this->chainPlan(
-			caseId: $caseId,
-			caseTypeId: $caseTypeId,
+			caseId: $phase['caseId'],
+			caseTypeId: $phase['caseTypeId'],
 			chainTermDays: $declared['chainTermDays'],
-			statusTypeId: $statusTypeId
+			statusTypeId: $phase['statusTypeId']
 		);
 
 		return (int)($plan['days'] ?? 0);
-	}//end daysForPhase()
+	}//end chainDays()
 
 	/**
 	 * What is left of the chain term, and how it splits over the phases ahead.
@@ -278,13 +317,24 @@ class PhaseTermService implements PhaseTermServiceInterface {
 		$spent = $this->spentPerPhase(caseId: $caseId, finished: array_slice($phases, 0, $position));
 		$plan = $this->splitter->recompute(termDays: $chainTermDays, shares: $shares, consumed: $spent);
 
+		return self::phasePlan(plan: $plan);
+	}//end chainPlan()
+
+	/**
+	 * The splitter's recomputed plan as the phase reads it: its own days first.
+	 *
+	 * @param array<string, mixed> $plan The recomputed plan.
+	 *
+	 * @return array{days: int, remainingDays: int, exhausted: bool, steps: mixed}
+	 */
+	private static function phasePlan(array $plan): array {
 		return [
 			'days' => (int)($plan['steps'][0] ?? 0),
 			'remainingDays' => (int)$plan['remainingDays'],
 			'exhausted' => (bool)$plan['exhausted'],
 			'steps' => $plan['steps'],
 		];
-	}//end chainPlan()
+	}//end phasePlan()
 
 	/**
 	 * Where a phase sits in the declared order.

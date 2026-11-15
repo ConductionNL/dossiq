@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
 use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTriggerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ReadsTimedChange;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -49,6 +50,7 @@ use Throwable;
  */
 class BezwaarArchiveTimerListener implements IEventListener {
 	use SavedObjectPayload;
+	use ReadsTimedChange;
 
 	/**
 	 * The fields whose change moves the timer.
@@ -84,12 +86,8 @@ class BezwaarArchiveTimerListener implements IEventListener {
 	 */
 	public function handle(Event $event): void {
 		try {
-			$saved  = $this->savedObject(event: $event);
-			$schema = (string) $this->settingsService->getConfigValue(BezwaarArchiveTriggerInterface::SCHEMA_CONFIG_KEY);
-			if ($saved === null
-				|| $this->inSchema(object: $saved, configured: $schema) === false
-				|| $this->unchanged(before: $this->previousObject(event: $event), after: $saved, fields: self::TIMED_FIELDS) === true
-			) {
+			$saved = $this->timedChange(event: $event, schemaKey: BezwaarArchiveTriggerInterface::SCHEMA_CONFIG_KEY);
+			if ($saved === null) {
 				return;
 			}
 

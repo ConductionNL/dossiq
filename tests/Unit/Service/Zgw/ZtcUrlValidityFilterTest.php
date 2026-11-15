@@ -18,6 +18,7 @@ use OCA\Dossiq\Service\ZgwService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter
@@ -61,7 +62,9 @@ class ZtcUrlValidityFilterTest extends TestCase {
 			public function __construct(private array $rows, private array &$finds) {
 			}
 
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->finds[] = [$id, $register, $schema];
 				if (isset($this->rows[$id]) === false) {
 					throw new RuntimeException('not found');

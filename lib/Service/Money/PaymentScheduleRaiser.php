@@ -33,6 +33,8 @@ use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\PaymentScheduleRaiserInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -207,9 +209,10 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 	private function saveSchedule(object $objectService, array $decision): void {
 		$objectService->saveObject(
 			object: $decision,
-			register: AppIdentity::REGISTER_SLUG,
-			schema: self::DECISION_SCHEMA,
-			uuid: (string)($decision['id'] ?? $decision['uuid'] ?? '')
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: AppIdentity::REGISTER_SLUG, schema: self::DECISION_SCHEMA),
+				uuid: (string)($decision['id'] ?? $decision['uuid'] ?? '')
+			)
 		);
 	}//end saveSchedule()
 

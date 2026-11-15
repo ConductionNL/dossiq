@@ -31,6 +31,8 @@ use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 class InformatieobjectApprovalGuardTest extends TestCase {
 
@@ -71,7 +73,9 @@ class InformatieobjectApprovalGuardTest extends TestCase {
 		$objects->method('find')->willReturn($entity);
 		$objects->method('searchObjects')->willReturn([$document]);
 		$objects->method('patchObject')->willReturnCallback(
-			function (string $objectId, array $data, ...$rest): ObjectEntityInterface {
+			function (ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true, ...$rest): ObjectEntityInterface {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->written[] = $data;
 				$stored = $this->createMock(ObjectEntityInterface::class);
 				$stored->method('getUuid')->willReturn($objectId);
@@ -81,6 +85,7 @@ class InformatieobjectApprovalGuardTest extends TestCase {
 		);
 		$objects->method('saveObject')->willReturnCallback(
 			function (array $object, ...$rest): ObjectEntityInterface {
+				$rest = array_slice(LegacyObjectArgs::positional(method: 'saveObject', args: [$object, ...$rest]), 1);
 				$this->written[] = $object;
 				$stored = $this->createMock(ObjectEntityInterface::class);
 				$stored->method('getUuid')->willReturn(self::DOCUMENT_ID);

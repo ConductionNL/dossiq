@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Service\Flow\ICallFlowNode;
 
 /**
  * Covers the transition side-effect dispatcher after the flow-node port.
@@ -61,7 +62,7 @@ class SideEffectDispatcherTest extends TestCase {
      * @return IFlowNode The node.
      */
     private function node(string $id, ?\Throwable $throws=null): IFlowNode {
-        $node = $this->createMock(IFlowNode::class);
+        $node = $this->createMock(ICallFlowNode::class);
         $node->method('getId')->willReturn($id);
         if ($throws !== null) {
             $node->method('execute')->willThrowException($throws);
@@ -299,7 +300,7 @@ class SideEffectDispatcherTest extends TestCase {
     public function testARetiredDeclarationRunsAsItsReplacement(): void {
         $seen     = [];
         $registry = $this->registry();
-        $node     = $this->createMock(IFlowNode::class);
+        $node     = $this->createMock(ICallFlowNode::class);
         $node->method('getId')->willReturn('openregister.send-notification');
         $node->expects($this->once())->method('execute')->willReturnCallback(
             static function (FlowNodeCall $call) use (&$seen): array {
@@ -338,7 +339,7 @@ class SideEffectDispatcherTest extends TestCase {
         $order    = [];
         $registry = $this->registry();
         foreach (['openregister.set-fields', 'openregister.object-write'] as $id) {
-            $node = $this->createMock(IFlowNode::class);
+            $node = $this->createMock(ICallFlowNode::class);
             $node->method('getId')->willReturn($id);
             $node->method('execute')->willReturnCallback(
                 static function (FlowNodeCall $call) use ($id, &$order): array {
@@ -390,7 +391,7 @@ class SideEffectDispatcherTest extends TestCase {
 
         $seen     = [];
         $registry = $this->registry();
-        $node     = $this->createMock(IFlowNode::class);
+        $node     = $this->createMock(ICallFlowNode::class);
         $node->method('getId')->willReturn('openconnector.source-call');
         $node->expects($this->once())->method('execute')->willReturnCallback(
             static function (FlowNodeCall $call) use (&$seen): array {

@@ -30,6 +30,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The failure and edge paths of a lodging.
@@ -89,7 +91,10 @@ class RemedyLodgingFailuresTest extends TestCase {
 
 	public function testACaseThatCannotBeOpenedIsAnError(): void {
 		$objects = new class extends RemedyObjectServiceDouble {
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, mixed $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = [(string)$schema, $object];
 				return [];
 			}
@@ -104,7 +109,10 @@ class RemedyLodgingFailuresTest extends TestCase {
 
 	public function testAWithdrawalThatFailsIsLoggedAndTheObjectionErrorStands(): void {
 		$objects = new class extends RemedyObjectServiceDouble {
-			public function deleteObject(string $uuid, mixed $register = null, mixed $schema = null): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				throw new RuntimeException('locked');
 			}
 		};

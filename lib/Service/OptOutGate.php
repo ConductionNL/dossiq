@@ -130,8 +130,21 @@ class OptOutGate implements OptOutGateInterface {
 			return $this->decision(send: true, code: self::CODE_CHECK_OFF, reason: '');
 		}
 
-		$question = new OptOutQuestion(recipient: $recipient, category: $category, caseRef: $caseRef);
+		return $this->askIntegriq(
+			question: new OptOutQuestion(recipient: $recipient, category: $category, caseRef: $caseRef),
+			channel: $channel
+		);
+	}//end ask()
 
+	/**
+	 * Put the question to integriq through its decision event, and read its answer.
+	 *
+	 * @param OptOutQuestion $question The recipient, category and case asked about.
+	 * @param string         $channel  The channel the notice would go out on.
+	 *
+	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
+	 */
+	private function askIntegriq(OptOutQuestion $question, string $channel): array {
 		$eventClass = FleetAppId::resolveClass(canonical: 'integriq', relative: $this->eventRelative);
 		if ($eventClass === null) {
 			return $this->unavailable(question: $question, why: 'integriq or its decision event is not installed');
@@ -141,8 +154,8 @@ class OptOutGate implements OptOutGateInterface {
 			$event = new $eventClass(
 				'dossiq',
 				$channel,
-				$category,
-				[['address' => $recipient, 'caseRef' => $caseRef]],
+				$question->category,
+				[['address' => $question->recipient, 'caseRef' => $question->caseRef]],
 				bin2hex(random_bytes(8)),
 			);
 			if (($event instanceof Event) === false) {
@@ -155,7 +168,7 @@ class OptOutGate implements OptOutGateInterface {
 		}
 
 		return $this->read(event: $event, question: $question);
-	}//end ask()
+	}//end askIntegriq()
 
 	/**
 	 * Read integriq's answer for one recipient out of the event.

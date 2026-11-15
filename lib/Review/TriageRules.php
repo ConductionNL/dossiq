@@ -31,6 +31,8 @@ use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\TriageRulesInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -214,9 +216,13 @@ class TriageRules implements TriageRulesInterface {
 		$this->ruleOf(rows: $this->rows(caseId: $caseId), ruleId: $ruleId);
 		try {
 			$this->settingsService->getObjectService()->deleteObject(
-				uuid: $ruleId,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+				new ObjectDeletion(
+					uuid: $ruleId,
+					target: new ObjectFindTarget(
+							register: $this->settingsService->getConfigValue('register'),
+							schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY)
+						)
+				)
 			);
 		} catch (Throwable $e) {
 			throw $this->unavailable(previous: $e);

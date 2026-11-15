@@ -97,6 +97,7 @@ import {
 	NcDialog,
 	NcTextField,
 } from '@nextcloud/vue'
+import { openable } from '../mixins/openable.js'
 
 export default {
 	name: 'ZgwMappingDialog',
@@ -107,12 +108,9 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
+	mixins: [openable],
 
+	props: {
 		resourceKey: {
 			type: String,
 			default: '',

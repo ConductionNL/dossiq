@@ -29,6 +29,7 @@ use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Controller\SubsidieRegisterController
@@ -102,7 +103,9 @@ class SubsidieRegisterControllerTest extends TestCase {
 				return $this->decisions;
 			}
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->findCalls[] = ['id' => $id, 'register' => $register, 'schema' => $schema];
 				$found = ($this->byId[$id] ?? []);
 				if ($found instanceof \Throwable) {

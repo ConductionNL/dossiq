@@ -47,6 +47,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Fake of OpenRegister's ObjectService that counts what it was asked for.
@@ -76,6 +77,7 @@ final class CapFakeObjectService {
 	 * @return array<string, mixed>|null The case, or null.
 	 */
 	public function find($id, ...$args) {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		unset($args);
 		$this->finds++;
 		return ($this->objects[(string)$id] ?? null);

@@ -361,18 +361,32 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		$caller = $this->callerOf(userId: $userId);
 		$this->refuseBlockedMove(object: $object, caseId: $caseId);
 
+		return $this->carriedOut(move: ['object' => $object, 'caseId' => $caseId, 'action' => $action, 'caller' => $caller], data: $data);
+	}//end execute()
+
+	/**
+	 * Make the move through the transition engine as the caller, classifying a failure.
+	 *
+	 * @param array<string, mixed> $move The case `object`, its `caseId`, the transition as `action` and the `caller`.
+	 * @param array<string, mixed> $data The action's inputs: the comment and the closing result.
+	 *
+	 * @return array<string, mixed> The engine's answer.
+	 *
+	 * @throws Throwable The classified failure.
+	 */
+	private function carriedOut(array $move, array $data): array {
 		try {
 			return $this->transitionEngine->execute(
-				caseId: $caseId,
-				transitionId: $action,
+				caseId: $move['caseId'],
+				transitionId: $move['action'],
 				comment: $this->textOf(data: $data, field: CaseActionList::COMMENT_INPUT),
-				userId: $caller,
+				userId: $move['caller'],
 				resultTypeId: $this->textOf(data: $data, field: CaseActionList::CLOSING_INPUT),
 			);
 		} catch (Throwable $e) {
-			throw $this->classify(failure: $e, move: ['object' => $object, 'caseId' => $caseId, 'action' => $action]);
+			throw $this->classify(failure: $e, move: ['object' => $move['object'], 'caseId' => $move['caseId'], 'action' => $move['action']]);
 		}
-	}//end execute()
+	}//end carriedOut()
 
 	/**
 	 * Refuse a move the list publishes blocked: work homed elsewhere, or leges unpaid.

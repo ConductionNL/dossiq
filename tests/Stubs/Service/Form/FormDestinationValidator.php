@@ -52,12 +52,11 @@ class FormDestinationValidator {
 	 * The findings for a mapping into a schema.
 	 *
 	 * @param array<string, mixed> $mapping The mapping.
-	 * @param Schema               $schema  The destination.
-	 * @param array<string, mixed> $options `audience` and such.
+	 * @param FormDestination      $destination The destination schema and the form's audience.
 	 *
 	 * @return array<int, array<string, mixed>> The findings.
 	 */
-	public function validate(array $mapping, Schema $schema, array $options = []): array {
+	public function validate(array $mapping, FormDestination $destination): array {
 		return [];
 	}//end validate()
 }//end class

@@ -27,6 +27,8 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The rows are shaped as they are stored on :8080: a publication whose
@@ -121,7 +123,9 @@ class RewriteWooPublicationSummariesTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException When the row is not there.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (isset($this->rows[(string)$schema][$id]) === false) {
 					throw new DoesNotExistException('gone');
 				}
@@ -139,7 +143,11 @@ class RewriteWooPublicationSummariesTest extends TestCase {
 			 *
 			 * @throws RuntimeException When told to fail on this row.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if (in_array($objectId, $this->failOn, true) === true) {
 					throw new RuntimeException('store refused');
 				}

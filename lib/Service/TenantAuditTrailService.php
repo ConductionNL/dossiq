@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -256,8 +257,7 @@ class TenantAuditTrailService implements TenantAuditTrailServiceInterface {
 			$objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
 			return $objectService->find(
 				$tenantId,
-				register: self::REGISTER,
-				schema: self::SCHEMA_TENANT,
+				new ObjectFindOptions(register: self::REGISTER, schema: self::SCHEMA_TENANT),
 				_rbac: false,
 				_multitenancy: false
 			);

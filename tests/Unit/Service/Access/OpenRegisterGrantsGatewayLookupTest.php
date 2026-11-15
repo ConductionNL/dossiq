@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The schema and object lookups behind a provenance question, and their failures.
@@ -210,7 +211,9 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 			 *
 			 * @return object The case.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->finds[] = [$id, $register, $schema];
 				return $this->case;
 			}
@@ -302,7 +305,9 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 			 *
 			 * @return object Never.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				throw new RuntimeException('gone');
 			}
 		};
@@ -347,7 +352,9 @@ class OpenRegisterGrantsGatewayLookupTest extends TestCase {
 			 *
 			 * @return object A case.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->finds++;
 				return new \stdClass();
 			}

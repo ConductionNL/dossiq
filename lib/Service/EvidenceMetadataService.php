@@ -247,13 +247,27 @@ class EvidenceMetadataService implements EvidenceMetadataServiceInterface {
 		$this->refuseCaptureOverItsLimit(type: $type, extra: $extra);
 
 		$gps = $this->classifyGps(reading: $gpsReading, caseAddress: $caseAddress);
+		$payload = ['inspectionRef' => $inspectionRef] + $this->capturePayload(type: $type, extra: $extra);
 
+		return $this->withGpsLocation(payload: $payload, gps: $gps);
+	}//end buildEvidencePayload()
+
+	/**
+	 * The capture fields of a fieldEvidence payload, after its inspectionRef.
+	 *
+	 * @param string               $type  One of photo/voice_memo/document/sketch.
+	 * @param array<string, mixed> $extra Additional fields (localBlobRef, tags, etc.).
+	 *
+	 * @return array<string, mixed> The payload fields from `type` on.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function capturePayload(string $type, array $extra): array {
 		$transcriptionStatus = $this->transcriptionStatusFor(type: $type);
 
 		$capturedAt = ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM));
 
-		$payload = [
-			'inspectionRef' => $inspectionRef,
+		return [
 			'type' => $type,
 			'localBlobRef' => ((string)($extra['localBlobRef'] ?? '')),
 			'cloudUrl' => null,
@@ -263,9 +277,7 @@ class EvidenceMetadataService implements EvidenceMetadataServiceInterface {
 			'tags' => ($extra['tags'] ?? []),
 			'sensitivityLevel' => ((string)($extra['sensitivityLevel'] ?? 'internal')),
 		];
-
-		return $this->withGpsLocation(payload: $payload, gps: $gps);
-	}//end buildEvidencePayload()
+	}//end capturePayload()
 
 	/**
 	 * The transcription status a new capture starts with.

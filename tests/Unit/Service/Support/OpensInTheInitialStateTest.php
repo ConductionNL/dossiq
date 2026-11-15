@@ -18,6 +18,8 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * Exposes the trait's protected seam to the test.
@@ -165,7 +167,10 @@ class OpensInTheInitialStateTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = '', bool $_rbac = true, bool $_multitenancy = true): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$register = $deletion->target->register ?? '';
+				$schema = $deletion->target->schema ?? '';
+				$uuid = $deletion->uuid ?? '';
 				throw new RuntimeException('delete refused');
 			}
 		};
@@ -194,6 +199,7 @@ class OpensInTheInitialStateTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function saveObject(array $object, mixed ...$rest): array {
+				$rest = LegacyObjectArgs::flatten(args: $rest);
 				$this->saved[] = $object;
 
 				return $object;

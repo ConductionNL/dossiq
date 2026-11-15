@@ -141,6 +141,26 @@ class IntakeLog implements IntakeLogInterface {
 		string $reason,
 		string $caseId = '',
 	): string {
+		return $this->recordMessage(
+			message: $message,
+			placed: ['verdict' => $verdict, 'results' => $results, 'outcome' => $outcome, 'reason' => $reason, 'caseId' => $caseId]
+		);
+	}//end record()
+
+	/**
+	 * Record one message and what happened to it, as {@see self::record()} describes.
+	 *
+	 * @param InboundMessage       $message The message.
+	 * @param array<string, mixed> $placed  The filter's `verdict`, the four authentication `results`, the `outcome`, the `reason`
+	 *                                      and the `caseId` it became (or '').
+	 *
+	 * @return string The entry id, or '' when nothing was stored.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function recordMessage(InboundMessage $message, array $placed): string {
+		$outcome = $placed['outcome'];
+		$caseId = $placed['caseId'];
 		$target = $this->target();
 		if ($target === null) {
 			$this->logger->warning(
@@ -151,8 +171,8 @@ class IntakeLog implements IntakeLogInterface {
 		}
 
 		$payload = $this->messageFields(message: $message)
-			+ $this->verdictFields(verdict: $verdict, results: $results)
-			+ ['outcome' => $outcome, 'reason' => $reason, 'case' => $caseId]
+			+ $this->verdictFields(verdict: $placed['verdict'], results: $placed['results'])
+			+ ['outcome' => $outcome, 'reason' => $placed['reason'], 'case' => $caseId]
 			+ $this->originalFields(message: $message);
 
 		$entryId = $this->saveEntry(
@@ -166,7 +186,7 @@ class IntakeLog implements IntakeLogInterface {
 		$this->recordOnTimeline(message: $message, placed: ['outcome' => $outcome, 'caseId' => $caseId, 'entryId' => $entryId]);
 
 		return $entryId;
-	}//end record()
+	}//end recordMessage()
 
 	/**
 	 * Record a message that arrived on a channel rather than in the mailbox.
@@ -211,30 +231,41 @@ class IntakeLog implements IntakeLogInterface {
 		string $reason,
 		string $caseId = '',
 	): string {
+		return $this->recordChannelEntry(
+			message: ['channel' => $channel, 'channelMessageId' => $channelMessageId, 'sender' => $sender, 'subject' => $subject],
+			placed: ['outcome' => $outcome, 'reason' => $reason, 'case' => $caseId]
+		);
+	}//end recordChannelMessage()
+
+	/**
+	 * Record a channel message, as {@see self::recordChannelMessage()} describes.
+	 *
+	 * @param array<string, string> $message The `channel`, the channel's own `channelMessageId`, the `sender` and the `subject`.
+	 * @param array<string, string> $placed  The `outcome`, the `reason` and the `case` it became (or '').
+	 *
+	 * @return string The entry id, or '' when nothing was stored.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function recordChannelEntry(array $message, array $placed): string {
 		$target = $this->target();
 		if ($target === null) {
 			$this->logger->warning(
 				'Dossiq: the intake log is not provisioned, so a channel message was not recorded',
-				['channel' => $channel, 'message' => $channelMessageId, 'outcome' => $outcome]
+				['channel' => $message['channel'], 'message' => $message['channelMessageId'], 'outcome' => $placed['outcome']]
 			);
 			return '';
 		}
 
-		$payload = array_map(
-			static fn (string $value): string => mb_substr($value, 0, 255),
-			['channel' => $channel, 'channelMessageId' => $channelMessageId, 'sender' => $sender, 'subject' => $subject]
-		) + [
+		$payload = array_map(static fn (string $value): string => mb_substr($value, 0, 255), $message) + [
 			'receivedAt' => $this->time->getDateTime()->format(DATE_ATOM),
-			'outcome' => $outcome,
-			'reason' => $reason,
-			'case' => $caseId,
-		];
+		] + $placed;
 
 		return ($this->saveEntry(
 			write: $target + ['object' => $payload],
-			failure: ['Dossiq: writing a channel intake log entry failed', ['channel' => $channel, 'message' => $channelMessageId]]
+			failure: ['Dossiq: writing a channel intake log entry failed', ['channel' => $message['channel'], 'message' => $message['channelMessageId']]]
 		) ?? '');
-	}//end recordChannelMessage()
+	}//end recordChannelEntry()
 
 	/**
 	 * The entry this channel already holds for this message, when there is one.

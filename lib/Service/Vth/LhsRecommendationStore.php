@@ -18,6 +18,9 @@ namespace OCA\Dossiq\Service\Vth;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectArray;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -96,7 +99,7 @@ class LhsRecommendationStore {
 		[$objectService, $register, $schema] = $this->recommendationStore();
 
 		try {
-			$row = $objectService->find($recommendationId, register: $register, schema: $schema);
+			$row = $objectService->find($recommendationId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq LHS: kon aanbeveling niet lezen: ' . $e->getMessage(),
@@ -134,9 +137,8 @@ class LhsRecommendationStore {
 			}
 
 			$saved = $objectService->saveObject(
-				register: $register,
-				schema: $schema,
 				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

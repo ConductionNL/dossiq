@@ -30,6 +30,8 @@ use OCA\Dossiq\Kernel\Contracts\ReviewBatchesInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IL10N;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
@@ -556,9 +558,13 @@ class ReviewBatches implements ReviewBatchesInterface {
 		try {
 			return $this->settingsService->getObjectService()->saveObject(
 				object: $batch,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+							register: $this->settingsService->getConfigValue('register'),
+							schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY)
+						),
+					uuid: $uuid
+				)
 			);
 		} catch (Throwable $e) {
 			$context = ['app' => AppIdentity::APP_ID, 'case' => ($batch['case'] ?? ''), 'exception' => $e->getMessage()];

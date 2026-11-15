@@ -91,6 +91,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { noticeRefusal, registerNotice } from '../services/noticeOfDefaultApi.js'
 
 /**
@@ -114,16 +115,7 @@ export default {
 		NcSelect,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogTokenAware],
 
 	emits: ['close'],
 
@@ -141,16 +133,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
 		channels() {
 			return [
@@ -260,10 +242,10 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@use '../styles/_dialogBanners.scss' as banner;
+
 .notice-of-default {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
+	@include banner.dialog-column;
 
 	&__error {
 		margin: 0;
@@ -271,11 +253,7 @@ export default {
 	}
 
 	&__saved {
-		margin: 0;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-success);
-		color: var(--color-success-text, var(--color-primary-element-text));
+		@include banner.saved-banner;
 	}
 }
 </style>
