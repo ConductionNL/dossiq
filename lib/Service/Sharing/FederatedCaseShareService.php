@@ -102,6 +102,28 @@ class FederatedCaseShareService {
 		string $permissionLevel,
 		string $createdBy,
 	): array {
+		return $this->share(
+			request: new FederatedShareRequest(
+				caseId: $caseId,
+				remoteCloudId: $remoteCloudId,
+				sharedFields: $sharedFields,
+				sharedDocuments: $sharedDocuments,
+				permissionLevel: $permissionLevel,
+				createdBy: $createdBy,
+			)
+		);
+	}//end createFederatedShare()
+
+	/**
+	 * Share the redacted snapshot the request describes, failing closed at every step.
+	 *
+	 * @param FederatedShareRequest $request What the share was asked to carry
+	 *
+	 * @return array The created federated share data, or an error array
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 */
+	private function share(FederatedShareRequest $request): array {
 		$services = $this->federationServices();
 		if ($services === null) {
 			return ['error' => 'Federated case sharing requires the OpenRegister federation leaf'];
@@ -109,21 +131,13 @@ class FederatedCaseShareService {
 
 		[$federationService, $objectService] = $services;
 
-		$config = $this->federatedShareConfig(sharedFields: $sharedFields);
+		$config = $this->federatedShareConfig(sharedFields: $request->sharedFields);
 		if (isset($config['error']) === true) {
 			return $config;
 		}
 
 		[$register, $caseSchema, $shareSchema] = $config;
 
-		$request = new FederatedShareRequest(
-			caseId: $caseId,
-			remoteCloudId: $remoteCloudId,
-			sharedFields: $sharedFields,
-			sharedDocuments: $sharedDocuments,
-			permissionLevel: $permissionLevel,
-			createdBy: $createdBy,
-		);
 		$store = new FederatedShareStore(objectService: $objectService, register: $register, shareSchema: $shareSchema);
 
 		$shareData = $this->buildShareData(request: $request, store: $store, caseSchema: $caseSchema);
@@ -137,7 +151,7 @@ class FederatedCaseShareService {
 			shareData: $shareData,
 			request: $request,
 		);
-	}//end createFederatedShare()
+	}//end share()
 
 	/**
 	 * The OR federation-share and object services, or null when either is unavailable.
