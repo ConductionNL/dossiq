@@ -223,12 +223,7 @@ class RearmBeslistermijnTimers implements IRepairStep {
 		}
 
 		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $target->objectService,
-				register: $target->register,
-				schema: $target->schema,
-				filters: ['_limit' => self::PAGE]
-			);
+			return $target->search(filters: ['_limit' => self::PAGE]);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq term timer re-arm: listing the terms failed', ['error' => $e->getMessage()]);
 			return null;
