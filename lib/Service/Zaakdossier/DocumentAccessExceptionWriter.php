@@ -117,6 +117,21 @@ class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInte
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-can-carry-an-access-exception-with-a-reason
 	 */
 	public function set(IUser $user, array $record, array $exception): array {
+		return $this->setOnRecord(user: $user, change: ['record' => $record, 'exception' => $exception]);
+	}//end set()
+
+	/**
+	 * Stamp the exception, restrict the file and save the record with its history, or restore the file.
+	 *
+	 * @param IUser                $user   Who sets it.
+	 * @param array<string, mixed> $change `record` the informatieobject, with `id`; `exception` the validated exception.
+	 *
+	 * @return array<string, mixed> The exception as stored.
+	 *
+	 * @throws RuntimeException When the file cannot be restricted, or the record cannot be saved.
+	 */
+	private function setOnRecord(IUser $user, array $change): array {
+		[$record, $exception] = [$change['record'], $change['exception']];
 		$old    = $this->rule->exceptionOf(record: $record);
 		$now    = (new DateTimeImmutable())->format(DATE_ATOM);
 		$new    = self::stamped(exception: $exception, stamp: ['setBy' => $user->getUID(), 'setAt' => $now]);
@@ -131,7 +146,7 @@ class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInte
 		$this->saveOrRestore(record: $record, file: ['id' => $fileId, 'old' => $old]);
 
 		return $new;
-	}//end set()
+	}//end setOnRecord()
 
 	/**
 	 * Remove the exception of a record.

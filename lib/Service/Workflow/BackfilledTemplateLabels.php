@@ -115,6 +115,21 @@ class BackfilledTemplateLabels {
 			return [];
 		}
 
+		return $this->healedChanges(template: $template, labels: ['caseType' => $caseType, 'statusesById' => $statusesById]);
+	}//end healed()
+
+	/**
+	 * The healed title and lists of a backfilled template.
+	 *
+	 * @param array<string, mixed>                                                                     $template The stored template.
+	 * @param array{caseType: array<string, mixed>, statusesById: array<string, array<string, mixed>>} $labels   `caseType` its case type;
+	 *                                                                                                           `statusesById` the case type's
+	 *                                                                                                           statuses, by id.
+	 *
+	 * @return array<string, mixed> The healed fields; [] when nothing needs it.
+	 */
+	private function healedChanges(array $template, array $labels): array {
+		[$caseType, $statusesById] = [$labels['caseType'], $labels['statusesById']];
 		$changes = $this->healedTitle(template: $template, caseType: $caseType);
 		foreach ($this->healers(statusesById: $statusesById) as $key => $heal) {
 			$list = $this->healedList(raw: ($template[$key] ?? null), heal: $heal);
@@ -124,7 +139,7 @@ class BackfilledTemplateLabels {
 		}
 
 		return $changes;
-	}//end healed()
+	}//end healedChanges()
 
 	/**
 	 * How each stored list is healed, by the template field that holds it, steps first.

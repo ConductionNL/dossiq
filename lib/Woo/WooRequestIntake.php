@@ -341,6 +341,21 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
 	 */
 	public function receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array {
+		return $this->receiveAnswers(answers: $answers, arrival: ['receivedAt' => $receivedAt, 'origin' => $origin]);
+	}//end receive()
+
+	/**
+	 * Write the case the answers ask for, and answer its term; a refusal is answered as such.
+	 *
+	 * @param array<string, mixed>                      $answers `{requestedInformation, requesterName?, requesterEmail?, requesterPhone?,
+	 *                                                           requesterAddress?, channel?, subjectRef?, originReference?}`.
+	 * @param array{receivedAt: string, origin: string} $arrival `receivedAt` when the requester sent it (ISO 8601); now when empty or unreadable;
+	 *                                                           `origin` `portal-form` or `opencatalogi`.
+	 *
+	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
+	 */
+	private function receiveAnswers(array $answers, array $arrival): array {
+		[$receivedAt, $origin] = [$arrival['receivedAt'], $arrival['origin']];
 		try {
 			$request = $this->requestAndIntake(answers: $answers, arrival: ['receivedAt' => $receivedAt, 'origin' => $origin]);
 			[$objectService, $register, $receivedTerm] = $this->writeTarget();
@@ -356,7 +371,7 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 		}//end try
 
 		return $this->termAnswer(receivedTerm: $receivedTerm, filed: ['target' => $target, 'caseId' => $saved['id']]);
-	}//end receive()
+	}//end receiveAnswers()
 
 	/**
 	 * The normalised Woo request and its intake, read from the answers.

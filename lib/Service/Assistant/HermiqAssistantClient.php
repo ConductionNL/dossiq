@@ -107,6 +107,24 @@ class HermiqAssistantClient implements HermiqAssistantClientInterface {
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
 	public function converse(?string $sessionId, string $message, array $context): array {
+		return $this->postConversation(sessionId: $sessionId, turn: ['message' => $message, 'context' => $context]);
+	}//end converse()
+
+	/**
+	 * Post one conversation turn to hermiq's assistant and decode its answer.
+	 *
+	 * @param string|null                            $sessionId Hermiq conversation UUID from a prior turn, or null to start one.
+	 * @param array{message: string, context: array} $turn      `message` the user's message text (already length-capped by the caller); `context`
+	 *                                                          `{app, objectType, objectRef, contextData}` — the caller is responsible for ensuring
+	 *                                                          `contextData` only contains fields the requesting user is authorized to see.
+	 *
+	 * @return array{sessionId: string, reply: string, usage: array<string, int|float>}
+	 *
+	 * @throws HermiqAssistantException On misconfiguration, transport failure, or any non-2xx response from Hermiq
+	 *                                  (`getStatusCode()`/`getErrorCode()` carry the mapped detail).
+	 */
+	private function postConversation(?string $sessionId, array $turn): array {
+		[$message, $context] = [$turn['message'], $turn['context']];
 		$call = new HermiqServiceCall(logger: $this->logger, caller: 'HermiqAssistantClient');
 		$call->requireAvailable(available: $this->isAvailable());
 		$credentials = $call->credentialsFrom(appConfig: $this->appConfig);
@@ -120,7 +138,7 @@ class HermiqAssistantClient implements HermiqAssistantClientInterface {
 		$post = new HermiqPost(url: $url, options: $call->postOptions(credentials: $credentials, json: $payload));
 
 		return $this->decodeResponse(call: $call, response: $call->send(clients: $this->clientService, post: $post));
-	}//end converse()
+	}//end postConversation()
 
 	/**
 	 * Decode a Hermiq response, translating a non-2xx status into a coded exception.

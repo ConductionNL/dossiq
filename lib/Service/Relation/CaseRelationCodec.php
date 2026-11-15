@@ -214,6 +214,20 @@ class CaseRelationCodec {
 			return $links;
 		}
 
+		return $this->withoutLinkTo(links: $links, strip: ['natureRelationship' => $natureRelationship, 'targetId' => $targetId]);
+	}//end withoutTypedLink()
+
+	/**
+	 * The links without the target, under one typed property or all of them.
+	 *
+	 * @param array<string, array<int, string>>                        $links Typed lists.
+	 * @param array{natureRelationship: string|null, targetId: string} $strip `natureRelationship` relation type, or null to strip the case from
+	 *                                                                        every typed list; `targetId` the case to unlink.
+	 *
+	 * @return array<string, array<int, string>> The typed lists.
+	 */
+	private function withoutLinkTo(array $links, array $strip): array {
+		[$natureRelationship, $targetId] = [$strip['natureRelationship'], $strip['targetId']];
 		$only = null;
 		if ($natureRelationship !== null) {
 			$only = $this->typedProperty(natureRelationship: $natureRelationship);
@@ -223,7 +237,7 @@ class CaseRelationCodec {
 		}
 
 		return self::stripped(links: $links, strip: ['only' => $only, 'targetId' => $targetId]);
-	}//end withoutTypedLink()
+	}//end withoutLinkTo()
 
 	/**
 	 * The typed lists without the target, in the one list named or in every list.

@@ -115,6 +115,21 @@ final class CaseRecordAccess {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function write(string $caseId, array $case, string $rule): void {
+		$this->writeOrRefuse(caseId: $caseId, write: ['case' => $case, 'rule' => $rule]);
+	}//end write()
+
+	/**
+	 * Save the case, refusing as indeterminate when it cannot be saved.
+	 *
+	 * @param string                                          $caseId The case uuid.
+	 * @param array{case: array<string, mixed>, rule: string} $write  `case` the changed case; `rule` the rule a failed write refuses with.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the write fails.
+	 */
+	private function writeOrRefuse(string $caseId, array $write): void {
+		[$case, $rule] = [$write['case'], $write['rule']];
 		[$objectService] = $this->scope();
 
 		try {
@@ -127,7 +142,7 @@ final class CaseRecordAccess {
 				previous: $e,
 			);
 		}
-	}//end write()
+	}//end writeOrRefuse()
 
 	/**
 	 * The object service and the case scope, or a refusal.
