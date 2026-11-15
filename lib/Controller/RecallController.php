@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersNoCaseAccess;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -44,6 +45,7 @@ use OCP\IUserSession;
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
  */
 class RecallController extends Controller {
+	use AnswersNoCaseAccess;
 
 	/**
 	 * Constructor.
@@ -244,18 +246,6 @@ class RecallController extends Controller {
 	private function unauthenticated(): JSONResponse {
 		return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
 	}//end unauthenticated()
-
-	/**
-	 * The refusal of a user without access to the case.
-	 *
-	 * @return JSONResponse The refusal.
-	 */
-	private function noAccess(): JSONResponse {
-		return new JSONResponse(
-			['error' => 'no-case-access', 'message' => $this->l10n->t('You do not have access to this case')],
-			Http::STATUS_FORBIDDEN
-		);
-	}//end noAccess()
 
 	/**
 	 * The translated sentence of a refusal rule.

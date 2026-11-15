@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersCaseNotYours;
 use OCA\Dossiq\Controller\Support\FindsCaseWriter;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
@@ -66,6 +67,7 @@ use Throwable;
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseVersionController extends Controller {
+	use AnswersCaseNotYours;
 	use FindsCaseWriter;
 
 	use TranslatesRefusals;
@@ -228,20 +230,6 @@ class CaseVersionController extends Controller {
 			return $this->broke(op: 'version-move', e: $e);
 		}
 	}//end moveToVersion()
-
-	/**
-	 * The answer a caller who may not touch this case gets.
-	 *
-	 * @return JSONResponse The 403.
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	private function notYours(): JSONResponse {
-		return new JSONResponse(
-			['message' => 'You cannot move this case.', 'error' => 'case-access-denied'],
-			Http::STATUS_FORBIDDEN,
-		);
-	}//end notYours()
 
 	/**
 	 * A failure that is not a refusal, logged and answered as one.
