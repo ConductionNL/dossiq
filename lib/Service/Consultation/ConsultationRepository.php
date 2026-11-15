@@ -215,18 +215,9 @@ class ConsultationRepository {
 	 * @spec openspec/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
 	 */
 	public function getRecentConsultations(int $days): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('consultation_schema');
-		if ($objectService === null || empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
 		$since = date('Y-m-d', strtotime('-' . $days . ' days'));
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		$rows = $this->rows->search(
+			schemaKey: 'consultation_schema',
 			filters: ['_order' => ['createdAt' => 'DESC'], '_limit' => 1000],
 		);
 
