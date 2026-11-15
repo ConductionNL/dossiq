@@ -13,7 +13,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+ * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
  */
 
 declare(strict_types=1);
@@ -131,6 +131,37 @@ class PublicationCategoryTest extends TestCase {
 		$this->assertSame(PublicationCategory::FALLBACK, $categories->forDecision(decision: []));
 		$this->assertSame(PublicationCategory::FALLBACK, (new PublicationCategory())->forDecision(decision: ['decisionType' => 'type-1']));
 	}//end testEverythingElseFallsBack()
+
+	/**
+	 * A decision type read that fails is the publish's failure: no category is guessed.
+	 *
+	 * @return void
+	 */
+	public function testAFailedReadFailsThePublish(): void {
+		$failing = new class {
+			/**
+			 * A store that refuses every read.
+			 *
+			 * @param string     $id       The object.
+			 * @param int|string $register The register.
+			 * @param int|string $schema   The schema.
+			 *
+			 * @return never
+			 */
+			public function find(string $id, int|string $register, int|string $schema): never {
+				throw new \RuntimeException(message: 'store refused');
+			}//end find()
+		};
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($failing);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'decision_type_schema' => 'decisionType'][$key] ?? $default)
+		);
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('store refused');
+		(new PublicationCategory(settingsService: $settings))->forDecision(decision: ['decisionType' => 'type-1']);
+	}//end testAFailedReadFailsThePublish()
 
 	/**
 	 * The fallback is the category the code mapped every decision to before.

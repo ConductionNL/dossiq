@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+ * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Copies each shipped decision type's publication category onto its stored row. Idempotent, non-fatal.
  *
- * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+ * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
  */
 class CopyShippedPublicationCategories implements IRepairStep {
 
@@ -69,7 +69,7 @@ class CopyShippedPublicationCategories implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
 	 */
 	public function getName(): string {
 		return 'Copy the shipped publication categories onto stored decision types';
@@ -82,7 +82,7 @@ class CopyShippedPublicationCategories implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();

@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+ * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -37,7 +37,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 /**
  * Reads a decision's publication category from its decision type row.
  *
- * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+ * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
  */
 class PublicationCategory {
 
@@ -70,7 +70,7 @@ class PublicationCategory {
 	 *
 	 * @return array{code: string, label: string, uri: string}
 	 *
-	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
 	 */
 	public function forDecision(array $decision): array {
 		$typeId = trim((string)($decision['decisionType'] ?? ''));
@@ -88,7 +88,7 @@ class PublicationCategory {
 	 *
 	 * @return array{code: string, label: string, uri: string}|null
 	 *
-	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
 	 */
 	public function fromRow(array $row): ?array {
 		$category = ($row['publicationCategory'] ?? null);
