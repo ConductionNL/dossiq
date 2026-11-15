@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Listener\Support\OwnPageRender;
+use OCA\Dossiq\Listener\Support\ProvidesOnOwnPage;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
@@ -44,6 +44,8 @@ use OCP\EventDispatcher\IEventListener;
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  */
 class WooReportsInitialStateListener implements IEventListener {
+
+	use ProvidesOnOwnPage;
 
 	/**
 	 * Constructor.
@@ -69,10 +71,9 @@ class WooReportsInitialStateListener implements IEventListener {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function handle(Event $event): void {
-		if ((new OwnPageRender())->matches(event: $event) === false) {
-			return;
-		}
-
-		$this->initialState->provideInitialState('woo_reports', $this->switches->offeredToCurrentUser());
+		$this->provideOnOwnPage(
+			event: $event,
+			provide: fn () => $this->initialState->provideInitialState('woo_reports', $this->switches->offeredToCurrentUser())
+		);
 	}//end handle()
 }//end class
