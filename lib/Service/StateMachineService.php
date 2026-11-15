@@ -144,7 +144,7 @@ class StateMachineService implements StateMachineServiceInterface {
 		}
 
 		[$objectService, $register, $logSchema] = $target;
-		$record = $this->transitionRecord(decisionId: $decisionId, from: $from, to: $to, metadata: $metadata);
+		$record = $this->transitionRecord(transition: ['decisionId' => $decisionId, 'from' => $from, 'to' => $to], metadata: $metadata);
 
 		try {
 			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
@@ -182,21 +182,20 @@ class StateMachineService implements StateMachineServiceInterface {
 	/**
 	 * The stateMachineLog record of a transition.
 	 *
-	 * @param string               $decisionId The beschikking UUID.
-	 * @param string               $from       The source status.
-	 * @param string               $to         The target status.
-	 * @param array<string, mixed> $metadata   Actor/trigger/evidence metadata.
+	 * @param array{decisionId: string, from: string, to: string} $transition The beschikking UUID, the source status
+	 *                                                                       and the target status.
+	 * @param array<string, mixed>                                $metadata   Actor/trigger/evidence metadata.
 	 *
 	 * @return array<string, mixed> The record.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
 	 */
-	private function transitionRecord(string $decisionId, string $from, string $to, array $metadata): array {
+	private function transitionRecord(array $transition, array $metadata): array {
 		return [
-			'decisionId' => $decisionId,
+			'decisionId' => $transition['decisionId'],
 			'overgang' => [
-				'van' => $from,
-				'to' => $to,
+				'van' => $transition['from'],
+				'to' => $transition['to'],
 				'moment' => (new DateTimeImmutable())->format('c'),
 				'actor' => (string)($metadata['actor'] ?? 'systeem'),
 				'actorType' => (string)($metadata['actorType'] ?? 'systeem'),
