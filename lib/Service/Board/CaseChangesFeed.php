@@ -95,11 +95,28 @@ class CaseChangesFeed implements CaseChangesFeedInterface {
 			return ['changes' => [], 'now' => $now];
 		}
 
+		return [
+			'changes' => $this->changesIn(
+				store: ['mapper' => $mapper, 'objectService' => $objectService, 'register' => $register, 'schema' => $schema],
+				window: ['schema' => $schema, 'since' => $since, 'readerId' => $readerId, 'scope' => $scope]
+			),
+			'now' => $now,
+		];
+	}//end since()
+
+	/**
+	 * The newest change per readable case in scope, up to the answer limit.
+	 *
+	 * @param array<string, mixed> $store  The audit trail mapper, the object service, the register and the case schema.
+	 * @param array<string, mixed> $window The case schema id, the moment, the reader and the board's scope.
+	 *
+	 * @return array<int, array<string, mixed>> The changes.
+	 */
+	private function changesIn(array $store, array $window): array {
 		$changes = [];
-		$window = ['schema' => $schema, 'since' => $since, 'readerId' => $readerId];
-		foreach ($this->latestPerCase(mapper: $mapper, window: $window) as $caseId => $entry) {
-			$case = $this->readableCase(objectService: $objectService, register: $register, schema: $schema, caseId: $caseId);
-			if ($case !== null && $this->inScope(case: $case, scope: $scope) === true) {
+		foreach ($this->latestPerCase(mapper: $store['mapper'], window: $window) as $caseId => $entry) {
+			$case = $this->readableCase(store: $store, caseId: $caseId);
+			if ($case !== null && $this->inScope(case: $case, scope: $window['scope']) === true) {
 				$changes[] = $this->changeOf(entry: $entry, caseId: $caseId);
 			}
 
@@ -108,8 +125,8 @@ class CaseChangesFeed implements CaseChangesFeedInterface {
 			}
 		}
 
-		return ['changes' => $changes, 'now' => $now];
-	}//end since()
+		return $changes;
+	}//end changesIn()
 
 	/**
 	 * The newest audit entry per case after the moment, by someone else.
@@ -148,15 +165,13 @@ class CaseChangesFeed implements CaseChangesFeedInterface {
 	 * outside the reader's rights as not found, which the read maps to null; any
 	 * other failure is not swallowed.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register id.
-	 * @param string $schema        The case schema id.
-	 * @param string $caseId        The case id.
+	 * @param array<string, mixed> $store  The OpenRegister object service, the register id and the case schema id.
+	 * @param string               $caseId The case id.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function readableCase(object $objectService, string $register, string $schema, string $caseId): ?array {
-		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId);
+	private function readableCase(array $store, string $caseId): ?array {
+		return $this->findObjectAsArray(objectService: $store['objectService'], register: $store['register'], schema: $store['schema'], id: $caseId);
 	}//end readableCase()
 
 	/**

@@ -222,6 +222,19 @@ class CaseRelationCodec {
 			}
 		}
 
+		return self::stripped(links: $links, strip: ['only' => $only, 'targetId' => $targetId]);
+	}//end withoutTypedLink()
+
+	/**
+	 * The typed lists without the target, in the one list named or in every list.
+	 *
+	 * @param array<string, array<int, string>>          $links Typed lists.
+	 * @param array{only: string|null, targetId: string} $strip The one list to strip, or null for all, and the case.
+	 *
+	 * @return array<string, array<int, string>> The lists.
+	 */
+	private static function stripped(array $links, array $strip): array {
+		['only' => $only, 'targetId' => $targetId] = $strip;
 		foreach ($links as $property => $uuids) {
 			if ($only !== null && $property !== $only) {
 				continue;
@@ -233,7 +246,7 @@ class CaseRelationCodec {
 		}
 
 		return $links;
-	}//end withoutTypedLink()
+	}//end stripped()
 
 	/**
 	 * Build a single relation entry, carrying the optional clarification.
