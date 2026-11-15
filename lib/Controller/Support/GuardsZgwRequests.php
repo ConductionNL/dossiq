@@ -10,8 +10,8 @@
  * controller's `$request`, a `ZGW_API` constant naming its register and the
  * `scopeDeniedResponse()` of {@see \OCA\Dossiq\Controller\ZgwController}.
  *
- * @category Support
- * @package  OCA\Dossiq\Support
+ * @category Controller
+ * @package  OCA\Dossiq\Controller\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,7 +29,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Support;
+namespace OCA\Dossiq\Controller\Support;
 
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

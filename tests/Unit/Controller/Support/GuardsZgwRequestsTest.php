@@ -9,10 +9,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Support;
+namespace OCA\Dossiq\Tests\Unit\Controller\Support;
 
+use OCA\Dossiq\Controller\Support\GuardsZgwRequests;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
-use OCA\Dossiq\Support\GuardsZgwRequests;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The guard trait, through a minimal host class.
  *
- * @covers \OCA\Dossiq\Support\GuardsZgwRequests
+ * @covers \OCA\Dossiq\Controller\Support\GuardsZgwRequests
  */
 final class GuardsZgwRequestsTest extends TestCase {
 

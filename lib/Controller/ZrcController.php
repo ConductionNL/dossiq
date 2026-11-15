@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\GuardsZgwRequests;
 use OCA\Dossiq\Exception\CaseHeldException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseRelationServiceInterface;
@@ -39,7 +40,6 @@ use OCA\Dossiq\Kernel\Contracts\DocumentJoinHomingInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZrcStatusEffectsInterface;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
-use OCA\Dossiq\Support\GuardsZgwRequests;
 use OCA\Dossiq\Support\MapsZgwRows;
 use OCA\OpenRegister\Exception\HookStoppedException;
 use OCP\AppFramework\Http;
