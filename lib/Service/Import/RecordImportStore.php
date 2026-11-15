@@ -369,8 +369,7 @@ class RecordImportStore {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
 	public function listAll(object $objectService, string $register, string $schema, array $filters): array {
-		$rows = [];
-		$seen = [];
+		$collected = ['rows' => [], 'seen' => []];
 		$offset = 0;
 		do {
 			$page = $this->searchObjectsAsArraysUnscoped(
@@ -379,23 +378,40 @@ class RecordImportStore {
 				schema: $schema,
 				filters: $filters + ['_limit' => self::PAGE, '_offset' => $offset]
 			);
-			foreach ($page as $row) {
-				$id = $this->idOf(row: $row);
-				if ($id !== '' && isset($seen[$id]) === true) {
-					// A store that ignores the offset answers the same page again.
-					return $rows;
-				}
-
-				$seen[$id] = true;
-				$rows[] = $row;
+			if ($this->absorb(page: $page, collected: $collected) === false) {
+				return $collected['rows'];
 			}
 
 			$offset += self::PAGE;
 			$full = (count($page) >= self::PAGE);
 		} while ($full === true);
 
-		return $rows;
+		return $collected['rows'];
 	}//end listAll()
+
+	/**
+	 * Add one page's rows to what was collected; false when the page repeats a row already seen.
+	 *
+	 * @param array<int, array<string, mixed>>                                 $page      The page.
+	 * @param array{rows: array<int, array<string, mixed>>, seen: array<string, bool>} $collected The rows so far and the
+	 *                                                                                  ids seen, extended in place.
+	 *
+	 * @return bool True when every row was new.
+	 */
+	private function absorb(array $page, array &$collected): bool {
+		foreach ($page as $row) {
+			$id = $this->idOf(row: $row);
+			if ($id !== '' && isset($collected['seen'][$id]) === true) {
+				// A store that ignores the offset answers the same page again.
+				return false;
+			}
+
+			$collected['seen'][$id] = true;
+			$collected['rows'][] = $row;
+		}
+
+		return true;
+	}//end absorb()
 
 	/**
 	 * A row's uuid, wherever the store put it.
