@@ -59,6 +59,18 @@ trait FindsFilesById {
 			return null;
 		}
 
+		return ($this->managedFile(fileService: $fileService, fileId: $fileId) ?? $this->rootFile(rootFolder: $rootFolder, fileId: $fileId));
+	}//end fileById()
+
+	/**
+	 * The file with this id in OpenRegister's managed tree.
+	 *
+	 * @param object|null $fileService OpenRegister's FileService, or null when it is unavailable.
+	 * @param int         $fileId      The Nextcloud file id.
+	 *
+	 * @return File|null The file, or null when the managed tree does not know it.
+	 */
+	private function managedFile(?object $fileService, int $fileId): ?File {
 		if ($fileService !== null && method_exists($fileService, 'getFileById') === true) {
 			$managed = $fileService->getFileById($fileId);
 			if ($managed instanceof File) {
@@ -66,6 +78,18 @@ trait FindsFilesById {
 			}
 		}
 
+		return null;
+	}//end managedFile()
+
+	/**
+	 * The first file with this id under the root folder.
+	 *
+	 * @param IRootFolder $rootFolder The root folder.
+	 * @param int         $fileId     The Nextcloud file id.
+	 *
+	 * @return File|null The file, or null when the root folder does not know it.
+	 */
+	private function rootFile(IRootFolder $rootFolder, int $fileId): ?File {
 		foreach ($rootFolder->getById($fileId) as $node) {
 			if ($node instanceof File) {
 				return $node;
@@ -73,5 +97,5 @@ trait FindsFilesById {
 		}
 
 		return null;
-	}//end fileById()
+	}//end rootFile()
 }//end trait
