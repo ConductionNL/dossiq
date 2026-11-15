@@ -34,6 +34,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
+use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -53,6 +54,7 @@ use Throwable;
  */
 class TenantAuthenticationService implements TenantAuthenticationServiceInterface {
 	use RefusesWhenIndeterminate;
+	use ResolvesInstalledObjectService;
 
 	/**
 	 * Default deny-everything matrix (fail-closed fallback).
@@ -585,24 +587,4 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 
 		return array_values(array_filter($arrays, static fn (array $data): bool => $data !== []));
 	}//end rowsAsArrays()
-
-	/**
-	 * Resolve OR's ObjectService when installed.
-	 *
-	 * @return mixed|null
-	 */
-	private function getObjectService() {
-		// IAppManager::getInstalledApps() declares its array return in PHPDoc
-		// only, so normalise defensively before the membership test.
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end getObjectService()
 }//end class
