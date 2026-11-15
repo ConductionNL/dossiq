@@ -244,20 +244,33 @@ class PipelinqGateway implements PipelinqGatewayInterface {
 			];
 		}
 
+		return $this->answerOf(service: $service, call: ['class' => $class, 'method' => $method, 'arguments' => $arguments, 'fallback' => $fallback]);
+	}//end ask()
+
+	/**
+	 * Make the call; a call that fails answers the fallback and logs why.
+	 *
+	 * @param object               $service The pipelinq service.
+	 * @param array<string, mixed> $call    The class constant, the method, its named arguments and the fallback.
+	 *
+	 * @return array{answered: bool, value: mixed, reason: string} The answer.
+	 */
+	private function answerOf(object $service, array $call): array {
+		['method' => $method, 'fallback' => $fallback] = $call;
 		try {
-			$value = $service->{$method}(...$arguments);
+			$value = $service->{$method}(...$call['arguments']);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq pipelinq: the call failed, so the fallback answers and nothing here is refused: '
 				. $e->getMessage(),
-				['class' => $class, 'method' => $method]
+				['class' => $call['class'], 'method' => $method]
 			);
 
 			return ['answered' => false, 'value' => $fallback, 'reason' => $e->getMessage()];
 		}
 
 		return ['answered' => true, 'value' => $value, 'reason' => ''];
-	}//end ask()
+	}//end answerOf()
 
 	/**
 	 * The open tickets of the pipelinq clients that share each master entity.

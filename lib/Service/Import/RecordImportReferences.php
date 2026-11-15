@@ -73,6 +73,19 @@ class RecordImportReferences {
 			schema: (string)$this->settingsService->getConfigValue('case_schema'),
 			filters: ['caseType' => $this->store->idOf(row: $caseType)]
 		);
+
+		return $this->byFormerReference(cases: $cases, application: $application);
+	}//end casesByFormerReference()
+
+	/**
+	 * Case ids keyed by the former reference each case carries for the application.
+	 *
+	 * @param array<int, array<string, mixed>> $cases       The case type's cases.
+	 * @param string                           $application The application the former references belong to.
+	 *
+	 * @return array<string, string> Former reference to case id.
+	 */
+	private function byFormerReference(array $cases, string $application): array {
 		$byKey = [];
 		foreach ($cases as $case) {
 			foreach ((array)($case['formerReferences'] ?? []) as $former) {
@@ -84,7 +97,7 @@ class RecordImportReferences {
 		}
 
 		return $byKey;
-	}//end casesByFormerReference()
+	}//end byFormerReference()
 
 	/**
 	 * The number a record shares with its duplicates, by `dedupeBy`, or ''.
