@@ -274,10 +274,10 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@use '../styles/_dialogBanners.scss' as banner;
+
 .log-contact {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
+	@include banner.dialog-column;
 
 	&__pair {
 		display: grid;
@@ -286,21 +286,14 @@ export default {
 	}
 
 	&__saved {
-		margin: 0;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-success);
-		color: var(--color-success-text, var(--color-primary-element-text));
+		@include banner.saved-banner;
 	}
 
 	&__refusal {
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-warning);
-		color: var(--color-warning-text, var(--color-main-text));
+		@include banner.warning-banner;
 	}
 
 	&__summary {

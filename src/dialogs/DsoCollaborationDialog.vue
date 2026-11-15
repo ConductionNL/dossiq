@@ -92,14 +92,8 @@ export default {
 }
 </script>
 
-<style scoped>
-.dso-dialog {
-	display: flex;
-	flex-direction: column;
-	gap: calc(var(--default-grid-baseline, 4px) * 3);
-}
+<style scoped lang="scss">
+@use './_dsoDialog.scss' as dso;
 
-.dso-dialog__error {
-	color: var(--color-error-text);
-}
+@include dso.dso-dialog;
 </style>

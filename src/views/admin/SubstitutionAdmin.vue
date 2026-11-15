@@ -228,17 +228,14 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../../styles/_substitutionList.scss' as list;
+
 .substitution-admin {
 	padding: 20px;
 }
 
-.substitution-admin__header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 12px;
-}
+@include list.list-header(substitution-admin);
 
 .substitution-admin__actions {
 	display: flex;
@@ -258,18 +255,7 @@ export default {
 	min-width: 260px;
 }
 
-.substitution-admin__table {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 0.9rem;
-}
-
-.substitution-admin__table th,
-.substitution-admin__table td {
-	text-align: start;
-	padding: 8px 10px;
-	border-bottom: 1px solid var(--color-border);
-}
+@include list.list-table(substitution-admin);
 
 .substitution-admin__row-actions {
 	display: flex;
@@ -289,10 +275,5 @@ export default {
 	color: var(--cn-status-badge-ink);
 }
 
-.status--ended,
-.status--revoked {
-	background: var(--color-background-dark);
-	--cn-status-badge-ink: var(--color-text-maxcontrast);
-	color: var(--cn-status-badge-ink);
-}
+@include list.ended-status;
 </style>
