@@ -131,19 +131,19 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 			return $cancelled;
 		}
 
-		return $this->armUntil(trigger: $trigger, triggerId: $triggerId, archive: $archive);
+		return $this->armUntil(trigger: $trigger, timer: ['triggerId' => $triggerId, 'archive' => $archive]);
 	}//end syncActive()
 
 	/**
 	 * Arm the timer up to the archive date, or report it due when that date has passed.
 	 *
-	 * @param array<string, mixed> $trigger   The bezwaarTrigger object.
-	 * @param string               $triggerId The trigger's id.
-	 * @param DateTimeImmutable    $archive   The archive date at midnight.
+	 * @param array<string, mixed>                                $trigger The bezwaarTrigger object.
+	 * @param array{triggerId: string, archive: DateTimeImmutable} $timer   The trigger's id, and the archive date at midnight.
 	 *
 	 * @return string One of the outcome constants.
 	 */
-	private function armUntil(array $trigger, string $triggerId, DateTimeImmutable $archive): string {
+	private function armUntil(array $trigger, array $timer): string {
+		[$triggerId, $archive] = [$timer['triggerId'], $timer['archive']];
 		$today = $this->dates->today();
 		if ($archive <= $today) {
 			return self::DUE;
