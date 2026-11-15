@@ -94,14 +94,13 @@ class InspectionTemplateMapper {
 		}
 
 		return $this->template(
-			source: $checklist,
 			identity: new TemplateIdentity(
 				name: (string)($checklist['name'] ?? ''),
 				caseType: (string)($checklist['caseType'] ?? ''),
 				status: $status,
 				legacyRef: 'inspectieChecklist/' . $this->idOf(object: $checklist)
 			),
-			items: $items
+			body: ['version' => ($checklist['version'] ?? 1), 'items' => $items]
 		);
 	}//end fromStackA()
 
@@ -187,14 +186,13 @@ class InspectionTemplateMapper {
 		}
 
 		return $this->template(
-			source: $checklist,
 			identity: new TemplateIdentity(
 				name: (string)($checklist['name'] ?? ''),
 				caseType: (string)($checklist['caseTypeRef'] ?? $checklist['caseType'] ?? ''),
 				status: $status,
 				legacyRef: 'inspectionChecklist/' . $this->idOf(object: $checklist)
 			),
-			items: $items
+			body: ['version' => ($checklist['version'] ?? 1), 'items' => $items]
 		);
 	}//end stackCTemplate()
 
@@ -355,20 +353,20 @@ class InspectionTemplateMapper {
 	/**
 	 * A template around one section of items.
 	 *
-	 * @param array<string, mixed>             $source   The source object.
-	 * @param TemplateIdentity                 $identity Its name, case type, status and source reference.
-	 * @param array<int, array<string, mixed>> $items    The items.
+	 * @param TemplateIdentity                                   $identity Its name, case type, status and source reference.
+	 * @param array{version: mixed, items: array<int, array<string, mixed>>} $body     The source object's version, and the items.
 	 *
 	 * @return array<string, mixed> The template.
 	 */
-	private function template(array $source, TemplateIdentity $identity, array $items): array {
+	private function template(TemplateIdentity $identity, array $body): array {
+		$items = $body['items'];
 		$name = $identity->name;
 		$status = $identity->status;
 		$caseType = $identity->caseType;
 		$legacyRef = $identity->legacyRef;
 		$template = [
 			'name' => $name,
-			'version' => max(1, (int)($source['version'] ?? 1)),
+			'version' => max(1, (int)$body['version']),
 			'status' => $status,
 			'active' => ($status === 'active'),
 			'sections' => [['order' => 1, 'name' => $name, 'items' => $items]],
