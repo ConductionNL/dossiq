@@ -159,7 +159,7 @@ class StufRegisterAccess implements StufRegisterAccessInterface {
 	 */
 	public function findAll(string $schema, array $filters = [], int $limit = 100): array {
 		try {
-			$objects = $this->readObjects(schema: $schema, filters: $filters, limit: $limit);
+			$objects = $this->readObjects(schema: $schema, page: ['filters' => $filters, 'limit' => $limit]);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				message: 'StUF register findAll failed: {err}',
@@ -178,13 +178,12 @@ class StufRegisterAccess implements StufRegisterAccessInterface {
 	/**
 	 * Read the objects of a schema, or none when the register is absent.
 	 *
-	 * @param string               $schema  The schema.
-	 * @param array<string, mixed> $filters Extra filters.
-	 * @param int                  $limit   The maximum number of objects.
+	 * @param string                                             $schema The schema.
+	 * @param array{filters: array<string, mixed>, limit: int} $page   Extra filters and the maximum number of objects.
 	 *
 	 * @return mixed The objects the object service answers.
 	 */
-	private function readObjects(string $schema, array $filters, int $limit): mixed {
+	private function readObjects(string $schema, array $page): mixed {
 		$service = $this->getObjectService();
 		if ($service === null) {
 			// A READ, so an empty list is the honest answer for an absent
@@ -195,8 +194,8 @@ class StufRegisterAccess implements StufRegisterAccessInterface {
 
 		return $service->findAll(
 			[
-				'filters' => array_merge(['register' => $this->getRegisterId(), 'schema' => $schema], $filters),
-				'limit' => $limit,
+				'filters' => array_merge(['register' => $this->getRegisterId(), 'schema' => $schema], $page['filters']),
+				'limit' => $page['limit'],
 			]
 		);
 	}//end readObjects()
