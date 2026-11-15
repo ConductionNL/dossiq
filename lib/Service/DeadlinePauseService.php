@@ -346,20 +346,34 @@ class DeadlinePauseService implements DeadlinePauseServiceInterface {
 			return $reason;
 		}
 
+		return $this->declaredRationale(caseId: $caseId, picked: ['key' => $pauseReason, 'reason' => $reason]);
+	}//end suspendRationale()
+
+	/**
+	 * The rationale for a picked reason the case type declares: the handler's text, else the reason's name.
+	 *
+	 * @param string                             $caseId Case UUID
+	 * @param array{key: string, reason: string} $picked The picked reason key, and the handler's text
+	 *
+	 * @return string The rationale.
+	 *
+	 * @throws RuntimeException `pause_reason_not_declared` for a key the case type does not declare.
+	 */
+	private function declaredRationale(string $caseId, array $picked): string {
 		foreach ($this->offeredReasons(caseId: $caseId) as $declared) {
-			if ($declared['key'] !== $pauseReason) {
+			if ($declared['key'] !== $picked['key']) {
 				continue;
 			}
 
-			if (trim($reason) === '') {
+			if (trim($picked['reason']) === '') {
 				return $declared['name'];
 			}
 
-			return $reason;
+			return $picked['reason'];
 		}
 
 		throw new RuntimeException('pause_reason_not_declared');
-	}//end suspendRationale()
+	}//end declaredRationale()
 
 	/**
 	 * Refuse a suspension the case type does not allow, or does not allow this
