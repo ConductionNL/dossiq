@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Task;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Kernel\Contracts\Value\TaskActorRef;
 use OCA\OpenRegister\Service\Task\TaskFormCompletion;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -136,13 +137,14 @@ class EngineTaskGatewayLifecycleTest extends TestCase {
 			}
 
 			/**
-			 * @param string      $uuid     The task.
-			 * @param string      $assignee The new assignee.
-			 * @param string|null $actor    The actor.
+			 * @param TaskActorRef $ref      The task and who reassigns.
+			 * @param string       $assignee The new assignee.
 			 *
 			 * @return void
 			 */
-			public function reassign(string $uuid, string $assignee, ?string $actor): void {
+			public function reassign(TaskActorRef $ref, string $assignee): void {
+				$uuid  = $ref->uuid;
+				$actor = $ref->actor;
 				$this->calls[] = [$uuid, $assignee, $actor];
 				if ($this->refusal !== null) {
 					throw new RuntimeException($this->refusal);
