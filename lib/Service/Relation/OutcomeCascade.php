@@ -120,14 +120,27 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 
 		$this->guardInputs(name: $name, guarded: ['steps' => $steps, 'inputs' => $inputs]);
 
-		$run = $this->startRun(cascade: $cascade, targetId: $targetId);
-		$run->inputs = $inputs;
-		foreach ($steps as $step) {
-			$this->runStep(run: $run, step: $step);
+		return $this->ranOn(cascade: $cascade, run: ['targetId' => $targetId, 'steps' => $steps, 'inputs' => $inputs]);
+	}//end run()
+
+	/**
+	 * Run every step of the cascade on its target, and answer the target as the steps left it.
+	 *
+	 * @param array<string, mixed>                                                              $cascade The cascade.
+	 * @param array{targetId: string, steps: array<int, mixed>, inputs: array<string, mixed>}   $run     The target, the cascade's steps
+	 *                                                                                                 and the caller's inputs.
+	 *
+	 * @return array<string, mixed> The target.
+	 */
+	private function ranOn(array $cascade, array $run): array {
+		$cascadeRun = $this->startRun(cascade: $cascade, targetId: $run['targetId']);
+		$cascadeRun->inputs = $run['inputs'];
+		foreach ($run['steps'] as $step) {
+			$this->runStep(run: $cascadeRun, step: $step);
 		}
 
-		return $run->target;
-	}//end run()
+		return $cascadeRun->target;
+	}//end ranOn()
 
 	/**
 	 * A run of a cascade on its target, read as it stands now.

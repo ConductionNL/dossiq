@@ -622,6 +622,18 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 			return false;
 		}
 
+		return $this->deletedOrHeldBy(entity: $entity, userId: $userId);
+	}//end maySee()
+
+	/**
+	 * Whether the user deleted the case, or handled it when it was deleted.
+	 *
+	 * @param object $entity The deleted case.
+	 * @param string $userId The user.
+	 *
+	 * @return bool True when it was theirs.
+	 */
+	private function deletedOrHeldBy(object $entity, string $userId): bool {
 		$marker = $this->windowReader->marker(entity: $entity);
 		if (trim((string)($marker['deletedBy'] ?? '')) === $userId) {
 			return true;
@@ -630,7 +642,7 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 		$payload = $this->windowReader->payload(entity: $entity);
 
 		return (trim((string)($payload['assignee'] ?? '')) === $userId);
-	}//end maySee()
+	}//end deletedOrHeldBy()
 
 	/**
 	 * Whether an entity belongs to the configured case schema.
