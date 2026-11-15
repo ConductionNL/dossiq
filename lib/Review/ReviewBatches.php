@@ -157,7 +157,7 @@ class ReviewBatches implements ReviewBatchesInterface {
 		$fields += ['filter' => $filter, 'assignee' => $assignee, 'status' => 'open'];
 		$batch = $this->save(batch: $fields);
 		$this->stampReviews(caseId: $caseId, batchId: $this->batchIdOf(batch: $batch), documents: $documents);
-		$assigned = $this->assign(batch: $batch, by: ['userId' => $userId] + $fields);
+		$assigned = $this->assign(batch: $batch, written: ['userId' => $userId] + $fields);
 
 		$progress = ['assessed' => 0, 'total' => count($documents)];
 		return ['batch' => $assigned['batch'], 'taskCreated' => $assigned['taskId'] !== '', 'progress' => $progress, 'access' => $assigned['access']];
@@ -177,8 +177,8 @@ class ReviewBatches implements ReviewBatchesInterface {
 	/**
 	 * Give a stored batch's reviewer a task, write the task on the batch and reconcile the case's reviewer access.
 	 *
-	 * @param array<string, mixed> $batch The stored batch.
-	 * @param array<string, mixed> $by    The batch as written (case, name, documents, assignee) and the creating userId.
+	 * @param array<string, mixed> $batch   The stored batch.
+	 * @param array<string, mixed> $written The batch as written (case, name, documents, assignee) and the creating userId.
 	 *
 	 * @return array{batch: array<string, mixed>, taskId: string, access: array{status: string, granted: int, revoked: int, refused: int}}
 	 *
@@ -186,14 +186,14 @@ class ReviewBatches implements ReviewBatchesInterface {
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
-	private function assign(array $batch, array $by): array {
+	private function assign(array $batch, array $written): array {
 		$batchId = $this->batchIdOf(batch: $batch);
-		$assignment = ['caseId' => $by['case'], 'batchId' => $batchId, 'name' => $by['name']];
-		$assignment += ['assignee' => $by['assignee'], 'count' => count($by['documents'])];
-		$taskId = $this->handTask(assignment: $assignment, userId: $by['userId']);
+		$assignment = ['caseId' => $written['case'], 'batchId' => $batchId, 'name' => $written['name']];
+		$assignment += ['assignee' => $written['assignee'], 'count' => count($written['documents'])];
+		$taskId = $this->handTask(assignment: $assignment, userId: $written['userId']);
 		$batch = $this->withTask(batch: $batch, taskId: $taskId);
 
-		return ['batch' => $batch, 'taskId' => $taskId, 'access' => $this->reconcile(caseId: $by['case'], batchId: $batchId)];
+		return ['batch' => $batch, 'taskId' => $taskId, 'access' => $this->reconcile(caseId: $written['case'], batchId: $batchId)];
 	}//end assign()
 
 	/**
@@ -290,7 +290,7 @@ class ReviewBatches implements ReviewBatchesInterface {
 		$fields = ['case' => $caseId, 'name' => $name, 'documents' => $documents];
 		$fields += ['filter' => ['recallSample' => $sampleId], 'assignee' => $assignee, 'status' => 'open'];
 
-		return $this->assign(batch: $this->save(batch: $fields), by: ['userId' => $userId] + $fields)['batch'];
+		return $this->assign(batch: $this->save(batch: $fields), written: ['userId' => $userId] + $fields)['batch'];
 	}//end createSampleBatch()
 
 	/**
