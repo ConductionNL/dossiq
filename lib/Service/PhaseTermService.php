@@ -289,13 +289,24 @@ class PhaseTermService implements PhaseTermServiceInterface {
 		$spent = $this->spentPerPhase(caseId: $caseId, finished: array_slice($phases, 0, $position));
 		$plan = $this->splitter->recompute(termDays: $chainTermDays, shares: $shares, consumed: $spent);
 
+		return self::phasePlan(plan: $plan);
+	}//end chainPlan()
+
+	/**
+	 * The splitter's recomputed plan as the phase reads it: its own days first.
+	 *
+	 * @param array<string, mixed> $plan The recomputed plan.
+	 *
+	 * @return array{days: int, remainingDays: int, exhausted: bool, steps: mixed}
+	 */
+	private static function phasePlan(array $plan): array {
 		return [
 			'days' => (int)($plan['steps'][0] ?? 0),
 			'remainingDays' => (int)$plan['remainingDays'],
 			'exhausted' => (bool)$plan['exhausted'],
 			'steps' => $plan['steps'],
 		];
-	}//end chainPlan()
+	}//end phasePlan()
 
 	/**
 	 * Where a phase sits in the declared order.

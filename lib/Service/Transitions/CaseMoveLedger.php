@@ -275,15 +275,27 @@ class CaseMoveLedger {
 		return $this->dispatcher->dispatch(
 			actions: $actions,
 			case: $case,
-			transitionContext: [
-				'fromStatus' => (string)$move['fromStatus'],
-				'toStatus' => (string)$move['toStatus'],
-				'transitionLabel' => (string)$move['label'],
-				'userId' => (string)$move['actor'],
-				'statusRecordUuid' => (string)($record['id'] ?? ''),
-			]
+			transitionContext: self::transitionContextOf(move: $move, record: $record)
 		);
 	}//end dispatch()
+
+	/**
+	 * The transition context the action handlers read.
+	 *
+	 * @param array<string, mixed> $move   The move.
+	 * @param array<string, mixed> $record The statusRecord it wrote.
+	 *
+	 * @return array{fromStatus: string, toStatus: string, transitionLabel: string, userId: string, statusRecordUuid: string}
+	 */
+	private static function transitionContextOf(array $move, array $record): array {
+		return [
+			'fromStatus' => (string)$move['fromStatus'],
+			'toStatus' => (string)$move['toStatus'],
+			'transitionLabel' => (string)$move['label'],
+			'userId' => (string)$move['actor'],
+			'statusRecordUuid' => (string)($record['id'] ?? ''),
+		];
+	}//end transitionContextOf()
 
 	/**
 	 * Write the results of the dispatched actions back onto the status record.
