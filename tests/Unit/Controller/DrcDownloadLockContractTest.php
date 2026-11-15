@@ -49,7 +49,7 @@ use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
-use OCA\OpenRegister\Service\Object\LockRequest;
+use OCA\OpenRegister\Kernel\Contracts\Value\LockRequest;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
