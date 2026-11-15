@@ -264,21 +264,36 @@ class MilestoneService implements MilestoneServiceInterface {
 		string $userId,
 		string $trigger = 'manual',
 	): array {
-		[$objectService, $register, $schema] = $this->milestoneRecordStore();
-
-		$recordData = $this->milestoneRecord(
+		return $this->recorded(
+			store: $this->milestoneRecordStore(),
 			reached: ['caseId' => $caseId, 'definitionId' => $definitionId, 'userId' => $userId, 'trigger' => $trigger]
 		);
+	}//end markMilestone()
+
+	/**
+	 * Save the reached milestone's record and log it.
+	 *
+	 * @param array{0: object, 1: string, 2: string}                                       $store   The object service, the
+	 *                                                                                           register and the schema.
+	 * @param array{caseId: string, definitionId: string, userId: string, trigger: string} $reached The case, the milestone
+	 *                                                                                           definition, who marks it
+	 *                                                                                           and how it was triggered.
+	 *
+	 * @return array<string, mixed> The created record id, its moment and who reached it.
+	 */
+	private function recorded(array $store, array $reached): array {
+		[$objectService, $register, $schema] = $store;
+		$recordData = $this->milestoneRecord(reached: $reached);
 
 		$record = $objectService->saveObject(object: $recordData, register: $register, schema: $schema);
 
 		$this->logger->info(
-			'Milestone marked: ' . $definitionId . ' on case ' . $caseId,
+			'Milestone marked: ' . $reached['definitionId'] . ' on case ' . $reached['caseId'],
 			['app' => AppIdentity::APP_ID],
 		);
 
-		return ['id' => $record->getUuid(), 'reachedAt' => $recordData['reachedAt'], 'reachedBy' => $userId];
-	}//end markMilestone()
+		return ['id' => $record->getUuid(), 'reachedAt' => $recordData['reachedAt'], 'reachedBy' => $reached['userId']];
+	}//end recorded()
 
 	/**
 	 * The object service, register and milestone record schema a milestone is written to.

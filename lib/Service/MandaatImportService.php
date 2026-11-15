@@ -99,7 +99,19 @@ class MandaatImportService implements MandaatImportServiceInterface {
 			decision: ['decisionNumber' => $decisionNumber, 'decisionName' => $decisionName, 'decideskUuid' => $decideskUuid]
 		);
 
-		$tally = $this->tallyFor(decision: $decision, decisionNumber: $decisionNumber);
+		return $this->importAll(decision: ['saved' => $decision, 'number' => $decisionNumber], resolved: $resolved);
+	}//end importFromCsv()
+
+	/**
+	 * Import every resolved row against the new decision, and summarise.
+	 *
+	 * @param array{saved: array<string, mixed>, number: string} $decision The stored decision, and its identifier.
+	 * @param array<int, array<string, mixed>>                   $resolved The rows with their role references resolved.
+	 *
+	 * @return array<string, mixed> The import summary.
+	 */
+	private function importAll(array $decision, array $resolved): array {
+		$tally = $this->tallyFor(decision: $decision['saved'], decisionNumber: $decision['number']);
 
 		// Create one mandaat per CSV row.
 		foreach ($resolved as $row) {
@@ -107,7 +119,7 @@ class MandaatImportService implements MandaatImportServiceInterface {
 		}
 
 		return $this->importSummary(tally: $tally, resolved: $resolved);
-	}//end importFromCsv()
+	}//end importAll()
 
 	/**
 	 * The data rows of the CSV.

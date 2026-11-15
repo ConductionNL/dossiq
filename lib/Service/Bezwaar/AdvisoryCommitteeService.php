@@ -390,16 +390,31 @@ class AdvisoryCommitteeService implements AdvisoryCommitteeServiceInterface {
 			throw new RuntimeException('Invalid BAC advice status');
 		}
 
+		return $this->movedTo(requestId: $requestId, move: ['newStatus' => $newStatus, 'payload' => $payload]);
+	}//end transitionAdviceStatus()
+
+	/**
+	 * Move the advice request to the new status, when the move is allowed, and store it.
+	 *
+	 * @param string                                                 $requestId UUID of the bacAdviceRequest
+	 * @param array{newStatus: string, payload: array<string, mixed>} $move      The target status, and the extra fields.
+	 *
+	 * @return array<string, mixed> The updated request.
+	 *
+	 * @throws RuntimeException When the move is not allowed or the request cannot be stored.
+	 */
+	private function movedTo(string $requestId, array $move): array {
+		$newStatus = $move['newStatus'];
 		$request = $this->loadAdviceRequest(requestId: $requestId);
 		$from = (string)($request['current']['status'] ?? 'assigned');
 		$this->assertMayMove(request: $request, from: $from, newStatus: $newStatus);
 
-		$update = $payload;
+		$update = $move['payload'];
 		$update['status'] = $newStatus;
 		$update = $this->transitionUpdate(request: $request, move: ['from' => $from, 'update' => $update]);
 
 		return $this->applyOrFail(request: $request, change: ['update' => $update, 'requestId' => $requestId]);
-	}//end transitionAdviceStatus()
+	}//end movedTo()
 
 	/**
 	 * Refuse a move the lifecycle forbids, or a signing move by a caller who does not chair.
