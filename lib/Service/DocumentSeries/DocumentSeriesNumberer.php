@@ -133,13 +133,29 @@ class DocumentSeriesNumberer {
 		$case = ($this->cases->loadCase(caseId: $caseId) ?? []);
 		$scopeKey = $this->scopeKey(scope: ['series' => $series, 'organisation' => $this->organisationOf(case: $case), 'year' => $year]);
 
+		$next = $this->reserveNumber(scopeKey: $scopeKey, asked: ['caseId' => $caseId, 'series' => $series]);
+
+		return sprintf(self::FORMAT, $this->prefixFor(case: $case, series: ['name' => $series, 'defaultPrefix' => $defaultPrefix]), $year, $next);
+	}//end issue()
+
+	/**
+	 * Reserve the next number in the scope; a reservation that fails or answers nothing is refused.
+	 *
+	 * @param string                               $scopeKey The counter's scope.
+	 * @param array{caseId: string, series: string} $asked    The case and the series, for the log.
+	 *
+	 * @return int The reserved number, 1 or more.
+	 *
+	 * @throws RefusedException When no number could be reserved.
+	 */
+	private function reserveNumber(string $scopeKey, array $asked): int {
 		try {
 			$sequences = $this->container->get(self::SEQUENCE_SERVICE);
 			$next = (int)$sequences->reserveNext(0, 0, $scopeKey);
 		} catch (Throwable $failure) {
 			$this->logger->error(
 				'Dossiq document series: no number could be reserved',
-				['exception' => $failure->getMessage(), 'caseId' => $caseId, 'series' => $series],
+				['exception' => $failure->getMessage(), 'caseId' => $asked['caseId'], 'series' => $asked['series']],
 			);
 
 			throw $this->unavailable(previous: $failure);
@@ -149,8 +165,8 @@ class DocumentSeriesNumberer {
 			throw $this->unavailable(previous: null);
 		}
 
-		return sprintf(self::FORMAT, $this->prefixFor(case: $case, series: ['name' => $series, 'defaultPrefix' => $defaultPrefix]), $year, $next);
-	}//end issue()
+		return $next;
+	}//end reserveNumber()
 
 	/**
 	 * The prefix the case type configures for this series, or the default.

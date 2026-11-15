@@ -85,7 +85,18 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getFrequencyByDimension(string $dimension, string $dateFrom, string $dateTo): array {
-		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
+		return $this->frequencyOf(complaints: $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo), dimension: $dimension);
+	}//end getFrequencyByDimension()
+
+	/**
+	 * Count the complaints per value of the dimension, most frequent first.
+	 *
+	 * @param array<int, array<string, mixed>> $complaints The complaints in the range
+	 * @param string                           $dimension  The grouping dimension
+	 *
+	 * @return array<string, int> Count per dimension value
+	 */
+	private function frequencyOf(array $complaints, string $dimension): array {
 		$frequency = [];
 
 		foreach ($complaints as $complaint) {
@@ -109,7 +120,7 @@ class ComplaintAnalyticsService implements ComplaintAnalyticsServiceInterface {
 
 		arsort($frequency);
 		return $frequency;
-	}//end getFrequencyByDimension()
+	}//end frequencyOf()
 
 	/**
 	 * Get monthly complaint trend for a date range.
