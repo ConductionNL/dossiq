@@ -31,9 +31,14 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\AppFramework\Services\IInitialState;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
+use OCP\IGroupManager;
 use OCP\IL10N;
+use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -42,6 +47,8 @@ use Psr\Log\LoggerInterface;
  * The bespoke registrar binds its six hand-wired services, and the settings ones build.
  *
  * @covers \OCA\Dossiq\Service\Registrar\BespokeServiceRegistrar
+ * @uses \OCA\Dossiq\Controller\DashboardController
+ * @uses \OCA\Dossiq\Controller\SettingsController
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
  * @uses \OCA\Dossiq\Service\Settings\ConfigurationImport
@@ -156,6 +163,80 @@ class BespokeServiceRegistrarTest extends TestCase {
 		$this->assertInstanceOf(InitializeSettings::class, $step);
 		$this->assertSame(array_keys($services), $asked);
 	}//end testTheInitializeSettingsRepairStepIsBuilt()
+
+	/**
+	 * A container holding the given services that records the ids it was asked for.
+	 *
+	 * @param array<string, object> $services The services by id.
+	 * @param array<int, string>    $asked    Filled with the ids asked, in order.
+	 *
+	 * @return ContainerInterface The container.
+	 */
+	private function recordingContainer(array $services, array &$asked): ContainerInterface {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function (string $id) use ($services, &$asked): object {
+				$asked[] = $id;
+				return $services[$id];
+			}
+		);
+
+		return $container;
+	}//end recordingContainer()
+
+	/**
+	 * The dashboard controller is built from the request, initial state, app config and event dispatcher.
+	 *
+	 * @return void
+	 */
+	public function testTheDashboardControllerIsBuilt(): void {
+		$asked = [];
+		$controller = $this->factories[DashboardController::class](
+			$this->recordingContainer(
+				services: [
+					'OCP\\IRequest' => $this->createMock(IRequest::class),
+					'OCP\\AppFramework\\Services\\IInitialState' => $this->createMock(IInitialState::class),
+					'OCP\\IAppConfig' => $this->createMock(IAppConfig::class),
+					'OCP\\EventDispatcher\\IEventDispatcher' => $this->createMock(IEventDispatcher::class),
+				],
+				asked: $asked
+			)
+		);
+
+		$this->assertInstanceOf(DashboardController::class, $controller);
+		$this->assertSame(
+			['OCP\\IRequest', 'OCP\\AppFramework\\Services\\IInitialState', 'OCP\\IAppConfig', 'OCP\\EventDispatcher\\IEventDispatcher'],
+			$asked
+		);
+	}//end testTheDashboardControllerIsBuilt()
+
+	/**
+	 * The settings controller is built from the container itself and the settings service, groups, session and translator.
+	 *
+	 * @return void
+	 */
+	public function testTheSettingsControllerIsBuilt(): void {
+		$asked = [];
+		$controller = $this->factories[SettingsController::class](
+			$this->recordingContainer(
+				services: [
+					'OCP\\IRequest' => $this->createMock(IRequest::class),
+					'OCP\\App\\IAppManager' => $this->createMock(IAppManager::class),
+					SettingsService::class => $this->createMock(SettingsService::class),
+					'OCP\\IGroupManager' => $this->createMock(IGroupManager::class),
+					'OCP\\IUserSession' => $this->createMock(IUserSession::class),
+					'OCP\\IL10N' => $this->createMock(IL10N::class),
+				],
+				asked: $asked
+			)
+		);
+
+		$this->assertInstanceOf(SettingsController::class, $controller);
+		$this->assertSame(
+			['OCP\\IRequest', 'OCP\\App\\IAppManager', SettingsService::class, 'OCP\\IGroupManager', 'OCP\\IUserSession', 'OCP\\IL10N'],
+			$asked
+		);
+	}//end testTheSettingsControllerIsBuilt()
 
 	/**
 	 * The settings section is built from the translator and the URL generator.
