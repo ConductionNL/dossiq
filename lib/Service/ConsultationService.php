@@ -171,11 +171,8 @@ class ConsultationService implements ConsultationServiceInterface {
 		// persist its ref. Fail CLOSED — never author the consultation advice
 		// outcome locally as a fallback.
 		$decisionRef = $this->raiseAndPersistAdviceDecision(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			consultationId: (string)$consultationId,
-			data: $data,
+			store: [$objectService, $register, $schema],
+			consultation: ['id' => (string)$consultationId, 'data' => $data],
 		);
 
 		// 🔑 THE ADVICE REQUEST IS THE FIRST OBLIGATION, NOT A SPECIAL CASE.
@@ -188,7 +185,7 @@ class ConsultationService implements ConsultationServiceInterface {
 		// blocked.
 		$this->placeAdviceObligation(consultationId: (string)$consultationId, data: $data);
 
-		return $this->createdSummary(consultationId: $consultationId, data: $data, decisionRef: $decisionRef);
+		return $this->createdSummary(data: $data, created: ['id' => $consultationId, 'decisionRef' => $decisionRef]);
 	}//end createConsultation()
 
 	/**
@@ -251,15 +248,15 @@ class ConsultationService implements ConsultationServiceInterface {
 	/**
 	 * Log the created consultation and answer its summary.
 	 *
-	 * @param mixed                $consultationId The consultation id
-	 * @param array<string, mixed> $data           The consultation data
-	 * @param mixed                $decisionRef    The decidesk decision reference
+	 * @param array<string, mixed>                $data    The consultation data
+	 * @param array{id: mixed, decisionRef: mixed} $created The consultation id and the decidesk decision reference
 	 *
 	 * @return array<string, mixed> Created consultation with ID and number
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
-	private function createdSummary(mixed $consultationId, array $data, mixed $decisionRef): array {
+	private function createdSummary(array $data, array $created): array {
+		$consultationId = $created['id'];
 		$this->logger->info(
 			'Consultation created: ' . $consultationId
 			. ' (' . $data['consultationNumber'] . ') for case ' . $data['parentCase'],
@@ -270,7 +267,7 @@ class ConsultationService implements ConsultationServiceInterface {
 			'id' => $consultationId,
 			'consultationNumber' => $data['consultationNumber'],
 			'status' => 'open',
-			'decisionRef' => $decisionRef,
+			'decisionRef' => $created['decisionRef'],
 		];
 	}//end createdSummary()
 
@@ -760,20 +757,18 @@ class ConsultationService implements ConsultationServiceInterface {
 	 *
 	 * Fails CLOSED — never authors the consultation advice outcome locally.
 	 *
-	 * @param object $objectService The OpenRegister object service
-	 * @param string $register The register slug
-	 * @param string $schema The schema slug
-	 * @param string $consultationId The freshly created consultation UUID
-	 * @param array<string, mixed> $data Consultation data used to build the decision payload
+	 * @param array{0: object, 1: string, 2: string}        $store        The object service, the register and the schema slug
+	 * @param array{id: string, data: array<string, mixed>} $consultation The new consultation's UUID and its data
 	 *
 	 * @return string The decidesk decision reference
 	 *
 	 * @throws \RuntimeException If decidesk is unavailable (REQ-PDRD-002)
 	 */
-	private function raiseAndPersistAdviceDecision(object $objectService, string $register, string $schema,
-		string $consultationId, array $data): string {
+	private function raiseAndPersistAdviceDecision(array $store, array $consultation): string {
+		[$objectService, $register, $schema] = $store;
+		$consultationId = $consultation['id'];
 		try {
-			$decisionRef = $this->raiseConsultationAdvice(register: $register, consultationId: $consultationId, data: $data);
+			$decisionRef = $this->raiseConsultationAdvice(register: $register, consultation: $consultation);
 
 			if ($consultationId !== '') {
 				$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $consultationId,
@@ -789,18 +784,18 @@ class ConsultationService implements ConsultationServiceInterface {
 	/**
 	 * Raise the decidesk advice Decision for a consultation.
 	 *
-	 * @param string               $register       The register slug
-	 * @param string               $consultationId The freshly created consultation UUID
-	 * @param array<string, mixed> $data           Consultation data used to build the decision payload
+	 * @param string                                        $register     The register slug
+	 * @param array{id: string, data: array<string, mixed>} $consultation The new consultation's UUID and its data
 	 *
 	 * @return string The decidesk decision reference
 	 *
 	 * @throws \RuntimeException If decidesk is unavailable (REQ-PDRD-002)
 	 */
-	private function raiseConsultationAdvice(string $register, string $consultationId, array $data): string {
+	private function raiseConsultationAdvice(string $register, array $consultation): string {
+		$data = $consultation['data'];
 		return $this->adviceDelegation->raiseAdviceDecision(
 			subjectSchema: 'consultation',
-			subjectId: $consultationId,
+			subjectId: $consultation['id'],
 			payload: [
 				'subjectRegister' => $register,
 				'externalReference' => (string)$data['parentCase'],

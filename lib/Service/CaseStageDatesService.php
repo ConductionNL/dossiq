@@ -94,7 +94,7 @@ class CaseStageDatesService implements CaseStageDatesServiceInterface {
 			return $dates;
 		}
 
-		$created = $this->createdStampOf(objectService: $objectService, register: $register, caseId: $caseId);
+		$created = $this->createdStampOf(location: [$objectService, $register], caseId: $caseId);
 
 		return $this->withInitialStatus(dates: $dates, statusTypes: $statusTypes, created: $created);
 	}//end reachedDatesFor()
@@ -102,15 +102,15 @@ class CaseStageDatesService implements CaseStageDatesServiceInterface {
 	/**
 	 * The creation stamp of one case, or '' when it cannot be read.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The register.
-	 * @param string $caseId        The case id.
+	 * @param array{0: object, 1: string} $location The OpenRegister ObjectService and the register.
+	 * @param string                      $caseId   The case id.
 	 *
 	 * @return string The `@self.created` stamp.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function createdStampOf(object $objectService, string $register, string $caseId): string {
+	private function createdStampOf(array $location, string $caseId): string {
+		[$objectService, $register] = $location;
 		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
 		if ($caseSchema === '') {
 			return '';
