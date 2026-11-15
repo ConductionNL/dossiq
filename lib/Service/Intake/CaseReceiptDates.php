@@ -40,7 +40,6 @@ use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\CaseReceiptDatesInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CaseTypeStore;
-use OCA\Dossiq\Service\Support\StoredArray;
 use Throwable;
 
 /**
@@ -214,6 +213,15 @@ class CaseReceiptDates implements CaseReceiptDatesInterface {
 	 * @return array<int, mixed> The answers.
 	 */
 	private function propertiesOf(array $case): array {
-		return array_values(StoredArray::from(value: ($case['properties'] ?? [])));
+		$properties = ($case['properties'] ?? []);
+		if (is_string($properties) === true) {
+			$properties = json_decode($properties, true);
+		}
+
+		if (is_array($properties) === false) {
+			return [];
+		}
+
+		return array_values($properties);
 	}//end propertiesOf()
 }//end class

@@ -30,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Sharing;
 
 use OCA\Dossiq\Kernel\Contracts\CaseShareListInterface;
-use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\IL10N;
 
 /**
@@ -158,7 +157,16 @@ class CaseShareList implements CaseShareListInterface {
 	 * @return int
 	 */
 	private function documentsOf(array $share): int {
-		return count(StoredArray::from(value: ($share['sharedDocuments'] ?? [])));
+		$documents = ($share['sharedDocuments'] ?? []);
+		if (is_string($documents) === true) {
+			$documents = json_decode($documents, true);
+		}
+
+		if (is_array($documents) === false) {
+			return 0;
+		}
+
+		return count($documents);
 	}//end documentsOf()
 
 	/**

@@ -44,7 +44,6 @@ namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
-use OCA\Dossiq\Service\Support\StoredArray;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -233,7 +232,15 @@ class IntakeTermStart implements IntakeTermStartInterface {
 	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function receiptAnswerOf(array $case): string {
-		$entries = StoredArray::from(value: ($case['properties'] ?? []));
+		$entries = ($case['properties'] ?? []);
+		if (is_string($entries) === true) {
+			$entries = json_decode($entries, true);
+		}
+
+		if (is_array($entries) === false) {
+			return '';
+		}
+
 		foreach ($entries as $entry) {
 			if (is_array($entry) === false || ($entry['name'] ?? null) !== self::RECEIPT_DATE) {
 				continue;
