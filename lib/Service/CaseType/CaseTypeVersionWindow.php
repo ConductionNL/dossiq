@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\CaseType;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionWindowInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsConfiguredSource;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -53,6 +54,8 @@ use Throwable;
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseTypeVersionWindow implements CaseTypeVersionWindowInterface {
+
+	use ReadsConfiguredSource;
 
 	/**
 	 * Constructor.
@@ -263,13 +266,12 @@ class CaseTypeVersionWindow implements CaseTypeVersionWindowInterface {
 	 * @return boolean True when it was written.
 	 */
 	private function save(array $object): bool {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-
-		if ($objectService === null || $register === '' || $schema === '') {
+		$source = $this->configuredSource(schemaKey: 'case_type_schema');
+		if ($source === null) {
 			return false;
 		}
+
+		[$objectService, $register, $schema] = $source;
 
 		try {
 			$objectService->saveObject(object: $object, register: $register, schema: $schema);
