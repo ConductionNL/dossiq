@@ -84,30 +84,28 @@ class DoorlooptijdController extends Controller {
 			return $denied;
 		}
 
-		$caseType = $this->request->getParam('caseType');
-		$period = $this->request->getParam('period', '12m');
-		$granularity = $this->request->getParam('granularity', 'month');
-		$atRiskRaw = $this->request->getParam('atRiskDays', 5);
-		$format = $this->request->getParam('format', 'json');
+		$query = [
+			'caseType' => $this->request->getParam('caseType'),
+			'period' => $this->request->getParam('period', '12m'),
+			'granularity' => $this->request->getParam('granularity', 'month'),
+			'atRiskDays' => $this->request->getParam('atRiskDays', 5),
+			'format' => $this->request->getParam('format', 'json'),
+		];
 
 		$refusal = (
-			$this->badRequest(caseType: $caseType, period: $period, atRiskRaw: $atRiskRaw)
-			?? $this->refuseChoice(format: $format, granularity: $granularity)
+			$this->badRequest(query: $query)
+			?? $this->refuseChoice(format: $query['format'], granularity: $query['granularity'])
 		);
 
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
-		if ($format === 'csv') {
-			return $this->csv(caseType: $caseType, period: $period);
+		if ($query['format'] === 'csv') {
+			return $this->csv(caseType: $query['caseType'], period: $query['period']);
 		}
 
-		return new JSONResponse(
-			$this->leadTimeService->getMetrics(
-				params: $this->metricsParams(caseType: $caseType, period: $period, granularity: $granularity, atRiskRaw: $atRiskRaw)
-			)
-		);
+		return new JSONResponse($this->leadTimeService->getMetrics(params: $this->metricsParams(query: $query)));
 	}//end metrics()
 
 	/**
@@ -160,20 +158,18 @@ class DoorlooptijdController extends Controller {
 	/**
 	 * The parameters the metrics service reads, the case type only when one is chosen.
 	 *
-	 * @param mixed  $caseType    The case type filter, already validated.
-	 * @param string $period      The period, already validated.
-	 * @param string $granularity The grouping, already validated.
-	 * @param mixed  $atRiskRaw   The at-risk horizon in days, already validated.
+	 * @param array<string, mixed> $query The case type filter, period, grouping and at-risk horizon in days, already validated.
 	 *
 	 * @return array<string, mixed> The parameters.
 	 *
 	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
 	 */
-	private function metricsParams(mixed $caseType, string $period, string $granularity, mixed $atRiskRaw): array {
+	private function metricsParams(array $query): array {
+		$caseType = $query['caseType'];
 		$params = [
-			'period' => $period,
-			'granularity' => $granularity,
-			'atRiskDays' => (int)$atRiskRaw,
+			'period' => $query['period'],
+			'granularity' => $query['granularity'],
+			'atRiskDays' => (int)$query['atRiskDays'],
 		];
 		if (is_string($caseType) === true && $caseType !== '') {
 			$params['caseType'] = $caseType;
@@ -222,15 +218,15 @@ class DoorlooptijdController extends Controller {
 	/**
 	 * The refusal a malformed query earns, or null when it reads.
 	 *
-	 * @param mixed $caseType  The case type filter as it arrived.
-	 * @param mixed $period    The period as it arrived.
-	 * @param mixed $atRiskRaw The at-risk window as it arrived.
+	 * @param array<string, mixed> $query The case type filter, the period and the at-risk window as they arrived.
 	 *
 	 * @return JSONResponse|null The refusal, or null.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T02
 	 */
-	private function badRequest(mixed $caseType, mixed $period, mixed $atRiskRaw): ?JSONResponse {
+	private function badRequest(array $query): ?JSONResponse {
+		$caseType = $query['caseType'];
+		$period = $query['period'];
 		if ($caseType !== null && is_string($caseType) === false) {
 			return new JSONResponse(['message' => 'caseType must be a string'], Http::STATUS_BAD_REQUEST);
 		}
@@ -239,7 +235,7 @@ class DoorlooptijdController extends Controller {
 			return new JSONResponse(['message' => 'period must look like 12m'], Http::STATUS_BAD_REQUEST);
 		}
 
-		if (is_numeric($atRiskRaw) === false) {
+		if (is_numeric($query['atRiskDays']) === false) {
 			return new JSONResponse(['message' => 'atRiskDays must be a number'], Http::STATUS_BAD_REQUEST);
 		}
 
