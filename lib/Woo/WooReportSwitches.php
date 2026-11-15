@@ -22,8 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\Settings\RenamedSettingKeys;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -44,17 +45,30 @@ class WooReportSwitches {
 	/**
 	 * Throughput per reviewer per day (row 16.10).
 	 */
-	public const THROUGHPUT = 'wooReviewerThroughputReport';
+	public const THROUGHPUT = 'reviewerThroughputReport';
 
 	/**
 	 * The collection by sender, recipient and domain (row 16.11).
 	 */
-	public const PARTIES = 'wooCollectionPartiesReport';
+	public const PARTIES = 'collectionPartiesReport';
 
 	/**
 	 * The Nextcloud group whose members read the throughput report.
 	 */
-	public const READERS = 'wooReviewerThroughputReaders';
+	public const READERS = 'reviewerThroughputReaders';
+
+	/**
+	 * Each setting's earlier, procedure-named key. Read when the current key
+	 * was never written, and accepted on a save, so an instance configured
+	 * before the rename keeps its reports.
+	 *
+	 * @var array<string, string>
+	 */
+	public const LEGACY_KEYS = [
+		self::THROUGHPUT => 'wooReviewerThroughputReport',
+		self::PARTIES => 'wooCollectionPartiesReport',
+		self::READERS => 'wooReviewerThroughputReaders',
+	];
 
 	/**
 	 * The refusal rule when the throughput report has no existing reader group.
@@ -142,21 +156,23 @@ class WooReportSwitches {
 	 * Which reports the signed-in user is offered, for the menu.
 	 *
 	 * The throughput report is offered only while it is on AND the user is
-	 * in its reader group. The parties report is not offered yet: its route
-	 * waits on the corpus collection (woo-review-reports, section 4).
+	 * in its reader group. The parties report is offered to every signed-in
+	 * user while it is on: it is read per case, and whether this user may read
+	 * a case is asked when they name one.
 	 *
-	 * @return array{throughput: bool} What the user is offered.
+	 * @return array{throughput: bool, parties: bool} What the user is offered.
 	 *
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function offeredToCurrentUser(): array {
 		$user = $this->userSession?->getUser();
 		if ($user === null) {
-			return ['throughput' => false];
+			return ['throughput' => false, 'parties' => false];
 		}
 
 		return [
 			'throughput' => $this->isOn(switch: self::THROUGHPUT) && $this->maySeeThroughput(userId: $user->getUID()),
+			'parties' => $this->isOn(switch: self::PARTIES),
 		];
 	}//end offeredToCurrentUser()
 
@@ -176,6 +192,7 @@ class WooReportSwitches {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function assertSaveAllowed(array $data): void {
+		$data = (new RenamedSettingKeys(earlierKeys: self::LEGACY_KEYS))->carry(data: $data);
 		if (array_key_exists(self::THROUGHPUT, $data) === false && array_key_exists(self::READERS, $data) === false) {
 			return;
 		}
@@ -222,7 +239,13 @@ class WooReportSwitches {
 	 * @return string The stored value.
 	 */
 	private function stored(string $key): string {
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
+		$legacy = (self::LEGACY_KEYS[$key] ?? null);
+		if ($value !== '' || $legacy === null || $this->appConfig->hasKey(AppIdentity::APP_ID, $key) === true) {
+			return $value;
+		}
+
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, $legacy, '');
 	}//end stored()
 
 	/**

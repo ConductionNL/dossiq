@@ -28,9 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Assessment\AssessedDocuments;
-use OCA\Dossiq\Service\Assessment\OutstandingDocuments;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AssessedDocumentsInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\OutstandingDocumentsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -51,24 +52,22 @@ class DocumentAssessmentController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string               $appName     The app name.
 	 * @param IRequest             $request     The request.
-	 * @param OutstandingDocuments $outstanding Names the documents that wait for an assessment.
-	 * @param AssessedDocuments    $assessed    Lists every document under review with its assessment.
-	 * @param CaseAccessGuard      $guard       Case read access.
+	 * @param OutstandingDocumentsInterface $outstanding Names the documents that wait for an assessment.
+	 * @param AssessedDocumentsInterface    $assessed    Lists every document under review with its assessment.
+	 * @param CaseAccessGuardInterface      $guard       Case read access.
 	 * @param IUserSession         $userSession The caller.
 	 * @param IL10N                $l10n        Translates the refusal the dialog shows.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
-		private readonly OutstandingDocuments $outstanding,
-		private readonly AssessedDocuments $assessed,
-		private readonly CaseAccessGuard $guard,
+		private readonly OutstandingDocumentsInterface $outstanding,
+		private readonly AssessedDocumentsInterface $assessed,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -82,25 +81,15 @@ class DocumentAssessmentController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function outstanding(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->guard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return new JSONResponse(
-				['error' => 'forbidden', 'message' => $this->l10n->t('You do not have access to this case.')],
-				Http::STATUS_FORBIDDEN
-			);
+		$refusal = $this->refusal(caseId: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
 			return new JSONResponse($this->outstanding->forCase(caseId: $id));
 		} catch (Throwable $e) {
-			return new JSONResponse(
-				['error' => 'unavailable', 'message' => $this->l10n->t('OpenRegister is not available.')],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
+			return $this->unavailable();
 		}
 	}//end outstanding()
 
@@ -115,25 +104,52 @@ class DocumentAssessmentController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(string $id): JSONResponse {
+		$refusal = $this->refusal(caseId: $id);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		try {
+			return new JSONResponse($this->assessed->forCase(caseId: $id));
+		} catch (Throwable $e) {
+			return $this->unavailable();
+		}
+	}//end index()
+
+	/**
+	 * The answer that refuses the caller this case, or null when they may read it.
+	 *
+	 * 401 without a signed-in user, 403 without read access to the case.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return JSONResponse|null The refusal, or null to go on.
+	 */
+	private function refusal(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->guard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
+		if ($this->guard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
 			return new JSONResponse(
 				['error' => 'forbidden', 'message' => $this->l10n->t('You do not have access to this case.')],
 				Http::STATUS_FORBIDDEN
 			);
 		}
 
-		try {
-			return new JSONResponse($this->assessed->forCase(caseId: $id));
-		} catch (Throwable $e) {
-			return new JSONResponse(
-				['error' => 'unavailable', 'message' => $this->l10n->t('OpenRegister is not available.')],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
-		}
-	}//end index()
+		return null;
+	}//end refusal()
+
+	/**
+	 * The answer when OpenRegister cannot be read: 503, never an empty list.
+	 *
+	 * @return JSONResponse The 503.
+	 */
+	private function unavailable(): JSONResponse {
+		return new JSONResponse(
+			['error' => 'unavailable', 'message' => $this->l10n->t('OpenRegister is not available.')],
+			Http::STATUS_SERVICE_UNAVAILABLE
+		);
+	}//end unavailable()
 }//end class

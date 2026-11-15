@@ -830,7 +830,7 @@ The system SHOULD support parent/child case hierarchies. A sub-case MUST be a fu
 
 ---
 
-### REQ-CM-19: Confidentiality Levels
+### Requirement: REQ-CM-19: Confidentiality Levels
 
 The system SHOULD support confidentiality levels on cases, defaulting from the case type. Cases MUST default their confidentiality from the case type.
 
@@ -1269,7 +1269,8 @@ sibling Overdue rather than All.
 ### Requirement: The case task is namespaced (REQ-CM-070)
 
 This requirement is obsolete. dossiq owns no task schema, so there is no slug
-left to namespace. It is kept rather than deleted because the collision it
+left to namespace. A task schema proposed for dossiq SHALL use the slug
+`caseTask`, never the bare `task`. It is kept rather than deleted because the collision it
 settled was real, and the next person to propose a task schema would otherwise
 re-litigate it.
 
@@ -1492,23 +1493,20 @@ one message and SHALL carry a 4xx status.
 
 ### Requirement: You follow a case you do not own (REQ-CM-40)
 
-`#CaseDetail` SHALL offer Follow, creating the platform's subscription of
-the signed-in user to the case, and Unfollow. `#Cases` SHALL carry a lens
-Followed and `#MyWorkHome` a tile Cases I follow, both over the platform's
-subscribed-by-me query. The People tab SHALL list the followers.
+`#CaseDetail` SHALL offer one Follow control, creating the platform's follow of the signed-in user on the case, and Unfollow. While you follow, the control SHALL offer a notifications switch that turns the notifications of your follow on or off and keeps the follow. A new follow SHALL notify. Every case list SHALL offer a Follow row action. `#Cases` SHALL carry a lens Following and `#MyWorkHome` a tile Cases you follow, both over the platform's followed-by-me query, quiet follows included. The People tab SHALL list the followers. When a case is assigned to a user, that user SHALL follow it with notifications on. There SHALL be no separate star.
 
 #### Scenario: Follow a colleague's case
 @e2e tests/e2e/case-followers.spec.ts
 
 - **GIVEN** a case assigned to Anna
 - **WHEN** you press Follow
-- **THEN** the case SHALL appear under Followed on Cases
+- **THEN** the case SHALL appear under Following on Cases
 - **AND** you SHALL be listed under Followers on the People tab
 
 #### Scenario: A follower hears
 @e2e tests/e2e/case-followers.spec.ts
 
-- **GIVEN** you follow the case
+- **GIVEN** you follow the case with notifications on
 - **WHEN** Anna changes its status
 - **THEN** you SHALL receive the platform's notification for it
 
@@ -1517,7 +1515,36 @@ subscribed-by-me query. The People tab SHALL list the followers.
 
 - **GIVEN** you follow the case
 - **WHEN** you press Unfollow
-- **THEN** it SHALL leave the Followed lens
+- **THEN** it SHALL leave the Following lens
+
+#### Scenario: A quiet follow from the case page
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case page with no star on it
+- **WHEN** you press Follow and then the bell beside it
+- **THEN** the case SHALL stay followed after a reload
+- **AND** the bell SHALL read notifications off
+
+#### Scenario: Following leaves the case untouched
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case with a known version
+- **WHEN** you follow it and read it back
+- **THEN** the case SHALL carry the same version
+
+#### Scenario: You follow a case from a list row
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** the Cases list
+- **WHEN** you use Follow or stop following on a row
+- **THEN** that case SHALL appear under the Following lens
+
+#### Scenario: The assignee follows the case
+@e2e exclude {the follow is written by OpenRegister's AssigneeFollowListener on save; asserted in openregister tests/Unit/Listener/AssigneeFollowListenerTest.php, dossiq only declares x-openregister-role on the property}
+
+- **GIVEN** a case
+- **WHEN** it is assigned to Anna
+- **THEN** Anna SHALL follow it with notifications on
 
 ### Requirement: Two cases merge into one through the platform (REQ-CM-37)
 
@@ -2345,6 +2372,15 @@ declaration, and SHALL NOT be readable in the portal by default.
 - **WHEN** it ends
 - **THEN** the case SHALL record the moment, both participants and the duration
 
+#### Scenario: a held conversation reads as the board draws it
+@e2e exclude {display only: tests/vitest/conversationRecordLine.spec.js and caseConversationsPanelHostProps.spec.js assert the line, the pill and the footnote}
+
+- **GIVEN** a conversation held on 4 October from 10:30 to 10:42 by Pieter Jansen and Sanne de Vries
+- **WHEN** a Dutch handler opens the case's Live conversation card
+- **THEN** its row SHALL read "4 okt, 10:30 tot 10:42 · Pieter Jansen en Sanne de Vries · 12 minuten" under the subject
+- **AND** the row SHALL carry the status pill "Afgelopen"
+- **AND** the card SHALL say under the list what it holds: when each conversation was held, who joined and how long it lasted
+
 #### Scenario: a recording becomes a case document
 @e2e tests/e2e/live-conversation-on-the-case.spec.ts
 
@@ -2507,9 +2543,11 @@ the applicant.
 A case SHALL be able to declare that it is homed in another application,
 naming the application, the identifier there and a link to it. Such a case
 SHALL still carry its type, status, terms and parties, and SHALL appear in
-the central list beside the cases dossiq handles. dossiq SHALL NOT offer
-to perform work on an externally homed case, and SHALL show where the work
-is instead.
+the central list beside the cases dossiq handles. The case page SHALL show
+the field "Elders behandeld" in the case's details, reading "Nee" for a case
+dossiq handles and the application and the identifier there for an externally
+homed case, as the board `DqZaak` draws "Elders behandeld: Nee". dossiq SHALL
+NOT offer to perform work on an externally homed case.
 
 #### Scenario: one list answers for both kinds
 @e2e tests/e2e/handing-a-case-over.spec.ts
@@ -2523,7 +2561,7 @@ is instead.
 
 - **GIVEN** an externally homed case
 - **WHEN** a handler opens it
-- **THEN** it SHALL name the application and the identifier there
+- **THEN** the field "Elders behandeld" SHALL name the application and the identifier there
 - **AND** it SHALL offer the link
 
 #### Scenario: dossiq does not pretend to hold the work
@@ -2531,7 +2569,7 @@ is instead.
 - **GIVEN** an externally homed case
 - **WHEN** a handler opens the lifecycle menu
 - **THEN** the acts that perform the work SHALL be disabled
-- **AND** they SHALL say where the work is done
+- **AND** the disabled acts SHALL name the application in "Elders behandeld" as the reason
 
 ### Requirement: One menu holds every lifecycle act (REQ-LIFE-10)
 
@@ -2890,68 +2928,6 @@ a number, and no dossiq class SHALL count existing rows to produce one.
 - **WHEN** it is deleted and another complaint is filed
 - **THEN** the new complaint SHALL NOT be numbered KL-2026-0007
 
-### Requirement: You star a case and it stays starred for you alone (REQ-FAV-01)
-
-You SHALL be able to star a case from its page and from a row in any case
-list, and unstar it the same way. The star SHALL be written through
-OpenRegister's favourite endpoint, SHALL be yours alone, and SHALL leave the
-case itself untouched: no new version, no audit entry, no change anybody else
-sees. dossiq SHALL store no favourite of its own.
-
-**Feature tier**: MVP
-
-#### Scenario: You star a case from its page
-@e2e tests/e2e/case-number-and-favourites.spec.ts
-
-- **GIVEN** a case you have not starred
-- **WHEN** you press the star on the case page
-- **THEN** the star SHALL read as set after a reload
-
-#### Scenario: Starring changes nothing on the case
-@e2e tests/e2e/case-number-and-favourites.spec.ts
-
-- **GIVEN** a case with a known number of audit entries
-- **WHEN** you star it and read it back
-- **THEN** the case SHALL carry the same number of audit entries
-
-#### Scenario: You star a case from a list row
-@e2e tests/e2e/case-number-and-favourites.spec.ts
-
-- **GIVEN** the Cases list
-- **WHEN** you use Add to favourites on a row
-- **THEN** that case SHALL appear under the Favourites chip
-
-### Requirement: Favourites and recently opened are lenses and tiles (REQ-FAV-02)
-
-The Cases index SHALL offer a Favourites chip and a Recently opened chip, each
-narrowing the list through OpenRegister's own lens rather than a dossiq query.
-The Dashboard SHALL carry a Favourites tile and a Recently opened tile over
-the same two lenses, each linking through to the matching chip.
-
-**Feature tier**: MVP
-
-#### Scenario: The Favourites chip lists only what you starred
-@e2e tests/e2e/case-number-and-favourites.spec.ts
-
-- **GIVEN** two of five cases starred by you
-- **WHEN** you pick the Favourites chip on Cases
-- **THEN** the list SHALL hold those two cases and no others
-
-#### Scenario: The Recently opened chip leads with the last case you read
-@e2e tests/e2e/case-number-and-favourites.spec.ts
-
-- **GIVEN** three cases you opened, the last of them case C
-- **WHEN** you pick the Recently opened chip on Cases
-- **THEN** case C SHALL be the first row
-
-#### Scenario: The dashboard tiles show the same two lists
-@e2e tests/e2e/case-number-and-favourites.spec.ts
-
-- **GIVEN** a starred case and a case you opened
-- **WHEN** you open the Dashboard
-- **THEN** the Favourites tile SHALL name the starred case
-- **AND** the Recently opened tile SHALL name the case you opened
-
 ### Requirement: The picker says what may be divided before the handler chooses (REQ-CM-49)
 
 The split picker SHALL ask the server which parts the case type allows before
@@ -3250,6 +3226,385 @@ It SHALL send no lock request before all three are known.
 - **GIVEN** the detail page passes the register, schema and id as getter functions
 - **WHEN** the lock is acquired
 - **THEN** the URL holds the values the getters return, not their source
+
+### Requirement: Case ownership is a dated chain of holdings (REQ-CUS-01)
+
+A case SHALL carry a `caseCustody` record for every period it was held. Each
+holding SHALL name the organisation unit, the handler where there is one,
+the moment it began, the moment it ended, the reason for the move and who
+made it. A case SHALL have exactly one open holding at any moment.
+
+#### Scenario: A transfer closes one holding and opens the next
+@e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
+
+- **GIVEN** a case held by unit A since 3 March
+- **WHEN** it is transferred to unit B on 12 April
+- **THEN** the holding by unit A SHALL be closed on 12 April
+- **AND** an open holding by unit B SHALL begin on the same moment
+- **AND** the reason and the person who moved it SHALL be recorded on the new holding
+
+#### Scenario: Who held the case in March is a query
+@e2e exclude unit over the reader; CaseCustodyQueryTest
+
+- **GIVEN** a case transferred three times in a year
+- **WHEN** the custody is read for 15 March
+- **THEN** exactly one unit SHALL be returned
+- **AND** the answer SHALL come from the custody record, not from the audit diff
+
+#### Scenario: A case is never held by nobody
+@e2e exclude unit; CaseCustodyChainTest
+
+- **GIVEN** any case in the system
+- **WHEN** its holdings are read
+- **THEN** exactly one SHALL be open
+- **AND** the holdings SHALL cover the case's life without a gap
+
+### Requirement: A colleague may ask the holder for a case (REQ-CUS-02)
+
+A user SHALL be able to request a case from the person or unit holding it,
+with a reason. The request SHALL reach the holder as a task. The holder
+SHALL accept or refuse, and a refusal SHALL carry a reason. Both answers
+SHALL be recorded on the case.
+
+Who may answer for a unit SHALL be decided per case: whoever has mutation
+access on the case may accept or refuse, and asking needs read access
+(decision 168). There is no separate action registry for this answer.
+
+#### Scenario: Only someone who may change the case answers the request
+
+- **GIVEN** a takeover request on a case
+- **WHEN** a user with read access but no mutation access tries to accept it
+- **THEN** the answer SHALL be refused with HTTP 403
+- **AND** the case SHALL stay where it is
+
+#### Scenario: The holder refuses with a reason
+@e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
+
+- **GIVEN** a case held by a handler
+- **WHEN** a colleague requests it and the holder refuses, giving a reason
+- **THEN** the case SHALL stay with the holder
+- **AND** the refusal and its reason SHALL be readable on the case
+
+#### Scenario: Accepting moves the case and writes the next holding
+@e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
+
+- **GIVEN** the same request
+- **WHEN** the holder accepts
+- **THEN** the case SHALL move to the asker through the ordinary transfer path
+- **AND** a new holding SHALL open naming the asker
+
+#### Scenario: An unanswered request escalates to the unit
+@e2e exclude time-dependent; unit over the timer-fired listener, CaseTakeoverEscalationTest
+
+- **GIVEN** a takeover request older than the period the case type declares
+- **WHEN** the period passes with no answer
+- **THEN** the request SHALL go to the unit holding the case
+- **AND** it SHALL NOT expire unanswered
+
+### Requirement: A recorded decision is listed on its case (REQ-CM-81)
+
+When a decision is recorded for a case from its document assessments, the case's `decisions` SHALL list it, once, alongside any decision listed before. Failing to update the case SHALL NOT undo the decision.
+
+#### Scenario: The checklist ticks after the decision
+@e2e exclude {asserted in tests/Unit/Service/WOODecisionServiceTest.php against an in-memory register; the checklist reads the field it fills}
+
+- **GIVEN** a case in its decision stage with every document assessed
+- **WHEN** the handler records the decision
+- **THEN** the case's `decisions` SHALL contain the new decision
+- **AND** the next-step item "Record the decision" SHALL read done
+
+### Requirement: A read or write with nobody signed in runs as the system (REQ-CM-83)
+
+When dossiq reads a case type or writes a timeline entry with nobody signed in (an install, an import, an occ command, cron), it SHALL do so as the system. A request with a signed-in user SHALL run with that user's rights.
+
+#### Scenario: The example set installs without anonymous refusals
+@e2e exclude {occ-time behaviour; asserted in tests/Unit/Service/Support/BackgroundReadsRunAsSystemTest.php and CaseTimelineTest with an object service that refuses anonymous reads}
+
+- **GIVEN** an instance installing an example set through occ
+- **WHEN** a case is created and its case type and timeline are read
+- **THEN** no "User 'Anonymous' does not have permission" line SHALL be logged by dossiq
+
+#### Scenario: A handler is never elevated
+- **GIVEN** a signed-in handler
+- **WHEN** the same read runs in their request
+- **THEN** it SHALL run with the handler's own rights
+
+### Requirement: The case page shows labels and names, not codes (REQ-CM-82)
+
+The case page SHALL show every enum value of the case it displays through a label in the reader's language, SHALL read a configured widget text through the app catalogue, and the Files tab SHALL show each file's name.
+
+#### Scenario: A Dutch reader reads the derived priority
+@e2e exclude {a register declaration; asserted in tests/Unit/Settings/CaseEnumLabelsTest.php}
+
+- **GIVEN** a case whose `priorityDerived` is `normal`, on an nl_NL instance
+- **WHEN** the handler opens the case
+- **THEN** the field SHALL read "Normaal"
+
+#### Scenario: The Files tab names its files
+@e2e exclude {asserted against the library's own column normaliser in tests/vitest/filesTabColumns.spec.js}
+
+- **GIVEN** a case with two documents in its folder
+- **WHEN** the handler opens the Files tab
+- **THEN** each row SHALL show the file's name
+
+### Requirement: The case page shows words, not raw values
+
+The case page SHALL show the initiator type as a translated label, and SHALL NOT count days overdue on a case in its final status.
+
+#### Scenario: A company initiator
+- **GIVEN** a case with `initiatorType: company`
+- **WHEN** a Dutch handler opens the case page
+- **THEN** the initiator type SHALL read "Bedrijf"
+
+#### Scenario: A closed case past its deadline
+- **GIVEN** a case with `isFinalStatus: true` whose deadline passed 24 days ago
+- **WHEN** a Dutch handler opens the case page
+- **THEN** the deadline tile SHALL read "Afgehandeld" and SHALL NOT read "24 dagen te laat"
+
+@e2e exclude Configuration over library widgets; tests/vitest/caseSettledAndInitiatorLabels.spec.js checks the declarations and the Dutch labels, and nextcloud-vue's own tests cover the rendering.
+
+### Requirement: A case's payment state reads as words
+
+Every value of a case's `paymentState` SHALL carry a label with a Dutch translation.
+
+#### Scenario: a case type without fees
+- **GIVEN** a case whose payment state is `notRequired`
+- **THEN** Termijn en betaling reads "Betaalstatus: Geen leges voor dit zaaktype"
+
+### Requirement: The term row reads in words with the extension the case type allows
+
+A case SHALL carry its type's extension period (`statutoryExtension`). The Termijn en betaling card SHALL label the term "Wettelijke termijn" and read it in words with that extension, and SHALL label the payment check "Laatst gecontroleerd".
+
+#### Scenario: a Woo case
+- **GIVEN** a Woo case whose type has a term of P28D and an extension of P14D
+- **THEN** the card reads "Wettelijke termijn: 4 weken, te verdagen met 2"
+
+### Requirement: A case type lists the fields its request card shows
+
+A case type MAY list `requestFields`, the facts entries the request card on a case's Overview shows. When the list is empty the card SHALL show the case description.
+
+#### Scenario: a Woo request
+- **GIVEN** the Woo type lists the request's scope, its period and the kinds of document
+- **THEN** the request card reads "Alle adviezen en mails …" with the pills "Periode 2025 tot en met 2026" and "Correspondentie, Rapporten"
+
+#### Scenario: a case type without request fields
+- **THEN** the request card shows the case description
+
+### Requirement: A view on my own cases reads "Mijn zaken"
+
+The Cases page SHALL name the assignee value `@me` "My cases" on its own in a saved view's summary.
+
+#### Scenario: Termijn deze week
+- THEN its summary reads "Mijn zaken, termijn binnen 7 dagen"
+
+### Requirement: Finishing or aborting a case picks its result from the case type (REQ-CM-80)
+
+The Finish and Abort acts SHALL offer the results a case of this case type can close with, including those a parent case type contributes, as a picker. The lifecycle dialog SHALL NOT ask for a result as free text. A close that names a result which is not one of the case type's results SHALL be refused with HTTP 422 and a sentence in the reader's language, before the case or a result row is written.
+
+#### Scenario: Finish offers the case type's results
+@e2e exclude {the picker is asserted in tests/vitest/finishingPicksAResult.spec.js and was checked on the rehearsal instance; no e2e fixture case type carries results}
+
+- **GIVEN** a case whose case type (or its parent) declares the results "Toegewezen" and "Deels toegewezen"
+- **WHEN** the handler opens Volgende stap and chooses Afronden
+- **THEN** the form SHALL offer "Toegewezen" and "Deels toegewezen" in a picker
+- **AND** the form SHALL NOT offer a free text field for the result
+
+#### Scenario: An unknown result is refused, not failed
+@e2e exclude {a server refusal asserted in tests/Unit/Service/Transitions/CaseResultWriterTest.php}
+
+- **GIVEN** a case type with results
+- **WHEN** a client posts finish with `resultTypeId` "Deels toegewezen"
+- **THEN** the server SHALL answer 422 with error `result-type-unknown`
+- **AND** the message SHALL be in the reader's language
+- **AND** no result row SHALL be written
+
+### Requirement: The hand-over list reads a team's description from its organisation role
+
+An organisation role SHALL be able to carry a short description, and the hand-over dialog SHALL show it under the team
+whose Nextcloud group the role names.
+
+#### Scenario: DqOverdragen
+
+- **WHEN** the organisation role for group "Juridische zaken" carries "bezwaar, beroep en Woo-advies"
+- **THEN** the team reads that line, after its member count where the viewer may read it
+
+### Requirement: The lifecycle dialog's acts start and end on the dialog body's padding
+
+The lifecycle dialog's list of acts SHALL add no padding of its own.
+
+#### Scenario: next step dialog
+- **THEN** the first act starts 22px under the subtitle and the footer 20px under the last act
+
+### Requirement: The lifecycle dialog's title stays clear of its close button (REQ-CM-78)
+
+The dialog that lists what a handler can do with a case SHALL be wide enough that
+its title does not run under the dialog's close button.
+
+#### Scenario: The title clears the close button
+@e2e exclude {a geometry check between two library-drawn elements; the size is asserted in tests/vitest/caseTransitionOutcome.spec.js and the result is checked on the live instance with a screenshot}
+
+- **GIVEN** a case page
+- **WHEN** the handler opens Meer and then Levensloop
+- **THEN** the dialog title SHALL not overlap the close button
+
+### Requirement: A person can switch e-mail on per notification
+
+dossiq's per-person notifications SHALL declare e-mail as an opt-in channel. The personal notification settings SHALL draw one column per channel the platform names for the notifications, e-mail unchecked until the person checks it, and a change SHALL write the row's full channel set.
+
+#### Scenario: Switch e-mail on
+- GIVEN "A case is assigned to me" with Nextcloud on and e-mail off
+- WHEN the person checks its "Per e-mail" cell
+- THEN the preference stored is enabled with channels nc-notification and email
+
+### Requirement: Following and recently opened are lenses and tiles (REQ-FAV-03)
+
+The Cases index SHALL offer a Following chip and a Recently opened chip, each narrowing the list through OpenRegister's own lens rather than a dossiq query. The Dashboard SHALL carry a Cases you follow tile and a Recently opened tile over the same two lenses, each linking through to the matching chip. There SHALL be no Favourites chip and no favourites tile.
+
+**Feature tier**: MVP
+
+#### Scenario: The Following chip lists what you follow, quiet follows included
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case you follow with notifications off and a case you stopped following
+- **WHEN** you pick the Following chip on Cases
+- **THEN** the list SHALL hold the first case and not the second
+
+#### Scenario: The Recently opened chip leads with the last case you read
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** three cases you opened, the last of them case C
+- **WHEN** you pick the Recently opened chip on Cases
+- **THEN** case C SHALL be the first row
+
+#### Scenario: The dashboard tiles show the same two lists
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case you follow and a case you opened
+- **WHEN** you open the Dashboard
+- **THEN** the Cases you follow tile SHALL show
+- **AND** the Recently opened tile SHALL show
+
+### Requirement: The case page shows one Follow control (REQ-CM-40a)
+
+`#CaseDetail` SHALL show exactly one Follow control: the platform's follow toggle
+beside the case title, with its notifications switch while you follow. The banner
+row SHALL NOT carry a second Follow control. The Follow row action on the case
+lists and the Followers section on the People tab SHALL stay.
+
+#### Scenario: The case page shows one Follow control
+@e2e tests/e2e/case-followers.spec.ts
+
+- **GIVEN** a case you do not follow
+- **WHEN** you open the case page
+- **THEN** there SHALL be one Follow control, beside the case title
+- **AND** the banner row SHALL show no Follow control
+
+#### Scenario: The bell belongs to the one control
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case you follow
+- **WHEN** you press the bell beside the Follow control and reload
+- **THEN** the case SHALL still be followed
+- **AND** the bell SHALL read notifications off
+
+### Requirement: An action on the case page answers with a card notice
+
+An action endpoint a case page card calls SHALL answer its result as a `notice` `{ variant, role, title, text }`
+the card shows in place of a toast: `role` is `alert` for an error and `status` otherwise, and the texts are in the
+reader's language. A task is cancelled through the task engine only, behind the write guard on the task's own case.
+
+#### Scenario: Task completed
+
+- **WHEN** a handler completes the task "Documenten beoordelen"
+- **THEN** the answer carries a success notice titled "Taak Documenten beoordelen afgerond."
+
+#### Scenario: Cancel refused by the engine
+
+- **WHEN** a handler cancels a task the engine will not cancel
+- **THEN** the answer is 409 with an error notice titled "Annuleren geweigerd voor <task>:" and the engine's reason as
+  its text
+- **AND** the task stays open
+
+#### Scenario: Cancel without write access
+
+- **WHEN** a signed-in user without write access on the task's case cancels it
+- **THEN** the answer is 403 and the engine is not asked
+
+### Requirement: A reader who is not the handler can claim the case to edit it
+
+The case page SHALL read the record rights, so its edit controls are off while `@self.can.update` is false. While
+`@self.can.update` is false and `@self.can["claim-as-handler"]` is true, the banner row SHALL show "Voeg jezelf toe als
+behandelaar om te kunnen bewerken" with one button that runs the declared action `claim-as-handler` on the case and
+reads the page again.
+
+#### Scenario: A group member opens a case they do not handle
+
+- **GIVEN** a case whose `@self.can` is `{ update: false, "claim-as-handler": true }` for the reader
+- **WHEN** the reader opens the case
+- **THEN** the edit controls are off and the banner offers "Voeg mij toe als behandelaar"
+- **AND** pressing it runs `claim-as-handler` on the case, after which the page follows the new rights
+
+#### Scenario: The handler opens the case
+
+- **GIVEN** a case whose `@self.can.update` is true for the reader
+- **THEN** the banner does not show and every edit control is there
+
+### Requirement: Objects is reached from the Cases menu
+
+The simple profile SHALL list Objects in the Cases part of the menu, at `/objects`. Each row SHALL be one case on an object: the object first, then its type, the case and the status of that case.
+
+#### Scenario: A handler starts at the object
+@e2e exclude a menu entry and columns declared in the manifest; objectsIndexLook reads them
+
+- **GIVEN** a building linked to two cases
+- **WHEN** a handler opens Objecten under Zaken
+- **THEN** the list shows two rows for that building, each with its case, the case number and the status
+- **AND** View case opens that row's case
+
+### Requirement: The custody chain reads as rows with the current holder marked
+
+The Archiving tab SHALL draw each holding as a row with the unit's initials, the unit, its period (both ends for a closed holding) and a pill saying whether the unit holds the case now or handed it over.
+
+#### Scenario: a case handed from the KCC to the Woo team
+@e2e exclude covered by tests/vitest/caseCustodyPanel.spec.js; the live chain needs example holdings
+
+- **GIVEN** a case held by the KCC from 3 okt 14:10 to 14:18 and since then by Team Woo en informatie
+- **WHEN** the handler opens the Archiving tab
+- **THEN** the KCC row SHALL read "Van 3 okt 14:10 tot 3 okt 14:18" with the pill "Overgedragen"
+- **AND** the Woo row SHALL read "In handen sinds 3 okt" with the pill "Houder nu"
+- **AND** the "Overgedragen" pill and the initials SHALL use the soft ink, and a request's "Overdragen" SHALL be a secondary button next to "Houden, met reden"
+
+### Requirement: Drafts stay out of the staff lists until a handler asks for them (REQ-CM-79)
+
+No staff list SHALL show a colleague's draft by default; a reader's own drafts stay in their lists, as OpenRegister keeps them. The exclusion is OpenRegister's: a list, a count and a search leave out every object in the status draft unless the query carries `_drafts`. dossiq SHALL spell that exclusion out on no page and in no lens, so that a list and the count beside it cannot disagree.
+
+The Cases page SHALL carry exactly one chip that asks for drafts, With drafts. Its filter SHALL be the open cases (`isFinalStatus: false`, `statusHiddenInLists: false`) with `_drafts: "any"`, which shows drafts beside the rest. It SHALL NOT be the default chip and SHALL sit behind the overflow chip, beside My drafts.
+
+The chip SHALL change what the list shows and never what the reader may read: a draft the reader has no access to stays out of the list with the chip on.
+
+#### Scenario: A colleague's draft is not in the work list
+- **GIVEN** a case in the status draft that a colleague saved and the handler may read
+- **WHEN** the handler opens Cases under All
+- **THEN** the draft is not in the list and not in its count
+- e2e: `tests/e2e/cases-with-drafts.spec.ts` "a draft shows under With drafts only"
+
+#### Scenario: The handler asks for drafts
+<!-- @e2e exclude Second half of the e2e above, which picks the chip and reads the same list; the query parameter itself is asserted by caseListLenses.spec.js. -->
+- **GIVEN** the same draft
+- **WHEN** the handler picks With drafts
+- **THEN** the list shows the open cases and the draft among them
+
+#### Scenario: The handler's own draft
+<!-- @e2e exclude OpenRegister keeps the caller's own drafts in every list (form-destination, "The owner still sees their own drafts"); proven there. dossiq adds no condition to it. -->
+- **GIVEN** a draft the handler saved themselves
+- **WHEN** the handler opens Cases under All
+- **THEN** their own draft is in the list, with or without the chip
+
+#### Scenario: Somebody else's private draft
+<!-- @e2e exclude Access rule of OpenRegister (DraftStatusPolicy), not of this chip; proven there. The chip sends one query parameter, asserted by caseListLenses.spec.js. -->
+- **GIVEN** a draft the handler may not read
+- **WHEN** the handler picks With drafts
+- **THEN** that draft is not in the list
 
 ## Sharing, Transfer, Email & Public Access (retrofit)
 
@@ -4489,77 +4844,3 @@ The system MUST provide full-text search across cases matching against title, de
 - **Archiefwet**: Case result types with archival rules (retain/destroy, retention period).
 - **Awb**: Administrative law requirements for case handling deadlines and notifications.
 - **Competitor reference**: Dimpact ZAC uses Flowable CMMN engine for case lifecycle, Solr for case search, and OPA for authorization. CaseFabric provides visual CMMN case modeling. Flowable Platform has native CMMN case plan execution with milestone tracking.
-
-### Requirement: Case ownership is a dated chain of holdings (REQ-CUS-01)
-
-A case SHALL carry a `caseCustody` record for every period it was held. Each
-holding SHALL name the organisation unit, the handler where there is one,
-the moment it began, the moment it ended, the reason for the move and who
-made it. A case SHALL have exactly one open holding at any moment.
-
-#### Scenario: A transfer closes one holding and opens the next
-@e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
-
-- **GIVEN** a case held by unit A since 3 March
-- **WHEN** it is transferred to unit B on 12 April
-- **THEN** the holding by unit A SHALL be closed on 12 April
-- **AND** an open holding by unit B SHALL begin on the same moment
-- **AND** the reason and the person who moved it SHALL be recorded on the new holding
-
-#### Scenario: Who held the case in March is a query
-@e2e exclude unit over the reader; CaseCustodyQueryTest
-
-- **GIVEN** a case transferred three times in a year
-- **WHEN** the custody is read for 15 March
-- **THEN** exactly one unit SHALL be returned
-- **AND** the answer SHALL come from the custody record, not from the audit diff
-
-#### Scenario: A case is never held by nobody
-@e2e exclude unit; CaseCustodyChainTest
-
-- **GIVEN** any case in the system
-- **WHEN** its holdings are read
-- **THEN** exactly one SHALL be open
-- **AND** the holdings SHALL cover the case's life without a gap
-
-### Requirement: A colleague may ask the holder for a case (REQ-CUS-02)
-
-A user SHALL be able to request a case from the person or unit holding it,
-with a reason. The request SHALL reach the holder as a task. The holder
-SHALL accept or refuse, and a refusal SHALL carry a reason. Both answers
-SHALL be recorded on the case.
-
-Who may answer for a unit SHALL be decided per case: whoever has mutation
-access on the case may accept or refuse, and asking needs read access
-(decision 168). There is no separate action registry for this answer.
-
-#### Scenario: Only someone who may change the case answers the request
-
-- **GIVEN** a takeover request on a case
-- **WHEN** a user with read access but no mutation access tries to accept it
-- **THEN** the answer SHALL be refused with HTTP 403
-- **AND** the case SHALL stay where it is
-
-#### Scenario: The holder refuses with a reason
-@e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
-
-- **GIVEN** a case held by a handler
-- **WHEN** a colleague requests it and the holder refuses, giving a reason
-- **THEN** the case SHALL stay with the holder
-- **AND** the refusal and its reason SHALL be readable on the case
-
-#### Scenario: Accepting moves the case and writes the next holding
-@e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
-
-- **GIVEN** the same request
-- **WHEN** the holder accepts
-- **THEN** the case SHALL move to the asker through the ordinary transfer path
-- **AND** a new holding SHALL open naming the asker
-
-#### Scenario: An unanswered request escalates to the unit
-@e2e exclude time-dependent; unit over the timer-fired listener, CaseTakeoverEscalationTest
-
-- **GIVEN** a takeover request older than the period the case type declares
-- **WHEN** the period passes with no answer
-- **THEN** the request SHALL go to the unit holding the case
-- **AND** it SHALL NOT expire unanswered

@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Psr\Log\LoggerInterface;
 /**
  * One act that asks, records and suspends, and one that resumes (REQ-TERM-067).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
  * constants and four pure predicates over an array, with no state, no I/O and
@@ -130,7 +130,7 @@ class InformationRequestService {
 	 *         the case type refuses a suspension this long, or it does not declare
 	 *         the reason named.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function ask(
 		string $caseId,
@@ -140,80 +140,94 @@ class InformationRequestService {
 		string $rationale = '',
 		string $pauseReason = '',
 	): array {
-		$instance = $this->runningTermFor(caseId: $caseId);
-		$instanceId = (string)($instance['id'] ?? '');
-		$asked = $this->cleanItems(items: $items);
+		$run = new InformationRequestRun(caseId: $caseId, instance: $this->runningTermFor(caseId: $caseId));
+		$run->items = $this->cleanItems(items: $items);
+		$this->refuseEmptyRequest(run: $run);
+		$run->recipient = $recipient;
+		$run->days = max(1, $durationDays);
+		$run->rationale = $rationale;
+		$run->pauseReason = $pauseReason;
 
-		if (count($asked) === 0) {
+		$failure = $this->sendRequestLetter(run: $run);
+		if ($failure !== null) {
+			return $failure;
+		}
+
+		return $this->suspendTerm(run: $run);
+	}//end ask()
+
+	/**
+	 * Refuse a request that, once cleaned, names nothing.
+	 *
+	 * @param InformationRequestRun $run The request being made.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When nothing is asked for.
+	 */
+	private function refuseEmptyRequest(InformationRequestRun $run): void {
+		if (count($run->items) === 0) {
 			throw new RefusedException(
 				rule: 'information-request-names-nothing',
 				sentence: 'Name at least one thing the applicant has to send, so the request can be answered.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end refuseEmptyRequest()
 
-		$now = new DateTimeImmutable();
+	/**
+	 * Send the letter; when it does not go out, record that and return the
+	 * not-sent result, otherwise return null.
+	 *
+	 * @param InformationRequestRun $run The request being made.
+	 *
+	 * @return array<string, mixed>|null The not-sent result, or null once the letter went out.
+	 */
+	private function sendRequestLetter(InformationRequestRun $run): ?array {
+		$run->moment = new DateTimeImmutable();
 
 		// The date in the letter is the date the applicant is held to, so it
 		// lands on the administered calendar like every other term end. It is
 		// computed through CaseTermsService rather than here, so this file does
 		// no date arithmetic of its own and cannot drift from the pause the
-		// next line registers.
-		$due = $this->terms->endAfter(start: $now, days: max(1, $durationDays));
+		// next step registers.
+		$due = $this->terms->endAfter(start: $run->moment, days: $run->days);
 
 		try {
 			$this->notifications->sendTermijnNotification(
 				self::TEMPLATE,
-				$instanceId,
-				$recipient,
-				['items' => $asked, 'pauseDeadline' => $due, 'case' => $caseId],
+				$run->instanceId,
+				$run->recipient,
+				['items' => $run->items, 'pauseDeadline' => $due, 'case' => $run->caseId],
 			);
 		} catch (\Throwable $e) {
 			// Nothing went out, so nothing is suspended (Awb 4:15 lid 1 sub a,
 			// REQ-WRN-004). The sender's not-sent result travels to the handler.
-			$notice = [];
-			if ($e instanceof NoticeNotSentException) {
-				$notice = $e->getDelivery();
-			}
-
-			return $this->recordFailedSend(
-				instanceId: $instanceId,
-				instance: $instance,
-				items: $asked,
-				moment: $now,
-				error: $e->getMessage(),
-				notice: $notice,
-			);
+			return $this->recordFailedSend(run: $run, failure: $e);
 		}
 
-		$why = 'Aanvulling gevraagd';
-		if ($rationale !== '') {
-			$why = $rationale;
-		}
+		return null;
+	}//end sendRequestLetter()
 
-		// The send worked, so the clock stops. This order is the requirement:
-		// a suspension that happens first survives a send that fails.
+	/**
+	 * The letter went out, so the clock stops and the act is recorded. This
+	 * order is the requirement: a suspension that happens first survives a
+	 * send that fails.
+	 *
+	 * @param InformationRequestRun $run The request whose letter went out.
+	 *
+	 * @return array{sent: bool, suspended: bool, instance: array<string, mixed>,
+	 *               record: array<string, mixed>|null, error: string}
+	 */
+	private function suspendTerm(InformationRequestRun $run): array {
+		$why = $this->suspensionReason(rationale: $run->rationale);
 		$suspended = $this->pause->registerPauze(
-			termInstanceId: $instanceId,
-			durationDays: max(1, $durationDays),
+			termInstanceId: $run->instanceId,
+			durationDays: $run->days,
 			rationale: ($why . ' (Awb 4:5)'),
-			pauseReason: $pauseReason,
+			pauseReason: $run->pauseReason,
 		);
-
-		$record = $this->termService->recordEvent(
-			termInstanceId: $instanceId,
-			type: self::EVENT_REQUESTED,
-			basis: 'Awb 4:5',
-			rationale: $why,
-			daysImpact: max(1, $durationDays),
-			moment: $now,
-			items: $asked,
-		);
-
-		$this->logger->info(
-			'Dossiq term: the applicant was asked and the term was suspended in one act',
-			['case' => $caseId, 'instance' => $instanceId, 'items' => count($asked)]
-		);
+		$record = $this->recordRequested(run: $run, why: $why);
 
 		return [
 			'sent' => true,
@@ -222,7 +236,50 @@ class InformationRequestService {
 			'record' => $record,
 			'error' => '',
 		];
-	}//end ask()
+	}//end suspendTerm()
+
+	/**
+	 * The reason a suspension is registered with: the handler's own, or the
+	 * standard one when they gave none.
+	 *
+	 * @param string $rationale The handler's rationale, possibly empty.
+	 *
+	 * @return string
+	 */
+	private function suspensionReason(string $rationale): string {
+		if ($rationale !== '') {
+			return $rationale;
+		}
+
+		return 'Aanvulling gevraagd';
+	}//end suspensionReason()
+
+	/**
+	 * Record the request that went out with the suspension it caused, and log it.
+	 *
+	 * @param InformationRequestRun $run The request whose letter went out.
+	 * @param string                $why The reason the suspension carries.
+	 *
+	 * @return array<string, mixed>|null The recorded event.
+	 */
+	private function recordRequested(InformationRequestRun $run, string $why): ?array {
+		$record = $this->termService->recordEvent(
+			termInstanceId: $run->instanceId,
+			type: self::EVENT_REQUESTED,
+			basis: 'Awb 4:5',
+			rationale: $why,
+			daysImpact: $run->days,
+			moment: $run->moment,
+			items: $run->items,
+		);
+
+		$this->logger->info(
+			'Dossiq term: the applicant was asked and the term was suspended in one act',
+			['case' => $run->caseId, 'instance' => $run->instanceId, 'items' => count($run->items)]
+		);
+
+		return $record;
+	}//end recordRequested()
 
 	/**
 	 * The aanvulling arrived: resume the clock and record what came in.
@@ -235,7 +292,7 @@ class InformationRequestService {
 	 *
 	 * @throws RefusedException When the case carries no suspended term to resume.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function receive(string $caseId, array $items, ?DateTimeImmutable $when = null): array {
 		$moment = ($when ?? new DateTimeImmutable());
@@ -260,12 +317,8 @@ class InformationRequestService {
 	/**
 	 * Record a send that failed, leaving the clock running.
 	 *
-	 * @param string $instanceId The term instance.
-	 * @param array<string, mixed> $instance The instance as it stands, unsuspended.
-	 * @param array<int, string> $items What was going to be asked for.
-	 * @param DateTimeImmutable $moment When the attempt was made.
-	 * @param string $error What went wrong.
-	 * @param array<string, mixed> $notice The sender's not-sent result, or [] when the failure kept none.
+	 * @param InformationRequestRun $run     The request whose letter did not go out.
+	 * @param \Throwable            $failure What went wrong.
 	 *
 	 * @return array{sent: bool, suspended: bool, instance: array<string, mixed>,
 	 *               record: array<string, mixed>|null, error: string, reasonCode: string,
@@ -273,39 +326,63 @@ class InformationRequestService {
 	 *
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-term-is-suspended-only-by-a-request-for-information-that-went-out-req-wrn-004
 	 */
-	private function recordFailedSend(
-		string $instanceId,
-		array $instance,
-		array $items,
-		DateTimeImmutable $moment,
-		string $error,
-		array $notice = [],
-	): array {
-		$record = $this->termService->recordEvent(
-			termInstanceId: $instanceId,
-			type: self::EVENT_FAILED,
-			basis: 'Awb 4:5',
-			rationale: 'De aanvraag om aanvulling kon niet worden verzonden, dus de termijn loopt door.',
-			daysImpact: 0,
-			moment: $moment,
-			items: $items,
-		);
-
-		$this->logger->warning(
-			'Dossiq term: a request for information could not be sent, so the term was NOT suspended',
-			['instance' => $instanceId, 'error' => $error]
-		);
+	private function recordFailedSend(InformationRequestRun $run, \Throwable $failure): array {
+		$notice = $this->noticeOf(failure: $failure);
+		$error = $failure->getMessage();
+		$record = $this->recordNotSent(run: $run, error: $error);
 
 		return [
 			'sent' => false,
 			'suspended' => false,
-			'instance' => $instance,
+			'instance' => $run->instance,
 			'record' => $record,
 			'error' => $error,
 			'reasonCode' => (string)($notice['reasonCode'] ?? 'send-failed'),
 			'notice' => $notice,
 		];
 	}//end recordFailedSend()
+
+	/**
+	 * The sender's not-sent result a failure carries, or [] when it kept none.
+	 *
+	 * @param \Throwable $failure What went wrong.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function noticeOf(\Throwable $failure): array {
+		if ($failure instanceof NoticeNotSentException) {
+			return $failure->getDelivery();
+		}
+
+		return [];
+	}//end noticeOf()
+
+	/**
+	 * Record on the term that the request could not be sent, and log it.
+	 *
+	 * @param InformationRequestRun $run   The request whose letter did not go out.
+	 * @param string                $error What went wrong.
+	 *
+	 * @return array<string, mixed>|null The recorded event.
+	 */
+	private function recordNotSent(InformationRequestRun $run, string $error): ?array {
+		$record = $this->termService->recordEvent(
+			termInstanceId: $run->instanceId,
+			type: self::EVENT_FAILED,
+			basis: 'Awb 4:5',
+			rationale: 'De aanvraag om aanvulling kon niet worden verzonden, dus de termijn loopt door.',
+			daysImpact: 0,
+			moment: $run->moment,
+			items: $run->items,
+		);
+
+		$this->logger->warning(
+			'Dossiq term: a request for information could not be sent, so the term was NOT suspended',
+			['instance' => $run->instanceId, 'error' => $error]
+		);
+
+		return $record;
+	}//end recordNotSent()
 
 	/**
 	 * The running statutory term on a case.

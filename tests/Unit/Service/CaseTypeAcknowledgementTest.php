@@ -29,6 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -52,7 +54,7 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->declaration = new CaseTypeAcknowledgement();
+		$this->declaration = new CaseTypeAcknowledgement(l10n: new SourceL10n());
 	}//end setUp()
 
 	/**
@@ -68,7 +70,7 @@ class CaseTypeAcknowledgementTest extends TestCase {
 
 		self::assertTrue(condition: $declaration['enabled']);
 		self::assertTrue(condition: $declaration['statutory']);
-		self::assertSame(expected: ['email', 'website', 'zgw-api'], actual: $declaration['intakeChannels']);
+		self::assertSame(expected: ['email', 'website', 'forms', 'zgw-api'], actual: $declaration['intakeChannels']);
 		self::assertSame(expected: 'email', actual: $declaration['defaultChannel']);
 		self::assertFalse(condition: $declaration['contentOnPlatform']);
 		self::assertSame(expected: 'nl', actual: $declaration['language']);
@@ -106,6 +108,7 @@ class CaseTypeAcknowledgementTest extends TestCase {
 		return [
 			'the portal' => ['website'],
 			'the mail intake' => ['email'],
+			'a Nextcloud Forms form' => ['forms'],
 			'the ZGW API' => ['zgw-api'],
 		];
 	}//end electronicChannels()
@@ -158,6 +161,61 @@ class CaseTypeAcknowledgementTest extends TestCase {
 			condition: $this->declaration->owesAcknowledgement(case: ['intakeChannel' => 'email'], caseType: $caseType)
 		);
 	}//end testACaseTypeMayNameAChannelOfItsOwn()
+
+	/**
+	 * A case that came in through a Nextcloud Forms form owes one by default, and a case type can switch that off.
+	 *
+	 * Decision 236. Off is the case type's own channel list without `forms`;
+	 * the other channels in that list keep owing one. Switching the whole
+	 * declaration off covers forms too.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/burger-notifications/spec.md#requirement-the-acknowledgement-of-receipt-has-a-trigger-req-term-020
+	 */
+	public function testAFormsCaseOwesOneUnlessTheCaseTypeSwitchesItOff(): void {
+		$case = ['intakeChannel' => 'forms'];
+
+		self::assertTrue(condition: $this->declaration->owesAcknowledgement(case: $case, caseType: []), message: 'On by default.');
+		self::assertTrue(
+			condition: $this->declaration->owesAcknowledgement(case: $case, caseType: ['acknowledgement' => ['enabled' => true]]),
+			message: 'A declaration that names no channel list keeps the default list.'
+		);
+
+		$withoutForms = ['acknowledgement' => ['intakeChannels' => ['email', 'website', 'zgw-api']]];
+		self::assertFalse(condition: $this->declaration->owesAcknowledgement(case: $case, caseType: $withoutForms), message: 'Switched off for forms.');
+		self::assertTrue(
+			condition: $this->declaration->owesAcknowledgement(case: ['intakeChannel' => 'website'], caseType: $withoutForms),
+			message: 'The portal still owes one.'
+		);
+		self::assertSame(expected: [], actual: $this->declaration->publicationWarnings(caseType: $withoutForms));
+
+		self::assertFalse(
+			condition: $this->declaration->owesAcknowledgement(case: $case, caseType: ['acknowledgement' => ['enabled' => false]]),
+			message: 'The whole declaration switched off.'
+		);
+	}//end testAFormsCaseOwesOneUnlessTheCaseTypeSwitchesItOff()
+
+	/**
+	 * The default list the case type schema shows is the list the code applies.
+	 *
+	 * An administrator reads the schema's default in the case type editor; a
+	 * case type that declares nothing gets the constant. Two lists would let
+	 * the screen promise a default the app does not send.
+	 *
+	 * @return void
+	 */
+	public function testTheShippedSchemaDefaultIsTheListTheCodeApplies(): void {
+		$fragment = json_decode(
+			json: (string)file_get_contents(dirname(__DIR__, 3) . '/lib/Settings/register.d/36-ontvangstbevestiging.json'),
+			associative: true,
+			flags: JSON_THROW_ON_ERROR
+		);
+		$channels = $fragment['components']['schemas']['caseType']['properties']['acknowledgement']['properties']['intakeChannels'];
+
+		self::assertSame(expected: CaseTypeAcknowledgement::ELECTRONIC_CHANNELS, actual: $channels['default']);
+		self::assertContains(needle: 'forms', haystack: $channels['items']['enum']);
+	}//end testTheShippedSchemaDefaultIsTheListTheCodeApplies()
 
 	/**
 	 * A case with no intake channel at all owes nothing.
@@ -318,6 +376,19 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	}//end testContentOnThePlatformIsACaseTypeDecision()
 
 	/**
+	 * REQ-ACK-COPY-001: an e-mail copy is off unless the case type declares it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	public function testAnEmailCopyIsACaseTypeDecision(): void {
+		self::assertTrue(condition: $this->declaration->sendsEmailCopy(caseType: ['acknowledgement' => ['emailCopy' => true]]));
+		self::assertFalse(condition: $this->declaration->sendsEmailCopy(caseType: ['acknowledgement' => ['emailCopy' => 'yes']]));
+		self::assertFalse(condition: $this->declaration->sendsEmailCopy(caseType: []));
+	}//end testAnEmailCopyIsACaseTypeDecision()
+
+	/**
 	 * The language is Dutch unless the case type declares another.
 	 *
 	 * @return void
@@ -348,4 +419,37 @@ class CaseTypeAcknowledgementTest extends TestCase {
 		self::assertSame(['sanne@example.org', 'second@example.org'], $this->declaration->addressesOn(case: $case, caseType: $caseType));
 		self::assertSame([], $this->declaration->addressesOn(case: $case, caseType: []));
 	}//end testTheAddressIsReadWhereTheCaseTypeDeclaresIt()
+
+	/**
+	 * The warning comes translated.
+	 *
+	 * @return void
+	 */
+	public function testTheWarningIsTranslated(): void {
+		$declaration = new CaseTypeAcknowledgement(l10n: $this->markingL10n());
+		$warnings    = $declaration->publicationWarnings(caseType: ['acknowledgement' => ['enabled' => false]]);
+
+		self::assertSame(
+			expected: ['NL: This case type sends no acknowledgement of receipt. Awb 4:3a asks for one on every electronic submission.'],
+			actual: $warnings
+		);
+	}//end testTheWarningIsTranslated()
+
+	/**
+	 * A translator that marks what it translated, so a test can tell a
+	 * translated warning from a hard-coded one.
+	 *
+	 * @return IL10N The translator.
+	 */
+	private function markingL10n(): IL10N {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => 'NL: ' . vsprintf($text, $parameters)
+		);
+		$l10n->method('n')->willReturnCallback(
+			static fn (string $singular, string $plural, int $count, array $parameters = []): string => 'NL: ' . vsprintf(str_replace('%n', (string)$count, $count === 1 ? $singular : $plural), $parameters)
+		);
+
+		return $l10n;
+	}//end markingL10n()
 }//end class

@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Review\StoppingRules;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StoppingRulesInterface;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -51,15 +51,15 @@ class StoppingRuleGuard implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings, for the rule schema.
-	 * @param StoppingRules $rules Whether review started on the rule's case.
+	 * @param SettingsServiceInterface $settingsService The settings, for the rule schema.
+	 * @param StoppingRulesInterface $rules Whether review started on the rule's case.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly StoppingRules $rules,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly StoppingRulesInterface $rules,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -93,7 +93,7 @@ class StoppingRuleGuard implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectUpdatingEvent|ObjectDeletingEvent $event, ObjectEntity $stored): void {
-		$expected = $this->settingsService->getConfigValue(StoppingRules::SCHEMA_KEY);
+		$expected = $this->settingsService->getConfigValue(StoppingRulesInterface::SCHEMA_KEY);
 		$schema = (string)$stored->getSchema();
 		if ($expected === '' || ($schema !== $expected && str_ends_with($schema, '/'.$expected) === false)) {
 			return;
@@ -104,7 +104,7 @@ class StoppingRuleGuard implements IEventListener {
 			return;
 		}
 
-		$event->setErrors(['message' => StoppingRules::LOCKED, 'code' => self::ERROR_CODE]);
+		$event->setErrors(['message' => StoppingRulesInterface::LOCKED, 'code' => self::ERROR_CODE]);
 		$event->stopPropagation();
 		$this->logger->info('Dossiq: refused a change to a Stopping rule after review started', ['case' => $caseId]);
 	}//end inspect()

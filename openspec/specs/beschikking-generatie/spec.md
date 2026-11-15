@@ -205,8 +205,9 @@ also told what to do instead.
 - **GIVEN** a beschikking with status `signed`
 - **WHEN** an attempt is made to modify `rationale` or `decision`
 - **THEN** the system SHALL reject the PATCH with HTTP 409
-- **AND** the response SHALL include a message that a wijzigingsbeschikking or an
-  intrekkingsbeschikking must be created instead
+- **AND** the response SHALL include a message that a correction must be started
+  instead: a wijzigingsbeschikking with its own number, as the board
+  DqZaakBesluiten draws "Correctie starten"
 
 #### Scenario: The generic object API is refused the same edit
 

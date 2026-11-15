@@ -10,8 +10,14 @@ on:
         type: boolean
         default: true
 
+permissions:
+  contents: read
+
 jobs:
   triage:
+    permissions:
+      contents: read
+      issues: write
     uses: ConductionNL/.github/.github/workflows/issue-triage.yml@main
     with:
       app-name: dossiq

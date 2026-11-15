@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -66,13 +66,13 @@ class PortalContactDetailsChangedListener implements IEventListener {
 	private const LIMIT = 500;
 
 	/**
-	 * @param SettingsService $settingsService OpenRegister access and the configured register.
-	 * @param CaseTimeline    $timeline        The one seam that writes a timeline entry.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
+	 * @param CaseTimelineInterface    $timeline        The one seam that writes a timeline entry.
 	 * @param LoggerInterface $logger          Where a failure is reported.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseTimeline $timeline,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseTimelineInterface $timeline,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -103,7 +103,7 @@ class PortalContactDetailsChangedListener implements IEventListener {
 		}
 
 		try {
-			$this->follow(subject: $subject, organisation: $organisation, channel: $channel);
+			$this->follow(change: new ContactChannelChange(subject: $subject, organisation: $organisation, channel: $channel));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'PortalContactDetailsChangedListener: the contact channel could not reach the running cases',
@@ -115,13 +115,11 @@ class PortalContactDetailsChangedListener implements IEventListener {
 	/**
 	 * Set the channel on every running case of the subject, as the system.
 	 *
-	 * @param string $subject      The portal subject reference.
-	 * @param string $organisation The organisation the event names, or ''.
-	 * @param string $channel      The portal channel.
+	 * @param ContactChannelChange $change The subject, the organisation and the portal channel.
 	 *
 	 * @return void
 	 */
-	private function follow(string $subject, string $organisation, string $channel): void {
+	private function follow(ContactChannelChange $change): void {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
@@ -129,37 +127,53 @@ class PortalContactDetailsChangedListener implements IEventListener {
 			return;
 		}
 
+		$cases = new RunningCaseStore(objectService: $objectService, register: $register, schema: $schema);
 		$this->runAsSystemIfAvailable(
 			objectService: $objectService,
-			operation: function () use ($objectService, $register, $schema, $subject, $organisation, $channel): void {
-				$rows = $this->searchObjectsAsArraysUnscoped(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: ['portalSubject' => $subject, '_limit' => self::LIMIT],
-				);
-				foreach ($rows as $row) {
-					if ($this->isRunning(row: $row, subject: $subject, organisation: $organisation) === false) {
-						continue;
-					}
-
-					$this->apply(objectService: $objectService, register: $register, schema: $schema, row: $row, channel: $channel);
-				}
+			operation: function () use ($cases, $change): void {
+				$this->followIn(cases: $cases, change: $change);
 			}
 		);
 	}//end follow()
 
 	/**
+	 * Set the channel on every running case of the subject in the case register.
+	 *
+	 * @param RunningCaseStore     $cases  The object service, register and case schema.
+	 * @param ContactChannelChange $change The subject, the organisation and the portal channel.
+	 *
+	 * @return void
+	 */
+	private function followIn(RunningCaseStore $cases, ContactChannelChange $change): void {
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $cases->objectService,
+			register: $cases->register,
+			schema: $cases->schema,
+			filters: ['portalSubject' => $change->subject, '_limit' => self::LIMIT],
+		);
+		foreach ($rows as $row) {
+			if ($this->isRunning(row: $row, change: $change) === false) {
+				continue;
+			}
+
+			$note = $this->noteFor(row: $row, channel: $change->channel);
+			if ($note !== null) {
+				$this->apply(cases: $cases, note: $note);
+			}
+		}
+	}//end followIn()
+
+	/**
 	 * Whether a row is a running case of this subject in this organisation.
 	 *
-	 * @param array<string, mixed> $row          The case row.
-	 * @param string               $subject      The portal subject reference.
-	 * @param string               $organisation The organisation the event names, or ''.
+	 * @param array<string, mixed> $row    The case row.
+	 * @param ContactChannelChange $change The portal subject and the organisation the event names, or ''.
 	 *
 	 * @return bool True when the channel should follow.
 	 */
-	private function isRunning(array $row, string $subject, string $organisation): bool {
-		if ((string)($row['portalSubject'] ?? '') !== $subject) {
+	private function isRunning(array $row, ContactChannelChange $change): bool {
+		$organisation = $change->organisation;
+		if ((string)($row['portalSubject'] ?? '') !== $change->subject) {
 			return false;
 		}
 
@@ -173,62 +187,74 @@ class PortalContactDetailsChangedListener implements IEventListener {
 	}//end isRunning()
 
 	/**
-	 * Write the channel on one case and tell its timeline.
+	 * What following the channel does to one case: the timeline sentence and the channel to write, if any.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The case schema.
-	 * @param array<string, mixed> $row           The case row.
-	 * @param string               $channel       The portal channel.
+	 * @param array<string, mixed> $row     The case row.
+	 * @param string               $channel The portal channel.
 	 *
-	 * @return void
+	 * @return array{caseId: string, message: string, channel: string, write: bool}|null The note, or null when
+	 *                                                                                   nothing changes.
 	 */
-	private function apply(object $objectService, string $register, string $schema, array $row, string $channel): void {
+	private function noteFor(array $row, string $channel): ?array {
 		$caseId = trim((string)($row['id'] ?? (($row['@self'] ?? [])['id'] ?? '')));
 		if ($caseId === '') {
-			return;
+			return null;
 		}
 
 		if ($channel === self::PHONE) {
-			$this->tell(caseId: $caseId, message: 'The applicant prefers to be phoned.', channel: $channel);
-			return;
+			return ['caseId' => $caseId, 'message' => 'The applicant prefers to be phoned.', 'channel' => $channel, 'write' => false];
 		}
 
 		$dossiqChannel = self::CHANNELS[$channel];
 		if ((string)($row['communicationChannel'] ?? '') === $dossiqChannel) {
-			return;
+			return null;
 		}
 
-		$this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $caseId,
-			changes: ['communicationChannel' => $dossiqChannel],
-		);
-		$this->tell(
-			caseId: $caseId,
-			message: 'Contact channel changed to ' . $dossiqChannel . ' by the applicant in the portal',
-			channel: $dossiqChannel
-		);
+		return [
+			'caseId' => $caseId,
+			'message' => 'Contact channel changed to ' . $dossiqChannel . ' by the applicant in the portal',
+			'channel' => $dossiqChannel,
+			'write' => true,
+		];
+	}//end noteFor()
+
+	/**
+	 * Write the channel on one case when the note says so, and tell its timeline.
+	 *
+	 * @param RunningCaseStore                                                     $cases The object service, register and case schema.
+	 * @param array{caseId: string, message: string, channel: string, write: bool} $note  What changes on the case.
+	 *
+	 * @return void
+	 */
+	private function apply(RunningCaseStore $cases, array $note): void {
+		if ($note['write'] === true) {
+			$this->patchObjectAsArray(
+				objectService: $cases->objectService,
+				register: $cases->register,
+				schema: $cases->schema,
+				id: $note['caseId'],
+				changes: ['communicationChannel' => $note['channel']],
+			);
+		}
+
+		$this->tell(note: $note);
 	}//end apply()
 
 	/**
 	 * Put the change on the case's timeline, for the handler.
 	 *
-	 * @param string $caseId  The case.
-	 * @param string $message The sentence.
-	 * @param string $channel The channel it names.
+	 * @param array{caseId: string, message: string, channel: string, write: bool} $note The case, the sentence and the
+	 *                                                                                   channel it names.
 	 *
 	 * @return void
 	 */
-	private function tell(string $caseId, string $message, string $channel): void {
+	private function tell(array $note): void {
 		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::APPLICANT_RESPONSE,
-			message: $message,
-			fields: ['act' => 'contact-channel', 'channel' => $channel],
-			visibility: CaseTimeline::INTERNAL,
+			caseId: $note['caseId'],
+			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
+			message: $note['message'],
+			fields: ['act' => 'contact-channel', 'channel' => $note['channel']],
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
 	}//end tell()
 }//end class

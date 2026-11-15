@@ -1,0 +1,18 @@
+{
+  "_note": "A case type's fields are listed in the order the functional administrator gives them (DqZaaktypeVelden: \"Sleep om de volgorde te wijzigen\"). The Fields tab drags a row to another place and writes only this number, so the order is the type's own and the same in the case's form and the list. A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "propertyDefinition": {
+        "version": "1.8.0",
+        "properties": {
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "description": "The field's place in its case type's list of fields, from 1. A field without one is listed after those that have one.",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}

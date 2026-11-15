@@ -34,6 +34,9 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Listener\ReportGroupingOnCreateListener
+ * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
+ * @uses \OCA\Dossiq\Listener\DependentTermListener
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ReportGroupingOnCreateListenerTest extends TestCase {
 

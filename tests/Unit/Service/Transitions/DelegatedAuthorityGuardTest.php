@@ -33,6 +33,9 @@ use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\StatusEntryGuards;
+use OCA\Dossiq\Service\Transitions\ActorGuards;
+use OCA\Dossiq\Service\Transitions\CaseContentGuards;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
@@ -44,6 +47,9 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard
+ * @uses \OCA\Dossiq\Service\Transitions\CaseContentGuards
+ * @uses \OCA\Dossiq\Service\Transitions\ActorGuards
+ * @uses \OCA\Dossiq\Service\Transitions\StatusEntryGuards
  * @uses \OCA\Dossiq\Service\Transitions\GuardRegistry
  * @uses \OCA\Dossiq\Service\Transitions\GuardResult
  * @uses \OCA\Dossiq\Support\FleetAppId
@@ -102,7 +108,7 @@ class DelegatedAuthorityGuardTest extends TestCase {
 			}
 		);
 
-		return new DelegatedAuthorityGuard($container, $this->createMock(LoggerInterface::class));
+		return new DelegatedAuthorityGuard($container, $this->createMock(LoggerInterface::class), l10n: new SourceL10n());
 	}//end guard()
 
 	/**
@@ -204,15 +210,21 @@ class DelegatedAuthorityGuardTest extends TestCase {
 	 */
 	public function testTheRegistryAnswersTheLegacyKeyWithItsAct(): void {
 		$registry = new GuardRegistry(
-			$this->createMock(ChecklistGuard::class),
-			$this->createMock(RequiredFieldGuard::class),
-			$this->createMock(RequiredDocumentGuard::class),
-			$this->createMock(RoleGuard::class),
-			$this->guard(answer: ['authorised' => true, 'reason' => 'authorised', 'allocation' => 'a-1']),
-			$this->createMock(StatusChecklistGuard::class),
-			$this->createMock(CapacityGuard::class),
-			$this->createMock(LoggerInterface::class),
-			$this->createMock(ApprovalGuard::class),
+			caseContent: new CaseContentGuards(
+				checklist: $this->createMock(ChecklistGuard::class),
+				requiredField: $this->createMock(RequiredFieldGuard::class),
+				requiredDocument: $this->createMock(RequiredDocumentGuard::class),
+				statusChecklist: $this->createMock(StatusChecklistGuard::class),
+			),
+			actor: new ActorGuards(
+				roleGuard: $this->createMock(RoleGuard::class),
+				authority: $this->guard(answer: ['authorised' => true, 'reason' => 'authorised', 'allocation' => 'a-1']),
+			),
+			statusEntry: new StatusEntryGuards(
+				capacity: $this->createMock(CapacityGuard::class),
+				approvalGuard: $this->createMock(ApprovalGuard::class),
+			),
+			logger: $this->createMock(LoggerInterface::class),
 		);
 
 		self::assertTrue($registry->knows('delegatedAuthorityGuard'));

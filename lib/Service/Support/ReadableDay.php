@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,14 +35,17 @@ use Throwable;
 /**
  * Writes a stored date as a day with the month spelled out.
  *
- * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
  */
 class ReadableDay {
 
 	/**
 	 * The Dutch month names, January first.
+	 *
+	 * Public, because a Dutch sentence that spells a day reads its month
+	 * names from here.
 	 */
-	private const MONTHS_NL = [
+	public const MONTHS_NL = [
 		'januari',
 		'februari',
 		'maart',
@@ -87,8 +90,8 @@ class ReadableDay {
 	 *
 	 * @return string The day, or an empty string when there is none to read.
 	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-confirmation-names-its-dates-as-days-req-wdi-003
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-confirmation-names-its-dates-as-days-req-wdi-003
 	 */
 	public function dutch(string $value): string {
 		return $this->spelled(value: $value, months: self::MONTHS_NL);
@@ -101,7 +104,7 @@ class ReadableDay {
 	 *
 	 * @return string The day, or an empty string when there is none to read.
 	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
 	public function english(string $value): string {
 		return $this->spelled(value: $value, months: self::MONTHS_EN);

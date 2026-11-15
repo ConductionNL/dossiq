@@ -60,6 +60,7 @@ class ConnectionsDeclarationTest extends TestCase {
 		'unconfiguredMessage',
 		'sourceTemplate',
 		'reportedOnly',
+		'switch',
 	];
 
 	/**
@@ -149,7 +150,7 @@ class ConnectionsDeclarationTest extends TestCase {
 		$keys = array_column($this->declaration()['connections'], 'key');
 
 		$this->assertSame(expected: IntegrationStatusService::KEYS, actual: $keys);
-		$this->assertCount(expectedCount: 12, haystack: $keys);
+		$this->assertCount(expectedCount: 15, haystack: $keys);
 	}//end testTheTwelveKeysAreTheOnesTheServiceAccepts()
 
 	/**
@@ -205,17 +206,30 @@ class ConnectionsDeclarationTest extends TestCase {
 			}
 
 			$url = (string)$connection['settingsUrl'];
-			$this->assertStringStartsWith(prefix: '/settings/admin/dossiq#section-', string: $url, message: $connection['key']);
+			$this->assertMatchesRegularExpression(
+				pattern: '#^/settings/admin/dossiq\\?tab=[a-z-]+\\#section-[a-z-]+$#',
+				string: $url,
+				message: $connection['key']
+			);
+			$tab    = substr($url, strpos($url, '=') + 1, strpos($url, '#') - strpos($url, '=') - 1);
 			$anchor = substr($url, strpos($url, '#') + 1);
+			// The first tab's panel is the shell's default slot: everything before the first named tab.
+			if ($tab === 'general') {
+				$panel = substr($adminRoot, 0, (int)strpos($adminRoot, '<template #tab-'));
+			} else {
+				$start = strpos($adminRoot, '<template #tab-' . $tab . '>');
+				$this->assertNotFalse(condition: $start, message: $connection['key'] . ' links to a missing tab');
+				$panel = substr($adminRoot, (int)$start, strpos($adminRoot, "\n\t\t</template>", (int)$start) - (int)$start);
+			}
 			$this->assertStringContainsString(
 				needle: 'id="' . $anchor . '"',
-				haystack: $adminRoot,
-				message: $connection['key'] . ' links to a missing section'
+				haystack: $panel,
+				message: $connection['key'] . ' links to a section that is not on its tab'
 			);
 			$linked++;
 		}
 
-		$this->assertSame(expected: 7, actual: $linked);
+		$this->assertSame(expected: 8, actual: $linked);
 		$this->assertStringNotContainsString(needle: 'id="section-pdok"', haystack: $adminRoot);
 	}//end testEverySettingsLinkPointsAtAnExistingSection()
 
@@ -234,6 +248,10 @@ class ConnectionsDeclarationTest extends TestCase {
 			$keys = ($connection['requiredConfig'] ?? []);
 			if (isset($connection['adapter']['configKey']) === true) {
 				$keys[] = $connection['adapter']['configKey'];
+			}
+
+			if (isset($connection['switch']['configKey']) === true) {
+				$keys[] = $connection['switch']['configKey'];
 			}
 
 			$keys = array_values(array_unique($keys));
@@ -306,6 +324,31 @@ class ConnectionsDeclarationTest extends TestCase {
 		$this->assertArrayNotHasKey(key: 'settingsUrl', array: $brp);
 		$this->assertArrayNotHasKey(key: 'available', array: $brp);
 	}//end testBrpNamesTheKeyThatWakesIt()
+
+	/**
+	 * Each document vendor's card probes integriq's source of the engine's slug.
+	 *
+	 * A decision template on `vendor:<slug>` renders through integriq's source
+	 * of that slug, so the card that says whether the vendor is reachable has
+	 * to watch that same source, and tell an administrator where to switch it on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/decision-templates-render-through-a-vendor/tasks.md#2.4
+	 */
+	public function testEachVendorCardProbesTheSourceItsEngineNames(): void {
+		$connections = $this->connectionsByKey();
+
+		foreach (['smartdocuments' => 'SmartDocuments', 'xential' => 'Xential'] as $slug => $name) {
+			$card = $connections[$slug];
+
+			$this->assertSame(expected: $slug, actual: $card['sourceTemplate']);
+			$this->assertSame(expected: $name, actual: $card['title']);
+			$this->assertStringContainsString(needle: 'vendor:' . $slug, haystack: (string)$card['description']);
+			$this->assertMatchesRegularExpression(pattern: '/Integriq/', string: (string)$card['unconfiguredMessage']);
+			$this->assertArrayNotHasKey(key: 'settingsUrl', array: $card);
+		}
+	}//end testEachVendorCardProbesTheSourceItsEngineNames()
 
 	/**
 	 * An adapter block uses only D2 fields, and `simulatedValues` is a list of strings.
@@ -414,4 +457,19 @@ class ConnectionsDeclarationTest extends TestCase {
 			$this->assertArrayNotHasKey(key: 'reportedOnly', array: $connection, message: $connection['key']);
 		}
 	}//end testNoRowIsReportedOnly()
+
+	/**
+	 * Kadaster (BRK) and WOZ is off while its source is "None": the mode `log`
+	 * sends no request outside, so integriq reads the row as switched off
+	 * rather than as configured (DqInstellingen "Uit").
+	 *
+	 * @return void
+	 */
+	public function testKadasterIsOffWhileItsSourceIsNone(): void {
+		$kadaster = $this->connectionsByKey()['kadaster'];
+
+		$this->assertSame(expected: '/settings/admin/dossiq?tab=integrations#section-kadaster', actual: $kadaster['settingsUrl']);
+		$this->assertSame(expected: ['configKey' => 'integration.brk.mode', 'offValues' => ['', 'log']], actual: $kadaster['switch']);
+		$this->assertArrayNotHasKey(key: 'requiredConfig', array: $kadaster);
+	}//end testKadasterIsOffWhileItsSourceIsNone()
 }//end class

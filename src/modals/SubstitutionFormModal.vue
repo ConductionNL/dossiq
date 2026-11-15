@@ -127,6 +127,19 @@ import {
 import { createSubstitution } from '../services/substitutionApi.js'
 import { useObjectStore } from '../store/modules/object.js'
 
+/**
+ * Why a registration failed: the server's reason, the error's own message, or
+ * a plain sentence.
+ *
+ * @param {object} err The failure.
+ * @return {string} The sentence to show.
+ */
+function registrationFailure(err) {
+	return err?.response?.data?.error
+		|| err?.message
+		|| t('dossiq', 'Failed to register substitution.')
+}
+
 export default {
 	name: 'SubstitutionFormModal',
 	components: {
@@ -225,35 +238,51 @@ export default {
 			}
 			this.saving = true
 			try {
-				const scope = this.selectedScope ? this.selectedScope.value : 'all'
-				const payload = {
-					substitute: this.form.substitute.trim(),
-					startDate: this.form.startDate,
-					endDate: this.form.endDate,
-					reason: this.selectedReason
-						? this.selectedReason.value
-						: 'verlof',
-
-					scope,
-					scopeRefs:
-						scope === 'caseTypes'
-							? this.selectedCaseTypes.map((ct) => ct.id)
-							: [],
-
-					comment: this.form.comment,
-				}
-				if (this.allowCoordinator && this.form.absentee.trim()) {
-					payload.absentee = this.form.absentee.trim()
-				}
-				const created = await createSubstitution(payload)
+				const created = await createSubstitution(this.substitutionPayload())
 				this.$emit('created', created)
 			} catch (err) {
-				this.serverError =
-					err?.response?.data?.error
-					|| err?.message
-					|| t('dossiq', 'Failed to register substitution.')
+				this.serverError = registrationFailure(err)
 			} finally {
 				this.saving = false
+			}
+		},
+
+		/**
+		 * The substitution to register, from the form. The absentee is sent
+		 * only when a coordinator named one.
+		 *
+		 * @return {object} The payload.
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
+		substitutionPayload() {
+			const payload = {
+				substitute: this.form.substitute.trim(),
+				startDate: this.form.startDate,
+				endDate: this.form.endDate,
+				reason: this.selectedReason ? this.selectedReason.value : 'verlof',
+				...this.scopeFields(),
+				comment: this.form.comment,
+			}
+			if (this.allowCoordinator && this.form.absentee.trim()) {
+				payload.absentee = this.form.absentee.trim()
+			}
+			return payload
+		},
+
+		/**
+		 * The scope and, for a case-type scope, the chosen case types.
+		 *
+		 * @return {{scope: string, scopeRefs: Array<string>}} The scope fields.
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
+		scopeFields() {
+			const scope = this.selectedScope ? this.selectedScope.value : 'all'
+			return {
+				scope,
+				scopeRefs:
+					scope === 'caseTypes'
+						? this.selectedCaseTypes.map((ct) => ct.id)
+						: [],
 			}
 		},
 

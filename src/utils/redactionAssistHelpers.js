@@ -9,7 +9,7 @@
  * independently testable without mounting Vue, mirroring
  * src/utils/assistantHelpers.js's convention.
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-4-1
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-4-1
  */
 
 /**

@@ -62,6 +62,7 @@ interface ContactMomentObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ContactMomentService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Support\CastArray
  */
 class ContactMomentServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -211,6 +212,24 @@ class ContactMomentServiceTest extends TestCase {
 		$this->assertArrayNotHasKey('case', $this->saved);
 		$this->assertSame([], $this->saved['relatedCases']);
 	}//end testNoCaseWritesNoCase()
+
+	/**
+	 * A paper letter is a channel: it is logged as `brief`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/contact-channel-letter/spec.md
+	 */
+	public function testALetterIsLoggedAsAChannel(): void {
+		$this->signIn('handler');
+
+		$this->service->createContactMoment([
+			'notificationChannel' => 'brief',
+			'summary' => 'Bezwaarschrift per post ontvangen',
+		]);
+
+		$this->assertSame('brief', $this->saved['notificationChannel']);
+	}//end testALetterIsLoggedAsAChannel()
 
 	/**
 	 * The form payload, channel and direction and summary only, saves.

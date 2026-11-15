@@ -19,8 +19,8 @@
  * spec files a case at the same moment.
  *
  * TWO. The tags editor is the `data` built-in in a sidebar tab. It edits in
- * place: a cell is clicked (`role="button"`, `aria-label="Click to edit …"` —
- * an English literal from the library, not a translated string), the value is
+ * place: a cell is clicked (`role="button"`, named "<field> bewerken" in
+ * Dutch, "Edit <field>" in English; older libraries said "Click to edit …"), the value is
  * confirmed on the field, and the widget is then saved. The whole chain is
  * driven here rather than shortcut through the API, because the point of
  * REQ-CM-26 is that a person can add a tag on the case page.
@@ -361,7 +361,7 @@ test.describe('Case identity', () => {
 		const cell = panel.locator('.cn-object-data-widget__cell')
 		await expect(cell).toHaveCount(1)
 
-		await cell.getByRole('button', { name: /Click to edit/ }).click()
+		await cell.getByRole('button', { name: /^Click to edit |^Edit | bewerken$/ }).click()
 		const editor = panel.locator('.cn-object-data-widget__editor')
 		await expect(editor).toBeVisible({ timeout: 15_000 })
 

@@ -16,15 +16,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\CaseAccessListenerRegistrar;
-use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CaseAccessListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDecisionAccessListener;
 use OCA\Dossiq\Listener\CaseReassignGuardListener;
+use OCA\Dossiq\Listener\CaseTypeRightsRowsListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\CaseAccessListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CaseAccessListenerRegistrar
  */
 class CaseAccessListenerRegistrarTest extends TestCase {
 
@@ -45,6 +46,7 @@ class CaseAccessListenerRegistrarTest extends TestCase {
 				['OCA\OpenRegister\Event\ObjectUpdatedEvent', CaseReassignGuardListener::class],
 				['OCA\OpenRegister\Event\DecisionChangeRequestedEvent', CaseDecisionAccessListener::class],
 				['OCA\OpenRegister\Event\DecisionVisibilityRequestedEvent', CaseDecisionAccessListener::class],
+				['OCA\OpenRegister\Event\MatrixRowsRequestedEvent', CaseTypeRightsRowsListener::class],
 			],
 			$registered
 		);

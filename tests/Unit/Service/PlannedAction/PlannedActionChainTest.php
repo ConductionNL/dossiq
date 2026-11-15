@@ -312,6 +312,32 @@ class PlannedActionChainTest extends TestCase {
 	}//end testTheLabelIsCopiedAtPlanningTime()
 
 	/**
+	 * A successor says what planned it the way its predecessor did, and an
+	 * action without that says nothing: no person planned the successor, the
+	 * steps that planned the first one did.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
+	 */
+	public function testTheSuccessorKeepsWhatPlannedTheChain(): void {
+		$next = $this->chain->next(
+			completed: ['id' => 'a1', 'case' => 'c1', 'actionType' => 'confirm', 'plannedBy' => 'alice', 'plannedByRule' => 'the steps of the request'],
+			types: $this->types(),
+			completedOn: new DateTimeImmutable('2026-03-02')
+		);
+		$this->assertSame(expected: 'the steps of the request', actual: $next['plannedByRule']);
+		$this->assertArrayNotHasKey(key: 'plannedBy', array: $next, message: 'a person planned the first action, not its successor');
+
+		$bare = $this->chain->next(
+			completed: ['id' => 'a1', 'case' => 'c1', 'actionType' => 'confirm'],
+			types: $this->types(),
+			completedOn: new DateTimeImmutable('2026-03-02')
+		);
+		$this->assertSame(expected: '', actual: $bare['plannedByRule']);
+	}//end testTheSuccessorKeepsWhatPlannedTheChain()
+
+	/**
 	 * A loop in the successor declarations is reported.
 	 *
 	 * @return void

@@ -234,4 +234,203 @@ class StoredDecisionTablesTest extends TestCase {
 		$this->expectException(UnexpectedValueException::class);
 		$this->tables(self::objectService(), $store)->find('dossiq.weg');
 	}//end testEvaluationGoesThroughTheStore()
+
+	/**
+	 * A store answering anything but an array is an error naming the table,
+	 * and a found table is answered as stored.
+	 *
+	 * @return void
+	 */
+	public function testAStoreAnswerThatIsNoArrayIsAnError(): void {
+		$silent = new class {
+			/**
+			 * Answer no result.
+			 *
+			 * @param string               $reference The key.
+			 * @param array<string, mixed> $inputs    The inputs.
+			 *
+			 * @return mixed
+			 */
+			public function evaluate(string $reference, array $inputs): mixed {
+				return null;
+			}
+
+			/**
+			 * Answer no table.
+			 *
+			 * @param string $reference The key.
+			 *
+			 * @return mixed
+			 */
+			public function find(string $reference): mixed {
+				return 'nope';
+			}
+		};
+		$tables = $this->tables(objects: self::objectService(), store: $silent);
+
+		try {
+			$tables->evaluate(reference: 'dossiq.toets', inputs: []);
+			self::fail(message: 'evaluate must refuse a store answer without a result');
+		} catch (RuntimeException $e) {
+			self::assertSame(
+				expected: 'OpenRegister answered the decision table "dossiq.toets" without a result.',
+				actual: $e->getMessage()
+			);
+		}
+
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'OpenRegister answered the decision table "dossiq.toets" without a table.');
+		$tables->find(reference: 'dossiq.toets');
+	}//end testAStoreAnswerThatIsNoArrayIsAnError()
+
+	/**
+	 * A stored table is read through OpenRegister's store.
+	 *
+	 * @return void
+	 */
+	public function testAStoredTableIsFound(): void {
+		$table = ['key' => 'dossiq.toets', 'name' => 'Toets', 'hitPolicy' => 'UNIQUE', 'inputs' => [], 'outputs' => [], 'rules' => []];
+		$store = new InMemoryDecisionTableStore(tables: ['dossiq.toets' => $table]);
+
+		$found = $this->tables(objects: self::objectService(), store: $store)->find(reference: 'dossiq.toets');
+
+		self::assertSame(expected: 'dossiq.toets', actual: $found['key']);
+		self::assertSame(expected: 'Toets', actual: $found['name']);
+	}//end testAStoredTableIsFound()
+
+	/**
+	 * The id of a stored row is found by its exact key, falling back to `@self`.
+	 *
+	 * @return void
+	 */
+	public function testTheIdOfAStoredRowIsFoundByItsKey(): void {
+		$tables = $this->tables(
+			objects: self::objectService(
+				rows: [
+					['@register' => 'decision-tables/decision-table', 'id' => 'uuid-1', 'key' => 'dossiq.een'],
+					['@register' => 'decision-tables/decision-table', '@self' => ['id' => 'uuid-2'], 'key' => 'dossiq.twee'],
+				]
+			)
+		);
+
+		self::assertSame(expected: 'uuid-1', actual: $tables->idOf(storedKey: 'dossiq.een'));
+		self::assertSame(expected: 'uuid-2', actual: $tables->idOf(storedKey: 'dossiq.twee'));
+		self::assertNull(actual: $tables->idOf(storedKey: 'dossiq.drie'));
+	}//end testTheIdOfAStoredRowIsFoundByItsKey()
+
+	/**
+	 * A register that cannot be read, or no OpenRegister at all, is reported
+	 * as unreadable rather than as a missing row.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableRegisterIsReported(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$absent = new StoredDecisionTables(
+			settingsService: $settings,
+			container: $this->createMock(originalClassName: ContainerInterface::class)
+		);
+
+		try {
+			$absent->idOf(storedKey: 'dossiq.toets');
+			self::fail(message: 'idOf must refuse without OpenRegister');
+		} catch (RuntimeException $e) {
+			self::assertSame(
+				expected: 'The decision-table register could not be read: OpenRegister is not available.',
+				actual: $e->getMessage()
+			);
+		}
+
+		$broken = new class {
+			/**
+			 * Fail the search.
+			 *
+			 * @param string               $register      Register slug.
+			 * @param string               $schema        Schema slug.
+			 * @param array<string, mixed> $filters       Filters.
+			 * @param bool                 $_rbac         RBAC.
+			 * @param bool                 $_multitenancy Multitenancy.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				throw new RuntimeException('register not imported');
+			}
+		};
+
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'The decision-table register could not be read: register not imported');
+		$this->tables(objects: $broken)->idOf(storedKey: 'dossiq.toets');
+	}//end testAnUnreadableRegisterIsReported()
+
+	/**
+	 * A table without a usable key or a name is refused before anything is written.
+	 *
+	 * @return void
+	 */
+	public function testATableWithoutKeyOrNameIsRefused(): void {
+		$objects = self::objectService();
+		$tables = $this->tables(objects: $objects);
+
+		foreach ([['key' => '***', 'name' => 'Toets'], ['key' => 'toets', 'name' => '']] as $table) {
+			try {
+				$tables->save(table: $table);
+				self::fail(message: 'save must refuse a table without key or name');
+			} catch (RuntimeException $e) {
+				self::assertSame(expected: 'A decision table needs a key and a name.', actual: $e->getMessage());
+			}
+		}
+
+		self::assertSame(expected: [], actual: $objects->saved);
+	}//end testATableWithoutKeyOrNameIsRefused()
+
+	/**
+	 * A save OpenRegister refuses names the stored key and keeps the cause.
+	 *
+	 * @return void
+	 */
+	public function testARefusedSaveNamesTheKey(): void {
+		$refusing = new class {
+			/**
+			 * No rows yet.
+			 *
+			 * @param string               $register      Register slug.
+			 * @param string               $schema        Schema slug.
+			 * @param array<string, mixed> $filters       Filters.
+			 * @param bool                 $_rbac         RBAC.
+			 * @param bool                 $_multitenancy Multitenancy.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				return [];
+			}
+
+			/**
+			 * Refuse the write.
+			 *
+			 * @param array<string, mixed> $object   Object.
+			 * @param string               $register Register.
+			 * @param string               $schema   Schema.
+			 * @param string|null          $uuid     Uuid.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+				throw new RuntimeException('schema violation');
+			}
+		};
+
+		try {
+			$this->tables(objects: $refusing)->save(table: ['key' => 'Toets', 'name' => 'Toets']);
+			self::fail(message: 'a refused save must throw');
+		} catch (RuntimeException $e) {
+			self::assertSame(
+				expected: 'OpenRegister refused the decision table "dossiq.toets": schema violation',
+				actual: $e->getMessage()
+			);
+			self::assertSame(expected: 'schema violation', actual: $e->getPrevious()?->getMessage());
+		}
+	}//end testARefusedSaveNamesTheKey()
 }//end class

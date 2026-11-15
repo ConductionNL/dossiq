@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Files\NotPermittedException;
 use OCP\IGroupManager;
@@ -75,6 +76,7 @@ class InformatieobjectAccessGuardTest extends TestCase {
 			settingsService: $this->settings,
 			groupManager: $this->groupManager,
 			logger: $this->createMock(LoggerInterface::class),
+			exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 		);
 
 	}//end setUp()
@@ -160,6 +162,7 @@ class InformatieobjectAccessGuardTest extends TestCase {
 				settingsService: $settings,
 				groupManager: $groupManager,
 				logger: $this->createMock(LoggerInterface::class),
+				exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 			);
 
 			$user = $this->createMock(IUser::class);

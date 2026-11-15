@@ -23,7 +23,7 @@ import { dismissSupportDialog, PAGE_LOAD } from '../helpers/nav.ts'
 const KEY = 'dossiq.lhs-intervention'
 
 test.describe('package lhs-intervention', () => {
-	// @e2e openspec/changes/lhs-packages/specs/enforcement-lhs/spec.md#scenario-the-intervention-table-is-in-openregister-under-its-key
+	// @e2e openspec/specs/enforcement-lhs/spec.md#scenario-the-intervention-table-is-in-openregister-under-its-key
 	test('an administrator finds the intervention table under its key, with a rule for each row and column', async ({
 		page,
 	}) => {

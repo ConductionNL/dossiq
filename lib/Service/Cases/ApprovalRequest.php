@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\ApprovalRequestInterface;
 use OCA\Dossiq\Service\CaseType\ApprovalGateDeclaration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
@@ -50,12 +51,12 @@ use RuntimeException;
 /**
  * Raises the decidiq decision a gated act waits on, and links it to the case.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see ApprovalGateDeclaration} is a
  * reader over two arrays with no state and nothing to inject.
  */
-class ApprovalRequest {
+class ApprovalRequest implements ApprovalRequestInterface {
 
 	/**
 	 * Constructor.
@@ -84,7 +85,7 @@ class ApprovalRequest {
 	 *
 	 * @throws RefusedException When the case is gone, the act is not gated, or decidiq cannot be reached.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public function raise(string $caseId, string $act, string $userId): array {
 		$case = $this->store->loadCase(caseId: $caseId);
@@ -96,6 +97,26 @@ class ApprovalRequest {
 			);
 		}
 
+		$gate = $this->gateOf(case: $case, act: $act);
+
+		$decisionRef = $this->raiseDecision(case: $case, request: $gate + ['caseId' => $caseId, 'userId' => $userId]);
+
+		return $this->recordReference(case: $case, link: ['act' => $gate['act'], 'decisionRef' => $decisionRef]);
+	}//end raise()
+
+	/**
+	 * The approval gate the case type declares for the act.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 * @param string               $act  The gated act.
+	 *
+	 * @return array{act: string, decisionType: string, label: string} The gate.
+	 *
+	 * @throws RefusedException When the act is not gated.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 */
+	private function gateOf(array $case, string $act): array {
 		$caseType = $this->caseTypes->effectiveCaseType(caseTypeId: trim((string)($case['caseType'] ?? '')));
 		$gate = ApprovalGateDeclaration::gateFor(caseType: $caseType, act: $act);
 		if ($gate === []) {
@@ -106,36 +127,67 @@ class ApprovalRequest {
 			);
 		}
 
+		return $gate;
+	}//end gateOf()
+
+	/**
+	 * Raise the decidiq decision the gate waits on.
+	 *
+	 * @param array<string, mixed> $case    The case.
+	 * @param array{act: string, decisionType: string, label: string, caseId: string, userId: string} $request The gate, the case UUID and who is asking.
+	 *
+	 * @return string The decision reference.
+	 *
+	 * @throws RefusedException When decidiq cannot be reached.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 */
+	private function raiseDecision(array $case, array $request): string {
+		['caseId' => $caseId, 'userId' => $userId] = $request;
 		try {
 			$decisionRef = $this->decisions->raiseDecision(
-				decisionType: $gate['decisionType'],
+				decisionType: $request['decisionType'],
 				externalReference: $caseId,
 				subject: [
 					'subjectRegister' => $this->settings->getConfigValue('register'),
 					'subjectSchema' => $this->settings->getConfigValue('case_schema'),
 					'subjectId' => $caseId,
-					'subjectLabel' => $gate['label'] . ': ' . trim((string)($case['title'] ?? $caseId)),
+					'subjectLabel' => $request['label'] . ': ' . trim((string)($case['title'] ?? $caseId)),
 				],
-				context: ['actorId' => $userId, 'act' => $gate['act']],
+				context: ['actorId' => $userId, 'act' => $request['act']],
 			);
 		} catch (RuntimeException $e) {
 			throw RefusedException::indeterminate(
 				rule: ApprovalGate::RULE_UNREADABLE,
-				sentence: 'We could not reach the approval service, so ' . $gate['label']
+				sentence: 'We could not reach the approval service, so ' . $request['label']
 					. ' was not asked for. Try again shortly.',
 				previous: $e,
 			);
 		}
 
+		return $decisionRef;
+	}//end raiseDecision()
+
+	/**
+	 * Record the decision reference on the case.
+	 *
+	 * @param array<string, mixed>                     $case The case.
+	 * @param array{act: string, decisionRef: string} $link The gated act and the decision reference.
+	 *
+	 * @return array{act: string, decisionRef: string, raisedAt: string} The link that was recorded.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 */
+	private function recordReference(array $case, array $link): array {
 		$raisedAt = (new DateTimeImmutable())->format('c');
 		$case[ApprovalGateDeclaration::REFERENCES] = ApprovalGateDeclaration::withReference(
 			case: $case,
-			act: $gate['act'],
-			decisionRef: $decisionRef,
+			act: $link['act'],
+			decisionRef: $link['decisionRef'],
 			raisedAt: $raisedAt,
 		);
 		$this->store->saveCase(case: $case);
 
-		return ['act' => $gate['act'], 'decisionRef' => $decisionRef, 'raisedAt' => $raisedAt];
-	}//end raise()
+		return $link + ['raisedAt' => $raisedAt];
+	}//end recordReference()
 }//end class

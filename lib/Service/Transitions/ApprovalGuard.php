@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use OCA\Dossiq\Service\Cases\ApprovalGate;
 /**
  * Evaluates the approval gate on one transition of one case.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 class ApprovalGuard implements GuardEvaluatorInterface {
 
@@ -71,7 +71,7 @@ class ApprovalGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult The verdict in the engine's shape.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
 		$verdict = $this->gate->verdictFor(
@@ -84,6 +84,17 @@ class ApprovalGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true);
 		}
 
+		return $this->refused(verdict: $verdict);
+	}//end evaluate()
+
+	/**
+	 * The refusal for a verdict that does not allow the act, with the approval named.
+	 *
+	 * @param array<string, mixed> $verdict The gate's verdict.
+	 *
+	 * @return GuardResult The refusal.
+	 */
+	private function refused(array $verdict): GuardResult {
 		return new GuardResult(
 			passed: false,
 			failureMessage: (string)$verdict['sentence'],
@@ -94,5 +105,5 @@ class ApprovalGuard implements GuardEvaluatorInterface {
 				'approvers' => (array)$verdict['approvers'],
 			],
 		);
-	}//end evaluate()
+	}//end refused()
 }//end class

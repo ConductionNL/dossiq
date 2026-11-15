@@ -52,18 +52,20 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CreateTaskHandlerInterface;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Built-in handler for `createTask` automatic actions.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T08
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T08
  */
-class CreateTaskHandler implements ActionHandlerInterface {
+class CreateTaskHandler implements ActionHandlerInterface, CreateTaskHandlerInterface {
 	/**
 	 * Constructor.
 	 *
@@ -97,95 +99,9 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		try {
-			// The engine, not a register schema. Its own reachability check
-			// names the reason, including the namespace-rename case a
-			// duck-typed lookup would otherwise hide.
-			$unavailable = $this->engineTasks->unavailableReason();
-			if ($unavailable !== '') {
-				$this->logger->error('CreateTaskHandler: the task engine is unavailable', ['reason' => $unavailable]);
-
-				return new ActionResult(succeeded: false, error: 'storage_unavailable');
-			}
-
-			$caseId = $this->assignees->caseId(case: $case);
-			$title = (string)($actionConfig['title'] ?? sprintf('Taak na transitie %s', $transitionContext['transitionLabel'] ?? ''));
-			$task = [
-				'title' => $title,
-				'case' => $caseId,
-				// The task schema's lifecycle starts at 'available' (enum:
-				// available|active|completed|terminated|disabled). Writing 'open'
-				// produced an object no transition could advance.
-				'status' => 'available',
-				'assignee' => $this->resolveAssignee(actionConfig: $actionConfig, case: $case, title: $title),
-			];
-
-			// The team is not a second guess at the person: a case can carry a
-			// team, a personal assignee, or both, and the task schema has a
-			// field for each. Carrying the case's team over is what keeps a
-			// checklist task on somebody's queue when no person resolves.
-			//
-			// Read through the resolver, never a (string) cast: an expanded
-			// read of the old $ref casts to the literal "Array" and writes a
-			// team that resolves to nothing (one-team-model: a group id now).
-			$team = $this->assignees->resolveTeam(case: $case);
-			if ($team !== '') {
-				$task['assigneeGroup'] = $team;
-			}
-
-			// Which status asked for this task. Written only when the action
-			// names one, because an empty string is a value the task lists and
-			// the checklist reader would both have to special-case: a task
-			// tagged with "no status" is not the same as an untagged task.
-			$workflowStepId = trim((string)($actionConfig['workflowStepId'] ?? ''));
-			if ($workflowStepId !== '') {
-				$task['workflowStepId'] = $workflowStepId;
-			}
-
-			// What the case type declared about THIS task: its own due date,
-			// the team it is offered to, the form it asks for, and what
-			// completing it does. Everything here is a declaration dossiq
-			// writes and the engine performs — there is no dossiq task store,
-			// no dossiq task number and no dossiq lock, which is what
-			// `remove-casetask` settled.
-			$task = $this->declared(task: $task, actionConfig: $actionConfig);
-
-			// THE ENGINE IS THE RECORD NOW, and the register write is gone.
-			// The dual-run has served its purpose: every read surface moved
-			// (#2357), the flow's own write and resume moved (#2337, #2362),
-			// and 33 existing tasks were backfilled and reconciled. Keeping
-			// the register write would leave a second store that nothing
-			// reads, drifting quietly until somebody trusted it.
-			//
-			// `mirrorImport` rather than `mirrorCreate`: the engine's create
-			// path is the HTTP one and pins the requester to whoever triggered
-			// the transition, where `import()` is its trusted in-process entry.
-			// It still authorizes, which is what the actor below is for.
-			//
-			// A FAILURE NOW FAILS THE TRANSITION, deliberately. Under the
-			// dual-run a failed mirror was swallowed because the register
-			// task already existed; with no register task there is nothing
-			// left, and a transition that silently created no task is the
-			// worse outcome. A checklist step whose task never appeared
-			// looks like a case that needs no work.
-			// 🔴 THIS WAS `actor: null`, AND THE ENGINE DENIES EVERY VERB WITH
-			// NO ACTING IDENTITY, so no checklist task was ever created. See
-			// {@see actor()} for what resolves one and why in that order.
-			$taskId = $this->engineTasks->mirrorImport(
-				task: $task,
-				caseId: $caseId,
-				actor: $this->actor(transitionContext: $transitionContext)
+			return $this->create(
+				action: new TaskAction(actionConfig: $actionConfig, case: $case, transitionContext: $transitionContext)
 			);
-
-			if ($taskId === '') {
-				$this->logger->error(
-					'CreateTaskHandler: the engine refused the task',
-					['reason' => $this->engineTasks->lastError(), 'case' => $caseId]
-				);
-
-				return new ActionResult(succeeded: false, error: 'create_task_failed');
-			}
-
-			return new ActionResult(succeeded: true, data: ['taskId' => $taskId]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CreateTaskHandler failed',
@@ -194,6 +110,240 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'create_task_failed');
 		}//end try
 	}//end handle()
+
+	/**
+	 * Create the task once: refuse when the engine cannot be reached, answer
+	 * an earlier add of the same once-key, and hand the engine the task.
+	 *
+	 * @param TaskAction $action The action, its case and its transition.
+	 *
+	 * @return ActionResult
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function create(TaskAction $action): ActionResult {
+		// The engine, not a register schema. Its own reachability check
+		// names the reason, including the namespace-rename case a
+		// duck-typed lookup would otherwise hide.
+		$unavailable = $this->engineTasks->unavailableReason();
+		if ($unavailable !== '') {
+			$this->logger->error('CreateTaskHandler: the task engine is unavailable', ['reason' => $unavailable]);
+
+			return new ActionResult(succeeded: false, error: 'storage_unavailable');
+		}
+
+		$caseId = $this->assignees->caseId(case: $action->case);
+
+		$onceKey = $this->onceKeyFor(actionConfig: $action->actionConfig, caseId: $caseId);
+		$added = $this->addedBefore(onceKey: $onceKey);
+		if ($added !== null) {
+			return $added;
+		}
+
+		$task = $this->taskFor(action: $action, caseId: $caseId);
+		$task['onceKey'] = $onceKey;
+
+		return $this->mirror(action: $action, task: $task);
+	}//end create()
+
+	/**
+	 * The task the action declares, on its case.
+	 *
+	 * What the case type declared about THIS task: its own due date, the team
+	 * it is offered to, the form it asks for, and what completing it does.
+	 * Everything here is a declaration dossiq writes and the engine performs —
+	 * there is no dossiq task store, no dossiq task number and no dossiq lock,
+	 * which is what `remove-casetask` settled.
+	 *
+	 * @param TaskAction $action The action, its case and its transition.
+	 * @param string     $caseId The case.
+	 *
+	 * @return array<string, mixed> The task.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function taskFor(TaskAction $action, string $caseId): array {
+		$actionConfig = $action->actionConfig;
+		$title = (string)($actionConfig['title'] ?? sprintf('Taak na transitie %s', $action->transitionContext['transitionLabel'] ?? ''));
+		$task = [
+			'title' => $title,
+			'case' => $caseId,
+			// The task schema's lifecycle starts at 'available' (enum:
+			// available|active|completed|terminated|disabled). Writing 'open'
+			// produced an object no transition could advance.
+			'status' => 'available',
+			'assignee' => $this->resolveAssignee(actionConfig: $actionConfig, case: $action->case, title: $title),
+		];
+
+		$task = $this->withTeamAndStep(task: $task, actionConfig: $actionConfig, case: $action->case);
+
+		return $this->declared(task: $task, actionConfig: $actionConfig);
+	}//end taskFor()
+
+	/**
+	 * Hand the task to the engine, which is the record.
+	 *
+	 * THE ENGINE IS THE RECORD NOW, and the register write is gone. The
+	 * dual-run has served its purpose: every read surface moved (#2357), the
+	 * flow's own write and resume moved (#2337, #2362), and 33 existing tasks
+	 * were backfilled and reconciled. Keeping the register write would leave a
+	 * second store that nothing reads, drifting quietly until somebody trusted
+	 * it.
+	 *
+	 * `mirrorImport` rather than `mirrorCreate`: the engine's create path is
+	 * the HTTP one and pins the requester to whoever triggered the
+	 * transition, where `import()` is its trusted in-process entry. It still
+	 * authorizes, which is what the actor below is for.
+	 *
+	 * A FAILURE NOW FAILS THE TRANSITION, deliberately. Under the dual-run a
+	 * failed mirror was swallowed because the register task already existed;
+	 * with no register task there is nothing left, and a transition that
+	 * silently created no task is the worse outcome. A checklist step whose
+	 * task never appeared looks like a case that needs no work.
+	 *
+	 * 🔴 THIS WAS `actor: null`, AND THE ENGINE DENIES EVERY VERB WITH NO
+	 * ACTING IDENTITY, so no checklist task was ever created. See
+	 * {@see actor()} for what resolves one and why in that order.
+	 *
+	 * @param TaskAction           $action The action, its case and its transition.
+	 * @param array<string, mixed> $task   The task, carrying its case.
+	 *
+	 * @return ActionResult
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function mirror(TaskAction $action, array $task): ActionResult {
+		$taskId = $this->engineTasks->mirrorImport(
+			task: $task,
+			caseId: $task['case'],
+			actor: $this->actor(transitionContext: $action->transitionContext)
+		);
+
+		if ($taskId === '') {
+			$this->logger->error(
+				'CreateTaskHandler: the engine refused the task',
+				['reason' => $this->engineTasks->lastError(), 'case' => $task['case']]
+			);
+
+			return new ActionResult(succeeded: false, error: 'create_task_failed');
+		}
+
+		return new ActionResult(succeeded: true, data: ['taskId' => $taskId]);
+	}//end mirror()
+
+	/**
+	 * The case's team and the status that asked for the task, when there are any.
+	 *
+	 * @param array<string, mixed> $task         The task being built.
+	 * @param array<string, mixed> $actionConfig The action.
+	 * @param array<string, mixed> $case         The case.
+	 *
+	 * @return array<string, mixed> The task.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withTeamAndStep(array $task, array $actionConfig, array $case): array {
+		// The team is not a second guess at the person: a case can carry a
+		// team, a personal assignee, or both, and the task schema has a
+		// field for each. Carrying the case's team over is what keeps a
+		// checklist task on somebody's queue when no person resolves.
+		//
+		// Read through the resolver, never a (string) cast: an expanded
+		// read of the old $ref casts to the literal "Array" and writes a
+		// team that resolves to nothing (one-team-model: a group id now).
+		$team = $this->assignees->resolveTeam(case: $case);
+		if ($team !== '') {
+			$task['assigneeGroup'] = $team;
+		}
+
+		// Which status asked for this task. Written only when the action
+		// names one, because an empty string is a value the task lists and
+		// the checklist reader would both have to special-case: a task
+		// tagged with "no status" is not the same as an untagged task.
+		$workflowStepId = trim((string)($actionConfig['workflowStepId'] ?? ''));
+		if ($workflowStepId !== '') {
+			$task['workflowStepId'] = $workflowStepId;
+		}
+
+		return $task;
+	}//end withTeamAndStep()
+
+	/**
+	 * The engine key of a task the action adds once per case, or '' when it may repeat.
+	 *
+	 * @param array<string, mixed> $actionConfig The action, optionally carrying `onceKey`.
+	 * @param string $caseId The case.
+	 *
+	 * @return string The key.
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	private function onceKeyFor(array $actionConfig, string $caseId): string {
+		$once = trim((string)($actionConfig['onceKey'] ?? ''));
+		if ($once === '' || $caseId === '') {
+			return '';
+		}
+
+		return 'dossiq:once:' . $once . ':' . $caseId;
+	}//end onceKeyFor()
+
+	/**
+	 * The result when a once-keyed task must not be added now, or null to go on.
+	 *
+	 * Added before: done, nothing to do. Unknown: fail rather than risk a
+	 * second task, with the reason in the log.
+	 *
+	 * @param string $onceKey The task's once-key, or '' when it may repeat.
+	 *
+	 * @return ActionResult|null The result, or null when the task is to be added.
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	private function addedBefore(string $onceKey): ?ActionResult {
+		if ($onceKey === '') {
+			return null;
+		}
+
+		try {
+			$taken = $this->engineTasks->keyTaken(key: $onceKey);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'CreateTaskHandler: could not tell whether the task was added before',
+				['reason' => $e->getMessage(), 'key' => $onceKey]
+			);
+
+			return new ActionResult(succeeded: false, error: 'once_key_unverifiable');
+		}
+
+		return $this->takenResult(taken: $taken, onceKey: $onceKey);
+	}//end addedBefore()
+
+	/**
+	 * The result for what the engine said about a once-key, or null to go on.
+	 *
+	 * @param mixed  $taken   True when added before, false when not, anything else when unknown.
+	 * @param string $onceKey The task's once-key.
+	 *
+	 * @return ActionResult|null
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	private function takenResult(mixed $taken, string $onceKey): ActionResult|null {
+		if ($taken === false) {
+			return null;
+		}
+
+		if ($taken === true) {
+			return new ActionResult(succeeded: true, data: ['skipped' => 'already added', 'key' => $onceKey]);
+		}
+
+		$this->logger->error(
+			'CreateTaskHandler: could not tell whether the task was added before',
+			['reason' => $this->engineTasks->lastError(), 'key' => $onceKey]
+		);
+
+		return new ActionResult(succeeded: false, error: 'once_key_unverifiable');
+	}//end takenResult()
 
 	/**
 	 * Apply the case type's per-task declaration to the task being created.
@@ -223,7 +373,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return array<string, mixed> The task, with the declaration applied.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function declared(array $task, array $actionConfig): array {
 		$declaration = ($actionConfig['declaration'] ?? null);
@@ -264,7 +414,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return array<string, mixed> The metadata, empty when nothing is declared.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private static function declaredMetadata(array $declaration): array {
 		$metadata = [];
@@ -293,7 +443,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return string The ISO date-time, or '' when nothing declares one.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function declaredDueDate(array $declaration, array $task): string {
 		$leadTime = (int)($declaration['leadTimeDays'] ?? 0);
@@ -378,8 +528,8 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return string The principal, or '' when nothing names one.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private function resolveAssignee(array $actionConfig, array $case, string $title): string {
 		$assignee = $this->assignees->resolve(

@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\CaseType\AlwaysAvailableActs;
 use OCA\Dossiq\Service\Cases\ApprovalGate;
 use OCA\Dossiq\Service\Lifecycle\CaseActsMenu;
 use OCA\Dossiq\Service\Lifecycle\LifecycleActorGate;
+use OCP\IL10N;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -193,4 +194,35 @@ class CaseActsMenuTest extends TestCase {
 
 		self::assertSame([], $menu->forCase(caseId: 'case-1', case: self::CASE)['alwaysAvailable']);
 	}//end testNoSessionAsksForTheEmptyUser()
+
+	/**
+	 * Archiving is greyed on an open case with the reason the act itself
+	 * refuses it for, and offered once an act has ended the case
+	 * (DqVolgendeStap "Archiveren: Kan pas als de zaak is afgerond.").
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testArchivingWaitsUntilTheCaseIsEnded(): void {
+		$gate = $this->createMock(originalClassName: LifecycleActorGate::class);
+		$gate->method('may')->willReturn(true);
+		$gate->method('roleFor')->willReturn('');
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnMap([['Only once the case is finished.', [], 'Kan pas als de zaak is afgerond.']]);
+		$menu = new CaseActsMenu(gate: $gate, l10n: $l10n);
+
+		$open = array_column(array: $menu->forCase(caseId: 'case-1', case: self::CASE)['acts'], column_key: null, index_key: 'act');
+		self::assertFalse(condition: $open['archive']['allowed']);
+		self::assertSame(expected: 'Kan pas als de zaak is afgerond.', actual: $open['archive']['reason']);
+		self::assertTrue(condition: $open['finish']['allowed'], message: 'only archiving waits for the end');
+
+		$ended = array_column(
+			array: $menu->forCase(caseId: 'case-1', case: (self::CASE + ['endingAct' => 'finish']))['acts'],
+			column_key: null,
+			index_key: 'act'
+		);
+		self::assertTrue(condition: $ended['archive']['allowed']);
+		self::assertSame(expected: '', actual: $ended['archive']['reason']);
+	}//end testArchivingWaitsUntilTheCaseIsEnded()
 }//end class

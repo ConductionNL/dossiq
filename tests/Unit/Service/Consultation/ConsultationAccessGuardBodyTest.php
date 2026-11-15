@@ -42,6 +42,8 @@ class ConsultationAccessGuardBodyTest extends TestCase {
 			consultationService: $this->createMock(originalClassName: ConsultationService::class),
 			userSession: $this->createMock(originalClassName: IUserSession::class),
 			groupManager: $this->createMock(originalClassName: IGroupManager::class),
+			caseAccess: $this->createMock(\OCA\Dossiq\Service\CaseAccessGuard::class),
+			serviceAccount: $this->createMock(\OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount::class),
 		);
 	}//end guard()
 

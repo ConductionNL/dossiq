@@ -1,0 +1,21 @@
+{
+    "status": 400,
+    "data": {
+        "message": "Refused by resumeAfterPauze"
+    },
+    "calls": [
+        {
+            "call": "pause::resumeAfterPauze",
+            "args": [
+                "inst-1",
+                null
+            ]
+        },
+        {
+            "call": "logger::info",
+            "args": [
+                "Hervat failed: Refused by resumeAfterPauze"
+            ]
+        }
+    ]
+}

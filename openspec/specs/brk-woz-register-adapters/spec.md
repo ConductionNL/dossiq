@@ -1,7 +1,7 @@
 # brk-woz-register-adapters Specification
 
 ## Purpose
-TBD - created by archiving change brk-woz-register-adapters. Update Purpose after archive.
+Read BRK and WOZ data through adapters chosen by configuration. The default makes no external calls, every lookup is validated first, and personal data is kept as references.
 ## Requirements
 ### Requirement: The BRK adapter MUST be selected by configuration, defaulting to no external calls
 

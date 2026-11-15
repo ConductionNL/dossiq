@@ -1,7 +1,7 @@
 # role-routing-via-or-rbac Specification
 
 ## Purpose
-TBD - created by archiving change migrate-role-routing-to-or-rbac. Update Purpose after archive.
+Route case work by role through OpenRegister's group authorisation. A role type names its Nextcloud group, and publishing and transitions enforce it.
 
 ## Requirements
 

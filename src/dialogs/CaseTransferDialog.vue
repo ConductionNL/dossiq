@@ -135,7 +135,7 @@ export default {
 
 	methods: {
 		/**
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 		 * @spec openspec/specs/federated-case-collaboration/spec.md#case-transfer-extends-across-federation-with-idempotent-acceptreject-and-a-custody-audit-trail
 		 */
 		async submitTransfer() {

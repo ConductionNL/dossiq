@@ -87,8 +87,8 @@ class BezwaarTermijnScheduler {
 	 *
 	 * @return array{endDate: string, herinnering: string} Both as `Y-m-d`.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function computeTermijn(string $bekendmaking, array $definitie = [], int $termDays = 0): array {
 		$span = new DateInterval('P6W');
@@ -117,44 +117,87 @@ class BezwaarTermijnScheduler {
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	public function createBezwaarTrigger(
-		string $decisionId,
-		string $bekendmaking,
-		string $endDate,
-		string $herinnering,
-	): void {
+	public function createBezwaarTrigger(string $decisionId, string $bekendmaking, string $endDate, string $herinnering): void {
+		$target = $this->triggerTarget();
+		if ($target === null) {
+			return;
+		}
+
+		$trigger = self::triggerRecord(decisionId: $decisionId, bekendmaking: $bekendmaking, endDate: $endDate, herinnering: $herinnering);
+		$this->saveTrigger(target: $target, trigger: $trigger);
+	}//end createBezwaarTrigger()
+
+	/**
+	 * The object service, register and schema a BezwaarTrigger is written to, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The object service, the register and the schema.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function triggerTarget(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return;
+			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'bezwaar_trigger_schema');
 		if ($register === '' || $schema === '') {
-			return;
+			return null;
 		}
 
+		return [$objectService, $register, $schema];
+	}//end triggerTarget()
+
+	/**
+	 * The BezwaarTrigger scheduling record.
+	 *
+	 * @param string $decisionId   The beschikking UUID.
+	 * @param string $bekendmaking The bekendmaking date.
+	 * @param string $endDate      The bezwaartermijn end date.
+	 * @param string $herinnering  The reminder date.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private static function triggerRecord(string $decisionId, string $bekendmaking, string $endDate, string $herinnering): array {
 		$archiveDate = (new DateTimeImmutable($endDate))->add(new DateInterval('P1D'))->format('Y-m-d');
 
+		return [
+			'decisionId' => $decisionId,
+			'announcementDate' => $bekendmaking,
+			'objectionTermEndDate' => $endDate,
+			'reminderDate' => $herinnering,
+			'objectionReceived' => false,
+			'archiveTriggerActive' => true,
+			'archiveDate' => $archiveDate,
+		];
+	}//end triggerRecord()
+
+	/**
+	 * Write the BezwaarTrigger record, logging when it cannot be written.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $target  The object service, the register and the schema.
+	 * @param array<string, mixed>                   $trigger The record.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function saveTrigger(array $target, array $trigger): void {
+		[$objectService, $register, $schema] = $target;
 		try {
 			$objectService->saveObject(
 				register: $register,
 				schema: $schema,
-				object: [
-					'decisionId' => $decisionId,
-					'announcementDate' => $bekendmaking,
-					'objectionTermEndDate' => $endDate,
-					'reminderDate' => $herinnering,
-					'objectionReceived' => false,
-					'archiveTriggerActive' => true,
-					'archiveDate' => $archiveDate,
-				],
+				object: $trigger,
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BeschikkingService: createBezwaarTrigger failed',
-				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
+				['exception' => $e->getMessage(), 'decisionId' => $trigger['decisionId']],
 			);
 		}
-	}//end createBezwaarTrigger()
+	}//end saveTrigger()
 }//end class

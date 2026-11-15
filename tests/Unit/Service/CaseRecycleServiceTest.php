@@ -29,6 +29,10 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
 use OCA\Dossiq\Service\Recycle\DeletionWindowReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\AuditTrail;
+use OCA\OpenRegister\Db\AuditTrailMapper;
+use OCA\OpenRegister\Db\AuditTrail\ObjectAuditEvent;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -42,6 +46,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Recycle\CaseRecycleService
  * @uses \OCA\Dossiq\Service\Recycle\DeletionWindowReader
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class CaseRecycleServiceTest extends TestCase {
 
@@ -109,10 +114,34 @@ class CaseRecycleServiceTest extends TestCase {
 	/**
 	 * Build the service under test.
 	 *
+	 * @param bool $lens Whether OpenRegister offers the `_deleted` lens.
+	 *
 	 * @return CaseRecycleService
 	 */
-	private function service(): CaseRecycleService {
+	private function service(bool $lens = false): CaseRecycleService {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+
+		if ($lens === true) {
+			return new class(
+				settingsService: $this->settingsService,
+				windowReader: new DeletionWindowReader(
+					settingsService: $this->settingsService,
+					logger: $logger
+				),
+				userSession: $this->userSession,
+				logger: $logger
+			) extends CaseRecycleService {
+
+				/**
+				 * An OpenRegister that offers the deleted lens.
+				 *
+				 * @return bool Always true.
+				 */
+				protected function deletedLensAvailable(): bool {
+					return true;
+				}
+			};
+		}
 
 		return new CaseRecycleService(
 			settingsService: $this->settingsService,
@@ -124,6 +153,70 @@ class CaseRecycleServiceTest extends TestCase {
 			logger: $logger
 		);
 	}//end service()
+
+	/**
+	 * Hand the service register and schema mappers that resolve anything.
+	 *
+	 * @return void
+	 */
+	private function withTableMappers(): void {
+		$finder = new class {
+
+			/**
+			 * Resolve an id or slug to a stand-in entity.
+			 *
+			 * @param mixed $id The id or slug.
+			 *
+			 * @return object The entity.
+			 */
+			public function find(mixed $id): object {
+				return (object)['id' => $id];
+			}
+		};
+
+		$this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				default => $default,
+			}
+		);
+		$this->settingsService->method('getOpenRegisterClass')->willReturnCallback(
+			fn (string $class): ?object => match ($class) {
+				CaseRecycleService::MAGIC_MAPPER => $this->mapper,
+				CaseRecycleService::AUDIT_MAPPER => $this->auditMapper,
+				CaseRecycleService::REGISTER_MAPPER, CaseRecycleService::SCHEMA_MAPPER => $finder,
+				default => null,
+			}
+		);
+	}//end withTableMappers()
+
+	/**
+	 * A trash with many deleted rows of other schemas ahead of one case, read
+	 * a page at a time the way OpenRegister's scan over every table pages it.
+	 *
+	 * @return object The mapper.
+	 */
+	private function crowdedTrash(): object {
+		return new class {
+
+			/**
+			 * Every soft-deleted row on the instance, newest first.
+			 *
+			 * @param int|null $limit Row cap.
+			 * @param int|null $offset Rows to skip.
+			 *
+			 * @return array<int, object> The rows.
+			 */
+			public function findDeletedAcrossAllMagicTables(?int $limit = null, ?int $offset = null): array {
+				$rows = array_fill(0, 60, CaseRecycleServiceTestEntity::aDocument());
+				$rows[] = CaseRecycleServiceTestEntity::aCase();
+
+				return array_slice($rows, ($offset ?? 0), $limit);
+			}
+		};
+	}//end crowdedTrash()
 
 	/**
 	 * A soft-deleted case, and a soft-deleted row of another schema beside it.
@@ -193,8 +286,8 @@ class CaseRecycleServiceTest extends TestCase {
 	 *
 	 * @return object The mapper.
 	 */
-	private function auditTrailMapper(): object {
-		return new class {
+	private function auditTrailMapper(): AuditTrailMapper {
+		return new class extends AuditTrailMapper {
 
 			/**
 			 * The entries written, newest last.
@@ -206,30 +299,19 @@ class CaseRecycleServiceTest extends TestCase {
 			/**
 			 * Keep the entry rather than writing one.
 			 *
-			 * @param object $object The object acted on.
-			 * @param string $action The action.
-			 * @param array<string, mixed> $context The record.
-			 * @param string|null $actorId The actor.
-			 * @param string|null $actorName The actor's display name.
+			 * @param ObjectAuditEvent $event The object, action, record and actor.
 			 *
-			 * @return array<string, mixed> The entry.
+			 * @return AuditTrail The entry.
 			 */
-			public function createAuditTrailEntry(
-				object $object,
-				string $action,
-				array $context = [],
-				?string $actorId = null,
-				?string $actorName = null,
-			): array {
-				$entry = [
-					'action' => $action,
-					'context' => $context,
-					'actorId' => $actorId,
-					'actorName' => $actorName,
+			public function recordObjectEvent(ObjectAuditEvent $event): AuditTrail {
+				$this->entries[] = [
+					'action' => $event->action,
+					'context' => $event->context,
+					'actorId' => $event->options->actor->id,
+					'actorName' => $event->options->actor->name,
 				];
-				$this->entries[] = $entry;
 
-				return $entry;
+				return new AuditTrail();
 			}
 		};
 	}//end auditTrailMapper()
@@ -251,6 +333,101 @@ class CaseRecycleServiceTest extends TestCase {
 		$this->assertSame('2034-01-31', $rows['results'][0]['windowEndsOn']);
 		$this->assertSame('behandelaar', $rows['results'][0]['deletedBy']);
 	}//end testTheLensListsDeletedCasesWithTheirWindow()
+
+	/**
+	 * A deleted case is listed however many other objects were deleted
+	 * before it: the lens keeps the cases first and pages after.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deleted-cases-read-the-case-table/specs/case-management/spec.md
+	 */
+	public function testTheLensPagesAfterKeepingTheCases(): void {
+		$this->mapper = $this->crowdedTrash();
+
+		$rows = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true);
+
+		$this->assertSame(expected: 1, actual: $rows['total']);
+		$this->assertSame(expected: 'case-9', actual: $rows['results'][0]['id']);
+	}//end testTheLensPagesAfterKeepingTheCases()
+
+	/**
+	 * With OpenRegister's `_deleted` lens and the case table at hand, the lens
+	 * asks for that table's deleted rows alone, and never scans every table.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deleted-cases-read-the-case-table/specs/case-management/spec.md
+	 */
+	public function testTheLensReadsTheCaseTableOnly(): void {
+		$this->mapper = new class {
+
+			/**
+			 * The query the case table was asked with.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public array $query = [];
+
+			/**
+			 * Whether the scan over every table ran.
+			 *
+			 * @var bool
+			 */
+			public bool $scanned = false;
+
+			/**
+			 * The deleted rows of one table.
+			 *
+			 * @param array<string, mixed> $query The query.
+			 * @param mixed $register The register.
+			 * @param mixed $schema The schema.
+			 *
+			 * @return array<int, object> The rows.
+			 */
+			public function searchObjectsInRegisterSchemaTable(array $query, mixed $register, mixed $schema): array {
+				$this->query = $query;
+
+				return [CaseRecycleServiceTestEntity::aCase(), CaseRecycleServiceTestEntity::anOlderCase()];
+			}
+
+			/**
+			 * The scan over every table.
+			 *
+			 * @return array<int, object> Nothing.
+			 */
+			public function findDeletedAcrossAllMagicTables(): array {
+				$this->scanned = true;
+
+				return [];
+			}
+		};
+		$this->withTableMappers();
+
+		$rows = $this->service(lens: true)->deletedCases(limit: 1, forUser: 'archivaris', isAdmin: true);
+
+		$this->assertFalse(condition: $this->mapper->scanned);
+		$this->assertSame(expected: 'true', actual: $this->mapper->query['_deleted']);
+		$this->assertSame(expected: 2, actual: $rows['total']);
+		$this->assertCount(expectedCount: 1, haystack: $rows['results']);
+	}//end testTheLensReadsTheCaseTableOnly()
+
+	/**
+	 * The page's search box narrows the lens on the number and the title.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deleted-cases-read-the-case-table/specs/case-management/spec.md
+	 */
+	public function testTheLensNarrowsBySearch(): void {
+		$hit = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true, search: '0009');
+		$title = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true, search: 'AANSLAG');
+		$miss = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true, search: '0010');
+
+		$this->assertSame(expected: 1, actual: $hit['total']);
+		$this->assertSame(expected: 1, actual: $title['total']);
+		$this->assertSame(expected: 0, actual: $miss['total']);
+	}//end testTheLensNarrowsBySearch()
 
 	/**
 	 * The lens is scoped to the caller. The trash holds every deleted case on
@@ -342,6 +519,103 @@ class CaseRecycleServiceTest extends TestCase {
 
 		$this->service()->restore(caseId: 'case-live');
 	}//end testALiveCaseCannotBeRestored()
+
+	/**
+	 * Only a soft-deleted case is found as deleted: a miss, another schema and an empty id are not.
+	 *
+	 * @return void
+	 */
+	public function testOnlyADeletedCaseIsFoundAsDeleted(): void {
+		$this->assertSame(expected: 'case-9', actual: $this->service()->findDeleted(caseId: 'case-9')->getUuid());
+		$this->assertNull(actual: $this->service()->findDeleted(caseId: ''));
+
+		$this->mapper = new class {
+
+			/**
+			 * A mapper that raises its miss.
+			 *
+			 * @return object Never.
+			 */
+			public function find(): object {
+				throw new RuntimeException('no such object');
+			}
+		};
+		$this->assertNull(actual: $this->service()->findDeleted(caseId: 'case-1'));
+
+		$this->mapper = new class {
+
+			/**
+			 * A deleted row of another schema.
+			 *
+			 * @return object The entity.
+			 */
+			public function find(): object {
+				return CaseRecycleServiceTestEntity::aDocument();
+			}
+		};
+		$this->assertNull(actual: $this->service()->findDeleted(caseId: 'doc-1'));
+	}//end testOnlyADeletedCaseIsFoundAsDeleted()
+
+	/**
+	 * Without the lens, without the table mappers, or with an unresolvable table, the lens scans every table.
+	 *
+	 * @return void
+	 */
+	public function testTheLensFallsBackOnTheScan(): void {
+		$this->assertSame(expected: 1, actual: $this->service(lens: true)->deletedCases(forUser: 'archivaris', isAdmin: true)['total']);
+
+		$this->withTableMappers();
+		$this->assertSame(expected: 1, actual: $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true)['total']);
+
+		$finder = new class {
+
+			/**
+			 * An unconfigured id.
+			 *
+			 * @return object Never.
+			 */
+			public function find(): object {
+				throw new RuntimeException('not configured');
+			}
+		};
+		$this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				default => $default,
+			}
+		);
+		$this->settingsService->method('getOpenRegisterClass')->willReturnCallback(
+			fn (string $class): ?object => match ($class) {
+				CaseRecycleService::MAGIC_MAPPER => $this->mapper,
+				CaseRecycleService::REGISTER_MAPPER, CaseRecycleService::SCHEMA_MAPPER => $finder,
+				default => null,
+			}
+		);
+		$this->assertSame(expected: 1, actual: $this->service(lens: true)->deletedCases(forUser: 'archivaris', isAdmin: true)['total']);
+	}//end testTheLensFallsBackOnTheScan()
+
+	/**
+	 * A trash that cannot be read lists nothing rather than failing the page.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableTrashListsNothing(): void {
+		$this->mapper = new class {
+
+			/**
+			 * A scan that fails.
+			 *
+			 * @return array<int, object> Never.
+			 */
+			public function findDeletedAcrossAllMagicTables(): array {
+				throw new RuntimeException('database gone');
+			}
+		};
+
+		$this->assertSame(expected: 0, actual: $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true)['total']);
+	}//end testAnUnreadableTrashListsNothing()
 }//end class
 
 /**
@@ -360,62 +634,10 @@ class CaseRecycleServiceTestEntity {
 	 * @param array<string, mixed> $payload The object payload.
 	 * @param array<string, mixed> $deleted The deletion marker.
 	 *
-	 * @return object The entity.
+	 * @return ObjectEntity The entity, as OpenRegister's object service hands it back.
 	 */
-	public static function make(string $uuid, string $schema, array $payload, array $deleted): object {
-		return new class($uuid, $schema, $payload, $deleted) {
-
-			/**
-			 * Build the entity.
-			 *
-			 * @param string $uuid The UUID.
-			 * @param string $schema The schema slug.
-			 * @param array<string, mixed> $payload The object payload.
-			 * @param array<string, mixed> $deleted The deletion marker.
-			 */
-			public function __construct(
-				private readonly string $uuid,
-				private readonly string $schema,
-				private readonly array $payload,
-				private readonly array $deleted,
-			) {
-			}
-
-			/**
-			 * The UUID.
-			 *
-			 * @return string The UUID.
-			 */
-			public function getUuid(): string {
-				return $this->uuid;
-			}
-
-			/**
-			 * The schema slug.
-			 *
-			 * @return string The slug.
-			 */
-			public function getSchema(): string {
-				return $this->schema;
-			}
-
-			/**
-			 * The payload.
-			 *
-			 * @return array<string, mixed> The payload.
-			 */
-			public function getObject(): array {
-				return $this->payload;
-			}
-
-			/**
-			 * The deletion marker.
-			 *
-			 * @return array<string, mixed> The marker.
-			 */
-			public function getDeleted(): array {
-				return $this->deleted;
-			}
+	public static function make(string $uuid, string $schema, array $payload, array $deleted): ObjectEntity {
+		$entity = new class extends ObjectEntity {
 
 			/**
 			 * Whether the row is in the recycle state.
@@ -423,9 +645,15 @@ class CaseRecycleServiceTestEntity {
 			 * @return bool True when soft-deleted.
 			 */
 			public function isSoftDeleted(): bool {
-				return ($this->deleted !== []);
+				return (($this->getDeleted() ?? []) !== []);
 			}
 		};
+		$entity->setUuid($uuid);
+		$entity->setSchema($schema);
+		$entity->setObject($payload);
+		$entity->setDeleted($deleted);
+
+		return $entity;
 	}//end make()
 
 	/**

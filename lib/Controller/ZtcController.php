@@ -6,7 +6,7 @@
  * Controller for serving ZGW Catalogi API endpoints (catalogussen, zaaktypen,
  * statustypen, resultaattypen, roltypen, eigenschappen, informatieobjecttypen,
  * besluittypen, zaaktype-informatieobjecttypen). Delegates shared operations
- * to ZgwService and handles ZTC-specific publish logic.
+ * to ZgwService. Publishing lives in ZtcPublishController.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -30,9 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Zgw\ZtcCrossReferenceEnricher;
-use OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter;
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Controller\Support\GuardsZgwRequests;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Service\Zgw\ValidityDateFilter;
+use OCA\Dossiq\Service\Zgw\ZtcHelperFactory;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -41,17 +42,16 @@ use OCP\IRequest;
 /**
  * ZTC (Catalogi) API Controller
  *
- * Handles ZGW Catalogi register resources with publish support for
- * zaaktypen, besluittypen, and informatieobjecttypen.
+ * Handles ZGW Catalogi register resources. Publishing a zaaktype,
+ * besluittype or informatieobjecttype is ZtcPublishController's.
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.TooManyPublicMethods)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZtcController extends ZgwController {
+	use GuardsZgwRequests;
+
 	/**
 	 * The ZGW API identifier for the Catalogi register.
 	 *
@@ -103,12 +103,12 @@ class ZtcController extends ZgwController {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The incoming request.
-	 * @param ZgwService $zgwService The shared ZGW service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -124,15 +124,21 @@ class ZtcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->requireValidJwt() ?? $this->listOf(resource: $resource);
+	}//end index()
 
+	/**
+	 * List resources of the given type once the token is valid.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return JSONResponse
+	 */
+	private function listOf(string $resource): JSONResponse {
 		$response = $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 
 		if ($response->getStatus() !== Http::STATUS_OK) {
@@ -147,7 +153,7 @@ class ZtcController extends ZgwController {
 		$data = $this->postProcessIndex(resource: $resource, data: $data);
 
 		return new JSONResponse(data: $data, statusCode: Http::STATUS_OK);
-	}//end index()
+	}//end listOf()
 
 	/**
 	 * Filter a page of ZTC results by datumGeldigheid, and enrich and filter each result's
@@ -162,10 +168,7 @@ class ZtcController extends ZgwController {
 		// ZTC datumGeldigheid: post-filter results by date validity.
 		$dateValidity = $this->request->getParam('datumGeldigheid');
 		if ($dateValidity !== null && $dateValidity !== '') {
-			$data['results'] = $this->filterByDateValidity(
-				results: $data['results'],
-				dateValidity: $dateValidity
-			);
+			$data['results'] = (new ValidityDateFilter())->keep(results: $data['results'], date: $dateValidity);
 			$data['count'] = count($data['results']);
 		}
 
@@ -191,18 +194,13 @@ class ZtcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate creates on catalogi.schrijven scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
-			return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
+		$refusal = $this->requireWriteScope();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Ztc-010: Resolve parent zaaktype draft status for sub-resource creation.
@@ -211,7 +209,7 @@ class ZtcController extends ZgwController {
 
 		// Ztc-010m: For ZIOT, resolve informatieobjecttype by omschrijving if not a UUID/URL.
 		if ($resource === 'zaaktype-informatieobjecttypen') {
-			$this->resolveIotByOmschrijving(body: $body);
+			(new ZtcHelperFactory())->ztcTypeNameResolver(zgwService: $this->zgwService)->resolveInformatieobjecttype(body: $body);
 		}
 
 		$response = $this->zgwService->handleCreate(
@@ -247,30 +245,26 @@ class ZtcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->requireValidJwt() ?? $this->shownResource(resource: $resource, uuid: $uuid);
+	}//end show()
 
+	/**
+	 * Retrieve one resource once the token is valid.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The resource UUID.
+	 *
+	 * @return JSONResponse
+	 */
+	private function shownResource(string $resource, string $uuid): JSONResponse {
 		$response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 
-		// Enrich cross-references and filter invalid URLs.
-		if (isset(self::URL_FILTER_FIELDS[$resource]) === true
-			&& $response->getStatus() === Http::STATUS_OK
-		) {
-			$data = $response->getData();
-			$data = $this->enrichCrossReferences(resource: $resource, data: $data);
-			$filtered = $this->filterValidUrls(resource: $resource, data: $data);
-
-			return new JSONResponse(data: $filtered, statusCode: Http::STATUS_OK);
-		}
-
-		return $response;
-	}//end show()
+		return $this->presented(resource: $resource, response: $response);
+	}//end shownResource()
 
 	/**
 	 * Resolve the parent zaaktype draft status for a sub-resource.
@@ -315,43 +309,11 @@ class ZtcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate updates on catalogi.schrijven scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
-			return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
-		}
-
-		$parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
-
-		$response = $this->zgwService->handleUpdate(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			false,
-			$parentZtDraft
-		);
-
-		// Enrich cross-references and filter invalid URLs.
-		if (isset(self::URL_FILTER_FIELDS[$resource]) === true
-			&& $response->getStatus() === Http::STATUS_OK
-		) {
-			$data = $response->getData();
-			$data = $this->enrichCrossReferences(resource: $resource, data: $data);
-			$filtered = $this->filterValidUrls(resource: $resource, data: $data);
-
-			return new JSONResponse(data: $filtered, statusCode: Http::STATUS_OK);
-		}
-
-		return $response;
+		return $this->requireWriteScope() ?? $this->updated(resource: $resource, uuid: $uuid, isPatch: false);
 	}//end update()
 
 	/**
@@ -368,20 +330,23 @@ class ZtcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->requireWriteScope() ?? $this->updated(resource: $resource, uuid: $uuid, isPatch: true);
+	}//end patch()
 
-		// SB2: Gate patches on catalogi.schrijven scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
-			return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
-		}
-
+	/**
+	 * Update a resource with its parent zaaktype's draft state, presented.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid     The resource UUID.
+	 * @param bool   $isPatch  Whether this is a partial update.
+	 *
+	 * @return JSONResponse
+	 */
+	private function updated(string $resource, string $uuid, bool $isPatch): JSONResponse {
 		$parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
 
 		$response = $this->zgwService->handleUpdate(
@@ -389,23 +354,12 @@ class ZtcController extends ZgwController {
 			self::ZGW_API,
 			$resource,
 			$uuid,
-			true,
+			$isPatch,
 			$parentZtDraft
 		);
 
-		// Enrich cross-references and filter invalid URLs.
-		if (isset(self::URL_FILTER_FIELDS[$resource]) === true
-			&& $response->getStatus() === Http::STATUS_OK
-		) {
-			$data = $response->getData();
-			$data = $this->enrichCrossReferences(resource: $resource, data: $data);
-			$filtered = $this->filterValidUrls(resource: $resource, data: $data);
-
-			return new JSONResponse(data: $filtered, statusCode: Http::STATUS_OK);
-		}
-
-		return $response;
-	}//end patch()
+		return $this->presented(resource: $resource, response: $response);
+	}//end updated()
 
 	/**
 	 * Delete a resource by UUID.
@@ -421,18 +375,13 @@ class ZtcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate destroys on catalogi.schrijven scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
-			return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
+		$refusal = $this->requireWriteScope();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
@@ -445,150 +394,6 @@ class ZtcController extends ZgwController {
 			$parentZtDraft
 		);
 	}//end destroy()
-
-	/**
-	 * Publish a ZTC resource by setting isDraft to false.
-	 *
-	 * Loads the existing object, sets isDraft=false, saves it back,
-	 * and returns the outbound-mapped result.
-	 *
-	 * @param string $resource The ZGW resource name (zaaktypen, besluittypen, informatieobjecttypen).
-	 * @param string $uuid The resource UUID.
-	 *
-	 * @return JSONResponse
-	 */
-	private function handlePublish(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		if ($this->zgwService->getObjectService() === null) {
-			return $this->zgwService->unavailableResponse();
-		}
-
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-		if ($mappingConfig === null) {
-			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
-		}
-
-		try {
-			$existing = $this->zgwService->getObjectService()->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->publishedCopy(existingData: $this->objectToArray(row: $existing));
-
-			$object = $this->zgwService->getObjectService()->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $existingData,
-				uuid: $uuid
-			);
-			$objectData = $this->objectToArray(row: $object);
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
-
-			return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'ZTC publish error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-
-			return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
-		}//end try
-	}//end handlePublish()
-
-	/**
-	 * The stored type as it is saved on publish: concept off, bookkeeping keys gone.
-	 *
-	 * @param array $existingData The stored type
-	 *
-	 * @return array The data to save
-	 */
-	private function publishedCopy(array $existingData): array {
-		unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
-		$existingData['isDraft'] = false;
-
-		if (isset($existingData['identifier']) === true && is_int($existingData['identifier']) === true) {
-			$existingData['identifier'] = (string)$existingData['identifier'];
-		}
-
-		// Re-encode fields that are stored as JSON strings but auto-decoded
-		// by jsonSerialize. Only string-typed schema fields need re-encoding.
-		// productsOrServices is NOT in this list: it is declared as an array,
-		// so re-encoding it here wrote a string into an array property.
-		foreach (['referenceProcess', 'relatedCaseTypes'] as $field) {
-			if (isset($existingData[$field]) === true && is_array($existingData[$field]) === true) {
-				$existingData[$field] = json_encode($existingData[$field]);
-			}
-		}
-
-		return $existingData;
-	}//end publishedCopy()
-
-	/**
-	 * Publish a zaaktype (set isDraft to false).
-	 *
-	 * @param string $uuid The zaaktype UUID.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 * @CORS
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
-	public function publishZaaktype(string $uuid): JSONResponse {
-		return $this->handlePublish(resource: 'zaaktypen', uuid: $uuid);
-	}//end publishZaaktype()
-
-	/**
-	 * Publish a besluittype (set isDraft to false).
-	 *
-	 * @param string $uuid The besluittype UUID.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 * @CORS
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
-	public function publishBesluittype(string $uuid): JSONResponse {
-		return $this->handlePublish(resource: 'besluittypen', uuid: $uuid);
-	}//end publishBesluittype()
-
-	/**
-	 * Publish an informatieobjecttype (set isDraft to false).
-	 *
-	 * @param string $uuid The informatieobjecttype UUID.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 * @CORS
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
-	public function publishInformatieobjecttype(string $uuid): JSONResponse {
-		return $this->handlePublish(resource: 'informatieobjecttypen', uuid: $uuid);
-	}//end publishInformatieobjecttype()
 
 	/**
 	 * Filter URL arrays in a ZTC response to only include valid/existing references.
@@ -608,43 +413,45 @@ class ZtcController extends ZgwController {
 	private function enrichCrossReferences(string $resource, array $data): array {
 		$baseUrl = $this->request->getServerProtocol() . '://' . $this->request->getServerHost() . '/index.php/apps/dossiq/api/zgw/catalogi/v1';
 
-		return (new ZtcCrossReferenceEnricher(zgwService: $this->zgwService))->enrich(resource: $resource, data: $data, baseUrl: $baseUrl);
+		$enricher = (new ZtcHelperFactory())->ztcCrossReferenceEnricher(zgwService: $this->zgwService);
+
+		return $enricher->enrich(resource: $resource, data: $data, baseUrl: $baseUrl);
 	}//end enrichCrossReferences()
 
-
+	/**
+	 * The JWT refusal, else the scope refusal for a consumer that may not write the catalogue, else null.
+	 *
+	 * The JWT is checked first and the scope only for a valid token, so a
+	 * write is refused before anything is read or written.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
+	 */
+	private function requireWriteScope(): ?JSONResponse {
+		return $this->scopedWriteRefusal(component: 'ztc', scope: 'catalogi.schrijven');
+	}//end requireWriteScope()
 
 	/**
-	 * Filter a list of ZTC results by datumGeldigheid (date validity).
+	 * A successful zaaktype or besluittype answer with its cross-references enriched and invalid URLs filtered; any other answer as it is.
 	 *
-	 * Returns only items where beginGeldigheid <= datumGeldigheid and
-	 * (eindeGeldigheid >= datumGeldigheid or eindeGeldigheid is absent).
+	 * @param string       $resource The ZGW resource name.
+	 * @param JSONResponse $response The store's answer.
 	 *
-	 * @param array $results The array of outbound-mapped result items.
-	 * @param string $dateValidity The validity date in Y-m-d format.
-	 *
-	 * @return array The filtered results (re-indexed).
+	 * @return JSONResponse The answer to send.
 	 */
-	private function filterByDateValidity(array $results, string $dateValidity): array {
-		$filtered = [];
-		foreach ($results as $item) {
-			$start = $item['startValidity'] ?? null;
-			$end = $item['endValidity'] ?? null;
+	private function presented(string $resource, JSONResponse $response): JSONResponse {
+		// Enrich cross-references and filter invalid URLs.
+		if (isset(self::URL_FILTER_FIELDS[$resource]) === true
+			&& $response->getStatus() === Http::STATUS_OK
+		) {
+			$data = $response->getData();
+			$data = $this->enrichCrossReferences(resource: $resource, data: $data);
+			$filtered = $this->filterValidUrls(resource: $resource, data: $data);
 
-			// BeginGeldigheid must be present and <= datumGeldigheid.
-			if ($start !== null && $start !== '' && $start > $dateValidity) {
-				continue;
-			}
-
-			// EindeGeldigheid, if present, must be >= datumGeldigheid.
-			if ($end !== null && $end !== '' && $end < $dateValidity) {
-				continue;
-			}
-
-			$filtered[] = $item;
+			return new JSONResponse(data: $filtered, statusCode: Http::STATUS_OK);
 		}
 
-		return $filtered;
-	}//end filterByDatumGeldigheid()
+		return $response;
+	}//end presented()
 
 	/**
 	 * For zaaktypen and besluittypen, removes URLs from array fields that point to
@@ -656,13 +463,12 @@ class ZtcController extends ZgwController {
 	 * @return array The filtered response data.
 	 */
 	private function filterValidUrls(string $resource, array $data): array {
-		return (new ZtcUrlValidityFilter(zgwService: $this->zgwService))->filter(
+		return (new ZtcHelperFactory())->ztcUrlValidityFilter(zgwService: $this->zgwService)->filter(
 			fieldConfigs: self::URL_FILTER_FIELDS[$resource] ?? [],
 			data: $data,
 			today: date('Y-m-d')
 		);
 	}//end filterValidUrls()
-
 
 	/**
 	 * List audit trail entries for a resource.
@@ -676,16 +482,11 @@ class ZtcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->audittrailList(resource: $resource, uuid: $uuid);
 	}//end audittrailIndex()
 
 	/**
@@ -701,105 +502,11 @@ class ZtcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailShow(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			$auditUuid
-		);
+		return $this->audittrailEntry(resource: $resource, uuid: $uuid, auditUuid: $auditUuid);
 	}//end audittrailShow()
 
-	/**
-	 * Resolve informatieobjecttype by omschrijving when not a UUID/URL (ztc-010m).
-	 *
-	 * The ZGW standard allows referencing an IOT by omschrijving in ZIOT creation.
-	 * This method looks up the IOT by omschrijving and replaces it with its UUID.
-	 *
-	 * @param array $body The request body (modified in-place via cached body)
-	 *
-	 * @return void
-	 */
-	private function resolveIotByOmschrijving(array $body): void {
-		$iotValue = $body['informatieobjecttype'] ?? '';
-		if ($iotValue === '') {
-			return;
-		}
-
-		// Already a UUID or URL — no resolution needed.
-		if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $iotValue) === 1) {
-			return;
-		}
-
-		if (filter_var($iotValue, FILTER_VALIDATE_URL) !== false) {
-			return;
-		}
-
-		// Try to look up by omschrijving (internal field: name).
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return;
-		}
-
-		$iotMapping = $this->zgwService->loadMappingConfig(self::ZGW_API, 'informatieobjecttypen');
-		if ($iotMapping === null) {
-			return;
-		}
-
-		try {
-			$iotUuid = $this->findIotUuidByOmschrijving(objectService: $objectService, iotMapping: $iotMapping, omschrijving: $iotValue);
-			if ($iotUuid !== '') {
-				$this->zgwService->updateCachedBodyField('informatieobjecttype', $iotUuid);
-			}
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->debug(
-				'ztc-010m: Failed to resolve IOT by omschrijving: ' . $e->getMessage()
-			);
-		}//end try
-	}//end resolveIotByOmschrijving()
-
-	/**
-	 * The uuid of the informatieobjecttype with this omschrijving, by name and else by full text.
-	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array $iotMapping The informatieobjecttypen mapping.
-	 * @param string $omschrijving The omschrijving.
-	 *
-	 * @return string The uuid, or '' when nothing matches.
-	 */
-	private function findIotUuidByOmschrijving(object $objectService, array $iotMapping, string $omschrijving): string {
-		$result = ['total' => 0];
-		foreach ([['name' => $omschrijving, '_limit' => 1], ['_search' => $omschrijving, '_limit' => 1]] as $params) {
-			$query = $objectService->buildSearchQuery(
-				requestParams: $params,
-				register: $iotMapping['sourceRegister'],
-				schema: $iotMapping['sourceSchema']
-			);
-			$result = $objectService->searchObjectsPaginated(
-				query: $query,
-				_rbac: false,
-				_multitenancy: false
-			);
-			if (($result['total'] ?? 0) !== 0) {
-				break;
-			}
-		}
-
-		if (($result['total'] ?? 0) <= 0) {
-			return '';
-		}
-
-		$iotData = $this->objectToArray(row: $result['results'][0]);
-
-		return $iotData['id'] ?? ($iotData['@self']['id'] ?? '');
-	}//end findIotUuidByOmschrijving()
 }//end class

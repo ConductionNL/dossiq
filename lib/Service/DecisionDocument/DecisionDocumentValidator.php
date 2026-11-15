@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\DecisionDocument;
 
+use OCA\OpenRegister\Service\Rules\ConditionEvaluation;
+use OCA\OpenRegister\Service\Rules\NamedConditionEvaluator;
 use Psr\Container\ContainerInterface;
 use Throwable;
 
@@ -41,13 +43,6 @@ use Throwable;
  * @spec openspec/specs/decision-document/spec.md
  */
 class DecisionDocumentValidator {
-
-	/**
-	 * OpenRegister's named-condition evaluator, resolved lazily: dossiq runs without it.
-	 *
-	 * @var string
-	 */
-	private const EVALUATOR = 'OCA\OpenRegister\Service\Rules\NamedConditionEvaluator';
 
 	/**
 	 * Constructor.
@@ -109,8 +104,11 @@ class DecisionDocumentValidator {
 	 */
 	private function holds(array $rule, array $document, array $library): ?bool {
 		try {
-			$evaluator = $this->container->get(self::EVALUATOR);
-			return (bool)$evaluator->holds($rule['when'], $document, $library);
+			$evaluator = $this->container->get(NamedConditionEvaluator::class);
+			return $evaluator->holds(
+				node: $rule['when'],
+				evaluation: new ConditionEvaluation(document: $document, library: $library, depth: 0)
+			);
 		} catch (Throwable $unevaluable) {
 			return null;
 		}
