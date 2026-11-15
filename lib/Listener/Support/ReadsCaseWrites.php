@@ -57,6 +57,8 @@ trait ReadsCaseWrites {
 	 * @param array<string, mixed> $object Object payload (incl. `@self`).
 	 *
 	 * @return bool True when this is a case.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) SchemaMembership::belongsTo() is a pure predicate on the payload.
 	 */
 	private function isCaseSchema(array $object): bool {
 		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('case_schema'));
