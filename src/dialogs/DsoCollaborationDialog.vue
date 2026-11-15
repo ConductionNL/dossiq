@@ -69,8 +69,8 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { caseDialogTokenAware } from '../mixins/caseDialog.js'
-import { dsoErrorOf, startCollaboration } from '../services/dsoCaseApi.js'
+import { dsoCaseDialog } from '../mixins/dsoCaseDialog.js'
+import { startCollaboration } from '../services/dsoCaseApi.js'
 
 export default {
 	name: 'DsoCollaborationDialog',
@@ -82,56 +82,12 @@ export default {
 		NcTextField,
 	},
 
-	mixins: [caseDialogTokenAware],
+	mixins: [dsoCaseDialog('rationale', startCollaboration)],
 
 	emits: ['close', 'done'],
 
-	data() {
-		return {
-			authority: '',
-			rationale: '',
-			busy: false,
-			error: '',
-			sent: null,
-		}
-	},
-
-	computed: {
-		/** @spec openspec/changes/vth-cases-run-end-to-end */
-		canSend() {
-			return this.busy === false
-				&& this.targetCaseId !== ''
-				&& this.authority.trim() !== ''
-				&& this.rationale.trim() !== ''
-		},
-	},
-
 	methods: {
 		t,
-
-		/**
-		 * Start the collaboration through the DSO route and show that it was asked.
-		 *
-		 * @return {Promise<void>}
-		 * @spec openspec/changes/vth-cases-run-end-to-end
-		 */
-		async send() {
-			if (!this.canSend) {
-				return
-			}
-			this.busy = true
-			this.error = ''
-			try {
-				const authority = this.authority.trim()
-				await startCollaboration(this.targetCaseId, authority, this.rationale.trim())
-				this.sent = authority
-				this.$emit('done', { authority })
-			} catch (error) {
-				this.error = dsoErrorOf(error)
-			} finally {
-				this.busy = false
-			}
-		},
 	},
 }
 </script>

@@ -68,8 +68,8 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { caseDialogTokenAware } from '../mixins/caseDialog.js'
-import { dsoErrorOf, forwardCase } from '../services/dsoCaseApi.js'
+import { dsoCaseDialog } from '../mixins/dsoCaseDialog.js'
+import { forwardCase } from '../services/dsoCaseApi.js'
 
 export default {
 	name: 'DsoForwardDialog',
@@ -81,56 +81,12 @@ export default {
 		NcTextField,
 	},
 
-	mixins: [caseDialogTokenAware],
+	mixins: [dsoCaseDialog('reason', forwardCase)],
 
 	emits: ['close', 'done'],
 
-	data() {
-		return {
-			authority: '',
-			reason: '',
-			busy: false,
-			error: '',
-			sent: null,
-		}
-	},
-
-	computed: {
-		/** @spec openspec/changes/vth-cases-run-end-to-end */
-		canSend() {
-			return this.busy === false
-				&& this.targetCaseId !== ''
-				&& this.authority.trim() !== ''
-				&& this.reason.trim() !== ''
-		},
-	},
-
 	methods: {
 		t,
-
-		/**
-		 * Send the forward through the DSO route and show that it went.
-		 *
-		 * @return {Promise<void>}
-		 * @spec openspec/changes/vth-cases-run-end-to-end
-		 */
-		async send() {
-			if (!this.canSend) {
-				return
-			}
-			this.busy = true
-			this.error = ''
-			try {
-				const authority = this.authority.trim()
-				await forwardCase(this.targetCaseId, authority, this.reason.trim())
-				this.sent = authority
-				this.$emit('done', { authority })
-			} catch (error) {
-				this.error = dsoErrorOf(error)
-			} finally {
-				this.busy = false
-			}
-		},
 	},
 }
 </script>

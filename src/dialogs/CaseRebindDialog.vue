@@ -130,16 +130,12 @@
 <script>
 import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
-import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import CaseRebindImpact from '../components/case/CaseRebindImpact.vue'
-import { caseDialogFromRoute } from '../mixins/caseDialog.js'
-
-const PAGE_REFRESH = 'cn:page:refresh'
+import { caseTypeChangeDialog } from '../mixins/caseTypeChangeDialog.js'
 
 /** How long a typed answer settles before the server is asked again. */
 const PREVIEW_DEBOUNCE_MS = 300
@@ -155,26 +151,18 @@ export default {
 		NcTextArea,
 	},
 
-	mixins: [caseDialogFromRoute],
+	mixins: [caseTypeChangeDialog('rebind')],
 
 	emits: ['close'],
 
 	data() {
 		return {
-			current: {},
-			targets: [],
-			target: '',
 			status: '',
-			preview: null,
 			answers: {},
 			remap: {},
 			dropConfirmed: false,
 			previewing: false,
 			previewSeq: 0,
-			reason: '',
-			error: '',
-			loading: true,
-			busy: false,
 		}
 	},
 
@@ -276,32 +264,8 @@ export default {
 		clearTimeout(this.previewTimer)
 	},
 
-	async mounted() {
-		await this.loadOptions()
-	},
-
 	methods: {
 		t,
-
-		/**
-		 * The case types this case could be rebound to.
-		 *
-		 * @return {Promise<void>}
-		 *
-		 * @spec openspec/specs/zaaktype-versioning/spec.md
-		 */
-		async loadOptions() {
-			this.loading = true
-			try {
-				const { data } = await axios.get(this.endpoint())
-				this.current = data?.current ?? {}
-				this.targets = Array.isArray(data?.targets) ? data.targets : []
-			} catch (e) {
-				this.error = this.refusalOf(e)
-			} finally {
-				this.loading = false
-			}
-		},
 
 		/**
 		 * A new target clears the mapping that belonged to the old one.
@@ -382,50 +346,21 @@ export default {
 		},
 
 		/**
-		 * Rebind the case, and keep the dialog open on a refusal.
+		 * What the change posts.
 		 *
-		 * @return {Promise<void>}
-		 *
-		 * @spec openspec/specs/zaaktype-versioning/spec.md
-		 * @spec openspec/specs/zaaktype-versioning/spec.md
-		 */
-		async confirm() {
-			if (!this.canConfirm) {
-				return
-			}
-			this.busy = true
-			this.error = ''
-			try {
-				await axios.post(this.endpoint(), {
-					target: this.target,
-					status: this.status,
-					reason: this.reason.trim(),
-					properties: this.answers,
-					remap: this.remap,
-					confirmDropped: this.droppedNames,
-				})
-				// Tell the whole page: the header, the stages widget and the
-				// attributes panel all read the case type.
-				emit(PAGE_REFRESH, {})
-				this.$emit('close')
-			} catch (e) {
-				this.error = this.refusalOf(e)
-			} finally {
-				this.busy = false
-			}
-		},
-
-		/**
-		 * The endpoint for this case.
-		 *
-		 * @return {string} The url.
+		 * @return {object} The request body.
 		 *
 		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
-		endpoint() {
-			return generateUrl(
-				`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/rebind`,
-			)
+		confirmPayload() {
+			return {
+				target: this.target,
+				status: this.status,
+				reason: this.reason.trim(),
+				properties: this.answers,
+				remap: this.remap,
+				confirmDropped: this.droppedNames,
+			}
 		},
 
 		/**
