@@ -84,24 +84,7 @@ class CaseEmailRepository implements CaseEmailRepositoryInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function findTemplate(string $templateId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('email_template_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $templateId
-		);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'email_template_schema', id: $templateId);
 	}//end findTemplate()
 
 	/**

@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AdvisoryBodyServiceInterface;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -99,27 +100,10 @@ class AdvisoryBodyService implements AdvisoryBodyServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function findById(string $id): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advisory_body_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
 		// A top-level `['id' => $id]` filter does not resolve in OpenRegister
 		// (ids are metadata, not schema properties) and silently matches
 		// nothing. The get-by-uuid path resolves the id directly.
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id
-		);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'advisory_body_schema', id: $id);
 	}//end findById()
 
 	/**
