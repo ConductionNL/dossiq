@@ -78,8 +78,22 @@ class ConcludedDecisionRecord {
 		string $subjectId,
 		string $externalRef,
 	): array {
-		$record = $this->decisionRecord(store: [$objectService, $register, $schema], decisionId: $decisionId);
+		return $this->caseAndDecisionOf(
+			record: $this->decisionRecord(store: [$objectService, $register, $schema], decisionId: $decisionId),
+			refs: ['subjectId' => $subjectId, 'externalRef' => $externalRef]
+		);
+	}//end resolveCaseAndDecision()
 
+	/**
+	 * The owning case and besluit a decision record names, or the case the references name when there is no record.
+	 *
+	 * @param mixed                                         $record The decision record, or null when none matched.
+	 * @param array{subjectId: string, externalRef: string} $refs   The subject id and the external reference from the event.
+	 *
+	 * @return array{0:string,1:string,2:array<string,mixed>|null} [caseId, besluitId, decisionRecord].
+	 */
+	private function caseAndDecisionOf(mixed $record, array $refs): array {
+		$externalRef = $refs['externalRef'];
 		if (is_array($record) === true) {
 			$caseId = (string)($record['case'] ?? $record['caseRef'] ?? $externalRef);
 			$besluitId = (string)($record['besluitRef'] ?? '');
@@ -88,13 +102,13 @@ class ConcludedDecisionRecord {
 
 		// No record matched: use the external reference (then subjectId) as the
 		// case identifier; no existing besluit is known.
-		$caseId = $subjectId;
+		$caseId = $refs['subjectId'];
 		if ($externalRef !== '') {
 			$caseId = $externalRef;
 		}
 
 		return [$caseId, '', null];
-	}//end resolveCaseAndDecision()
+	}//end caseAndDecisionOf()
 
 	/**
 	 * The record that stores this decision as its `decisionRef`, when one is found.
