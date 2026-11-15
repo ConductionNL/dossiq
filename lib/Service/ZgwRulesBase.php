@@ -271,8 +271,20 @@ abstract class ZgwRulesBase {
 			return $this->badTypeUrlError(fieldName: $fieldName);
 		}
 
+		return $this->storedTypeError(type: ['uuid' => $extractedUuid, 'schemaKey' => $schemaKey], fieldName: $fieldName);
+	}//end validateTypeUrl()
+
+	/**
+	 * The error for a type that the store does not hold or holds as a draft, or null when it is published.
+	 *
+	 * @param array{uuid: string, schemaKey: string} $type      The type's UUID and the settings key for its schema
+	 * @param string                                 $fieldName The field name for error reporting
+	 *
+	 * @return array|null Validation error, or null if valid
+	 */
+	private function storedTypeError(array $type, string $fieldName): ?array {
 		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
+		$schema = $this->settingsService->getConfigValue(key: $type['schemaKey']);
 
 		if (empty($register) === true || empty($schema) === true) {
 			return null;
@@ -280,7 +292,7 @@ abstract class ZgwRulesBase {
 
 		try {
 			$typeObject = $this->objectService->find(
-				id: $extractedUuid,
+				id: $type['uuid'],
 				register: $register,
 				schema: $schema
 			);
@@ -289,7 +301,7 @@ abstract class ZgwRulesBase {
 		}
 
 		return $this->draftTypeError(typeObject: $typeObject, fieldName: $fieldName);
-	}//end validateTypeUrl()
+	}//end storedTypeError()
 
 	/**
 	 * The error for a type URL that is malformed or names no type.
