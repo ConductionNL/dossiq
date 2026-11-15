@@ -16,6 +16,7 @@ use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Redaction\RedactedCopyRecorder;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Signing\SigningConclusion;
 use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds;
@@ -224,7 +225,9 @@ class DocumentAccessExceptionRawAccessTest extends TestCase {
 		$stateMachine->method('validateTransition')->willReturn(true);
 		$recorder = new SigningConclusionRecorder(repository: $repository, stateMachine: $stateMachine, readers: $this->readers());
 
-		$this->assertTrue($recorder->record(decisionId: 'dec-1', requestId: 'req-1', status: 'signed', signedDocumentRef: '88', signedAt: null));
+		$conclusion = new SigningConclusion(decisionId: 'dec-1', requestId: 'req-1', status: 'signed', signedDocumentRef: '88', signedAt: null);
+
+		$this->assertTrue($recorder->record(conclusion: $conclusion));
 	}//end testASignedVersionCarriesTheOriginalsException()
 
 	public function testAHandlerThatCannotBeReadIsDroppedNotKept(): void {
