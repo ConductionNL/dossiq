@@ -438,13 +438,13 @@ class AdviceService implements AdviceServiceInterface {
 
 		$register = $this->settingsService->getConfigValue('register');
 
-		$payload = $this->advicePayload(caseId: $caseId, data: $data, requestedBy: $requestedBy);
+		$payload = $this->advicePayload(data: $data, request: ['case' => $caseId, 'requestedBy' => $requestedBy]);
 
-		$savedRecord = $this->savedAdvice(objectService: $objectService, register: $register, payload: $payload);
+		$advice = ['objectService' => $objectService, 'register' => $register, 'data' => $data, 'payload' => $payload];
+		$savedRecord = $this->savedAdvice(advice: $advice);
+		$advice['saved'] = $savedRecord;
 
-		$this->delegateAdviceDecision(
-			advice: ['objectService' => $objectService, 'register' => $register, 'data' => $data, 'payload' => $payload, 'saved' => $savedRecord]
-		);
+		$this->delegateAdviceDecision(advice: $advice);
 
 		$this->notifyAdviseurUnlessExternal(payload: $payload, savedRecord: $savedRecord);
 
@@ -495,9 +495,8 @@ class AdviceService implements AdviceServiceInterface {
 	/**
 	 * The adviceRequest payload, with the deadline parsed.
 	 *
-	 * @param string               $caseId      UUID of the case
-	 * @param array<string, mixed> $data        Advice request data (adviseur, deadline, vraag, etc.)
-	 * @param string               $requestedBy User UID of the requester
+	 * @param array<string, mixed>                     $data    Advice request data (adviseur, deadline, vraag, etc.)
+	 * @param array{case: string, requestedBy: string} $request UUID of the case, and the user UID of the requester
 	 *
 	 * @return array<string, mixed> The payload.
 	 *
@@ -505,7 +504,7 @@ class AdviceService implements AdviceServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
 	 */
-	private function advicePayload(string $caseId, array $data, string $requestedBy): array {
+	private function advicePayload(array $data, array $request): array {
 		// The deadline used to be stored verbatim, so 31-01-2028 became an
 		// advice request nobody could act on and nobody was told about. It is
 		// parsed here, and an unreadable value refuses the write.
@@ -522,8 +521,8 @@ class AdviceService implements AdviceServiceInterface {
 		// The adviesAanvraag schema is the one the list, the transitions and
 		// the reminders read (AdviceRepository), so a request is written there.
 		return [
-			'case' => $caseId,
-			'requestedBy' => $requestedBy,
+			'case' => $request['case'],
+			'requestedBy' => $request['requestedBy'],
 			'advisor' => (string)($data['advisor'] ?? ''),
 			'type' => $type,
 			'subject' => (string)($data['subject'] ?? ''),
@@ -536,19 +535,18 @@ class AdviceService implements AdviceServiceInterface {
 	/**
 	 * Save the adviceRequest payload and answer the stored record.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param string               $register      The register id.
-	 * @param array<string, mixed> $payload       The adviceRequest payload.
+	 * @param array{objectService: object, register: string, data: array, payload: array} $advice The OpenRegister ObjectService,
+	 *        the register id, the request data and the adviceRequest payload.
 	 *
 	 * @return array<string, mixed> The stored record, or [] when the save answered no array.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-6
 	 */
-	private function savedAdvice(object $objectService, string $register, array $payload): array {
-		$saved = $objectService->saveObject(
-			register: $register,
+	private function savedAdvice(array $advice): array {
+		$saved = $advice['objectService']->saveObject(
+			register: $advice['register'],
 			schema: $this->adviceSchema(),
-			object: $payload
+			object: $advice['payload']
 		);
 
 		$savedRecord = [];
