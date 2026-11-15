@@ -45,6 +45,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -115,7 +117,10 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 
 		$objection = $this->buildObjection(link: $link, payload: $objectionPayload);
 
-		$created = $objectService->saveObject(object: $objection, register: $schemas['register'], schema: $schemas['objection']);
+		$created = $objectService->saveObject(
+			object: $objection,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $schemas['register'], schema: $schemas['objection']))
+		);
 
 		return $this->toArray(value: $created) ?? $objection;
 	}//end onBezwaarCreated()
@@ -274,7 +279,10 @@ class BezwaarCreationHook implements BezwaarCreationHookInterface {
 		$related[$relatedCaseId] = $relatedCaseId;
 		$case['relatedCases'] = array_values($related);
 
-		$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
+		$objectService->saveObject(
+			object: $case,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $caseSchema))
+		);
 	}//end linkRelatedCase()
 
 	/**

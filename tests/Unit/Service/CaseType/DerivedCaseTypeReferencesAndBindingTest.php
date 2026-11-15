@@ -22,6 +22,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences
@@ -63,7 +64,9 @@ class DerivedCaseTypeReferencesAndBindingTest extends TestCase {
 			 *
 			 * @return array
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->test->saves[] = [$object, $register, $schema];
 				if ($this->failure !== null) {
 					throw $this->failure;

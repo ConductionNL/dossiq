@@ -33,6 +33,7 @@ use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Every adapter call, store write, timeline entry and log line of sendMessage(), per case.
@@ -115,6 +116,7 @@ class BerichtenboxSendGoldenTest extends TestCase {
 		$objects = $this->createMock(originalClassName: 'OCA\\OpenRegister\\Contract\\ObjectServiceInterface');
 		$objects->method('saveObject')->willReturnCallback(
 			function (array $object, ...$rest): object {
+				$rest = array_slice(LegacyObjectArgs::positional(method: 'saveObject', args: [$object, ...$rest]), 1);
 				$this->log[] = ['saveObject' => ['object' => $object, 'named' => $rest]];
 				$entity = $this->createMock(originalClassName: 'OCA\\OpenRegister\\Contract\\ObjectEntityInterface');
 				$entity->method('jsonSerialize')->willReturn(array_merge($object, ['id' => 'message-1']));

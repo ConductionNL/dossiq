@@ -31,12 +31,13 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwBrcRulesService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The ObjectService shape the BRC rules call with named arguments.
  */
 interface BrcObjectServiceStub {
-	public function find(string $id, string $register, string $schema): ?array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array;
 
 	public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
 
@@ -95,7 +96,9 @@ class ZgwBrcRulesServiceTest extends TestCase {
 		if ($objects !== null) {
 			$objectService = $this->createMock(BrcObjectServiceStub::class);
 			$objectService->method('find')->willReturnCallback(
-				static function (string $id, string $register, string $schema) use ($objects): ?array {
+				static function (string $id, ?ObjectFindOptions $options = null) use ($objects): ?array {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					return $objects[$id] ?? null;
 				}
 			);

@@ -33,6 +33,7 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Intake\CollectionCaseLinks
@@ -242,18 +243,19 @@ class CollectionCaseLinksFailureTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				mixed $_extend = null,
-				bool $files = false,
-				int|string $register = '',
-				int|string $schema = '',
+				?ObjectFindOptions $options = null,
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): ?array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				if (in_array((string)$schema, $this->failingReads, true) === true) {
 					throw new RuntimeException('read failed: ' . (string)$schema);
 				}
 
-				return parent::find(id: $id, _extend: $_extend, files: $files, register: $register, schema: $schema, _rbac: $_rbac, _multitenancy: $_multitenancy);
+				return parent::find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema, extend: $_extend, files: $files), _rbac: $_rbac, _multitenancy: $_multitenancy);
 			}
 		};
 		$this->seed(register: $register);

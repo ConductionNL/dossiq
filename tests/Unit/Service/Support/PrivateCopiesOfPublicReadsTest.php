@@ -33,6 +33,7 @@ use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use ReflectionMethod;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 class PrivateCopiesOfPublicReadsTest extends TestCase {
 
@@ -111,7 +112,9 @@ class PrivateCopiesOfPublicReadsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The case.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($id === 'c-1' ? ['id' => 'c-1', 'register' => $register, 'schema' => $schema] : null);
 			}
 		};

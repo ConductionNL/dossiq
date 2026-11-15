@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Listener\Registrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
 use OCA\Dossiq\Listener\CaseTypeDeleteGuard;
 use OCA\Dossiq\Listener\EmailTemplateVersionListener;
+use OCA\Dossiq\Listener\SubmissionClosingDateGuard;
 use OCA\Dossiq\Listener\WooRefusalGroundDeleteGuard;
 use OCA\Dossiq\Listener\DependentTermListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
@@ -79,9 +80,29 @@ class ObjectListenerRegistrar {
 		$this->registerWooRefusalGroundDeleteGuard(context: $context);
 		$this->registerCaseTypeDeleteGuard(context: $context);
 		$this->registerEmailTemplateVersionListener(context: $context);
+		$this->registerSubmissionClosingDateGuard(context: $context);
 		$this->registerMapLayerHostListener(context: $context);
 		$this->registerSubsystemRegistrars(context: $context);
 	}//end register()
+
+	/**
+	 * Register the guard that refuses a submission received after its case's closing date.
+	 *
+	 * On the create only: a submission that came in on time keeps moving
+	 * through its lifecycle after the closing date.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenders-run-on-the-tender-case-type
+	 */
+	private function registerSubmissionClosingDateGuard(IRegistrationContext $context): void {
+		$context->registerEventListener(
+			event: ObjectCreatingEvent::class,
+			listener: SubmissionClosingDateGuard::class
+		);
+	}//end registerSubmissionClosingDateGuard()
 
 	/**
 	 * Register the Woo refusal-ground delete guard.

@@ -45,6 +45,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use stdClass;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The `findAll()` and `saveObject()` signatures the tenant services call.
@@ -74,7 +75,7 @@ interface TenantEntityRowObjectServiceStub {
 	 *
 	 * @return ObjectEntity The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): ObjectEntity;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): ObjectEntity;
 }
 
 /**
@@ -132,7 +133,10 @@ class TenantEntityRowReadsTest extends TestCase {
 			}
 		);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): ObjectEntity {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): ObjectEntity {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['object' => $object, 'schema' => $schema, 'uuid' => $uuid];
 
 				return $this->entity(object: $object, uuid: ($uuid ?? 'created'));

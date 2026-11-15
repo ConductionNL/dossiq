@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Service\Flow\ICallFlowNode;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\SideEffectDispatcher
@@ -146,7 +147,7 @@ class SideEffectDispatcherFallbackTest extends TestCase {
 	 * @return void
 	 */
 	public function testANodeThrowingWithoutAMessageReportsActionFailed(): void {
-		$node = $this->createMock(IFlowNode::class);
+		$node = $this->createMock(ICallFlowNode::class);
 		$node->method('getId')->willReturn('dossiq.createTask');
 		$node->expects($this->once())->method('execute')->willThrowException(new RuntimeException(''));
 

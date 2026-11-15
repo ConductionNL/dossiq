@@ -45,6 +45,8 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -410,7 +412,9 @@ class RemedyLodging implements RemedyLodgingInterface {
 	 */
 	private function withdrawOpened(array $store, string $caseId): void {
 		try {
-			$store['objectService']->deleteObject(uuid: $caseId, register: $store['register'], schema: $store['caseSchema']);
+			$store['objectService']->deleteObject(
+				new ObjectDeletion(uuid: $caseId, target: new ObjectFindTarget(register: $store['register'], schema: $store['caseSchema']))
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'A remedy case whose objection failed could not be deleted again',

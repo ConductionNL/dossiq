@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden test for UnmatchedMailIntake::caseFor().
@@ -106,7 +108,9 @@ class UnmatchedMailIntakeGoldenTest extends TestCase {
 			 *
 			 * @return mixed The object.
 			 */
-			public function find(string|int $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string|int $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->test->calls[] = ['find', ['id' => $id, 'register' => $register, 'schema' => $schema]];
 				if (array_key_exists('caseType', $this->world) === false) {
 					throw new DoesNotExistException('Object not found');
@@ -124,7 +128,9 @@ class UnmatchedMailIntakeGoldenTest extends TestCase {
 			 *
 			 * @return mixed The saved object.
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->test->calls[] = ['saveObject', ['object' => $object, 'register' => $register, 'schema' => $schema]];
 				if (($this->world['save'] ?? null) === 'throws') {
 					throw new RuntimeException('the store refused it');

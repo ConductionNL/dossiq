@@ -35,6 +35,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden test for BeschikkingGenerationService::generateBeschikking().
@@ -111,7 +112,9 @@ class BeschikkingGenerationServiceGoldenTest extends TestCase {
 			 *
 			 * @return mixed The saved object.
 			 */
-			public function saveObject(mixed $register, mixed $schema, mixed $object): mixed {
+			public function saveObject(mixed $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->test->calls[] = ['ObjectService::saveObject', ['register' => $register, 'schema' => $schema, 'object' => $object]];
 				$answer = ($this->saves[$this->count] ?? null);
 				$this->count++;

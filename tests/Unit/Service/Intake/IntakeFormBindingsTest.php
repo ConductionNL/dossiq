@@ -26,6 +26,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * @covers \OCA\Dossiq\Service\Intake\IntakeFormBindings
@@ -80,7 +81,11 @@ class IntakeFormBindingsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->patches[] = ['id' => $objectId, 'data' => $data, 'register' => $register, 'schema' => $schema];
 				return ['id' => $objectId] + $data;
 			}

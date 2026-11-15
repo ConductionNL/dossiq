@@ -37,6 +37,8 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\StateMachineServiceInterface;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -147,7 +149,10 @@ class StateMachineService implements StateMachineServiceInterface {
 		$record = $this->transitionRecord(transition: ['decisionId' => $decisionId, 'from' => $from, 'to' => $to], metadata: $metadata);
 
 		try {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
+			$saved = $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $logSchema))
+			);
 			return $this->toArray(value: $saved);
 		} catch (\Throwable $e) {
 			$this->logger->error('StateMachineService: failed to persist transition log', ['exception' => $e->getMessage(), 'decisionId' => $decisionId]);

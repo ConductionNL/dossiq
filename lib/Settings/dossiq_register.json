@@ -11134,16 +11134,17 @@
                         "type": "string",
                         "enum": [
                             "cases_per_month",
+                            "storage_mb",
                             "storage_gb",
                             "active_users",
                             "api_calls_per_hour"
                         ],
-                        "description": "Quota dimension",
+                        "description": "Quota dimension. storage_mb counts megabytes; storage_gb is the old name of the same row, rewritten to storage_mb on upgrade",
                         "title": "Quota Type"
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Hard limit value (NULL = unlimited). Only for cases_per_month and active_users: the limits for storage_gb and api_calls_per_hour live on the Organisation, as storageQuota and requestQuota, and are read from there",
+                        "description": "Hard limit value (NULL = unlimited). Only for cases_per_month: the limits for storage_mb, api_calls_per_hour and active_users live on the Organisation, as storageQuota, requestQuota and userQuota, and are read from there",
                         "title": "Limit"
                     },
                     "currentUsage": {
@@ -13864,8 +13865,8 @@
                     "slug": "tier-template-basic-storage-gb"
                 },
                 "tenantRef": "00000000-0000-0000-0000-000000000000",
-                "quotaType": "storage_gb",
-                "limit": 10,
+                "quotaType": "storage_mb",
+                "limit": 10240,
                 "currentUsage": 0,
                 "softLimitWarningPercent": 80,
                 "enforcement": "warn"
@@ -13916,8 +13917,8 @@
                     "slug": "tier-template-standard-storage-gb"
                 },
                 "tenantRef": "00000000-0000-0000-0000-000000000001",
-                "quotaType": "storage_gb",
-                "limit": 100,
+                "quotaType": "storage_mb",
+                "limit": 102400,
                 "currentUsage": 0,
                 "softLimitWarningPercent": 80,
                 "enforcement": "warn"
@@ -13968,7 +13969,7 @@
                     "slug": "tier-template-enterprise-storage-gb"
                 },
                 "tenantRef": "00000000-0000-0000-0000-000000000002",
-                "quotaType": "storage_gb",
+                "quotaType": "storage_mb",
                 "limit": null,
                 "currentUsage": 0,
                 "softLimitWarningPercent": 90,

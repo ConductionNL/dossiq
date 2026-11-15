@@ -44,6 +44,8 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Kernel\Contracts\IntakeSourceSeederInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -280,15 +282,19 @@ class IntakeSourceSeeder implements IntakeSourceSeederInterface {
 		$existing = $this->findBySlug(target: $target, slug: (string)$source['slug']);
 
 		if ($existing === null) {
-			$objectService->saveObject(register: $register, schema: self::SCHEMA_SLUG, object: $this->newRow(source: $source));
+			$objectService->saveObject(
+				object: $this->newRow(source: $source),
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: self::SCHEMA_SLUG))
+			);
 			return 'created';
 		}
 
 		$objectService->saveObject(
-			register: $register,
-			schema: self::SCHEMA_SLUG,
 			object: $this->refreshedRow(existing: $this->dataOf(object: $existing), source: $source),
-			uuid: $this->uuidOf(object: $existing)
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: self::SCHEMA_SLUG),
+				uuid: $this->uuidOf(object: $existing)
+			)
 		);
 		return 'updated';
 	}//end writeSource()

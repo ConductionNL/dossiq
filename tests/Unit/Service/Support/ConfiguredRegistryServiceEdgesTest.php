@@ -32,6 +32,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The edges of the configured registry: a failing listing degrades and is
@@ -112,7 +113,9 @@ class ConfiguredRegistryServiceEdgesTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(string $register, string $schema, array $object): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				return $this->saved;
 			}
 		};

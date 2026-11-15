@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zgw\ZgwZrcZaakinformatieobjectRules;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Zgw\ZgwZrcZaakinformatieobjectRules
@@ -75,7 +76,9 @@ class ZgwZrcZaakinformatieobjectRulesTest extends TestCase {
 			public function __construct(private array $rows, private bool $linked) {
 			}
 
-			public function find(string $id, string $register, string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->rows[$id . '@' . $schema] ?? null;
 			}
 

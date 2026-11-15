@@ -36,6 +36,8 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -262,15 +264,17 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 		[$folderUuid, $file] = $stored;
 		$informatieobject = $this->informatieobjectFor(file: $file);
 
-		$saved = $target->objectService->saveObject(object: $informatieobject, register: $target->register, schema: $target->schema);
+		$saved = $target->objectService->saveObject(
+			object: $informatieobject,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $target->schema))
+		);
 		$infoId = $this->savedUuid(saved: $saved);
 
 		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
 		if ($joinSchema !== '' && $infoId !== '') {
 			$target->objectService->saveObject(
 				object: $this->joinRecord(folderUuid: $folderUuid, infoId: $infoId),
-				register: $target->register,
-				schema: $joinSchema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $joinSchema))
 			);
 		}
 	}//end backfillFile()

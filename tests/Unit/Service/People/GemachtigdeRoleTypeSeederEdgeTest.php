@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\People\GemachtigdeRoleTypeSeeder;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Tests for GemachtigdeRoleTypeSeeder at its edges.
@@ -85,7 +86,10 @@ class GemachtigdeRoleTypeSeederEdgeTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($this->saveError !== null) {
 					throw new RuntimeException($this->saveError);
 				}

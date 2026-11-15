@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\QuotaGate;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IUser;
@@ -48,6 +49,13 @@ class DossierUploadHandlerTest extends TestCase {
 	private CaseAccessGuard&MockObject $guard;
 
 	/**
+	 * The tenant quota gate; it refuses nothing unless a test says so.
+	 *
+	 * @var QuotaGate&MockObject
+	 */
+	private QuotaGate&MockObject $quota;
+
+	/**
 	 * Temp files written by a test.
 	 *
 	 * @var list<string>
@@ -62,6 +70,7 @@ class DossierUploadHandlerTest extends TestCase {
 	protected function setUp(): void {
 		$this->files = $this->createMock(ZaakdossierService::class);
 		$this->guard = $this->createMock(CaseAccessGuard::class);
+		$this->quota = $this->createMock(QuotaGate::class);
 	}//end setUp()
 
 	/**
@@ -83,7 +92,7 @@ class DossierUploadHandlerTest extends TestCase {
 	 * @return DossierUploadHandler
 	 */
 	private function handler(): DossierUploadHandler {
-		return new DossierUploadHandler($this->files, $this->guard);
+		return new DossierUploadHandler($this->files, $this->guard, $this->quota);
 	}//end handler()
 
 	/**

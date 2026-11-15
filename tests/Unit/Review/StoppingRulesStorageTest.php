@@ -28,6 +28,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Review\StoppingRules
@@ -70,7 +71,10 @@ class StoppingRulesStorageTest extends TestCase {
 				return [];
 			}
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($this->failure !== null) {
 					throw $this->failure;
 				}

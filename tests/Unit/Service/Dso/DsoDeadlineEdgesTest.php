@@ -35,6 +35,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Nothing is read or written without configuration, a notification that
@@ -98,7 +99,9 @@ class DsoDeadlineEdgesTest extends TestCase {
 			 *
 			 * @return array|null
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->asked[] = $id;
 				return ['id' => $id];
 			}

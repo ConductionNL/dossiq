@@ -30,6 +30,9 @@ namespace OCA\Dossiq\Tests\Support;
 
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class EntityAnsweringRegister {
 	/**
@@ -59,14 +62,15 @@ class EntityAnsweringRegister {
 	 */
 	public function find(
 		int|string $id,
-		mixed $_extend = null,
-		bool $files = false,
-		int|string $register = '',
-		int|string $schema = '',
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): ObjectEntity {
-		$row = $this->register->find(id: $id, register: $register, schema: $schema);
+		$_extend = $options?->extend;
+		$files = $options?->files ?? false;
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
+		$row = $this->register->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 		if ($row === null) {
 			throw new DoesNotExistException('no such object');
 		}
@@ -93,13 +97,14 @@ class EntityAnsweringRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
-		return $this->register->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
+		return $this->register->saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 	}//end saveObject()
 
 	/**

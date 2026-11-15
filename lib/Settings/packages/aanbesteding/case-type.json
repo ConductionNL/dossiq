@@ -16,13 +16,14 @@
     "isDraft": false,
     "confidentiality": "zaakvertrouwelijk",
     "initialStatus": "775cbdfe-31e7-5ec8-8405-f2ff35d32fa4",
+    "tenderChain": true,
     "sideCards": [
       "case-tile-deadline",
       "case-banner-stack"
     ],
     "overviewCards": [
-      "case-overview-sections",
-      "case-tender-bids"
+      "case-tender-ranking",
+      "case-overview-sections"
     ],
     "overviewSections": [
       {

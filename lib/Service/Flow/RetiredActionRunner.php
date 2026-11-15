@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Flow;
 
 use OCA\OpenRegister\Service\Flow\FlowNodeCall;
+use OCA\OpenRegister\Service\Flow\FlowNodeInvoker;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -206,7 +207,10 @@ class RetiredActionRunner {
 		$items = [['json' => $run['case']]];
 		try {
 			foreach ($run['steps'] as $step) {
-				$items = $registry->get(type: $step['type'])->execute(call: new FlowNodeCall(items: $items, config: $step['config'], context: $run['context']));
+				$items = (new FlowNodeInvoker())->execute(
+					node: $registry->get(type: $step['type']),
+					call: new FlowNodeCall(items: $items, config: $step['config'], context: $run['context'])
+				);
 			}
 		} catch (Throwable $e) {
 			$message = $e->getMessage();

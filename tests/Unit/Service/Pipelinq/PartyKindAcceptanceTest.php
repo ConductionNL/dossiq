@@ -23,6 +23,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Pipelinq\PartyKindConsumer
@@ -95,12 +97,18 @@ class PartyKindAcceptanceTest extends TestCase {
 				return $this->rows;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->writes[] = ['save', $object, $register, $schema];
 				return $object;
 			}
 
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->writes[] = ['patch', $objectId, $data, $register, $schema];
 				return $data;
 			}
@@ -189,7 +197,9 @@ class PartyKindAcceptanceTest extends TestCase {
 				return [];
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new RuntimeException('schema partyKindAcceptance not found');
 			}
 		};

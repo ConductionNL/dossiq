@@ -39,6 +39,9 @@ use OCA\Dossiq\Kernel\Contracts\EmailTemplateRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use RuntimeException;
 
 /**
@@ -115,8 +118,7 @@ class EmailTemplateRepository implements EmailTemplateRepositoryInterface {
 
 		$saved = $objectService->saveObject(
 			object: $payload,
-			register: $register,
-			schema: $schema,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
 		);
 
 		$saved = $this->toArrayOrNull(value: $saved);
@@ -181,7 +183,7 @@ class EmailTemplateRepository implements EmailTemplateRepositoryInterface {
 		}
 
 		try {
-			$obj = $objectService->find($id, register: $register, schema: $schema);
+			$obj = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable) {
 			return null;
 		}

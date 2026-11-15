@@ -38,6 +38,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * What one act moves, what it only names, and what it records.
@@ -255,6 +256,7 @@ class LeaverHandoverTest extends TestCase {
 			 * @return never
 			 */
 			public function saveObject(mixed ...$args): never {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new RuntimeException('store is read-only');
 			}
 		});

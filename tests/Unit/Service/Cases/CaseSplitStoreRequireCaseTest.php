@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The case a split reads, or the refusal that stops it.
@@ -67,7 +68,9 @@ class CaseSplitStoreRequireCaseTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['id' => $id, 'register' => $register, 'schema' => $schema];
 
 				return ['id' => $id, 'title' => 'Bouwvergunning'];
@@ -105,7 +108,9 @@ class CaseSplitStoreRequireCaseTest extends TestCase {
 			 *
 			 * @return array<string, mixed> Never.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw $this->cause;
 			}//end find()
 		};
@@ -158,7 +163,9 @@ class CaseSplitStoreRequireCaseTest extends TestCase {
 			 *
 			 * @return null Nothing.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}//end find()
 		};

@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Service\Flow;
 use DateTimeImmutable;
 use OCA\Dossiq\Kernel\Contracts\CaseFlowActionsInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -564,7 +565,7 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		}
 
 		try {
-			$found = $lookup->objectService->find($id, register: $lookup->register, schema: $schema);
+			$found = $lookup->objectService->find($id, new ObjectFindOptions(register: $lookup->register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->debug('CaseFlowActions: object lookup failed', ['id' => $id, 'exception' => $e->getMessage()]);
 

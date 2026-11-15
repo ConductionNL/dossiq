@@ -23,6 +23,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Covers the committee migration repair step.
@@ -94,7 +95,10 @@ class MigrateCommitteesToDecidiqTest extends TestCase {
 				 *
 				 * @return array<string, mixed> The stored row.
 				 */
-				public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+				public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+					$register = $options->target->register ?? '';
+					$schema = $options->target->schema ?? '';
+					$uuid = $options->uuid;
 					$this->saved[] = $object;
 
 					return $object;
@@ -138,7 +142,10 @@ class MigrateCommitteesToDecidiqTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->saved[] = $object;
 
 				return $object;
@@ -416,7 +423,10 @@ class MigrateCommitteesToDecidiqTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->saved[] = $object;
 
 				return $object;
@@ -478,7 +488,10 @@ class MigrateCommitteesToDecidiqTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				throw new RuntimeException('local write refused');
 			}
 		};

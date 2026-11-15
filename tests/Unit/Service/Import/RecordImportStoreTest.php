@@ -31,6 +31,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore
@@ -93,6 +94,7 @@ class RecordImportStoreTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function saveObject(...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new RuntimeException('down');
 			}
 
@@ -104,6 +106,7 @@ class RecordImportStoreTest extends TestCase {
 			 * @return array<string, mixed>|null
 			 */
 			public function find(...$args): ?array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new RuntimeException('down');
 			}
 		};

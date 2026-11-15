@@ -38,6 +38,13 @@ namespace OCA\Dossiq\Service\Task;
 use DateTime;
 use OCA\Dossiq\Kernel\Contracts\EngineInboxQueryInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\TaskInboxAnchor;
+use OCA\OpenRegister\Db\TaskInboxAudience;
+use OCA\OpenRegister\Db\TaskInboxCriteria;
+use OCA\OpenRegister\Db\TaskInboxDueWindow;
+use OCA\OpenRegister\Db\TaskInboxFilter;
+use OCA\OpenRegister\Db\TaskInboxOrder;
+use OCA\OpenRegister\Db\TaskInboxSelection;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -200,6 +207,43 @@ class EngineInboxQuery implements EngineInboxQueryInterface {
     }//end scope()
 
     /**
+     * The engine's inbox criteria for a flat set of named filters.
+     *
+     * @param array<string, mixed> $criteria Filters keyed by name: uid, groupIds, isAdmin, scope,
+     *                                       states, isTerminal, priority, kind, overdueAt, dueAfter,
+     *                                       dueBefore, objectUuid, runUuid, includeBlocked, sort,
+     *                                       sortDescending, openFirst.
+     *
+     * @return TaskInboxCriteria The criteria.
+     *
+     * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
+     */
+    private function criteriaOf(array $criteria): TaskInboxCriteria {
+        $parts = [
+            'audience' => ['uid', 'groupIds', 'isAdmin', 'scope'],
+            'filter' => ['states', 'isTerminal', 'priority', 'kind'],
+            'window' => ['overdueAt', 'dueAfter', 'dueBefore'],
+            'anchor' => ['objectUuid', 'runUuid', 'includeBlocked'],
+            'order' => ['sort', 'sortDescending', 'openFirst'],
+        ];
+        $pick = static fn (string $part): array => array_intersect_key($criteria, array_flip($parts[$part]));
+        // A filter none of the parts knows is passed on, so the engine names it as an unknown parameter.
+        $unknown = array_diff_key($criteria, array_flip(array_merge(...array_values($parts))));
+
+        $arguments = [
+            'audience' => new TaskInboxAudience(...$pick('audience')),
+            'selection' => new TaskInboxSelection(
+                filter: new TaskInboxFilter(...$pick('filter')),
+                window: new TaskInboxDueWindow(...$pick('window')),
+                anchor: new TaskInboxAnchor(...$pick('anchor')),
+                order: new TaskInboxOrder(...$pick('order'))
+            ),
+        ];
+
+        return new TaskInboxCriteria(...($arguments + $unknown));
+    }//end criteriaOf()
+
+    /**
      * One inbox read, as the engine's own envelope.
      *
      * The single place the criteria is constructed and the read is made, so
@@ -242,10 +286,8 @@ class EngineInboxQuery implements EngineInboxQueryInterface {
             return null;
         }
 
-        $criteriaClass = self::CRITERIA;
-
         try {
-            return $inbox->inbox(new $criteriaClass(...$criteria), $limit, 0);
+            return $inbox->inbox($this->criteriaOf(criteria: $criteria), $limit, 0);
         } catch (Throwable $e) {
             $this->lastError = $e->getMessage();
 

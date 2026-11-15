@@ -17,6 +17,9 @@ use OCA\Dossiq\Kernel\Contracts\CaseRoleProjectionInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -171,7 +174,9 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 		}
 
 		[$objectService, $register] = $this->requireRegister();
-		$objectService->deleteObject(uuid: $uuid, register: $register, schema: $this->schema(key: 'role_schema'));
+		$objectService->deleteObject(
+			new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'role_schema')))
+		);
 
 		return true;
 	}//end retire()
@@ -252,10 +257,20 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 		unset($record['id']);
 
 		if ($uuid === '') {
-			return $this->uuidOf(saved: $objectService->saveObject(object: $record, register: $register, schema: $schema));
+			return $this->uuidOf(
+				saved: $objectService->saveObject(
+					object: $record,
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+				)
+			);
 		}
 
-		return $this->uuidOf(saved: $objectService->saveObject(object: $record, register: $register, schema: $schema, uuid: $uuid));
+		return $this->uuidOf(
+			saved: $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid)
+			)
+		);
 	}//end saveRole()
 
 	/**
@@ -320,9 +335,10 @@ class CaseRoleProjection implements CaseRoleProjectionInterface {
 		[$objectService, $register] = $this->requireRegister();
 		$objectService->saveObject(
 			object: $case,
-			register: $register,
-			schema: $this->schema(key: 'case_schema'),
-			uuid: $uuid,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'case_schema')),
+				uuid: $uuid
+			)
 		);
 	}//end saveCase()
 
