@@ -236,7 +236,7 @@ class TenantQuotaService implements TenantQuotaServiceInterface {
 				return null;
 			}
 
-			return $this->withOrganisationLimit(quota: $quota, tenantId: $tenantId, quotaType: $quotaType);
+			return $this->withOrganisationLimit(quota: $quota, key: ['tenantId' => $tenantId, 'quotaType' => $quotaType]);
 		} catch (Throwable $e) {
 			return null;
 		}//end try
@@ -292,14 +292,15 @@ class TenantQuotaService implements TenantQuotaServiceInterface {
 	 * no response would say which number was being enforced.
 	 *
 	 * @param array<string,mixed> $quota     The quota row.
-	 * @param string              $tenantId  Tenant uuid, which is the Organisation uuid.
-	 * @param string              $quotaType The quota dimension.
+	 * @param array{tenantId: string, quotaType: string} $key Tenant uuid, which is the Organisation uuid, and the
+	 *                                                       quota dimension.
 	 *
 	 * @return array<string,mixed> The row with its limit resolved.
 	 *
 	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
-	private function withOrganisationLimit(array $quota, string $tenantId, string $quotaType): array {
+	private function withOrganisationLimit(array $quota, array $key): array {
+		['tenantId' => $tenantId, 'quotaType' => $quotaType] = $key;
 		if ($this->organisationLimits->owns(quotaType: $quotaType) === false) {
 			return $quota;
 		}
