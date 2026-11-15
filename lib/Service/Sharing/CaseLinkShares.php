@@ -294,7 +294,7 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_share_schema');
 		if (empty($register) === true || empty($schema) === true) {
-			return $this->notConfiguredError(caseId: $share->caseId, register: $register, schema: $schema);
+			return $this->notConfiguredError(caseId: $share->caseId, config: ['register' => $register, 'schema' => $schema]);
 		}
 
 		try {
@@ -323,15 +323,14 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 	/**
 	 * Log and describe a share that cannot be recorded because the case share schema is not configured.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $register The configured register, possibly empty.
-	 * @param string $schema The configured case share schema, possibly empty.
+	 * @param string                                  $caseId The case UUID.
+	 * @param array{register: mixed, schema: mixed} $config The configured register and case share schema, possibly empty.
 	 *
 	 * @return array<string, string> The error array.
 	 *
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
-	private function notConfiguredError(string $caseId, string $register, string $schema): array {
+	private function notConfiguredError(string $caseId, array $config): array {
 		// 🔴 NAME WHAT IS UNAVAILABLE. This branch is reached when this
 		// instance never finished configuring dossiq, which is a LOCAL
 		// gap and not OpenRegister refusing anything. It used to answer
@@ -341,7 +340,7 @@ class CaseLinkShares implements CaseLinkSharesInterface {
 		// what lets the controller answer 503 rather than 502.
 		$this->logger->error(
 			'CaseLinkShares: the case share schema is not configured, so no share can be recorded',
-			['caseId' => $caseId, 'register' => $register, 'schema' => $schema]
+			['caseId' => $caseId, 'register' => $config['register'], 'schema' => $config['schema']]
 		);
 		return [
 			'error' => 'Sharing is not configured on this instance yet. '

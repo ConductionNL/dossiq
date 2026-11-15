@@ -1132,10 +1132,10 @@
     },
     {
       "file": "lib/Service/SubstitutionAuditService.php",
-      "method": "stampIfSubstituted",
+      "method": "stamp",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`stampIfSubstituted()` answers `return null` when the read fails; the catch logs at error (\"Substitution capacity stamp failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`stamp()` answers `return null` when the read fails; the catch logs at error (\"Substitution capacity stamp failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Support/ConfiguredRegistryService.php",

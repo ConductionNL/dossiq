@@ -142,8 +142,10 @@ class CaseLeafProvider implements CaseLeafProviderInterface {
 		$rows = array_map(
 			fn (array $case): array => $this->present(
 				case: $case,
-				caseType: ($types[(string)($case['caseType'] ?? '')] ?? []),
-				statusType: ($statuses[(string)($case['status'] ?? '')] ?? [])
+				linked: [
+					'caseType' => ($types[(string)($case['caseType'] ?? '')] ?? []),
+					'statusType' => ($statuses[(string)($case['status'] ?? '')] ?? []),
+				]
 			),
 			array_values($cases)
 		);
@@ -190,13 +192,15 @@ class CaseLeafProvider implements CaseLeafProviderInterface {
 	/**
 	 * The fields of a case a host app shows.
 	 *
-	 * @param array<string, mixed> $case       The stored case.
-	 * @param array<string, mixed> $caseType   Its case type, or none.
-	 * @param array<string, mixed> $statusType Its status, or none.
+	 * @param array<string, mixed>                                                   $case   The stored case.
+	 * @param array{caseType: array<string, mixed>, statusType: array<string, mixed>} $linked Its case type and its status, each
+	 *                                                                                       or none.
 	 *
 	 * @return array<string, mixed> The leaf row.
 	 */
-	private function present(array $case, array $caseType, array $statusType): array {
+	private function present(array $case, array $linked): array {
+		$caseType = $linked['caseType'];
+		$statusType = $linked['statusType'];
 		$id = (string)$case['id'];
 		$assignee = (string)($case['assignee'] ?? '');
 

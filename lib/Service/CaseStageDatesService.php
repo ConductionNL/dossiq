@@ -94,7 +94,7 @@ class CaseStageDatesService implements CaseStageDatesServiceInterface {
 			return $dates;
 		}
 
-		$created = $this->createdStampOf(objectService: $objectService, register: $register, caseId: $caseId);
+		$created = $this->createdStampOf(location: [$objectService, $register], caseId: $caseId);
 
 		return $this->withInitialStatus(dates: $dates, statusTypes: $statusTypes, created: $created);
 	}//end reachedDatesFor()
@@ -102,15 +102,15 @@ class CaseStageDatesService implements CaseStageDatesServiceInterface {
 	/**
 	 * The creation stamp of one case, or '' when it cannot be read.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register      The register.
-	 * @param string $caseId        The case id.
+	 * @param array{0: object, 1: string} $location The OpenRegister ObjectService and the register.
+	 * @param string                      $caseId   The case id.
 	 *
 	 * @return string The `@self.created` stamp.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function createdStampOf(object $objectService, string $register, string $caseId): string {
+	private function createdStampOf(array $location, string $caseId): string {
+		[$objectService, $register] = $location;
 		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
 		if ($caseSchema === '') {
 			return '';
@@ -150,17 +150,29 @@ class CaseStageDatesService implements CaseStageDatesServiceInterface {
 			return $dates;
 		}
 
-		usort(
-			$statusTypes,
-			static fn (array $left, array $right): int => ((int)($left['order'] ?? 0) <=> (int)($right['order'] ?? 0))
-		);
-		$first = (string)($statusTypes[0]['id'] ?? '');
+		$first = $this->firstStatusId(statusTypes: $statusTypes);
 		if ($first !== '' && isset($dates[$first]) === false) {
 			$dates[$first] = $day;
 		}
 
 		return $dates;
 	}//end withInitialStatus()
+
+	/**
+	 * The id of the status type with the lowest order.
+	 *
+	 * @param array<int, array<string, mixed>> $statusTypes The case type's status types.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private function firstStatusId(array $statusTypes): string {
+		usort(
+			$statusTypes,
+			static fn (array $left, array $right): int => ((int)($left['order'] ?? 0) <=> (int)($right['order'] ?? 0))
+		);
+
+		return (string)($statusTypes[0]['id'] ?? '');
+	}//end firstStatusId()
 
 	/**
 	 * Fold status moves into the first day each status was reached.

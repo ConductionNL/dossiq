@@ -193,7 +193,15 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 			$data = array_merge($data, $stored['lists']);
 		}
 
-		$data = $this->withRelatedCaseTypes(data: $data, objectData: $objectData, target: $target, ztMapping: $ztMapping);
+		$related = $this->relatedCaseTypesOf(data: $data, objectData: $objectData);
+		if ($related !== null && $ztMapping !== null) {
+			$data['gerelateerdeZaaktypen'] = $this->lookup->expandRelatedCaseTypes(
+				related: $related,
+				objectService: $target->objectService,
+				ztMapping: $ztMapping,
+				baseUrl: $target->baseUrl
+			);
+		}
 
 		$data = $this->withDocumentAndDecisionTypes(data: $data, target: $target);
 
@@ -268,19 +276,17 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 	}//end withSubResources()
 
 	/**
-	 * Fill gerelateerdeZaaktypen.
+	 * The related zaaktypen to expand into gerelateerdeZaaktypen, or null when there are none.
 	 *
 	 * Read from the raw object's relatedCaseTypes (a JSON-encoded string), since Twig outbound
 	 * mapping cannot handle an array of objects; fall back to what the mapping produced.
 	 *
-	 * @param array               $data       The outbound-mapped zaaktype
-	 * @param array|null          $objectData The stored zaaktype, null when it could not be read
-	 * @param ZtcEnrichmentTarget $target     The zaaktype's object service and base URL
-	 * @param array|null          $ztMapping  The zaaktypen mapping
+	 * @param array      $data       The outbound-mapped zaaktype
+	 * @param array|null $objectData The stored zaaktype, null when it could not be read
 	 *
-	 * @return array The zaaktype with its relations expanded
+	 * @return array|null The related zaaktypen, or null
 	 */
-	private function withRelatedCaseTypes(array $data, ?array $objectData, ZtcEnrichmentTarget $target, ?array $ztMapping): array {
+	private function relatedCaseTypesOf(array $data, ?array $objectData): ?array {
 		$relatedRaw = null;
 		if ($objectData !== null) {
 			$relatedRaw = $objectData['relatedCaseTypes'] ?? null;
@@ -291,19 +297,12 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 			$relatedRaw = json_decode($relatedRaw, true);
 		}
 
-		if (is_array($relatedRaw) === false || empty($relatedRaw) === true || $ztMapping === null) {
-			return $data;
+		if (is_array($relatedRaw) === false || empty($relatedRaw) === true) {
+			return null;
 		}
 
-		$data['gerelateerdeZaaktypen'] = $this->lookup->expandRelatedCaseTypes(
-			related: $relatedRaw,
-			objectService: $target->objectService,
-			ztMapping: $ztMapping,
-			baseUrl: $target->baseUrl
-		);
-
-		return $data;
-	}//end withRelatedCaseTypes()
+		return $relatedRaw;
+	}//end relatedCaseTypesOf()
 
 	/**
 	 * Read the zaaktype and build the lists it stores itself: deelzaaktypen (each expanded to

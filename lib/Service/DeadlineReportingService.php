@@ -166,7 +166,7 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	public function perTypeBetween(array $window): array {
 		$rows = $this->listInstances(from: $window['from'], until: $window['until']);
 		$types = $this->caseTypes->resolve(rows: $rows);
-		return $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: null, types: $types['byRow']));
+		return $this->reducePerType(byType: $this->aggregateByType(rows: $rows, types: $types['byRow']));
 	}//end perTypeBetween()
 
 	/**
@@ -183,7 +183,9 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 		$bounds = $this->resolveQuarter(period: $period);
 		$rows = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
 		$types = $this->caseTypes->resolve(rows: $rows);
-		$perType = $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']));
+		$perType = $this->reducePerType(
+			byType: $this->aggregateByType(rows: $this->inDepartment(rows: $rows, department: $department), types: $types['byRow'])
+		);
 
 		return [
 			// `periode` is the old name of `period`, kept for one release for
@@ -244,27 +246,20 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 	}//end quarterSummary()
 
 	/**
-	 * Bucket instance rows per case type, skipping rows outside the department filter.
+	 * Bucket instance rows per case type.
 	 *
-	 * @param array<int, array<string, mixed>> $rows Instance rows.
-	 * @param string|null $department Optional department filter.
+	 * @param array<int, array<string, mixed>> $rows Instance rows, keyed by row index.
 	 * @param array<int, array{key: string, title: string}> $types The case type of each row, by row index.
 	 *
 	 * @return array<string, array<string, mixed>> Raw per-case-type tallies.
 	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
-	private function aggregateByType(array $rows, ?string $department, array $types): array {
+	private function aggregateByType(array $rows, array $types): array {
 		$byType   = [];
 		$accruals = $this->accrualsByInstance();
 		foreach ($rows as $index => $row) {
 			$type = ($types[$index] ?? ['key' => self::UNRESOLVED, 'title' => '']);
-			// $row['department'] is a SCHEMA PROPERTY — OpenRegister materialises
-			// it as a real column. It moves with a data migration, not here.
-			if ($department !== null && (string)($row['department'] ?? '') !== $department) {
-				continue;
-			}
-
 			$byType[$type['key']] ??= $this->emptyBucket(title: $type['title']);
 
 			$this->accumulateRow(row: $row, bucket: $byType[$type['key']]);
@@ -273,6 +268,26 @@ class DeadlineReportingService implements DeadlineReportingServiceInterface {
 
 		return $byType;
 	}//end aggregateByType()
+
+	/**
+	 * The instance rows of one department, keeping their row index; every row without a department filter.
+	 *
+	 * @param array<int, array<string, mixed>> $rows       Instance rows.
+	 * @param string|null                      $department Optional department filter.
+	 *
+	 * @return array<int, array<string, mixed>> The rows in the department.
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function inDepartment(array $rows, ?string $department): array {
+		if ($department === null) {
+			return $rows;
+		}
+
+		// $row['department'] is a SCHEMA PROPERTY — OpenRegister materialises
+		// it as a real column. It moves with a data migration, not here.
+		return array_filter($rows, static fn (array $row): bool => (string)($row['department'] ?? '') === $department);
+	}//end inDepartment()
 
 	/**
 	 * A per-case-type tally with nothing counted yet.

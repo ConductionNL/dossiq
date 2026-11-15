@@ -95,7 +95,9 @@ class MandaatImportService implements MandaatImportServiceInterface {
 		// Resolve rol-name → rolId.
 		$resolved = $this->resolveRoleReferences(rows: $rows);
 
-		$decision = $this->saveDraftDecision(decisionNumber: $decisionNumber, decisionName: $decisionName, decideskUuid: $decideskUuid);
+		$decision = $this->saveDraftDecision(
+			decision: ['decisionNumber' => $decisionNumber, 'decisionName' => $decisionName, 'decideskUuid' => $decideskUuid]
+		);
 
 		$tally = $this->tallyFor(decision: $decision, decisionNumber: $decisionNumber);
 
@@ -130,25 +132,24 @@ class MandaatImportService implements MandaatImportServiceInterface {
 	/**
 	 * Create the decision as a concept.
 	 *
-	 * @param string $decisionNumber Decision identifier.
-	 * @param string $decisionName Decision name.
-	 * @param string $decideskUuid Source Decidesk decision id.
+	 * @param array{decisionNumber: string, decisionName: string, decideskUuid: string} $decision Decision identifier, name and
+	 *                                                                                           source Decidesk decision id.
 	 *
 	 * @return array<string, mixed> The stored decision.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
-	private function saveDraftDecision(string $decisionNumber, string $decisionName, string $decideskUuid): array {
+	private function saveDraftDecision(array $decision): array {
 		// Create the decision (concept). The schemaConfigKey stays
 		// 'mandaterings_besluit_schema': it is the app-config key the schema id
 		// is already stored under on existing installs, not a display name.
 		return $this->repository->save(
 			schemaConfigKey: 'mandaterings_besluit_schema',
 			object: [
-				'decisionNumber' => $decisionNumber,
-				'decisionName' => $decisionName,
+				'decisionNumber' => $decision['decisionNumber'],
+				'decisionName' => $decision['decisionName'],
 				'status' => 'draft',
-				'decideskUuid' => $decideskUuid,
+				'decideskUuid' => $decision['decideskUuid'],
 			]
 		);
 	}//end saveDraftDecision()

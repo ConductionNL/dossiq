@@ -178,7 +178,7 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 		[$objectService, $register, $schema] = $this->store();
 
 		$items = self::itemsOf(delivered: $delivered);
-		$set = $this->pendingSet(caseId: $caseId, decisionId: $decisionId, items: $items);
+		$set = $this->pendingSet(subject: ['case' => $caseId, 'decision' => $decisionId], items: $items);
 
 		$stored = $this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $set);
 		if ($stored === null || $this->idOf(row: $stored) === '') {
@@ -239,19 +239,16 @@ class WooDeliveredSetWriter implements WooDeliveredSetWriterInterface {
 	/**
 	 * The pending set of one delivery, superseding the case's latest frozen set.
 	 *
-	 * @param string                           $caseId     The Woo case.
-	 * @param string                           $decisionId The Woo decision.
-	 * @param array<int, array<string, mixed>> $items      The manifest items.
+	 * @param array{case: string, decision: string} $subject The Woo case and the Woo decision.
+	 * @param array<int, array<string, mixed>>      $items   The manifest items.
 	 *
 	 * @return array<string, mixed> The set.
 	 *
 	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
-	private function pendingSet(string $caseId, string $decisionId, array $items): array {
-		$previous = $this->latestFrozen(caseId: $caseId);
-		return [
-			'case' => $caseId,
-			'decision' => $decisionId,
+	private function pendingSet(array $subject, array $items): array {
+		$previous = $this->latestFrozen(caseId: $subject['case']);
+		return $subject + [
 			'status' => self::STATUS_PENDING,
 			'deliveredAt' => (new DateTimeImmutable())->format('c'),
 			'deliveredBy' => (string)($this->userSession?->getUser()?->getUID() ?? ''),

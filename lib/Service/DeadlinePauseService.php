@@ -137,16 +137,32 @@ class DeadlinePauseService implements DeadlinePauseServiceInterface {
 		$run->durationDays = $durationDays;
 		$run->rationale = $rationale;
 		$run->documentLink = $documentLink;
-		$this->assertSuspensionAllowed(instance: $run->instance, durationDays: $durationDays);
+
+		return $this->pause(run: $run, pauseReason: $pauseReason);
+	}//end registerPauze()
+
+	/**
+	 * Pause the instance the run names, when its case type allows it, and record the event.
+	 *
+	 * @param PauseRegistrationRun $run         The instance, the duration, the rationale and the document link.
+	 * @param string               $pauseReason The declared suspension reason key, or ''.
+	 *
+	 * @return array<string, mixed> The updated instance.
+	 *
+	 * @throws RefusedException When the case type forbids the suspension, forbids it this
+	 *         long, or does not declare the reason named.
+	 */
+	private function pause(PauseRegistrationRun $run, string $pauseReason): array {
+		$this->assertSuspensionAllowed(instance: $run->instance, durationDays: $run->durationDays);
 		$run->reason = $this->resolveReason(instance: $run->instance, key: $pauseReason);
 		$run->now = new DateTimeImmutable();
 
 		$patch = $this->suspendOnTheEngine(run: $run, patch: $this->pausePatch(run: $run));
-		$updated = $this->termService->updateTermijnInstance($termInstanceId, $patch);
+		$updated = $this->termService->updateTermijnInstance($run->termInstanceId, $patch);
 		$this->recordPauseEvent(run: $run);
 
 		return $updated ?? $run->instance;
-	}//end registerPauze()
+	}//end pause()
 
 	/**
 	 * The instance a pause can be registered on.
@@ -530,18 +546,31 @@ class DeadlinePauseService implements DeadlinePauseServiceInterface {
 		$this->timerService?->resumeBeslistermijn(instance: $instance, reason: self::EXPIRED_RESUME_REASON);
 		$updated = $this->termService->updateTermijnInstance($termInstanceId, (['endDateCurrent' => $newEnd] + self::RESUME_CLEARS));
 
+		$this->recordExpiredResume(termInstanceId: $termInstanceId, event: ['moment' => $moment, 'notice' => (['endDate' => $newEnd] + $notice)]);
+
+		return $updated ?? $instance;
+	}//end resumeAfterExpiry()
+
+	/**
+	 * Record that the term resumed because its pause ran out.
+	 *
+	 * @param string                                                        $termInstanceId Instance id.
+	 * @param array{moment: DateTimeImmutable, notice: array<string, string>} $event          When the pause ran out, and who
+	 *                                                                                       to tell with the new end date.
+	 *
+	 * @return void
+	 */
+	private function recordExpiredResume(string $termInstanceId, array $event): void {
 		$this->termService->recordEvent(
 			termInstanceId: $termInstanceId,
 			type: 'hervat',
 			basis: 'AWB 4:15',
 			rationale: self::EXPIRED_RESUME_REASON,
 			daysImpact: 0,
-			moment: $moment,
-			notice: (['endDate' => $newEnd] + $notice),
+			moment: $event['moment'],
+			notice: $event['notice'],
 		);
-
-		return $updated ?? $instance;
-	}//end resumeAfterExpiry()
+	}//end recordExpiredResume()
 
 	/**
 	 * The instance a resume applies to.

@@ -212,7 +212,7 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 
 		$existing = $this->existingTable(objectService: $objectService, marker: $marker);
 
-		$reconciled = $this->reconcileWithExisting(existing: $existing, table: $table, marker: $marker);
+		$reconciled = $this->reconcileWithExisting(existing: $existing, projection: ['table' => $table, 'marker' => $marker]);
 		if ($reconciled['refusal'] !== null) {
 			return $reconciled['refusal'];
 		}
@@ -269,16 +269,16 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 	/**
 	 * Decide between creating and updating the projected table.
 	 *
-	 * @param array<string, mixed>|null $existing The table already projected, if any.
-	 * @param array<string, mixed>      $table    The projected table.
-	 * @param string                    $marker   The provenance marker.
+	 * @param array<string, mixed>|null                           $existing   The table already projected, if any.
+	 * @param array{table: array<string, mixed>, marker: string} $projection The projected table and its provenance marker.
 	 *
 	 * @return array{refusal: array{outcome: string, marker: string, detail: string}|null, outcome: string, table: array<string, mixed>}
 	 *         The refusal when the existing table was edited, else the outcome and the table to save.
 	 *
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
-	private function reconcileWithExisting(?array $existing, array $table, string $marker): array {
+	private function reconcileWithExisting(?array $existing, array $projection): array {
+		$table = $projection['table'];
 		$outcome = 'created';
 		if ($existing !== null) {
 			// 🔴 AN EDITED TABLE IS NOT OVERWRITTEN.
@@ -295,7 +295,7 @@ class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorIn
 				return [
 					'refusal' => [
 						'outcome' => 'skipped',
-						'marker' => $marker,
+						'marker' => $projection['marker'],
 						'detail' => 'the projected table has been edited since it was created; '
 							. 'refusing to overwrite it',
 					],

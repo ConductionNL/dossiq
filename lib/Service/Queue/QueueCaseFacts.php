@@ -215,7 +215,7 @@ class QueueCaseFacts {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function resolveCaseDeadline(object $objectService, string $register, string $caseId, string $fallback): ?string {
-		$nearest = $this->nearestActiveTermDeadline(objectService: $objectService, register: $register, caseId: $caseId);
+		$nearest = $this->nearestActiveTermDeadline(location: [$objectService, $register], caseId: $caseId);
 		if ($nearest !== null) {
 			return $nearest;
 		}
@@ -232,15 +232,14 @@ class QueueCaseFacts {
 	 * (running, extended, paused or exceeded), or null when termijn tracking
 	 * is not configured, the case has none, or the lookup fails.
 	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register slug/id.
-	 * @param string $caseId Case id.
+	 * @param array{0: object, 1: string} $location OpenRegister ObjectService and the register slug/id.
+	 * @param string                      $caseId   Case id.
 	 *
 	 * @return string|null The nearest active deadline, or null.
 	 *
 	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
 	 */
-	private function nearestActiveTermDeadline(object $objectService, string $register, string $caseId): ?string {
+	private function nearestActiveTermDeadline(array $location, string $caseId): ?string {
 		$termSchema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
 		if ($termSchema === '' || $caseId === '') {
 			return null;
@@ -248,8 +247,8 @@ class QueueCaseFacts {
 
 		try {
 			$instances = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
+				objectService: $location[0],
+				register: $location[1],
 				schema: $termSchema,
 				filters: ['case' => $caseId]
 			);

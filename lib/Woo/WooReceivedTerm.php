@@ -126,19 +126,27 @@ class WooReceivedTerm {
 			['requestId' => $caseId, 'reference' => trim((string)($case['identifier'] ?? '')), 'caseUrl' => $caseUrl]
 		);
 
-		$deadline = substr(trim((string)($case['deadline'] ?? '')), 0, 10);
+		return array_merge($answer, $this->termOutcome(caseId: $caseId, deadline: substr(trim((string)($case['deadline'] ?? '')), 0, 10)));
+	}//end answer()
+
+	/**
+	 * Whether the request's term started, with its due date or why it did not; a term that did not start is noted.
+	 *
+	 * @param string $caseId   The case UUID.
+	 * @param string $deadline The case's deadline, `Y-m-d`, or ''.
+	 *
+	 * @return array<string, string> The outcome, the due date when armed, and the message.
+	 */
+	private function termOutcome(string $caseId, string $deadline): array {
 		$reason = $this->refusal(caseId: $caseId, deadline: $deadline);
 		if ($reason !== '') {
 			$this->noteNotStarted(caseId: $caseId, reason: $reason);
 
-			return array_merge($answer, ['outcome' => 'not-armed', 'message' => 'The request was received, but its term did not start: ' . $reason]);
+			return ['outcome' => 'not-armed', 'message' => 'The request was received, but its term did not start: ' . $reason];
 		}
 
-		return array_merge(
-			$answer,
-			['outcome' => 'armed', 'dueAt' => $deadline, 'message' => 'The request was received. A decision is due by ' . $deadline . '.']
-		);
-	}//end answer()
+		return ['outcome' => 'armed', 'dueAt' => $deadline, 'message' => 'The request was received. A decision is due by ' . $deadline . '.'];
+	}//end termOutcome()
 
 	/**
 	 * Note on the case, internally, that its term did not start and why.

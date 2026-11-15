@@ -141,7 +141,7 @@ class CaseArchiveState {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function mark(string $caseId, string $reason): array {
-		return $this->call(verb: 'archive', caseId: $caseId, reason: $reason);
+		return $this->call(verb: 'archive', asked: ['caseId' => $caseId, 'reason' => $reason]);
 	}//end mark()
 
 	/**
@@ -157,7 +157,7 @@ class CaseArchiveState {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function clear(string $caseId, string $reason): array {
-		return $this->call(verb: 'unarchive', caseId: $caseId, reason: $reason);
+		return $this->call(verb: 'unarchive', asked: ['caseId' => $caseId, 'reason' => $reason]);
 	}//end clear()
 
 	/**
@@ -171,14 +171,14 @@ class CaseArchiveState {
 	 * reads has to be the reason the server gave (ADR-105).
 	 *
 	 * @param string $verb `archive` or `unarchive`; the handler answers it as `<verb>With()`.
-	 * @param string $caseId The case UUID.
-	 * @param string $reason Why.
+	 * @param array{caseId: string, reason: string} $asked The case UUID, and why.
 	 *
 	 * @return array<string, mixed> What the handler answered.
 	 *
 	 * @throws RefusedException When the platform refuses or cannot be reached.
 	 */
-	private function call(string $verb, string $caseId, string $reason): array {
+	private function call(string $verb, array $asked): array {
+		$caseId = $asked['caseId'];
 		[$register, $schema] = $this->caseTarget();
 
 		$handler = $this->handler();
@@ -186,7 +186,7 @@ class CaseArchiveState {
 		try {
 			// The handler is resolved by name, so its methods are called by name too.
 			$answer = $handler->{$verb . 'With'}(
-				new ObjectStateRequest(identifier: $caseId, reason: $reason, register: $register, schema: $schema)
+				new ObjectStateRequest(identifier: $caseId, reason: $asked['reason'], register: $register, schema: $schema)
 			);
 		} catch (RefusedException $e) {
 			throw $e;
