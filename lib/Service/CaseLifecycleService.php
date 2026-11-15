@@ -328,13 +328,24 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 			period: (string)$caseType['extensionPeriod'],
 		);
 
-		$extension = new TermExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd);
+		return $this->applyExtension(extension: new TermExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd), case: $case);
+	}//end extend()
+
+	/**
+	 * Ask for the extension, journal it on the case and answer the case's state with the notice.
+	 *
+	 * @param TermExtension        $extension The case, the reason and the new end date.
+	 * @param array<string, mixed> $case      The case as read before the extension.
+	 *
+	 * @return array<string, mixed> The case's state, with the extension notice.
+	 */
+	private function applyExtension(TermExtension $extension, array $case): array {
 		$extended = $this->requestExtension(extension: $extension);
 
 		$this->journalExtension(extension: $extension, case: $case);
 
-		return $this->state(caseId: $caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
-	}//end extend()
+		return $this->state(caseId: $extension->caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
+	}//end applyExtension()
 
 	/**
 	 * The case's type, refused when it does not allow another extension.

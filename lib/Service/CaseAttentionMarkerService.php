@@ -399,7 +399,21 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 		$caseTypeId = $this->referenceId(value: ($case['caseType'] ?? null));
 		$standing = $this->standing(case: $case);
 
-		$judged = new CaseUnderJudgement(case: $case, now: $now, context: $context, standing: $standing);
+		return $this->raisedMarkers(
+			caseTypeId: $caseTypeId,
+			judged: new CaseUnderJudgement(case: $case, now: $now, context: $context, standing: $standing)
+		);
+	}//end evaluate()
+
+	/**
+	 * The markers the case type's declarations raise on the case under judgement.
+	 *
+	 * @param string             $caseTypeId The case type the declarations come from.
+	 * @param CaseUnderJudgement $judged     The case, the moment, the context and the case's standing.
+	 *
+	 * @return array<int, array<string, mixed>> The raised markers.
+	 */
+	private function raisedMarkers(string $caseTypeId, CaseUnderJudgement $judged): array {
 		$raised = [];
 		foreach ($this->declarationsFor(caseTypeId: $caseTypeId) as $declaration) {
 			$marker = $this->markerFor(declaration: $declaration, judged: $judged);
@@ -409,7 +423,7 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 		}
 
 		return $raised;
-	}//end evaluate()
+	}//end raisedMarkers()
 
 	/**
 	 * The marker one declaration raises on this case, or null when it raises none.
