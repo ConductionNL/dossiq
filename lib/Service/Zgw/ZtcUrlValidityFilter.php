@@ -110,11 +110,12 @@ class ZtcUrlValidityFilter implements ZtcUrlValidityFilterInterface {
 	 */
 	private function isValidListItem(mixed $item, array $config, string $today): bool {
 		// GerelateerdeZaaktypen: array of objects with 'caseType' URL field.
+		$target = ['schemaKey' => $config['schemaKey'], 'today' => $today];
 		if ($config['nested'] === true) {
-			return $this->isUrlValid(url: $item['caseType'] ?? '', schemaKey: $config['schemaKey'], today: $today);
+			return $this->isUrlValid(url: $item['caseType'] ?? '', target: $target);
 		}
 
-		return is_string($item) === true && $this->isUrlValid(url: $item, schemaKey: $config['schemaKey'], today: $today);
+		return is_string($item) === true && $this->isUrlValid(url: $item, target: $target);
 	}//end isValidListItem()
 
 	/**
@@ -124,12 +125,13 @@ class ZtcUrlValidityFilter implements ZtcUrlValidityFilterInterface {
 	 * a URL without a uuid, or an object that cannot be read, does not.
 	 *
 	 * @param string $url The URL
-	 * @param string $schemaKey The settings key of the target schema
-	 * @param string $today Today's date in Y-m-d format
+	 * @param array{schemaKey: string, today: string} $target The settings key of the target schema and today's
+	 *                                                        date in Y-m-d format
 	 *
 	 * @return bool True when the URL may stay
 	 */
-	private function isUrlValid(string $url, string $schemaKey, string $today): bool {
+	private function isUrlValid(string $url, array $target): bool {
+		['schemaKey' => $schemaKey, 'today' => $today] = $target;
 		if (preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $url, $matches) !== 1) {
 			return false;
 		}
