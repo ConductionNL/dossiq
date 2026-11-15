@@ -76,19 +76,36 @@ class ConnectedSystemDocumentFiler {
 			return self::refused(reason: 'Het documenttype is niet gekoppeld aan een documenttype in dossiq.');
 		}
 
-		$metadata = $this->documentMetadata(operation: $operation, type: $type);
+		return $this->uploadFiled(
+			operation: $operation,
+			filing: ['case' => $case, 'fileName' => $fileName, 'content' => $content, 'type' => $type, 'system' => $system]
+		);
+	}//end file()
+
+	/**
+	 * Upload the document onto the case and answer how the filing went.
+	 *
+	 * @param array<string, mixed> $operation The generic add-document operation.
+	 * @param array<string, mixed> $filing    The case, the file name, the content, the dossiq document type id and
+	 *                                        the connection id.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function uploadFiled(array $operation, array $filing): array {
+		$case = $filing['case'];
+		$metadata = $this->documentMetadata(operation: $operation, type: $filing['type']);
 
 		$result = $this->upload(
 			document: new ConnectedDocumentUpload(
 				caseId: self::text(value: ($case['@self']['id'] ?? ($case['id'] ?? ''))),
-				fileName: $fileName,
-				content: $content,
+				fileName: $filing['fileName'],
+				content: $filing['content'],
 				format: self::text(value: ($operation['format'] ?? '')),
 				metadata: $metadata
 			)
 		);
-		return $this->filedOutcome(result: $result, system: $system);
-	}//end file()
+		return $this->filedOutcome(result: $result, system: $filing['system']);
+	}//end uploadFiled()
 
 	/**
 	 * The dossiq document type the system's document type name maps to.
