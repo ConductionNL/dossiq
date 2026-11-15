@@ -51,4 +51,4 @@ A mandaatbesluit may only be signed by someone who holds the mandate for it. Dos
 
 ## Next
 
-Activate the besluitvorming case types from **Settings, Case types**, then open **All cases** and filter on the one you need.
+Activate the besluitvorming case types from **Advanced, Case types**, then open **All cases** and filter on the one you need.

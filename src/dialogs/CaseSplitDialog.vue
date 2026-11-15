@@ -24,11 +24,11 @@
   forbids dividing documents and a task the engine cannot move are two different
   answers with two different ways out.
 
-  @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Split this case in two')"
+	<CnDialog
+		:name="t('dossiq', 'Split in two')"
 		data-testid="case-split-dialog"
 		@closing="$emit('close')">
 		<div class="case-split-dialog">
@@ -36,7 +36,7 @@
 				{{
 					t(
 						'dossiq',
-						'What you tick moves to the new case. This case keeps a reference to it, so the file still reads as a whole.',
+						'What you tick moves to the new case.',
 					)
 				}}
 			</p>
@@ -134,17 +134,17 @@
 				{{ t('dossiq', 'Split') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 
@@ -156,7 +156,7 @@ export default {
 	components: {
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcDialog,
+		CnDialog,
 		NcLoadingIcon,
 		NcTextField,
 	},
@@ -194,7 +194,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md */
+		/** @spec openspec/specs/case-management/spec.md */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
@@ -206,7 +206,7 @@ export default {
 		 * case that their case type was the problem.
 		 *
 		 * @return {boolean} True when there is nothing to tick.
-		 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		nothingToDivide() {
 			return (
@@ -223,7 +223,7 @@ export default {
 		 * one of them.
 		 *
 		 * @return {boolean} True when the split can be asked for.
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		canConfirm() {
 			const contradicts = this.chosenParties.some((id) =>
@@ -249,7 +249,7 @@ export default {
 			 * Read what this case holds, and what its type allows.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+			 * @spec openspec/specs/case-management/spec.md
 			 */
 			handler() {
 				this.load()
@@ -266,7 +266,7 @@ export default {
 		 * @param {Array<string>} list The list being ticked into.
 		 * @param {string} id The id.
 		 * @return {void}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		toggle(list, id) {
 			const at = list.indexOf(id)
@@ -286,7 +286,7 @@ export default {
 		 * children.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async load() {
 			if (this.targetCaseId === '') {
@@ -298,46 +298,76 @@ export default {
 			this.error = ''
 
 			try {
-				// 🔴 THE RULE FIRST, THEN THE ROWS. `CaseSplitPolicy` decides
-				// what this case type allows, and asking it before drawing is
-				// the whole point: otherwise the handler ticks a document,
-				// confirms, and learns from the refusal that documents may not
-				// be divided here. The rule was always enforced; it was just
-				// never said until after the attempt.
-				const { data: rules } = await axios.get(
-					generateUrl(
-						`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/split`,
-					),
-				)
-				this.allowed = Array.isArray(rules?.allowed) ? rules.allowed : []
-
-				const [documents, parties] = await Promise.all([
-					this.allows('documents')
-						? this.children('caseDocument', [
-								'title',
-								'name',
-								'documentType',
-							])
-						: [],
-					this.allows('parties')
-						? this.children('role', ['roleType', 'name', 'displayName'])
-						: [],
-				])
-				this.documents = documents
-				this.parties = parties
+				await this.readSplitRule()
+				await this.readSplitChildren()
 			} catch (loadError) {
-				this.allowed = []
-				this.documents = []
-				this.parties = []
-				this.error =
-					loadError?.response?.data?.error
-					|| t(
-						'dossiq',
-						'What this case holds could not be read, so nothing was split.',
-					)
+				this.showLoadFailure(loadError)
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * Read what this case type allows to be divided.
+		 *
+		 * 🔴 THE RULE FIRST, THEN THE ROWS. `CaseSplitPolicy` decides what this
+		 * case type allows, and asking it before drawing is the whole point:
+		 * otherwise the handler ticks a document, confirms, and learns from the
+		 * refusal that documents may not be divided here. The rule was always
+		 * enforced; it was just never said until after the attempt.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		async readSplitRule() {
+			const { data: rules } = await axios.get(
+				generateUrl(
+					`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/split`,
+				),
+			)
+			this.allowed = Array.isArray(rules?.allowed) ? rules.allowed : []
+		},
+
+		/**
+		 * Read the documents and parties, each only when the rule allows it.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		async readSplitChildren() {
+			const [documents, parties] = await Promise.all([
+				this.allows('documents')
+					? this.children('caseDocument', [
+							'title',
+							'name',
+							'documentType',
+						])
+					: [],
+				this.allows('parties')
+					? this.children('role', ['roleType', 'name', 'displayName'])
+					: [],
+			])
+			this.documents = documents
+			this.parties = parties
+		},
+
+		/**
+		 * Show nothing to split, and why.
+		 *
+		 * @param {object} loadError What the read threw.
+		 * @return {void}
+		 * @spec openspec/specs/case-management/spec.md
+		 */
+		showLoadFailure(loadError) {
+			this.allowed = []
+			this.documents = []
+			this.parties = []
+			this.error =
+				loadError?.response?.data?.error
+				|| t(
+					'dossiq',
+					'What this case holds could not be read, so nothing was split.',
+				)
 		},
 
 		/**
@@ -345,7 +375,7 @@ export default {
 		 *
 		 * @param {string} part One of documents, parties or tasks.
 		 * @return {boolean} True when it may be divided.
-		 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		allows(part) {
 			return this.allowed.includes(part)
@@ -357,7 +387,7 @@ export default {
 		 * @param {string} schema The schema slug.
 		 * @param {Array<string>} labelFields The fields a label is built from, in order.
 		 * @return {Promise<Array<object>>} The rows.
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async children(schema, labelFields) {
 			const { data } = await axios.get(
@@ -379,7 +409,7 @@ export default {
 		 * Ask the server to split, and keep the dialog open on a refusal.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 		 */
 		async confirm() {
 			if (!this.canConfirm || this.targetCaseId === '') {

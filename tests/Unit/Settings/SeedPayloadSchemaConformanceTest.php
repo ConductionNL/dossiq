@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -71,6 +72,7 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 		'propertyDefinitions' => 'propertyDefinition',
 		'inspectionChecklists' => 'inspectionChecklistTemplate',
 		'lhsMatrices' => 'lhsMatrix',
+		'deadlineDefinitions' => 'deadlineDefinition',
 	];
 
 	/**
@@ -235,7 +237,9 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 
 			$collection = null;
 			foreach (self::COLLECTION_SCHEMA as $key => $slug) {
-				$settingsKey = strtolower((string)preg_replace('/(?<!^)[A-Z]/', '_$0', $slug)) . '_schema';
+				// The settings key the installer resolves; most spell their slug,
+				// some (deadlineDefinition is `termijn_definitie_schema`) do not.
+				$settingsKey = (SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug] ?? strtolower((string)preg_replace('/(?<!^)[A-Z]/', '_$0', $slug)) . '_schema');
 				if ($settingsKey === (string)($data['schema'] ?? '')) {
 					$collection = $key;
 				}

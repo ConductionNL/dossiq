@@ -271,4 +271,41 @@ class MandaatCheckServiceTest extends TestCase {
 		// Without a relation step in the answer nothing is added.
 		$this->assertArrayNotHasKey('relationCheck', $this->service->isAuthorized('alice', 'wmo-toekenning', 'Z/2026/1', ['bedragCents' => 100000]));
 	}
+	/**
+	 * The whole verdict, allowed and refused: a pass names its mandate, a role without a
+	 * matching mandate is not competent, a failing condition names itself, and a conflict
+	 * refuses with its own reason before any mandate is read.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeVerdictAllowedAndRefused(): void {
+		$day = new \DateTimeImmutable('2026-06-01');
+		self::assertSame(
+			['authorized' => true, 'mandaatId' => 'm-consulent', 'reason' => null],
+			$this->service->isAuthorized('alice', 'wmo-toekenning', 'Z/1', ['bedragCents' => 100], $day)
+		);
+		self::assertSame(
+			['authorized' => false, 'reason' => MandaatCheckService::REDEN_NIET_BEVOEGD],
+			$this->service->isAuthorized('alice', 'omgevingsvergunning', 'Z/2', [], $day)
+		);
+		self::assertSame(
+			['authorized' => false, 'reason' => MandaatCheckService::REDEN_NIET_BEVOEGD],
+			$this->service->isAuthorized('eve', 'wmo-toekenning', 'Z/3', [], $day)
+		);
+		$over = $this->service->isAuthorized('alice', 'wmo-toekenning', 'Z/4', ['bedragCents' => 900000], $day);
+		self::assertSame(['authorized', 'reason', 'failedConditions'], array_keys($over));
+		self::assertFalse($over['authorized']);
+		self::assertSame(MandaatCheckService::REDEN_PLAFOND_OVERSCHREDEN, $over['reason']);
+		self::assertNotSame([], $over['failedConditions']);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$conflict = $this->createMock(ConflictOfInterestService::class);
+		$conflict->method('checkConflict')->willReturn(['conflict' => true, 'reason' => 'family']);
+		$settings->expects(self::never())->method('getConfigValue');
+		self::assertSame(
+			['authorized' => false, 'reason' => MandaatCheckService::REDEN_BELANGENCONFLICT, 'conflictReason' => 'family'],
+			(new MandaatCheckService($settings, $this->createMock(LoggerInterface::class), $conflict))->isAuthorized('alice', 'wmo-toekenning', 'Z/5', [], $day)
+		);
+	}//end testTheWholeVerdictAllowedAndRefused()
 }

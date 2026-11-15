@@ -63,7 +63,7 @@ class WooRequestRefused extends RuntimeException {
 	 *                       is about the request as a whole. A portal shows the
 	 *                       sentence on that field.
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
 	 */
 	public function __construct(
 		private readonly string $reason,
@@ -78,7 +78,7 @@ class WooRequestRefused extends RuntimeException {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
 	 */
 	public function getField(): string {
 		return $this->field;

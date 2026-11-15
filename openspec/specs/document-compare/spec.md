@@ -1,7 +1,7 @@
 # document-compare Specification
 
 ## Purpose
-TBD - created by archiving change woo-delivered-set-is-a-record. Update Purpose after archive.
+Compare an original document with the file that went out, side by side, so a handler sees what was redacted or changed.
 
 ## Requirements
 

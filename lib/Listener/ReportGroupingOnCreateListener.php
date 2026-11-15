@@ -31,8 +31,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\BackgroundJob\ReportGroupingJob;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -50,13 +50,15 @@ class ReportGroupingOnCreateListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param IJobList                 $jobList      The job list.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves the schema slug of a payload.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves the schema slug of a payload.
+	 * @param ReceiptMoment $receipt Tells a received case from a draft (decision 180).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IJobList $jobList,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
+		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()
 
@@ -70,13 +72,9 @@ class ReportGroupingOnCreateListener implements IEventListener {
 	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-identical-reports-collapse-on-the-case-and-dossiq-decides-what-a-group-means-req-aic-04
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $event->getObject()->jsonSerialize();
-
-		if ($this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
+		// A draft is not a report yet; it is grouped when it is sent.
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
+		if ($payload === null || $this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
 			return;
 		}
 

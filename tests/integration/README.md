@@ -13,6 +13,7 @@ in Newman**; Playwright drives the UI only.
 | 2. Case (zaak) CRUD | OpenRegister `/api/objects/{register}/{schema}` (ADR-022; dossiq owns no case-CRUD controller) | create → read → update → delete with id capture | — | anon read (OR reads are not auth-gated — see note) |
 | 3. Settings | `GET /api/settings`, `POST /api/settings/load` | 200 + contract shape | — | 401 no-auth, 401 invalid-auth |
 | 4. Complaints | `GET /api/complaints`, `POST /api/complaints` | — (see KNOWN BUG) | 400 missing-fields validation | 401 no-auth |
+| 5. Public API access with an API key | OpenRegister `/api/consumers`, `GET /api/zgw/zaken/v1/zaken`, `GET /api/zgw/catalogi/v1/zaaktypen` | API key in scope → 200 | unknown key → 401 | key out of scope → 403 |
 | 9. Teardown | deletes the seeded cases | idempotent cleanup | — | — |
 
 The collection is **self-contained and idempotent**: setup requests seed the

@@ -17,7 +17,8 @@ handler sees on opening the app, that is the other file.
 My Work is the personal starting point for a case handler: the list of cases
 assigned to the signed-in user. It answers the daily question "what is on my
 plate?" by scoping the standard case index to `assignee == currentUser` and
-rendering it as a card list (with a table toggle).
+rendering it as one list sorted on urgency, as board DqAanMijToegewezen draws
+it.
 
 It is one of three surfaces in the My work group, and each answers a different
 question. **Queue** (`/queue`) holds what nobody has picked up: no `assignee` and
@@ -71,39 +72,43 @@ list contents are not assertable without pre-seeded per-user data.
 - THEN the system MUST display exactly those 3 cases
 - AND a case where Jan is NOT the assignee MUST NOT appear
 
-#### Scenario: Card and table view
+#### Scenario: One list, most urgent first
 @e2e tests/e2e/spec-coverage/my-work.spec.ts
 
 - GIVEN Jan is viewing My Work
-- THEN the list MUST default to card view and offer a card/table toggle
-- AND the table view MUST show the columns: identifier, title, case type,
-  status, deadline
+- THEN the cases MUST show as one list of rows sorted on urgency, the most
+  urgent first, with no table view; the same list as cards is one click away
+  under Cards, as board DqAanMijToegewezen draws it
+- AND the line under the title MUST say how many cases are on Jan's name and
+  that they are sorted most urgent first ("10 zaken op uw naam · meest urgente
+  eerst")
 
-### Requirement: Card Display [MVP]
+### Requirement: Row Display [MVP]
 
-Each case card MUST present the case in human-readable form, implemented in
-`src/views/MyWorkCaseCard.vue`.
+Each case row MUST present the case in human-readable form, as board
+DqAanMijToegewezen draws it.
 
-@e2e exclude Requires an assigned case with a case type + status; card field
+@e2e exclude Requires an assigned case with a case type + status; row field
 rendering is data-dependent.
 
-#### Scenario: Card fields
+#### Scenario: Row fields
 - GIVEN an assigned case with a caseType and a status
-- THEN the card MUST display:
-  - The case title
-  - A truncated description (when present)
+- THEN the row MUST display:
   - The identifier (e.g. "2026-0118")
-  - The **case-type name** (not its raw UUID) resolved from the caseType map
-  - The **status name** (not its raw UUID) resolved from the statusType map
-  - The deadline date when set
-- AND a case whose deadline is in the past MUST show the deadline in an error
-  colour (overdue), not relying on colour alone (the "Deadline:" label remains)
+  - The case title
+  - The **case-type name** (not its raw UUID) and the requester ("Woo-verzoek · Linda Bakker")
+  - The **status name** (not its raw UUID)
+  - The deadline date when set ("Termijn 27 okt")
+  - The urgency (Kritiek, Bijna or Normaal)
+- AND cases whose deadline is in the past MUST sit under the heading "Te laat",
+  so overdue does not rely on colour alone
+- AND a case held as a stand-in MUST say for whom and until when ("Voor Esra Demir, tot 2 nov")
 
 #### Scenario: Case-type / status name resolution
-- GIVEN card view does not apply column formatters
-- WHEN My Work renders its cards
-- THEN the parent index MUST load the `caseType` and `statusType` collections
-  once and pass UUID→name maps to each card so names render, never raw UUIDs
+- GIVEN the list renders case-type and status names
+- WHEN My Work renders its rows
+- THEN the index MUST load the `caseType` and `statusType` collections
+  once and resolve names from them, never raw UUIDs
 
 ### Requirement: Item Navigation [MVP]
 
@@ -113,7 +118,7 @@ Opening a case from My Work MUST navigate to that case's detail view.
 
 #### Scenario: Open a case
 - GIVEN case 2026-0118 appears in My Work
-- WHEN the user clicks the card (or the table row)
+- WHEN the user clicks the row
 - THEN the system MUST navigate to the `CaseDetail` route for that case id
 
 ### Requirement: Empty State [MVP]
@@ -137,11 +142,12 @@ covered by PHPUnit + smoke tests, not Playwright browser assertions.
 
 #### Scenario: My Tasks / Overdue widgets
 - GIVEN the Nextcloud dashboard is displayed
-- THEN the Dossiq "My Tasks" widget (`lib/Dashboard/MyTasksWidget.php`) MUST
-  summarise the user's assigned tasks
-- AND the "Overdue Cases" widget (`lib/Dashboard/OverdueCasesWidget.php`) MUST
-  summarise overdue cases with a red indicator
-- AND clicking a widget MUST navigate into the app
+- THEN the Dossiq "Mijn werk" widget MUST summarise the user's open work in
+  one widget, as the board `DqNextcloudDashboard` draws it: open cases on the
+  user's name, open tasks with how many are late, cases in the user's queue
+  and archive reviews, read from the same source as My Work
+- AND late cases and tasks MUST be shown in red
+- AND "Naar Mijn werk" MUST navigate into the app
 
 #### Scenario: Dashboard preview panel
 - GIVEN the user opens the Dossiq app dashboard (home view)
@@ -387,15 +393,66 @@ The daily digest job SHALL compose each person's digest with that person as the 
 - **THEN** the `workDigest` record SHALL be written by the background service account
 - **AND** no user SHALL remain signed in after the run
 
+### Requirement: A My Work row keeps its content inside the row and its late deadline readable (REQ-MW-CARD-01)
+
+A row on Assigned to me SHALL keep every chip inside the row; a chip whose text
+does not fit SHALL end in an ellipsis and carry its full text as a tooltip. A
+deadline that is late SHALL be drawn in a colour with at least 4.5:1 contrast on
+the row's background.
+
+#### Scenario: A long case type stays inside the row
+@e2e exclude {a layout measurement on a themed instance; the chip rules and tooltip are asserted in tests/vitest/myWorkCaseCard.spec.js and measured live on the review instance}
+
+- **GIVEN** a case whose case type is "Omgevingsvergunning kleine bouwactiviteit"
+- **WHEN** the handler opens Assigned to me
+- **THEN** the case type chip SHALL end inside the row
+- **AND** its tooltip SHALL show the full case type
+
+#### Scenario: A late deadline can be read
+@e2e exclude {contrast depends on the active theme's tokens; the text token is asserted in tests/vitest/myWorkCaseCard.spec.js and the contrast measured live}
+
+- **GIVEN** a case whose deadline has passed
+- **WHEN** the handler opens Assigned to me
+- **THEN** the deadline text SHALL have at least 4.5:1 contrast on the row
+
+### Requirement: Your team's queue shows its deadlines as dates (REQ-MW-CARD-02)
+
+The Deadline column of Your team's queue and of Cases you follow SHALL show the
+deadline as a date in the reader's locale, not as the stored ISO string.
+
+#### Scenario: The team queue shows a date
+@e2e exclude {the column carries the library's own date format; asserted in tests/vitest/landingViews.spec.js and checked live}
+
+- **GIVEN** an unassigned case of the reader's team with deadline 2026-12-07
+- **WHEN** the reader opens My work, My team
+- **THEN** the Deadline column SHALL show a date such as "7 dec. 2026"
+
+### Requirement: A planned item starts at the next working day at 10:00
+
+The "Plan an item" dialog SHALL open with "When" set to the next working day after today at 10:00, the working day read
+from the organisation's working-day calendar (the built-in list when no calendar answers). The reader SHALL be able to
+change it before planning.
+
+#### Scenario: On a Friday
+
+- GIVEN today is Friday 9 October 2026 and the weekend is not worked
+- WHEN the reader opens "Iets inplannen"
+- THEN "Wanneer" reads Monday 12 October 2026 10:00
+
+#### Scenario: Before a closure day
+
+- GIVEN today is Monday and the organisation is closed on Tuesday
+- THEN "Wanneer" reads Wednesday 10:00
+
 ## Non-Functional Requirements
 
 - **Performance**: My Work reuses the index self-fetch; it MUST page/limit like
   the standard case index rather than loading unbounded results.
-- **Accessibility**: Cards MUST be keyboard-operable (focusable, Enter/Space to
-  open) and overdue state MUST NOT rely on colour alone (the "Deadline:" text
-  label is always present). Content MUST meet WCAG AA.
+- **Accessibility**: Rows MUST be keyboard-operable (focusable, Enter/Space to
+  open) and overdue state MUST NOT rely on colour alone (the "Te laat" heading
+  is always present). Content MUST meet WCAG AA.
 - **Localization**: All labels MUST support English + Dutch via `t()`.
-- **Responsiveness**: The card grid MUST adapt to narrow viewports.
+- **Responsiveness**: The list MUST adapt to narrow viewports.
 
 ---
 

@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\Transfer\DoorzendingNotifier;
@@ -38,11 +39,16 @@ use Psr\Log\LoggerInterface;
  * Who is told a case moved, and who is deliberately not.
  *
  * @covers \OCA\Dossiq\Service\Transfer\DoorzendingNotifier
+ * @covers \OCA\Dossiq\Service\Term\TermNoticeSources
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Service\Term\TermLetter
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class DoorzendingNotificationTest extends TestCase {
 
@@ -168,8 +174,10 @@ class DoorzendingNotificationTest extends TestCase {
 	 */
 	public function testTheWordingNamesTheDestinationInBothLanguages(): void {
 		$service = new TermijnNotificationService(
-			termService: $this->createMock(originalClassName: \OCA\Dossiq\Service\TermijnService::class),
-			sender: $this->createMock(originalClassName: \OCA\Dossiq\Service\Termijn\TermNoticeSender::class),
+			notices: new TermNoticeSources(
+				termService: $this->createMock(originalClassName: \OCA\Dossiq\Service\TermijnService::class),
+				sender: $this->createMock(originalClassName: \OCA\Dossiq\Service\Termijn\TermNoticeSender::class),
+			),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 

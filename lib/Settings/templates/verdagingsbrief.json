@@ -1,9 +1,41 @@
 {
   "id": "verdagingsbrief",
   "title": "Verdagingsbrief",
-  "description": "Extension letter: tells an applicant the decision deadline has moved, and why.",
+  "description": "Voor het verlengen van de beslistermijn, met de reden.",
   "category": "document",
   "version": "1.0.0",
   "documentType": "Ontvangstbevestiging",
+  "fills": [
+    {
+      "label": "Decision deadline",
+      "field": "legalDecisionDate",
+      "as": "deadline",
+      "term": "statutoryTerm"
+    },
+    {
+      "label": "Adjournment",
+      "field": "statutoryExtension",
+      "as": "extension",
+      "from": "legalDecisionDate"
+    },
+    {
+      "label": "Effective date",
+      "field": "statutoryExtension",
+      "as": "after-extension",
+      "from": "legalDecisionDate"
+    },
+    {
+      "label": "Statement of reasons",
+      "field": "extensionReason",
+      "required": true
+    },
+    {
+      "label": "Status after generating",
+      "value": "Draft (concept)"
+    }
+  ],
+  "notes": [
+    "Na verzenden start de bezwaartermijn van 6 weken vanaf de bekendmaking. Een week voor het einde krijgt u een herinnering; archiveren wacht tot de termijn voorbij is."
+  ],
   "body": "Geachte heer, mevrouw,\n\nUw aanvraag {{case.title}}, kenmerk {{case.identifier}}, is nog in behandeling.\n\nWij hebben meer tijd nodig om een zorgvuldig besluit te nemen. Wij verdagen de beslistermijn; de oorspronkelijke termijn liep tot {{case.deadline}}.\n\nMet vriendelijke groet,\n\nDe behandelaar"
 }

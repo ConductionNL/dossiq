@@ -33,6 +33,23 @@
 		</p>
 
 		<template v-else>
+			<dl class="case-type-blueprint__summary" data-testid="case-type-blueprint-summary">
+				<div class="case-type-blueprint__fact">
+					<dt>{{ t('dossiq', 'Statuses') }}</dt>
+					<dd>{{ statusesLine }}</dd>
+				</div>
+				<div class="case-type-blueprint__fact">
+					<dt>{{ t('dossiq', 'Results') }}</dt>
+					<dd>{{ summary.results }}</dd>
+				</div>
+				<div class="case-type-blueprint__fact">
+					<dt>{{ t('dossiq', 'Attributes') }}</dt>
+					<dd>{{ attributesLine }}</dd>
+				</div>
+			</dl>
+
+			<details class="case-type-blueprint__all">
+				<summary>{{ t('dossiq', 'Every status, result and attribute') }}</summary>
 			<p
 				v-if="parentTitle"
 				class="case-type-blueprint__parent"
@@ -64,7 +81,7 @@
 						<span class="case-type-blueprint__name">{{ row.name }}</span>
 						<span
 							v-if="row.badge"
-							class="case-type-blueprint__badge"
+							class="case-type-blueprint__badge cn-status-badge cn-status-badge--default"
 							:data-origin="row.origin"
 							:title="row.badgeTitle">
 							{{ row.badge }}
@@ -72,6 +89,7 @@
 					</li>
 				</ul>
 			</section>
+			</details>
 		</template>
 	</div>
 </template>
@@ -79,10 +97,10 @@
 <script>
 import axios from '@nextcloud/axios'
 import { subscribe, unsubscribe } from '@nextcloud/event-bus'
-import { translate as t } from '@nextcloud/l10n'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { blueprintSections, parentTitleOf } from '../../utils/caseTypeBlueprint.js'
+import { blueprintSections, blueprintSummary, parentTitleOf } from '../../utils/caseTypeBlueprint.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -149,6 +167,42 @@ export default {
 		parentTitle() {
 			return parentTitleOf(this.blueprint)
 		},
+
+		/**
+		 * The counts the card leads with.
+		 *
+		 * @return {object}
+		 * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-reads-as-a-summary-card
+		 */
+		summary() {
+			return blueprintSummary(this.blueprint)
+		},
+
+		/**
+		 * "6, of which 2 final".
+		 *
+		 * @return {string}
+		 */
+		statusesLine() {
+			const { statuses, finalStatuses } = this.summary
+			return finalStatuses > 0
+				? t('dossiq', '{count}, of which {final} final', { count: statuses, final: finalStatuses })
+				: String(statuses)
+		},
+
+		/**
+		 * "14 fields, 6 inherited from Omgevingsvergunning".
+		 *
+		 * @return {string}
+		 */
+		attributesLine() {
+			const { attributes, inheritedAttributes, parent } = this.summary
+			const fields = n('dossiq', '%n field', '%n fields', attributes)
+			if (inheritedAttributes > 0 && parent !== '') {
+				return t('dossiq', '{fields}, {count} inherited from {parent}', { fields, count: inheritedAttributes, parent })
+			}
+			return fields
+		},
 	},
 
 	/**
@@ -209,9 +263,47 @@ export default {
 </script>
 
 <style scoped>
+.case-type-blueprint__summary {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 8px 16px;
+	margin: 0 0 12px;
+	padding: 0;
+	font-size: 14px;
+}
+
+.case-type-blueprint__fact {
+	display: contents;
+}
+
+.case-type-blueprint__fact dt {
+	color: var(--color-text-maxcontrast);
+	text-align: start;
+}
+
+.case-type-blueprint__fact dd {
+	margin: 0;
+	font-weight: 500;
+}
+
+/* Nextcloud pads every dt and dd 12px; the board's facts sit 8px apart on
+   their natural leading. */
+.case-type-blueprint__fact dt,
+.case-type-blueprint__fact dd {
+	padding: 0;
+	line-height: normal;
+}
+
+.case-type-blueprint__all > summary {
+	cursor: pointer;
+	font-size: 14px;
+	line-height: normal;
+	color: var(--color-text-maxcontrast);
+}
+
 .case-type-blueprint {
 	height: 100%;
-	padding: 8px 12px;
+	padding: 0;
 	overflow-y: auto;
 }
 
@@ -244,11 +336,9 @@ export default {
 }
 
 .case-type-blueprint__badge {
-	padding: 0 8px;
-	border-radius: var(--border-radius-pill, 100px);
 	background-color: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
-	font-size: 0.8em;
+	--cn-status-badge-ink: var(--color-text-maxcontrast);
+	color: var(--cn-status-badge-ink);
 }
 
 .case-type-blueprint__empty {

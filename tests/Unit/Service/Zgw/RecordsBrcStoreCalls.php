@@ -34,7 +34,7 @@ final class RecordsBrcStoreCalls {
 	public array $calls = [];
 
 	/**
-	 * Objects find() answers, by uuid; a missing uuid throws.
+	 * Objects find() answers, by uuid; a missing uuid throws DoesNotExistException, as OpenRegister does.
 	 *
 	 * @var array<string, mixed>
 	 */
@@ -55,6 +55,13 @@ final class RecordsBrcStoreCalls {
 	public array $failOn = [];
 
 	/**
+	 * Methods that OpenRegister refuses to the caller (NotAuthorizedException).
+	 *
+	 * @var array<int, string>
+	 */
+	public array $refuseOn = [];
+
+	/**
 	 * What saveObject() answers.
 	 *
 	 * @var mixed
@@ -66,12 +73,16 @@ final class RecordsBrcStoreCalls {
 		if (in_array($method, $this->failOn, true) === true) {
 			throw new \RuntimeException($method . ' is down');
 		}
+
+		if (in_array($method, $this->refuseOn, true) === true) {
+			throw new \OCA\OpenRegister\Exception\NotAuthorizedException('may not ' . $method);
+		}
 	}//end record()
 
 	public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
 		$this->record('find', [$id, $register, $schema]);
 		if (array_key_exists($id, $this->objects) === false) {
-			throw new \RuntimeException('not found');
+			throw new \OCP\AppFramework\Db\DoesNotExistException('not found');
 		}
 
 		return $this->objects[$id];

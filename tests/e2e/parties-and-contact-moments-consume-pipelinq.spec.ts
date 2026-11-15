@@ -144,11 +144,11 @@ test.describe('pipelinq on the case', () => {
 		})
 		const panel = await openCasePanel(page, 'customerRecord')
 		const row = panel
-			.locator('[data-testid="case-pipelinq-moment"]')
+			.locator('[data-testid="cn-record-list-item"]')
 			.filter({ hasText: moment.summary })
 		await expect(row).toHaveCount(1, { timeout: 20_000 })
 		await expect(
-			row.locator('[data-testid="case-pipelinq-moment-shared"]'),
+			row.locator('[data-testid="cn-record-list-badge-count"]'),
 		).toBeVisible()
 	})
 

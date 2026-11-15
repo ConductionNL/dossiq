@@ -32,14 +32,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\OpenRegister\AppHost\Controller\GenericMetricsController;
 use OCA\OpenRegister\AppHost\Observability\ManifestLoader;
 use OCA\OpenRegister\AppHost\Observability\MetricsEngine;
@@ -50,7 +50,7 @@ use OCP\IRequest;
 /**
  * Admin-only declarative Prometheus metrics endpoint backed by the AppHost engine.
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
  */
 class MetricsController extends GenericMetricsController {
 
@@ -70,7 +70,7 @@ class MetricsController extends GenericMetricsController {
 		MetricsEngine $engine
 	) {
 		parent::__construct(
-			appName: Application::APP_ID,
+			appName: AppIdentity::APP_ID,
 			request: $request,
 			manifestLoader: $manifestLoader,
 			engine: $engine
@@ -84,7 +84,7 @@ class MetricsController extends GenericMetricsController {
 	 *
 	 * @return TextPlainResponse Prometheus text exposition 0.0.4.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
 	 */
 	#[NoCSRFRequired]
 	public function index(): TextPlainResponse {

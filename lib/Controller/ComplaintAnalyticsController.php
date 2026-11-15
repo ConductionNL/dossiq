@@ -25,15 +25,16 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\ComplaintAnalyticsService;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAnalyticsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\EmployeeAlertAudienceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -43,24 +44,37 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
  */
 class ComplaintAnalyticsController extends Controller {
+	/**
+	 * Response key for each complaint dimension whose frequency is reported.
+	 *
+	 * @var array<string, string>
+	 */
+	private const FREQUENCY_DIMENSIONS = [
+		'byCategorie' => 'category',
+		'byAfdeling' => 'involvedDepartment',
+		'byKanaal' => 'receiptChannel',
+	];
+
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param ComplaintAnalyticsService $analyticsService Analytics service
-	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
+	 * @param ComplaintAnalyticsServiceInterface $analyticsService Analytics service
+	 * @param ComplaintAccessGuardInterface $accessGuard Shared complaint authorization guard
+	 * @param EmployeeAlertAudienceInterface $alertAudience Who may read the employee threshold alerts
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ComplaintAnalyticsService $analyticsService,
-		private readonly ComplaintAccessGuard $accessGuard,
+		private readonly ComplaintAnalyticsServiceInterface $analyticsService,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
+		private readonly EmployeeAlertAudienceInterface $alertAudience,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -68,50 +82,60 @@ class ComplaintAnalyticsController extends Controller {
 	/**
 	 * Get complaint frequency analytics.
 	 *
+	 * The employee threshold alerts are only built and returned for the alert
+	 * audience (EmployeeAlertAudience); every other caller gets the frequency
+	 * figures without the `employeeAlerts` key.
+	 *
 	 * @return JSONResponse Analytics data
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
 	 */
 	public function analytics(): JSONResponse {
-		if ($this->accessGuard->currentUid() === '') {
+		$uid = $this->accessGuard->currentUid();
+		if ($uid === '') {
 			return $this->accessGuard->notAuthenticated();
 		}
 
-		$dateFrom = $this->request->getParam('dateFrom') ?? date('Y-01-01');
-		$dateTo = $this->request->getParam('dateTo') ?? date('Y-m-d');
+		$mayReadAlerts = $this->alertAudience->mayReadEmployeeAlerts($uid);
 
-		$byCategory = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'category',
-			dateFrom: $dateFrom,
-			dateTo: $dateTo,
+		$body = $this->frequencyFigures(
+			dateFrom: $this->request->getParam('dateFrom') ?? date('Y-01-01'),
+			dateTo: $this->request->getParam('dateTo') ?? date('Y-m-d'),
 		);
-		$byDepartment = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'involvedDepartment',
-			dateFrom: $dateFrom,
-			dateTo: $dateTo,
-		);
-		$byChannel = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'receiptChannel',
-			dateFrom: $dateFrom,
-			dateTo: $dateTo,
-		);
-		$monthlyTrend = $this->analyticsService->getMonthlyTrend(dateFrom: $dateFrom, dateTo: $dateTo);
-		$avgResolution = $this->analyticsService->getAverageResolutionTime(dateFrom: $dateFrom, dateTo: $dateTo);
-		$employeeAlerts = $this->analyticsService->checkEmployeeThresholdAlerts();
+		if ($mayReadAlerts === true) {
+			$body['employeeAlerts'] = $this->analyticsService->checkEmployeeThresholdAlerts();
+		}
 
-		return new JSONResponse(
-			[
-				'byCategorie' => $byCategory,
-				'byAfdeling' => $byDepartment,
-				'byKanaal' => $byChannel,
-				'monthlyTrend' => $monthlyTrend,
-				'avgResolution' => $avgResolution,
-				'employeeAlerts' => $employeeAlerts,
-			]
-		);
+		return new JSONResponse($body);
 	}//end analytics()
+
+	/**
+	 * The complaint frequency figures for one window.
+	 *
+	 * @param string $dateFrom First day of the window (Y-m-d).
+	 * @param string $dateTo   Last day of the window (Y-m-d).
+	 *
+	 * @return array<string, mixed> Frequency per dimension, the monthly trend and the average resolution.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	private function frequencyFigures(string $dateFrom, string $dateTo): array {
+		$figures = [];
+		foreach (self::FREQUENCY_DIMENSIONS as $key => $dimension) {
+			$figures[$key] = $this->analyticsService->getFrequencyByDimension(
+				dimension: $dimension,
+				dateFrom: $dateFrom,
+				dateTo: $dateTo,
+			);
+		}
+
+		$figures['monthlyTrend'] = $this->analyticsService->getMonthlyTrend(dateFrom: $dateFrom, dateTo: $dateTo);
+		$figures['avgResolution'] = $this->analyticsService->getAverageResolutionTime(dateFrom: $dateFrom, dateTo: $dateTo);
+		return $figures;
+	}//end frequencyFigures()
 
 	/**
 	 * Get KPI cards for management dashboard.
@@ -120,7 +144,7 @@ class ComplaintAnalyticsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function kpi(): JSONResponse {
 		if ($this->accessGuard->currentUid() === '') {

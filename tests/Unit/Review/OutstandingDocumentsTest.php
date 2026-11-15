@@ -76,6 +76,23 @@ class OutstandingDocumentsTest extends TestCase {
 	}//end testOnlyUnassessedDocumentsThatWereNotSetAsideAreOutstanding()
 
 	/**
+	 * REQ-CRA-011: an exclusion the caller cannot read still takes its document off the outstanding list.
+	 *
+	 * @return void
+	 */
+	public function testADocumentSetAsideOutOfTheCallersSightIsNotOutstanding(): void {
+		$register = new InMemoryRegister();
+		$register->seed(schema: 'document', uuid: 'doc-1', row: ['case' => 'case-1']);
+		$register->seed(schema: 'document', uuid: 'doc-2', row: ['case' => 'case-1']);
+		$register->seed(schema: 'wooExclusion', uuid: 'x-1', row: ['case' => 'case-1', 'documentRef' => 'doc-2']);
+		$register->hiddenFromCaller = ['wooExclusion'];
+
+		$outstanding = (new OutstandingDocuments(settingsService: $this->settings(register: $register)))->forCase(caseId: 'case-1');
+
+		self::assertSame(['count' => 1, 'documents' => ['doc-1']], $outstanding);
+	}//end testADocumentSetAsideOutOfTheCallersSightIsNotOutstanding()
+
+	/**
 	 * Without OpenRegister, a register or any document, nothing is outstanding.
 	 *
 	 * @return void
@@ -110,4 +127,31 @@ class OutstandingDocumentsTest extends TestCase {
 		self::assertSame([], (new OutstandingDocuments(settingsService: $this->settings(register: null)))->underReview(caseId: 'case-1'));
 		self::assertSame([], (new OutstandingDocuments(settingsService: $this->settings(register: $register, name: '')))->underReview(caseId: 'case-1'));
 	}//end testUnderReviewIsEveryDocumentThatWasNotSetAside()
+
+	/**
+	 * The redacted copy of a partly public document is part of that document's assessment.
+	 *
+	 * The case folder's listener records the copy as a document of the case, so
+	 * without this it would wait for an assessment of its own.
+	 *
+	 * @return void
+	 */
+	public function testARedactedCopyIsNeitherUnderReviewNorOutstanding(): void {
+		$register = new InMemoryRegister();
+		foreach (['doc-1', 'doc-1-gelakt', 'doc-2'] as $doc) {
+			$register->seed(schema: 'document', uuid: $doc, row: ['case' => 'case-1']);
+		}
+
+		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a-1', row: [
+			'caseRef' => 'case-1',
+			'documentRef' => 'doc-1',
+			'classification' => 'deels_openbaar',
+			'redactedDocumentRef' => 'doc-1-gelakt',
+		]);
+
+		$documents = new OutstandingDocuments(settingsService: $this->settings(register: $register));
+
+		self::assertSame(['doc-1', 'doc-2'], $documents->underReview(caseId: 'case-1'));
+		self::assertSame(['count' => 1, 'documents' => ['doc-2']], $documents->forCase(caseId: 'case-1'));
+	}//end testARedactedCopyIsNeitherUnderReviewNorOutstanding()
 }//end class

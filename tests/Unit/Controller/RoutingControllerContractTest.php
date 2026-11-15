@@ -77,6 +77,7 @@ interface RoutingControllerContractObjectService {
  *
  * @covers \OCA\Dossiq\Controller\RoutingController
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Support\ObjectArray
  */
 class RoutingControllerContractTest extends TestCase {
 

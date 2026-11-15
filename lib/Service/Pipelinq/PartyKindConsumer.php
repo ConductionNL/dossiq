@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pipelinq;
 
+use OCA\Dossiq\Kernel\Contracts\PartyKindConsumerInterface;
 use OCA\Dossiq\Service\People\PartyVocabulary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -35,9 +36,8 @@ use Throwable;
  *
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
  */
-class PartyKindConsumer {
+class PartyKindConsumer implements PartyKindConsumerInterface {
 	use SearchesObjects;
-
 
 	/**
 	 * How a dossiq case type is named to pipelinq.
@@ -321,12 +321,20 @@ class PartyKindConsumer {
 			return null;
 		}
 
-		foreach ($rows as $row) {
-			$data = $row;
-			if ($row instanceof \JsonSerializable) {
-				$data = $row->jsonSerialize();
-			}
+		return $this->uuidForTarget(rows: $rows, target: $target);
+	}//end existingAcceptanceId()
 
+	/**
+	 * The uuid of the first acceptance row for a target, or null when none carries one.
+	 *
+	 * @param iterable<mixed> $rows   The acceptance rows found.
+	 * @param string          $target The `<app>:<schema>:<type>` literal.
+	 *
+	 * @return string|null The uuid, or null.
+	 */
+	private function uuidForTarget(iterable $rows, string $target): ?string {
+		foreach ($rows as $row) {
+			$data = $this->rowData(row: $row);
 			if (is_array($data) === false) {
 				continue;
 			}
@@ -342,7 +350,23 @@ class PartyKindConsumer {
 		}
 
 		return null;
-	}//end existingAcceptanceId()
+	}//end uuidForTarget()
+
+	/**
+	 * A row as plain data, serialised when it is an entity.
+	 *
+	 * @param mixed $row The row.
+	 *
+	 * @return mixed The row's data.
+	 */
+	private function rowData(mixed $row): mixed {
+		$data = $row;
+		if ($row instanceof \JsonSerializable) {
+			$data = $row->jsonSerialize();
+		}
+
+		return $data;
+	}//end rowData()
 
 	/**
 	 * OpenRegister's object service, or null when it is unavailable.

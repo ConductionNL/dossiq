@@ -44,8 +44,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -67,14 +67,14 @@ class DeclareTimelineKinds implements IRepairStep {
 	 *
 	 * @var string
 	 */
-	public const KIND_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineKindService';
+	public const KIND_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Timeline\\TimelineKindService';
 
 	/**
 	 * OpenRegister's text block service, named the same way.
 	 *
 	 * @var string
 	 */
-	public const BLOCK_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TextBlockService';
+	public const BLOCK_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Timeline\\TextBlockService';
 
 	/**
 	 * Constructor.
@@ -138,7 +138,7 @@ class DeclareTimelineKinds implements IRepairStep {
 		}
 
 		$declared = 0;
-		foreach (TimelineKinds::DECLARATIONS as $declaration) {
+		foreach (TimelineKindsInterface::DECLARATIONS as $declaration) {
 			try {
 				$service->declareKind($declaration);
 				$declared++;
@@ -146,7 +146,7 @@ class DeclareTimelineKinds implements IRepairStep {
 				$this->logger->warning(
 					'Dossiq timeline: kind {kind} was not declared, {reason}',
 					[
-						'app' => Application::APP_ID,
+						'app' => AppIdentity::APP_ID,
 						'kind' => $declaration['slug'],
 						'reason' => $e->getMessage(),
 					],
@@ -169,7 +169,7 @@ class DeclareTimelineKinds implements IRepairStep {
 		}
 
 		$seeded = 0;
-		foreach (TimelineKinds::TEXT_BLOCKS as $block) {
+		foreach (TimelineKindsInterface::TEXT_BLOCKS as $block) {
 			try {
 				$service->declareBlock($block);
 				$seeded++;
@@ -177,7 +177,7 @@ class DeclareTimelineKinds implements IRepairStep {
 				$this->logger->warning(
 					'Dossiq timeline: text block {block} was not seeded, {reason}',
 					[
-						'app' => Application::APP_ID,
+						'app' => AppIdentity::APP_ID,
 						'block' => $block['slug'],
 						'reason' => $e->getMessage(),
 					],

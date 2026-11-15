@@ -36,6 +36,8 @@ use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
+use OCA\OpenRegister\Service\Flow\Timer\EscalationNotice;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -102,12 +104,8 @@ class AdviceTimerFiredListenerTest extends TestCase {
 
 		return new FlowTimerFiredEvent(
 			timer: $timer,
-			kind: FlowTimerFiredEvent::KIND_RUNG,
-			transition: 'escalation:'.$rungKey,
-			rungKey: $rungKey,
-			recipients: [],
-			priority: 'normal',
-			message: null
+			firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:'.$rungKey, rungKey: $rungKey),
+			notice: new EscalationNotice(priority: 'normal'),
 		);
 	}//end fire()
 
@@ -164,12 +162,7 @@ class AdviceTimerFiredListenerTest extends TestCase {
 		$this->listener()->handle(
 			event: new FlowTimerFiredEvent(
 				timer: $timer,
-				kind: FlowTimerFiredEvent::KIND_RUNG,
-				transition: 'escalation:slaBreached:0',
-				rungKey: 'slaBreached:0',
-				recipients: [],
-				priority: null,
-				message: null
+				firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:slaBreached:0', rungKey: 'slaBreached:0'),
 			)
 		);
 	}//end testAFireWithoutARequestDoesNothing()

@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Exception\NoticeNotSentException;
+use OCA\Dossiq\Kernel\Contracts\ExtensionNoticeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnNotificationService;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
  */
-class ExtensionNotice {
+class ExtensionNotice implements ExtensionNoticeInterface {
 
 	use SearchesObjects;
 
@@ -93,13 +94,13 @@ class ExtensionNotice {
 				$case,
 			);
 		} catch (NoticeNotSentException $e) {
-			return $this->answer(status: 'not-sent', channel: '', code: $e->getReasonCode(), reason: $e->getMessage());
+			return $this->notSent(code: $e->getReasonCode(), reason: $e->getMessage());
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: the extension notice could not be sent', ['case' => $caseId, 'exception' => $e]);
-			return $this->answer(status: 'not-sent', channel: '', code: 'send-failed', reason: 'The extension notice could not be sent.');
+			return $this->notSent(code: 'send-failed', reason: 'The extension notice could not be sent.');
 		}
 
-		return $this->answer(status: 'sent', channel: (string)($payload['dispatch']['channel'] ?? ''), code: '', reason: '');
+		return $this->sent(channel: (string)($payload['dispatch']['channel'] ?? ''));
 	}//end tell()
 
 	/**
@@ -136,21 +137,35 @@ class ExtensionNotice {
 	}//end caseRow()
 
 	/**
-	 * The notice part of the extension answer.
+	 * The notice part of the extension answer for a notice that went out.
 	 *
-	 * @param string $status  `sent` or `not-sent`.
 	 * @param string $channel The channel it went through, or ''.
-	 * @param string $code    Why not, or ''.
-	 * @param string $reason  The sentence, or ''.
 	 *
 	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
 	 */
-	private function answer(string $status, string $channel, string $code, string $reason): array {
+	private function sent(string $channel): array {
 		return [
-			'noticeStatus' => $status,
+			'noticeStatus' => 'sent',
 			'noticeChannel' => $channel,
+			'noticeReasonCode' => '',
+			'noticeReason' => '',
+		];
+	}//end sent()
+
+	/**
+	 * The notice part of the extension answer for a notice that did not go out.
+	 *
+	 * @param string $code   Why not.
+	 * @param string $reason The sentence.
+	 *
+	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
+	 */
+	private function notSent(string $code, string $reason): array {
+		return [
+			'noticeStatus' => 'not-sent',
+			'noticeChannel' => '',
 			'noticeReasonCode' => $code,
 			'noticeReason' => $reason,
 		];
-	}//end answer()
+	}//end notSent()
 }//end class

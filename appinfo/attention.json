@@ -20,7 +20,7 @@
 			"op": "gt",
 			"value": 0,
 			"action": {
-				"label": "Open these cases",
+				"label": "All cases past their deadline",
 				"path": "/cases"
 			}
 		}

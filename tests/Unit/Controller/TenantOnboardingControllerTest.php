@@ -42,6 +42,8 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Task\EngineInboxQuery
  * @uses \OCA\Dossiq\Service\Task\OnboardingSteps
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
+ * @uses \OCA\Dossiq\Service\Tenant\OnboardingStepGuide
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class TenantOnboardingControllerTest extends TestCase {
 	use MakesTenantAnchors;
@@ -84,6 +86,10 @@ class TenantOnboardingControllerTest extends TestCase {
 			request: $this->createMock(IRequest::class),
 			onboarding: $onboarding,
 			userSession: $this->createMock(IUserSession::class),
+			guide: new \OCA\Dossiq\Service\Tenant\OnboardingStepGuide(
+				l10n: $this->createMock(originalClassName: \OCP\IL10N::class),
+				urls: $this->createMock(originalClassName: \OCP\IURLGenerator::class),
+			),
 		);
 	}//end controller()
 

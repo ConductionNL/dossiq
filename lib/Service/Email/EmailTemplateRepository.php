@@ -28,14 +28,16 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\EmailTemplateRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
@@ -44,9 +46,9 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
-class EmailTemplateRepository {
+class EmailTemplateRepository implements EmailTemplateRepositoryInterface {
 
 	use SearchesObjects;
 
@@ -67,24 +69,11 @@ class EmailTemplateRepository {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function findActiveByCaseType(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('email_template_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		$rows = (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(
+			schemaKey: 'email_template_schema',
 			filters: [
 				'caseType' => $caseTypeId,
 				'_limit' => 100,
@@ -110,7 +99,7 @@ class EmailTemplateRepository {
 	 * @throws RuntimeException When OpenRegister is unavailable or the
 	 *                          emailTemplate schema is not configured.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function saveTemplate(array $payload): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -145,7 +134,7 @@ class EmailTemplateRepository {
 	 *
 	 * @return array<string, mixed>|null Null when unconfigured, unavailable or unknown.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function findTemplate(string $templateId): ?array {
 		return $this->findIn(configKey: 'email_template_schema', id: $templateId);
@@ -158,7 +147,7 @@ class EmailTemplateRepository {
 	 *
 	 * @return array<string, mixed>|null Null when unconfigured, unavailable or unknown.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function findCase(string $caseId): ?array {
 		$case = $this->findIn(configKey: 'case_schema', id: $caseId);

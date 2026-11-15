@@ -1,0 +1,27 @@
+{
+  "schema": {
+    "app": "dossiq",
+    "register": "dossiq",
+    "slug": "casePlanGoal"
+  },
+  "rows": [
+    {
+      "id": "c07d93b9-fd6c-5637-ae5c-75428f416232",
+      "plan": "fc4316d9-a068-5466-9ebc-04fa4ee81693",
+      "case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+      "title": "Kind slaapt door en gaat weer elke dag naar school",
+      "metWhen": "een week zonder verzuim, slaapdagboek zonder nachtelijk wakker worden",
+      "state": "open"
+    },
+    {
+      "id": "e80a8619-45e9-553e-8826-2d8bf7183f29",
+      "plan": "fc4316d9-a068-5466-9ebc-04fa4ee81693",
+      "case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+      "title": "Ouders weten bij wie ze terechtkunnen",
+      "metWhen": "ouders noemen zelf hun contactpersoon bij de evaluatie",
+      "state": "met",
+      "closedDate": "{{date:-2}}",
+      "closedObservation": "De ouders noemden Fatma Kaya als hun contactpersoon."
+    }
+  ]
+}

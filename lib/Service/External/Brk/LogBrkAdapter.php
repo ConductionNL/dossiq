@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Dormant log-backed Dossiq BRK adapter.
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 class LogBrkAdapter implements BrkAdapterInterface {
 	/**
@@ -64,7 +64,7 @@ class LogBrkAdapter implements BrkAdapterInterface {
 	 *
 	 * @return BrkLookupResult The dispatch outcome.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
 		string $municipalityCode,
@@ -95,7 +95,7 @@ class LogBrkAdapter implements BrkAdapterInterface {
 	 *
 	 * @return BrkLookupResult The dispatch outcome.
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupObject(string $id, array $context = []): BrkLookupResult {
 		$this->logger->info(
@@ -134,7 +134,7 @@ class LogBrkAdapter implements BrkAdapterInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function isDormant(): bool {
 		return true;

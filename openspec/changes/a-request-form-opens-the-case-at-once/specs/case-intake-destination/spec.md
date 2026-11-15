@@ -29,6 +29,31 @@
 - **AND** `startDate` is 2026-10-12, not the Friday the draft was begun
 - **AND** the acknowledgement is queued once
 
+### Requirement: A draft case MUST NOT be treated as received
+
+A case in OpenRegister status `draft` SHALL NOT get a case number, SHALL NOT be placed in a group of similar reports and SHALL NOT get a case plan. Each SHALL happen once, when the draft is sent, on the event OpenRegister sends for it (decisions 180 and 201). A case created outside `draft` SHALL get all three on its create, as before.
+
+OpenRegister announces a sent draft in one of two ways, and both SHALL give the same result. On OpenRegister without decision 227 a draft's create is a created event for a draft and sending it is an activated event. On OpenRegister with decision 227 a draft's create reaches no created listener, and sending it is a created event followed by an activated event for the same object. A listener that sits on both events SHALL do its creation work once per case under either: the case number, the grouping, the case plan, the acknowledgement of receipt and the term binding.
+
+#### Scenario: A draft has no case number until it is sent
+@e2e exclude a draft is saved and sent through the portal, which the dossiq e2e rig does not run; covered by `tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php::testADraftIsNumberedWhenItIsSent`
+
+- **GIVEN** a resident who saves a request form as a draft
+- **WHEN** the draft case is stored
+- **THEN** no case number is assigned, no grouping job is queued and no case plan is projected
+- **WHEN** the resident sends it
+- **THEN** the case gets its number, is queued for grouping once and gets its plan
+
+#### Scenario: A sent draft is announced twice and handled once
+@e2e exclude the two events come from OpenRegister inside one save and need an OpenRegister with decision 227, which is not on development; covered by `tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php::testASentDraftDoesItsCreationWorkOnceUnderBothEventModels`
+
+- **GIVEN** an OpenRegister that announces a sent draft as created and then as activated
+- **WHEN** a resident sends a draft case
+- **THEN** the case gets one case number, one grouping job, one case plan, one queued acknowledgement and one term
+- **GIVEN** an OpenRegister that announces a sent draft as activated only
+- **WHEN** a resident sends a draft case
+- **THEN** the result is the same
+
 ### Requirement: The confirmation fields MUST be marked on the case schema
 
 `identifier`, `receivedAt`, `termStartsAt` and `deadline` SHALL carry `x-openregister.confirmation: true`. `identifier`, `receivedAt`, `termStartsAt` and `receivedOutsideWorkingHours` SHALL carry `x-openregister.serverSet: true`.
@@ -39,15 +64,54 @@
 - **WHEN** it is validated against the case schema
 - **THEN** the validator returns zero findings
 
+### Requirement: A case type's intake form MUST be checked against the case schema when it is bound
+
+A case type MAY carry `intakeFormMapping` next to `intakeFormRef`: `fields`, one entry per answer with the question (`field`), the case property it fills (`property`) and the kind of answer (`type`), and `fixed`, the values every case of this form gets. Saving a case type that has `intakeFormRef` set SHALL validate that mapping against the case schema with OpenRegister's form destination validator, before the case type is stored. The mapping judged SHALL include what the binding itself writes: `caseType`, `intakeChannel` `forms`, the case type's first status, and a title when no answer fills it. A save with findings SHALL be refused and SHALL return the findings (decision 181). A submission of the bound form SHALL be written through OpenRegister's form submit with that same mapping. Where OpenRegister has no validator the case type SHALL be saved and the missing check SHALL be logged.
+
+#### Scenario: An answer into a property the case does not have is refused at the save
+@e2e exclude no Forms app is installed on the e2e rig; covered by `tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php::testANewCaseTypeWithAWrongBindingIsRefused`
+
+- **GIVEN** a case type with `intakeFormRef` set and a mapping whose answer "Onderwerp" fills `onderwerp`
+- **WHEN** the case type is saved
+- **THEN** the save is refused with finding `property-unknown` on `onderwerp`
+- **AND** the case type is not stored
+
+#### Scenario: A binding without a mapping keeps working
+@e2e exclude no Forms app is installed on the e2e rig; covered by `tests/Unit/Service/Intake/IntakeFormBindingTest.php::testABindingWithoutAnswersKeepsWhatItDid`
+
+- **GIVEN** a case type with `intakeFormRef` set and no `intakeFormMapping`
+- **WHEN** the bound form is submitted
+- **THEN** the case is named after the first answer and its description lists every answer
+- **AND** the case type saves without findings
+
 ### Requirement: Publishing a case type MUST re-check the forms bound to it
 
-Publishing a case type SHALL validate every form bound to it against the case schema plus that type's `intakeRequirements.requiredBeforeCreation`. A finding SHALL block the publish or unpublish the form, per the `formDestinationBreak` setting.
+Publishing a case type SHALL validate every form bound to it against the case schema plus that type's `intakeRequirements.requiredBeforeCreation`. A finding SHALL block the publish or unpublish the form, per the `formDestinationBreak` setting. The case type's own intake form (`intakeFormRef`) is part of the case type, so a finding on it SHALL refuse the save: every `requiredBeforeCreation` property SHALL be filled by an answer or a fixed value of `intakeFormMapping` on a case type that is not a draft. A draft case type SHALL NOT be held to that list until it is published.
 
 #### Scenario: A new intake requirement catches a form that lacks it
+@e2e exclude the forms are another app's (portaliq) and the e2e rig runs dossiq alone; covered by `tests/Unit/AppInfo/BoundFormsRegistrationTest.php::testByDefaultTheBrokenFormIsUnpublishedAfterTheSaveAndItsAuthorIsTold` and `::testAFormThatLacksANewIntakeRequirementRefusesThePublishWhereItsAppSaysSo`
 
 - **GIVEN** a published portal form bound to case type `klacht` that does not ask for `communicationChannel`
 - **WHEN** `communicationChannel` is added to that type's `requiredBeforeCreation` and the type is published
-- **THEN** the publish response names the form with finding `required-unmapped`
+- **THEN** where portaliq's `formDestinationBreak` is `refuse`, the save is refused with rule `bound-form-invalid`, naming the form with finding `required-unmapped`
+- **AND** otherwise the case type is saved, the form is unpublished and its author is told
+
+#### Scenario: A case schema change re-checks the case types' own Forms bindings
+@e2e exclude no Forms app is installed on the e2e rig; covered by `tests/Unit/AppInfo/BoundFormsRegistrationTest.php::testDossiqAnnouncesItsOwnFormsBindingsForTheCaseSchema`
+
+- **GIVEN** a published case type with a Nextcloud Forms form bound in `intakeFormRef`
+- **WHEN** OpenRegister asks which forms write into the case schema before that schema changes
+- **THEN** dossiq names the binding with its mapping and the case type's owner
+- **AND** when the change breaks it, the binding is taken off the case type and its mapping is kept
+
+#### Scenario: Publishing a case type whose own intake form leaves out an intake requirement is refused
+@e2e exclude no Forms app is installed on the e2e rig; covered by `tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php::testPublishingReChecksTheFormAgainstTheIntakeRequirements`
+
+- **GIVEN** a draft case type with `intakeFormRef` set, `requiredBeforeCreation` naming `communicationChannel`, and a mapping that does not fill it
+- **WHEN** the case type is saved as a draft
+- **THEN** the save succeeds
+- **WHEN** it is published
+- **THEN** the save is refused with finding `required-unmapped` on `communicationChannel`
 
 ### Requirement: A portal filing MUST NOT be held in an intermediate object
 
