@@ -124,9 +124,25 @@ class DecisionDocumentLifecycle {
 	): array {
 		self::assertMove(document: $document, to: $to);
 
-		$moment = ($moment ?? new DateTimeImmutable());
-		$stamp = $moment->format(DateTimeInterface::ATOM);
-		$move = new DecisionDocumentMove(definition: $definition, document: $document, actor: $actor, moment: $moment);
+		return $this->changesTo(
+			to: $to,
+			move: new DecisionDocumentMove(definition: $definition, document: $document, actor: $actor, moment: ($moment ?? new DateTimeImmutable()))
+		);
+	}//end transition()
+
+	/**
+	 * The fields that move the document to the status.
+	 *
+	 * @param string               $to   The target status, already allowed from the current one.
+	 * @param DecisionDocumentMove $move The kind's definition, the document, the acting user and the moment.
+	 *
+	 * @return array<string, mixed> The changes.
+	 *
+	 * @throws RefusedException 422 when the document is invalid or unsigned; 403 or 503 from the authority
+	 *                          check; 503 when no number can be issued.
+	 */
+	private function changesTo(string $to, DecisionDocumentMove $move): array {
+		$stamp = $move->moment->format(DateTimeInterface::ATOM);
 
 		return match ($to) {
 			'approved' => $this->approve(move: $move),
@@ -135,7 +151,7 @@ class DecisionDocumentLifecycle {
 			'archived' => ['currentStatus' => 'archived', 'archivedAt' => $stamp],
 			default => ['currentStatus' => 'draft', 'approvedBy' => null, 'approvedAt' => null],
 		};
-	}//end transition()
+	}//end changesTo()
 
 	/**
 	 * Refuse a move the lifecycle does not allow from the document's current status.
