@@ -87,6 +87,19 @@ class ProcessingTimeRows {
 		// Counted between calendar dates in one zone, so a reference day at
 		// the tenant's midnight does not lose a day against a UTC start date.
 		$scan->today = new DateTimeImmutable($today->format('Y-m-d'));
+
+		return $this->rowsAtRisk(scan: $scan, open: $open);
+	}//end atRisk()
+
+	/**
+	 * The at-risk row of every open record the scan lists, least time left first.
+	 *
+	 * @param AtRiskScan                       $scan The scan.
+	 * @param array<int, array<string, mixed>> $open The open records.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function rowsAtRisk(AtRiskScan $scan, array $open): array {
 		$rows = [];
 		foreach ($open as $record) {
 			$measure = $this->measure(scan: $scan, record: $record);
@@ -101,7 +114,7 @@ class ProcessingTimeRows {
 		);
 
 		return $rows;
-	}//end atRisk()
+	}//end rowsAtRisk()
 
 	/**
 	 * Measure an open record against its type's target, or null when it has no target or start.
