@@ -99,6 +99,25 @@ class CollectionCaseLinks {
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 */
 	public function owned(object $objectService, string $collectionId, string $subjectRef): ?array {
+		$collection = $this->readCollection(objectService: $objectService, collectionId: $collectionId);
+		if (is_array($collection) === false || (string)($collection['owner'] ?? '') !== $subjectRef) {
+			return null;
+		}
+
+		$collection['id'] = $collectionId;
+
+		return $collection;
+	}//end owned()
+
+	/**
+	 * The collection as the reader finds it; a failed read is logged and reads as none.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $collectionId  The collection uuid.
+	 *
+	 * @return mixed The collection, or null.
+	 */
+	private function readCollection(object $objectService, string $collectionId): mixed {
 		$collection = null;
 		try {
 			$collection = $this->reader->find(
@@ -111,14 +130,8 @@ class CollectionCaseLinks {
 			$this->logger->warning('CollectionCaseLinks: the collection could not be read', ['collection' => $collectionId, 'error' => $e->getMessage()]);
 		}
 
-		if (is_array($collection) === false || (string)($collection['owner'] ?? '') !== $subjectRef) {
-			return null;
-		}
-
-		$collection['id'] = $collectionId;
-
 		return $collection;
-	}//end owned()
+	}//end readCollection()
 
 	/**
 	 * Link the collection to the case: one case object per item, then the
