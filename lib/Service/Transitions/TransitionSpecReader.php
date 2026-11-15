@@ -58,13 +58,14 @@ class TransitionSpecReader {
 	 *
 	 * @param array<string, mixed> $transition     The transition.
 	 * @param bool                 $approvalsWired Whether the registry answers for the approval gate.
+	 * @param bool                 $entryGuardWired Whether the registry answers for a status's entry requirements.
 	 *
 	 * @return array<int, array<string, mixed>> The guards to evaluate, in order.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
-	public function guardsWithImplicit(array $transition, bool $approvalsWired): array {
+	public function guardsWithImplicit(array $transition, bool $approvalsWired, bool $entryGuardWired): array {
 		$guards = $this->extractGuards(transition: $transition);
 		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
 
@@ -85,6 +86,13 @@ class TransitionSpecReader {
 			'type' => GuardRegistry::STATUS_CAPACITY,
 			'toStatus' => (string)($transition['toStatus'] ?? ''),
 		];
+
+		if ($entryGuardWired === true) {
+			$guards[] = [
+				'type' => GuardRegistry::STATUS_ENTRY_REQUIREMENTS,
+				'toStatus' => (string)($transition['toStatus'] ?? ''),
+			];
+		}
 
 		$act = trim((string)($transition['id'] ?? ''));
 		if ($approvalsWired === true && $act !== '') {

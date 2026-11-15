@@ -33,7 +33,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Keeps the standing derivation declared, and keeps it alone.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 class StandingArchivalDerivationIsDeclaredTest extends TestCase {
 
@@ -91,7 +91,7 @@ class StandingArchivalDerivationIsDeclaredTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	public function testEachStandingDerivationNamesWhatBlocksItsRemoval(): void {
 		foreach (self::STANDING as $relative) {
@@ -129,7 +129,7 @@ class StandingArchivalDerivationIsDeclaredTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	public function testNoThirdClassDerivesAnArchiveActionDate(): void {
 		$found = [];

@@ -183,24 +183,24 @@ test.describe('The duplicate warning at intake', () => {
 		return dialog
 	}
 
-	// @e2e openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md#a-likely-duplicate-is-shown
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#a-likely-duplicate-is-shown
 	test('names the open case this one looks like, with a link to it', async ({
 		page,
 	}) => {
 		await fileTheSameCaseAgain(page)
 
-		const panel = page.locator('[data-testid="duplicate-warning-note"]')
+		const panel = page.locator('[data-testid="cn-duplicate-warning-note"]')
 		await expect(panel).toBeVisible({ timeout: 30000 })
 
 		// The match is named AND reachable. A panel that reported a count
 		// without a link would leave a handler with a warning and nowhere to
 		// check it, which is the whole gesture this exists for.
-		const link = page.locator('[data-testid="duplicate-warning-link"]').first()
+		const link = page.locator('[data-testid="cn-duplicate-warning-match"] a').first()
 		await expect(link).toBeVisible()
 		await expect(link).toHaveAttribute('href', new RegExp(existingCaseId))
 
 		// The case type says `warn`, so the way through is offered.
-		const carryOn = page.locator('[data-testid="duplicate-warning-continue"]')
+		const carryOn = page.locator('[data-testid="cn-duplicate-warning-continue"]')
 		await expect(carryOn).toBeVisible()
 		await expect(carryOn).toBeEnabled()
 
@@ -216,7 +216,7 @@ test.describe('The duplicate warning at intake', () => {
 		}).toPass({ timeout: 30000 })
 	})
 
-	// @e2e openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md#block-stops-a-handler-not-a-coordinator
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#block-stops-a-handler-not-a-coordinator
 	test('offers a handler no way past a case type that blocks', async ({
 		page,
 	}) => {
@@ -227,14 +227,14 @@ test.describe('The duplicate warning at intake', () => {
 		await fileTheSameCaseAgain(page)
 
 		await expect(
-			page.locator('[data-testid="duplicate-warning-blocked"]'),
+			page.locator('[data-testid="cn-duplicate-warning-blocked"]'),
 		).toBeVisible({ timeout: 30000 })
 		await expect(
-			page.locator('[data-testid="duplicate-warning-continue"]'),
+			page.locator('[data-testid="cn-duplicate-warning-continue"]'),
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md#block-stops-a-handler-not-a-coordinator
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#block-stops-a-handler-not-a-coordinator
 	test('offers a coordinator a way past, once they say why', async ({ page }) => {
 		expect(
 			await ocs('post', '/ocs/v2.php/cloud/groups', {
@@ -251,7 +251,7 @@ test.describe('The duplicate warning at intake', () => {
 
 		await fileTheSameCaseAgain(page)
 
-		const carryOn = page.locator('[data-testid="duplicate-warning-continue"]')
+		const carryOn = page.locator('[data-testid="cn-duplicate-warning-continue"]')
 		await expect(carryOn).toBeVisible({ timeout: 30000 })
 
 		// Offered, but not yet allowed. The reason is the point of the
@@ -260,7 +260,7 @@ test.describe('The duplicate warning at intake', () => {
 		await expect(carryOn).toBeDisabled()
 
 		await page
-			.locator('[data-testid="duplicate-warning-reason"]')
+			.locator('[data-testid="cn-duplicate-warning-reason"]')
 			.getByRole('textbox')
 			.fill('A second tree on the same address, a separate permit.')
 

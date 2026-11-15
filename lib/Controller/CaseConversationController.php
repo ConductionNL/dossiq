@@ -26,32 +26,33 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Conversation\CaseCaptureService;
-use OCA\Dossiq\Service\Conversation\CaseConversationService;
-use OCA\Dossiq\Service\Conversation\MajorCaseDeclaration;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseCaptureServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseConversationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\MajorCaseDeclarationInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
  * REST controller for live conversations, captures and major declarations.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseConversationController extends Controller {
 
@@ -63,35 +64,35 @@ class CaseConversationController extends Controller {
 	 * @var array<string, int>
 	 */
 	private const REASON_STATUS = [
-		CaseConversationService::REASON_NO_TALK => Http::STATUS_SERVICE_UNAVAILABLE,
-		CaseConversationService::REASON_NO_CASE => Http::STATUS_NOT_FOUND,
-		CaseConversationService::REASON_UNKNOWN_ROOM => Http::STATUS_NOT_FOUND,
-		CaseConversationService::REASON_UNRESOLVED_RESPONDERS => Http::STATUS_CONFLICT,
-		CaseCaptureService::REASON_NOT_A_CAPTURE => Http::STATUS_BAD_REQUEST,
-		CaseCaptureService::REASON_EMPTY => Http::STATUS_BAD_REQUEST,
+		CaseConversationServiceInterface::REASON_NO_TALK => Http::STATUS_SERVICE_UNAVAILABLE,
+		CaseConversationServiceInterface::REASON_NO_CASE => Http::STATUS_NOT_FOUND,
+		CaseConversationServiceInterface::REASON_UNKNOWN_ROOM => Http::STATUS_NOT_FOUND,
+		CaseConversationServiceInterface::REASON_UNRESOLVED_RESPONDERS => Http::STATUS_CONFLICT,
+		CaseCaptureServiceInterface::REASON_NOT_A_CAPTURE => Http::STATUS_BAD_REQUEST,
+		CaseCaptureServiceInterface::REASON_EMPTY => Http::STATUS_BAD_REQUEST,
 	];
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest                 $request         Inbound request.
-	 * @param CaseConversationService  $conversations   Conversations and the record they leave.
-	 * @param MajorCaseDeclaration     $major           Declaring a case major, and closing its channel.
-	 * @param CaseCaptureService       $captures        Voice notes and screen captures.
-	 * @param CaseAccessGuard          $caseAccessGuard Per-case authorization, failing closed.
+	 * @param CaseConversationServiceInterface  $conversations   Conversations and the record they leave.
+	 * @param MajorCaseDeclarationInterface     $major           Declaring a case major, and closing its channel.
+	 * @param CaseCaptureServiceInterface       $captures        Voice notes and screen captures.
+	 * @param CaseAccessGuardInterface          $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession             $userSession     Current user session.
 	 * @param LoggerInterface          $logger          Logger, used by the refusal translator.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseConversationService $conversations,
-		private readonly MajorCaseDeclaration $major,
-		private readonly CaseCaptureService $captures,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseConversationServiceInterface $conversations,
+		private readonly MajorCaseDeclarationInterface $major,
+		private readonly CaseCaptureServiceInterface $captures,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -102,7 +103,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The affordance and its reason.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function availability(): JSONResponse {
@@ -123,17 +124,13 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The conversation record, or a refusal.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function start(string $caseId, ?string $subject = null): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -161,17 +158,13 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The completed record, or a refusal.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function end(string $caseId, string $roomId = '', array $participants = [], int $durationSeconds = 0): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -197,7 +190,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The case document, or a refusal.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function capture(
@@ -207,13 +200,9 @@ class CaseConversationController extends Controller {
 		string $content = '',
 		?string $taskId = null,
 	): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -237,17 +226,13 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The channel, or a refusal naming the group that did not resolve.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function declareMajor(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -268,10 +253,29 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse Whether a channel was closed, or a refusal.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function closeMajorChannel(string $caseId): JSONResponse {
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		return $this->answer(result: $this->major->closeMajorChannel(caseId: $caseId));
+	}//end closeMajorChannel()
+
+	/**
+	 * The signed-in user when they may change the case, else the refusal.
+	 *
+	 * No session user is 401 and the case is not asked about; a user without
+	 * mutation access to the case is 403.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse The user, or the refusal to answer.
+	 */
+	private function caseMutator(string $caseId): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
@@ -281,8 +285,8 @@ class CaseConversationController extends Controller {
 			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
 		}
 
-		return $this->answer(result: $this->major->closeMajorChannel(caseId: $caseId));
-	}//end closeMajorChannel()
+		return $user;
+	}//end caseMutator()
 
 	/**
 	 * Turn a service result into a response, with the refusal's own status.
@@ -291,7 +295,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The response.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function answer(array $result): JSONResponse {
 		if (($result['ok'] ?? false) === true) {

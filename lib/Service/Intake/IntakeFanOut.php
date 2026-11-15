@@ -41,7 +41,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -49,9 +49,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\IntakeFanOutInterface;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Routing\RoutingNote;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -65,9 +68,9 @@ use Throwable;
  *  a named constructor, not a service call. It holds no state and exists so a
  *  caller cannot build a refusal with the wrong status on it.
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
-class IntakeFanOut {
+class IntakeFanOut implements IntakeFanOutInterface {
 
 	use SearchesObjects;
 
@@ -126,7 +129,7 @@ class IntakeFanOut {
 	 *
 	 * @return array<int, array{title: string, caseType: string, department: string}>
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function destinationsFor(array $caseType): array {
 		$declared = ($caseType[self::PROPERTY] ?? null);
@@ -166,7 +169,7 @@ class IntakeFanOut {
 	 *
 	 * @throws RefusedException When nothing is declared or the register is absent.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function submit(string $formCaseTypeId, array $submission, string $submissionId): array {
 		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $formCaseTypeId);
@@ -180,36 +183,44 @@ class IntakeFanOut {
 			);
 		}
 
-		$created = [];
-		$failed = [];
+		$run = new FanOutRun(submission: $submission, submissionId: $submissionId);
 		foreach ($destinations as $destination) {
-			try {
-				$created[] = $this->open(
-					destination: $destination,
-					submission: $submission,
-					submissionId: $submissionId
-				);
-			} catch (Throwable $e) {
-				$reason = $this->readableReason(error: $e);
-				$this->logger->warning(
-					'Dossiq fan-out: destination {destination} opened no case',
-					['destination' => $destination['title'], 'reason' => $reason],
-				);
-				$failed[] = [
-					'destination' => $destination['title'],
-					'caseType' => $destination['caseType'],
-					'reason' => $reason,
-				];
-			}//end try
+			$this->openFor(run: $run, destination: $destination);
 		}
 
-		$this->tieTogether(created: $created);
+		$this->tieTogether(created: $run->created);
+		$this->noteRouting(created: $run->created, failed: $run->failed, submissionId: $submissionId);
 
 		return [
-			'created' => $created,
-			'failed' => $failed,
+			'created' => $run->created,
+			'failed' => $run->failed,
 		];
 	}//end submit()
+
+	/**
+	 * Open the case of one destination, or report the destination as failed.
+	 *
+	 * @param FanOutRun                                                 $run         The fan-out.
+	 * @param array{title: string, caseType: string, department: string} $destination The destination.
+	 *
+	 * @return void
+	 */
+	private function openFor(FanOutRun $run, array $destination): void {
+		try {
+			$run->created[] = $this->open(destination: $destination, run: $run);
+		} catch (Throwable $e) {
+			$reason = $this->readableReason(error: $e);
+			$this->logger->warning(
+				'Dossiq fan-out: destination {destination} opened no case',
+				['destination' => $destination['title'], 'reason' => $reason],
+			);
+			$run->failed[] = [
+				'destination' => $destination['title'],
+				'caseType' => $destination['caseType'],
+				'reason' => $reason,
+			];
+		}//end try
+	}//end openFor()
 
 	/**
 	 * Tie every created case to every other one from the same submission.
@@ -218,7 +229,7 @@ class IntakeFanOut {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	private function tieTogether(array $created): void {
 		$ids = [];
@@ -245,39 +256,20 @@ class IntakeFanOut {
 	/**
 	 * Open one case for one destination.
 	 *
-	 * @param array{title: string, caseType: string, department: string} $destination  The destination.
-	 * @param array<string, mixed>                                      $submission   The submitted values.
-	 * @param string                                                    $submissionId The submission.
+	 * @param array{title: string, caseType: string, department: string} $destination The destination.
+	 * @param FanOutRun                                                 $run         The fan-out, with the submission.
 	 *
 	 * @return array<string, mixed> `{id, caseType, department, title}`.
 	 *
 	 * @throws RefusedException When the register is absent or the write failed.
 	 */
-	private function open(array $destination, array $submission, string $submissionId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			throw RefusedException::indeterminate(
-				rule: self::RULE_NOT_CONFIGURED,
-				sentence: 'The register is not configured, so the submission opened no case.',
-			);
-		}
-
-		$payload = array_merge(
-			$submission,
-			[
-				'caseType' => $destination['caseType'],
-				'assignedGroup' => $destination['department'],
-				'intakeSubmission' => $submissionId,
-			]
-		);
-
+	private function open(array $destination, FanOutRun $run): array {
+		[$objectService, $register, $schema] = $this->caseStore();
 		$stored = $this->saveObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			object: $payload
+			object: self::payloadFor(destination: $destination, run: $run)
 		);
 		if ($stored === null) {
 			throw new RefusedException(
@@ -294,6 +286,91 @@ class IntakeFanOut {
 			'title' => $destination['title'],
 		];
 	}//end open()
+
+	/**
+	 * The ObjectService, register and schema cases are written to.
+	 *
+	 * @return array{0: object, 1: string, 2: string} ObjectService, register, schema.
+	 *
+	 * @throws RefusedException When the register is not configured.
+	 */
+	private function caseStore(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			throw RefusedException::indeterminate(
+				rule: self::RULE_NOT_CONFIGURED,
+				sentence: 'The register is not configured, so the submission opened no case.',
+			);
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseStore()
+
+	/**
+	 * The case one destination opens: the submitted values, its case type and department, and the submission.
+	 *
+	 * @param array{title: string, caseType: string, department: string} $destination The destination.
+	 * @param FanOutRun                                                 $run         The fan-out.
+	 *
+	 * @return array<string, mixed> The payload.
+	 */
+	private static function payloadFor(array $destination, FanOutRun $run): array {
+		// Each destination's case opens in its own case type's initial status,
+		// which OpenRegister fills in; a status the submission names is not it.
+		$submission = array_diff_key($run->submission, CallerIdentity::KEYS + ['status' => true]);
+
+		return array_merge(
+			$submission,
+			[
+				'caseType' => $destination['caseType'],
+				'assignedGroup' => $destination['department'],
+				'intakeSubmission' => $run->submissionId,
+			]
+		);
+	}//end payloadFor()
+
+	/**
+	 * Leave a routing note on every opened case of a split or partial fan-out.
+	 *
+	 * A note that cannot be written costs no case: the fan-out stands.
+	 *
+	 * @param array<int, array<string, mixed>> $created      The cases that were opened.
+	 * @param array<int, array<string, mixed>> $failed       The destinations that opened no case.
+	 * @param string                           $submissionId The submission.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
+	 */
+	private function noteRouting(array $created, array $failed, string $submissionId): void {
+		if (count($created) < 2 && $failed === []) {
+			return;
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
+		foreach ($created as $case) {
+			$siblings = array_values(array_diff(array_column($created, 'title'), [$case['title']]));
+			$note = RoutingNote::intakeSplit(submission: $submissionId, siblings: $siblings, failed: $failed);
+			try {
+				$this->patchObjectAsArray(
+					objectService: $objectService,
+					register: $register,
+					schema: $schema,
+					id: (string)$case['id'],
+					changes: ['routingNote' => $note]
+				);
+			} catch (Throwable $e) {
+				$this->logger->warning(
+					'Dossiq fan-out: the routing note of case {case} was not written',
+					['case' => $case['id'], 'reason' => $e->getMessage()],
+				);
+			}
+		}
+	}//end noteRouting()
 
 	/**
 	 * Why one destination failed, in a sentence a handler can read.

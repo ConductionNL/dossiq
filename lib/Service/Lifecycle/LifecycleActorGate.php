@@ -43,7 +43,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -51,7 +53,7 @@ use Throwable;
 /**
  * The per-act, per-case-type role gate, with the missing role named.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class LifecycleActorGate {
 
@@ -69,12 +71,16 @@ class LifecycleActorGate {
 	 * @param IGroupManager $groupManager Answers group membership.
 	 * @param IUserSession $userSession Names the caller.
 	 * @param LoggerInterface $logger Records a check that could not be made.
+	 * @param BackgroundServiceAccount $serviceAccount Names the account the background jobs act as.
+	 * @param IL10N $l10n Words the refusal in the reader's language.
 	 */
 	public function __construct(
 		private readonly LifecycleCaseTypeRules $rules,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -86,7 +92,7 @@ class LifecycleActorGate {
 	 *
 	 * @return string The group id.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function roleFor(string $act, array $case): string {
 		return $this->rules->roleFor(caseTypeId: (string)($case['caseType'] ?? ''), act: $act);
@@ -100,7 +106,7 @@ class LifecycleActorGate {
 	 *
 	 * @return bool True when the act is permitted.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function may(string $act, array $case): bool {
 		$user = $this->userSession->getUser();
@@ -109,10 +115,46 @@ class LifecycleActorGate {
 		}
 
 		$uid = $user->getUID();
+		if ($this->isTheBackgroundAccount(uid: $uid) === true) {
+			// The background account ends a case for one reason only: the
+			// silence close of a case type that opted in to it. OpenRegister
+			// cannot scope a grant per case type (the case schema is open to
+			// every signed-in user), so the rule is enforced here, and it is
+			// checked before the admin bypass so promoting the account cannot
+			// widen it.
+			return $this->backgroundMay(act: $act, case: $case);
+		}
+
 		if ($this->isAdmin(uid: $uid) === true) {
 			return true;
 		}
 
+		return $this->mayByRole(case: $case, asked: ['act' => $act, 'uid' => $uid]);
+	}//end may()
+
+	/**
+	 * Whether the background account may perform the act: only the opted-in silence close.
+	 *
+	 * @param string               $act  The act.
+	 * @param array<string, mixed> $case The loaded case.
+	 *
+	 * @return bool
+	 */
+	private function backgroundMay(string $act, array $case): bool {
+		return ($act === 'abort'
+			&& $this->rules->autoCloseOptedIn(caseTypeId: (string)($case['caseType'] ?? '')) === true);
+	}//end backgroundMay()
+
+	/**
+	 * Whether the user holds the role the act needs, or the act needs none.
+	 *
+	 * @param array<string, mixed>           $case  The loaded case.
+	 * @param array{act: string, uid: string} $asked The act and the user.
+	 *
+	 * @return bool
+	 */
+	private function mayByRole(array $case, array $asked): bool {
+		['act' => $act, 'uid' => $uid] = $asked;
 		$role = $this->roleFor(act: $act, case: $case);
 		if ($role === '') {
 			return (in_array($act, self::CLOSED_WITHOUT_A_ROLE, true) === false);
@@ -128,7 +170,7 @@ class LifecycleActorGate {
 
 			return false;
 		}
-	}//end may()
+	}//end mayByRole()
 
 	/**
 	 * Refuse the act when the caller may not perform it, naming the role.
@@ -145,7 +187,7 @@ class LifecycleActorGate {
 	 *
 	 * @throws RefusedException When the caller may not perform the act.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function require(string $act, array $case): void {
 		if ($this->may(act: $act, case: $case) === true) {
@@ -167,15 +209,20 @@ class LifecycleActorGate {
 	 *
 	 * @return string The sentence, naming the role when one is declared.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function refusalSentence(string $act, array $case): string {
-		$role = $this->roleFor(act: $act, case: $case);
-		if ($role !== '') {
-			return sprintf('This act needs the %s group.', $role);
+		$user = $this->userSession->getUser();
+		if ($user !== null && $this->isTheBackgroundAccount(uid: $user->getUID()) === true) {
+			return $this->l10n->t('The background account may only close a silent case of a case type that opted in to it.');
 		}
 
-		return 'This act needs an administrator.';
+		$role = $this->roleFor(act: $act, case: $case);
+		if ($role !== '') {
+			return $this->l10n->t('This act needs the %s group.', [$role]);
+		}
+
+		return $this->l10n->t('This act needs an administrator.');
 	}//end refusalSentence()
 
 	/**
@@ -199,4 +246,19 @@ class LifecycleActorGate {
 			return false;
 		}
 	}//end isAdmin()
+
+	/**
+	 * Whether the caller is the account the background jobs act as.
+	 *
+	 * @param string $uid The caller's uid.
+	 *
+	 * @return bool True when it is the configured background service account.
+	 *
+	 * @spec exclude one config read behind may(), which carries the requirement
+	 */
+	private function isTheBackgroundAccount(string $uid): bool {
+		$account = $this->serviceAccount->configuredUserId();
+
+		return ($account !== '' && $account === $uid);
+	}//end isTheBackgroundAccount()
 }//end class

@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Status\StatusDeclaration
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusWaitingOnTest extends TestCase {
 
@@ -49,7 +49,7 @@ class StatusWaitingOnTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testWaitingOnTheApplicantIsNotWaitingOnAThirdParty(): void {
 		$declaration = new StatusDeclaration();
@@ -81,7 +81,7 @@ class StatusWaitingOnTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAnUndeclaredStatusReadsAsOursToMove(): void {
 		$declaration = new StatusDeclaration();
@@ -106,7 +106,7 @@ class StatusWaitingOnTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testRoleIsUntouchedByTheNewDeclaration(): void {
 		$statusType = [
@@ -132,7 +132,7 @@ class StatusWaitingOnTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAMaximumDwellIsPositiveOrAbsent(): void {
 		$declaration = new StatusDeclaration();

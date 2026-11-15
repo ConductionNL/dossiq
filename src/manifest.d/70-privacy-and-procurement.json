@@ -1,0 +1,263 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"change": "screens-round12-domain-lists",
+		"boards": "DqContracten",
+		"why": "The contracts and suppliers lists the board draws. Contracts are `supplierContract` rows and suppliers are `supplier` rows, both already in the register. The data subject requests list that sat here is a view of the Cases page now (`data-subject-requests`, Ruben, 19 October 2026); /privacy/requests redirects there."
+	},
+	"pages": [
+		{
+			"id": "Contracts",
+			"route": "/procurement/contracts",
+			"type": "index",
+			"title": "Contracts",
+			"config": {
+				"showTitle": true,
+				"register": "dossiq",
+				"schema": "supplierContract",
+				"breadcrumb": {
+					"label": "Procurement",
+					"route": "Contracts"
+				},
+				"pageTabs": [
+					{
+						"label": "Contracts",
+						"route": "Contracts",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplierContract",
+							"filter": {}
+						}
+					},
+					{
+						"label": "Suppliers",
+						"route": "Suppliers",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplier",
+							"filter": {}
+						}
+					},
+					{
+						"label": "Portal accounts",
+						"route": "SupplierUsers",
+						"adminOnly": true
+					}
+				],
+				"_headerMetaNote": "Board DqContracten: '38 contracten bij 21 leveranciers', every contract and every supplier, not the filtered list's total.",
+				"headerMeta": "{count:contracts} contracts with {count:suppliers} suppliers",
+				"headerMetaCounts": {
+					"contracts": { "register": "dossiq", "schema": "supplierContract" },
+					"suppliers": { "register": "dossiq", "schema": "supplier" }
+				},
+				"addLabel": "New contract",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "add",
+						"label": "New contract",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
+				"searchPlaceholder": "Search a contract or supplier",
+				"footerNote": "20 per page",
+				"notice": {
+					"variant": "info",
+					"placement": "page",
+					"text": "Renewing and terminating are decisions. dossiq asks decidiq for them, which checks the mandate; the outcome comes back onto the contract. The expiry signal runs in dossiq."
+				},
+				"_defaultFiltersNote": "Board DqContracten opens with \"Status: actief en verlopend\" on the Active line, removable with its chip or Alles wissen: a default filter, not a fixed one. The board is canon: active and ending only; the contracts waiting on a renewal or termination decision show under Decision needed or once the chip is cleared. filterLabels names the chip as the board does.",
+				"defaultFilters": {
+					"status": [
+						"active",
+						"ending"
+					]
+				},
+				"filterLabels": {
+					"status": {
+						"label": "Status",
+						"values": {
+							"active": "active",
+							"ending": "expiring"
+						}
+					}
+				},
+				"quickFilters": [
+					{
+						"label": "All",
+						"showCount": true,
+						"filter": {},
+						"default": true
+					},
+					{
+						"label": "Active",
+						"showCount": true,
+						"filter": {
+							"status": "active"
+						}
+					},
+					{
+						"label": "Expires within 6 months",
+						"showCount": true,
+						"filter": {
+							"renewalWarning": true
+						}
+					},
+					{
+						"label": "Decision needed",
+						"showCount": true,
+						"filter": {
+							"status": ["renewal-decision", "termination-decision"]
+						}
+					}
+				],
+				"columns": [
+					{
+						"key": "subject",
+						"label": "Contract",
+						"secondary": "{number}"
+					},
+					{
+						"key": "supplierRef",
+						"label": "Supplier",
+						"widget": "fkResolve",
+						"widgetProps": {
+							"register": "dossiq",
+							"schema": "supplier",
+							"labelField": "legalName"
+						}
+					},
+					{
+						"key": "value",
+						"label": "Value",
+						"formatter": "currency",
+						"formatterOptions": { "decimals": 0 }
+					},
+					{
+						"key": "endDate",
+						"label": "End date",
+						"formatter": "date"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"active": "success",
+								"renewal-decision": "warning",
+								"termination-decision": "warning",
+								"ending": "default"
+							}
+						}
+					}
+				],
+				"defaultSort": [
+					{
+						"field": "endDate",
+						"order": "asc"
+					}
+				],
+				"showViewAction": true,
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "Suppliers",
+			"route": "/procurement/suppliers",
+			"type": "index",
+			"title": "Suppliers",
+			"config": {
+				"showTitle": true,
+				"register": "dossiq",
+				"schema": "supplier",
+				"breadcrumb": {
+					"label": "Procurement",
+					"route": "Contracts"
+				},
+				"pageTabs": [
+					{
+						"label": "Contracts",
+						"route": "Contracts",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplierContract",
+							"filter": {}
+						}
+					},
+					{
+						"label": "Suppliers",
+						"route": "Suppliers",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplier",
+							"filter": {}
+						}
+					},
+					{
+						"label": "Portal accounts",
+						"route": "SupplierUsers",
+						"adminOnly": true
+					}
+				],
+				"headerMeta": "{total} suppliers",
+				"addLabel": "New supplier",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "add",
+						"label": "New supplier",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
+				"rowIcon": "OfficeBuildingOutline",
+				"columns": [
+					{
+						"key": "legalName",
+						"label": "Name",
+						"secondary": "{kvkNumber}"
+					},
+					"contactPerson",
+					"contactEmail",
+					{
+						"key": "status",
+						"label": "Status",
+						"widget": "badge"
+					},
+					{
+						"key": "qualityStatus",
+						"label": "Quality",
+						"widget": "badge"
+					}
+				],
+				"defaultSort": [
+					{
+						"field": "legalName",
+						"order": "asc"
+					}
+				],
+				"showViewAction": true,
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		}
+	]
+}

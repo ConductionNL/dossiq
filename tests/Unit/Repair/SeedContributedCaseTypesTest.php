@@ -51,6 +51,8 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * What the upgrade does with a contributed case type.
@@ -216,20 +218,25 @@ class SeedContributedCaseTypesTest extends TestCase {
 			 * @param int|string           $register Ignored.
 			 * @param int|string           $schema   The schema slug.
 			 * @param string|null          $uuid     The uuid, or null to create.
+			 * @param bool                 $_rbac          Ignored.
+			 * @param bool                 $_multitenancy  Ignored.
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
 			): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				if (($object['identifier'] ?? '') === 'broken-type') {
 					throw new RuntimeException('caseType/identifier: value is not allowed');
 				}
 
-				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				return parent::saveObject(object: $object, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid));
 			}
 		};
 

@@ -50,9 +50,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Repair\Support\StoredValueRewriter;
+use OCA\Dossiq\Repair\Support\ValueRewrite;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -65,12 +66,6 @@ use Throwable;
  */
 class RealignStatutoryVocabulary implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
-
-	/**
-	 * The dossiq register slug.
-	 */
-	private const REGISTER_SLUG = 'dossiq';
 
 	/**
 	 * Schema slug => property => the wrong English value => the declared Dutch one.
@@ -126,13 +121,13 @@ class RealignStatutoryVocabulary implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves OpenRegister's ObjectService.
+	 * @param SettingsServiceInterface $settingsService Resolves OpenRegister's ObjectService.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -201,19 +196,12 @@ class RealignStatutoryVocabulary implements IRepairStep {
 	 * @return integer The number of rows rewritten.
 	 */
 	private function realignAll(object $objectService): int {
+		$rewriter = new StoredValueRewriter(objectService: $objectService);
 		$repaired = 0;
 
 		foreach (self::REALIGNMENTS as $schema => $properties) {
-			foreach ($properties as $property => $values) {
-				foreach ($values as $wrong => $right) {
-					$repaired += $this->realign(
-						objectService: $objectService,
-						schema: (string)$schema,
-						property: (string)$property,
-						wrong: (string)$wrong,
-						right: $right
-					);
-				}
+			foreach ($this->schemaRewrites(schema: (string)$schema, properties: $properties) as $rewrite) {
+				$repaired += $rewriter->rewrite(rewrite: $rewrite);
 			}
 		}
 
@@ -221,59 +209,26 @@ class RealignStatutoryVocabulary implements IRepairStep {
 	}//end realignAll()
 
 	/**
-	 * Rewrite one wrong value on one schema's property.
+	 * The value rewrites one schema declares, property by property, in declaration order.
 	 *
-	 * Filters on the WRONG value rather than reading every row, so the step is
-	 * idempotent: a repaired row no longer matches.
+	 * @param string                               $schema     The schema slug.
+	 * @param array<string, array<string, string>> $properties Property => wrong value => right value.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $schema The schema slug.
-	 * @param string $property The property to rewrite.
-	 * @param string $wrong The value the bad rename produced.
-	 * @param string $right The value the schema declares.
-	 *
-	 * @return integer The number of rows rewritten.
+	 * @return array<int, ValueRewrite> The rewrites.
 	 */
-	private function realign(
-		object $objectService,
-		string $schema,
-		string $property,
-		string $wrong,
-		string $right,
-	): int {
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: self::REGISTER_SLUG,
-			schema: $schema,
-			filters: [
-				$property => $wrong,
-				'_limit' => 5000,
-			],
-		);
-
-		$repaired = 0;
-		foreach ($rows as $row) {
-			// Defensive: a filter the backend cannot express server-side would
-			// return everything, and rewriting a `zaakvertrouwelijk` case to
-			// `openbaar` would be a far worse bug than the one being fixed.
-			if (($row[$property] ?? null) !== $wrong) {
-				continue;
-			}
-
-			$row[$property] = $right;
-
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: self::REGISTER_SLUG,
-				schema: $schema,
-				object: $row,
-			);
-
-			if ($saved !== null) {
-				$repaired++;
+	private function schemaRewrites(string $schema, array $properties): array {
+		$rewrites = [];
+		foreach ($properties as $property => $values) {
+			foreach ($values as $wrong => $right) {
+				$rewrite = new ValueRewrite();
+				$rewrite->schema = $schema;
+				$rewrite->property = (string)$property;
+				$rewrite->wrong = (string)$wrong;
+				$rewrite->right = $right;
+				$rewrites[] = $rewrite;
 			}
 		}
 
-		return $repaired;
-	}//end realign()
+		return $rewrites;
+	}//end schemaRewrites()
 }//end class

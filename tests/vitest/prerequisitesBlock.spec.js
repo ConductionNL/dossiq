@@ -68,7 +68,7 @@ function reading(overrides = {}) {
 				{ id: 'openregister', unlocks: 'Stores every case.', present: true },
 			],
 			optional: [
-				{ id: 'hrmq', unlocks: 'Books the hours.', present: false },
+				{ id: 'humaniq', unlocks: 'Books the hours.', present: false },
 				{ id: 'hermiq', unlocks: 'Answers the AI steps.', present: true },
 			],
 		},
@@ -125,7 +125,7 @@ describe('The Prerequisites block', () => {
 
 	it('lists an absent optional app with what it would have added', () => {
 		const wrapper = open(reading())
-		const hours = row(wrapper, 'prerequisite-app-hrmq')
+		const hours = row(wrapper, 'prerequisite-app-humaniq')
 
 		expect(hours).toContain('missing')
 		expect(hours).toContain('Books the hours.')
@@ -168,6 +168,78 @@ describe('The Prerequisites block', () => {
 		// nothing about the instance they are looking at.
 		expect(php).toContain('8.3')
 		expect(php).toContain('8.3.6')
+	})
+
+	it('reads each platform row as one sentence, translatable whole', () => {
+		const php = row(open(reading()), 'prerequisite-php')
+		expect(php).toContain('This instance runs 8.3.6')
+		expect(php).toContain('PHP 8.3 or higher')
+		expect(php).not.toContain('this instance runs')
+	})
+
+	it('marks the Nextcloud row present or missing, like every other row', () => {
+		// @spec openspec/specs/admin-settings/spec.md
+		// The row had no mark at all, the one row on the page without one.
+		const inRange = row(
+			open(
+				reading({
+					nextcloud: {
+						min: '32',
+						max: '35',
+						running: '34',
+						present: true,
+					},
+				}),
+			),
+			'prerequisite-nextcloud',
+		)
+		expect(inRange).toContain('present')
+		expect(inRange).toContain('34')
+
+		const outOfRange = row(
+			open(
+				reading({
+					nextcloud: {
+						min: '32',
+						max: '35',
+						running: '31',
+						present: false,
+					},
+				}),
+			),
+			'prerequisite-nextcloud',
+		)
+		expect(outOfRange).toContain('missing')
+	})
+
+	it('shows the name the server gives, not the id it looked up', () => {
+		// @spec openspec/specs/admin-settings/spec.md
+		const wrapper = open(
+			reading({
+				apps: {
+					required: [
+						{
+							id: 'openregister',
+							name: 'openregister',
+							unlocks: 'x',
+							present: true,
+						},
+					],
+					optional: [
+						{
+							id: 'docudesk',
+							name: 'filinq',
+							unlocks: 'Documents.',
+							present: false,
+						},
+					],
+				},
+			}),
+		)
+		const filinq = row(wrapper, 'prerequisite-app-docudesk')
+
+		expect(filinq).toContain('filinq')
+		expect(filinq).not.toContain('docudesk')
 	})
 
 	it('renders an empty block rather than throwing on absent state', () => {

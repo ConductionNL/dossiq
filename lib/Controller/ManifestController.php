@@ -4,13 +4,13 @@
  * Dossiq Manifest Controller
  *
  * Serves the backend `/api/manifest` delta consumed by the frontend's
- * `useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' })`. It resolves
- * the live `caseType` OpenRegister objects the current user may see and returns
- * one navigation child per case type, keyed for a delta-merge into the existing
- * "Cases" menu group (ADR-036 keyed `children[]` merge). This is the sanctioned
- * imperative seam (ADR-031): a case type is a live OpenRegister object, so the
- * per-case-type nav entries are resolved server-side at request time rather than
- * baked into the static bundled manifest.
+ * `useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' })`. It returns
+ * one default view of the Cases page per case type the current user pinned
+ * (case-type-pins-are-views), which the library's "My views" section links to.
+ * This is the sanctioned imperative seam (ADR-031): the choice is per user and
+ * a case type is a live OpenRegister object, so the views are resolved
+ * server-side at request time rather than baked into the static bundled
+ * manifest.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -21,15 +21,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-navigation/tasks.md
+ * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-001
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeViewsInterface;
+use OCA\Dossiq\Kernel\Contracts\MenuCaseTypesServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -38,162 +38,103 @@ use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * Controller resolving case types into a menu delta for the app shell.
+ * Controller resolving the user's chosen case types into a menu delta.
  *
- * @spec openspec/changes/case-type-navigation/tasks.md
+ * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-001
  */
 class ManifestController extends Controller {
-
-	use SearchesObjects;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param SettingsService $settingsService Settings service
+	 * @param MenuCaseTypesServiceInterface $menuCaseTypes The per-user menu choice
 	 * @param IUserSession $userSession User session
+	 * @param CaseTypeViewsInterface $caseTypeViews The view of the case list per case type
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly SettingsService $settingsService,
+		private readonly MenuCaseTypesServiceInterface $menuCaseTypes,
 		private readonly IUserSession $userSession,
+		private readonly CaseTypeViewsInterface $caseTypeViews,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
-	 * Return the case-type navigation delta.
+	 * Return the case-type views delta.
 	 *
-	 * Resolves the live `caseType` objects visible to the current user (RBAC is
-	 * enforced by OpenRegister's ObjectService under the user session) and maps
-	 * each to a menu child under the existing `CasesGroup`. An unauthenticated
-	 * caller is refused with 401. Otherwise the response is a no-op delta
-	 * (`['menu' => []]`) whenever OpenRegister is unavailable, the register/schema
-	 * is unconfigured, or no case types exist — it must never break the app shell.
+	 * One default view of the Cases page per case type the user pinned (the
+	 * Woo request case type has a view of its own on the page), added to the
+	 * page's default views. An unauthenticated caller is refused with 401.
+	 * Otherwise the response is a no-op delta (`['menu' => []]`) whenever
+	 * OpenRegister is unavailable, the register/schema is unconfigured, or no
+	 * case types exist; it must never break the app shell.
 	 *
-	 * @return JSONResponse A `mergeStrategy: 'delta'` menu payload.
+	 * @return JSONResponse A `mergeStrategy: 'delta'` payload.
 	 *
-	 * @spec openspec/changes/case-type-navigation/tasks.md
+	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-001
 	 */
 	#[NoAdminRequired]
 	public function manifest(): JSONResponse {
-		// Authorization guard: the endpoint is authenticated-user scoped (it
-		// never takes an object id — it returns only the case types the CURRENT
-		// user may see, RBAC-filtered by OpenRegister's ObjectService). An
-		// unauthenticated caller (NC middleware normally rejects these first) is
-		// refused explicitly; the frontend treats the non-200 as "no override".
-		if ($this->userSession->getUser() === null) {
+		// Authorization guard: the endpoint is scoped to the current user (it
+		// takes no object id and returns only that user's own choice, filtered
+		// to the case types OpenRegister lets them see).
+		$user = $this->userSession->getUser();
+		if ($user === null) {
 			return new JSONResponse([], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$offered = $this->menuCaseTypes->offeredCaseTypes(userId: $user->getUID());
+		if (count($offered) === 0) {
 			return new JSONResponse(['menu' => []]);
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if (empty($register) === true || empty($schema) === true) {
+		$views = $this->viewsFor(uid: $user->getUID(), offered: $offered);
+		if ($views === []) {
 			return new JSONResponse(['menu' => []]);
 		}
 
-		$caseTypes = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => 200]
-		);
-
-		if (count($caseTypes) === 0) {
-			return new JSONResponse(['menu' => []]);
-		}
-
-		// Sort deterministically by human name so nav order is stable across
-		// requests regardless of the store's return order.
-		usort(
-			$caseTypes,
-			static function (array $left, array $right): int {
-				return strcasecmp(
-					(string)($left['title'] ?? ''),
-					(string)($right['title'] ?? '')
-				);
-			}
-		);
-
-		$children = [];
-		$index = 0;
-		foreach ($caseTypes as $caseType) {
-			$uuid = $this->resolveUuid(object: $caseType);
-			if ($uuid === null) {
-				continue;
-			}
-
-			$label = (string)($caseType['title'] ?? $uuid);
-
-			$children[] = [
-				'id' => 'ct-' . $uuid,
-				'label' => $label,
-				'icon' => 'icon-folder',
-				'route' => 'Cases',
-				'query' => ['caseType' => $uuid],
-				'order' => (50 + $index),
-			];
-			$index++;
-		}//end foreach
-
-		if (count($children) === 0) {
-			return new JSONResponse(['menu' => []]);
-		}
-
-		return new JSONResponse(
-			[
-				'menu' => [
-					[
-						'id' => 'CasesGroup',
-						'children' => $children,
-					],
-				],
-			]
-		);
+		return $this->pagesResponse(views: $views);
 	}//end manifest()
 
 	/**
-	 * Resolve an OpenRegister object's UUID from its array shape.
+	 * The case list views: the instance's declared views and the case types the user pinned.
 	 *
-	 * ObjectService rows expose their identifier either at the top level as
-	 * `id`/`uuid` or nested under the `@self` metadata block, depending on the
-	 * search path. Falls back through all three before giving up.
+	 * The case types a user pinned are views of the case list, which the
+	 * library's "My views" section lists; no menu entry of dossiq's own.
 	 *
-	 * @param array<string, mixed> $object The object as an associative array.
+	 * @param string            $uid     The user.
+	 * @param array<int, mixed> $offered The case types offered to the user.
 	 *
-	 * @return string|null The UUID, or null when none is resolvable.
-	 *
-	 * @spec openspec/changes/case-type-navigation/tasks.md
+	 * @return array<int, mixed>
 	 */
-	private function resolveUuid(array $object): ?string {
-		$self = ($object['@self'] ?? null);
+	private function viewsFor(string $uid, array $offered): array {
+		$chosen = $this->menuCaseTypes->chosen(userId: $uid, visible: $offered);
+		$identifiers = array_column($this->caseTypeViews->declaredViews(), 'caseTypeIdentifier');
+		return array_merge(
+			$this->caseTypeViews->instanceViews(byIdentifier: $this->menuCaseTypes->byIdentifier(identifiers: $identifiers)),
+			$this->caseTypeViews->views(caseTypes: $chosen)
+		);
+	}//end viewsFor()
 
-		$candidates = [
-			($object['uuid'] ?? null),
-			($object['id'] ?? null),
-		];
-
-		if (is_array($self) === true) {
-			$candidates[] = ($self['id'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if (is_string($candidate) === true && $candidate !== '') {
-				return $candidate;
-			}
-
-			if (is_int($candidate) === true) {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
-	}//end resolveUuid()
+	/**
+	 * The manifest that carries the views on the case list page.
+	 *
+	 * @param array<int, mixed> $views The case list views.
+	 *
+	 * @return JSONResponse
+	 */
+	private function pagesResponse(array $views): JSONResponse {
+		return new JSONResponse(
+			[
+				'menu' => [],
+				'pages' => [
+					['id' => CaseTypeViewsInterface::PAGE, 'config' => [CaseTypeViewsInterface::DEFAULT_VIEWS_KEY => $views]],
+				],
+			]
+		);
+	}//end pagesResponse()
 }//end class

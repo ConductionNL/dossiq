@@ -24,17 +24,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\ProcessMiningService;
+use OCA\Dossiq\Kernel\Contracts\ProcessMiningServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportAnswerInterface;
+use OCA\Dossiq\Kernel\Contracts\ReportRequestInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -45,7 +48,7 @@ use Throwable;
 /**
  * Process-mining bottleneck REST surface.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  *
  * @psalm-suppress UnusedClass
  */
@@ -60,53 +63,72 @@ class ProcessMiningController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $appName Nextcloud app id.
-	 * @param IRequest $request Incoming request.
-	 * @param IUserSession $userSession Current user session.
-	 * @param IGroupManager $groupManager Group manager (for RBAC check).
-	 * @param ProcessMiningService $processMiningService Report aggregation service.
-	 * @param LoggerInterface $logger PSR-3 logger.
+	 * @param string               $appName              Nextcloud app id.
+	 * @param IRequest             $request              Incoming request.
+	 * @param IUserSession         $userSession          Current user session.
+	 * @param IGroupManager        $groupManager         Group manager (for RBAC check).
+	 * @param ProcessMiningServiceInterface $processMiningService Report aggregation service.
+	 * @param LoggerInterface      $logger               PSR-3 logger.
+	 * @param ReportRequestInterface        $requests             Checks the query and builds the filters.
+	 * @param ReportAnswerInterface         $answers              Shapes the JSON body and the CSV.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
-		private readonly ProcessMiningService $processMiningService,
+		private readonly ProcessMiningServiceInterface $processMiningService,
 		private readonly LoggerInterface $logger,
+		private readonly ReportRequestInterface $requests,
+		private readonly ReportAnswerInterface $answers,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
-	 * Return the process-mining bottleneck report.
+	 * Return the process-mining bottleneck report, or with `format=csv` the
+	 * days per phase per case type as a download.
 	 *
-	 * @return JSONResponse Report body, 401 when unauthenticated, 403 when
-	 *                      the caller lacks the controller/beheerder/admin
-	 *                      role, or 400 on invalid parameters.
+	 * `period` (a {@see \OCA\Dossiq\Service\Reporting\ReportPeriod} preset)
+	 * sets `from` when `from` is not given. Without `view` the whole report is
+	 * answered with every display block of {@see \OCA\Dossiq\Service\ProcessMining\ReportViews}
+	 * beside it; `view` narrows the answer to that block plus `period`,
+	 * `clock`, `labels` and `truncated`.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+	 * @return JSONResponse|DataDownloadResponse Report body, the CSV, 401 when
+	 *                                          unauthenticated, 403 when the caller lacks the
+	 *                                          controller/beheerder/admin role, or 400 on
+	 *                                          invalid parameters.
+	 *
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
+	 * @spec openspec/specs/procesanalyse-csv/spec.md#requirement-the-days-per-phase-download-as-csv
 	 */
 	#[NoAdminRequired]
-	public function report(): JSONResponse {
+	public function report(): JSONResponse|DataDownloadResponse {
 		$denied = $this->ensureAllowed();
 		if ($denied !== null) {
 			return $denied;
 		}
 
-		$from = $this->request->getParam('from');
-		$to = $this->request->getParam('to');
-		$caseType = $this->request->getParam('caseType');
-
-		$invalid = $this->validateFilters(from: $from, to: $to, caseType: $caseType);
-		if ($invalid !== null) {
-			return $invalid;
+		$query = $this->query();
+		$refusal = $this->requests->refusal(query: $query);
+		if ($refusal !== null) {
+			return new JSONResponse(['message' => $refusal], Http::STATUS_BAD_REQUEST);
 		}
 
-		$params = $this->buildFilters(from: $from, to: $to, caseType: $caseType);
+		$params = $this->requests->filters(query: $query);
 
 		try {
-			return new JSONResponse($this->processMiningService->getReport(params: $params));
+			$report = $this->processMiningService->getReport(params: $params);
+			if ($query['format'] === 'csv') {
+				return new DataDownloadResponse(
+					$this->answers->csv(report: $report, statistic: $query['statistic']),
+					'procesanalyse.csv',
+					'text/csv; charset=utf-8'
+				);
+			}
+
+			return new JSONResponse($this->answers->json(report: $report, view: $query['view']));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: process-mining report generation failed', ['exception' => $e->getMessage()]);
 			return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
@@ -114,61 +136,21 @@ class ProcessMiningController extends Controller {
 	}//end report()
 
 	/**
-	 * Validate the optional report filter parameters.
+	 * The report's query parameters; the download is JSON of the mean when the request names none.
 	 *
-	 * Each filter may be absent (null); when present it must carry the right
-	 * shape — `from`/`to` a calendar-valid `Y-m-d` string, `caseType` a string.
-	 *
-	 * @param mixed $from Raw `from` request parameter.
-	 * @param mixed $to Raw `to` request parameter.
-	 * @param mixed $caseType Raw `caseType` request parameter.
-	 *
-	 * @return JSONResponse|null A 400 response for the first offending filter, or null when all are acceptable.
+	 * @return array<string, mixed> The parameters by name.
 	 */
-	private function validateFilters(mixed $from, mixed $to, mixed $caseType): ?JSONResponse {
-		if ($from !== null && (is_string($from) === false || $this->isValidDate(value: $from) === false)) {
-			return new JSONResponse(['message' => 'from must be a Y-m-d date'], Http::STATUS_BAD_REQUEST);
+	private function query(): array {
+		$query = [];
+		foreach (['from', 'to', 'caseType', 'period', 'view'] as $name) {
+			$query[$name] = $this->request->getParam($name);
 		}
 
-		if ($to !== null && (is_string($to) === false || $this->isValidDate(value: $to) === false)) {
-			return new JSONResponse(['message' => 'to must be a Y-m-d date'], Http::STATUS_BAD_REQUEST);
-		}
+		$query['format'] = ($this->request->getParam('format') ?? 'json');
+		$query['statistic'] = ($this->request->getParam('statistic') ?? 'mean');
 
-		if ($caseType !== null && is_string($caseType) === false) {
-			return new JSONResponse(['message' => 'caseType must be a string'], Http::STATUS_BAD_REQUEST);
-		}
-
-		return null;
-	}//end validateFilters()
-
-	/**
-	 * Assemble the service filter map from the validated request parameters.
-	 *
-	 * Absent and empty-string filters are omitted so the service sees only the
-	 * filters the caller actually supplied.
-	 *
-	 * @param mixed $from Validated `from` request parameter.
-	 * @param mixed $to Validated `to` request parameter.
-	 * @param mixed $caseType Validated `caseType` request parameter.
-	 *
-	 * @return array<string, string> The filter map passed to the report service.
-	 */
-	private function buildFilters(mixed $from, mixed $to, mixed $caseType): array {
-		$params = [];
-		if (is_string($from) === true && $from !== '') {
-			$params['from'] = $from;
-		}
-
-		if (is_string($to) === true && $to !== '') {
-			$params['to'] = $to;
-		}
-
-		if (is_string($caseType) === true && $caseType !== '') {
-			$params['caseType'] = $caseType;
-		}
-
-		return $params;
-	}//end buildFilters()
+		return $query;
+	}//end query()
 
 	/**
 	 * Authentication + RBAC guard for {@see self::report()}.
@@ -209,23 +191,4 @@ class ProcessMiningController extends Controller {
 
 		return $this->groupManager->isAdmin($uid) === true;
 	}//end isAllowed()
-
-	/**
-	 * Validate a `Y-m-d` date string.
-	 *
-	 * Accepts only a zero-padded calendar date: the shape is checked first,
-	 * then the calendar validity (so `2026-02-30` is rejected rather than
-	 * silently rolled over to March).
-	 *
-	 * @param string $value Candidate date string.
-	 *
-	 * @return bool
-	 */
-	private function isValidDate(string $value): bool {
-		if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $parts) !== 1) {
-			return false;
-		}
-
-		return checkdate((int)$parts[2], (int)$parts[3], (int)$parts[1]);
-	}//end isValidDate()
 }//end class

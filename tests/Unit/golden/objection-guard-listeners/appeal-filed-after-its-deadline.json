@@ -1,0 +1,18 @@
+[
+    {
+        "getConfigValue": "beroep_schema"
+    },
+    {
+        "getConfigValue": "register"
+    },
+    {
+        "getConfigValue": "bezwaar_schema"
+    },
+    {
+        "find": {
+            "id": "b-1",
+            "register": "reg",
+            "schema": "objection"
+        }
+    }
+]

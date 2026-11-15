@@ -1,0 +1,22 @@
+{
+  "_note": "package-upgrade-refreshes-untouched-rows. The ledger's `fingerprint` hashes a row as this instance stores it, and OpenRegister fills properties a package never named, so it cannot tell on its own whether the keys a package ships were edited. `shippedFingerprint` hashes the row as the package shipped it; a newer version refreshes a row while its shipped keys still hash to that, and keeps it the moment one of them was edited here. shippedOrigin moves to 1.1.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "shippedOrigin": {
+        "version": "1.1.0",
+        "properties": {
+          "shippedFingerprint": {
+            "type": "string",
+            "title": "Shipped fingerprint",
+            "description": "A hash of the row as the set shipped it, over the keys the set names. While the stored row still hashes to it over those keys, nobody edited what the set ships.",
+            "maxLength": 128
+          }
+        }
+      }
+    }
+  }
+}

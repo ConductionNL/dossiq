@@ -48,11 +48,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Notification\Notifier;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ApplicantPortalActsInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
@@ -61,7 +63,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portal-contribution/spec.md
  */
-class ApplicantPortalActs {
+class ApplicantPortalActs implements ApplicantPortalActsInterface {
 
 	/**
 	 * The act a withdrawal is recorded under. portaliq's write acts are its
@@ -82,19 +84,30 @@ class ApplicantPortalActs {
 		'amendment' => 'The applicant changed an answer in the portal',
 		'document' => 'The applicant added a document in the portal',
 		'task-answer' => 'The applicant answered a task in the portal',
+		'answer' => 'The applicant answered your question in the portal',
+	];
+
+	/**
+	 * What the represented person reads on their case for each act done for
+	 * them, after "Namens {party}: " (site-business-and-authorisation D4).
+	 */
+	private const ACTING_FOR_ACTS = [
+		'amendment' => 'gegevens aangepast in het portaal',
+		'document' => 'document toegevoegd in het portaal',
+		'task-answer' => 'vraag beantwoord in het portaal',
 	];
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService      $settings            Resolves the object service, register and case schema.
-	 * @param CaseTimeline         $timeline            The one seam that writes a timeline entry.
+	 * @param SettingsServiceInterface      $settings            Resolves the object service, register and case schema.
+	 * @param CaseTimelineInterface         $timeline            The one seam that writes a timeline entry.
 	 * @param INotificationManager $notificationManager Nextcloud's notification manager.
 	 * @param LoggerInterface      $logger              Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
-		private readonly CaseTimeline $timeline,
+		private readonly SettingsServiceInterface $settings,
+		private readonly CaseTimelineInterface $timeline,
 		private readonly INotificationManager $notificationManager,
 		private readonly LoggerInterface $logger,
 	) {
@@ -104,20 +117,18 @@ class ApplicantPortalActs {
 	 * Record a write the applicant made on their case and tell the assignee.
 	 *
 	 * @param string             $caseId     The case the write landed on.
-	 * @param string             $act        `amendment`, `document` or `task-answer`.
+	 * @param string             $act        `amendment`, `document`, `task-answer` or `answer`.
 	 * @param array<int, string> $fields     The field names the act touched.
 	 * @param string             $occurredAt The moment of the write, ISO 8601.
+	 * @param array<string, mixed> $mandate  The mandate the write ran under: `actingFor`, `actingForLabel`, or none.
 	 *
 	 * @return boolean True when the case is dossiq's and the act was recorded.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
+	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
-	public function recordWrite(string $caseId, string $act, array $fields, string $occurredAt): bool {
-		if (isset(self::WRITE_ACTS[$act]) === false) {
-			$this->logger->warning(
-				'Dossiq: a portal write on case {case} names an act this app does not know, {act}',
-				['app' => Application::APP_ID, 'case' => $caseId, 'act' => $act],
-			);
+	public function recordWrite(string $caseId, string $act, array $fields, string $occurredAt, array $mandate=[]): bool {
+		if ($this->isKnownAct(caseId: $caseId, act: $act) === false) {
 			return false;
 		}
 
@@ -126,6 +137,51 @@ class ApplicantPortalActs {
 			return false;
 		}
 
+		$write = new ApplicantWrite(caseId: $caseId, act: $act, fields: $fields, occurredAt: $occurredAt, mandate: $mandate);
+		$this->recordOnTimeline(write: $write);
+
+		$this->tellTheRepresented(write: $write);
+
+		$this->notifyAssignee(
+			case: $case,
+			caseId: $caseId,
+			subject: NotifierInterface::SUBJECT_APPLICANT_RESPONDED,
+			parameters: ['act' => $act],
+		);
+
+		return true;
+	}//end recordWrite()
+
+	/**
+	 * Whether the act is one this app records, warning when it is not.
+	 *
+	 * @param string $caseId The case the write landed on.
+	 * @param string $act    The act.
+	 *
+	 * @return boolean
+	 */
+	private function isKnownAct(string $caseId, string $act): bool {
+		if (isset(self::WRITE_ACTS[$act]) === false) {
+			$this->logger->warning(
+				'Dossiq: a portal write on case {case} names an act this app does not know, {act}',
+				['app' => AppIdentity::APP_ID, 'case' => $caseId, 'act' => $act],
+			);
+			return false;
+		}
+
+		return true;
+	}//end isKnownAct()
+
+	/**
+	 * Record the applicant's write on the case's internal timeline.
+	 *
+	 * @param ApplicantWrite $write The case, the act, the fields it touched and its moment.
+	 *
+	 * @return void
+	 */
+	private function recordOnTimeline(ApplicantWrite $write): void {
+		$act = $write->act;
+		$fields = $write->fields;
 		$touched = implode(', ', array_filter(array_map('strval', $fields), static fn (string $field): bool => $field !== ''));
 
 		$message = self::WRITE_ACTS[$act];
@@ -134,26 +190,49 @@ class ApplicantPortalActs {
 		}
 
 		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::APPLICANT_RESPONSE,
+			caseId: $write->caseId,
+			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
 			message: $message,
 			fields: [
 				'act' => $act,
 				'fields' => $touched,
-				'occurredAt' => $occurredAt,
+				'occurredAt' => $write->occurredAt,
 			],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
+	}//end recordOnTimeline()
 
-		$this->notifyAssignee(
-			case: $case,
-			caseId: $caseId,
-			subject: Notifier::SUBJECT_APPLICANT_RESPONDED,
-			parameters: ['act' => $act],
+	/**
+	 * A write made for someone else under a mandate is told to that person on
+	 * the case's public history: "Namens {party}: ...". The mandate's label
+	 * names the party; without one the party reference does. Portaliq does not
+	 * hand over the acting person's name, so the entry names the party only.
+	 *
+	 * @param ApplicantWrite $write The case, the act, the mandate it ran under and its moment.
+	 *
+	 * @return void
+	 */
+	private function tellTheRepresented(ApplicantWrite $write): void {
+		$act = $write->act;
+		$mandate = $write->mandate;
+		$party = trim((string)($mandate['actingFor'] ?? ''));
+		if ($party === '') {
+			return;
+		}
+
+		$label = trim((string)($mandate['actingForLabel'] ?? ''));
+		if ($label === '') {
+			$label = $party;
+		}
+
+		$this->timeline->record(
+			caseId: $write->caseId,
+			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
+			message: 'Namens ' . $label . ': ' . self::ACTING_FOR_ACTS[$act],
+			fields: ['act' => $act, 'actingFor' => $party, 'occurredAt' => $write->occurredAt],
+			visibility: CaseTimelineInterface::PUBLIC_ENTRY,
 		);
-
-		return true;
-	}//end recordWrite()
+	}//end tellTheRepresented()
 
 	/**
 	 * Record a withdrawal the applicant made from the portal and tell the assignee.
@@ -175,7 +254,7 @@ class ApplicantPortalActs {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::APPLICANT_RESPONSE,
+			kind: TimelineKindsInterface::APPLICANT_RESPONSE,
 			message: 'The applicant withdrew the request in the portal',
 			fields: [
 				'act' => self::ACT_WITHDRAWAL,
@@ -183,13 +262,13 @@ class ApplicantPortalActs {
 				'reason' => $reason,
 				'occurredAt' => $occurredAt,
 			],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
 
 		$this->notifyAssignee(
 			case: $case,
 			caseId: $caseId,
-			subject: Notifier::SUBJECT_APPLICANT_WITHDREW,
+			subject: NotifierInterface::SUBJECT_APPLICANT_WITHDREW,
 			parameters: ['reason' => $reason],
 		);
 
@@ -215,7 +294,7 @@ class ApplicantPortalActs {
 			return null;
 		}
 
-		$object = $objectService->find($caseId, register: $register, schema: $schema);
+		$object = $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $schema));
 		if (is_object($object) === false || method_exists($object, 'jsonSerialize') === false) {
 			return null;
 		}
@@ -248,7 +327,7 @@ class ApplicantPortalActs {
 		}
 
 		$notification = $this->notificationManager->createNotification();
-		$notification->setApp(Application::APP_ID)
+		$notification->setApp(AppIdentity::APP_ID)
 			->setUser($assignee)
 			->setDateTime(new DateTime())
 			->setObject('case', $caseId)

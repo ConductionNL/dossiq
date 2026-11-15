@@ -68,6 +68,7 @@ function control(name) {
 
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: control('NcButton'),
+	NcCheckboxRadioSwitch: control('NcCheckboxRadioSwitch'),
 	NcDialog: control('NcDialog'),
 	NcNoteCard: control('NcNoteCard'),
 	NcSelect: control('NcSelect'),
@@ -166,6 +167,73 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(company.vm.form.bsn).toBe('')
 	})
 
+	it('shows the case\'s BSN masked, marks it optional, and still sends it', async () => {
+		mockGet.mockResolvedValue({
+			data: { initiatorType: 'person', initiatorSourceId: '999997609' },
+		})
+		const wrapper = mount(BerichtenboxComposeDialog, {
+			props: { open: true, caseId: 'case-1' },
+		})
+		await flushPromises()
+		const field = () => wrapper.findAllComponents({ name: 'NcTextField' })[0]
+		expect(field().props('modelValue')).toBe('*****7609')
+		expect(wrapper.find('[data-testid="compose-bsn-optional"]').text()).toBe('(optional)')
+		expect(wrapper.html()).not.toContain('999997609')
+		expect(wrapper.vm.form.bsn).toBe('999997609')
+
+		// Focus empties the field for another number; leaving it empty goes back.
+		wrapper.vm.onBsnFocus()
+		await flushPromises()
+		expect(field().props('modelValue')).toBe('')
+		wrapper.vm.onBsnBlur()
+		await flushPromises()
+		expect(wrapper.vm.form.bsn).toBe('999997609')
+		expect(field().props('modelValue')).toBe('*****7609')
+
+		// A typed number is shown as typed and drops the optional mark.
+		wrapper.vm.onBsnFocus()
+		field().vm.$emit('update:modelValue', '123456782')
+		wrapper.vm.onBsnBlur()
+		await flushPromises()
+		expect(wrapper.vm.form.bsn).toBe('123456782')
+		expect(field().props('modelValue')).toBe('123456782')
+		expect(wrapper.find('[data-testid="compose-bsn-optional"]').exists()).toBe(false)
+	})
+
+	it('lines the besluit note up with its checkbox label, through the board dialog inset', () => {
+		const source = fs.readFileSync(path.join(ROOT, 'src', 'dialogs', 'BerichtenboxComposeDialog.vue'), 'utf8')
+		expect(source).toMatch(/\.compose-dialog__check-note \{\s*padding-inline-start: var\(--cn-dialog-check-label-inset, 44px\);/)
+	})
+
+	it('opens on the kind Status update, as board DqBerichtVersturen does', () => {
+		const wrapper = open()
+		expect(wrapper.vm.form.berichtTypeCode?.code).toBe('status')
+		expect(wrapper.findComponent({ name: 'NcSelect' }).props('modelValue')).toEqual(wrapper.vm.typeCodes.find((type) => type.code === 'status'))
+	})
+
+	it('marks the delivery note with the outgoing-mail icon, as board DqBerichtVersturen does', () => {
+		const wrapper = open()
+		const note = wrapper.findAllComponents({ name: 'NcNoteCard' })[0]
+		const icon = note.vm.$slots.icon?.()
+		expect(icon?.[0]?.type?.name).toBe('EmailFastOutlineIcon')
+	})
+
+	it('offers the case type\'s Berichtenbox templates and fills subject and message from the chosen one, still editable', async () => {
+		mockGet.mockResolvedValue({ data: { initiatorType: 'person', initiatorSourceId: '999997609', caseType: 'ct-woo' } })
+		const wrapper = mount(BerichtenboxComposeDialog, { props: { open: true, caseId: 'case-1' } })
+		await flushPromises()
+		const picker = wrapper.findComponent({ name: 'MessageTemplateSelect' })
+		expect(picker.props('caseId')).toBe('case-1')
+		expect(picker.props('caseTypeId')).toBe('ct-woo')
+		expect(picker.props('channels')).toEqual(['mailbox', 'mailbox-then-email'])
+		picker.vm.$emit('fill', { templateId: 't-status', subject: 'Uw Woo-verzoek 2026-0082: we beoordelen de stukken', body: 'Beste mevrouw De Vries,' })
+		await flushPromises()
+		expect(wrapper.vm.form.subject).toBe('Uw Woo-verzoek 2026-0082: we beoordelen de stukken')
+		expect(wrapper.vm.form.body).toBe('Beste mevrouw De Vries,')
+		wrapper.findAllComponents({ name: 'NcTextField' })[1].vm.$emit('update:modelValue', 'Eigen onderwerp')
+		expect(wrapper.vm.form.subject).toBe('Eigen onderwerp')
+	})
+
 	it('shows the provider’s own sentence and stays open on a refusal', async () => {
 		mockPost.mockRejectedValue({
 			response: {
@@ -205,6 +273,35 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(wrapper.emitted('sent')).toBeUndefined()
 	})
 
+	it('says what the administrator sets up when no Berichtenbox connection exists (DqBerichtVersturen)', async () => {
+		mockPost.mockRejectedValue({ response: { status: 400, data: { code: 'provider-not-configured', error: 'No provider.' } } })
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(wrapper.vm.sendNotice).toMatchObject({
+			variant: 'error',
+			role: 'alert',
+			title: 'Not sent: no Berichtenbox connection is set up',
+		})
+		expect(wrapper.vm.sendNotice.text).toContain('berichtenbox_provider in integriq')
+		const banner = wrapper.find('[data-testid="dialog-notice"]')
+		expect(banner.exists()).toBe(true)
+		expect(banner.attributes('role')).toBe('alert')
+		expect(wrapper.emitted('sent')).toBeUndefined()
+	})
+
+	it('shows any other refusal as its own sentence in the same banner', async () => {
+		mockPost.mockRejectedValue({ response: { status: 400, data: { error: 'No PKIoverheid certificate is configured.' } } })
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(wrapper.vm.sendNotice).toMatchObject({ variant: 'error', title: 'No PKIoverheid certificate is configured.', text: '' })
+	})
+
 	it('emits sent for a letter integriq accepted', async () => {
 		mockPost.mockResolvedValue({
 			data: { success: true, message: { externalMessageId: 'dp-4711' } },
@@ -226,5 +323,60 @@ describe('BerichtenboxComposeDialog', () => {
 
 		expect(mockPost).not.toHaveBeenCalled()
 		expect(wrapper.vm.errors.body).toBeTruthy()
+	})
+})
+
+describe('the category decides, and a refusal says why (opt-out-before-send)', () => {
+	it('sends a case update unless the handler marks a besluit', async () => {
+		mockPost.mockResolvedValue({
+			data: { success: true, message: { id: 'm-1' } },
+		})
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		expect(mockPost.mock.calls[0][1].category).toBe('case-update')
+
+		wrapper.vm.form.isBesluit = true
+		await wrapper.vm.send()
+		expect(mockPost.mock.calls[1][1].category).toBe('besluit')
+	})
+
+	it('announces an opted-out refusal in an alert and stays open', async () => {
+		mockPost.mockRejectedValue({
+			response: {
+				data: {
+					success: false,
+					code: 'opted-out',
+					error: 'integriq refused',
+				},
+			},
+		})
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		await flushPromises()
+
+		const alert = wrapper.find('[role="alert"]')
+		expect(alert.exists()).toBe(true)
+		expect(alert.text()).toContain(
+			'This person asked not to receive updates about this case. Nothing was sent.',
+		)
+		expect(wrapper.emitted('sent')).toBeUndefined()
+	})
+
+	it('names integriq when it could not answer', async () => {
+		mockPost.mockRejectedValue({
+			response: {
+				data: { success: false, code: 'authority-unavailable', error: 'x' },
+			},
+		})
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(wrapper.find('[role="alert"]').text()).toContain(
+			'integriq is not available',
+		)
 	})
 })

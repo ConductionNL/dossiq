@@ -160,7 +160,8 @@ test.describe('Lifecycle acts on the case', () => {
 		await cleanupRunObjects(request, token)
 	})
 
-	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	// @e2e openspec/specs/case-status-machinery/spec.md#my-work-and-the-queue-honour-it
+	// @e2e openspec/specs/case-status-machinery/spec.md#a-hidden-case-is-still-findable
 	test('a hidden status empties the working list while search still finds it', async ({
 		request,
 	}) => {
@@ -202,7 +203,8 @@ test.describe('Lifecycle acts on the case', () => {
 		expect(objectId(found)).toBe(cases.hidden)
 	})
 
-	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-handler-sees-what-they-may-do-in-one-place
+	// @e2e openspec/specs/case-management/spec.md#a-refused-act-says-why
 	test('one menu lists every act, and a refused act is disabled with its reason', async ({
 		page,
 	}) => {
@@ -235,7 +237,7 @@ test.describe('Lifecycle acts on the case', () => {
 		)
 	})
 
-	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#an-intrekking-is-not-a-granted-vergunning
 	test('an abort is not a besluit, and an early close records the skipped phases', async ({
 		request,
 	}) => {
@@ -260,7 +262,7 @@ test.describe('Lifecycle acts on the case', () => {
 		expect(Array.isArray(skipped)).toBe(true)
 	})
 
-	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#archiving-writes-the-retention-rule
 	test('archiving writes the retention rule, and only after the case is ended', async ({
 		request,
 	}) => {
@@ -294,7 +296,7 @@ test.describe('Lifecycle acts on the case', () => {
 		expect(String(after.archiveStatus ?? '')).toMatch(/^archived/)
 	})
 
-	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#reopening-keeps-the-ending-in-the-record
 	test('reopening keeps the ending in the record', async ({ request }) => {
 		const ended = await act(request, cases.abort, 'acts')
 		// `acts` is a GET; this is the read the menu uses, asserted here
@@ -322,7 +324,8 @@ test.describe('Lifecycle acts on the case', () => {
 		}
 	})
 
-	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-case-is-parked-until-a-date
+	// @e2e openspec/specs/case-management/spec.md#a-hold-does-not-stop-the-clock
 	test('a hold records a reason and a date, and does not stop the clock', async ({
 		request,
 	}) => {
@@ -358,7 +361,8 @@ test.describe('Lifecycle acts on the case', () => {
 		expect((await past.json()).error).toBe('wake-date-not-ahead')
 	})
 
-	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-concept-zaak-is-not-already-overdue
+	// @e2e openspec/specs/case-management/spec.md#promoting-binds-the-clock
 	test('a draft binds no term, and promoting it binds one', async ({
 		request,
 	}) => {
@@ -398,7 +402,7 @@ test.describe('Lifecycle acts on the case', () => {
 		)
 	})
 
-	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-phone-intake-is-not-lost
 	test('an incomplete phone intake is kept, and says which field is missing', async ({
 		request,
 	}) => {

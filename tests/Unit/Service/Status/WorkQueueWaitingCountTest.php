@@ -22,13 +22,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Status;
 
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
+use OCA\Dossiq\Service\Queue\QueueCaseFacts;
+use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
+use OCA\Dossiq\Service\Queue\UrgencyScorer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\WorkQueueService;
@@ -39,9 +43,12 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\WorkQueueService::tallyWaitingOn
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
  * @uses \OCA\Dossiq\Service\WorkQueueService
+ * @uses \OCA\Dossiq\Service\Queue\UrgencyScorer
+ * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class WorkQueueWaitingCountTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -63,7 +70,9 @@ class WorkQueueWaitingCountTest extends TestCase {
 			settingsService: $this->createMock(originalClassName: SettingsService::class),
 			engineTasks: $this->createMock(originalClassName: EngineTaskInbox::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
-			dates: $this->caseDates(),
+			urgencySettings: new QueueUrgencySettings(settings: $this->createMock(originalClassName: SettingsService::class)),
+			scorer: new UrgencyScorer(dates: $this->caseDates(), logger: $this->createMock(LoggerInterface::class)),
+			caseFacts: new QueueCaseFacts(settingsService: $this->createMock(SettingsService::class), journal: $this->createMock(originalClassName: CaseJournal::class), dates: $this->caseDates(), logger: $this->createMock(LoggerInterface::class)),
 		);
 	}//end setUp()
 
@@ -95,7 +104,7 @@ class WorkQueueWaitingCountTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testTheQueueIsCountedByWhoIsWaitedOn(): void {
 		self::assertSame(
@@ -112,7 +121,7 @@ class WorkQueueWaitingCountTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAnUndeclaredCaseCountsAsOursToMove(): void {
 		$counts = $this->queue->tallyWaitingOn(
@@ -138,7 +147,7 @@ class WorkQueueWaitingCountTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAClosedCaseIsInNoneOfTheThree(): void {
 		$counts = $this->queue->tallyWaitingOn(

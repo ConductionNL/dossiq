@@ -23,9 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 
 use OCA\Dossiq\Service\Kcc\CallbackService;
-use OCA\Dossiq\Service\Kcc\SlaCalculator;
+use OCA\Dossiq\Service\Kcc\CallbackRetrySchedule;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -35,8 +34,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\Kcc\CallbackService
  *
- * @uses \OCA\Dossiq\Service\Kcc\SlaCalculator
- * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Kcc\CallbackRetrySchedule
  */
 class CallbackServiceTest extends TestCase {
 
@@ -48,7 +46,7 @@ class CallbackServiceTest extends TestCase {
 	protected function setUp(): void {
 		$settings = $this->createMock(SettingsService::class);
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->service = new CallbackService($settings, new SlaCalculator(workingDays: new WorkingDayCalculator()), $logger);
+		$this->service = new CallbackService($settings, new CallbackRetrySchedule(), $logger);
 	}//end setUp()
 
 	/**

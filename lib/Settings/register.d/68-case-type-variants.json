@@ -1,0 +1,42 @@
+{
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.29.0",
+        "properties": {
+          "variants": {
+            "type": "array",
+            "title": "Variants",
+            "description": "The routes through this case type, such as Regulier and Met welstand. A case picks one when it is made: the default one, unless a rule picks another. The Phases and tasks tab lists them.",
+            "items": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "Name",
+                  "description": "What the variant is called, for example Met welstand.",
+                  "maxLength": 255
+                },
+                "description": {
+                  "type": "string",
+                  "title": "Description",
+                  "description": "What the variant does differently, in one sentence.",
+                  "maxLength": 512
+                },
+                "isDefault": {
+                  "type": "boolean",
+                  "title": "Default",
+                  "description": "The route a case takes when no rule picks another one.",
+                  "default": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

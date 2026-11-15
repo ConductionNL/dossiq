@@ -1,0 +1,208 @@
+<?php
+
+/**
+ * ZrcUsageRights Unit Tests
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Service\Zgw
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
+
+use OCA\Dossiq\Service\Zgw\ZrcUsageRights;
+use OCA\Dossiq\Service\ZgwMappingService;
+use OCA\Dossiq\Service\ZgwService;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
+/**
+ * Settling and checking indicatieGebruiksrecht on a zaak's documents.
+ */
+class ZrcUsageRightsTest extends TestCase {
+	private const CASE = 'c0000000-0000-0000-0000-000000000001';
+	private const DOC = 'd0000000-0000-0000-0000-00000000000a';
+
+	/** @var array<string, array<string, array<string, mixed>>> */
+	private array $rows = [];
+
+	/** @var array<int, array<string, mixed>> */
+	private array $saved = [];
+
+	/** @var array<int, string> */
+	private array $unmapped = [];
+
+	private bool $failSaves = false;
+
+	private bool $failLinkSearch = false;
+
+	private ?LoggerInterface $logger = null;
+
+	protected function setUp(): void {
+		parent::setUp();
+		$this->rows = [
+			'13' => ['z1' => ['case' => self::CASE, 'document' => 'https://nc/documenten/' . self::DOC]],
+			'14' => [self::DOC => ['title' => 'a']],
+			'15' => [],
+		];
+		$this->saved = [];
+		$this->unmapped = [];
+	}
+
+	private function rights(): ZrcUsageRights {
+		$test = $this;
+		$store = new class($test) {
+			public function __construct(private ZrcUsageRightsTest $test) {
+			}
+
+			public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
+				return $this->test->rowsOf((string)$schema)[(string)$id] ?? null;
+			}
+
+			public function buildSearchQuery(array $requestParams, mixed $register, mixed $schema): array {
+				unset($requestParams['_limit']);
+				return ['schema' => (string)$schema, 'params' => $requestParams];
+			}
+
+			public function searchObjectsPaginated(array $query): array {
+				$key = (string)array_key_first($query['params']);
+				$value = $query['params'][$key];
+				return ['results' => array_values(array_filter($this->test->rowsOf($query['schema']), static fn (array $r): bool => ($r[$key] ?? null) === $value))];
+			}
+
+			public function saveObject(array $object=[], ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				$this->test->record($object);
+				return $object;
+			}
+		};
+		$schemas = ['zaakinformatieobject' => '13', 'enkelvoudiginformatieobject' => '14', 'gebruiksrechten' => '15'];
+		$mappings = $this->createMock(ZgwMappingService::class);
+		$mappings->method('getMapping')->willReturnCallback(
+			fn (string $key): ?array => in_array($key, $this->unmapped, true) === true ? null : ['sourceRegister' => '1', 'sourceSchema' => $schemas[$key]]
+		);
+		$zgw = $this->createMock(ZgwService::class);
+		$zgw->method('getZgwMappingService')->willReturn($mappings);
+		$zgw->method('getObjectService')->willReturn($store);
+		$zgw->method('getLogger')->willReturn($this->logger ?? $this->createMock(LoggerInterface::class));
+		return new ZrcUsageRights(zgwService: $zgw);
+	}
+
+	public function rowsOf(string $schema): array {
+		if ($this->failLinkSearch === true && $schema === '13') {
+			throw new \RuntimeException('search index offline');
+		}
+
+		return $this->rows[$schema] ?? [];
+	}
+
+	public function record(array $object): void {
+		if ($this->failSaves === true) {
+			throw new \RuntimeException('register read-only');
+		}
+
+		$this->saved[] = $object;
+	}
+
+	public function testClosingSetsTheIndicationFromTheGebruiksrechten(): void {
+		$this->rows['15'] = ['g1' => ['document' => self::DOC]];
+
+		$this->rights()->settleOnClose(self::CASE);
+
+		$this->assertSame([['title' => 'a', 'usageRightsIndication' => true, 'id' => self::DOC]], $this->saved);
+	}
+
+	public function testWithoutGebruiksrechtenTheIndicationIsFalse(): void {
+		$this->rights()->settleOnClose(self::CASE);
+
+		$this->assertFalse($this->saved[0]['usageRightsIndication']);
+	}
+
+	public function testAnUnsearchableGebruiksrechtenMappingLeavesItUnsetAndTheCheckRefuses(): void {
+		$this->unmapped = ['gebruiksrechten'];
+
+		$this->rights()->settleOnClose(self::CASE);
+		$refusal = $this->rights()->firstUnsetRefusal(self::CASE);
+
+		$this->assertSame([], $this->saved);
+		$this->assertSame('indicatiegebruiksrecht-unset', $refusal['code']);
+	}
+
+	public function testADocumentThatHasAnIndicationIsLeftAndPasses(): void {
+		$this->rows['14'][self::DOC]['indicatieGebruiksrecht'] = false;
+
+		$this->rights()->settleOnClose(self::CASE);
+
+		$this->assertSame([], $this->saved);
+		$this->assertNull($this->rights()->firstUnsetRefusal(self::CASE));
+	}
+
+	public function testWithoutDocumentMappingsNothingIsCheckedOrWritten(): void {
+		$this->unmapped = ['enkelvoudiginformatieobject'];
+		$this->assertNull($this->rights()->firstUnsetRefusal(self::CASE));
+		$this->rights()->settleOnClose(self::CASE);
+
+		$this->unmapped = ['zaakinformatieobject'];
+		$this->assertNull($this->rights()->firstUnsetRefusal(self::CASE));
+		$this->rights()->settleOnClose(self::CASE);
+
+		$this->assertSame([], $this->saved);
+	}
+
+	public function testALinkWithoutADocumentUuidIsSkipped(): void {
+		$this->rows['13'] = [
+			'z1' => ['case' => self::CASE, 'document' => 'https://nc/documenten/not-a-uuid'],
+			'z2' => ['case' => self::CASE, 'document' => ''],
+		];
+
+		$this->assertNull($this->rights()->firstUnsetRefusal(self::CASE));
+		$this->rights()->settleOnClose(self::CASE);
+		$this->assertSame([], $this->saved);
+	}
+
+	public function testALinkNamingItsDocumentAsInformatieobjectIsFollowed(): void {
+		$this->rows['13'] = ['z1' => ['case' => self::CASE, 'informatieobject' => self::DOC]];
+
+		$this->assertSame('indicatiegebruiksrecht-unset', $this->rights()->firstUnsetRefusal(self::CASE)['code']);
+	}
+
+	public function testAFailedDocumentWriteIsLoggedPerDocumentAndTheCloseGoesOn(): void {
+		$this->failSaves = true;
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('debug')
+			->with('zrc-007b: Could not update indicatieGebruiksrecht for doc ' . self::DOC . ': register read-only');
+		$logger->expects($this->never())->method('warning');
+		$this->logger = $logger;
+
+		$this->rights()->settleOnClose(self::CASE);
+
+		$this->assertSame([], $this->saved);
+	}
+
+	public function testAFailedLinkSearchOnCloseIsLoggedAndSwallowed(): void {
+		$this->failLinkSearch = true;
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('warning')
+			->with('zrc-007b: Failed to set indicatieGebruiksrecht: search index offline');
+		$this->logger = $logger;
+
+		$this->rights()->settleOnClose(self::CASE);
+
+		$this->assertSame([], $this->saved);
+	}
+}

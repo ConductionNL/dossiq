@@ -169,7 +169,6 @@ class PersonalQueueControllerTest extends TestCase {
 
 		$calls = [
 			'index' => [],
-			'endOfDay' => [],
 			'setGrouping' => [],
 			'hideGroup' => ['tasks'],
 			'showGroup' => ['tasks'],
@@ -208,31 +207,6 @@ class PersonalQueueControllerTest extends TestCase {
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
 		self::assertSame(1, $response->getData()['total']);
 	}//end testTheQueueAnswersForTheCaller()
-
-	/**
-	 * The end-of-day candidates are the cases and tasks, and nothing else.
-	 *
-	 * A mention is on the queue and is not something a day is closed on: there
-	 * is no update to write against "you were mentioned".
-	 *
-	 * @return void
-	 */
-	public function testEndOfDayOffersOnlyCasesAndTasks(): void {
-		$this->signIn();
-		$this->queue->method('forPerson')->willReturn($this->queueOf([
-			['id' => 'assigned-cases:case:a', 'subjectType' => 'case'],
-			['id' => 'tasks:task:b', 'subjectType' => 'task'],
-			['id' => 'mentions:mention:c', 'subjectType' => 'mention'],
-			['id' => 'planned-items:plannedItem:d', 'subjectType' => 'plannedItem'],
-		]));
-
-		$data = $this->controller->endOfDay()->getData();
-
-		self::assertSame(
-			['assigned-cases:case:a', 'tasks:task:b'],
-			array_column($data['items'], 'id')
-		);
-	}//end testEndOfDayOffersOnlyCasesAndTasks()
 
 	/**
 	 * Hiding a group hides it for today, and shows it again on request.

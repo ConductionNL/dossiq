@@ -29,6 +29,7 @@ use Psr\Log\NullLogger;
  * REQ-TERM-069: the age of the open workload is answerable per status.
  *
  * @covers \OCA\Dossiq\Service\OpenWorkloadAgeService
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class OpenWorkloadAgeTest extends TestCase {
 	/**

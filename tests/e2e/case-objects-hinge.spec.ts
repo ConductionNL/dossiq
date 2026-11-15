@@ -114,7 +114,7 @@ test.describe('Objects as the hinge between cases', () => {
 		request,
 		page,
 	}) => {
-		await page.goto(`/index.php/apps/dossiq/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
 		await page.getByRole('tab', { name: 'Related' }).click()
 		await expect(page.getByText(`${RUN_PREFIX} Pand Kerkstraat 1`)).toBeVisible()
 

@@ -1,0 +1,35 @@
+{
+    "zgwResource": "verzending",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "informatieobject": "{{ document }}",
+        "betrokkene": "{{ involvedParty }}",
+        "aardRelatie": "{{ relationshipType }}",
+        "notes": "{{ description }}",
+        "receiptDate": "{{ receiveDate }}",
+        "verzenddatum": "{{ sendDate }}",
+        "contactPersoon": "{{ contactPerson }}",
+        "contactpersoonnaam": "{{ contactPersonName }}"
+    },
+    "reverseMapping": {
+        "document": "{{ informatieobject }}",
+        "involvedParty": "{{ betrokkene }}",
+        "relationshipType": "{{ aardRelatie }}",
+        "description": "{{ toelichting }}",
+        "receiveDate": "{{ ontvangstdatum }}",
+        "sendDate": "{{ verzenddatum }}",
+        "contactPerson": "{{ contactPersoon }}",
+        "contactPersonName": "{{ contactpersoonnaam }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "informatieobject": {
+            "field": "document"
+        }
+    }
+}

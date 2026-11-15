@@ -7,6 +7,15 @@
  * exponentially via the `pdfAttempts` field maintained by the
  * archival service; gives up after 3 attempts.
  *
+ * DELIBERATELY NOT REGISTERED: PARKED UNTIL THE FILINQ PDF ADAPTER EXISTS.
+ * There is no adapter that converts a mail to PDF yet, so every pass only
+ * re-marks the row failed. Scheduled, it burns the three retries in 45
+ * minutes and drops every failed archival row for good. It stays out of
+ * `appinfo/info.xml`, and the repair step RetireUnscheduledBackgroundJobs
+ * takes it off instances that already had it. Register it again in the same
+ * change that wires the filinq adapter into run(), and move it onto the
+ * background service account then, because it writes.
+ *
  * @category BackgroundJob
  * @package  OCA\Dossiq\BackgroundJob
  *
@@ -21,15 +30,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\EmailArchivalService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\EmailArchivalServiceInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -38,7 +47,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Retries failed PDF archival attempts on a 15-minute cadence.
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
  */
 class EmailPdfRetryJob extends TimedJob {
 	/**
@@ -46,13 +55,13 @@ class EmailPdfRetryJob extends TimedJob {
 	 *
 	 * @param ITimeFactory $time Time factory.
 	 * @param IAppManager $appManager App manager.
-	 * @param EmailArchivalService $archivalService Archival service.
+	 * @param EmailArchivalServiceInterface $archivalService Archival service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly IAppManager $appManager,
-		private readonly EmailArchivalService $archivalService,
+		private readonly EmailArchivalServiceInterface $archivalService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -69,7 +78,7 @@ class EmailPdfRetryJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
 	 */
 	protected function run($argument): void {
 		try {
@@ -100,7 +109,7 @@ class EmailPdfRetryJob extends TimedJob {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'EmailPdfRetryJob failed',
-				['error' => $e->getMessage(), 'app' => Application::APP_ID]
+				['error' => $e->getMessage(), 'app' => AppIdentity::APP_ID]
 			);
 		}//end try
 	}//end run()

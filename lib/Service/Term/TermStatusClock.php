@@ -34,13 +34,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Term;
 
+use OCA\Dossiq\Kernel\Contracts\TermStatusClockInterface;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
@@ -49,9 +50,9 @@ use Throwable;
 /**
  * Suspends and resumes a term's engine timer from the case's status.
  *
- * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
  */
-class TermStatusClock {
+class TermStatusClock implements TermStatusClockInterface {
 	/**
 	 * Nothing was needed.
 	 */
@@ -101,7 +102,7 @@ class TermStatusClock {
 	 *
 	 * @return string One of UNCHANGED, SUSPENDED or RESUMED.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-term-declares-the-statuses-its-clock-runs-in-with-thresholds-as-days-or-shares-req-tcf-03
 	 */
 	public function reconcile(string $caseId, string $statusId, string $caseType): string {
 		$instance = $this->terms->getTermijnInstanceForZaak(caseId: $caseId);
@@ -117,7 +118,21 @@ class TermStatusClock {
 			return self::UNCHANGED;
 		}
 
-		$inside = in_array($statusId, $running, true);
+		return $this->stopOrStart(instance: $instance, inside: in_array($statusId, $running, true));
+	}//end reconcile()
+
+	/**
+	 * Stop a running clock outside its statuses, or start a stopped one inside them.
+	 *
+	 * @param array<string, mixed> $instance The case's term instance.
+	 * @param bool                 $inside   Whether the case's status is one the clock runs in.
+	 *
+	 * @return string What changed.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$inside` is the status test's answer, compared with the clock's
+	 *  own state; it does not switch the method between two jobs.
+	 */
+	private function stopOrStart(array $instance, bool $inside): string {
 		$stopped = (($instance['clockStoppedByStatus'] ?? false) === true);
 
 		if ($inside === false && $stopped === false) {
@@ -129,7 +144,7 @@ class TermStatusClock {
 		}
 
 		return self::UNCHANGED;
-	}//end reconcile()
+	}//end stopOrStart()
 
 	/**
 	 * Stop the clock, and write down that this is why.

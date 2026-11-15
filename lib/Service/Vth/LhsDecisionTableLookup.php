@@ -20,10 +20,14 @@
  * (dossiq#1596). A declared table cannot hide that: its inputs are NAMED, so
  * the evaluator refuses what it cannot resolve rather than quietly missing.
  *
- * SOFT DEPENDENCY. The evaluator is resolved lazily through the container and
- * guarded by class_exists. An OpenRegister release that has not shipped it, or
- * an instance where the projection was never run, must degrade to the matrix
- * rather than take enforcement recommendations down with it.
+ * STORED IN OPENREGISTER (openregister#4572). The projected table lives in
+ * OpenRegister's decision-tables register under `dossiq.lhs-matrix-<version>`
+ * and is evaluated through its DecisionTableStore, the same store a flow step
+ * names by `tableRef`.
+ *
+ * SOFT DEPENDENCY. An OpenRegister without the store, or an instance where the
+ * projection was never run, must degrade to the matrix rather than take
+ * enforcement recommendations down with it.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Vth
@@ -39,111 +43,89 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
+ * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Vth;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use Psr\Container\ContainerInterface;
+use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Evaluates the projected LHS decision table.
+ * Evaluates the projected LHS decision table in OpenRegister.
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
  */
 class LhsDecisionTableLookup {
-	use SearchesObjects;
 
 	/**
-	 * OpenRegister's decision-table evaluator.
+	 * The key a projected table carries before its version, before the dossiq prefix.
+	 *
+	 * @var string
 	 */
-	private const EVALUATOR = '\\OCA\\OpenRegister\\Service\\Dmn\\DecisionTableEvaluator';
-
-	/**
-	 * Provenance marker prefix the migrator writes into a projected table.
-	 */
-	private const MARKER_PREFIX = LhsMatrixDecisionTableMigrator::MARKER_PREFIX;
+	public const KEY_STEM = 'lhs-matrix-';
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the register, schema and object service.
-	 * @param ContainerInterface $container Resolves the OpenRegister evaluator lazily.
+	 * @param StoredDecisionTables $tables OpenRegister's decision-tables register.
 	 * @param LoggerInterface $logger Logger.
-	 *
-	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly ContainerInterface $container,
+		private readonly StoredDecisionTables $tables,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
 	/**
+	 * The stored key of the table projected from a matrix version.
+	 *
+	 * @param string $matrixVersion The matrix version.
+	 *
+	 * @return string The stored key, for example `dossiq.lhs-matrix-2`.
+	 *
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
+	 */
+	public function referenceFor(string $matrixVersion): string {
+		$version = trim($matrixVersion);
+		if ($version === '') {
+			$version = '1';
+		}
+
+		return $this->tables->keyFor(key: self::KEY_STEM . $version);
+	}//end referenceFor()
+
+	/**
 	 * Look up the prescribed intervention for one triple.
 	 *
-	 * Returns null when this instance has no projected table for the matrix,
-	 * which is the caller's signal to fall back rather than to fail. A table
-	 * that EXISTS and refuses the triple is a different answer: that refusal is
-	 * propagated as a miss, because a declared input the table cannot resolve
-	 * is exactly the defect this lookup exists to surface.
+	 * Null is the caller's signal to fall back to the matrix: no store, no
+	 * table for this version, or a table that refuses the triple. A refusal by
+	 * a table that EXISTS is logged as a warning, because a declared input the
+	 * table cannot resolve is exactly the defect this lookup exists to surface.
 	 *
-	 * @param string $matrixId The stored matrix's own id.
-	 * @param string $severity Severity axis value.
-	 * @param string $behaviour Behaviour axis value.
-	 * @param string $actorType Actor-type axis value.
+	 * @param string $matrixVersion The matrix version the table was projected from.
+	 * @param string $severity The severity.
+	 * @param string $behaviour The behaviour.
+	 * @param string $actorType The actor type.
 	 *
-	 * @return string|null The intervention, or null when no table answers here.
+	 * @return string|null The intervention, or null to fall back.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
 	 */
 	public function intervention(
-		string $matrixId,
+		string $matrixVersion,
 		string $severity,
 		string $behaviour,
 		string $actorType,
 	): ?string {
-		$table = $this->tableFor(matrixId: $matrixId);
-		if ($table === null) {
-			return null;
-		}
-
-		$evaluator = $this->evaluator();
-		if ($evaluator === null) {
-			return null;
-		}
-
-		try {
-			$result = $evaluator->evaluate(
-				$table,
-				[
-					'severity' => $severity,
-					'behaviour' => $behaviour,
-					'actorType' => $actorType,
-				]
-			);
-		} catch (Throwable $e) {
-			// A refusal is information, not noise: it means the table could not
-			// resolve a declared input, which is the class of defect the
-			// dictionary used to swallow.
-			$this->logger->warning(
-				'Dossiq: the LHS decision table refused a triple',
-				[
-					'matrix' => $matrixId,
-					'triple' => $severity . ':' . $behaviour . ':' . $actorType,
-					'exception' => $e->getMessage(),
-				]
-			);
-
-			return null;
-		}
+		$result = $this->evaluated(
+			reference: $this->referenceFor(matrixVersion: $matrixVersion),
+			inputs: ['severity' => $severity, 'behaviour' => $behaviour, 'actorType' => $actorType]
+		);
 
 		$intervention = ($result['outputs']['intervention'] ?? null);
 		if (is_string($intervention) === true && $intervention !== '') {
@@ -154,95 +136,42 @@ class LhsDecisionTableLookup {
 	}//end intervention()
 
 	/**
-	 * Find the enabled decision table projected from this matrix.
+	 * The table's answer for the triple, or null (logged) when it does not answer.
 	 *
-	 * Resolved by the provenance MARKER rather than by name or key: both are
-	 * editable in the decision-table editor, and matching on one would make an
-	 * ordinary rename silently detach the table from its matrix.
+	 * @param string                                                   $reference The stored key.
+	 * @param array{severity: string, behaviour: string, actorType: string} $inputs    The triple.
 	 *
-	 * @param string $matrixId The stored matrix's own id.
-	 *
-	 * @return array<string, mixed>|null The table, or null when absent or disabled.
-	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @return array<string, mixed>|null The evaluation result.
 	 */
-	private function tableFor(string $matrixId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('decision_table_schema');
-
-		if ($objectService === null || $register === '' || $schema === '') {
-			return null;
-		}
-
-		$marker = (self::MARKER_PREFIX . $matrixId);
-
+	private function evaluated(string $reference, array $inputs): ?array {
+		$result = null;
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => 200],
-			);
+			$result = $this->tables->evaluate(reference: $reference, inputs: $inputs);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not read decision tables for the LHS lookup',
-				['exception' => $e->getMessage()]
-			);
-
-			return null;
+			$this->logRefusal(failure: $e, context: ['table' => $reference, 'triple' => implode(':', $inputs)]);
 		}
 
-		foreach ($rows as $row) {
-			if (str_contains((string)($row['description'] ?? ''), $marker) === false) {
-				continue;
-			}
-
-			// A DISABLED table is a projection somebody has not adopted yet.
-			// Reading it anyway would make the enforcement answer depend on a
-			// table an administrator deliberately left switched off.
-			if (($row['enabled'] ?? false) !== true) {
-				return null;
-			}
-
-			return $row;
-		}
-
-		return null;
-	}//end tableFor()
+		return $result;
+	}//end evaluated()
 
 	/**
-	 * Resolve OpenRegister's evaluator, or null when it is not there.
+	 * Log why the table did not answer.
 	 *
-	 * LAZY, and behind class_exists. Constructor-injecting a class from another
-	 * app makes every consumer of this service fatal when that app is absent or
-	 * mid-upgrade, which is how a deleted OpenRegister class once 403'd every
-	 * object write across the fleet.
+	 * A missing table is the ordinary state before the projection runs, so it
+	 * is debug; anything else is a table that exists and refused.
 	 *
-	 * @return object|null The evaluator.
+	 * @param Throwable                              $failure What the store threw.
+	 * @param array{table: string, triple: string} $context The stored key and the triple.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @return void
 	 */
-	private function evaluator(): ?object {
-		if (class_exists(self::EVALUATOR) === false) {
-			return null;
+	private function logRefusal(Throwable $failure, array $context): void {
+		$context['exception'] = $failure->getMessage();
+		if ($failure instanceof \UnexpectedValueException) {
+			$this->logger->debug('Dossiq: no runnable LHS decision table in OpenRegister', $context);
+			return;
 		}
 
-		try {
-			$evaluator = $this->container->get(self::EVALUATOR);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: OpenRegister decision-table evaluator could not be resolved',
-				['exception' => $e->getMessage()]
-			);
-
-			return null;
-		}
-
-		if (is_object($evaluator) === true && method_exists($evaluator, 'evaluate') === true) {
-			return $evaluator;
-		}
-
-		return null;
-	}//end evaluator()
+		$this->logger->warning('Dossiq: the LHS decision table refused a triple', $context);
+	}//end logRefusal()
 }//end class

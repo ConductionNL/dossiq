@@ -1,0 +1,3 @@
+- [x] contactmoment 1.7.0 subject/note/attachmentCount (register.d + mock), nl/en catalogue
+- [x] resident thread subjectField/noteField/attachmentCountField
+- [x] vitest configLabels + contactsDomain version pin; phpunit SchemaHasSurface, DemoDataService

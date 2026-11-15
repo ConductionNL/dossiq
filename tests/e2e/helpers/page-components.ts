@@ -38,26 +38,42 @@
  * `page.goto()` prefix them with `/index.php/apps/dossiq`.
  */
 
-/** `src/views/CasesOnMapView.vue` — the Cases map view (manifest page `CaseMap`). */
-export const CasesOnMapView = '/map'
+/**
+ * A default view of the Cases index (manifest page `Cases`, `defaultSavedViews`):
+ * `my-work`, `team-queue`, `data-subject-requests`, `woo-requests`.
+ *
+ * @param slug The view's slug.
+ * @return The app-relative route that opens the view.
+ */
+export function CasesSavedView(slug: string): string {
+	return `/cases?savedView=default:${slug}`
+}
 
-/** `src/views/MyWorkCards.vue` — the personal workload cards (manifest page `MyWork`). */
-export const MyWorkCards = '/my-work'
-
-/** `src/views/workflow-board/WorkflowBoard.vue` — the kanban status board. */
-export const WorkflowBoard = '/workflow-board'
+/**
+ * Whether nextcloud-vue renders a view's page config `overrides` (card
+ * layout, columns, slots, header, tabs; library batch 18). The tests that
+ * read what a view restores (openspec/changes/archive/2026-10-30-lists-are-views/restore.md)
+ * are fixme while this is false.
+ */
+export const VIEW_OVERRIDES_APPLIED = true
 
 /**
  * `src/views/settings/SubstitutionSettings.vue` — self-service vervanging.
- * Retired as an app page by page-topology-cleanup (B4); it is now a PERSONAL
- * SETTING, so this is an absolute Nextcloud settings path, not an app route.
+ * Retired as an app page by page-topology-cleanup (B4); it is a PERSONAL
+ * SETTING, a section of the in-app user settings dialog. App.vue opens the
+ * dialog on this hash (dossiq has no Nextcloud personal settings page since
+ * 11 Oct 2026).
  */
-export const SubstitutionPersonalSettings = '/settings/user/dossiq'
+export const SubstitutionPersonalSettings = '/apps/dossiq/#user-settings'
 
-/** `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console (manifest page `SubstitutionAdmin`). */
-export const SubstitutionAdmin = '/substitution-admin'
+/**
+ * `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console,
+ * the Substitution tab of the admin settings (its own page `/substitution-admin`
+ * retired on 20 Oct 2026 and redirects here). Prefix with `/index.php` only.
+ */
+export const SubstitutionAdmin = '/settings/admin/dossiq?tab=substitution'
 
-/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets from `src/views/processMining/`. */
+/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets are library charts, stats and tables over `/api/reports/process-mining`. */
 export const ProcessMiningDashboard = '/process-mining'
 
 /**

@@ -1,0 +1,554 @@
+{
+    "full": {
+        "status": 200,
+        "data": {
+            "notified": 3
+        },
+        "sent": [
+            {
+                "app": "dossiq",
+                "user": "bob",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "carol",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "7",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            }
+        ],
+        "queued": [
+            {
+                "person": "bob",
+                "actor": "Alice Jansen",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "carol",
+                "actor": "Alice Jansen",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "7",
+                "actor": "Alice Jansen",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            }
+        ],
+        "warnings": []
+    },
+    "forged actor in the request": {
+        "status": 200,
+        "data": {
+            "notified": 3
+        },
+        "sent": [
+            {
+                "app": "dossiq",
+                "user": "bob",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "carol",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "7",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            }
+        ],
+        "queued": [
+            {
+                "person": "bob",
+                "actor": "Alice Jansen",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "carol",
+                "actor": "Alice Jansen",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "7",
+                "actor": "Alice Jansen",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            }
+        ],
+        "warnings": []
+    },
+    "no display name": {
+        "status": 200,
+        "data": {
+            "notified": 4
+        },
+        "sent": [
+            {
+                "app": "dossiq",
+                "user": "bob",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "dave",
+                        "actorDisplayName": "",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "carol",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "dave",
+                        "actorDisplayName": "",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "alice",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "dave",
+                        "actorDisplayName": "",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "7",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "dave",
+                        "actorDisplayName": "",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            }
+        ],
+        "queued": [
+            {
+                "person": "bob",
+                "actor": "dave",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "carol",
+                "actor": "dave",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "alice",
+                "actor": "dave",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "7",
+                "actor": "dave",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            }
+        ],
+        "warnings": []
+    },
+    "no schema": {
+        "status": 200,
+        "data": {
+            "notified": 3
+        },
+        "sent": [
+            {
+                "app": "dossiq",
+                "user": "bob",
+                "object": [
+                    "note",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "carol",
+                "object": [
+                    "note",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "7",
+                "object": [
+                    "note",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            }
+        ],
+        "queued": [
+            {
+                "person": "bob",
+                "actor": "Alice Jansen",
+                "subjectType": "note",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "carol",
+                "actor": "Alice Jansen",
+                "subjectType": "note",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "7",
+                "actor": "Alice Jansen",
+                "subjectType": "note",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            }
+        ],
+        "warnings": []
+    },
+    "no register or note id": {
+        "status": 200,
+        "data": {
+            "notified": 1
+        },
+        "sent": [
+            {
+                "app": "dossiq",
+                "user": "bob",
+                "object": [
+                    "note",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "",
+                        "schema": "",
+                        "objectId": "case-1",
+                        "noteId": ""
+                    }
+                ],
+                "dated": true
+            }
+        ],
+        "queued": [
+            {
+                "person": "bob",
+                "actor": "Alice Jansen",
+                "subjectType": "note",
+                "subjectId": "case-1",
+                "noteId": ""
+            }
+        ],
+        "warnings": []
+    },
+    "one bell breaks": {
+        "status": 200,
+        "data": {
+            "notified": 2
+        },
+        "sent": [
+            {
+                "app": "dossiq",
+                "user": "carol",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            },
+            {
+                "app": "dossiq",
+                "user": "7",
+                "object": [
+                    "case",
+                    "case-1"
+                ],
+                "subject": [
+                    "note_mention",
+                    {
+                        "actorUserId": "alice",
+                        "actorDisplayName": "Alice Jansen",
+                        "register": "dossiq",
+                        "schema": "case",
+                        "objectId": "case-1",
+                        "noteId": "n-9"
+                    }
+                ],
+                "dated": true
+            }
+        ],
+        "queued": [
+            {
+                "person": "carol",
+                "actor": "Alice Jansen",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            },
+            {
+                "person": "7",
+                "actor": "Alice Jansen",
+                "subjectType": "case",
+                "subjectId": "case-1",
+                "noteId": "n-9"
+            }
+        ],
+        "warnings": [
+            [
+                "Failed to send note mention notification",
+                {
+                    "mentionedUserId": "bob",
+                    "objectId": "case-1",
+                    "exception": "bell broke for bob"
+                }
+            ]
+        ]
+    },
+    "only self": {
+        "status": 200,
+        "data": {
+            "notified": 0
+        },
+        "sent": [],
+        "queued": [],
+        "warnings": []
+    },
+    "no recipients": {
+        "status": 400,
+        "data": {
+            "error": "objectId and a non-empty mentionedUserIds array are required"
+        },
+        "sent": [],
+        "queued": [],
+        "warnings": []
+    },
+    "recipients not a list": {
+        "status": 400,
+        "data": {
+            "error": "objectId and a non-empty mentionedUserIds array are required"
+        },
+        "sent": [],
+        "queued": [],
+        "warnings": []
+    },
+    "no object": {
+        "status": 400,
+        "data": {
+            "error": "objectId and a non-empty mentionedUserIds array are required"
+        },
+        "sent": [],
+        "queued": [],
+        "warnings": []
+    },
+    "signed out": {
+        "status": 401,
+        "data": {
+            "message": "unauthenticated"
+        },
+        "sent": [],
+        "queued": [],
+        "warnings": []
+    }
+}

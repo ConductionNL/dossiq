@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\Iv3TaakveldListInterface;
 use RuntimeException;
 
 /**
@@ -36,7 +37,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/tasks.md#1.2
  */
-class Iv3TaakveldList {
+class Iv3TaakveldList implements Iv3TaakveldListInterface {
 
 	/**
 	 * In-memory cache of the decoded taakveld bundle (per-request; this
@@ -84,10 +85,8 @@ class Iv3TaakveldList {
 		$bundle = $this->load();
 		$out = [];
 		foreach ((array)($bundle['categories'] ?? []) as $category) {
-			$categoryCode = (string)($category['code'] ?? '');
-			$categoryLabel = (string)($category['label'] ?? '');
 			foreach ((array)($category['taakvelden'] ?? []) as $taskField) {
-				$out[] = $this->flattenTaskField(taskField: $taskField, categoryCode: $categoryCode, categoryLabel: $categoryLabel);
+				$out[] = $this->flattenTaskField(taskField: $taskField, category: $category);
 			}
 		}
 
@@ -99,12 +98,11 @@ class Iv3TaakveldList {
 	 * Flatten one raw JSON taakveld entry into its public shape.
 	 *
 	 * @param array<string, mixed> $taskField Raw taakveld entry.
-	 * @param string $categoryCode Owning category code.
-	 * @param string $categoryLabel Owning category label.
+	 * @param array<string, mixed> $category  Raw owning category entry, with its code and label.
 	 *
 	 * @return array{code: string, label: string, categoryCode: string, categoryLabel: string, deprecated: bool, aggregatesUnder: string|null}
 	 */
-	private function flattenTaskField(array $taskField, string $categoryCode, string $categoryLabel): array {
+	private function flattenTaskField(array $taskField, array $category): array {
 		$aggregatesUnder = ($taskField['aggregatesUnder'] ?? null);
 		if (is_string($aggregatesUnder) === false || $aggregatesUnder === '') {
 			$aggregatesUnder = null;
@@ -113,8 +111,8 @@ class Iv3TaakveldList {
 		return [
 			'code' => (string)($taskField['code'] ?? ''),
 			'label' => (string)($taskField['label'] ?? ''),
-			'categoryCode' => $categoryCode,
-			'categoryLabel' => $categoryLabel,
+			'categoryCode' => (string)($category['code'] ?? ''),
+			'categoryLabel' => (string)($category['label'] ?? ''),
 			'deprecated' => (bool)($taskField['deprecated'] ?? false),
 			'aggregatesUnder' => $aggregatesUnder,
 		];

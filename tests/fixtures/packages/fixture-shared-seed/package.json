@@ -1,0 +1,9 @@
+{
+  "id": "fixture-shared-seed",
+  "title": "Fixture shared seed",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": ["seed"],
+  "install": "on-request",
+  "description": "A neutral seed-only package. Its seed file names the schema of another app by app, register and slug, so the installer must write the rows into that app's register, and it names the property an existing row is recognised by. It belongs to no procedure: the installer's tests and the CI install job use it to prove seeding into another app's register."
+}

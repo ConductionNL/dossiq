@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\CaseNumberService;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\Dossiq\Kernel\Contracts\CaseNumberServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -46,12 +46,14 @@ class CaseNumberListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseNumberService        $caseNumbers  The case-number service.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param CaseNumberServiceInterface        $caseNumbers  The case-number service.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
+	 * @param ReceiptMoment $receipt Tells a received case from a draft (decision 180).
 	 */
 	public function __construct(
-		private readonly CaseNumberService $caseNumbers,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CaseNumberServiceInterface $caseNumbers,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
+		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()
 
@@ -65,11 +67,9 @@ class CaseNumberListener implements IEventListener {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $this->extractObject(event: $event);
+		// A draft is not a case yet and gets no number; the moment it is sent
+		// is when it is received, and numbered (decision 201).
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null) {
 			return;
 		}
@@ -84,32 +84,4 @@ class CaseNumberListener implements IEventListener {
 
 		$this->caseNumbers->assign(case: $payload);
 	}//end handle()
-
-	/**
-	 * Extract the OpenRegister object array from an event.
-	 *
-	 * @param Event $event The event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null when the event
-	 *                                   carries none.
-	 */
-	private function extractObject(Event $event): ?array {
-		if (method_exists($event, 'getObject') === false) {
-			return null;
-		}
-
-		$object = $event->getObject();
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end extractObject()
 }//end class

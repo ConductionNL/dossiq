@@ -1,0 +1,66 @@
+{
+    "not signed in": {
+        "status": 401,
+        "body": {
+            "error": "Not authenticated"
+        },
+        "calls": []
+    },
+    "no write access on the case": {
+        "status": 403,
+        "body": {
+            "error": "Not authorized"
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1"
+        ]
+    },
+    "no contested decision": {
+        "status": 400,
+        "body": {
+            "error": "Name the besluit this objection is against."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1"
+        ]
+    },
+    "a blank contested decision": {
+        "status": 400,
+        "body": {
+            "error": "Name the besluit this objection is against."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1"
+        ]
+    },
+    "opened": {
+        "status": 200,
+        "body": {
+            "id": "bezwaar-1"
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "onBezwaarCreated [\"case-1\",\"besluit-1\",{\"grounds\":\"too late\"}]"
+        ]
+    },
+    "opened with an objection that is not a list": {
+        "status": 200,
+        "body": {
+            "id": "bezwaar-1"
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "onBezwaarCreated [\"case-1\",\"besluit-1\",[]]"
+        ]
+    },
+    "the hook refuses": {
+        "status": 400,
+        "body": {
+            "error": "Contested decision not found"
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "onBezwaarCreated [\"case-1\",\"besluit-1\",{\"grounds\":\"too late\"}]"
+        ]
+    }
+}

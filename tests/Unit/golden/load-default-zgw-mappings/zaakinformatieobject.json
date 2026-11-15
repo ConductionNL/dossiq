@@ -1,0 +1,33 @@
+{
+    "zgwResource": "zaakinformatieobject",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "zaak": "{{ _baseUrl | replace({\"zaken/v1/zaakinformatieobjecten\": \"zaken/v1/zaken\"}) }}/{{ case }}",
+        "informatieobject": "{{ document }}",
+        "titel": "{{ title }}",
+        "beschrijving": "{{ description }}",
+        "registrationDate": "{{ registrationDate }}"
+    },
+    "reverseMapping": {
+        "case": "{{ zaak | zgw_extract_uuid }}",
+        "document": "{{ informatieobject }}",
+        "title": "{{ titel }}",
+        "description": "{{ beschrijving }}",
+        "registrationDate": "{{ registratiedatum }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "zaak": {
+            "field": "case",
+            "extractUuid": true
+        },
+        "informatieobject": {
+            "field": "document"
+        }
+    }
+}

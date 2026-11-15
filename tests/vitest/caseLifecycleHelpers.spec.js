@@ -2,8 +2,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page's lifecycle reasoning: stepper ordering, whether a transition
- * closes the case, whether it may be confirmed, and what a refusal means.
+ * The case page's lifecycle reasoning: stepper ordering, the transition
+ * payload, and what a refusal means.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  * @spec openspec/specs/case-dashboard-view/spec.md
@@ -12,8 +12,7 @@
 import { describe, expect, it } from 'vitest'
 import {
 	buildTransitionPayload,
-	canConfirmTransition,
-	isClosingTransition,
+	extensionNotice,
 	refusalMessage,
 	rowId,
 	toStages,
@@ -69,83 +68,6 @@ describe('toStages', () => {
 	})
 })
 
-describe('isClosingTransition', () => {
-	const statuses = [
-		{ id: 'progress', isFinal: false },
-		{ id: 'done', isFinal: true },
-		{ id: 'archived', isFinal: 'true' },
-	]
-
-	it('is true for the status that closes the case', () => {
-		expect(isClosingTransition(statuses, 'done')).toBe(true)
-	})
-
-	it('reads a JSON-shaped boolean', () => {
-		expect(isClosingTransition(statuses, 'archived')).toBe(true)
-	})
-
-	it('is false for an ordinary status, an unknown one and none at all', () => {
-		expect(isClosingTransition(statuses, 'progress')).toBe(false)
-		expect(isClosingTransition(statuses, 'nope')).toBe(false)
-		expect(isClosingTransition(statuses, '')).toBe(false)
-	})
-})
-
-describe('canConfirmTransition', () => {
-	it('allows an ordinary transition', () => {
-		expect(
-			canConfirmTransition({
-				closing: false,
-				resultTypes: [],
-				resultTypeId: '',
-				busy: false,
-			}),
-		).toBe(true)
-	})
-
-	it('blocks a closing transition until a result is picked', () => {
-		const resultTypes = [{ id: 'granted' }, { id: 'refused' }]
-		expect(
-			canConfirmTransition({
-				closing: true,
-				resultTypes,
-				resultTypeId: '',
-				busy: false,
-			}),
-		).toBe(false)
-		expect(
-			canConfirmTransition({
-				closing: true,
-				resultTypes,
-				resultTypeId: 'granted',
-				busy: false,
-			}),
-		).toBe(true)
-	})
-
-	it('allows a closing transition on a case type that offers no results', () => {
-		expect(
-			canConfirmTransition({
-				closing: true,
-				resultTypes: [],
-				resultTypeId: '',
-				busy: false,
-			}),
-		).toBe(true)
-	})
-
-	it('blocks while a request is in flight', () => {
-		expect(
-			canConfirmTransition({
-				closing: false,
-				resultTypes: [],
-				resultTypeId: '',
-				busy: true,
-			}),
-		).toBe(false)
-	})
-})
-
 describe('buildTransitionPayload', () => {
 	it('carries only what was given', () => {
 		expect(buildTransitionPayload({ transitionId: 't1' })).toEqual({
@@ -172,8 +94,77 @@ describe('buildTransitionPayload', () => {
 	})
 })
 
+describe('extensionNotice', () => {
+	const t = (s) => s
+
+	// REQ-TEL-002: the answer to an extension says whether the requester was told.
+	it('says the requester was told when the notice went out', () => {
+		expect(
+			extensionNotice(
+				{ notice: { noticeStatus: 'sent', noticeChannel: 'email' } },
+				t,
+			),
+		).toEqual({
+			told: true,
+			text: 'The term is extended. The requester was told.',
+		})
+	})
+
+	it('says the requester was not told, with the reason the server gave', () => {
+		expect(
+			extensionNotice(
+				{
+					notice: {
+						noticeStatus: 'not-sent',
+						noticeReasonCode: 'no-channel',
+						noticeReason: 'The requester has no reachable channel.',
+					},
+				},
+				t,
+			),
+		).toEqual({
+			told: false,
+			text: 'The term is extended. The requester was not told. The requester has no reachable channel.',
+		})
+	})
+
+	it('translates the reasons dossiq writes itself', () => {
+		const translate = (s) =>
+			s === 'This case has no statutory term, so no notice was sent.'
+				? 'Deze zaak heeft geen wettelijke termijn, dus er is geen bericht verstuurd.'
+				: s
+
+		expect(
+			extensionNotice(
+				{
+					notice: {
+						noticeStatus: 'not-sent',
+						noticeReasonCode: 'no-statutory-term',
+						noticeReason:
+							'This case has no statutory term, so no notice was sent.',
+					},
+				},
+				translate,
+			).text,
+		).toBe(
+			'The term is extended. The requester was not told. Deze zaak heeft geen wettelijke termijn, dus er is geen bericht verstuurd.',
+		)
+	})
+
+	it('answers nothing when the response carries no notice', () => {
+		expect(extensionNotice({}, t)).toBeNull()
+		expect(extensionNotice(null, t)).toBeNull()
+	})
+})
+
 describe('refusalMessage', () => {
 	const t = (s) => s
+
+	it('names the extension limit', () => {
+		expect(refusalMessage({ code: 'extension_limit_reached' }, t)).toBe(
+			'The term of this case was already extended as often as its case type allows.',
+		)
+	})
 
 	it('shows the guard message the engine reported', () => {
 		// `failureMessage` is the key GuardRegistry::evaluateAll writes. Feeding

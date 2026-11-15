@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use RuntimeException;
 /**
  * Re-arming a case's running terms against another case type's definition.
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class TermRearm {
 
@@ -108,9 +108,32 @@ class TermRearm {
 	 *
 	 * @return array{rearmed: int, kept: int, note: string} What happened to the clocks.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function forDefinition(string $caseId, string $caseTypeSlug, string $reason): array {
+		$rebind  = new TermRebind(caseId: $caseId, caseTypeSlug: $caseTypeSlug, reason: $reason);
+		$running = $this->runningOf(caseId: $caseId);
+		if ($running === []) {
+			return ['rearmed' => 0, 'kept' => 0, 'note' => ''];
+		}
+
+		if ($this->terms->getTermijnDefinitie(caseType: $caseTypeSlug) === null) {
+			return $this->keptWithoutDefinition(rebind: $rebind, running: count($running));
+		}
+
+		$rearmed = $this->rearmAll(rebind: $rebind, running: $running);
+
+		return ['rearmed' => $rearmed, 'kept' => (count($running) - $rearmed), 'note' => ''];
+	}//end forDefinition()
+
+	/**
+	 * The case's running term instances.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array<int, array<string, mixed>> The instances whose status is `lopend`.
+	 */
+	private function runningOf(string $caseId): array {
 		$running = [];
 		foreach ($this->terms->instancesForCase(caseId: $caseId) as $instance) {
 			if ((string)($instance['status'] ?? '') === 'lopend') {
@@ -118,89 +141,133 @@ class TermRearm {
 			}
 		}
 
-		if ($running === []) {
-			return ['rearmed' => 0, 'kept' => 0, 'note' => ''];
-		}
+		return $running;
+	}//end runningOf()
 
-		$definitie = $this->terms->getTermijnDefinitie(caseType: $caseTypeSlug);
-		if ($definitie === null) {
-			$this->logger->warning(
-				'TermRearm.forDefinition: the target case type has no active term definition, '
-					. 'so the running terms were left on the definition they started under',
-				['case' => $caseId, 'caseType' => $caseTypeSlug, 'running' => count($running)]
-			);
+	/**
+	 * The answer, and the warning, when the target case type defines no term.
+	 *
+	 * @param TermRebind $rebind  The re-arm.
+	 * @param int        $running How many terms are running.
+	 *
+	 * @return array{rearmed: int, kept: int, note: string} Every running term kept.
+	 */
+	private function keptWithoutDefinition(TermRebind $rebind, int $running): array {
+		$this->logger->warning(
+			'TermRearm.forDefinition: the target case type has no active term definition, '
+				. 'so the running terms were left on the definition they started under',
+			['case' => $rebind->caseId, 'caseType' => $rebind->caseTypeSlug, 'running' => $running]
+		);
 
-			return [
-				'rearmed' => 0,
-				'kept' => count($running),
-				'note' => 'The target case type has no active term definition, so this case\'s running terms '
-					. 'were left as they are rather than closed with nothing to replace them.',
-			];
-		}
+		return [
+			'rearmed' => 0,
+			'kept' => $running,
+			'note' => 'The target case type has no active term definition, so this case\'s running terms '
+				. 'were left as they are rather than closed with nothing to replace them.',
+		];
+	}//end keptWithoutDefinition()
 
+	/**
+	 * Re-arm every running term, counting the successors created.
+	 *
+	 * @param TermRebind                       $rebind  The re-arm.
+	 * @param array<int, array<string, mixed>> $running The running instances.
+	 *
+	 * @return int How many were re-armed.
+	 */
+	private function rearmAll(TermRebind $rebind, array $running): int {
 		$rearmed = 0;
 		foreach ($running as $instance) {
-			if ($this->rearmOne(instance: $instance, caseId: $caseId, caseTypeSlug: $caseTypeSlug, reason: $reason) === true) {
+			if ($this->rearmOne(instance: $instance, rebind: $rebind) === true) {
 				$rearmed++;
 			}
 		}
 
-		return [
-			'rearmed' => $rearmed,
-			'kept' => (count($running) - $rearmed),
-			'note' => '',
-		];
-	}//end forDefinition()
+		return $rearmed;
+	}//end rearmAll()
 
 	/**
 	 * Close one running term and open its successor on the same start date.
 	 *
-	 * @param array<string, mixed> $instance     The running instance.
-	 * @param string               $caseId       The case.
-	 * @param string               $caseTypeSlug The target case type's slug.
-	 * @param string               $reason       Why the case was rebound.
+	 * @param array<string, mixed> $instance The running instance.
+	 * @param TermRebind           $rebind   The re-arm.
 	 *
 	 * @return boolean True when the successor was created.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	private function rearmOne(array $instance, string $caseId, string $caseTypeSlug, string $reason): bool {
+	private function rearmOne(array $instance, TermRebind $rebind): bool {
 		$instanceId = (string)($instance['id'] ?? '');
 		if ($instanceId === '') {
 			return false;
 		}
 
 		$carried = $this->carriedEvents(termInstanceId: $instanceId);
-		$startDate = $this->startOf(instance: $instance);
-
 		try {
-			$successor = $this->terms->createTermijnInstance(
-				caseId: $caseId,
-				caseType: $caseTypeSlug,
-				startDate: $startDate
-			);
+			$successor = $this->successorOf(instance: $instance, rebind: $rebind);
 		} catch (NoTermijnDefinitieException | RuntimeException $e) {
 			// The successor is created BEFORE the old one is closed, so a
 			// failure here leaves the case with the clock it already had
 			// rather than with none at all.
-			$this->logger->error(
-				'TermRearm.forDefinition: the successor term could not be created, '
-					. 'so the running term was left alone',
-				['case' => $caseId, 'instance' => $instanceId, 'error' => $e->getMessage()]
-			);
-
-			return false;
+			return $this->keptRunning(rebind: $rebind, failure: ['instance' => $instanceId, 'error' => $e->getMessage()]);
 		}
 
+		$this->closeRebound(instanceId: $instanceId, reason: $rebind->reason);
+		$this->replay(successor: $successor, carried: $carried);
+		return true;
+	}//end rearmOne()
+
+	/**
+	 * Open the successor of a running term on the target case type, on the same start date.
+	 *
+	 * @param array<string, mixed> $instance The running instance.
+	 * @param TermRebind           $rebind   The re-arm.
+	 *
+	 * @return array<string, mixed> The successor.
+	 *
+	 * @throws NoTermijnDefinitieException|RuntimeException When it cannot be created.
+	 */
+	private function successorOf(array $instance, TermRebind $rebind): array {
+		$startDate = $this->startOf(instance: $instance);
+		return $this->terms->createTermijnInstance(
+			caseId: $rebind->caseId,
+			caseType: $rebind->caseTypeSlug,
+			startDate: $startDate
+		);
+	}//end successorOf()
+
+	/**
+	 * Log that a running term stays as it is because its successor could not be created.
+	 *
+	 * @param TermRebind           $rebind  The re-arm.
+	 * @param array<string, mixed> $failure The instance and the error.
+	 *
+	 * @return false Not re-armed.
+	 */
+	private function keptRunning(TermRebind $rebind, array $failure): bool {
+		$this->logger->error(
+			'TermRearm.forDefinition: the successor term could not be created, '
+				. 'so the running term was left alone',
+			['case' => $rebind->caseId] + $failure
+		);
+
+		return false;
+	}//end keptRunning()
+
+	/**
+	 * Complete the old term, saying it was closed by the rebind.
+	 *
+	 * @param string $instanceId The old instance.
+	 * @param string $reason     Why the case was rebound.
+	 *
+	 * @return void
+	 */
+	private function closeRebound(string $instanceId, string $reason): void {
 		$this->terms->markTermijnCompleted(
 			termInstanceId: $instanceId,
 			rationale: 'Termijn afgesloten bij herbinding naar een ander zaaktype: ' . $reason,
 		);
-
-		$this->replay(successor: $successor, carried: $carried);
-
-		return true;
-	}//end rearmOne()
+	}//end closeRebound()
 
 	/**
 	 * Re-record the old term's extensions and suspensions on its successor.
@@ -210,7 +277,7 @@ class TermRearm {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function replay(array $successor, array $carried): void {
 		$successorId = (string)($successor['id'] ?? '');
@@ -218,40 +285,60 @@ class TermRearm {
 			return;
 		}
 
-		$days = 0;
+		$totals = $this->recordAll(successorId: $successorId, carried: $carried);
+		if ($totals['days'] === 0 && $totals['extensions'] === 0) {
+			return;
+		}
+
+		$current = $this->shifted(calculated: (string)($successor['endDateCalculated'] ?? ''), days: $totals['days']);
+		$this->terms->updateTermijnInstance(
+			termInstanceId: $successorId,
+			patch: ['endDateCurrent' => $current, 'countExtensions' => $totals['extensions']]
+		);
+	}//end replay()
+
+	/**
+	 * Record every carried event on the successor, adding up the days and extensions.
+	 *
+	 * @param string                           $successorId The new instance.
+	 * @param array<int, array<string, mixed>> $carried     The events to carry.
+	 *
+	 * @return array{days: int, extensions: int} What the events are worth.
+	 */
+	private function recordAll(string $successorId, array $carried): array {
+		$days       = 0;
 		$extensions = 0;
 		foreach ($carried as $event) {
-			$impact = (int)($event['daysImpact'] ?? 0);
-			$days += $impact;
+			$days += (int)($event['daysImpact'] ?? 0);
 			if ((string)($event['type'] ?? '') === 'verdaging') {
 				$extensions++;
 			}
 
-			$this->terms->recordEvent(
-				termInstanceId: $successorId,
-				type: (string)($event['type'] ?? 'verdaging'),
-				basis: (string)($event['basis'] ?? 'AWB 4:14'),
-				rationale: (string)($event['rationale'] ?? ''),
-				daysImpact: $impact,
-				moment: $this->momentOf(event: $event),
-				actor: (string)($event['actor'] ?? 'system'),
-			);
+			$this->recordCarried(successorId: $successorId, event: $event);
 		}
 
-		if ($days === 0 && $extensions === 0) {
-			return;
-		}
+		return ['days' => $days, 'extensions' => $extensions];
+	}//end recordAll()
 
-		$current = $this->shifted(
-			calculated: (string)($successor['endDateCalculated'] ?? ''),
-			days: $days,
-		);
-
-		$this->terms->updateTermijnInstance(
+	/**
+	 * Re-record one carried event on the successor.
+	 *
+	 * @param string               $successorId The new instance.
+	 * @param array<string, mixed> $event       The carried event.
+	 *
+	 * @return void
+	 */
+	private function recordCarried(string $successorId, array $event): void {
+		$this->terms->recordEvent(
 			termInstanceId: $successorId,
-			patch: ['endDateCurrent' => $current, 'countExtensions' => $extensions]
+			type: (string)($event['type'] ?? 'verdaging'),
+			basis: (string)($event['basis'] ?? 'AWB 4:14'),
+			rationale: (string)($event['rationale'] ?? ''),
+			daysImpact: (int)($event['daysImpact'] ?? 0),
+			moment: $this->momentOf(event: $event),
+			actor: (string)($event['actor'] ?? 'system'),
 		);
-	}//end replay()
+	}//end recordCarried()
 
 	/**
 	 * A calculated end date moved by the days the carried events are worth.
@@ -261,7 +348,7 @@ class TermRearm {
 	 *
 	 * @return string The moved date, or the calculated one when there is nothing to move.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function shifted(string $calculated, int $days): string {
 		if ($calculated === '' || $days === 0) {
@@ -290,32 +377,67 @@ class TermRearm {
 	 *
 	 * @return array<int, array<string, mixed>> The events, oldest first.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function carriedEvents(string $termInstanceId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_gebeurtenis_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->eventStore();
+		if ($store === null) {
 			return [];
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['deadlineInstance' => $termInstanceId]
-			);
+			$rows = $this->eventRows(store: $store, termInstanceId: $termInstanceId);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'TermRearm.carriedEvents lookup failed, so no extension was carried forward',
-				['instance' => $termInstanceId, 'error' => $e->getMessage()]
-			);
+			$context = ['instance' => $termInstanceId, 'error' => $e->getMessage()];
+			$this->logger->warning('TermRearm.carriedEvents lookup failed, so no extension was carried forward', $context);
 
 			return [];
 		}
 
+		return self::lengthening(rows: $rows);
+	}//end carriedEvents()
+
+	/**
+	 * Where term events are stored, null when that is not configured.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function eventStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register      = (string)$this->settingsService->getConfigValue('register');
+		$schema        = (string)$this->settingsService->getConfigValue('termijn_gebeurtenis_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end eventStore()
+
+	/**
+	 * Every event stored on one instance.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store          The event store.
+	 * @param string                                                          $termInstanceId The instance.
+	 *
+	 * @return array<int, array<string, mixed>> The events.
+	 */
+	private function eventRows(array $store, string $termInstanceId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			filters: ['deadlineInstance' => $termInstanceId]
+		);
+	}//end eventRows()
+
+	/**
+	 * The events that change how long a term runs, oldest first.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Every event of the instance.
+	 *
+	 * @return array<int, array<string, mixed>> The events other than `start` and `voltooi`.
+	 */
+	private static function lengthening(array $rows): array {
 		$carried = [];
 		foreach ($rows as $row) {
 			if (in_array((string)($row['type'] ?? ''), ['start', 'voltooi'], true) === false) {
@@ -330,7 +452,7 @@ class TermRearm {
 		);
 
 		return $carried;
-	}//end carriedEvents()
+	}//end lengthening()
 
 	/**
 	 * The day a running term started, as a date.

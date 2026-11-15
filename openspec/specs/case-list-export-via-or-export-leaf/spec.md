@@ -1,7 +1,7 @@
 # case-list-export-via-or-export-leaf Specification
 
 ## Purpose
-TBD - created by archiving change case-list-export-via-or-export-leaf. Update Purpose after archive.
+Export the Cases list from a menu on the page, with the export itself done by OpenRegister's export leaf.
 ## Requirements
 ### Requirement: Export menu on the Cases page
 

@@ -30,15 +30,15 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
-use OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService;
+use OCA\Dossiq\Kernel\Contracts\ConsultationAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ExternalConsultationLinkServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -49,7 +49,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
  */
 class ConsultationLinkController extends Controller {
 	/**
@@ -57,14 +57,14 @@ class ConsultationLinkController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param ConsultationAccessGuard $accessGuard The authorization and body-decoding guard
-	 * @param ExternalConsultationLinkService $externalLinks The external advisory body's access link
+	 * @param ConsultationAccessGuardInterface $accessGuard The authorization and body-decoding guard
+	 * @param ExternalConsultationLinkServiceInterface $externalLinks The external advisory body's access link
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConsultationAccessGuard $accessGuard,
-		private readonly ExternalConsultationLinkService $externalLinks,
+		private readonly ConsultationAccessGuardInterface $accessGuard,
+		private readonly ExternalConsultationLinkServiceInterface $externalLinks,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -78,7 +78,7 @@ class ConsultationLinkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function externalLink(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -108,7 +108,7 @@ class ConsultationLinkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function collectAdvice(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -135,7 +135,7 @@ class ConsultationLinkController extends Controller {
 	 *
 	 * @return string|null The password, or null
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	private function optionalPassword(mixed $value): ?string {
 		if ($value === null) {

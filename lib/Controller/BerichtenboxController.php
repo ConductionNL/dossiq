@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\BerichtenboxService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BerichtenboxServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -36,24 +36,42 @@ use OCP\IUserSession;
 /**
  * Controller exposing Berichtenbox send/list/poll endpoints.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class BerichtenboxController extends Controller {
+
+	/**
+	 * Refusal codes that mean no digital post provider is set up on this
+	 * instance; the send answers them as `provider-not-configured`.
+	 *
+	 * @var array<int, string>
+	 */
+	private const PROVIDER_MISSING_CODES = [
+		'integriq-missing',
+		'integriq-seam-missing',
+		'digital-post-source-unset',
+		'provider-not-configured',
+	];
+
+	/**
+	 * The categories a handler may send by digital post (opt-out-before-send).
+	 */
+	private const CATEGORIES = ['case-update', 'besluit', 'statutory'];
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param BerichtenboxService $berichtenboxService The Berichtenbox service.
+	 * @param BerichtenboxServiceInterface $berichtenboxService The Berichtenbox service.
 	 * @param IUserSession $userSession The user session.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 */
 	public function __construct(
 		IRequest $request,
-		private BerichtenboxService $berichtenboxService,
+		private BerichtenboxServiceInterface $berichtenboxService,
 		private IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -63,7 +81,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function send(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -72,12 +90,54 @@ class BerichtenboxController extends Controller {
 		}
 
 		$caseId = $this->request->getParam('caseId');
-		$bsn = $this->request->getParam('bsn', '');
-		$subject = $this->request->getParam('subject', '');
-		$body = $this->request->getParam('body', '');
-		$typeCode = $this->request->getParam('berichtTypeCode', '');
-		$attachmentFileId = $this->request->getParam('attachmentFileId');
+		$category = (string)$this->request->getParam('category', 'case-update');
+		$refusal = ($this->sendRefusal(caseId: $caseId, user: $user) ?? $this->categoryRefusal(category: $category));
+		if ($refusal !== null) {
+			return $refusal;
+		}
 
+		return $this->dispatch(caseId: $caseId, category: $category);
+	}//end send()
+
+	/**
+	 * Hand the message to the service and answer with what it recorded.
+	 *
+	 * @param mixed  $caseId   The case the message is about.
+	 * @param string $category The message category.
+	 *
+	 * @return JSONResponse The 200 with the message record, or the 400 the service's refusal answers with.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function dispatch(mixed $caseId, string $category): JSONResponse {
+		$result = $this->berichtenboxService->sendMessage(
+			$caseId,
+			$this->request->getParam('bsn', ''),
+			$this->request->getParam('subject', ''),
+			$this->request->getParam('body', ''),
+			$this->request->getParam('berichtTypeCode', ''),
+			$this->request->getParam('attachmentFileId'),
+			$category
+		);
+
+		if (isset($result['error']) === true) {
+			return $this->notSent(result: $result);
+		}
+
+		return new JSONResponse(['success' => true, 'message' => $result]);
+	}//end dispatch()
+
+	/**
+	 * Refuse a send without a case, or by a caller who may not change it.
+	 *
+	 * @param mixed      $caseId The case the message is about.
+	 * @param \OCP\IUser $user   The caller.
+	 *
+	 * @return JSONResponse|null The 400 or 403, or null when the send may go ahead.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function sendRefusal(mixed $caseId, \OCP\IUser $user): ?JSONResponse {
 		if (empty($caseId) === true) {
 			return new JSONResponse(['success' => false, 'error' => 'caseId is required'], 400);
 		}
@@ -92,21 +152,57 @@ class BerichtenboxController extends Controller {
 			);
 		}
 
-		$result = $this->berichtenboxService->sendMessage(
-			$caseId,
-			$bsn,
-			$subject,
-			$body,
-			$typeCode,
-			$attachmentFileId
-		);
+		return null;
+	}//end sendRefusal()
 
-		if (isset($result['error']) === true) {
-			return new JSONResponse(['success' => false, 'error' => $result['error']], 400);
+	/**
+	 * Refuse a message category this app does not know.
+	 *
+	 * The category decides, not the channel: a besluit by Berichtenbox is
+	 * always delivered, a case update respects the citizen's opt-out.
+	 *
+	 * @param string $category The category.
+	 *
+	 * @return JSONResponse|null The 400, or null for a known category.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function categoryRefusal(string $category): ?JSONResponse {
+		if (in_array($category, self::CATEGORIES, true) === false) {
+			return new JSONResponse(
+				['success' => false, 'code' => 'invalid-category', 'error' => 'Unknown message category.'],
+				Http::STATUS_BAD_REQUEST
+			);
 		}
 
-		return new JSONResponse(['success' => true, 'message' => $result]);
-	}//end send()
+		return null;
+	}//end categoryRefusal()
+
+	/**
+	 * The 400 a message the service did not send answers with.
+	 *
+	 * The message is still recorded as not sent, with this reason
+	 * (BerichtenboxService::storedSend()). A missing provider is named as such.
+	 *
+	 * @param array<string, mixed> $result The service's answer, carrying `error` and maybe `code`.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function notSent(array $result): JSONResponse {
+		$answer = ['success' => false, 'error' => $result['error']];
+		if (isset($result['code']) === true) {
+			$answer['code'] = $result['code'];
+		}
+
+		if (in_array(($result['code'] ?? ''), self::PROVIDER_MISSING_CODES, true) === true) {
+			$answer['code']  = 'provider-not-configured';
+			$answer['cause'] = $result['code'];
+		}
+
+		return new JSONResponse($answer, 400);
+	}//end notSent()
 
 	/**
 	 * List Berichtenbox messages linked to a case.
@@ -115,7 +211,7 @@ class BerichtenboxController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function messages(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -139,38 +235,4 @@ class BerichtenboxController extends Controller {
 		$messages = $this->berichtenboxService->getMessagesForCase($caseId);
 		return new JSONResponse(['success' => true, 'messages' => $messages]);
 	}//end messages()
-
-	/**
-	 * Poll read-status for a sent Berichtenbox message.
-	 *
-	 * @param string $messageId The external message identifier.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @NoAdminRequired
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function poll(string $messageId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// The route carries only a message id, so the owning case is resolved
-		// first and the same per-case guard applied. An unresolvable message
-		// denies, so this is not an existence oracle.
-		$caseId = $this->berichtenboxService->getCaseIdForMessage($messageId);
-		if ($caseId === null
-			|| $this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false
-		) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Not authorized'],
-				Http::STATUS_FORBIDDEN
-			);
-		}
-
-		$result = $this->berichtenboxService->pollReadStatus($messageId);
-		return new JSONResponse(['success' => true, 'message' => $result]);
-	}//end poll()
 }//end class

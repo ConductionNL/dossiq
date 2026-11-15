@@ -41,6 +41,7 @@ use PHPUnit\Framework\TestCase;
  * One declaration, read live and mirrored nowhere else.
  *
  * @covers \OCA\Dossiq\Prerequisites
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class PrerequisitesTest extends TestCase {
 
@@ -148,9 +149,9 @@ class PrerequisitesTest extends TestCase {
 		$report = (new Prerequisites())->check($this->appManager(['openregister']));
 
 		$rows = array_column($report['apps']['optional'], null, 'id');
-		$this->assertArrayHasKey('hrmq', $rows, 'the hours app must be listed');
-		$this->assertFalse($rows['hrmq']['present']);
-		$this->assertNotSame('', $rows['hrmq']['unlocks']);
+		$this->assertArrayHasKey('humaniq', $rows, 'the hours app must be listed');
+		$this->assertFalse($rows['humaniq']['present']);
+		$this->assertNotSame('', $rows['humaniq']['unlocks']);
 
 		foreach ($report['apps']['optional'] as $row) {
 			$this->assertNotSame(
@@ -160,6 +161,44 @@ class PrerequisitesTest extends TestCase {
 			);
 		}
 	}//end testAnOptionalAppSaysWhatItUnlocks()
+
+	/**
+	 * An optional app is found under the id it ships today and under its old one.
+	 *
+	 * Filinq, integriq, decidiq and humaniq each ship their new id on
+	 * development, and an instance that has not upgraded still answers to the
+	 * old one. A lookup on either id alone tells one of the two administrators
+	 * to install an app they already have.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md#requirement-the-prerequisites-are-declared-once-and-shown-req-admin-024
+	 */
+	public function testAnOptionalAppIsFoundUnderItsShippedIdAndItsOldOne(): void {
+		$shipped = ['filinq', 'integriq', 'decidiq', 'humaniq', 'thematiq'];
+		$old = ['docudesk', 'openconnector', 'decidesk', 'hrmq', 'nldesign'];
+
+		$onNew = array_column(
+			(new Prerequisites())->check($this->appManager(array_merge(['openregister'], $shipped)))['apps']['optional'],
+			null,
+			'id'
+		);
+		$onOld = array_column(
+			(new Prerequisites())->check($this->appManager(array_merge(['openregister'], $old)))['apps']['optional'],
+			null,
+			'id'
+		);
+
+		foreach ($shipped as $appId) {
+			$this->assertArrayHasKey($appId, $onNew, sprintf('"%s" must be listed under the id it ships', $appId));
+			$this->assertTrue($onNew[$appId]['present'], sprintf('"%s" installed under its shipped id must read present', $appId));
+			$this->assertTrue($onOld[$appId]['present'], sprintf('"%s" installed under its old id must read present', $appId));
+		}
+
+		foreach ($old as $appId) {
+			$this->assertArrayNotHasKey($appId, $onNew, sprintf('"%s" is an old id and must not be a row of its own', $appId));
+		}
+	}//end testAnOptionalAppIsFoundUnderItsShippedIdAndItsOldOne()
 
 	/**
 	 * A PHP older than the declared minimum reports missing.
@@ -305,4 +344,216 @@ class PrerequisitesTest extends TestCase {
 			'the README said 28, which is a Nextcloud that does not run PHP 8.3'
 		);
 	}//end testTheReadmeTableAgrees()
+
+	/**
+	 * The Nextcloud row says whether this instance is in range, like PHP does.
+	 *
+	 * Before, the row carried only the range, so it was the one row on the
+	 * page without a present or missing mark (round-4 cloud check).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testTheNextcloudRowSaysWhetherThisInstanceIsInRange(): void {
+		$prerequisites = new Prerequisites();
+		$apps = $this->appManager(['openregister']);
+
+		$inRange = $prerequisites->check($apps, null, null, 34)['nextcloud'];
+		$this->assertTrue($inRange['present'], '34 lies within 32 to 35');
+		$this->assertSame('34', $inRange['running']);
+
+		$this->assertFalse(
+			$prerequisites->check($apps, null, null, 31)['nextcloud']['present'],
+			'31 is below the range'
+		);
+		$this->assertFalse(
+			$prerequisites->check($apps, null, null, 36)['nextcloud']['present'],
+			'36 is above the range'
+		);
+		$this->assertTrue(
+			$prerequisites->check($apps, null, null, (int)Prerequisites::NEXTCLOUD_MAX)['nextcloud']['present'],
+			'the top of the range is inside it'
+		);
+	}//end testTheNextcloudRowSaysWhetherThisInstanceIsInRange()
+
+	/**
+	 * A renamed app is a row under the id it ships, reads its new name, and
+	 * still reads present on an instance that answers only to the old id.
+	 *
+	 * 🔴 THE LOOKUP IS THE HALF THAT MUST NOT MOVE. `isInstalled()` answers
+	 * false for an id nothing answers to, so a row keyed on the new id must
+	 * resolve through `FleetAppId`, which also tries the old one. The double
+	 * below only knows the OLD ids, which is what an instance that has not
+	 * upgraded answers today.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testARenamedAppShowsItsNewNameAndKeepsItsLookupId(): void {
+		$report = (new Prerequisites())->check(
+			$this->appManager(['openregister', 'openconnector', 'docudesk', 'hrmq', 'decidesk', 'nldesign'])
+		);
+		$rows = array_column($report['apps']['optional'], null, 'id');
+
+		$expected = [
+			'integriq' => ['openconnector', 'Integriq'],
+			'filinq' => ['docudesk', 'Filinq'],
+			'humaniq' => ['hrmq', 'Humaniq'],
+			'decidiq' => ['decidesk', 'Decidiq'],
+			'thematiq' => ['nldesign', 'Thematiq'],
+		];
+		foreach ($expected as $id => [$oldId, $name]) {
+			$this->assertArrayHasKey($id, $rows, sprintf('"%s" is the row id', $id));
+			$this->assertSame($name, $rows[$id]['name'], sprintf('"%s" reads as "%s"', $id, $name));
+			$this->assertTrue($rows[$id]['present'], sprintf('"%s" is found under its old id "%s"', $id, $oldId));
+		}
+
+		// An app whose name did not move reads as its product name, not its id.
+		$this->assertSame('Portaliq', $rows['portaliq']['name']);
+		$this->assertSame('OpenRegister', $report['apps']['required'][0]['name']);
+	}//end testARenamedAppShowsItsNewNameAndKeepsItsLookupId()
+
+	/**
+	 * Every app row names the product, never the lowercase app id.
+	 *
+	 * Round 5 read "integriq, filinq, humaniq, ..." on the settings page: the
+	 * display name of a renamed app was its new id, and an app that was never
+	 * renamed showed its id. The lookup ids stay exactly as they are.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testEveryAppRowShowsAProductNameAndKeepsItsLookupId(): void {
+		$report = (new Prerequisites())->check($this->appManager([]));
+		$rows   = array_merge($report['apps']['required'], $report['apps']['optional']);
+
+		$this->assertSame(
+			array_merge(array_keys(Prerequisites::APPS_REQUIRED), array_keys(Prerequisites::APPS_OPTIONAL)),
+			array_column($rows, 'id'),
+			'the lookup ids are the declared keys, unchanged'
+		);
+
+		$names = array_column($rows, 'name', 'id');
+		$this->assertSame(
+			[
+				'openregister' => 'OpenRegister',
+				'integriq' => 'Integriq',
+				'filinq' => 'Filinq',
+				'humaniq' => 'Humaniq',
+				'decidiq' => 'Decidiq',
+				'portaliq' => 'Portaliq',
+				'pipelinq' => 'Pipelinq',
+				'hermiq' => 'Hermiq',
+				'thematiq' => 'Thematiq',
+			],
+			$names
+		);
+		foreach ($names as $id => $name) {
+			$this->assertNotSame($id, $name, sprintf('"%s" reads as a product name, not its id', $id));
+		}
+	}//end testEveryAppRowShowsAProductNameAndKeepsItsLookupId()
+
+	/**
+	 * An app manager that throws reads that app as missing, and the report still completes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testAnAppManagerThatThrowsReadsTheAppAsMissing(): void {
+		$appManager = $this->getMockBuilder(IAppManager::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['isInstalled'])
+			->getMockForAbstractClass();
+		$appManager->method('isInstalled')->willReturnCallback(
+			static function (string $appId): bool {
+				if ($appId === 'openregister') {
+					throw new \RuntimeException('broken app directory');
+				}
+
+				return $appId === 'portaliq';
+			}
+		);
+
+		$report = (new Prerequisites())->check($appManager, static fn (): bool => true, 80300, 33);
+
+		$this->assertSame(
+			[['id' => 'openregister', 'name' => 'OpenRegister', 'unlocks' => Prerequisites::APPS_REQUIRED['openregister'], 'present' => false]],
+			$report['apps']['required']
+		);
+		$optional = array_column($report['apps']['optional'], 'present', 'id');
+		$this->assertTrue($optional['portaliq'], 'the other apps are still read');
+		$this->assertFalse($optional['pipelinq']);
+	}//end testAnAppManagerThatThrowsReadsTheAppAsMissing()
+
+	/**
+	 * Without a known Nextcloud major the row has no running version and is not in range.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testAnUnknownNextcloudVersionIsNotInRange(): void {
+		$this->assertSame(
+			['min' => '32', 'max' => '35', 'running' => '', 'present' => false],
+			(new Prerequisites())->check($this->appManager([]))['nextcloud']
+		);
+		$this->assertSame(
+			['min' => '32', 'max' => '35', 'running' => '32', 'present' => true],
+			(new Prerequisites())->check($this->appManager([]), null, null, 32)['nextcloud'],
+			'the bottom of the range is inside it'
+		);
+	}//end testAnUnknownNextcloudVersionIsNotInRange()
+
+	/**
+	 * The report has the four sections in order, the running PHP and every extension in declared order.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testTheReportShapeAndTheRunningPhp(): void {
+		$asked = [];
+		$report = (new Prerequisites())->check(
+			$this->appManager(['openregister']),
+			static function (string $name) use (&$asked): int {
+				$asked[] = $name;
+				return ($name === 'json') ? 1 : 0;
+			},
+			80399
+		);
+
+		$this->assertSame(['php', 'nextcloud', 'extensions', 'apps'], array_keys($report));
+		$this->assertSame(['required', 'optional'], array_keys($report['apps']));
+		$this->assertSame(['required' => '8.3', 'running' => PHP_VERSION, 'present' => true], $report['php']);
+		$this->assertSame(['json', 'mbstring', 'zip'], $asked);
+		$this->assertSame(
+			[
+				['name' => 'json', 'why' => Prerequisites::EXTENSIONS['json'], 'present' => true],
+				['name' => 'mbstring', 'why' => Prerequisites::EXTENSIONS['mbstring'], 'present' => false],
+				['name' => 'zip', 'why' => Prerequisites::EXTENSIONS['zip'], 'present' => false],
+			],
+			$report['extensions']
+		);
+		$this->assertSame(array_keys(Prerequisites::APPS_OPTIONAL), array_column($report['apps']['optional'], 'id'));
+	}//end testTheReportShapeAndTheRunningPhp()
+
+	/**
+	 * Without a checker the extensions are read from this PHP, and without a version id from this PHP too.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testWithoutDoublesThisPhpIsRead(): void {
+		$report = (new Prerequisites())->check($this->appManager([]));
+
+		$this->assertSame(PHP_VERSION_ID >= 80300, $report['php']['present']);
+		foreach ($report['extensions'] as $row) {
+			$this->assertSame(extension_loaded($row['name']), $row['present'], $row['name']);
+		}
+	}//end testWithoutDoublesThisPhpIsRead()
 }//end class

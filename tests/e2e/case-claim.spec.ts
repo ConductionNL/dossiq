@@ -34,6 +34,7 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
+import { chooseLens } from './helpers/lens.ts'
 import { clickHeaderAction, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 /** The uid Playwright signs in as, read once off the loaded page. */
@@ -106,7 +107,7 @@ test.describe('Claim and release a case', () => {
 	const storedAssignee = async (api: any, id: string): Promise<string> =>
 		String((await showObject(api, 'case', id)).assignee ?? '')
 
-	// @e2e openspec/changes/case-claim-action/specs/case-management/spec.md#claim-from-the-case-page
+	// @e2e openspec/specs/case-management/spec.md#claim-from-the-case-page
 	test('Claim on the case page puts the case in your hands', async ({
 		page,
 		playwright,
@@ -141,7 +142,7 @@ test.describe('Claim and release a case', () => {
 		expect(errors, errors.join('\n')).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-claim-action/specs/case-management/spec.md#claim-from-the-queue
+	// @e2e openspec/specs/case-management/spec.md#claim-from-the-queue
 	test('Claim on a queue row takes the case out of the queue', async ({
 		page,
 		playwright,
@@ -182,11 +183,7 @@ test.describe('Claim and release a case', () => {
 
 		// And it is on Cases under Mine.
 		await page.goto(`/apps/${REGISTER}/cases`, PAGE_LOAD)
-		await page
-			.locator('[role="tab"], button')
-			.filter({ hasText: /^(Mine|Van mij)$/ })
-			.first()
-			.click()
+		await chooseLens(page, /^(Mine|Van mij)$/)
 		await expect(
 			page.locator('tbody tr').filter({ hasText: title }),
 		).toHaveCount(1, { timeout: 30_000 })
@@ -194,7 +191,7 @@ test.describe('Claim and release a case', () => {
 		expect(errors, errors.join('\n')).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-claim-action/specs/case-management/spec.md#release-returns-the-case-to-the-queue
+	// @e2e openspec/specs/case-management/spec.md#release-returns-the-case-to-the-queue
 	test('Release gives the case back to the queue', async ({
 		page,
 		playwright,
@@ -222,7 +219,7 @@ test.describe('Claim and release a case', () => {
 		expect(errors, errors.join('\n')).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-claim-action/specs/case-management/spec.md#claim-from-the-case-page
+	// @e2e openspec/specs/case-management/spec.md#claim-from-the-case-page
 	test('a claim on a case somebody else holds is refused and changes nothing', async ({
 		playwright,
 		baseURL,

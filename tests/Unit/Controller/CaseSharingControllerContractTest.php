@@ -315,6 +315,28 @@ class CaseSharingControllerContractTest extends TestCase {
 	}//end testRevokePartnerShareResolvesTheSharesCaseAndRefusesWith403()
 
 	/**
+	 * A share whose case cannot be resolved is refused like an access denial.
+	 *
+	 * @return void
+	 */
+	public function testRevokeShareRefusesAShareWithoutAResolvableCase(): void {
+		$this->signIn(uid: 'alice');
+		$this->withParams([]);
+
+		$this->caseSharingService->method('getCaseIdForShare')->with('share-5')->willReturn(null);
+		$this->caseSharingService->expects($this->never())->method('canUserAccessCase');
+		$this->caseSharingService->expects($this->never())->method('revokeShare');
+
+		$response = $this->controller->revokeShare(shareId: 'share-5');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(
+			['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
+			$response->getData()
+		);
+	}//end testRevokeShareRefusesAShareWithoutAResolvableCase()
+
+	/**
 	 * An authorized partner revoke answers 200 and carries the revoked share
 	 * back, attributed to the revoking user.
 	 *

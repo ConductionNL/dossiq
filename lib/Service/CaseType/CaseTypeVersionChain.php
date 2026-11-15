@@ -31,33 +31,37 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionChainInterface;
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\Support\TranslatedText;
 
 /**
  * Reads a case type's version chain, newest version first.
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
-class CaseTypeVersionChain {
+class CaseTypeVersionChain implements CaseTypeVersionChainInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @param CaseTypeStore          $store    The app's one case type reader.
 	 * @param DerivedCaseTypePayload $payloads What a version number means when the row carries none.
+	 * @param TranslatedText         $text     The translatable title in the reader's language.
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $store,
 		private readonly DerivedCaseTypePayload $payloads,
+		private readonly TranslatedText $text,
 	) {
 	}//end __construct()
 
@@ -74,7 +78,7 @@ class CaseTypeVersionChain {
 	 *
 	 * @return array<int, array<string, mixed>> The versions, newest first.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function versionsOf(string $caseTypeId): array {
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
@@ -118,7 +122,7 @@ class CaseTypeVersionChain {
 	 *
 	 * @return array<string, mixed> The current version's entry, or an empty array.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function currentOf(string $caseTypeId): array {
 		foreach ($this->versionsOf(caseTypeId: $caseTypeId) as $entry) {
@@ -142,7 +146,7 @@ class CaseTypeVersionChain {
 	 *
 	 * @return array<int, array<string, mixed>> The candidate versions, newest first.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function targetsFor(string $caseTypeId): array {
 		$targets = [];
@@ -169,7 +173,7 @@ class CaseTypeVersionChain {
 	private function entry(array $row, string $id, string $currentId): array {
 		return [
 			'id' => $id,
-			'title' => (string)($row['title'] ?? ''),
+			'title' => $this->text->forReader(value: ($row['title'] ?? null)),
 			'identifier' => (string)($row['identifier'] ?? ''),
 			'version' => $this->payloads->versionOf(caseType: $row),
 			'isDraft' => (($row['isDraft'] ?? false) === true),
