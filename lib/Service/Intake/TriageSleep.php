@@ -111,7 +111,7 @@ class TriageSleep implements TriageSleepInterface {
 	/**
 	 * Put one triage item to sleep until a date.
 	 *
-	 * @param string                                                                           $entryId The intake log entry.
+	 * @param string $entryId The intake log entry.
 	 * @param string $until   The date it comes back, as YYYY-MM-DD.
 	 * @param string $reason  Why nothing is done until then.
 	 * @param string $actorId The uid of the person sleeping it.
