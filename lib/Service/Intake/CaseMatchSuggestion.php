@@ -156,9 +156,10 @@ class CaseMatchSuggestion implements CaseMatchSuggestionInterface {
 		}
 
 		foreach (['identifier', 'externalIdentifier'] as $field) {
-			$case = ($this->openCasesBy(target: $target, field: $field, reference: $reference)[0] ?? null);
+			$match = ['field' => $field, 'reference' => $reference];
+			$case = ($this->openCasesBy(target: $target, match: $match)[0] ?? null);
 			if (is_array($case) === true) {
-				return $this->suggestion(case: $case, reference: $reference, field: $field);
+				return $this->suggestion(case: $case, match: $match);
 			}
 		}
 
@@ -184,14 +185,14 @@ class CaseMatchSuggestion implements CaseMatchSuggestionInterface {
 	/**
 	 * The open cases whose field holds the reference, at most one; none when the read fails.
 	 *
-	 * @param array{0: object, 1: string, 2: string} $target    The object service, register and case schema.
-	 * @param string                                 $field     The field to match on.
-	 * @param string                                 $reference The quoted reference.
+	 * @param array{0: object, 1: string, 2: string}      $target The object service, register and case schema.
+	 * @param array{field: string, reference: string} $match  The field to match on and the quoted reference.
 	 *
 	 * @return array<int, mixed> The cases.
 	 */
-	private function openCasesBy(array $target, string $field, string $reference): array {
+	private function openCasesBy(array $target, array $match): array {
 		[$objectService, $register, $schema] = $target;
+		['field' => $field, 'reference' => $reference] = $match;
 		try {
 			$cases = $this->searchObjectsAsArrays(
 				objectService: $objectService,
@@ -211,18 +212,17 @@ class CaseMatchSuggestion implements CaseMatchSuggestionInterface {
 	/**
 	 * The suggestion for a matched case.
 	 *
-	 * @param array<string, mixed> $case      The matched case.
-	 * @param string               $reference The quoted reference.
-	 * @param string               $field     The field it matched on.
+	 * @param array<string, mixed>                    $case  The matched case.
+	 * @param array{field: string, reference: string} $match The field it matched on and the quoted reference.
 	 *
 	 * @return array{case: string, identifier: string, title: string, matchedOn: string} The suggestion.
 	 */
-	private function suggestion(array $case, string $reference, string $field): array {
+	private function suggestion(array $case, array $match): array {
 		return [
 			'case' => (string)($case['id'] ?? ($case['@self']['id'] ?? '')),
-			'identifier' => (string)($case['identifier'] ?? $reference),
+			'identifier' => (string)($case['identifier'] ?? $match['reference']),
 			'title' => (string)($case['title'] ?? ''),
-			'matchedOn' => $field,
+			'matchedOn' => $match['field'],
 		];
 	}//end suggestion()
 }//end class

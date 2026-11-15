@@ -129,7 +129,7 @@ class LifecycleActorGate {
 			return true;
 		}
 
-		return $this->mayByRole(act: $act, case: $case, uid: $uid);
+		return $this->mayByRole(case: $case, asked: ['act' => $act, 'uid' => $uid]);
 	}//end may()
 
 	/**
@@ -148,13 +148,13 @@ class LifecycleActorGate {
 	/**
 	 * Whether the user holds the role the act needs, or the act needs none.
 	 *
-	 * @param string               $act  The act.
-	 * @param array<string, mixed> $case The loaded case.
-	 * @param string               $uid  The user.
+	 * @param array<string, mixed>           $case  The loaded case.
+	 * @param array{act: string, uid: string} $asked The act and the user.
 	 *
 	 * @return bool
 	 */
-	private function mayByRole(string $act, array $case, string $uid): bool {
+	private function mayByRole(array $case, array $asked): bool {
+		['act' => $act, 'uid' => $uid] = $asked;
 		$role = $this->roleFor(act: $act, case: $case);
 		if ($role === '') {
 			return (in_array($act, self::CLOSED_WITHOUT_A_ROLE, true) === false);
