@@ -170,7 +170,10 @@ class RequesterNoticeSender {
 		$this->tryChannels(delivery: $delivery);
 
 		$result = $this->result(delivery: $delivery);
-		$result['record'] = $this->record(case: $case, result: $result, extras: (array)($options['recordExtras'] ?? []));
+		$result['record'] = $this->recordOn(
+			case: $case,
+			record: $this->noticeRecord(result: $result, extras: (array)($options['recordExtras'] ?? []))
+		);
 		$this->logOutcome(result: $result);
 
 		return $result;
@@ -221,7 +224,7 @@ class RequesterNoticeSender {
 	 * @return bool Whether the channel sent it.
 	 */
 	private function tryChannel(NoticeDelivery $delivery, string $channel): bool {
-		$answer = $this->through(channel: $channel, case: $delivery->case, notice: $delivery->notice);
+		$answer = $this->through(channel: $channel, delivery: $delivery);
 		if ($answer === null) {
 			return false;
 		}
@@ -257,17 +260,16 @@ class RequesterNoticeSender {
 	/**
 	 * Ask one channel, or null when the channel is not offered for this requester.
 	 *
-	 * @param string               $channel The channel.
-	 * @param array<string, mixed> $case    The case row.
-	 * @param array<string, mixed> $notice  The notice.
+	 * @param string         $channel  The channel.
+	 * @param NoticeDelivery $delivery The delivery: the case row and the notice.
 	 *
 	 * @return array<string, mixed>|null `{sent: true, messageId, sentAt}` or `{sent: false, reasonCode, reason}`.
 	 */
-	private function through(string $channel, array $case, array $notice): ?array {
+	private function through(string $channel, NoticeDelivery $delivery): ?array {
 		return match ($channel) {
-			self::CHANNEL_PORTAL => $this->portalInbox(case: $case, notice: $notice),
-			self::CHANNEL_DIGITAL_POST => $this->digitalPostTo(case: $case, notice: $notice),
-			default => $this->emailTo(case: $case, notice: $notice),
+			self::CHANNEL_PORTAL => $this->portalInbox(case: $delivery->case, notice: $delivery->notice),
+			self::CHANNEL_DIGITAL_POST => $this->digitalPostTo(case: $delivery->case, notice: $delivery->notice),
+			default => $this->emailTo(case: $delivery->case, notice: $delivery->notice),
 		};
 	}//end through()
 
@@ -471,37 +473,22 @@ class RequesterNoticeSender {
 		}
 
 		try {
-			$dispatch = $this->dispatchEmail(caseRow: $case, notice: $notice, address: $address);
+			$dispatch = $this->email->send(
+				template: $notice['template'],
+				instanceId: $notice['instanceId'],
+				recipient: $address,
+				caseRef: (string)($case['id'] ?? ''),
+				subject: $notice['subject'],
+				body: $notice['body'],
+				dedupeKey: $notice['dedupeKey'],
+				case: $case,
+			);
 		} catch (NoticeNotSentException $e) {
 			return $this->refused(code: $e->getReasonCode(), reason: $e->getMessage());
 		}
 
 		return $this->emailAnswer(dispatch: $dispatch);
 	}//end emailTo()
-
-	/**
-	 * Send the notice through TermNoticeSender to one address.
-	 *
-	 * @param array<string, mixed> $caseRow The case row.
-	 * @param array<string, mixed> $notice  The notice.
-	 * @param string               $address The e-mail address.
-	 *
-	 * @return array<string, mixed> The dispatch answer.
-	 *
-	 * @throws NoticeNotSentException When the notice is not sent.
-	 */
-	private function dispatchEmail(array $caseRow, array $notice, string $address): array {
-		return $this->email->send(
-			template: $notice['template'],
-			instanceId: $notice['instanceId'],
-			recipient: $address,
-			caseRef: (string)($caseRow['id'] ?? ''),
-			subject: $notice['subject'],
-			body: $notice['body'],
-			dedupeKey: $notice['dedupeKey'],
-			case: $caseRow,
-		);
-	}//end dispatchEmail()
 
 	/**
 	 * The sent answer for an e-mail dispatch.
@@ -654,16 +641,13 @@ class RequesterNoticeSender {
 	 * possible.
 	 *
 	 * @param array<string, mixed> $case   The case row.
-	 * @param array<string, mixed> $result The delivery result.
-	 * @param array<string, mixed> $extras More keys from the caller.
+	 * @param array<string, mixed> $record The record of this notice.
 	 *
 	 * @return array<string, mixed> The record.
 	 *
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
 	 */
-	private function record(array $case, array $result, array $extras): array {
-		$record = $this->noticeRecord(result: $result, extras: $extras);
-
+	private function recordOn(array $case, array $record): array {
 		$caseId = (string)($case['id'] ?? '');
 		$store = $this->storeFor(schemaKey: 'case_schema');
 		if ($caseId === '' || $store === null || $this->writer === null) {
@@ -673,7 +657,7 @@ class RequesterNoticeSender {
 		$this->appendRecord(location: [...$store, $caseId], record: $record);
 
 		return $record;
-	}//end record()
+	}//end recordOn()
 
 	/**
 	 * The record of this notice, from the transport's answer and the caller's extras.
