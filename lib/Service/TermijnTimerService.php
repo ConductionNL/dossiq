@@ -226,7 +226,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 
 		$run = new TimerArmRun(instance: $instance, definitie: $definitie, instanceId: $instanceId, start: $start);
 
-		return $this->arm(config: $this->beslistermijnConfig(run: $run), context: 'beslistermijn', instanceId: $instanceId);
+		return $this->arm(config: $this->beslistermijnConfig(run: $run), term: ['kind' => 'beslistermijn', 'instance' => $instanceId]);
 	}//end armBeslistermijn()
 
 	/**
@@ -418,7 +418,7 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 			'metadata' => (new TermTimerFields())->metadata(instance: $instance, kind: self::KIND_HERSTELTERMIJN) + ['basis' => 'AWB 4:5'],
 		];
 
-		return $this->arm(config: $config, context: 'hersteltermijn', instanceId: $instanceId);
+		return $this->arm(config: $config, term: ['kind' => 'hersteltermijn', 'instance' => $instanceId]);
 	}//end armHersteltermijn()
 
 	/**
@@ -552,13 +552,12 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 	/**
 	 * Arm one timer, returning the persisted uuid.
 	 *
-	 * @param array<string, mixed> $config The engine arm configuration.
-	 * @param string $context Which term kind, for logging.
-	 * @param string $instanceId The instance, for logging.
+	 * @param array<string, mixed>                 $config The engine arm configuration.
+	 * @param array{kind: string, instance: string} $term   Which term kind and which instance, for logging.
 	 *
 	 * @return string|null The timer uuid, or null on an unavailable or refusing engine.
 	 */
-	private function arm(array $config, string $context, string $instanceId): ?string {
+	private function arm(array $config, array $term): ?string {
 		$engine = $this->engine();
 		if ($engine === null) {
 			return null;
@@ -569,11 +568,11 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 			$uuid = (string)$timer->getUuid();
 			$this->logger->info(
 				'Dossiq termijn: engine timer armed',
-				['kind' => $context, 'instance' => $instanceId, 'timer' => $uuid]
+				['kind' => $term['kind'], 'instance' => $term['instance'], 'timer' => $uuid]
 			);
 			return $uuid;
 		} catch (\Throwable $e) {
-			$this->logFailure(operation: 'arm ' . $context, timerId: $instanceId, error: $e);
+			$this->logFailure(operation: 'arm ' . $term['kind'], timerId: $term['instance'], error: $e);
 			return null;
 		}
 	}//end arm()
