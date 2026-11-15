@@ -524,7 +524,7 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 		[$actor, $actorName] = $this->restoringActor();
 
 		try {
-			$context = self::restoreContext(entity: $entity, window: $window, actor: $actor);
+			$context = self::restoreContext(entity: $entity, restoring: ['window' => $window, 'actor' => $actor]);
 			$event = ObjectAuditEvents::of(object: $entity, action: self::RESTORE_ACTION, context: $context, actorId: $actor, actorName: $actorName);
 			$mapper->recordObjectEvent(event: $event);
 		} catch (Throwable $e) {
@@ -552,13 +552,13 @@ class CaseRecycleService implements CaseRecycleServiceInterface {
 	/**
 	 * What the restore record says: who, when, which case and inside which window.
 	 *
-	 * @param object                    $entity The case restored.
-	 * @param array<string, mixed>|null $window The window it came back inside.
-	 * @param string                    $actor  Who restored it.
+	 * @param object                                                  $entity    The case restored.
+	 * @param array{window: array<string, mixed>|null, actor: string} $restoring `window` the window it came back inside; `actor` who restored it.
 	 *
 	 * @return array<string, mixed> The context.
 	 */
-	private static function restoreContext(object $entity, ?array $window, string $actor): array {
+	private static function restoreContext(object $entity, array $restoring): array {
+		[$window, $actor] = [$restoring['window'], $restoring['actor']];
 		return [
 			'restoredBy' => $actor,
 			'restoredAt' => (new DateTime())->format(DateTime::ATOM),

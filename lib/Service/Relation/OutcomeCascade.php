@@ -118,7 +118,7 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 			throw new InvalidArgumentException("Cascade '$name' has no steps.");
 		}
 
-		$this->guardInputs(name: $name, steps: $steps, inputs: $inputs);
+		$this->guardInputs(name: $name, guarded: ['steps' => $steps, 'inputs' => $inputs]);
 
 		$run = $this->startRun(cascade: $cascade, targetId: $targetId);
 		$run->inputs = $inputs;
@@ -222,8 +222,10 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 	private function writeTarget(CascadeRun $run, array $set): void {
 		$run->target = ($this->write(
 			schemaKey: (string)$run->cascade['target'],
-			id: $run->targetId,
-			changes: $this->values(values: $set, inputs: $run->inputs)
+			written: [
+				'id' => $run->targetId,
+				'changes' => $this->values(values: $set, inputs: $run->inputs),
+			]
 		) ?? $run->target);
 	}//end writeTarget()
 
@@ -254,7 +256,7 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 		foreach ($dependents as $dependent) {
 			$id = $this->text(value: ($dependent['@self']['id'] ?? ($dependent['id'] ?? '')));
 			if ($id !== '') {
-				$this->write(schemaKey: $schemaKey, id: $id, changes: $changes);
+				$this->write(schemaKey: $schemaKey, written: ['id' => $id, 'changes' => $changes]);
 			}
 		}
 	}//end setDependents()
@@ -297,15 +299,15 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 	/**
 	 * Refuse before writing when the steps ask for an input the caller did not give.
 	 *
-	 * @param string               $name   The cascade, for the message.
-	 * @param array<int, mixed>    $steps  The steps.
-	 * @param array<string, mixed> $inputs The caller's values.
+	 * @param string                                                        $name    The cascade, for the message.
+	 * @param array{steps: array<int, mixed>, inputs: array<string, mixed>} $guarded `steps` the steps; `inputs` the caller's values.
 	 *
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When an input is missing or not a scalar.
 	 */
-	private function guardInputs(string $name, array $steps, array $inputs): void {
+	private function guardInputs(string $name, array $guarded): void {
+		[$steps, $inputs] = [$guarded['steps'], $guarded['inputs']];
 		foreach (array_unique(self::askedInputs(steps: $steps)) as $input) {
 			if (array_key_exists($input, $inputs) === false || is_scalar($inputs[$input]) === false) {
 				throw new InvalidArgumentException("Cascade '$name' needs the input '$input'.");
@@ -404,13 +406,13 @@ class OutcomeCascade implements OutcomeCascadeInterface {
 	/**
 	 * Write fields onto one object.
 	 *
-	 * @param string               $schemaKey Config key of its schema.
-	 * @param string               $id        Its uuid.
-	 * @param array<string, mixed> $changes   The fields.
+	 * @param string                                           $schemaKey Config key of its schema.
+	 * @param array{id: string, changes: array<string, mixed>} $written   `id` its uuid; `changes` the fields.
 	 *
 	 * @return array<string, mixed>|null The object after the write.
 	 */
-	private function write(string $schemaKey, string $id, array $changes): ?array {
+	private function write(string $schemaKey, array $written): ?array {
+		[$id, $changes] = [$written['id'], $written['changes']];
 		return $this->patchObjectAsArray(
 			objectService: $this->objectService(),
 			register: $this->settingsService->getConfigValue(key: 'register'),

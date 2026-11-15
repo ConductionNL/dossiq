@@ -205,7 +205,7 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 		try {
 			return [$this->copyRecord(copy: $copy, record: [$uuid, array_values($entries)]), null];
 		} catch (Throwable $e) {
-			$this->reportNotCopied(copy: $copy, uuid: $uuid, error: $e);
+			$this->reportNotCopied(copy: $copy, failure: ['uuid' => $uuid, 'error' => $e]);
 			return [0, $uuid];
 		}
 	}//end copyRow()
@@ -213,13 +213,13 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	/**
 	 * Report a record whose entries could not be copied.
 	 *
-	 * @param BezwaarAuditCopy $copy  The schema and the repair output.
-	 * @param string           $uuid  The record.
-	 * @param Throwable        $error Why the copy failed.
+	 * @param BezwaarAuditCopy                      $copy    The schema and the repair output.
+	 * @param array{uuid: string, error: Throwable} $failure `uuid` the record; `error` why the copy failed.
 	 *
 	 * @return void
 	 */
-	private function reportNotCopied(BezwaarAuditCopy $copy, string $uuid, Throwable $error): void {
+	private function reportNotCopied(BezwaarAuditCopy $copy, array $failure): void {
+		[$uuid, $error] = [$failure['uuid'], $failure['error']];
 		$copy->output->warning('The bezwaar audit entries of '.$copy->schema.' '.$uuid.' could not be copied: '.$error->getMessage());
 		$this->logger->error(
 			'Dossiq: embedded bezwaar audit entries not copied',

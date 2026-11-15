@@ -153,7 +153,7 @@ class WooDossierReturn {
 		try {
 			return $this->appendToCollection(target: $target, addition: $addition);
 		} catch (Throwable $e) {
-			$this->warnNotAppended(collectionId: $target['id'], publicationId: $addition['publicationId'], error: $e);
+			$this->warnNotAppended(collectionId: $target['id'], failure: ['publicationId' => $addition['publicationId'], 'error' => $e]);
 			return false;
 		}
 	}//end appendOrWarn()
@@ -161,13 +161,13 @@ class WooDossierReturn {
 	/**
 	 * Log that the decision could not be added to its source dossier.
 	 *
-	 * @param string    $collectionId  The source dossier uuid.
-	 * @param string    $publicationId The publication uuid.
-	 * @param Throwable $error         What went wrong.
+	 * @param string                                         $collectionId The source dossier uuid.
+	 * @param array{publicationId: string, error: Throwable} $failure      `publicationId` the publication uuid; `error` what went wrong.
 	 *
 	 * @return void
 	 */
-	private function warnNotAppended(string $collectionId, string $publicationId, Throwable $error): void {
+	private function warnNotAppended(string $collectionId, array $failure): void {
+		[$publicationId, $error] = [$failure['publicationId'], $failure['error']];
 		$this->logger->warning(
 			'WooDossierReturn: the decision could not be added to its source dossier',
 			['collection' => $collectionId, 'publication' => $publicationId, 'error' => $error->getMessage()]

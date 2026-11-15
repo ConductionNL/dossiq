@@ -460,21 +460,22 @@ class CaseAttentionMarkerService implements CaseAttentionMarkerServiceInterface 
 			return null;
 		}
 
-		return $this->raisedMarker(declaration: $declaration, reason: $reason, judged: $judged);
+		return $this->raisedMarker(declaration: $declaration, raising: ['reason' => $reason, 'judged' => $judged]);
 	}//end markerFor()
 
 	/**
 	 * The marker a declaration raises for a reason.
 	 *
-	 * @param array<string, mixed> $declaration The marker declaration.
-	 * @param string               $reason      Why the marker stands.
-	 * @param CaseUnderJudgement   $judged      Today, and the raisedAt of each standing marker by id.
+	 * @param array<string, mixed>                              $declaration The marker declaration.
+	 * @param array{reason: string, judged: CaseUnderJudgement} $raising     `reason` why the marker stands; `judged` today, and the raisedAt of
+	 *                                                                       each standing marker by id.
 	 *
 	 * @return array<string, mixed> The raised marker.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function raisedMarker(array $declaration, string $reason, CaseUnderJudgement $judged): array {
+	private function raisedMarker(array $declaration, array $raising): array {
+		[$reason, $judged] = [$raising['reason'], $raising['judged']];
 		$id = (string)$declaration['id'];
 
 		return [

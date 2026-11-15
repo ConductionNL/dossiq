@@ -107,7 +107,7 @@ class DrcObjectLinkRules {
 			$error = $this->validateObjectUrl(objectUrl: $objectUrl, objectType: $objectType);
 		}
 
-		$error ??= $this->checkOioRelations(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
+		$error ??= $this->checkOioRelations(ioUrl: $ioUrl, linked: ['objectUrl' => $objectUrl, 'objectType' => $objectType]);
 		if ($error !== null) {
 			return $error;
 		}
@@ -120,13 +120,13 @@ class DrcObjectLinkRules {
 	 *
 	 * Uniqueness runs first so a duplicate error takes priority over the cross-register check.
 	 *
-	 * @param mixed $ioUrl The informatieobject URL
-	 * @param mixed $objectUrl The object URL
-	 * @param mixed $objectType The objectType
+	 * @param mixed                                      $ioUrl  The informatieobject URL
+	 * @param array{objectUrl: mixed, objectType: mixed} $linked `objectUrl` the object URL; `objectType` the objectType.
 	 *
 	 * @return array|null The refusal, or null when acceptable or when there is nothing to look up
 	 */
-	private function checkOioRelations(mixed $ioUrl, mixed $objectUrl, mixed $objectType): ?array {
+	private function checkOioRelations(mixed $ioUrl, array $linked): ?array {
+		[$objectUrl, $objectType] = [$linked['objectUrl'], $linked['objectType']];
 		if ($ioUrl === '' || $objectUrl === '' || $this->lookups->objectService() === null) {
 			return null;
 		}

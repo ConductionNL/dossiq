@@ -241,7 +241,7 @@ class WooCollectionQueries implements WooCollectionQueriesInterface {
 		return match ((string)($query['source'] ?? '')) {
 			WooSources::SOURCE_FILES => ['rows' => $this->searchFiles(terms: $terms, userId: $userId), 'refusal' => ''],
 			WooSources::SOURCE_CASES => ['rows' => $this->searchCases(terms: $terms), 'refusal' => ''],
-			default => $this->searchMicrosoft365(terms: $terms, from: $from, until: $until, userId: $userId),
+			default => $this->searchMicrosoft365(terms: $terms, window: ['from' => $from, 'until' => $until, 'userId' => $userId]),
 		};
 	}//end search()
 
@@ -291,14 +291,13 @@ class WooCollectionQueries implements WooCollectionQueriesInterface {
 	/**
 	 * integriq's Microsoft 365 search.
 	 *
-	 * @param string     $terms  The terms.
-	 * @param mixed      $from   Start of the period.
-	 * @param mixed      $until  End of the period.
-	 * @param string     $userId The caller.
+	 * @param string                                           $terms  The terms.
+	 * @param array{from: mixed, until: mixed, userId: string} $window `from` start of the period; `until` end of the period; `userId` the caller.
 	 *
 	 * @return array{rows: array<int, array<string, mixed>>, refusal: string}
 	 */
-	private function searchMicrosoft365(string $terms, mixed $from, mixed $until, string $userId): array {
+	private function searchMicrosoft365(string $terms, array $window): array {
+		[$from, $until, $userId] = [$window['from'], $window['until'], $window['userId']];
 		if (is_string($from) === false) {
 			$from = null;
 		}

@@ -169,7 +169,7 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 
 		$infoId = $this->storeUploadedRecord(store: $store, upload: $upload, informatieobject: $informatieobject);
 
-		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $infoId, correspondents: $profile->correspondents);
+		$this->linkAndRecordDispatches(caseId: $caseId, linking: ['infoId' => $infoId, 'correspondents' => $profile->correspondents]);
 
 		return $this->uploadSummary(infoId: $infoId, informatieobject: $informatieobject);
 	}//end uploadDocument()
@@ -219,15 +219,16 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 	/**
 	 * Join the uploaded document to its case and record one dispatch per correspondent.
 	 *
-	 * @param string               $caseId         The case (zaak) UUID.
-	 * @param string               $infoId         The stored informatieobject id.
-	 * @param array<string, mixed> $correspondents The resolved sender and recipients.
+	 * @param string                                                      $caseId  The case (zaak) UUID.
+	 * @param array{infoId: string, correspondents: array<string, mixed>} $linking `infoId` the stored informatieobject id; `correspondents` the
+	 *                                                                             resolved sender and recipients.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
-	private function linkAndRecordDispatches(string $caseId, string $infoId, array $correspondents): void {
+	private function linkAndRecordDispatches(string $caseId, array $linking): void {
+		[$infoId, $correspondents] = [$linking['infoId'], $linking['correspondents']];
 		// Create the case <-> document join, unless the listener already did.
 		$this->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoId);
 

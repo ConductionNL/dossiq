@@ -150,7 +150,7 @@ class TermijnService implements TermijnServiceInterface {
 		?DateTimeImmutable $startDate = null,
 		?array $resolution = null,
 	): array {
-		$start = $this->termStart(caseId: $caseId, caseType: $caseType, startDate: $startDate, resolution: $resolution);
+		$start = $this->termStart(caseId: $caseId, start: ['caseType' => $caseType, 'startDate' => $startDate, 'resolution' => $resolution]);
 
 		$saved = $this->storeStartedInstance(start: $start);
 
@@ -162,16 +162,20 @@ class TermijnService implements TermijnServiceInterface {
 	/**
 	 * The start of a term, with the definition it starts under.
 	 *
-	 * @param string                    $caseId     The case uuid.
-	 * @param string                    $caseType   The zaaktype identifier.
-	 * @param DateTimeImmutable|null    $startDate  Optional start (defaults to now).
-	 * @param array<string, mixed>|null $resolution The resolution a caller already made.
+	 * @param string                                                                                            $caseId The case uuid.
+	 * @param array{caseType: string, startDate: DateTimeImmutable|null, resolution: array<string, mixed>|null} $start  `caseType` the zaaktype
+	 *                                                                                                                  identifier; `startDate`
+	 *                                                                                                                  optional start (defaults to
+	 *                                                                                                                  now); `resolution` the
+	 *                                                                                                                  resolution a caller already
+	 *                                                                                                                  made.
 	 *
 	 * @return TermStart
 	 *
 	 * @throws NoTermijnDefinitieException When no TermijnDefinitie matches the zaaktype.
 	 */
-	private function termStart(string $caseId, string $caseType, ?DateTimeImmutable $startDate, ?array $resolution): TermStart {
+	private function termStart(string $caseId, array $start): TermStart {
+		[$caseType, $startDate, $resolution] = [$start['caseType'], $start['startDate'], $start['resolution']];
 		$start = new TermStart();
 		$start->caseId = $caseId;
 		$start->caseType = $caseType;

@@ -544,7 +544,7 @@ abstract class ZgwRulesBase {
 		}
 
 		try {
-			$body = $this->fetchBody(guard: $guard, url: $url, address: $address);
+			$body = $this->fetchBody(guard: $guard, target: ['url' => $url, 'address' => $address]);
 			return $this->jsonArray(body: $body);
 		} catch (\Throwable $e) {
 			$this->logger->warning('Failed to fetch external URL: ' . $e->getMessage(), ['url' => $url]);
@@ -577,15 +577,15 @@ abstract class ZgwRulesBase {
 	/**
 	 * GET the URL from the inspected address.
 	 *
-	 * @param OutboundUrlGuard $guard   The outbound guard.
-	 * @param string           $url     The URL to fetch
-	 * @param string           $address The inspected address.
+	 * @param OutboundUrlGuard                    $guard  The outbound guard.
+	 * @param array{url: string, address: string} $target `url` the URL to fetch; `address` the inspected address.
 	 *
 	 * @return string The response body.
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function fetchBody(OutboundUrlGuard $guard, string $url, string $address): string {
+	private function fetchBody(OutboundUrlGuard $guard, array $target): string {
+		[$url, $address] = [$target['url'], $target['address']];
 		return $this->httpGet(
 			url: $url,
 			options: (['timeout' => 10] + $guard->requestOptions(url: $url, address: $address))
