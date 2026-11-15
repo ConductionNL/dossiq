@@ -234,19 +234,34 @@ class RecallSamples implements RecallSamplesInterface {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
 	 */
 	public function judge(string $caseId, string $sampleId, string $documentRef, bool $inScope, string $userId): array {
-		$sample = $this->find(caseId: $caseId, sampleId: $sampleId);
+		$sample = $this->judged(sample: $this->find(caseId: $caseId, sampleId: $sampleId), judgement: ['document' => $documentRef, 'inScope' => $inScope]);
 		$documents = array_map('strval', (array)($sample['documents'] ?? []));
-		$this->assertSampled(documents: $documents, documentRef: $documentRef);
-		$this->assertOpen(sample: $sample);
-
-		$judgements = $this->judgementsWith(sample: $sample, documentRef: $documentRef, inScope: $inScope);
-		$sample['judgements'] = $judgements;
-		if (count(array_intersect($documents, array_map('strval', array_keys($judgements)))) === count($documents)) {
-			$sample = $this->complete(caseId: $caseId, sample: $sample, userId: $userId);
+		if (count(array_intersect($documents, array_map('strval', array_keys($sample['judgements'])))) === count($documents)) {
+			$sample = $this->complete(sample: $sample, judgedBy: ['caseId' => $caseId, 'userId' => $userId]);
 		}
 
 		return $this->withProgress(sample: $this->save(sample: $sample));
 	}//end judge()
+
+	/**
+	 * The sample with one of its documents judged, refused when the document is not sampled or the sample is closed.
+	 *
+	 * @param array<string, mixed>                    $sample    The recall sample.
+	 * @param array{document: string, inScope: bool} $judgement The judged document, and whether it is about the request after all.
+	 *
+	 * @return array<string, mixed> The sample with its judgements.
+	 *
+	 * @throws RefusedException When the document is not sampled or the sample is closed.
+	 */
+	private function judged(array $sample, array $judgement): array {
+		$documents = array_map('strval', (array)($sample['documents'] ?? []));
+		$this->assertSampled(documents: $documents, documentRef: $judgement['document']);
+		$this->assertOpen(sample: $sample);
+
+		$sample['judgements'] = $this->judgementsWith(sample: $sample, judgement: $judgement);
+
+		return $sample;
+	}//end judged()
 
 	/**
 	 * Refuse a judgement of a document outside the sample.
@@ -290,16 +305,16 @@ class RecallSamples implements RecallSamplesInterface {
 	/**
 	 * The sample's judgements, with this document judged in or out of scope.
 	 *
-	 * @param array<string, mixed> $sample The recall sample.
-	 * @param string $documentRef The judged document.
-	 * @param bool $inScope Whether the document is about the request after all.
+	 * @param array<string, mixed>                    $sample    The recall sample.
+	 * @param array{document: string, inScope: bool} $judgement The judged document, and whether it is about the request after all.
 	 *
 	 * @return array<string, string> The judgements by document.
 	 */
-	private function judgementsWith(array $sample, string $documentRef, bool $inScope): array {
+	private function judgementsWith(array $sample, array $judgement): array {
+		$documentRef = $judgement['document'];
 		$judgements = (array)($sample['judgements'] ?? []);
 		$judgements[$documentRef] = DocumentRelevance::OUT_OF_SCOPE;
-		if ($inScope === true) {
+		if ($judgement['inScope'] === true) {
 			$judgements[$documentRef] = DocumentRelevance::IN_SCOPE;
 		}
 
@@ -350,21 +365,21 @@ class RecallSamples implements RecallSamplesInterface {
 	/**
 	 * Compute and store the estimate, and record the stopping rule as met when it is.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param array<string, mixed> $sample The fully judged sample.
-	 * @param string $userId Who judged last.
+	 * @param array<string, mixed>                  $sample   The fully judged sample.
+	 * @param array{caseId: string, userId: string} $judgedBy The case UUID, and who judged last.
 	 *
 	 * @return array<string, mixed> The sample with its estimate.
 	 *
 	 * @throws RefusedException When the met record cannot be written.
 	 */
-	private function complete(string $caseId, array $sample, string $userId): array {
+	private function complete(array $sample, array $judgedBy): array {
+		$caseId = $judgedBy['caseId'];
 		$rule = $this->rules->forCase(caseId: $caseId);
 		$confidence = $this->confidenceOf(rule: $rule);
 
 		$sample = $this->withEstimate(sample: $sample, confidence: $confidence);
 
-		$metAt = $this->met->record(caseId: $caseId, rule: $rule, sample: $sample, userId: $userId);
+		$metAt = $this->met->record(caseId: $caseId, rule: $rule, sample: $sample, userId: $judgedBy['userId']);
 		if ($metAt !== null) {
 			$sample['stoppingRuleMetAt'] = $metAt;
 		}
