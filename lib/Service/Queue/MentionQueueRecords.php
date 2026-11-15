@@ -99,19 +99,31 @@ class MentionQueueRecords {
 			$subjectType = 'case';
 		}
 
+		return $this->store(
+			mention: [
+				'person' => $person,
+				'actor' => $actor,
+				'subjectType' => $subjectType,
+				'subjectId' => $subjectId,
+				'noteId' => $noteId,
+			]
+		);
+	}//end record()
+
+	/**
+	 * Write the mention, stamped with the moment it is written; a failure is logged.
+	 *
+	 * @param array<string, string> $mention Who was mentioned, by whom, in what, and the note.
+	 *
+	 * @return bool TRUE when the record was written.
+	 */
+	private function store(array $mention): bool {
 		try {
 			$saved = $this->saveObjectAsArray(
 				objectService: $this->objects(),
 				register: $this->register(),
 				schema: self::SCHEMA,
-				object: [
-					'person' => $person,
-					'actor' => $actor,
-					'subjectType' => $subjectType,
-					'subjectId' => $subjectId,
-					'noteId' => $noteId,
-					'mentionedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-				]
+				object: $mention + ['mentionedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP')]
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: could not record a mention on the queue: ' . $e->getMessage());
@@ -119,7 +131,7 @@ class MentionQueueRecords {
 		}
 
 		return ($saved !== null);
-	}//end record()
+	}//end store()
 
 	/**
 	 * The mentions this person has not dealt with.
