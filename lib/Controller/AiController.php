@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use Closure;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AiAuditServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\AiServiceInterface;
@@ -219,21 +220,7 @@ class AiController extends Controller {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestRouting(): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$caseId = $this->request->getParam('caseId', '');
-
-		if (empty($caseId) === true) {
-			return $this->badRequest(error: 'caseId is required');
-		}
-
-		$userId = $user->getUID();
-		$result = $this->aiService->suggestRouting($caseId, $userId);
-
-		return new JSONResponse($result);
+		return $this->caseSuggestion(suggest: fn (string $caseId, string $userId): array => $this->aiService->suggestRouting($caseId, $userId));
 	}//end suggestRouting()
 
 	/**
@@ -246,21 +233,7 @@ class AiController extends Controller {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestNext(): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$caseId = $this->request->getParam('caseId', '');
-
-		if (empty($caseId) === true) {
-			return $this->badRequest(error: 'caseId is required');
-		}
-
-		$userId = $user->getUID();
-		$result = $this->aiService->suggestNextStep($caseId, $userId);
-
-		return new JSONResponse($result);
+		return $this->caseSuggestion(suggest: fn (string $caseId, string $userId): array => $this->aiService->suggestNextStep($caseId, $userId));
 	}//end suggestNext()
 
 	/**
@@ -525,4 +498,26 @@ class AiController extends Controller {
 	private function badRequest(string $error): JSONResponse {
 		return new JSONResponse(['error' => $error], Http::STATUS_BAD_REQUEST);
 	}//end badRequest()
+
+	/**
+	 * Answer a suggestion for the requested case, for a signed-in caller.
+	 *
+	 * @param Closure(string, string): array<string, mixed> $suggest The suggestion, given the case id and the caller's uid.
+	 *
+	 * @return JSONResponse
+	 */
+	private function caseSuggestion(Closure $suggest): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$caseId = $this->request->getParam('caseId', '');
+
+		if (empty($caseId) === true) {
+			return $this->badRequest(error: 'caseId is required');
+		}
+
+		return new JSONResponse($suggest($caseId, $user->getUID()));
+	}//end caseSuggestion()
 }//end class
