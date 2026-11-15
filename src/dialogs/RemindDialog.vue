@@ -85,6 +85,7 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseDialog } from '../mixins/caseDialog.js'
 import { useEngineTaskStore } from '../store/modules/engineTask.js'
 import {
 	defaultReminderDate,
@@ -104,17 +105,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/**
-		 * The case to remind about. Absent when the manifest opened the
-		 * dialog: an `open-modal` action carries no object context, so the
-		 * route answers.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialog],
 
 	emits: ['close'],
 

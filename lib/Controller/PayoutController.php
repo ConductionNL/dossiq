@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\OwningCaseResolverInterface;
 use OCA\Dossiq\Kernel\Contracts\PayoutServiceInterface;
@@ -46,6 +47,10 @@ use Throwable;
  * @spec openspec/specs/payout/spec.md
  */
 class PayoutController extends Controller {
+	use ReadsJsonRequests {
+		jsonBody as protected;
+	}
+
 	/**
 	 * Constructor.
 	 *
@@ -151,23 +156,4 @@ class PayoutController extends Controller {
 	public function prepareLegacyPath(string $id): JSONResponse {
 		return $this->prepare(id: $id);
 	}//end prepareLegacyPath()
-
-	/**
-	 * Decode the JSON request body.
-	 *
-	 * IRequest::getContent() is protected on the concrete OC request, so the
-	 * payload is read from php://input. Protected so a test can supply it.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @spec openspec/specs/payout/spec.md#REQ-PAY-001
-	 */
-	protected function jsonBody(): array {
-		$body = json_decode((string)file_get_contents('php://input'), true);
-		if (is_array($body) === true) {
-			return $body;
-		}
-
-		return [];
-	}//end jsonBody()
 }//end class

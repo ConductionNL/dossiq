@@ -337,6 +337,23 @@ class PlannedSeriesLedger {
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function stopSeries(string $caseId, string $flowId, string $uid): array {
+		$service = $this->seriesFlowService(caseId: $caseId, flowId: $flowId);
+		$this->switchOff(service: $service, stop: ['flowId' => $flowId, 'notes' => sprintf('Series stopped by %s on %s.', $uid, date('Y-m-d'))]);
+
+		return ['id' => $flowId, 'stopped' => true];
+	}//end stopSeries()
+
+	/**
+	 * The flow service, once this case is known to own the series flow.
+	 *
+	 * @param string $caseId The case the series belongs to.
+	 * @param string $flowId The series flow's uuid.
+	 *
+	 * @return object The OpenRegister flow service.
+	 *
+	 * @throws RuntimeException `flows_unavailable`, `case_not_found`.
+	 */
+	private function seriesFlowService(string $caseId, string $flowId): object {
 		$service = $this->optional(name: self::FLOW_SERVICE);
 		if ($service === null) {
 			throw new RuntimeException('flows_unavailable');
@@ -347,25 +364,37 @@ class PlannedSeriesLedger {
 			throw new RuntimeException('case_not_found');
 		}
 
+		return $service;
+	}//end seriesFlowService()
+
+	/**
+	 * Switch the series flow off and write why to its notes.
+	 *
+	 * @param object                               $service The OpenRegister flow service.
+	 * @param array{flowId: string, notes: string} $stop    The series flow's uuid and the stop note.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException `stop_failed`.
+	 */
+	private function switchOff(object $service, array $stop): void {
 		try {
 			$service->save(
 				data: [
 					'enabled' => false,
-					'notes' => sprintf('Series stopped by %s on %s.', $uid, date('Y-m-d')),
+					'notes' => $stop['notes'],
 				],
-				uuid: $flowId
+				uuid: $stop['flowId']
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'PlannedSeriesLedger: could not stop a series',
-				['flow' => $flowId, 'exception' => $e->getMessage()]
+				['flow' => $stop['flowId'], 'exception' => $e->getMessage()]
 			);
 
 			throw new RuntimeException('stop_failed');
 		}
-
-		return ['id' => $flowId, 'stopped' => true];
-	}//end stopSeries()
+	}//end switchOff()
 
 	/**
 	 * The series flow with this uuid among THIS case's planned flows, or null.

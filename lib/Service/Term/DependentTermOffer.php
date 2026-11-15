@@ -201,16 +201,26 @@ class DependentTermOffer implements DependentTermOfferInterface {
 			return 0;
 		}
 
-		$move    = new TermMove(sourceCaseId: $sourceCaseId, sourceTitle: $sourceTitle, daysImpact: $daysImpact);
+		return $this->offerToDependents(move: new TermMove(sourceCaseId: $sourceCaseId, sourceTitle: $sourceTitle, daysImpact: $daysImpact));
+	}//end offer()
+
+	/**
+	 * Offer the move to every case that depends on the source case.
+	 *
+	 * @param TermMove $move The source case, its title and the days its term moved.
+	 *
+	 * @return int How many offers were written.
+	 */
+	private function offerToDependents(TermMove $move): int {
 		$written = 0;
-		foreach ($this->dependentsOf(sourceCaseId: $sourceCaseId) as $dependent) {
+		foreach ($this->dependentsOf(sourceCaseId: $move->sourceCaseId) as $dependent) {
 			if ($this->offerTo(move: $move, dependent: $dependent) === true) {
 				$written++;
 			}
 		}
 
 		return $written;
-	}//end offer()
+	}//end offerToDependents()
 
 	/**
 	 * Offer the move to one waiting case, when that case has a running term.

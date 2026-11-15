@@ -125,10 +125,11 @@ class CaseCustodyQuery implements CaseCustodyQueryInterface {
 			return [];
 		}
 
+		$window = ['start' => $windowStart, 'end' => $windowEnd];
 		$overlapping = array_values(
 			array_filter(
 				$this->unitHoldings(organisationUnit: $organisationUnit),
-				fn (array $row): bool => $this->overlaps(holding: $row, windowStart: $windowStart, windowEnd: $windowEnd) === true,
+				fn (array $row): bool => $this->overlaps(holding: $row, window: $window) === true,
 			)
 		);
 
@@ -173,22 +174,21 @@ class CaseCustodyQuery implements CaseCustodyQueryInterface {
 	 * An open holding, the one with no `until`, reaches into the window from
 	 * whenever it started, which is why an absent end is not read as "ended".
 	 *
-	 * @param array<string, mixed> $holding     The holding as it was read.
-	 * @param DateTimeImmutable    $windowStart The start of the window.
-	 * @param DateTimeImmutable    $windowEnd   The end of the window.
+	 * @param array<string, mixed>                                   $holding The holding as it was read.
+	 * @param array{start: DateTimeImmutable, end: DateTimeImmutable} $window  The start and the end of the window.
 	 *
 	 * @return bool True when the holding falls inside the window.
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
-	private function overlaps(array $holding, DateTimeImmutable $windowStart, DateTimeImmutable $windowEnd): bool {
+	private function overlaps(array $holding, array $window): bool {
 		$holdingStart = (new StoredInstant())->parse(value: (string)($holding['from'] ?? ''));
-		if ($holdingStart === null || $holdingStart > $windowEnd) {
+		if ($holdingStart === null || $holdingStart > $window['end']) {
 			return false;
 		}
 
 		$holdingEnd = (new StoredInstant())->parse(value: (string)($holding['until'] ?? ''));
 
-		return ($holdingEnd === null || $holdingEnd >= $windowStart);
+		return ($holdingEnd === null || $holdingEnd >= $window['start']);
 	}//end overlaps()
 }//end class

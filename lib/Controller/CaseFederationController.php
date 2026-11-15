@@ -36,6 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersFlaggedRefusals;
+use OCA\Dossiq\Controller\Support\AnswersUnassignedCaller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseCollaborationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
@@ -61,6 +63,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
 class CaseFederationController extends Controller {
+	use AnswersUnassignedCaller;
+	use AnswersFlaggedRefusals;
 
 	/**
 	 * Brute-force throttler action for rejected federation share tokens.
@@ -138,7 +142,7 @@ class CaseFederationController extends Controller {
 	public function createFederatedShare(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		$wanted = $this->requestedShare();
@@ -205,10 +209,7 @@ class CaseFederationController extends Controller {
 
 		// C2: same case-access guard as the partner/token share paths.
 		if ($this->caseSharingService->canUserAccessCase($wanted['caseId'], $userId) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->notAssigned();
 		}
 
 		return null;
@@ -351,15 +352,12 @@ class CaseFederationController extends Controller {
 	private function shareCaller(string $shareId): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+			return $this->notAuthenticated();
 		}
 
 		$caseId = $this->caseSharingService->getCaseIdForFederatedShare($shareId);
 		if ($caseId !== null && $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->notAssigned();
 		}
 
 		return $user;

@@ -100,8 +100,20 @@ class CaseHoldActs {
 		$case = $this->load(caseId: $caseId);
 		self::assertReason(reason: $reason);
 
-		$wake = $this->wakeDate(named: $until);
+		return $this->held(case: $case, hold: ['caseId' => $caseId, 'reason' => $reason, 'until' => $this->wakeDate(named: $until)]);
+	}//end hold()
 
+	/**
+	 * Put the case on hold until its wake date, journal it and save it.
+	 *
+	 * @param array<string, mixed>  $case The case.
+	 * @param array<string, string> $hold The `caseId`, the `reason` and the wake date as `until`.
+	 *
+	 * @return array<string, mixed> The held answer.
+	 */
+	private function held(array $case, array $hold): array {
+		$reason = $hold['reason'];
+		$wake = $hold['until'];
 		$case[self::UNTIL_FIELD] = $wake;
 		$case[self::REASON_FIELD] = $reason;
 		$case = $this->journal->append(
@@ -110,8 +122,8 @@ class CaseHoldActs {
 		);
 		$this->store->saveCase(case: $case);
 
-		return self::heldAnswer(caseId: $caseId, case: $case);
-	}//end hold()
+		return self::heldAnswer(caseId: $hold['caseId'], case: $case);
+	}//end held()
 
 	/**
 	 * Refuse a hold without a reason.

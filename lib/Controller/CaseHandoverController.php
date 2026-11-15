@@ -36,7 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\CaseCaller;
+use OCA\Dossiq\Controller\Support\AnswersCaseNotYours;
+use OCA\Dossiq\Controller\Support\FindsCaseWriter;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
@@ -59,6 +60,8 @@ use Throwable;
  * @spec openspec/specs/case-management/spec.md
  */
 class CaseHandoverController extends Controller {
+	use AnswersCaseNotYours;
+	use FindsCaseWriter;
 
 	use TranslatesRefusals;
 
@@ -255,17 +258,6 @@ class CaseHandoverController extends Controller {
 	}//end outstanding()
 
 	/**
-	 * The caller, when they may write this case.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null when they may not.
-	 */
-	private function writerOf(string $caseId): ?IUser {
-		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
-	}//end writerOf()
-
-	/**
 	 * The teams a caller belongs to.
 	 *
 	 * @param IUser $user The caller.
@@ -275,18 +267,6 @@ class CaseHandoverController extends Controller {
 	private function teamsOf(IUser $user): array {
 		return array_map('strval', $this->groups->getUserGroupIds($user));
 	}//end teamsOf()
-
-	/**
-	 * One answer for "this case is not yours", so none of the four differ.
-	 *
-	 * @return JSONResponse The refusal.
-	 */
-	private function notYours(): JSONResponse {
-		return new JSONResponse(
-			['message' => 'You cannot move this case.', 'error' => 'case-access-denied'],
-			Http::STATUS_FORBIDDEN,
-		);
-	}//end notYours()
 
 	/**
 	 * A failure that is not a refusal, logged and answered as one.

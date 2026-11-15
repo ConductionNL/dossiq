@@ -108,7 +108,8 @@ class ReportShippedFlowAdoption implements IRepairStep {
 			return;
 		}
 
-		$this->reportPending(output: $output, pending: $pending, total: count($census['flows']));
+		$this->reportPending(output: $output, pending: $pending);
+		$this->logPending(pending: count($pending), total: count($census['flows']));
 	}//end run()
 
 	/**
@@ -161,11 +162,10 @@ class ReportShippedFlowAdoption implements IRepairStep {
 	 *
 	 * @param IOutput                          $output  Output sink.
 	 * @param array<int, array<string, mixed>> $pending The flows still to adopt.
-	 * @param int                              $total   The number of shipped flows.
 	 *
 	 * @return void
 	 */
-	private function reportPending(IOutput $output, array $pending, int $total): void {
+	private function reportPending(IOutput $output, array $pending): void {
 		foreach ($pending as $flow) {
 			$output->warning(
 				'Dossiq: shipped flow "' . $flow['name'] . '" ' . $this->reasonFor(flow: $flow)
@@ -178,7 +178,17 @@ class ReportShippedFlowAdoption implements IRepairStep {
 			. '(flows arrive ownerless and disabled by OpenRegister\'s design; adopting one is a '
 			. 'deliberate act, because its runs then execute as that user).'
 		);
+	}//end reportPending()
 
+	/**
+	 * Log that shipped flows await adoption, with the command that adopts them.
+	 *
+	 * @param int $pending The number of flows still to adopt.
+	 * @param int $total   The number of shipped flows.
+	 *
+	 * @return void
+	 */
+	private function logPending(int $pending, int $total): void {
 		// 🔴 THE LOG LINE CARRIES THE COMMAND, BECAUSE ON ONE PATH IT IS THE
 		// ONLY WITNESS. Everything above goes to `IOutput`, and `IOutput` for a
 		// repair step is a set of dispatched events. Only `occ
@@ -192,12 +202,12 @@ class ReportShippedFlowAdoption implements IRepairStep {
 			'Dossiq: shipped flows await adoption',
 			[
 				'app' => AppIdentity::APP_ID,
-				'pending' => count($pending),
+				'pending' => $pending,
 				'total' => $total,
 				'command' => 'occ dossiq:flows:adopt --user <admin> --enable',
 			]
 		);
-	}//end reportPending()
+	}//end logPending()
 
 	/**
 	 * Say which of the two things is missing, rather than that something is.

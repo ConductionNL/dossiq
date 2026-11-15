@@ -40,7 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\RegistryObjectWrite;
+use OCA\Dossiq\Controller\Support\BuildsRegistryWrites;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\MandaatRegistryServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -61,6 +61,8 @@ use Throwable;
  * @spec openspec/specs/mandaat-matrix/spec.md
  */
 class OrganisatieRolController extends Controller {
+	use BuildsRegistryWrites;
+
 	/**
 	 * Constructor.
 	 *
@@ -214,19 +216,4 @@ class OrganisatieRolController extends Controller {
 	public function toewijzingenUpdate(string $id): JSONResponse {
 		return $this->writes()->update(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_TOEWIJZING, id: $id);
 	}//end toewijzingenUpdate()
-
-	/**
-	 * Writes registry objects from this request's body.
-	 *
-	 * @return RegistryObjectWrite
-	 *
-	 * @spec openspec/specs/mandaat-matrix/spec.md
-	 */
-	private function writes(): RegistryObjectWrite {
-		$writes = new RegistryObjectWrite();
-		$writes->registry = $this->registry;
-		$writes->request = $this->request;
-		$writes->logger = $this->logger;
-		return $writes;
-	}//end writes()
 }//end class

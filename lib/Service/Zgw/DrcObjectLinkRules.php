@@ -107,7 +107,7 @@ class DrcObjectLinkRules {
 			$error = $this->validateObjectUrl(objectUrl: $objectUrl, objectType: $objectType);
 		}
 
-		$error ??= $this->checkOioRelations(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
+		$error ??= $this->checkOioRelations(ioUrl: $ioUrl, linked: ['objectUrl' => $objectUrl, 'objectType' => $objectType]);
 		if ($error !== null) {
 			return $error;
 		}
@@ -120,13 +120,13 @@ class DrcObjectLinkRules {
 	 *
 	 * Uniqueness runs first so a duplicate error takes priority over the cross-register check.
 	 *
-	 * @param mixed $ioUrl The informatieobject URL
-	 * @param mixed $objectUrl The object URL
-	 * @param mixed $objectType The objectType
+	 * @param mixed                                      $ioUrl  The informatieobject URL
+	 * @param array{objectUrl: mixed, objectType: mixed} $linked `objectUrl` the object URL; `objectType` the objectType.
 	 *
 	 * @return array|null The refusal, or null when acceptable or when there is nothing to look up
 	 */
-	private function checkOioRelations(mixed $ioUrl, mixed $objectUrl, mixed $objectType): ?array {
+	private function checkOioRelations(mixed $ioUrl, array $linked): ?array {
+		[$objectUrl, $objectType] = [$linked['objectUrl'], $linked['objectType']];
 		if ($ioUrl === '' || $objectUrl === '' || $this->lookups->objectService() === null) {
 			return null;
 		}
@@ -136,7 +136,7 @@ class DrcObjectLinkRules {
 			return $error;
 		}
 
-		return $this->validateOioCrossRegister(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
+		return $this->validateOioCrossRegister(ioUrl: $ioUrl, linked: ['objectUrl' => $objectUrl, 'objectType' => $objectType]);
 	}//end checkOioRelations()
 
 	/**
@@ -205,13 +205,14 @@ class DrcObjectLinkRules {
 	/**
 	 * Validate OIO cross-register: ZIO/BIO must exist (drc-004 VNG).
 	 *
-	 * @param string $ioUrl The informatieobject URL
-	 * @param string $objectUrl The object URL (zaak or besluit)
-	 * @param string $objectType The object type (zaak or besluit)
+	 * @param string                                       $ioUrl  The informatieobject URL
+	 * @param array{objectUrl: string, objectType: string} $linked `objectUrl` the object URL (zaak or besluit); `objectType` the object type (zaak
+	 *                                                             or besluit).
 	 *
 	 * @return array|null The refusal when the relation does not exist or could not be looked up, null if valid
 	 */
-	private function validateOioCrossRegister(string $ioUrl, string $objectUrl, string $objectType): ?array {
+	private function validateOioCrossRegister(string $ioUrl, array $linked): ?array {
+		[$objectUrl, $objectType] = [$linked['objectUrl'], $linked['objectType']];
 		$ioUuid = $this->fieldValidator->extractUuid(url: $ioUrl) ?? '';
 		$objectUuid = $this->fieldValidator->extractUuid(url: $objectUrl) ?? '';
 

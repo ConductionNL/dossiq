@@ -97,6 +97,30 @@ trait ReadsRegisterShards {
 	}//end shardMarkers()
 
 	/**
+	 * The OpenRegister tables of this app's registers that the predicate calls a shard.
+	 *
+	 * @param \Closure $isShard Answers whether a table name is a shard, given the register markers.
+	 *
+	 * @return array<int, string>
+	 */
+	private function shardTablesWhere(\Closure $isShard): array {
+		$ids = $this->registerIdsOrNone(warning: 'could not resolve the dossiq registers; skipping.');
+		if ($ids === []) {
+			return [];
+		}
+
+		$markers = $this->shardMarkers(ids: $ids);
+		$tables = [];
+		foreach ($this->openRegisterTableNames() as $name) {
+			if ($isShard($name, $markers) === true) {
+				$tables[] = $name;
+			}
+		}
+
+		return $tables;
+	}//end shardTablesWhere()
+
+	/**
 	 * List the column names of a table.
 	 *
 	 * Queried from information_schema for the same reason as the tables:

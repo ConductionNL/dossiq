@@ -161,9 +161,23 @@ class ChaseSchedule {
 			return false;
 		}
 
+		$after = $this->escalationMoment(instance: $instance, reason: $reason);
+
+		return ($after !== null && $after->setTime(0, 0) <= ($now ?? new DateTimeImmutable())->setTime(0, 0));
+	}//end escalationDue()
+
+	/**
+	 * When the silence may be escalated: one interval after the last reminder, or null when none was sent.
+	 *
+	 * @param array<string, mixed> $instance The TermijnInstance row.
+	 * @param array<string, mixed> $reason   The normalised reason in force.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null without a last reminder.
+	 */
+	private function escalationMoment(array $instance, array $reason): ?DateTimeImmutable {
 		$last = $this->dates->tryParse(value: ($instance['lastChasedAt'] ?? null));
 		if ($last === null) {
-			return false;
+			return null;
 		}
 
 		$interval = (int)$reason['chaseIntervalDays'];
@@ -172,8 +186,8 @@ class ChaseSchedule {
 			$after = $this->calendar->addWorkingDays(start: $last, days: $interval);
 		}
 
-		return ($after->setTime(0, 0) <= ($now ?? new DateTimeImmutable())->setTime(0, 0));
-	}//end escalationDue()
+		return $after;
+	}//end escalationMoment()
 
 	/**
 	 * The engine rung offsets for one pause, in days before the pause ends.

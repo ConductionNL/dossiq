@@ -191,10 +191,10 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@use '../styles/_dialogBanners.scss' as banner;
+
 .payout-prepare {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
+	@include banner.dialog-column;
 
 	p {
 		margin: 0;
@@ -209,11 +209,7 @@ export default {
 	}
 
 	&__saved {
-		margin: 0;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-success);
-		color: var(--color-success-text, var(--color-primary-element-text));
+		@include banner.saved-banner;
 	}
 }
 </style>

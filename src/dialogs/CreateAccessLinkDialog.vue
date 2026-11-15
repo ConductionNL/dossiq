@@ -120,6 +120,7 @@ import {
 	NcDialog,
 	NcTextField,
 } from '@nextcloud/vue'
+import { caseShareDialog } from '../mixins/caseShareDialog.js'
 
 /**
  * How far ahead the expiry field starts, in days.
@@ -138,17 +139,9 @@ export default {
 		NcCheckboxRadioSwitch,
 	},
 
+	mixins: [caseShareDialog],
+
 	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
-
-		caseId: {
-			type: String,
-			required: true,
-		},
-
 		/** The case's documents, as `{ id, name }`. */
 		documents: {
 			type: Array,
@@ -160,7 +153,6 @@ export default {
 
 	data() {
 		return {
-			saving: false,
 			form: {
 				label: '',
 				comment: true,
@@ -215,20 +207,15 @@ export default {
 				capabilities.push('upload')
 			}
 
-			this.saving = true
-			try {
-				this.$emit('created', {
-					caseId: this.caseId,
-					shareType: 'link',
-					label: this.form.label,
-					capabilities,
-					expiresAt: this.form.expiresAt,
-					password: this.form.password || null,
-					sharedDocuments: this.form.documents,
-				})
-			} finally {
-				this.saving = false
-			}
+			this.emitWhileSaving('created', {
+				caseId: this.caseId,
+				shareType: 'link',
+				label: this.form.label,
+				capabilities,
+				expiresAt: this.form.expiresAt,
+				password: this.form.password || null,
+				sharedDocuments: this.form.documents,
+			})
 		},
 	},
 }

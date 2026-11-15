@@ -16,7 +16,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RepairSchema;
-use OCA\Dossiq\Repair\Support\RepairSchemas;
+use OCA\Dossiq\Repair\Support\RunsOnce;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -39,6 +39,7 @@ use Throwable;
  */
 class MapLegacyArchivalActions implements IRepairStep {
 	use RunsUnderSystemIdentity;
+	use RunsOnce;
 
 	/**
 	 * The app-config key that records the step has run.
@@ -49,6 +50,20 @@ class MapLegacyArchivalActions implements IRepairStep {
 	 * The value the key holds once the step ran; bump it to run the step again.
 	 */
 	public const DONE_VERSION = '1';
+
+	/**
+	 * The schema config key this step walks.
+	 *
+	 * @var string
+	 */
+	private const TARGET_SCHEMA_KEY = 'result_type_schema';
+
+	/**
+	 * What the upgrade output says when the schema is unavailable.
+	 *
+	 * @var string
+	 */
+	private const UNAVAILABLE_NOTE = 'Dossiq archival actions: OpenRegister or the result type schema is unavailable; nothing mapped.';
 
 	/**
 	 * The stored legacy value and the enum value it becomes.
@@ -100,22 +115,7 @@ class MapLegacyArchivalActions implements IRepairStep {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
-			return;
-		}
-
-		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'result_type_schema');
-		if ($target === null) {
-			$output->info('Dossiq archival actions: OpenRegister or the result type schema is unavailable; nothing mapped.');
-			return;
-		}
-
-		$this->withSystemIdentity(
-			objectService: $target->objectService,
-			work: function () use ($target, $output): void {
-				$this->map(target: $target, output: $output);
-			}
-		);
+		$this->onceOnSchema(output: $output, work: fn (RepairSchema $target) => $this->map(target: $target, output: $output));
 	}//end run()
 
 	/**

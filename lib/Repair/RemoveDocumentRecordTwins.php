@@ -16,8 +16,8 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchema;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -38,7 +38,6 @@ use Throwable;
  */
 class RemoveDocumentRecordTwins implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
 
 	public const DONE_KEY = 'document_record_twins_removed';
 
@@ -138,25 +137,14 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 	 * @return array<int, array<int, array<string, mixed>>> file id => its records.
 	 */
 	private function recordsByFile(object $objectService, string $register, string $schema): array {
+		$source = new RepairSchema(objectService: $objectService, register: $register);
+		$source->schema = $schema;
 		$byFile = [];
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				$fileId = (int)($row['fileId'] ?? 0);
-				if ($fileId > 0) {
-					$byFile[$fileId][] = $row;
-				}
+		foreach ($source->rows(pageSize: self::PAGE_SIZE) as $row) {
+			$fileId = (int)($row['fileId'] ?? 0);
+			if ($fileId > 0) {
+				$byFile[$fileId][] = $row;
 			}
-
-			$page++;
 		}
 
 		return $byFile;

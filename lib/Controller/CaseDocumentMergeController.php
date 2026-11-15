@@ -91,21 +91,20 @@ class CaseDocumentMergeController extends Controller {
 			);
 		}
 
-		return $this->runMerge(ids: $ids, name: $name, caseId: $caseId);
+		return $this->runMerge(ids: $ids, target: ['name' => $name, 'caseId' => $caseId]);
 	}//end merge()
 
 	/**
 	 * Merge the documents into one and answer it, or the failure.
 	 *
-	 * @param array<int> $ids The file ids, at least two.
-	 * @param string $name The merged document's name.
-	 * @param string $caseId The case.
+	 * @param array<int>                           $ids    The file ids, at least two.
+	 * @param array{name: string, caseId: string} $target The merged document's name and the case.
 	 *
 	 * @return JSONResponse
 	 */
-	private function runMerge(array $ids, string $name, string $caseId): JSONResponse {
+	private function runMerge(array $ids, array $target): JSONResponse {
 		try {
-			return new JSONResponse($this->merges->merge(fileIds: $ids, name: $name, caseId: $caseId));
+			return new JSONResponse($this->merges->merge(fileIds: $ids, name: $target['name'], caseId: $target['caseId']));
 		} catch (Throwable $e) {
 			return $this->mergeFailure(e: $e);
 		}

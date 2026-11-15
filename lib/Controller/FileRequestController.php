@@ -135,19 +135,31 @@ class FileRequestController extends Controller {
 			return new JSONResponse(['error' => 'Name the party to ask'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->sendRequest(caseId: $caseId, ask: ['personUid' => trim($personId), 'note' => trim($note), 'days' => $days]);
+	}//end create()
+
+	/**
+	 * Send the file request; a refused request answers with the status its code names.
+	 *
+	 * @param string                                          $caseId The case uuid.
+	 * @param array{personUid: string, note: string, days: int} $ask    Who is asked, for what, and for how long.
+	 *
+	 * @return JSONResponse The recipient and the request.
+	 */
+	private function sendRequest(string $caseId, array $ask): JSONResponse {
 		try {
 			$sent = $this->fileRequests->request(
 				caseId: $caseId,
-				personUid: trim($personId),
-				note: trim($note),
-				days: $days,
+				personUid: $ask['personUid'],
+				note: $ask['note'],
+				days: $ask['days'],
 			);
 		} catch (RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], $this->statusOf(code: (int)$e->getCode()));
 		}
 
 		return new JSONResponse($sent, Http::STATUS_CREATED);
-	}//end create()
+	}//end sendRequest()
 
 	/**
 	 * A service code as an HTTP status.

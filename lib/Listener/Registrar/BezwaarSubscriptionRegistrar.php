@@ -111,15 +111,19 @@ class BezwaarSubscriptionRegistrar {
 		// `in_array($schemaSlug, RELEVANT_SCHEMAS)` guard.
 		$this->subscribeFiltered(
 			dispatcher: $dispatcher,
-			event: ObjectCreatedEvent::class,
-			listener: BezwaarLifecycleListener::class,
-			schemas: self::LIFECYCLE_SCHEMAS
+			subscription: new FilteredSubscription(
+				event: ObjectCreatedEvent::class,
+				listener: BezwaarLifecycleListener::class,
+				schemas: self::LIFECYCLE_SCHEMAS
+			)
 		);
 		$this->subscribeFiltered(
 			dispatcher: $dispatcher,
-			event: ObjectUpdatedEvent::class,
-			listener: BezwaarLifecycleListener::class,
-			schemas: self::LIFECYCLE_SCHEMAS
+			subscription: new FilteredSubscription(
+				event: ObjectUpdatedEvent::class,
+				listener: BezwaarLifecycleListener::class,
+				schemas: self::LIFECYCLE_SCHEMAS
+			)
 		);
 
 		// Bezwaar/beroep legal hold: when an Awb proceeding (objection) is
@@ -130,9 +134,11 @@ class BezwaarSubscriptionRegistrar {
 		// ArchivalTriggerService `opgeschort-juridische-procedure` status.
 		$this->subscribeFiltered(
 			dispatcher: $dispatcher,
-			event: ObjectCreatedEvent::class,
-			listener: BezwaarLegalHoldListener::class,
-			schemas: self::LEGAL_HOLD_SCHEMAS
+			subscription: new FilteredSubscription(
+				event: ObjectCreatedEvent::class,
+				listener: BezwaarLegalHoldListener::class,
+				schemas: self::LEGAL_HOLD_SCHEMAS
+			)
 		);
 	}//end subscribe()
 
@@ -152,29 +158,24 @@ class BezwaarSubscriptionRegistrar {
 	 * no compile-time dependency on the optional app; there is no instance to
 	 * inject.
 	 *
-	 * @param IEventDispatcher $dispatcher The live event dispatcher.
-	 * @param string $event OpenRegister event class name.
-	 * @param string $listener Listener class name.
-	 * @param array<int,string> $schemas Schema slugs the listener reacts to.
+	 * @param IEventDispatcher     $dispatcher   The live event dispatcher.
+	 * @param FilteredSubscription $subscription The event, the listener and the schemas it reacts to.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
 	 */
-	private function subscribeFiltered(
-		IEventDispatcher $dispatcher,
-		string $event,
-		string $listener,
-		array $schemas,
-	): void {
-		$subscription = '\\OCA\\OpenRegister\\Event\\ObjectEventSubscription';
-		if (class_exists($subscription) === true) {
-			$subscription::subscribe(
+	private function subscribeFiltered(IEventDispatcher $dispatcher, FilteredSubscription $subscription): void {
+		$event = $subscription->event;
+		$listener = $subscription->listener;
+		$proxy = '\\OCA\\OpenRegister\\Event\\ObjectEventSubscription';
+		if (class_exists($proxy) === true) {
+			$proxy::subscribe(
 				dispatcher: $dispatcher,
 				event: $event,
 				listener: $listener,
 				registers: self::REGISTERS,
-				schemas: $schemas
+				schemas: $subscription->schemas
 			);
 			return;
 		}
