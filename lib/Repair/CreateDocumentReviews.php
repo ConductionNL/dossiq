@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Service\Support\ObjectSearch;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -105,7 +106,9 @@ class CreateDocumentReviews implements IRepairStep {
 
 		$tally = (array)$this->runAsSystemIfAvailable(
 			objectService: $objectService,
-			operation: fn (): array => $this->createMissing(objectService: $objectService, register: $register, schema: $assessmentSchema)
+			operation: fn (): array => $this->createMissing(
+				assessments: new ObjectSearch(objectService: $objectService, register: $register, schema: $assessmentSchema, filters: [], scope: [])
+			)
 		);
 		$output->info('Document reviews: '.$tally['created'].' created, '.$tally['failed'].' failed.');
 	}//end run()
@@ -113,20 +116,18 @@ class CreateDocumentReviews implements IRepairStep {
 	/**
 	 * Page through the assessments and create a review where a document has none.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register The register.
-	 * @param string $schema The assessment schema.
+	 * @param ObjectSearch $assessments OpenRegister's object service, the register and the assessment schema.
 	 *
 	 * @return array{created: int, failed: int} The tally.
 	 */
-	private function createMissing(object $objectService, string $register, string $schema): array {
+	private function createMissing(ObjectSearch $assessments): array {
 		$tally = ['created' => 0, 'failed' => 0];
 		$known = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
 			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $assessments->objectService,
+				register: $assessments->register,
+				schema: $assessments->schema,
 				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
 			);
 			foreach ($rows as $assessment) {
