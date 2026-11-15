@@ -198,7 +198,7 @@ class DrainIntakeObjectsCommand extends Command {
 			apply: $apply
 		);
 
-		return $this->print(report: $report, apply: $apply, output: $output);
+		return $this->print(report: [...$report, 'applied' => $apply], output: $output);
 	}//end execute()
 
 	/**
@@ -251,18 +251,17 @@ class DrainIntakeObjectsCommand extends Command {
 	/**
 	 * Print the report.
 	 *
-	 * @param array<string, array<int, mixed>> $report The report.
-	 * @param bool                             $apply  Whether cases were written.
-	 * @param OutputInterface                  $output The output.
+	 * @param array<string, mixed> $report The report, and under `applied` whether cases were written.
+	 * @param OutputInterface      $output The output.
 	 *
 	 * @return int 0 when nothing is pending.
 	 */
-	private function print(array $report, bool $apply, OutputInterface $output): int {
+	private function print(array $report, OutputInterface $output): int {
 		$this->printRows(report: $report, output: $output);
 
 		$pending = count($report['refused']);
 		$hint = '';
-		if ($apply === false) {
+		if ($report['applied'] === false) {
 			$pending += count($report['delivered']);
 			$hint = ' Dry run: pass --apply to open the cases.';
 		}
