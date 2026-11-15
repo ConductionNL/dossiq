@@ -95,6 +95,7 @@ import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
 import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
+import ConsentRecordDialog from './dialogs/ConsentRecordDialog.vue'
 import ContactMomentDetailDialog from './dialogs/ContactMomentDetailDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DecisionTableAdviceDialog from './dialogs/DecisionTableAdviceDialog.vue'
@@ -162,6 +163,7 @@ import WorkloadTeamHeading from './views/WorkloadTeamHeading.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 import {
+	exportAnonymisedSelection,
 	extendTermSelection,
 	reassignSelection,
 	resumeSelection,
@@ -656,6 +658,15 @@ const registry = {
 		_note: 'CaseDetail Actions menu and the Related cases tab: a case type, a date and a title, posted to /plan, which writes ONE scheduled flow creating the case on that date. The earliest date is tomorrow, because a schedule fires on a cron minute and a follow-up planned for today would fire in a few hours or not at all depending on the clock. Single-shot is kept by PlannedFollowUpSweepJob, not by the cron: five cron fields cannot say "once" or "three times". A Repeat picker turns it into a series (planned-case-series): the recurrence becomes the cron fields, the end becomes the sweep\'s stop rule, and the Related tab grows a series row with a Stop series action. The form lives here and not in the manifest: an `open-modal` header action carries a target and props only, and the five fields (case type, date, title, Repeat, Ends) are bound to each other, since the end fields appear only once a repeat is chosen and no `visibleWhen` on a header action can say that. What the manifest does decide is that the gesture is a modal rather than a `handler`, because a handler action resolves `action.handler` against `effectiveManifest.actions`, a JSON map that cannot hold a function, so the entry would warn to the console and do nothing when clicked. The manifest entry itself carries no `_note`: the v2 schema sets `additionalProperties: false` on a header action, so the rationale belongs in this file.',
 	},
 
+	// --- Record a consent on the case (social-domain-consent-and-safeguards 2.1). ---
+	// @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	ConsentRecordDialog: {
+		kind: 'modal',
+		component: ConsentRecordDialog,
+		propsSchema: {},
+		_note: 'The Add of the CaseDetail consents widget: who gave the consent, to sharing with which party, for which purpose, from and until when, saved as one `toestemming` object. That is the record CaseTransferConsentGate reads before a share, so a consent recorded here lets a share with the named party through and its revoke (the widget row action, a patch of `withdrawn`) stops the next one. It reads the case from the route when no case id is passed.',
+	},
+
 	// --- Remind a colleague about this case (case-reminder-as-task, row 8.4). ---
 	// @spec openspec/specs/task-management/spec.md
 	RemindDialog: {
@@ -1077,6 +1088,13 @@ const registry = {
 		kind: 'handler',
 		handler: toggleCaseFollow,
 		_note: "The Queue's and Cases' follow row action, which replaced the star (one-follow-control). ONE entry rather than a follow and an unfollow, because `@self.watching` rides every row so the click knows which way to go. The gesture is PUT to follow and DELETE to stop on one path, and no declarative write takes two methods.",
+	},
+	// The anonymised export of the selected cases (social-domain-consent-and-safeguards 4.1).
+	// @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	exportAnonymisedSelection: {
+		kind: 'handler',
+		handler: exportAnonymisedSelection,
+		_note: 'The Cases page\'s Export anonymised bulk action. The library export menu (CSV and Excel) streams OpenRegister\'s export leaf and has no anonymised variant, so this posts the selected ids to POST /api/cases/anonymised-export, which removes or generalises each case type\'s identifyingFields and writes the processing-log row, and saves the answer as CSV. A refusal is shown and nothing falls back to the plain export.',
 	},
 	// @spec openspec/specs/case-management/spec.md
 	reassignSelection: {
