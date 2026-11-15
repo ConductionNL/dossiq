@@ -236,19 +236,18 @@ class CasePlanMigrationService implements CasePlanMigrationServiceInterface {
 			return $this->report(caseId: $caseId, outcome: self::WOULD_MIGRATE, reason: 'dry_run');
 		}
 
-		return $this->commit(drained: new CaseWithBlob(caseId: $caseId, blob: $blob), definition: $definition, history: $history);
+		return $this->commit(drained: new CaseWithBlob(caseId: $caseId, blob: $blob), plan: ['definition' => $definition, 'history' => $history]);
 	}//end migrateCase()
 
 	/**
 	 * Ensure the rows, write the case file, verify, clear the blob.
 	 *
-	 * @param CaseWithBlob         $drained    The case uuid and its decoded blob.
-	 * @param array<string, mixed> $definition The definition with states.
-	 * @param array<int, mixed>    $history    The history entries.
+	 * @param CaseWithBlob         $drained The case uuid and its decoded blob.
+	 * @param array<string, mixed> $plan    The definition with states (`definition`) and the history entries (`history`).
 	 *
 	 * @return array<string, mixed> The case's report.
 	 */
-	private function commit(CaseWithBlob $drained, array $definition, array $history): array {
+	private function commit(CaseWithBlob $drained, array $plan): array {
 		$caseId = $drained->caseId;
 		$plans = $this->settingsService->getOpenRegisterClass(class: CasePlanProjectionService::CASE_PLAN_SERVICE);
 		if ($plans === null || method_exists($plans, 'ensureItems') === false) {
@@ -260,8 +259,8 @@ class CasePlanMigrationService implements CasePlanMigrationServiceInterface {
 				objectUuid: $caseId,
 				registerId: $this->intOrNull(key: 'register'),
 				schemaId: $this->intOrNull(key: 'case_schema'),
-				definition: $definition,
-				history: $history,
+				definition: $plan['definition'],
+				history: $plan['history'],
 				app: CasePlanProjectionService::SYSTEM_APP,
 			);
 		} catch (Throwable $e) {

@@ -140,7 +140,7 @@ class DecisionAdviceService {
 				$inputs[] = [
 					'name' => $name,
 					'type' => (string)($definition['type'] ?? 'string'),
-					'options' => $this->entries(rules: $rules, key: 'inputEntries', index: $index),
+					'options' => $this->entries(rules: $rules, column: ['key' => 'inputEntries', 'index' => $index]),
 				];
 			}
 
@@ -151,7 +151,7 @@ class DecisionAdviceService {
 			'available' => ($inputs !== []),
 			'decisionTable' => $reference,
 			'inputs' => $inputs,
-			'outcomes' => $this->entries(rules: $rules, key: 'outputEntries', index: 0),
+			'outcomes' => $this->entries(rules: $rules, column: ['key' => 'outputEntries', 'index' => 0]),
 		];
 	}//end form()
 
@@ -159,13 +159,13 @@ class DecisionAdviceService {
 	 * The distinct literal values one column of the rules uses, in rule order.
 	 * A dash or an empty entry matches anything and is no option.
 	 *
-	 * @param array  $rules The table's rules.
-	 * @param string $key   `inputEntries` or `outputEntries`.
-	 * @param int    $index The column.
+	 * @param array                          $rules  The table's rules.
+	 * @param array{key: string, index: int} $column `inputEntries` or `outputEntries`, and the column.
 	 *
 	 * @return list<string>
 	 */
-	private function entries(array $rules, string $key, int $index): array {
+	private function entries(array $rules, array $column): array {
+		['key' => $key, 'index' => $index] = $column;
 		$values = [];
 		foreach ($rules as $rule) {
 			$entry = null;
