@@ -36,6 +36,17 @@ namespace OCA\Dossiq\Kernel\Contracts;
 interface StatusTypeLookupInterface {
 
 	/**
+	 * A statusType's human-readable name.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The name, or the empty string when unresolvable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function nameFor(string $statusTypeId): string;
+
+	/**
 	 * The words a status is announced in, or '' when it is not announced.
 	 *
 	 * NOT THE SAME QUESTION AS {@see StatusPublicLabels::publicLabelOf()}, and

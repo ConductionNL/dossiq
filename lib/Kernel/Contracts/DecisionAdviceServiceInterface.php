@@ -44,7 +44,7 @@ interface DecisionAdviceServiceInterface {
 	 *
 	 * @return array<string, mixed> The stored advice.
 	 *
-	 * @throws DecisionAdviceRefusal When the case, its table or an input is missing, or the table gives no answer.
+	 * @throws \OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceRefusal When the case, its table or an input is missing, or the table gives no answer.
 	 *
 	 * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md#requirement-a-handler-asks-the-case-types-decision-table-for-advice-on-the-case-req-lhs-case-01
 	 */
@@ -57,7 +57,7 @@ interface DecisionAdviceServiceInterface {
 	 *
 	 * @return array<string, mixed> The advice.
 	 *
-	 * @throws DecisionAdviceRefusal When it cannot be found.
+	 * @throws \OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceRefusal When it cannot be found.
 	 *
 	 * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md#requirement-a-handler-asks-the-case-types-decision-table-for-advice-on-the-case-req-lhs-case-01
 	 */
@@ -74,7 +74,7 @@ interface DecisionAdviceServiceInterface {
 	 * @return array{available: bool, decisionTable: string, inputs: list<array{name: string, type: string, options: list<string>}>,
 	 *     outcomes: list<string>}
 	 *
-	 * @throws DecisionAdviceRefusal When the case is unknown or the table cannot be read.
+	 * @throws \OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceRefusal When the case is unknown or the table cannot be read.
 	 *
 	 * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
 	 */
@@ -91,7 +91,7 @@ interface DecisionAdviceServiceInterface {
 	 *
 	 * @return array<string, mixed> The stored advice with the choice.
 	 *
-	 * @throws DecisionAdviceRefusal When the outcome is missing, a deviation has no reason, or the choice was already made.
+	 * @throws \OCA\Dossiq\Service\DecisionAdvice\DecisionAdviceRefusal When the outcome is missing, a deviation has no reason, or the choice was already made.
 	 *
 	 * @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md#requirement-a-handler-asks-the-case-types-decision-table-for-advice-on-the-case-req-lhs-case-01
 	 */

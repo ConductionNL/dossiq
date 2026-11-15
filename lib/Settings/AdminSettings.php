@@ -56,7 +56,7 @@ class AdminSettings implements IDelegatedSettings {
 	 * @param SettingsServiceInterface $settingsService Reads the stored config values.
 	 * @param QueueUrgencySettingsInterface $queueUrgency The queue thresholds and weights.
 	 * @param ServerVersion        $serverVersion The Nextcloud this instance runs.
-	 * @param PackageAdminTabsInterface     $packageTabs   The installed packages that declare an admin tab.
+	 * @param PackageAdminTabsInterface $packageTabs The installed packages that declare an admin tab.
 	 */
 	public function __construct(
 		private IAppManager $appManager,

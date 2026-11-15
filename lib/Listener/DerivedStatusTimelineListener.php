@@ -79,7 +79,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 	 *
 	 * @param DerivedStatusJournal $journal  What the derivation staged this request.
 	 * @param CaseTimelineInterface         $timeline The one seam that writes a timeline entry.
-	 * @param StatusTypeLookupInterface     $statuses Resolves a statusType id to its name.
+	 * @param StatusTypeLookupInterface $statuses Resolves a statusType id to its name.
 	 * @param LoggerInterface      $logger   Structured logger.
 	 */
 	public function __construct(

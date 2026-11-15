@@ -32,7 +32,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Substitution;
 
-use OCA\Dossiq\Kernel\Contracts\SubstitutionAccessGuardInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesConfiguredSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -47,7 +46,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-class SubstitutionAccessGuard implements SubstitutionAccessGuardInterface {
+class SubstitutionAccessGuard {
 	use SearchesObjects;
 	use SearchesConfiguredSchema;
 

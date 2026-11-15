@@ -55,11 +55,6 @@ class AiAuditLog implements AiAuditLogInterface {
 	use SearchesObjects;
 
 	/**
-	 * Default audit-listing page size.
-	 */
-	private const DEFAULT_LIMIT = 50;
-
-	/**
 	 * Maximum audit-listing page size.
 	 */
 	private const MAX_LIMIT = 200;

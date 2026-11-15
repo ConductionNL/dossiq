@@ -36,6 +36,11 @@ namespace OCA\Dossiq\Kernel\Contracts;
 interface AiAuditLogInterface {
 
 	/**
+	 * Default audit-listing page size.
+	 */
+	public const DEFAULT_LIMIT = 50;
+
+	/**
 	 * List recorded AI audit entries from OpenRegister, newest first.
 	 *
 	 * Degrades gracefully (empty result, warning logged, no throw) when AI audit
