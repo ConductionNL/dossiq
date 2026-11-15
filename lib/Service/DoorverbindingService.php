@@ -88,7 +88,7 @@ class DoorverbindingService implements DoorverbindingServiceInterface {
 
 		$target = $this->resolve();
 
-		$record = $this->transferRecord(data: $data, interactionId: $interactionId, fromEmployeeId: $fromEmployeeId);
+		$record = $this->transferRecord(data: ['interactionId' => $interactionId, 'fromEmployeeId' => $fromEmployeeId] + $data);
 
 		$created = $this->saveTransferRecord(target: $target, record: $record);
 
@@ -98,18 +98,16 @@ class DoorverbindingService implements DoorverbindingServiceInterface {
 	/**
 	 * The doorverbinding record a warm transfer starts with.
 	 *
-	 * @param array<string, mixed> $data           The transfer fields.
-	 * @param string               $interactionId  The trimmed contactmoment id.
-	 * @param string               $fromEmployeeId The trimmed transferring employee id.
+	 * @param array<string, mixed> $data The transfer fields, with the trimmed contactmoment id and transferring employee id.
 	 *
 	 * @return array<string, mixed> The record to save.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
 	 */
-	private function transferRecord(array $data, string $interactionId, string $fromEmployeeId): array {
+	private function transferRecord(array $data): array {
 		return [
-			'interactionId' => $interactionId,
-			'fromEmployeeId' => $fromEmployeeId,
+			'interactionId' => $data['interactionId'],
+			'fromEmployeeId' => $data['fromEmployeeId'],
 			'toEmployeeId' => ($data['toEmployeeId'] ?? null),
 			'toQueue' => ($data['toQueue'] ?? null),
 			'transferReason' => (string)($data['transferReason'] ?? ''),
