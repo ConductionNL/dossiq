@@ -97,6 +97,7 @@ import {
 	NcNoteCard,
 	NcSelect,
 } from '@nextcloud/vue'
+import { loadOnMount } from '../../mixins/loadOnMount.js'
 
 /**
  * The endpoint for the caller's own settings.
@@ -153,6 +154,8 @@ export default {
 		NcNoteCard,
 		NcSelect,
 	},
+
+	mixins: [loadOnMount],
 
 	data() {
 		return {
@@ -237,16 +240,6 @@ export default {
 				},
 			)
 		},
-	},
-
-	/**
-	 * Read the caller's settings.
-	 *
-	 * @spec openspec/specs/email-case-matching/spec.md
-	 * @return {Promise<void>}
-	 */
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

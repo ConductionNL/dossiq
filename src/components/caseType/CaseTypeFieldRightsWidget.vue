@@ -70,6 +70,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
 import ChevronUp from 'vue-material-design-icons/ChevronUp.vue'
 import FilterOutline from 'vue-material-design-icons/FilterOutline.vue'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 import { fetchBlueprintCatalogue, fetchRoleNamesByGroup } from '../../services/caseTypeRules.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { fieldRightsMatrix } from '../../utils/fieldRightsMatrix.js'
@@ -80,6 +81,8 @@ export default {
 	name: 'CaseTypeFieldRightsWidget',
 
 	components: { ChevronDown, ChevronUp, CnStatusBadge, FilterOutline, NcActionCheckbox, NcActions, NcLoadingIcon },
+
+	mixins: [caseTypeWidget],
 
 	data() {
 		return {
@@ -111,16 +114,6 @@ export default {
 			}
 			const sign = this.sortDir === 'desc' ? -1 : 1
 			return [...kept].sort((a, b) => sign * a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }))
-		},
-
-		/**
-		 * The case type this page is bound to.
-		 *
-		 * @return {string} The route's id.
-		 * @spec openspec/specs/case-types/spec.md
-		 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
 		},
 
 		/**
