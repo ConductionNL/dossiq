@@ -13,7 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentJoinHomingInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -28,7 +29,7 @@ use Throwable;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class DocumentJoinHoming {
+class DocumentJoinHoming implements DocumentJoinHomingInterface {
 
 	/**
 	 * @param DocumentProjectionService $projection The projection that moves the file.
@@ -88,7 +89,7 @@ class DocumentJoinHoming {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq documents: could not move document ' . $recordId . ' into case ' . $caseId . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e],
+				['app' => AppIdentity::APP_ID, 'exception' => $e],
 			);
 
 			return false;

@@ -13,12 +13,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
-use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -49,8 +49,14 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 
 	/**
 	 * The value the key holds once the step ran; bump it to run the step again.
+	 *
+	 * 2: joins stored straight into OpenRegister (an example set, an import)
+	 * before DocumentJoinHomingListener left their files outside the case
+	 * folder, so the case's Files tab stayed empty.
+	 * 3: such a record holds its file in `@self.files` with no `fileId`, which
+	 * version 2 still skipped.
 	 */
-	public const DONE_VERSION = '1';
+	public const DONE_VERSION = '3';
 
 	/**
 	 * How many records one page holds.
@@ -58,16 +64,16 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	private const PAGE_SIZE = 200;
 
 	/**
-	 * @param SettingsService $settingsService OpenRegister access and the configured register.
-	 * @param DocumentRecordStore $store Records and joins.
-	 * @param DocumentProjectionService $projection The move itself.
+	 * @param SettingsServiceInterface $settingsService OpenRegister access and the configured register.
+	 * @param DocumentRecordStoreInterface $store Records and joins.
+	 * @param DocumentProjectionServiceInterface $projection The move itself.
 	 * @param IAppConfig $appConfig The version gate.
 	 * @param LoggerInterface $logger Where each skipped record is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly DocumentRecordStore $store,
-		private readonly DocumentProjectionService $projection,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly DocumentRecordStoreInterface $store,
+		private readonly DocumentProjectionServiceInterface $projection,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -94,7 +100,7 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
@@ -128,9 +134,26 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 			return;
 		}
 
-		$moved = 0;
-		$skipped = 0;
-		$missing = 0;
+		$counts = $this->moveEveryPage(objectService: $objectService, register: $register, infoSchema: $infoSchema);
+
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+		$output->info(
+			'Dossiq documents: moved ' . $counts['moved'] . ' file(s) into their case, left ' . $counts['skipped']
+			. ' already home or without a case, ' . $counts['missing'] . ' named in the log.'
+		);
+	}//end moveAll()
+
+	/**
+	 * Page through every record with a file and move each one.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $infoSchema    The informatieobject schema.
+	 *
+	 * @return array{moved: int, skipped: int, missing: int} The outcomes counted.
+	 */
+	private function moveEveryPage(object $objectService, string $register, string $infoSchema): array {
+		$counts = ['moved' => 0, 'skipped' => 0, 'missing' => 0];
 		$page = 1;
 		$full = true;
 		while ($full === true) {
@@ -141,30 +164,40 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
 			);
 			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				$outcome = $this->moveOne(row: $row);
-				if ($outcome === 'moved') {
-					$moved++;
-				}
-
-				if ($outcome === 'skipped') {
-					$skipped++;
-				}
-
-				if ($outcome === 'missing') {
-					$missing++;
-				}
-			}
+			$counts = $this->moveRows(rows: $rows, counts: $counts);
 
 			$page++;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
-		$output->info(
-			'Dossiq documents: moved ' . $moved . ' file(s) into their case, left ' . $skipped
-			. ' already home or without a case, ' . $missing . ' named in the log.'
-		);
-	}//end moveAll()
+		return $counts;
+	}//end moveEveryPage()
+
+	/**
+	 * Move each row of one page and add its outcome to the counts.
+	 *
+	 * @param array<int, array<string, mixed>>              $rows   The page's rows.
+	 * @param array{moved: int, skipped: int, missing: int} $counts The counts so far.
+	 *
+	 * @return array{moved: int, skipped: int, missing: int} The counts.
+	 */
+	private function moveRows(array $rows, array $counts): array {
+		foreach ($rows as $row) {
+			$outcome = $this->moveOne(row: $row);
+			if ($outcome === 'moved') {
+				$counts['moved']++;
+			}
+
+			if ($outcome === 'skipped') {
+				$counts['skipped']++;
+			}
+
+			if ($outcome === 'missing') {
+				$counts['missing']++;
+			}
+		}
+
+		return $counts;
+	}//end moveRows()
 
 	/**
 	 * Move one record's file, when it has one and a case to go to.
@@ -176,26 +209,74 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	private function moveOne(array $row): string {
 		$recordId = trim((string)($row['id'] ?? (($row['@self'] ?? [])['id'] ?? '')));
 		$fileName = (string)($row['fileName'] ?? '');
-		if ($recordId === '' || $fileName === '' || (int)($row['fileId'] ?? 0) <= 0) {
-			return 'skipped';
-		}
-
-		$ownFolder = $this->projection->folderOf(objectId: $recordId);
-		if ($ownFolder === null || $ownFolder->nodeExists($fileName) === false) {
-			// Already under a case folder, which is what a second run sees.
+		if ($this->hasMovableFile(row: $row, recordId: $recordId, fileName: $fileName) === false
+			|| $this->stillInOwnFolder(recordId: $recordId, fileName: $fileName) === false
+		) {
 			return 'skipped';
 		}
 
 		$caseId = $this->owningCase(recordId: $recordId);
 		if ($caseId === '') {
-			$this->logger->warning(
-				'Dossiq documents: ' . $recordId . ' (' . $fileName . ') is joined to no case; its file stays in its own folder',
-				['app' => Application::APP_ID],
-			);
-
-			return 'missing';
+			return $this->unjoined(recordId: $recordId, fileName: $fileName);
 		}
 
+		return $this->homeInCase(recordId: $recordId, fileName: $fileName, caseId: $caseId);
+	}//end moveOne()
+
+	/**
+	 * Whether the record has an id, a file name and a file.
+	 *
+	 * @param array<string, mixed> $row The record row.
+	 * @param string $recordId The record id.
+	 * @param string $fileName The record's file name.
+	 *
+	 * @return bool True when there is a file to move.
+	 */
+	private function hasMovableFile(array $row, string $recordId, string $fileName): bool {
+		return !($recordId === '' || $fileName === '' || $this->holdsFile(row: $row) === false);
+	}//end hasMovableFile()
+
+	/**
+	 * Whether the file still sits in the record's own folder.
+	 *
+	 * @param string $recordId The record id.
+	 * @param string $fileName The record's file name.
+	 *
+	 * @return bool True when the file is still in the record's own folder.
+	 */
+	private function stillInOwnFolder(string $recordId, string $fileName): bool {
+		$ownFolder = $this->projection->folderOf(objectId: $recordId);
+		// Already under a case folder, which is what a second run sees.
+		return !($ownFolder === null || $ownFolder->nodeExists($fileName) === false);
+	}//end stillInOwnFolder()
+
+	/**
+	 * Log a record joined to no case; its file stays where it is.
+	 *
+	 * @param string $recordId The record id.
+	 * @param string $fileName The record's file name.
+	 *
+	 * @return string Always missing.
+	 */
+	private function unjoined(string $recordId, string $fileName): string {
+		$this->logger->warning(
+			'Dossiq documents: ' . $recordId . ' (' . $fileName . ') is joined to no case; its file stays in its own folder',
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return 'missing';
+	}//end unjoined()
+
+	/**
+	 * Move the record's file into its case folder.
+	 *
+	 * @param string $recordId The record id.
+	 * @param string $fileName The record's file name.
+	 * @param string $caseId The owning case.
+	 *
+	 * @return string moved, skipped or missing.
+	 */
+	private function homeInCase(string $recordId, string $fileName, string $caseId): string {
 		try {
 			if ($this->projection->homeDocument(recordId: $recordId, caseId: $caseId) === true) {
 				return 'moved';
@@ -205,12 +286,25 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq documents: ' . $recordId . ' (' . $fileName . ') could not move into case ' . $caseId . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e],
+				['app' => AppIdentity::APP_ID, 'exception' => $e],
 			);
 
 			return 'missing';
 		}
-	}//end moveOne()
+	}//end homeInCase()
+
+	/**
+	 * Whether a record holds a file: a `fileId`, or one attached in `@self.files`.
+	 *
+	 * @param array<string, mixed> $row The record row.
+	 *
+	 * @return bool
+	 */
+	private function holdsFile(array $row): bool {
+		$attached = (($row['@self'] ?? [])['files'] ?? []);
+
+		return ((int)($row['fileId'] ?? 0) > 0 || (is_array($attached) === true && $attached !== []));
+	}//end holdsFile()
 
 	/**
 	 * The case of a record's earliest join, by registration date.

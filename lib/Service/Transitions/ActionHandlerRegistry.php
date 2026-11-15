@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Service\Transitions;
 /**
  * Registry of action handlers keyed by action type.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T09
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T09
  */
 class ActionHandlerRegistry {
 
@@ -54,14 +54,16 @@ class ActionHandlerRegistry {
 	 * @param CreateSubCaseHandler $createSubCase Built-in sub-case handler
 	 * @param BesluitvormingPublishHandler $decisionPublish DROP/LVBB publication handler
 	 * @param ResumeTermHandler $resumeTerm Lifts a paused term, as a task effect
+	 * @param RaiseDecisionHandler $raiseDecision Hands the case to the decision app as a decision of a configured type
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function __construct(
 		CreateTaskHandler $createTask,
 		CreateSubCaseHandler $createSubCase,
 		BesluitvormingPublishHandler $decisionPublish,
 		ResumeTermHandler $resumeTerm,
+		RaiseDecisionHandler $raiseDecision,
 	) {
 		$this->handlers = [
 			'createTask' => $createTask,
@@ -71,6 +73,7 @@ class ActionHandlerRegistry {
 			// task that processed the aanvulling is what lifts the pause the
 			// aanvulling request put on the term.
 			'resumeTerm' => $resumeTerm,
+			'raiseDecision' => $raiseDecision,
 		];
 	}//end __construct()
 

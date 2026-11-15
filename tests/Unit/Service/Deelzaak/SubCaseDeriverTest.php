@@ -13,8 +13,8 @@
  * in for, copied from `ObjectRelationService` and `ObjectServiceInterface` on
  * openregister `development` (openregister#3764). A double that invents a
  * method the real class lacks can only ever pass, so nothing here is invented:
- * `declarationFor`, `applyInheritance` and `recordDerivation` are real, and
- * `applyInheritance` implements the rule OpenRegister implements, so a change
+ * `declarationFor`, `inherit` and `recordDerivation` are real, and
+ * `inherit` implements the rule OpenRegister implements, so a change
  * to that rule shows up here as a disagreement rather than as silence.
  *
  * @category Tests
@@ -38,13 +38,20 @@ namespace OCA\Dossiq\Tests\Unit\Service\Deelzaak;
 
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Relation\ParentInheritance;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for SubCaseDeriver.
  *
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
+ * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseStore
+ * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseLink
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class SubCaseDeriverTest extends TestCase {
 
@@ -159,7 +166,9 @@ class SubCaseDeriverTest extends TestCase {
 				 *
 				 * @return object|null
 				 */
-				public function find(string $id, $register = null, $schema = null): ?object {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?object {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					return ($id === 'parent') ? $this->entity : null;
 				}//end find()
 
@@ -172,7 +181,9 @@ class SubCaseDeriverTest extends TestCase {
 				 *
 				 * @return object
 				 */
-				public function saveObject(array $object, $register = null, $schema = null): object {
+				public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
 					$this->saved = $object;
 
 					return new class($object) {
@@ -228,16 +239,16 @@ class SubCaseDeriverTest extends TestCase {
 				}//end declarationFor()
 
 				/**
-				 * Mimic ObjectRelationService::applyInheritance(), rule for rule.
+				 * Mimic ObjectRelationService::inherit(), rule for rule.
 				 *
-				 * @param object $parent The parent object.
-				 * @param array<string, mixed> $childData The child so far.
-				 * @param array<string, string> $inherits Role to property name.
+				 * @param ParentInheritance $request The parent, the child so far, and role to property name.
 				 *
 				 * @return array{data: array<string, mixed>, inherited: array<string, mixed>}
 				 */
-				public function applyInheritance(object $parent, array $childData, array $inherits): array {
-					$parentData = $parent->getObject();
+				public function inherit(ParentInheritance $request): array {
+					$parentData = $request->parent->getObject();
+					$childData = $request->childData;
+					$inherits = $request->inherits;
 					$record = [];
 					foreach ($inherits as $role => $property) {
 						$value = ($parentData[$property] ?? null);
@@ -256,7 +267,7 @@ class SubCaseDeriverTest extends TestCase {
 					}
 
 					return ['data' => $childData, 'inherited' => $record];
-				}//end applyInheritance()
+				}//end inherit()
 
 				/**
 				 * Mimic ObjectRelationService::recordDerivation().

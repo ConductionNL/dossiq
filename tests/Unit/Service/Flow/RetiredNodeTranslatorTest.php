@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Flow;
 
-use OCA\Dossiq\Service\Dmn\DecisionTableService;
+use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeRewriter;
@@ -40,6 +40,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Flow\RetiredNodeMap
  * @covers \OCA\Dossiq\Service\Flow\RetiredNodeRewriter
  * @covers \OCA\Dossiq\Service\Flow\RetiredWebhookSteps
+ * @uses   \OCA\Dossiq\Service\Dmn\StoredDecisionTables
  */
 class RetiredNodeTranslatorTest extends TestCase {
 
@@ -60,8 +61,12 @@ class RetiredNodeTranslatorTest extends TestCase {
 				: ''
 		);
 
-		$tables = $this->createMock(DecisionTableService::class);
-		$tables->method('findByKey')->willReturn($table);
+		$tables = $this->getMockBuilder(StoredDecisionTables::class)->disableOriginalConstructor()->onlyMethods(['find'])->getMock();
+		if ($table === null) {
+			$tables->method('find')->willThrowException(new \UnexpectedValueException('No decision table has the key or id "dossiq.weg".'));
+		} else {
+			$tables->method('find')->with('dossiq.' . $table['key'])->willReturn($table);
+		}
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($tables);
@@ -205,6 +210,53 @@ class RetiredNodeTranslatorTest extends TestCase {
 	}//end testATransitionMailKeepsItsTextAsWritten()
 
 	/**
+	 * Both mails refuse an empty body, and the catalogue mail does so before it reads its subject.
+	 *
+	 * @return void
+	 */
+	public function testAMailWithoutABodyIsRefused(): void {
+		$refusals = [];
+		foreach (
+			[
+				[RetiredNodeMap::EMAIL_ACTION, ['recipientRef' => 'indiener', 'subjectTemplate' => '{{case.a.b}}', 'bodyTemplate' => ' ']],
+				[RetiredNodeMap::EMAIL_TRANSITION, ['recipient' => 'a@example.org', 'subject' => 'S', 'body' => " \n"]],
+			] as [$translation, $config]
+		) {
+			try {
+				$this->translator()->translate(translation: $translation, config: $config);
+				self::fail('Not refused: ' . $translation);
+			} catch (UnmappableStep $e) {
+				$refusals[] = $e->getMessage();
+			}
+		}
+
+		self::assertSame(
+			['the step has no body, which the send-email step refuses', 'the step has no body, which the send-email step refuses'],
+			$refusals
+		);
+	}//end testAMailWithoutABodyIsRefused()
+
+	/**
+	 * A transition mail reads `recipient` when `to` is absent, and refuses one with neither.
+	 *
+	 * @return void
+	 */
+	public function testATransitionMailNeedsARecipient(): void {
+		$steps = $this->translator()->translate(
+			translation: RetiredNodeMap::EMAIL_TRANSITION,
+			config: ['recipient' => ' b@example.org ', 'body' => 'B']
+		);
+		self::assertSame(
+			[['type' => 'openregister.send-email', 'config' => ['recipients' => ['b@example.org'], 'externalRecipients' => 'object', 'subject' => '', 'body' => 'B']]],
+			$steps
+		);
+
+		$this->expectException(UnmappableStep::class);
+		$this->expectExceptionMessage('the step names no recipient');
+		$this->translator()->translate(translation: RetiredNodeMap::EMAIL_TRANSITION, config: ['body' => 'B']);
+	}//end testATransitionMailNeedsARecipient()
+
+	/**
 	 * A role notification reads both role fields and gets the notifier's wording when it had none.
 	 *
 	 * @return void
@@ -297,11 +349,11 @@ class RetiredNodeTranslatorTest extends TestCase {
 	}//end testSetFieldWithoutACaseSchemaIsRefused()
 
 	/**
-	 * A decision carries the stored table inline and writes the mapped outputs to the case.
+	 * A decision names the stored table by tableRef and writes the mapped outputs to the case.
 	 *
 	 * @return void
 	 */
-	public function testADecisionCarriesItsTableAndWritesItsOutputs(): void {
+	public function testADecisionNamesItsStoredTableAndWritesItsOutputs(): void {
 		$table = [
 			'id' => 'uuid-1',
 			'@self' => ['id' => 'uuid-1'],
@@ -318,12 +370,11 @@ class RetiredNodeTranslatorTest extends TestCase {
 		);
 
 		self::assertSame(['openregister.decision-table', 'openregister.object-write'], array_column($steps, 'type'));
-		self::assertArrayNotHasKey('id', $steps[0]['config']['table']);
-		self::assertArrayNotHasKey('@self', $steps[0]['config']['table']);
-		self::assertSame('toets', $steps[0]['config']['table']['key']);
+		self::assertSame('dossiq.toets', $steps[0]['config']['tableRef']);
+		self::assertArrayNotHasKey('table', $steps[0]['config'], 'the table lives once in the register, not inline in the step');
 		self::assertSame(['uitkomst' => 'besluit'], $steps[0]['config']['outputMapping']);
 		self::assertSame(['besluit' => '{{ besluit }}', 'reden' => '{{ reden }}'], $steps[1]['config']['fields']);
-	}//end testADecisionCarriesItsTableAndWritesItsOutputs()
+	}//end testADecisionNamesItsStoredTableAndWritesItsOutputs()
 
 	/**
 	 * A decision naming a table that does not exist is refused.
@@ -332,7 +383,7 @@ class RetiredNodeTranslatorTest extends TestCase {
 	 */
 	public function testADecisionWithoutItsTableIsRefused(): void {
 		$this->expectException(UnmappableStep::class);
-		$this->expectExceptionMessage('no decision table has the key "weg"');
+		$this->expectExceptionMessage('is not in OpenRegister\'s decision-tables register as "dossiq.weg"');
 
 		$this->translator(table: null)->translate(translation: RetiredNodeMap::DECISION, config: ['decisionKey' => 'weg']);
 	}//end testADecisionWithoutItsTableIsRefused()
@@ -392,6 +443,37 @@ class RetiredNodeTranslatorTest extends TestCase {
 		self::assertSame('dossiq', $config['requestingApp']);
 		self::assertSame(['informatieobjecttype' => 'type-uuid', 'direction' => 'outgoing', 'addressees' => 'case'], $config['metadata']);
 	}//end testACreatedDocumentIsFiledUnderItsType()
+
+	/**
+	 * Both document steps file under their type with a default name, and a merge without a target field files too.
+	 *
+	 * @return void
+	 */
+	public function testDocumentsFiledWithTheirDefaultNames(): void {
+		$created = $this->translator()->translate(
+			translation: RetiredNodeMap::DOCUMENT_CREATE,
+			config: ['templateSlug' => 'Tekst', 'outputName' => ' ', 'documentType' => ' type-1 ']
+		);
+		$merged = $this->translator()->translate(
+			translation: RetiredNodeMap::DOCUMENT_MERGE,
+			config: ['templateSlug' => 'Tekst', 'name' => 'Brief', 'documentType' => 'type-2']
+		);
+		$unnamed = $this->translator()->translate(
+			translation: RetiredNodeMap::DOCUMENT_MERGE,
+			config: ['template' => 'Tekst', 'documentType' => 'type-3']
+		);
+
+		self::assertSame($created[0]['type'], $merged[0]['type']);
+		self::assertSame(
+			[['document', 'type-1', true], ['Brief', 'type-2', true], ['Document', 'type-3', true]],
+			[
+				[$created[0]['config']['filename'], $created[0]['config']['metadata']['informatieobjecttype'], $created[0]['config']['storeFile']],
+				[$merged[0]['config']['filename'], $merged[0]['config']['metadata']['informatieobjecttype'], $merged[0]['config']['storeFile']],
+				[$unnamed[0]['config']['filename'], $unnamed[0]['config']['metadata']['informatieobjecttype'], $unnamed[0]['config']['storeFile']],
+			]
+		);
+		self::assertSame(array_keys($created[0]['config']), array_keys($merged[0]['config']));
+	}//end testDocumentsFiledWithTheirDefaultNames()
 
 	/**
 	 * Text dossiq printed but Twig would run is refused.
@@ -546,7 +628,7 @@ class RetiredNodeTranslatorTest extends TestCase {
 		);
 
 		$this->expectException(UnmappableStep::class);
-		$this->expectExceptionMessage('could not be read');
+		$this->expectExceptionMessage('no openregister');
 
 		$translator->translate(translation: RetiredNodeMap::DECISION, config: ['decisionKey' => 'toets']);
 	}//end testAnUnreachableTableStoreIsARefusal()

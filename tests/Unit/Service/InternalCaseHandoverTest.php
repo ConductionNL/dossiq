@@ -52,9 +52,11 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Transfer\TeamDirectory
  * @covers \OCA\Dossiq\Service\Transfer\CaseSeatReconciler
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Routing\RoutingNote
  * @uses \OCA\Dossiq\Service\People\CaseSeats
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class InternalCaseHandoverTest extends TestCase {
 
@@ -200,6 +202,11 @@ class InternalCaseHandoverTest extends TestCase {
 			'vergunningen',
 			$this->store->row(schema: 'case', uuid: 'case-1')['assignedGroup'],
 			'A refusal returns the case to the sending team.',
+		);
+		self::assertSame(
+			expected: ['kind' => 'handover-refused', 'level' => 'error', 'team' => 'toezicht', 'reason' => 'Dit is wel degelijk een vergunning'],
+			actual: $this->store->row(schema: 'case', uuid: 'case-1')['routingNote'],
+			message: 'The refusal stays on the case, for the queue to say.',
 		);
 	}//end testTheWrongTeamSendsItBack()
 

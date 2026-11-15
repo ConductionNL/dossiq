@@ -51,6 +51,23 @@ class SupplierPortalRegisterSchemasTest extends TestCase {
 		$this->assertTrue(($msg['x-insert-only'] ?? false), 'supplierMessage must be write-once');
 	}
 
+	/**
+	 * The read date the supplier portal's mark-read writes must be a property
+	 * that takes what it writes: an ISO 8601 time, optional, so a message is
+	 * created without it and stays valid until it is opened. Without it a
+	 * supplier's message stayed unread forever.
+	 *
+	 * @return void
+	 */
+	public function testSupplierMessageCarriesAnOptionalReadDate(): void {
+		$msg = $this->register['components']['schemas']['supplierMessage'] ?? [];
+		$read = ($msg['properties']['readByRecipientAt'] ?? null);
+		$this->assertIsArray($read, 'supplierMessage keeps the date its recipient read it');
+		$this->assertSame('string', ($read['type'] ?? null));
+		$this->assertSame('date-time', ($read['format'] ?? null));
+		$this->assertNotContains('readByRecipientAt', ($msg['required'] ?? []), 'a new message is unread, so the read date cannot be required');
+	}
+
 	public function testSupplierUserEnumsMatchDesign(): void {
 		$user = $this->register['components']['schemas']['supplierUser']['properties'] ?? [];
 		$this->assertSame(['admin', 'finance', 'contracts', 'sales', 'read_only'], $user['role']['enum']);

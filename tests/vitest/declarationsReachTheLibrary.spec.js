@@ -24,19 +24,19 @@
  * `vitest.config.js` matches the bare package name only, so a deep import is
  * the published file itself.
  *
- * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
- * @spec openspec/changes/archive/2026-09-20-columns-follow-the-case-type/specs/case-management/spec.md
- * @spec openspec/changes/archive/2026-09-20-a-dashboard-the-reader-arranges/specs/dashboard/spec.md
+ * @spec openspec/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 import { userWidgetPresets } from '@conduction/nextcloud-vue/src/components/CnWidgetGrid/dashboardWidgetRegistry.js'
 import { buildQueryString } from '@conduction/nextcloud-vue/src/utils/headers.js'
 import { resolveQueryFilters } from '@conduction/nextcloud-vue/src/utils/routeFilters.js'
 import { resolveScopeLayout } from '@conduction/nextcloud-vue/src/utils/scopeListLayout.js'
+import { contextOf } from '@conduction/nextcloud-vue/src/utils/sentinelTokens.js'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { buildRelatedFilters } from '../../src/utils/caseTypeFieldFilters.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 
@@ -51,7 +51,7 @@ function readJson(...parts) {
 }
 
 const manifest = readJson('src', 'manifest.json')
-const vthSeed = readJson('lib', 'Settings', 'vth_seed_data.json')
+const vthPackage = readJson('lib', 'Settings', 'packages', 'vth', 'case-type.json')
 
 /** The page whose columns a case type selects from. */
 const casesPage = manifest.pages.find((page) => page.id === 'Cases')
@@ -59,8 +59,10 @@ const casesPage = manifest.pages.find((page) => page.id === 'Cases')
 /** The pages that hand their geometry to the reader. */
 const DASHBOARD_PAGES = [
 	'Dashboard',
-	'MyWorkHome',
 	'Doorlooptijd',
+	// landing-view-layouts: its widgets live in its views, and since
+	// nextcloud-vue 2.69.0 a reader's arrangement is kept per view.
+	'MyWorkHome',
 	'ProcessMiningDashboard',
 	'TermijnDashboard',
 ]
@@ -78,7 +80,7 @@ function keyOf(column) {
 describe('row 11.9: a case type layout survives the library that reads it', () => {
 	const pageColumns = casesPage.config.columns
 
-	const seeded = vthSeed.caseTypes.filter((caseType) => caseType['x-index'])
+	const seeded = vthPackage.caseType.filter((caseType) => caseType['x-index'])
 
 	it('has at least one seeded case type to check', () => {
 		expect(seeded.length).toBeGreaterThan(0)
@@ -139,10 +141,15 @@ describe('row 11.9: a case type layout survives the library that reads it', () =
 })
 
 describe('row 9.2: the field filters have to leave the browser', () => {
-	const compiled = buildRelatedFilters([
-		{ definitionId: 'pd-1', value: { gte: '100000' } },
-		{ definitionId: 'pd-4', value: { eq: 'Noord' } },
-	])
+	// What CnRelatedFieldFilters compiles for two filled fields under the
+	// Cases page's `relatedFieldFilters` (asserted in the library's own
+	// tests/utils/relatedFieldFilters.spec.js).
+	const compiled = {
+		'_related[caseProperty][case][0][propertyDefinition]': 'pd-1',
+		'_related[caseProperty][case][0][value][gte]': '100000',
+		'_related[caseProperty][case][1][propertyDefinition]': 'pd-4',
+		'_related[caseProperty][case][1][value]': 'Noord',
+	}
 
 	it('is dropped by the route-query reader, so the route cannot be the transport', () => {
 		const query = { caseType: 'ct-1', ...compiled }
@@ -196,20 +203,19 @@ describe('row 10.1: a dashboard needs more than the one key', () => {
 	)
 
 	it.each(DASHBOARD_PAGES.map((id, index) => [id, pages[index]]))(
-		'%s declares the app id and page id its layout is stored under',
+		'%s declares its app id and a page id that does not follow the title',
 		(id, page) => {
-			expect(page.config.userLayout).toBe(true)
 			expect(page.config.appId).toBe('dossiq')
 			expect(page.config.pageId).toBe(id)
 		},
 	)
 
-	it('is the whole set: no other page asks for a user layout', () => {
+	it('asks for no user layout on any page: the layout is buildiq\'s', () => {
 		const asking = manifest.pages
-			.filter((page) => page.config && page.config.userLayout)
+			.filter((page) => page.config && 'userLayout' in page.config)
 			.map((page) => page.id)
 
-		expect(asking.sort()).toEqual([...DASHBOARD_PAGES].sort())
+		expect(asking).toEqual([])
 	})
 
 	it('names a page id that cannot move when somebody edits a title', () => {
@@ -224,25 +230,6 @@ describe('row 10.1: a dashboard needs more than the one key', () => {
 		)
 
 		expect(slugs).not.toEqual(pages.map((page) => page.config.pageId))
-	})
-
-	it('guards both the load and the save on the app id', () => {
-		// Read out of the installed library rather than asserted from memory:
-		// this is the line that makes `appId` load-bearing, and a release that
-		// changes it should be read again before this test is edited.
-		const source = fs.readFileSync(
-			path.join(
-				ROOT,
-				'node_modules/@conduction/nextcloud-vue/src/components',
-				'CnDashboardPage/CnDashboardPage.vue',
-			),
-			'utf8',
-		)
-
-		expect(source).toContain('if (!this.userLayout || !this.appId)')
-		expect(
-			source.match(/if \(!this\.userLayout \|\| !this\.appId/g).length,
-		).toBeGreaterThanOrEqual(2)
 	})
 
 	it('offers the two preset lists through the library that reads them', () => {
@@ -264,11 +251,15 @@ describe('row 10.1: a dashboard needs more than the one key', () => {
 				0,
 			)
 
-			// And no unresolved token: nothing resolves "my team", so a
-			// preset filtering on one would send the literal string and be a
-			// permanently empty card.
+			// And only tokens the installed library resolves at fetch time.
+			// "Your team's queue" filters on `@myGroups` (my-teams-queue): a
+			// library that does not know it would send the literal string and
+			// show a permanently empty card, so this fails until the
+			// dependency carries it.
 			Object.values(preset.widget.content.filter).forEach((value) => {
-				expect(String(value).startsWith('@')).toBe(false)
+				if (String(value).startsWith('@')) {
+					expect(contextOf(String(value)), String(value)).toBe('filter')
+				}
 			})
 		})
 	})

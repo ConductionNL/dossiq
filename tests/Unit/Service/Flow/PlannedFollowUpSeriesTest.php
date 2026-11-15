@@ -467,4 +467,48 @@ class PlannedFollowUpSeriesTest extends TestCase {
 		$this->expectExceptionMessage('invalid_end');
 		$this->document->endOf(recurrence: 'monthly', until: '2026-12-31', count: 3);
 	}//end testAnEndIsADateOrACountButNotBoth()
+	/**
+	 * The whole flow document of a one-off follow-up, and what a series changes in it.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeFlowDocument(): void {
+		$built = $this->document->build(caseId: 'case-1', caseTypeId: 'type-1', due: new DateTimeImmutable('2026-10-15'), title: 'Controle', uid: 'alice');
+		$this->assertSame(
+			[
+				'name' => 'Planned follow-up: Controle',
+				'description' => 'Creates a case of type type-1 on 2026-10-15, related to case case-1. Planned by alice.',
+				'app' => 'dossiq',
+				'applicationSlug' => PlannedFollowUpDocument::PLANNED_SLUG,
+				'trigger' => 'schedule',
+				'cron' => '0 6 15 10 *',
+				'executionMode' => 'async',
+				'enabled' => false,
+				'nodes' => [
+					['id' => 'when', 'type' => 'openregister.trigger-schedule', 'config' => ['cron' => '0 6 15 10 *', 'runAs' => 'alice']],
+					[
+						'id' => 'create',
+						'type' => 'dossiq.createSubCase',
+						'config' => [
+							'caseType' => 'type-1',
+							'title' => 'Controle',
+							'relatedCases' => ['case-1'],
+							'series' => ['recurrence' => 'none', 'anchor' => '2026-10-15', 'until' => '', 'count' => 0],
+						],
+					],
+					['id' => 'done', 'type' => 'openregister.end', 'config' => []],
+				],
+				'edges' => [
+					['id' => 'e-create', 'from' => 'when', 'to' => 'create'],
+					['id' => 'e-done', 'from' => 'create', 'to' => 'done'],
+				],
+				'limits' => ['maxTransitions' => 10],
+			],
+			$built
+		);
+
+		$series = $this->document->build(caseId: 'case-1', caseTypeId: 'type-1', due: new DateTimeImmutable('2026-10-15'), title: 'Controle', uid: 'alice', recurrence: 'monthly', until: '2027-10-15', count: 4);
+		$this->assertStringStartsWith('Creates a case of type type-1 every ', $series['description']);
+		$this->assertSame(['until' => '2027-10-15', 'count' => 4], array_intersect_key($series['nodes'][1]['config']['series'], ['until' => 1, 'count' => 1]));
+	}//end testTheWholeFlowDocument()
 }//end class

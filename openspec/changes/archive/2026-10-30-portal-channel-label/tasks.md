@@ -1,0 +1,4 @@
+- [x] utils/configLabels.js + main.js
+- [x] simple layout channelMap + enumLabels
+- [x] utils/portalName.js shared; formatters + LogContactDialog
+- [x] vitest configLabels, logContactPortalChannel, contactMomentColumns

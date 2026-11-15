@@ -30,19 +30,20 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq;
 
+use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 
 /**
  * The declaration, and a live reading of it.
  *
- * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 final class Prerequisites {
 
@@ -66,7 +67,7 @@ final class Prerequisites {
 	 *
 	 * @var string
 	 */
-	public const NEXTCLOUD_MAX = '34';
+	public const NEXTCLOUD_MAX = '35';
 
 	/**
 	 * The PHP extensions dossiq calls. Each one is also a `ext-*` line in
@@ -93,23 +94,56 @@ final class Prerequisites {
 	/**
 	 * The apps dossiq works with when they are there, and what each one adds.
 	 *
-	 * 🔴 THE KEYS ARE APP IDS AND A RENAMED APP MOVES ON ITS OWN SCHEDULE.
-	 * `IAppManager::isInstalled()` is a duck-typed lookup: pointing one at a
-	 * name nothing answers to reports "missing" rather than failing, so a key
-	 * changed ahead of the app it names would tell every administrator to
-	 * install something they already have.
+	 * 🔴 THE KEYS ARE THE IDS THE APPS SHIP, AND THE LOOKUP ALSO TRIES THEIR OLD
+	 * ONE. `IAppManager::isInstalled()` is a duck-typed lookup: pointing it at a
+	 * name nothing answers to reports "missing" rather than failing. Filinq,
+	 * integriq, decidiq, humaniq and thematiq ship their new id on development,
+	 * and an instance that has not upgraded still answers to the old one, so
+	 * each key resolves through `FleetAppId`, which tries both. A key on either
+	 * id alone tells one of those two administrators to install an app they
+	 * already have.
 	 *
 	 * @var array<string, string>
 	 */
 	public const APPS_OPTIONAL = [
-		'openconnector' => 'Sends and receives over the municipal integrations.',
-		'docudesk' => 'Generates and anonymises the documents on a case.',
-		'hrmq' => 'Books the hours a handler writes on a case.',
-		'decidesk' => 'Takes a decision that needs a committee.',
+		'integriq' => 'Sends and receives over the municipal integrations.',
+		'filinq' => 'Generates and anonymises the documents on a case.',
+		'humaniq' => 'Books the hours a handler writes on a case.',
+		'decidiq' => 'Takes a decision that needs a committee.',
 		'portaliq' => 'Shows the applicant their own case.',
 		'pipelinq' => 'Runs the intake and routing pipelines.',
 		'hermiq' => 'Answers the AI-assisted steps.',
-		'nldesign' => 'Themes the app to the government design system.',
+		'thematiq' => 'Themes the app to the government design system.',
+	];
+
+	/**
+	 * The product name a person reads for each declared app id.
+	 *
+	 * 🔴 DISPLAY ONLY. The keys of APPS_REQUIRED and APPS_OPTIONAL are the ids
+	 * `isInstalled()` is asked about, through `FleetAppId`, which also tries the
+	 * old id. The row shows the product name and looks up both ids, so an
+	 * administrator is not told to install an app they already have.
+	 *
+	 * Every declared id has an entry, written as the product is written
+	 * ("Integriq", "OpenRegister"), because the page is read by a person and an
+	 * app id ("integriq") is a lookup key, not a name. Round 5 showed the
+	 * lowercase ids; `PrerequisitesTest` now holds every row to this list.
+	 *
+	 * @var array<string, string>
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public const DISPLAY_NAMES = [
+		'openregister' => 'OpenRegister',
+		'integriq' => 'Integriq',
+		'filinq' => 'Filinq',
+		'humaniq' => 'Humaniq',
+		'decidiq' => 'Decidiq',
+		'portaliq' => 'Portaliq',
+		'pipelinq' => 'Pipelinq',
+		'hermiq' => 'Hermiq',
+		'thematiq' => 'Thematiq',
 	];
 
 	/**
@@ -124,19 +158,84 @@ final class Prerequisites {
 	 *                                       Injected so a test can report one
 	 *                                       absent; defaults to the real thing.
 	 * @param int|null      $phpVersionId   The running PHP, as PHP_VERSION_ID.
+	 * @param int|null      $nextcloudMajor The running Nextcloud major version,
+	 *                                      from `OCP\ServerVersion`. Null reports
+	 *                                      it unknown, and so not in range.
 	 *
 	 * @return array<string, mixed> The declaration with a `present` on every item.
 	 *
-	 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function check(
 		IAppManager $appManager,
 		?callable $extensionLoaded = null,
 		?int $phpVersionId = null,
+		?int $nextcloudMajor = null,
 	): array {
-		$loaded = $extensionLoaded ?? static fn (string $name): bool => extension_loaded($name);
-		$running = $phpVersionId ?? PHP_VERSION_ID;
+		return [
+			'php' => $this->phpCheck(phpVersionId: $phpVersionId),
+			'nextcloud' => $this->nextcloudCheck(nextcloudMajor: $nextcloudMajor),
+			'extensions' => $this->extensionChecks(extensionLoaded: $extensionLoaded),
+			'apps' => [
+				'required' => self::readApps(appManager: $appManager, declared: self::APPS_REQUIRED),
+				'optional' => self::readApps(appManager: $appManager, declared: self::APPS_OPTIONAL),
+			],
+		];
+	}//end check()
 
+	/**
+	 * Whether the running PHP is new enough.
+	 *
+	 * @param int|null $phpVersionId The PHP version id to judge; null for the running one.
+	 *
+	 * @return array{required: string, running: string, present: bool}
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function phpCheck(?int $phpVersionId): array {
+		return [
+			'required' => self::PHP_MIN,
+			'running' => PHP_VERSION,
+			'present' => ($phpVersionId ?? PHP_VERSION_ID) >= self::phpMinVersionId(),
+		];
+	}//end phpCheck()
+
+	/**
+	 * Whether the Nextcloud major is within the supported range.
+	 *
+	 * @param int|null $nextcloudMajor The Nextcloud major; null when unknown.
+	 *
+	 * @return array{min: string, max: string, running: string, present: bool}
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function nextcloudCheck(?int $nextcloudMajor): array {
+		$major = ($nextcloudMajor ?? 0);
+		$majorText = '';
+		if ($major > 0) {
+			$majorText = (string)$major;
+		}
+
+		return [
+			'min' => self::NEXTCLOUD_MIN,
+			'max' => self::NEXTCLOUD_MAX,
+			'running' => $majorText,
+			'present' => ($major >= (int)self::NEXTCLOUD_MIN && $major <= (int)self::NEXTCLOUD_MAX),
+		];
+	}//end nextcloudCheck()
+
+	/**
+	 * Which of the required PHP extensions are loaded, and why each is needed.
+	 *
+	 * @param callable|null $extensionLoaded Answers whether an extension is loaded; null for PHP's own.
+	 *
+	 * @return list<array{name: string, why: string, present: bool}>
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function extensionChecks(?callable $extensionLoaded): array {
+		$loaded = $extensionLoaded ?? static fn (string $name): bool => extension_loaded($name);
 		$extensions = [];
 		foreach (self::EXTENSIONS as $name => $why) {
 			$extensions[] = [
@@ -146,23 +245,8 @@ final class Prerequisites {
 			];
 		}
 
-		return [
-			'php' => [
-				'required' => self::PHP_MIN,
-				'running' => PHP_VERSION,
-				'present' => $running >= self::phpMinVersionId(),
-			],
-			'nextcloud' => [
-				'min' => self::NEXTCLOUD_MIN,
-				'max' => self::NEXTCLOUD_MAX,
-			],
-			'extensions' => $extensions,
-			'apps' => [
-				'required' => self::readApps(appManager: $appManager, declared: self::APPS_REQUIRED),
-				'optional' => self::readApps(appManager: $appManager, declared: self::APPS_OPTIONAL),
-			],
-		];
-	}//end check()
+		return $extensions;
+	}//end extensionChecks()
 
 	/**
 	 * PHP_VERSION_ID for the declared minimum.
@@ -195,6 +279,7 @@ final class Prerequisites {
 		foreach ($declared as $appId => $unlocks) {
 			$rows[] = [
 				'id' => $appId,
+				'name' => (self::DISPLAY_NAMES[$appId] ?? $appId),
 				'unlocks' => $unlocks,
 				// 🔴 A MISSING APP IS REPORTED, NEVER GUESSED AT. isInstalled()
 				// can throw on a broken app directory, and a throw here would
@@ -216,7 +301,7 @@ final class Prerequisites {
 	 */
 	private static function isInstalled(IAppManager $appManager, string $appId): bool {
 		try {
-			return $appManager->isInstalled($appId);
+			return FleetAppId::isInstalled(appManager: $appManager, canonical: $appId);
 		} catch (\Throwable) {
 			return false;
 		}

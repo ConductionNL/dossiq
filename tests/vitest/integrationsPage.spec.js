@@ -17,7 +17,7 @@
  * to stop exactly this class of quiet untruth, so the guard has to be here
  * rather than in a reviewer's eye.
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'
@@ -170,7 +170,7 @@ describe('the connection declaration', () => {
 		expect(declaration.app).toBe('dossiq')
 	})
 
-	it('keeps the twelve keys the page used, in placement order', () => {
+	it('keeps the keys the page used, Kadaster added after BRP, in placement order', () => {
 		expect(connections.map((c) => c.key)).toEqual([
 			'zgw',
 			'stuf',
@@ -180,10 +180,13 @@ describe('the connection declaration', () => {
 			'store',
 			'financial',
 			'brp',
+			'kadaster',
 			'kvk',
 			'pdok',
 			'berichtenbox',
 			'templates',
+			'smartdocuments',
+			'xential',
 		])
 		const orders = connections.map((c) => c.order)
 		expect([...orders].sort((a, b) => a - b)).toEqual(orders)
@@ -197,11 +200,11 @@ describe('the connection declaration', () => {
 
 	// BRP and KvK were both once marked "Specified, not built yet", which was
 	// false for both. What separates them is who calls them: nothing injects
-	// the KvK adapter.
+	// a KvK lookup, and dossiq ships no KvK client (ADR-118).
 	it('declares only KvK unavailable, and says why', () => {
 		const unavailable = connections.filter((c) => c.available === false)
 		expect(unavailable.map((c) => c.key)).toEqual(['kvk'])
-		expect(byKey.kvk.unavailableMessage).toMatch(/built and bound/i)
+		expect(byKey.kvk.unavailableMessage).toMatch(/no KvK client/i)
 		expect(byKey.kvk.unavailableMessage).not.toMatch(/not built/i)
 		expect(byKey.kvk.settingsUrl).toBeUndefined()
 	})
@@ -209,10 +212,14 @@ describe('the connection declaration', () => {
 	// The rows this page exists for. A mock adapter WORKS and delivers
 	// nothing, so integriq shows Simulated while the adapter key is empty, and
 	// the message has to say the word.
-	// BRP is built and called, and reaches nothing until its tier key moves.
-	// No admin section writes that key, so the row's message has to name it.
-	it('names the key that wakes BRP, and offers no settings link', () => {
-		expect(byKey.brp.unconfiguredMessage).toMatch(/integration\.brp\.mode/)
+	// Dossiq ships no BRP client (ADR-118). The conflict-of-interest check
+	// reads family relations through integriq's BRP source, which stays off
+	// until relationFields is set there. No admin section in dossiq writes
+	// that, so the row's message has to name it.
+	it('names the setting that wakes BRP, and offers no settings link', () => {
+		expect(byKey.brp.unconfiguredMessage).toMatch(/relationFields/)
+		expect(byKey.brp.unconfiguredMessage).toMatch(/Integriq/)
+		expect(byKey.brp.unconfiguredMessage).not.toMatch(/integration\.brp\.mode/)
 		expect(byKey.brp.unconfiguredMessage).not.toMatch(/not built/i)
 		expect(byKey.brp.settingsUrl).toBeUndefined()
 	})
@@ -243,8 +250,10 @@ describe('the connection declaration', () => {
 			'OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter',
 			'mock',
 		])
+		// An empty template key binds filinq's adapter when filinq is enabled,
+		// so only the mock class itself reads Simulated; dossiq reports the
+		// rest (IntegrationStatusService::recordTemplates()).
 		expect(byKey.templates.adapter.simulatedValues).toEqual([
-			'',
 			'OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter',
 		])
 		expect(connections.some((c) => 'reportedOnly' in c)).toBe(false)
@@ -267,11 +276,11 @@ describe('the connection declaration', () => {
 
 	it('links only to an anchor AdminRoot.vue actually carries', () => {
 		const linked = connections.filter((c) => c.settingsUrl !== undefined)
-		expect(linked).toHaveLength(7)
+		expect(linked).toHaveLength(8)
 		for (const connection of linked) {
 			const anchor = connection.settingsUrl.split('#')[1]
 			expect(
-				connection.settingsUrl.startsWith('/settings/admin/dossiq#'),
+				connection.settingsUrl.startsWith('/settings/admin/dossiq?tab='),
 			).toBe(true)
 			expect(adminRoot).toContain(`id="${anchor}"`)
 		}

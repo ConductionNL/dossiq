@@ -27,7 +27,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 declare(strict_types=1);
@@ -35,8 +35,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
+use OCA\Dossiq\Service\Custody\ConsentRefusal;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -47,8 +49,11 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Tests\Support\InMemoryRegister
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Custody\ConsentStanding
+ * @uses \OCA\Dossiq\Service\Custody\ConsentRefusal
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class CaseTransferConsentGateTest extends TestCase {
 
@@ -83,7 +88,7 @@ class CaseTransferConsentGateTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function testAWmoCaseCannotLeaveWithoutConsent(): void {
 		$verdict = $this->gate()->assess(
@@ -107,7 +112,7 @@ class CaseTransferConsentGateTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function testARecordedConsentLetsTheCaseGo(): void {
 		$this->recordConsent(validTo: '2026-12-31');
@@ -129,7 +134,7 @@ class CaseTransferConsentGateTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function testConsentThatHasLapsedDoesNotCover(): void {
 		$this->recordConsent(validTo: '2026-04-01');
@@ -151,7 +156,7 @@ class CaseTransferConsentGateTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function testAWithdrawnConsentIsNamedAsWithdrawn(): void {
 		$this->recordConsent(validTo: '2026-12-31', withdrawn: true);
@@ -172,7 +177,7 @@ class CaseTransferConsentGateTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function testAMoveInsideOneOrganisationIsNotBlocked(): void {
 		$verdict = $this->gate()->assess(
@@ -192,7 +197,7 @@ class CaseTransferConsentGateTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function testACaseTypeCanDemandConsentInsideTheOrganisation(): void {
 		$this->store->seed(
@@ -224,7 +229,7 @@ class CaseTransferConsentGateTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function testAHandOffWithNoNamedReceiverIsRefused(): void {
 		$verdict = $this->gate()->assess(
@@ -243,7 +248,7 @@ class CaseTransferConsentGateTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function testAConsentForSomebodyElseDoesNotCoverThisReceiver(): void {
 		$this->recordConsent(validTo: '2026-12-31', recipient: 'andere-zorgpartner');
@@ -294,6 +299,7 @@ class CaseTransferConsentGateTest extends TestCase {
 		return new CaseTransferConsentGate(
 			settingsService: $this->settings(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			refusals: new ConsentRefusal(l10n: new SourceL10n()),
 		);
 	}//end gate()
 

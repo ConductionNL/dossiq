@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTermsService;
@@ -38,12 +39,16 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\TermKind
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\TermCalendarGuard
  * @uses \OCA\Dossiq\Service\TermijnTimerService
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
  */
 class TermijnKindTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -102,9 +107,11 @@ class TermijnKindTest extends TestCase {
 		$this->timers->method('rollTermEndFor')->willReturnArgument(0);
 
 		$this->service = new CaseTermsService(
-			termService: $this->termService,
-			declarations: $this->declarations,
-			timers: $this->timers,
+			sources: new CaseTermSources(
+				termService: $this->termService,
+				declarations: $this->declarations,
+				timers: $this->timers,
+			),
 			logger: new NullLogger(),
 		);
 	}//end setUp()
@@ -230,9 +237,11 @@ class TermijnKindTest extends TestCase {
 			->willReturnArgument(0);
 
 		$service = new CaseTermsService(
-			termService: $this->termService,
-			declarations: $this->declarations,
-			timers: $timers,
+			sources: new CaseTermSources(
+				termService: $this->termService,
+				declarations: $this->declarations,
+				timers: $timers,
+			),
 			logger: new NullLogger(),
 		);
 

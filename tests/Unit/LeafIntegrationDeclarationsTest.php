@@ -29,7 +29,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+ * @spec openspec/specs/leaf-integrations/spec.md
  */
 
 declare(strict_types=1);
@@ -54,9 +54,16 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 	 * makes the integration silently no-op rather than error, so it moves when
 	 * decidiq's own id lands and not before.
 	 *
+	 * `planninq-projects` is planninq's (RegisterProjectsLeafListener::LEAF_ID),
+	 * placed on the case by dossiq#3190.
+	 *
+	 * `portaliq-change-proposal-queue` is portaliq's
+	 * (RegisterProposalLeavesListener::QUEUE_LEAF_ID), placed on the case by
+	 * portal-change-proposals-on-the-case.
+	 *
 	 * @var array<int, string>
 	 */
-	private const CROSS_APP_LEAVES = ['decidesk-decisions', 'pipelinq-contact-moments', 'pipelinq-party'];
+	private const CROSS_APP_LEAVES = ['decidesk-decisions', 'pipelinq-contact-moments', 'pipelinq-party', 'planninq-projects', 'portaliq-change-proposal-queue'];
 
 	/**
 	 * Values in `linkedTypes` that are NOT leaf ids and must not be read as one.
@@ -142,8 +149,11 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 			$schemas = ($decoded['components']['schemas'] ?? []);
 			foreach ($schemas as $name => $schema) {
 				$types = ($schema['configuration']['linkedTypes'] ?? null);
+				// Fragments CONCATENATE lists (RegisterFragmentMerger), so a
+				// fragment adds to what the schema already declares; it does
+				// not replace it.
 				if (is_array($types) === true) {
-					$declared[$name] = $types;
+					$declared[$name] = array_values(array_unique(array_merge(($declared[$name] ?? []), $types)));
 				}
 			}
 		}

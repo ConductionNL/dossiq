@@ -1,0 +1,21 @@
+{
+  "_note": "The case deadline calculation (startDate + the type's processing deadline) is the fallback for a case without a statutory term: once a term exists, CaseDeadlineFollowsTermListener puts the term's current end back on every save. Declared `fallback` so OpenRegister's rematerialise-calculations does not count a term-owned deadline as a save that did not materialise (23 of 75 cases after REFRESH-7). case moves to 1.56.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.56.0",
+        "configuration": {
+          "x-openregister-calculations": {
+            "deadline": {
+              "fallback": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -13,7 +13,7 @@
  * first paint to their own rows, and an empty result reads as an empty
  * register rather than as a filter. The default assertion is the guard.
  *
- * The Unclaimed chip and the Queue page's base filter are the same two
+ * The Unclaimed chip and the team queue view's filter are the same two
  * conditions written twice. Nothing at runtime compares them, so they drift
  * the moment one side is edited; the deep-equal here is what makes "the two
  * lists agree" a fact rather than an intention.
@@ -35,14 +35,13 @@ import { TODAY_DELTA_RE } from '@conduction/nextcloud-vue/src/utils/sentinelToke
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
 
-const CELL_WIDGETS_PATH = path.join(ROOT, 'src', 'services', 'cellWidgets.js')
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
-const cellWidgetsSource = fs.readFileSync(CELL_WIDGETS_PATH, 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const bulkActionsSource = fs.readFileSync(
 	path.join(ROOT, 'src', 'utils', 'caseBulkActions.js'),
@@ -98,6 +97,14 @@ const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week'
 const DRAFTS_LENS = 'My drafts'
 
 /**
+ * The lens that shows drafts beside the working set (decision 201).
+ *
+ * A draft is its own object in the status draft (decision 180), and a list of
+ * tasks holds none, so this chip has no counterpart there either.
+ */
+const WITH_DRAFTS_LENS = 'With drafts'
+
+/**
  * The Cases chips, which carry one lens the Tasks list does not.
  *
  * Unread is a per-USER lens over OpenRegister's read state, not a field of the
@@ -127,17 +134,16 @@ const CASE_LENSES = [
 	// person raised. They are the everyday two, which is why they are pills.
 	'Waiting on the applicant',
 	'Needs attention',
-	// Three lenses over per-user platform state rather than a field of the case
-	// (case-number-and-favourites row 2.19, openregister#3766; case-followers
-	// row 13.18, openregister `object-watchers`). They answer about YOU, not
-	// about the case: the star you set, the cases you subscribed to and the
-	// ones you last opened. Followed sits next to Favourites because both
-	// answer "which cases did I pick out", and before Recently opened because
-	// a case you chose outranks one you happened to open. All three are behind
-	// the '⋯' chip rather than in the strip: the cap keeps the pills for the
-	// lenses a handler reaches for every morning.
-	'Favourites',
-	'Followed',
+	// Two lenses over per-user platform state rather than a field of the case
+	// (case-followers row 13.18, openregister `object-watchers`;
+	// case-number-and-favourites row 2.19). They answer about YOU, not about
+	// the case: the cases you follow and the ones you last opened. Following
+	// is the one lens for the cases you picked out since a favourite became a
+	// follow with notifications off (one-follow-control), and it sits before
+	// Recently opened because a case you chose outranks one you happened to
+	// open. Both are behind the '⋯' chip rather than in the strip: the cap
+	// keeps the pills for the lenses a handler reaches for every morning.
+	'Following',
 	'Recently opened',
 	// The risk this organisation assessed
 	// (markers-and-assessments-on-the-case row 2.40, #2837). It sits before
@@ -160,6 +166,12 @@ const CASE_LENSES = [
 	// work.
 	'Closed with no result',
 	DRAFTS_LENS,
+	// The one lens that asks for drafts beside the working set (decision 201,
+	// REQ-CM-79). OpenRegister leaves drafts out of every list by default, so
+	// this chip is the filter that shows them. It sits beside My drafts
+	// because both are about drafts: that one is yours alone, this one is the
+	// working set with every draft you may read in it.
+	WITH_DRAFTS_LENS,
 	'Overdue',
 	'Due this week',
 	// fees-and-payments-on-the-case (#2930): the cases whose type makes a fee
@@ -168,6 +180,10 @@ const CASE_LENSES = [
 	// what this case is waiting on before it can move.
 	'Awaiting payment',
 	'Stuck',
+	// The cases whose term stands still (DqZaken "Opgeschort"): a term clock of
+	// the case is paused under Awb 4:5. Last, because it is the newest lens and
+	// the full structure shows only the first four.
+	'Suspended',
 ]
 
 /**
@@ -190,8 +206,7 @@ const CASE_LENSES = [
  */
 const CASES_ONLY = [
 	'Unread',
-	'Favourites',
-	'Followed',
+	'Following',
 	'Recently opened',
 	'Waiting on the applicant',
 	'Needs attention',
@@ -204,15 +219,28 @@ const CASES_ONLY = [
 	// A case closes with or without a result; a task completes and has none.
 	'Closed with no result',
 	DRAFTS_LENS,
+	WITH_DRAFTS_LENS,
 	// A fee is due on a CASE, under its type's own rule; a task carries no
 	// payment of its own and nothing on the Tasks list could answer this.
 	'Awaiting payment',
 	'Stuck',
+	// A pause belongs to a case's term; a task has no term of its own to pause.
+	'Suspended',
 ]
 
 describe('Cases index lenses', () => {
 	it('declares the seventeen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
+	})
+
+	it('narrows Suspended on a paused term of the open case, through the term rows that point at it', () => {
+		const suspended = chip('Cases', 'Suspended')
+		expect(suspended.filter).toEqual({
+			'_related[deadlineInstance][case][status]': 'paused',
+			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
+		})
 	})
 
 	it('shows four chips and hands the rest to the overflow chip', () => {
@@ -262,9 +290,9 @@ describe('Cases index lenses', () => {
 		expect(chip('Cases', 'Closed').filter).toEqual({ isFinalStatus: true })
 	})
 
-	it('gives Unclaimed the same filter as the Queue page', () => {
+	it('gives Unclaimed the same filter as the team queue view', () => {
 		expect(chip('Cases', 'Unclaimed').filter).toEqual(
-			page('Queue').config.filter,
+			page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters,
 		)
 	})
 
@@ -277,6 +305,44 @@ describe('Cases index lenses', () => {
 		expect(asking).toHaveLength(1)
 		expect(asking[0].label).toBe('Archived')
 		expect(asking[0].filter).toEqual({ _archived: true })
+	})
+
+	it('offers exactly one lens that shows drafts beside the working set', () => {
+		// Decision 201, REQ-CM-79. `_drafts` is OpenRegister's lens over the
+		// stored status: absent is the work list, `any` is drafts beside the
+		// rest. A flat string, because a nested value is JSON-stringified into
+		// the query and matches nothing.
+		const asking = chips('Cases').filter(
+			(entry) => entry.filter && '_drafts' in entry.filter,
+		)
+		expect(asking).toHaveLength(1)
+		expect(asking[0].label).toBe(WITH_DRAFTS_LENS)
+		expect(asking[0].filter).toEqual({
+			isFinalStatus: false,
+			statusHiddenInLists: false,
+			_drafts: 'any',
+		})
+	})
+
+	it('is not the default lens, so drafts are hidden on the first paint', () => {
+		expect(chip('Cases', WITH_DRAFTS_LENS).default).toBeUndefined()
+		expect(
+			chips('Cases').findIndex((entry) => entry.label === WITH_DRAFTS_LENS),
+		).toBeGreaterThanOrEqual(VISIBLE_LENS_COUNT)
+	})
+
+	it('asks for drafts on no other staff list', () => {
+		// The exclusion is the platform's default. A page that spelled
+		// `_drafts: false` would be a second copy of that rule, and a page
+		// that spelled `any` in its base filter would show drafts to
+		// everybody who opens it.
+		const asking = manifest.pages
+			.filter((entry) => entry.type === 'index')
+			.filter((entry) =>
+				JSON.stringify(entry.config?.filter ?? {}).includes('_drafts'),
+			)
+		expect(asking).toEqual([])
+		expect('_drafts' in page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters).toBe(false)
 	})
 
 	it('is not the default lens, so the archive is never the first paint', () => {
@@ -309,12 +375,12 @@ describe('Cases index lenses', () => {
 		expect(spelled).toEqual([])
 	})
 
-	it('keeps the archive out of the Queue by the same default', () => {
-		// The Queue's base filter carries no archive condition either, and it
+	it('keeps the archive out of the team queue by the same default', () => {
+		// The team queue view's filter carries no archive condition either, and it
 		// does not need one twice over: the platform excludes archived objects
 		// from every list, and a case can only be archived after it has ended,
 		// which `isFinalStatus: false` already keeps out.
-		const queue = page('Queue').config.filter
+		const queue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters
 		expect('_archived' in queue).toBe(false)
 		expect(queue.isFinalStatus).toBe(false)
 	})
@@ -512,7 +578,7 @@ describe('the relative-date tokens the windows are built from', () => {
 function dashboardWidgets() {
 	const byId = {}
 	for (const pageId of ['Dashboard', 'MyWorkHome']) {
-		for (const widget of page(pageId).config.widgets) {
+		for (const widget of pageWidgets(page(pageId))) {
 			byId[widget.id] = widget
 		}
 	}
@@ -552,10 +618,10 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(routeQuery(tile)).toEqual(asQuery(chip('Cases', 'Overdue').filter))
 	})
 
-	it('the Deadlines table carries its own, wider window', () => {
-		// Not the chip's filter: this table also lists what is due within
-		// three days, so landing on overdue-only would show fewer cases than
-		// the table just listed. What must hold is that the filter survives
+	it('the deadline signals table carries its own, wider window', () => {
+		// Not the chip's filter: this table also lists cases in the last
+		// quarter of their term, so landing on overdue-only would show fewer
+		// cases than the table just listed. What must hold is that the filter survives
 		// the trip at all (triage item 4) and reaches the page as a flat
 		// bracket key rather than a JSON-stringified object.
 		const table = dashboardWidgets().deadlines
@@ -564,7 +630,7 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(table.content.viewAllRoute.name).toBe('Cases')
 		expect(query).toEqual(asQuery(flattenFilter(table.content.source.filter)))
 		expect(query.isFinalStatus).toBe('false')
-		expect(Object.keys(query)).toContain('deadline[lte]')
+		expect(Object.keys(query)).toContain('termSignalFrom[lte]')
 	})
 })
 
@@ -600,15 +666,39 @@ describe('the Deadline column', () => {
 			(column) => typeof column === 'object' && column.key === 'deadline',
 		)
 
-	it('renders through the deadlineCountdown cell widget', () => {
-		expect(deadlineColumn().widget).toBe('deadlineCountdown')
+	it('renders through the library date cell as a countdown', () => {
+		// The library's `date` cell with `due` reads the days overdue in the
+		// error colour from the day after the deadline, "Due today" on the
+		// day itself, and with `upcomingLabel` the days left before it.
+		expect(deadlineColumn().widget).toBe('date')
+		expect(deadlineColumn().widgetProps.due.upcomingLabel).toEqual({
+			one: '{count} day left',
+			other: '{count} days left',
+		})
 	})
 
-	it('names a widget id the cell registry resolves', () => {
-		// A `widget` id that resolves to nothing in `cnCellWidgets` does not
-		// error: CnCellRenderer falls through to the type-aware rendering and
-		// the column silently reverts to a plain date.
-		expect(cellWidgetsSource).toMatch(/^\tdeadlineCountdown: /m)
+	it('declares the same countdown on every deadline column', () => {
+		const deadlineColumns = []
+		const walk = (node) => {
+			if (Array.isArray(node)) {
+				node.forEach(walk)
+			} else if (node && typeof node === 'object') {
+				if (node.key === 'deadline' && typeof node.widget === 'string' && node.widgetProps?.due) {
+					deadlineColumns.push(node)
+				}
+				Object.values(node).forEach(walk)
+			}
+		}
+		walk(manifest.pages)
+		expect(deadlineColumns.length).toBeGreaterThan(1)
+		for (const column of deadlineColumns) {
+			expect(column.widget).toBe('date')
+			expect(column.widgetProps.due.upcomingLabel.other).toBe('{count} days left')
+		}
+	})
+
+	it('names no app cell widget, so the library draws it', () => {
+		expect(fs.existsSync(path.join(ROOT, 'src', 'services', 'cellWidgets.js'))).toBe(false)
 	})
 
 	it('sorts on the stored deadline, not on the rendered text', () => {
@@ -631,13 +721,14 @@ describe('bulk actions on the Cases index', () => {
 	 */
 	const actions = () => page('Cases').config.bulkActions
 
-	it('offers reassign plus the four lifecycle gestures', () => {
+	it('offers reassign, the four lifecycle gestures and the anonymised export', () => {
 		expect(actions().map((action) => action.id)).toEqual([
 			'reassign',
 			'transition',
 			'suspend',
 			'resume',
 			'extend-term',
+			'export-anonymised',
 		])
 	})
 
@@ -675,9 +766,12 @@ describe('bulk actions on the Cases index', () => {
 })
 
 describe('what this change does NOT move', () => {
-	it('leaves the Queue page and the My Work page in place', () => {
-		expect(page('Queue')).toBeTruthy()
-		expect(page('MyWork')).toBeTruthy()
+	it('keeps the team queue and Assigned to me as views of the case list', () => {
+		// They were pages; they are views of Cases now (Ruben, 19 October 2026).
+		const slugs = page('Cases').config.defaultSavedViews.map((view) => view.slug)
+		expect(slugs).toEqual(expect.arrayContaining(['team-queue', 'my-work']))
+		expect(page('Queue')).toBeUndefined()
+		expect(page('MyWork')).toBeUndefined()
 	})
 
 	it('changes no menu entry', () => {
@@ -695,12 +789,10 @@ describe('what this change does NOT move', () => {
 		// beside `All cases`, which is where a handler looks for the case
 		// they just deleted.
 		//
-		// TWO ENTRIES ARE LABELLED `Organisations` AND THAT IS NOT A TYPO. The
-		// second one, further down, is `TenantsMenu` — the multitenancy
-		// tenant, not a KvK company. It sits in `menu-layout.json#removals`
-		// and renders nowhere, so the two never appear together; the
-		// collision is only visible here, on the RAW manifest, which is
-		// exactly where it should be visible.
+		// ONE ENTRY IS LABELLED `Organisations`: the KvK companies. The second
+		// one, `TenantsMenu` (the multitenancy tenant), retired with dossiq's
+		// tenant store (tenancy-onto-openregister-organisation step 5); a
+		// tenant is an OpenRegister organisation and is administered there.
 		expect(manifest.menu.map((entry) => entry.label)).toEqual([
 			'Dashboard',
 			// `Your queue` and `Close out your day` are the sixth and seventh
@@ -722,18 +814,19 @@ describe('what this change does NOT move', () => {
 			'Reports',
 			'Processing time',
 			'Process mining',
-			'Map',
+			// `Map` retired with the CaseMap page; the map is the Cases list
+			// in map view, and `/map` redirects there.
 			'Settings',
 			'Documentation',
-			'Store',
-			'Organisations',
+			'Marketplace',
 			'Map layers',
+			'Woo refusal grounds',
 			'Case types',
 			// The eighth later addition (attribute-catalogue-folders): the
 			// attribute catalogue, beside the case types it files for. It
 			// spends no top-level slot either, because it carries
 			// `section: "settings"` like `Case types` and `Flows` do.
-			'Attributes',
+			'Attributes (catalogue)',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',
@@ -748,10 +841,8 @@ describe('what this change does NOT move', () => {
 			'Offline sync conflicts',
 			'Needs assessments',
 			'Multidisciplinary consultations',
-			'Re-integration pathways',
 			'Supplier portal accounts',
 			'Data breach register',
-			'Substitutions & reassignment',
 			'Integrations',
 			'Features & roadmap',
 			'Processing activities (AVG)',

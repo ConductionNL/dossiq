@@ -181,4 +181,30 @@ class ErasureCompletePreconditionTest extends TestCase {
 
 		self::assertSame(['the erasure, which did not reach obj-7'], $reasons);
 	}//end testABareIdentifierIsStillNamed()
+
+	/**
+	 * Each wording branch: a label on a case with no run, an unnamed run without a label,
+	 * a name repeated across buckets, and a list exactly at the cap.
+	 *
+	 * @return void
+	 */
+	public function testEveryWordingOfTheErasureReason(): void {
+		$reason = fn (array $transition, mixed $outcome): array => $this->preconditions->withheldReasons(
+			transition: $transition,
+			case: ['id' => 'c1', 'erasureOutcome' => $outcome],
+			toIsClosing: true,
+		);
+
+		self::assertSame(['the erasure of this file'], $reason($this->closing(label: ' the erasure of this file '), null));
+		self::assertSame(['the erasure, which has not run yet'], $reason($this->closing(), []));
+		self::assertSame(['the erasure, which did not finish'], $reason($this->closing(), ['complete' => false, 'withheld' => []]));
+		self::assertSame(
+			['the erasure, which did not reach a, b'],
+			$reason($this->closing(), ['complete' => false, 'withheld' => [['name' => 'a']], 'refused' => ['a', 'b'], 'failed' => [['name' => 'b']]])
+		);
+		self::assertSame(
+			['the erasure, which did not reach a, b, c'],
+			$reason($this->closing(), ['complete' => false, 'failed' => ['a', 'b', 'c']])
+		);
+	}//end testEveryWordingOfTheErasureReason()
 }//end class

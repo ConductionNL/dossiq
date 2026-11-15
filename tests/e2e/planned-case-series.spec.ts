@@ -178,7 +178,7 @@ test.describe('A planned follow-up that repeats', () => {
 		)
 	}
 
-	// @e2e openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md#a-yearly-inspection-is-planned-once
+	// @e2e openspec/specs/workflow-definition-engine/spec.md#a-yearly-inspection-is-planned-once
 	test('a yearly inspection is planned once and comes back on schedule', async ({
 		page,
 		request,
@@ -245,7 +245,7 @@ test.describe('A planned follow-up that repeats', () => {
 		expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([])
 	})
 
-	// @e2e openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md#a-single-follow-up-is-unchanged
+	// @e2e openspec/specs/workflow-definition-engine/spec.md#a-single-follow-up-is-unchanged
 	test('a follow-up with no repeat carries the planned date as before', async ({
 		page,
 		request,
@@ -297,7 +297,7 @@ test.describe('A planned follow-up that repeats', () => {
 		expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([])
 	})
 
-	// @e2e openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md#two-occurrences-show-under-one-series
+	// @e2e openspec/specs/workflow-definition-engine/spec.md#two-occurrences-show-under-one-series
 	test('the cases a series opened show under it, and Stop series is offered', async ({
 		page,
 		request,
@@ -361,11 +361,11 @@ test.describe('A planned follow-up that repeats', () => {
 
 		// Stop series is offered on the series row, and only on a row that
 		// repeats: a single follow-up has nothing to stop.
-		const stop = page.getByTestId(`case-planned-stop-${flowId}`)
+		const stop = page.getByTestId('cn-related-row-action').filter({ hasText: 'Stop series' })
 		await expect(stop).toBeVisible({ timeout: 30_000 })
 		for (const id of occurrences) {
 			await expect(
-				page.getByTestId(`case-planned-occurrence-${id}`),
+				page.locator(`[data-testid="cn-related-children"] a[href*="${id}"]`),
 			).toBeVisible({ timeout: 30_000 })
 		}
 

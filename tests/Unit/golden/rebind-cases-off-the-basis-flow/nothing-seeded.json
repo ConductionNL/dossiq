@@ -1,0 +1,14 @@
+[
+    {
+        "search": {
+            "register": "dossiq",
+            "schema": "caseType",
+            "filters": {
+                "_limit": 500
+            }
+        }
+    },
+    {
+        "info": "Basis flow rebind: 0 open case(s) moved onto the flow their case type names."
+    }
+]

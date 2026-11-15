@@ -19,7 +19,9 @@ Read at dossiq `development` `c8ac7427e` and portaliq `development`
   schema and reads its `proposable` list.
 - portaliq `src/portal/components/PageView.jsx:336` renders the resident's
   propose form in the detail card when the collection's `rowActions` name a
-  `propose-change` action.
+  `propose-change` action. Since 2026-10-02 the React portal is retired
+  (portaliq#1072); residents use `/apps/portaliq/site`, so this citation names
+  retired code.
 - portaliq `lib/Contribution/CollectionConfigNormaliser.php:109`
   `resolveRowActions()` keeps only ids of `type: update` actions, so a
   `propose-change` id named in `rowActions` is dropped before it reaches the
@@ -46,7 +48,7 @@ are never proposable.
 
 `case.linkedTypes` gains `portaliq-change-proposal-queue` in a fragment
 `lib/Settings/register.d/77-portaliq-change-proposals.json`, and `CaseDetail`
-places it as a `type: integration` widget titled "Voorgestelde wijzigingen".
+places it as a `type: integration` widget titled "Voorgestelde wijzigingen", shown as the Proposals (Voorstellen) tab of the case panels, as board PtVoorstelBeoordelen draws it (amended 10 Oct: the board wins over a grid panel).
 A leaf whose app has not registered it is never mounted, so until portaliq
 lands T06 the panel is absent rather than empty.
 

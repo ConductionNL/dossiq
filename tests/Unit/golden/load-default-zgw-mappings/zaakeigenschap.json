@@ -1,0 +1,26 @@
+{
+    "zgwResource": "zaakeigenschap",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "zaak": "{{ _baseUrl | replace({\"zaken/v1/zaakeigenschappen\": \"zaken/v1/zaken\"}) }}/{{ case }}",
+        "eigenschap": "{{ _baseUrl | replace({\"zaken/v1/zaakeigenschappen\": \"catalogi/v1/eigenschappen\"}) }}/{{ propertyDefinition }}",
+        "value": "{{ value }}"
+    },
+    "reverseMapping": {
+        "case": "{{ zaak | zgw_extract_uuid }}",
+        "propertyDefinition": "{{ eigenschap | zgw_extract_uuid }}",
+        "value": "{{ waarde }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "zaak": {
+            "field": "case",
+            "extractUuid": true
+        }
+    }
+}

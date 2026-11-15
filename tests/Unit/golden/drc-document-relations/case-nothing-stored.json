@@ -1,0 +1,139 @@
+{
+    "calls": [
+        {
+            "getConfigValue": "document_link_schema"
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "document": "https://drc.example.com/enkelvoudiginformatieobjecten/71000000-1111-4222-8333-444455556666",
+                    "object": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "11"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "document": "https://drc.example.com/enkelvoudiginformatieobjecten/71000000-1111-4222-8333-444455556666",
+                    "object": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "11"
+            }
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "document": "71000000-1111-4222-8333-444455556666",
+                    "object": "73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "11"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "document": "71000000-1111-4222-8333-444455556666",
+                    "object": "73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "11"
+            }
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "_search": "71000000-1111-4222-8333-444455556666 73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "11"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "_search": "71000000-1111-4222-8333-444455556666 73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "11"
+            }
+        },
+        {
+            "getConfigValue": "case_document_schema"
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "document": "https://drc.example.com/enkelvoudiginformatieobjecten/71000000-1111-4222-8333-444455556666",
+                    "case": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "12"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "document": "https://drc.example.com/enkelvoudiginformatieobjecten/71000000-1111-4222-8333-444455556666",
+                    "case": "https://zrc.example.com/zaken/73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "12"
+            }
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "document": "71000000-1111-4222-8333-444455556666",
+                    "case": "73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "12"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "document": "71000000-1111-4222-8333-444455556666",
+                    "case": "73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "12"
+            }
+        },
+        {
+            "buildSearchQuery": {
+                "requestParams": {
+                    "_search": "71000000-1111-4222-8333-444455556666 73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "register": "5",
+                "schema": "12"
+            }
+        },
+        {
+            "searchObjectsPaginated": {
+                "q": {
+                    "_search": "71000000-1111-4222-8333-444455556666 73000000-1111-4222-8333-444455556666",
+                    "_limit": 1
+                },
+                "r": "5",
+                "s": "12"
+            }
+        }
+    ],
+    "answer": null
+}

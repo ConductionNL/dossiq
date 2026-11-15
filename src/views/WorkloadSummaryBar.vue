@@ -3,70 +3,181 @@
   - SPDX-License-Identifier: EUPL-1.2
 -->
 <template>
-	<div v-if="handlers.length > 0" class="workload-summary">
-		<span class="workload-summary__title">{{
-			t('dossiq', 'Team workload')
-		}}</span>
-		<ul class="workload-summary__list">
-			<li
-				v-for="row in handlers"
-				:key="row.handler"
-				class="workload-summary__row">
-				<span class="workload-summary__handler">{{ row.handler }}</span>
-				<span class="workload-summary__bar-track">
-					<span
-						class="workload-summary__bar-fill"
-						:style="{ width: barWidth(row.openCaseCount) + '%' }" />
-				</span>
-				<span class="workload-summary__count">{{ row.openCaseCount }}</span>
-			</li>
-		</ul>
-	</div>
+	<section
+		v-if="rows.length > 0"
+		class="workload-summary"
+		:class="`workload-summary--${part}`"
+		data-testid="workload-summary">
+		<template v-if="part !== 'chips'">
+			<h2 class="workload-summary__title">
+				{{ t('dossiq', 'Team workload') }}
+			</h2>
+			<p class="workload-summary__hint">
+				{{ t('dossiq', 'Open cases per colleague in your teams. Choose a name to see their work.') }}
+			</p>
+		</template>
+		<CnQuickFilterBar
+			v-if="part !== 'heading'"
+			inline
+			:tabs="tabs"
+			:activeIndex="ownIndex"
+			:counts="counts"
+			@update:activeIndex="choose" />
+	</section>
 </template>
 
 <script>
+import { CnQuickFilterBar } from '@conduction/nextcloud-vue'
+import { getCurrentUser } from '@nextcloud/auth'
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
+
+/** The workload request in flight, shared by the parts mounted together. */
+let workloadRequest = null
+
 /**
- * Compact per-handler open-case workload bar for coordinators, rendered on
- * My Work only when GET /api/work-queue/workload succeeds (the caller is a
- * coordinator). Renders nothing when there is no data — the parent silently
- * swallows a 403 for non-coordinators, so this component never needs to
- * distinguish "no access" from "no data".
+ * Read the team workload once for every part that asks while a request runs.
+ *
+ * @return {Promise<object>} The axios response.
+ */
+function readWorkload() {
+	if (workloadRequest === null) {
+		workloadRequest = axios.get(generateUrl('/apps/dossiq/api/work-queue/workload'))
+			.finally(() => { workloadRequest = null })
+	}
+	return workloadRequest
+}
+
+/**
+ * The team's open work per colleague, as a strip of name chips with a count,
+ * on My Work's `below-header` slot. It reads GET /api/work-queue/workload
+ * itself, which answers only a coordinator; anyone else gets a 403 and the
+ * strip renders nothing, so it never needs to tell "no access" from "no data".
+ * The reader's own chip is the active one; choosing another name emits
+ * `select` and opens that colleague's open cases on the Cases page.
+ *
+ * The chips are the strip's own rather than the index page's quick filters:
+ * the names are only known at runtime, only a coordinator sees them, and a
+ * choice leaves this page for the Cases list.
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export default {
 	name: 'WorkloadSummaryBar',
 
+	components: { CnQuickFilterBar },
+
 	props: {
-		/** Per-handler open-case counts, e.g. [{ handler, openCaseCount }]. */
+		/**
+		 * Per-handler open-case counts, e.g. [{ handler, openCaseCount, displayName? }].
+		 * When not given the strip reads them from the workload endpoint.
+		 */
 		handlers: {
 			type: Array,
-			default: () => [],
+			default: null,
+		},
+
+		/**
+		 * What the strip draws: `all` (heading and chips), `heading` (title
+		 * and hint, under the page header) or `chips` (the name chips, at the
+		 * start of the toolbar row, board DqAanMijToegewezen).
+		 */
+		part: {
+			type: String,
+			default: 'all',
+			validator: (value) => ['all', 'heading', 'chips'].includes(value),
 		},
 	},
 
+	emits: ['select'],
+
+	data() {
+		return {
+			/** The workload the strip read itself. */
+			loaded: [],
+		}
+	},
+
 	computed: {
-		/** The highest open-case count across all handlers, used to scale bars. */
-		maxCount() {
-			return this.handlers.reduce(
-				(max, row) => Math.max(max, row.openCaseCount || 0),
-				0,
-			)
+		/** The signed-in user's id, or '' when nobody is signed in. */
+		ownUid() {
+			return getCurrentUser()?.uid ?? ''
 		},
+
+		/** One chip per handler, the reader's own marked "(you)" and placed first. */
+		tabs() {
+			return this.ordered.map((row) => ({
+				label: row.handler === this.ownUid
+					? this.t('dossiq', '{name} (you)', { name: row.displayName || row.handler })
+					: (row.displayName || row.handler),
+			}))
+		},
+
+		/** The workload shown: the prop when given, else what the strip read. */
+		rows() {
+			return Array.isArray(this.handlers) ? this.handlers : this.loaded
+		},
+
+		/** The handlers with the reader's own row first, the rest as the server ranked them. */
+		ordered() {
+			const own = this.rows.filter((row) => row.handler === this.ownUid)
+			return [...own, ...this.rows.filter((row) => row.handler !== this.ownUid)]
+		},
+
+		/** The open-case count per chip, in chip order. */
+		counts() {
+			return this.ordered.map((row) => row.openCaseCount || 0)
+		},
+
+		/** The reader's own chip, or null when the reader holds no open cases. */
+		ownIndex() {
+			return this.ordered.findIndex((row) => row.handler === this.ownUid) === 0 ? 0 : null
+		},
+	},
+
+	mounted() {
+		if (!Array.isArray(this.handlers)) {
+			this.fetchWorkload()
+		}
 	},
 
 	methods: {
 		/**
-		 * Compute a handler's bar width as a percentage of the busiest handler.
+		 * Read the team workload; a refusal (not a coordinator) or a failure
+		 * leaves the strip empty.
 		 *
-		 * @param {number} count The handler's open-case count.
-		 * @return {number} A percentage (0–100).
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
-		barWidth(count) {
-			if (this.maxCount <= 0) {
-				return 0
+		async fetchWorkload() {
+			try {
+				const response = await readWorkload()
+				this.loaded = (response.data && response.data.handlers) || []
+			} catch {
+				this.loaded = []
 			}
-			return Math.round((count / this.maxCount) * 100)
+		},
+
+		/**
+		 * Emit the handler behind a chosen chip and open a colleague's open
+		 * cases; the reader's own chip stays on this page.
+		 *
+		 * @param {number|null} index The chosen chip.
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		choose(index) {
+			const row = index === null ? null : this.ordered[index]
+			if (!row) {
+				return
+			}
+			this.$emit('select', row.handler)
+			if (row.handler === this.ownUid || !this.$router) {
+				return
+			}
+			this.$router.push({
+				name: 'Cases',
+				query: { assignee: row.handler, isFinalStatus: 'false', statusHiddenInLists: 'false', isDraft: 'false' },
+			})
 		},
 	},
 }
@@ -76,61 +187,41 @@ export default {
 .workload-summary {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	padding: 12px 16px;
-	margin-bottom: 12px;
-	background: var(--color-background-hover);
-	border-radius: var(--border-radius-large, 12px);
+	gap: 4px;
+	margin-bottom: 16px;
 }
 
 .workload-summary__title {
-	font-weight: 600;
-	font-size: 0.85rem;
-	color: var(--color-text-maxcontrast);
-}
-
-.workload-summary__list {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	list-style: none;
 	margin: 0;
-	padding: 0;
-}
-
-.workload-summary__row {
-	display: grid;
-	grid-template-columns: 8rem 1fr 2rem;
-	align-items: center;
-	gap: 8px;
-}
-
-.workload-summary__handler {
-	overflow: hidden;
-	font-size: 0.85rem;
+	font-size: 1.15rem;
+	font-weight: 700;
 	color: var(--color-main-text);
-	text-overflow: ellipsis;
-	white-space: nowrap;
 }
 
-.workload-summary__bar-track {
-	display: block;
-	height: 8px;
-	background: var(--color-background-darker);
-	border-radius: var(--border-radius-pill, 16px);
-	overflow: hidden;
-}
-
-.workload-summary__bar-fill {
-	display: block;
-	height: 100%;
-	background: var(--color-primary-element);
-	border-radius: var(--border-radius-pill, 16px);
-}
-
-.workload-summary__count {
-	font-size: 0.85rem;
+.workload-summary__hint {
+	margin: 0 0 12px;
 	color: var(--color-text-maxcontrast);
-	text-align: end;
+}
+
+/* Board DqAanMijToegewezen: an 18px title over a 14px hint, 2px apart, on the
+   normal line height; the page's gap is the only space below it. */
+.workload-summary--heading {
+	margin-bottom: 0;
+	gap: 2px;
+
+	.workload-summary__title {
+		font-size: 18px;
+		line-height: normal;
+	}
+
+	.workload-summary__hint {
+		margin: 0;
+		font-size: 14px;
+		line-height: normal;
+	}
+}
+
+.workload-summary--chips {
+	margin-bottom: 0;
 }
 </style>

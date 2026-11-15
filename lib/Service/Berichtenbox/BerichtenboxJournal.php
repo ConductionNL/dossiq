@@ -61,35 +61,25 @@ class BerichtenboxJournal {
 	 * able to see what became of the letter they wrote. It carries status
 	 * `refused`, no external id, no sent time and the reason.
 	 *
-	 * @param string               $caseId           The case.
-	 * @param string               $bsn              Who it was addressed to.
-	 * @param string               $subject          The subject.
-	 * @param string               $body             The body.
-	 * @param string               $typeCode         The bericht type.
-	 * @param string|null          $attachmentFileId The attachment, when there is one.
-	 * @param array<string, mixed> $result           What the adapter answered.
+	 * @param array<string, mixed> $letter The letter: `caseId`, `bsn` (who it was addressed to), `subject`, `body`,
+	 *                                     `typeCode` (the bericht type) and `attachmentFileId` (or null).
+	 * @param array<string, mixed> $result What the adapter answered.
 	 *
 	 * @return array<string, mixed> The record to store.
 	 *
 	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
-	public function messageRecord(
-		string $caseId,
-		string $bsn,
-		string $subject,
-		string $body,
-		string $typeCode,
-		?string $attachmentFileId,
-		array $result,
-	): array {
+	public function messageRecord(array $letter, array $result): array {
+		$record = [
+			'caseId' => $letter['caseId'],
+			'bsn' => $letter['bsn'],
+			'subject' => $letter['subject'],
+			'body' => $letter['body'],
+			'berichtTypeCode' => $letter['typeCode'],
+			'attachmentFileId' => $letter['attachmentFileId'],
+		];
 		if ((($result['refused'] ?? false) === true)) {
-			return [
-				'caseId' => $caseId,
-				'bsn' => $bsn,
-				'subject' => $subject,
-				'body' => $body,
-				'berichtTypeCode' => $typeCode,
-				'attachmentFileId' => $attachmentFileId,
+			return $record + [
 				'externalMessageId' => null,
 				'status' => 'refused',
 				'sentAt' => null,
@@ -97,13 +87,7 @@ class BerichtenboxJournal {
 			];
 		}
 
-		return [
-			'caseId' => $caseId,
-			'bsn' => $bsn,
-			'subject' => $subject,
-			'body' => $body,
-			'berichtTypeCode' => $typeCode,
-			'attachmentFileId' => $attachmentFileId,
+		return $record + [
 			'externalMessageId' => $result['messageId'] ?? null,
 			'status' => $result['status'] ?? 'sent',
 			'sentAt' => $result['sentAt'] ?? (new DateTime())->format('c'),
@@ -170,7 +154,7 @@ class BerichtenboxJournal {
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::PORTAL_MESSAGE,
-			message: $this->statusSentence(subject: (string)($data['subject'] ?? ''), status: $status, lastError: $lastError),
+			message: $this->statusSentence(subject: (string)($data['subject'] ?? ''), outcome: ['status' => $status, 'lastError' => $lastError]),
 			fields: [
 				'subject' => (string)($data['subject'] ?? ''),
 				'messageId' => $externalMessageId,
@@ -212,13 +196,13 @@ class BerichtenboxJournal {
 	 * handler with nothing to act on, which is how a citizen goes unnotified
 	 * while the case says something happened.
 	 *
-	 * @param string $subject   The letter's subject.
-	 * @param string $status    The status it moved to.
-	 * @param string $lastError The provider's reason, when it failed.
+	 * @param string                                    $subject The letter's subject.
+	 * @param array{status: string, lastError: string} $outcome The status it moved to, and the provider's reason when it failed.
 	 *
 	 * @return string The sentence.
 	 */
-	private function statusSentence(string $subject, string $status, string $lastError): string {
+	private function statusSentence(string $subject, array $outcome): string {
+		['status' => $status, 'lastError' => $lastError] = $outcome;
 		if ($status === 'failed') {
 			$reason = $lastError;
 			if ($reason === '') {

@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -44,12 +44,13 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Term\DayCount;
 use Throwable;
 
 /**
  * The rules an incident obeys: its order, its delay and its own hand-off.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class IncidentRecord {
 	/**
@@ -77,8 +78,12 @@ class IncidentRecord {
 	 *        so it has to be counted in the zone the organisation administers;
 	 *        counting it in a zone this class named itself is the zone nobody
 	 *        chose (openspec/changes/one-date-write-path).
+	 * @param DayCount $days Counts the days between two moments.
 	 */
-	public function __construct(private readonly CaseDateNormaliser $dates) {
+	public function __construct(
+		private readonly CaseDateNormaliser $dates,
+		private readonly DayCount $days = new DayCount(),
+	) {
 	}//end __construct()
 
 	/**
@@ -88,7 +93,7 @@ class IncidentRecord {
 	 *
 	 * @return array<int, array<string, mixed>> The incidents, in event order.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function inEventOrder(array $incidents): array {
 		$rows = array_values(array_filter($incidents, static fn ($row): bool => is_array($row)));
@@ -117,7 +122,7 @@ class IncidentRecord {
 	 *
 	 * @return int|null The delay in days, or null when either moment is missing.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function recordingDelayDays(array $incident): ?int {
 		$event = $this->parse(value: (string)($incident['eventDate'] ?? ''));
@@ -132,8 +137,10 @@ class IncidentRecord {
 		// hours short of a whole day, and the delay comes out one day low with
 		// nothing to show why.
 		$zone = $this->dates->timeZone();
-		$days = (int)$event->setTimezone($zone)->setTime(0, 0)
-			->diff($recorded->setTimezone($zone)->setTime(0, 0))->days;
+		$days = $this->days->between(
+			from: $event->setTimezone($zone)->setTime(0, 0),
+			to: $recorded->setTimezone($zone)->setTime(0, 0)
+		);
 
 		// A recording BEFORE the event is a typo in the event date, not a
 		// negative delay. Reported as no delay rather than as a number that
@@ -152,7 +159,7 @@ class IncidentRecord {
 	 *
 	 * @return int The count.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function openCount(array $incidents): int {
 		$open = 0;
@@ -181,7 +188,7 @@ class IncidentRecord {
 	 *
 	 * @return array<string, mixed> The fields to write on the INCIDENT.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function handoverChange(array $incident, string $assignee): array {
 		$change = ['assignee' => trim($assignee)];

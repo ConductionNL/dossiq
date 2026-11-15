@@ -71,7 +71,9 @@ test.describe('REQ-DT-30 the report says which clock it counted on', () => {
 	 * @return The parsed payload.
 	 */
 	async function report(): Promise<any> {
-		const res = await api.get(`${REPORT}?period=all`)
+		const res = await api.get(`${REPORT}?period=all`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(res.status(), await res.text()).toBe(200)
 		return res.json()
 	}

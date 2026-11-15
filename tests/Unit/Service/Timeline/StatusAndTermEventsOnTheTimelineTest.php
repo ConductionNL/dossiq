@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -51,6 +51,8 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Typed stub for the OpenRegister ObjectService as CaseStatusStore calls it.
@@ -68,7 +70,7 @@ interface StatusStoreObjectServiceStub {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 
 	/**
 	 * Read one object.
@@ -79,7 +81,7 @@ interface StatusStoreObjectServiceStub {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function find(string $id, mixed $register = null, mixed $schema = null): array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -98,6 +100,9 @@ interface StatusStoreObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Timeline\StatusDisplayName
  */
 class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 
@@ -165,7 +170,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAStatusMoveReachesTheTimeline(): void {
 		$store = $this->statusStore(actor: 'handler');
@@ -260,7 +265,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheActorTheCallerNamesWinsOverTheSession(): void {
 		$store = $this->statusStore(actor: 'session-user');
@@ -288,7 +293,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheStatusSentenceCarriesNamesRatherThanIds(): void {
 		$store = $this->statusStore(actor: 'handler');
@@ -316,7 +321,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testARefusedTimelineWriteStillReturnsTheStatusRecord(): void {
 		$this->armTimeline(answer: '');
@@ -343,7 +348,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testATermEventReachesTheTimeline(): void {
 		$service = $this->termService();
@@ -377,7 +382,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testARefusedTimelineWriteStillReturnsTheTermEvent(): void {
 		$this->armTimeline(answer: '');
@@ -407,7 +412,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAPhaseTermStartReachesTheTimeline(): void {
 		$service = $this->termService();
@@ -441,7 +446,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testRewritingAnExistingTermAnnouncesNoStart(): void {
 		$service = $this->termService();
@@ -464,7 +469,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testATermEventWithoutAReadableCaseWritesNoEntry(): void {
 		$service = $this->termService();
@@ -491,12 +496,16 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	private function statusStore(string $actor, string $publicLabel = ''): CaseStatusStore {
 		$objectService = $this->createMock(StatusStoreObjectServiceStub::class);
 		$objectService->method('saveObject')->willReturnCallback(
-			static function (array $object, string $register, string $schema): array {
+			static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				return array_merge($object, ['id' => 'record-1']);
 			}
 		);
 		$objectService->method('find')->willReturnCallback(
-			static function (string $id, mixed $register = null, mixed $schema = null) use ($publicLabel): array {
+			static function (string $id, ?ObjectFindOptions $options = null) use ($publicLabel): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$behandeling = ['id' => 'st-behandeling', 'name' => 'Behandeling'];
 				if ($publicLabel !== '') {
 					$behandeling['publicLabel'] = $publicLabel;

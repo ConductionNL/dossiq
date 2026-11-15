@@ -1,0 +1,18 @@
+{
+    "status": 200,
+    "data": {
+        "id": "inst-1",
+        "answeredBy": "resumeAfterPauze"
+    },
+    "calls": [
+        {
+            "call": "pause::resumeAfterPauze",
+            "args": [
+                "inst-1",
+                {
+                    "date": "2026-03-01T23:00:00Z"
+                }
+            ]
+        }
+    ]
+}

@@ -31,7 +31,7 @@ use OCP\EventDispatcher\Event;
 /**
  * A citizen's withdrawal of their own request.
  *
- * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalClientWithdrawalEvent extends Event {
 	/**

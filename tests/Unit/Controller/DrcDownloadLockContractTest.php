@@ -56,6 +56,9 @@ use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\LockRequest;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Minimal OpenRegister ObjectService stub for the download/lock contract tests.
@@ -76,7 +79,7 @@ interface DrcDownloadLockObjectServiceStub {
 	 *
 	 * @return mixed The stored object row.
 	 */
-	public function find(int|string $id = '', ?string $register = null, ?string $schema = null): mixed;
+	public function find(int|string $id = '', ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Save or update an object.
@@ -88,7 +91,7 @@ interface DrcDownloadLockObjectServiceStub {
 	 *
 	 * @return mixed The saved object row.
 	 */
-	public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Take OpenRegister's own lock on an object.
@@ -97,7 +100,7 @@ interface DrcDownloadLockObjectServiceStub {
 	 *
 	 * @return mixed The locked object row.
 	 */
-	public function lockObject(string $identifier): mixed;
+	public function lockObject(LockRequest $request, bool $advisory = false): mixed;
 }//end interface
 
 /**
@@ -363,19 +366,18 @@ class DrcDownloadLockContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('lockObject')
 			->willReturnCallback(
-				static function (string $identifier): array {
+				static function (LockRequest $request): array {
+					$identifier = $request->identifier;
 					return ['id' => $identifier];
 				}
 			);
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (
-					string $register,
-					string $schema,
-					array $object,
-					?string $uuid = null,
-				) use (&$saved): array {
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saved): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$saved = ['object' => $object, 'uuid' => $uuid];
 					return $object;
 				}

@@ -13,10 +13,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\Folder;
+use OCP\Lock\LockedException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -37,12 +40,24 @@ use RuntimeException;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class DocumentProjectionService {
+class DocumentProjectionService implements DocumentProjectionServiceInterface {
+
+	use SearchesObjects;
 
 	/**
 	 * The folder OpenRegister keeps every register under, in every user's files.
 	 */
 	public const REGISTER_ROOT = 'Open Registers';
+
+	/**
+	 * How often a locked folder is asked for before the lookup gives up.
+	 */
+	private const FOLDER_LOCK_ATTEMPTS = 3;
+
+	/**
+	 * The first wait after a lock, in microseconds; each next wait is longer by as much.
+	 */
+	private const FOLDER_LOCK_WAIT_MICROSECONDS = 150000;
 
 	/**
 	 * @param DocumentRecordStore $store Cases, records, joins and types in OpenRegister.
@@ -57,6 +72,26 @@ class DocumentProjectionService {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * Run a projection as the system, for a file written with nobody signed in.
+	 *
+	 * Without OpenRegister the operation runs as it is.
+	 *
+	 * @param callable $operation The projection.
+	 *
+	 * @return mixed What the projection returns.
+	 *
+	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 */
+	public function asSystem(callable $operation): mixed {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return $operation();
+		}
+
+		return $this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
+	}//end asSystem()
 
 	/**
 	 * Whether a node path lies under the register tree at all.
@@ -149,12 +184,28 @@ class DocumentProjectionService {
 		}
 
 		if (dirname($sourcePath) === dirname($node->getPath())) {
-			$this->renameRecord(record: $record, node: $node, previousName: basename($sourcePath));
+			$this->renameRecord(record: $record, names: ['previous' => basename($sourcePath), 'current' => $node->getName()]);
 			return;
 		}
 
+		$this->moveBetweenCases(move: ['record' => $record, 'sourceCaseId' => $this->caseIdFromPath(path: $sourcePath)], node: $node);
+	}//end rehomeNode()
+
+	/**
+	 * Move a record that changed folder: drop the source case's join, then project or retire it.
+	 *
+	 * The file is projected into the case it now sits in; a record no case joins any more is retired.
+	 *
+	 * @param array{record: array<string, mixed>, sourceCaseId: string} $move The document record and the case the file
+	 *                                                                        was in, or ''.
+	 * @param File                                                       $node The moved file.
+	 *
+	 * @return void
+	 */
+	private function moveBetweenCases(array $move, File $node): void {
+		$record = $move['record'];
 		$recordId = (string)$record['id'];
-		$sourceCaseId = $this->caseIdFromPath(path: $sourcePath);
+		$sourceCaseId = $move['sourceCaseId'];
 		$targetCase = $this->resolveCaseForNode(node: $node);
 		$targetCaseId = '';
 		if ($targetCase !== null) {
@@ -170,10 +221,10 @@ class DocumentProjectionService {
 			return;
 		}
 
-		if ($this->store->joinsFor(recordId: $recordId) === []) {
+		if ($this->store->joinsFor(recordId: (string)$record['id']) === []) {
 			$this->retireRecord(record: $record);
 		}
-	}//end rehomeNode()
+	}//end moveBetweenCases()
 
 	/**
 	 * Move an API-first document's file into the case's folder on its first join.
@@ -193,38 +244,95 @@ class DocumentProjectionService {
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function homeDocument(string $recordId, string $caseId): bool {
-		$record = $this->store->findRecord(recordId: $recordId) ?? [];
-		$fileName = (string)($record['fileName'] ?? '');
-		if ($fileName === '') {
-			return false;
-		}
-
-		$ownFolder = $this->folderOf(objectId: $recordId);
-		if ($ownFolder === null || $ownFolder->nodeExists($fileName) === false) {
+		$move      = new DocumentMove(record: ($this->store->findRecord(recordId: $recordId) ?? []), recordId: $recordId, caseId: $caseId);
+		$ownFolder = $this->ownFolderHolding(move: $move);
+		if ($ownFolder === null) {
 			// Already under a case folder, or never stored: nothing to move.
 			return false;
 		}
 
-		$caseFolder = $this->folderOf(objectId: $caseId);
-		if ($caseFolder === null) {
-			throw new RuntimeException('Case ' . $caseId . ' has no folder to hold its documents');
-		}
-
-		$node = $ownFolder->get($fileName);
-		$previousId = $node->getId();
-		$moved = $node->move($caseFolder->getPath() . '/' . $fileName);
-		$this->logger->info(
-			'Dossiq documents: moved ' . $fileName . ' of ' . $recordId . ' into case ' . $caseId,
-			['app' => Application::APP_ID],
-		);
-
-		if ($moved->getId() !== $previousId || (int)($record['fileId'] ?? 0) !== $moved->getId()) {
-			$record['fileId'] = $moved->getId();
-			$this->store->saveRecord(record: $record);
-		}
+		$this->moveIntoCase(move: $move, ownFolder: $ownFolder);
 
 		return true;
 	}//end homeDocument()
+
+	/**
+	 * The record's own folder when it still holds the file, null otherwise.
+	 *
+	 * @param DocumentMove $move The record and the case.
+	 *
+	 * @return Folder|null The folder.
+	 */
+	private function ownFolderHolding(DocumentMove $move): ?Folder {
+		if ($move->fileName === '') {
+			return null;
+		}
+
+		$ownFolder = $this->folderOf(objectId: $move->recordId);
+		if ($ownFolder === null || $ownFolder->nodeExists($move->fileName) === false) {
+			return null;
+		}
+
+		return $ownFolder;
+	}//end ownFolderHolding()
+
+	/**
+	 * Move the file into the case's folder, naming it on the record before and after when its id changes.
+	 *
+	 * @param DocumentMove $move      The record and the case.
+	 * @param Folder       $ownFolder The record's own folder, holding the file.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the case has no folder.
+	 */
+	private function moveIntoCase(DocumentMove $move, Folder $ownFolder): void {
+		$caseFolder = $this->folderOf(objectId: $move->caseId);
+		if ($caseFolder === null) {
+			throw new RuntimeException('Case ' . $move->caseId . ' has no folder to hold its documents');
+		}
+
+		$node       = $ownFolder->get($move->fileName);
+		$previousId = $node->getId();
+		// The move's file event finds the record by its file; without this it projects a second record.
+		$record = $this->withFileId(record: $move->record, fileId: $previousId);
+		$moved  = $node->move($caseFolder->getPath() . '/' . $move->fileName);
+		$this->logger->info($move->logLine(), ['app' => AppIdentity::APP_ID]);
+		if ($moved->getId() !== $previousId) {
+			$this->saveFileId(record: ($this->store->findRecord(recordId: $move->recordId) ?? $record), fileId: $moved->getId());
+		}
+	}//end moveIntoCase()
+
+	/**
+	 * The record naming this file id, saved when it named another.
+	 *
+	 * @param array<string, mixed> $record The record.
+	 * @param int                  $fileId The file id it should name.
+	 *
+	 * @return array<string, mixed> The record.
+	 */
+	private function withFileId(array $record, int $fileId): array {
+		if ((int)($record['fileId'] ?? 0) !== $fileId) {
+			$record = $this->saveFileId(record: $record, fileId: $fileId);
+		}
+
+		return $record;
+	}//end withFileId()
+
+	/**
+	 * Save the record naming this file id.
+	 *
+	 * @param array<string, mixed> $record The record.
+	 * @param int                  $fileId The file id it names.
+	 *
+	 * @return array<string, mixed> The record as saved.
+	 */
+	private function saveFileId(array $record, int $fileId): array {
+		$record['fileId'] = $fileId;
+		$this->store->saveRecord(record: $record);
+
+		return $record;
+	}//end saveFileId()
 
 	/**
 	 * Whether a case has a folder to hold documents.
@@ -254,14 +362,55 @@ class DocumentProjectionService {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$folder = $fileService->getObjectFolder(objectEntity: $objectId, registerId: $register);
+		$folder = $this->folderWhenUnlocked(fileService: $fileService, objectId: $objectId);
 		if (($folder instanceof Folder) === false) {
 			return null;
 		}
 
 		return $folder;
 	}//end folderOf()
+
+	/**
+	 * Ask for the folder, and ask again while a parallel request is creating it.
+	 *
+	 * Opening a case's Documents tab sends two requests at once: OpenRegister's
+	 * own folder read and dossiq's linked documents. On a case with no folder
+	 * yet both create it, and the one that loses the race met a LockedException
+	 * that went out as a 500 (13 October, Woo request, thomas.kuiper). The
+	 * other request is done in milliseconds, after which the folder simply
+	 * exists, so the lookup waits briefly and asks again. A folder that stays
+	 * locked is reported as a RuntimeException, which the read endpoints
+	 * answer as 503: busy, try again, not broken.
+	 *
+	 * @param object $fileService OpenRegister's FileService.
+	 * @param string $objectId    The object uuid, in the configured register.
+	 *
+	 * @return mixed What the file service answered.
+	 *
+	 * @throws RuntimeException When the folder stays locked.
+	 *
+	 * @spec openspec/specs/document-projection/spec.md
+	 */
+	private function folderWhenUnlocked(object $fileService, string $objectId): mixed {
+		$register = $this->settingsService->getConfigValue('register');
+		$attempt = 0;
+		while (true) {
+			$attempt++;
+			try {
+				return $fileService->getObjectFolder(objectEntity: $objectId, registerId: $register);
+			} catch (LockedException $e) {
+				if ($attempt >= self::FOLDER_LOCK_ATTEMPTS) {
+					$this->logger->warning(
+						'Dossiq: the folder of an object stayed locked',
+						['app' => AppIdentity::APP_ID, 'objectId' => $objectId, 'attempts' => $attempt]
+					);
+					throw new RuntimeException(message: 'object_folder_busy', previous: $e);
+				}
+
+				usleep(self::FOLDER_LOCK_WAIT_MICROSECONDS * $attempt);
+			}
+		}
+	}//end folderWhenUnlocked()
 
 	/**
 	 * The case whose folder holds this node, or null.
@@ -334,16 +483,15 @@ class DocumentProjectionService {
 	/**
 	 * Follow a rename: the file name, and the title when it was still derived.
 	 *
-	 * @param array<string, mixed> $record The stored record.
-	 * @param File $node The file under its new name.
-	 * @param string $previousName The file name before.
+	 * @param array<string, mixed>                     $record The stored record.
+	 * @param array{previous: string, current: string} $names  The file name before and the file's new name.
 	 *
 	 * @return void
 	 */
-	private function renameRecord(array $record, File $node, string $previousName): void {
-		$record['fileName'] = $node->getName();
-		if ((string)($record['title'] ?? '') === pathinfo($previousName, PATHINFO_FILENAME)) {
-			$record['title'] = pathinfo($node->getName(), PATHINFO_FILENAME);
+	private function renameRecord(array $record, array $names): void {
+		$record['fileName'] = $names['current'];
+		if ((string)($record['title'] ?? '') === pathinfo($names['previous'], PATHINFO_FILENAME)) {
+			$record['title'] = pathinfo($names['current'], PATHINFO_FILENAME);
 		}
 
 		$this->store->saveRecord(record: $record);

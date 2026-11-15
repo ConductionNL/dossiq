@@ -235,7 +235,9 @@ status-specific fields including the legally mandated rejection motivation.
 - GIVEN a scoped request for a rejected tender
 - WHEN the detail endpoint responds
 - THEN it SHALL include the rejection reason (per Aanbestedingswet 2012 art. 2.130), an appeal
-  deadline of 20 days from the rejection date, and an anonymized evaluation-report download link
+  deadline of 20 days after the provisional award (the Alcatel period), shown as
+  board PtLeverancier draws it: "Bezwaar tot 8 juli 2026, 20 dagen na de voorlopige
+  gunning (Alcatel-termijn)", and an anonymized evaluation-report download link
 - AND a request for a tender outside the supplier's scope SHALL return 403 or 404
 
 ### Requirement: Anonymized Document Download

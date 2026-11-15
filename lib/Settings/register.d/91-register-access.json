@@ -1,0 +1,27 @@
+{
+  "_note": "case-access-by-handling-team, decided by Ruben on 2026-10-11 (REQ-ACC-11). The register level authorization block closes the dossiq register to anybody outside the staff group. OpenRegister applies a register block to every schema that declares none of its own (rbac-scopes, the four-level cascade), so the schemas that shipped without one stop being open to every signed in account, and a schema added later is closed on the day it ships. The background service group is named beside the staff group because every background job that writes does so as that account (register.d/90-background-service-account.json); without it the jobs would be refused the moment the register closes. dossiq-medewerkers is provisioned by ProvisionAssignedGroups and seeded once by SeedStaffGroup with the current handling teams and assignees, so nobody loses dossiq on the upgrade. The case schema declares its own block (register.d/66-notification-routing.json) and CaseTeamAccessProjector adds the handling team rules to it, so this block does not reach cases. The register version moves to 1.4.0 because OpenRegister writes a register's own fields only when its version is newer.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "authorization": {
+          "read": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "create": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "update": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "delete": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ]
+        }
+      }
+    }
+  }
+}

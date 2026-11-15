@@ -52,7 +52,7 @@ Alle services schrijven naar `OverdrachtAuditLog` via `AuditLogger` (ADR-001 —
 
 ## 2. Datamodel
 
-Zie [ADR-000](../../openspec/architecture/adr-000-data-model.md) voor de exacte velden. Korte samenvatting van de relaties:
+Zie [ADR-000](https://github.com/ConductionNL/dossiq/blob/development/openspec/architecture/adr-000-data-model.md) voor de exacte velden. Korte samenvatting van de relaties:
 
 ```
 BewaarTermijnRegel  1 ---- *  OverdrachtTrigger

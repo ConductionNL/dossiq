@@ -27,6 +27,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
+use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -37,6 +39,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
+ * @uses \OCA\Dossiq\Service\TermKind
  */
 class TermijnServiceTest extends TestCase {
 
@@ -270,6 +274,77 @@ class TermijnServiceTest extends TestCase {
 		// 2026-04-01 + 70 days = 2026-06-10.
 		self::assertSame('2026-06-10', $fresh['endDateCalculated']);
 	}//end testExistingTermijnInstanceRetainsOriginalDefinitieAfterVersionBump()
+	/**
+	 * A service whose saves bring the case in line (REQ-OTE-01).
+	 *
+	 * @return TermijnService The service, writing case deadlines through the mirror.
+	 */
+	private function mirroringService(): TermijnService {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				'termijn_definitie_schema' => 'deadlineDefinition',
+				'termijn_instance_schema' => 'deadlineInstance',
+				'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
+				default => '',
+			},
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+
+		return new TermijnService(
+			settingsService: $settings,
+			logger: $logger,
+			mirror: new CaseDeadlineMirror(
+				settingsService: $settings,
+				store: new TermInstanceStore(settingsService: $settings, logger: $logger),
+				logger: $logger,
+			),
+		);
+	}//end mirroringService()
+
+	/**
+	 * Creating the term and pausing it both reach the case (the pause scenario).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function testACaseDeadlineFollowsItsTermAfterAPause(): void {
+		$this->objects->seed('case', ['id' => 'case-1', 'title' => 'Dakkapel', 'deadline' => '2026-07-13']);
+		$service = $this->mirroringService();
+
+		$instance = $service->createTermijnInstance(
+			'case-1',
+			'omgevingsvergunning-regulier',
+			new DateTimeImmutable('2026-06-01T10:00:00+00:00')
+		);
+		self::assertSame('2026-07-27', $this->objects->get('case', 'case-1')[CaseDeadlineMirror::FIELD]);
+
+		$service->updateTermijnInstance((string)$instance['id'], ['status' => 'paused', 'endDateCurrent' => '2026-08-06']);
+		self::assertSame('2026-08-06', $this->objects->get('case', 'case-1')[CaseDeadlineMirror::FIELD]);
+		self::assertSame('Dakkapel', $this->objects->get('case', 'case-1')['title']);
+	}//end testACaseDeadlineFollowsItsTermAfterAPause()
+
+	/**
+	 * A planned end saved beside it does not move the case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function testAPlannedEndDoesNotMoveTheCase(): void {
+		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-07-13']);
+
+		$this->mirroringService()->saveTermInstance(
+			['case' => 'case-1', 'kind' => 'planned', 'status' => 'lopend', 'endDateCurrent' => '2026-06-20']
+		);
+
+		self::assertArrayNotHasKey(CaseDeadlineMirror::FIELD, $this->objects->get('case', 'case-1'));
+	}//end testAPlannedEndDoesNotMoveTheCase()
+
 }//end class
 
 // `FakeTermijnStore` is now declared in tests/Unit/Fixtures/FakeTermijnStore.php

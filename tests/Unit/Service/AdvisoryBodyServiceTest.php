@@ -29,6 +29,8 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * ObjectService stub for advisory body tests.
@@ -64,7 +66,7 @@ interface AdvisoryObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function find(string $id, string $register, string $schema): array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array;
 
 	/**
 	 * Save or update an object.
@@ -91,7 +93,7 @@ interface AdvisoryObjectServiceStub {
 	// fake declared (register, schema, id), so it accepted the transposed
 	// positional call the service was making and no test could ever see the bug.
 	// A fake that agrees with the caller instead of with the callee cannot fail.
-	public function deleteObject(string $uuid, ?string $register = null, ?string $schema = null): void;
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): void;
 }//end interface
 
 /**
@@ -214,7 +216,7 @@ class AdvisoryBodyServiceTest extends TestCase {
 	 * because the fake had been written to match the caller rather than
 	 * OpenRegister.
 	 *
-	 * The same defect shipped in four other services. InspectionChecklistService
+	 * The same defect shipped in four other services. ChecklistTemplateStore (then InspectionChecklistService)
 	 * carries a docblock describing it, found the same way and never swept.
 	 *
 	 * @return void
@@ -224,7 +226,10 @@ class AdvisoryBodyServiceTest extends TestCase {
 
 		$objectService = $this->createMock(AdvisoryObjectServiceStub::class);
 		$objectService->method('deleteObject')->willReturnCallback(
-			function (string $uuid, ?string $register = null, ?string $schema = null) use (&$received): void {
+			function (ObjectDeletion $deletion) use (&$received): void {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$received = ['uuid' => $uuid, 'register' => $register, 'schema' => $schema];
 			}
 		);

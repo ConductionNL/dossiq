@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The team fields on a case and on a task.
+ * The team on a case is a Nextcloud group.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Settings
@@ -26,32 +26,22 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * `case.assignedGroup` is the team a case belongs to, and this file pins the
- * four things about it that fail silently.
+ * things about it that fail silently.
  *
- * IT USED TO COVER `caseTask.assigneeGroup` TOO. remove-casetask deleted that
- * schema, and the engine has no equivalent to assert from here: it models the
- * pool as a LIST of candidate groups rather than one `assigneeGroup` $ref, and
- * that list is OpenRegister's own column, not a property dossiq's descriptor
- * declares. Asserting it from this file would pin another app's schema.
+ * It is a Nextcloud GROUP ID (one-team-model, Ruben 2026-10-09). It used to be
+ * a `$ref` to `organisatieRol`, while the handover, the custody chain and the
+ * case type's `handling.defaultGroup` all wrote and read group ids: so a case
+ * held either kind of value and no reader could trust it. `referenceType:
+ * nextcloud-group` is what nextcloud-vue reads to render a group picker. A
+ * `$ref` or a `format: uuid` back on the property would make OpenRegister
+ * refuse every group id with "should match format uuid", which is how the
+ * handover e2e died before.
  *
- * It must reference `organisatieRol`. A Nextcloud group id was considered
- * and rejected: `roleType.ncGroupId` already binds a role to a group for
- * AUTHORIZATION, and a second group field on the case would blur assignment
- * with permission. A `$ref` pointing anywhere else, or missing, turns the
- * picker into a free-text box and the facet into a list of raw strings.
+ * It must stay OPTIONAL and FACETABLE, and the mock register must say the same
+ * thing as the live one: `DemoDataService` reads the mock.
  *
- * It must stay OPTIONAL. `role`'s `required` list is what makes the Add
- * party form's props matter; adding a team to a case's required list would
- * 400 every case create in the app, including the ones the flows write.
- *
- * It must be FACETABLE. The Team chip on the indexes is blocked on the
- * platform resolving the signed-in handler's `organisatieRol` rows, so the
- * sidebar facet is the only way to narrow a list to a team. A facet is opt-in
- * per property: drop the flag and the sidebar shows nothing, with no error.
- *
- * And the mock register must carry the same property. `DemoDataService` reads
- * it, so a property present in the live register and absent from the mock
- * makes the demo instance disagree with the real one about what a case has.
+ * And the organisation role carries `ncGroupId`, the one link from a role to a
+ * team, which the resident's team name and the migration both read.
  *
  * @coversNothing
  */
@@ -65,11 +55,11 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 	private const ROOT = __DIR__ . '/../../..';
 
 	/**
-	 * The schema the team property references.
+	 * The reference type a Nextcloud group field declares.
 	 *
 	 * @var string
 	 */
-	private const TEAM_SCHEMA = 'organisatieRol';
+	private const GROUP_REFERENCE = 'nextcloud-group';
 
 	/**
 	 * The team property of each schema that carries one.
@@ -83,17 +73,18 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 	/**
 	 * The schemas of one shipped register file.
 	 *
-	 * @param string $file File name under lib/Settings.
+	 * @param string $file    File name under lib/Settings, or under register.d.
+	 * @param int    $atLeast The fewest schemas the file must yield for a pass to mean something.
 	 *
 	 * @return array<string, mixed> Schema slug => schema.
 	 */
-	private function schemas(string $file): array {
+	private function schemas(string $file, int $atLeast = 10): array {
 		$data = json_decode((string)file_get_contents(self::ROOT . '/lib/Settings/' . $file), true);
 		self::assertIsArray($data, $file . ' did not parse.');
 
 		$schemas = (array)(((array)($data['components'] ?? []))['schemas'] ?? []);
-		self::assertGreaterThan(
-			10,
+		self::assertGreaterThanOrEqual(
+			$atLeast,
 			count($schemas),
 			$file . ' yielded almost no schemas, so an all-clear below would say nothing.'
 		);
@@ -114,7 +105,7 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 	}//end registerFileProvider()
 
 	/**
-	 * The team property exists, references organisatieRol and is facetable.
+	 * The team property is a Nextcloud group, facetable, titled Team.
 	 *
 	 * @param string $file The register file to read.
 	 *
@@ -122,7 +113,7 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testBothTeamPropertiesReferenceTheOrganisationRole(string $file): void {
+	public function testTheTeamIsANextcloudGroup(string $file): void {
 		$schemas = $this->schemas($file);
 
 		foreach (self::TEAM_PROPERTIES as $slug => $property) {
@@ -133,42 +124,56 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 			self::assertArrayHasKey(
 				$property,
 				$properties,
-				sprintf('%s: schema "%s" has no "%s" property, so no case or task can name a team.', $file, $slug, $property)
+				sprintf('%s: schema "%s" has no "%s" property, so no case can name a team.', $file, $slug, $property)
 			);
 
 			$declared = (array)$properties[$property];
+			self::assertSame('string', ($declared['type'] ?? null), sprintf('%s: "%s.%s" holds one group id.', $file, $slug, $property));
 			self::assertSame(
-				self::TEAM_SCHEMA,
-				($declared['$ref'] ?? null),
+				self::GROUP_REFERENCE,
+				($declared['referenceType'] ?? null),
 				sprintf(
-					'%s: "%s.%s" must reference "%s". Without the reference the field is free text: the form renders a '
-					. 'box instead of a picker and the facet lists whatever was typed.',
+					'%s: "%s.%s" must declare referenceType "%s", or the form renders a text box instead of a group picker.',
 					$file,
 					$slug,
 					$property,
-					self::TEAM_SCHEMA
+					self::GROUP_REFERENCE
 				)
 			);
-			self::assertSame(
-				'Team',
-				($declared['title'] ?? null),
-				sprintf('%s: "%s.%s" is labelled Team on both indexes and both forms.', $file, $slug, $property)
+			self::assertArrayNotHasKey(
+				'$ref',
+				$declared,
+				sprintf('%s: "%s.%s" is a group id, not a reference to a register row.', $file, $slug, $property)
 			);
-			self::assertTrue(
-				($declared['facetable'] ?? false),
+			self::assertArrayNotHasKey(
+				'format',
+				$declared,
 				sprintf(
-					'%s: "%s.%s" must be facetable. The Team quick-filter chip is blocked on the platform, so the '
-					. 'sidebar facet is the only way to narrow a list to a team.',
+					'%s: "%s.%s" must declare no format. A uuid format refuses every group id the handover writes.',
 					$file,
 					$slug,
 					$property
 				)
 			);
-		}
-	}//end testBothTeamPropertiesReferenceTheOrganisationRole()
+			self::assertSame(
+				'Team',
+				($declared['title'] ?? null),
+				sprintf('%s: "%s.%s" is labelled Team on the index and the forms.', $file, $slug, $property)
+			);
+			self::assertTrue(
+				($declared['facetable'] ?? false),
+				sprintf(
+					'%s: "%s.%s" must be facetable, or the sidebar cannot narrow a list to a team.',
+					$file,
+					$slug,
+					$property
+				)
+			);
+		}//end foreach
+	}//end testTheTeamIsANextcloudGroup()
 
 	/**
-	 * Neither team property is required.
+	 * The team property is not required.
 	 *
 	 * @param string $file The register file to read.
 	 *
@@ -185,8 +190,8 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 				$property,
 				$required,
 				sprintf(
-					'%s: "%s.%s" is optional. A team is additive — a case keeps its personal assignee and a case '
-					. 'without a team is still a valid case — and requiring it would 400 every create the flows make.',
+					'%s: "%s.%s" is optional. A team is additive, a case keeps its personal assignee and a case '
+					. 'without a team is still a valid case, and requiring it would 400 every create the flows make.',
 					$file,
 					$slug,
 					$property
@@ -196,33 +201,70 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 	}//end testNeitherTeamPropertyIsRequired()
 
 	/**
-	 * The team schema the two properties point at is actually shipped.
-	 *
-	 * A `$ref` to a slug nothing declares resolves to nothing at import time
-	 * and leaves the picker empty, which reads exactly like an instance that
-	 * has no teams yet.
+	 * An organisation role names its Nextcloud group, in the live and the mock register.
 	 *
 	 * @return void
 	 */
-	public function testTheReferencedTeamSchemaIsShipped(): void {
-		$declared = [];
-		foreach ((array)glob(self::ROOT . '/lib/Settings/register.d/*.json') as $file) {
-			$data = json_decode((string)file_get_contents((string)$file), true);
-			if (is_array($data) === false) {
-				continue;
-			}
+	public function testTheOrganisationRoleNamesItsGroup(): void {
+		$sources = [
+			'register.d/61-mandaat-matrix.json' => $this->schemas('register.d/61-mandaat-matrix.json', 1),
+			'dossiq_mock_register.json' => $this->schemas('dossiq_mock_register.json'),
+		];
 
-			$declared = array_merge($declared, array_keys((array)(((array)($data['components'] ?? []))['schemas'] ?? [])));
+		foreach ($sources as $file => $schemas) {
+			$properties = (array)(((array)($schemas['organisatieRol'] ?? []))['properties'] ?? []);
+			self::assertArrayHasKey(
+				'ncGroupId',
+				$properties,
+				sprintf('%s: organisatieRol has no ncGroupId, so no role can be moved to a team.', $file)
+			);
+			self::assertSame(
+				self::GROUP_REFERENCE,
+				(((array)$properties['ncGroupId'])['referenceType'] ?? null),
+				sprintf('%s: organisatieRol.ncGroupId must be picked from the Nextcloud groups.', $file)
+			);
 		}
+	}//end testTheOrganisationRoleNamesItsGroup()
 
-		$declared = array_merge($declared, array_keys($this->schemas('dossiq_register.json')));
+	/**
+	 * The resident's team name is read through the role bound to the case's group.
+	 *
+	 * `@ref.assignedGroup` named a reference nothing declared once the field
+	 * stopped being a `$ref`, and a calculation that reads an undeclared
+	 * reference answers null on every case. The lookup must be on `ncGroupId`,
+	 * and the expression must refuse an empty team: a lookup on an empty value
+	 * may match a role that is bound to nothing and hand its name to the case.
+	 *
+	 * @return void
+	 */
+	public function testThePublicNameIsReadThroughTheRoleBoundToTheGroup(): void {
+		$case = (array)($this->schemas('dossiq_register.json')['case'] ?? []);
+		$configuration = (array)($case['configuration'] ?? []);
 
-		self::assertContains(
-			self::TEAM_SCHEMA,
-			$declared,
-			sprintf('No shipped fragment declares "%s", so the team picker would come up empty.', self::TEAM_SCHEMA)
+		$team = (array)(((array)($configuration['x-openregister-references'] ?? []))['team'] ?? []);
+		self::assertSame('organisatieRol', ($team['schema'] ?? null), 'The team lookup reads organisation roles.');
+		self::assertSame('lookup', ($team['mode'] ?? null), 'The team is found by a lookup, not followed as a reference.');
+		self::assertSame(
+			['ncGroupId' => '@self.assignedGroup'],
+			($team['filters'] ?? null),
+			'The role is the one bound to the case\'s group.'
 		);
-	}//end testTheReferencedTeamSchemaIsShipped()
+
+		$calculation = (array)(((array)($configuration['x-openregister-calculations'] ?? []))['assignedGroupPublicName'] ?? []);
+		$expression = (string)json_encode($calculation['expression'] ?? null);
+		self::assertStringNotContainsString('@ref.assignedGroup', $expression, 'No reference named assignedGroup is declared.');
+		self::assertStringContainsString('@ref.team.publicName', $expression);
+		self::assertStringContainsString(
+			'{"eq":[{"coalesce":[{"prop":"assignedGroup"},""]},""]}',
+			$expression,
+			'The name must be empty for a case without a team, whatever the lookup returned.'
+		);
+		self::assertStringContainsString(
+			'{"prop":"@ref.team.ncGroupId"}',
+			$expression,
+			'The name is only trusted from a role whose group is the case\'s group.'
+		);
+	}//end testThePublicNameIsReadThroughTheRoleBoundToTheGroup()
 
 	/**
 	 * The personal assignee survives beside the team.

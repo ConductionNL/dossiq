@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusFieldRuleDeclarationTest extends TestCase {
 
@@ -237,4 +237,34 @@ class StatusFieldRuleDeclarationTest extends TestCase {
 
 		$this->assertSame([], $block);
 	}//end testAnUnusableRuleIsDropped()
+
+	/**
+	 * A condition naming no field, or one that is not a map, publishes the
+	 * rule without a `when`, as the editor shows it.
+	 *
+	 * @return void
+	 */
+	public function testAConditionWithoutAFieldIsDropped(): void {
+		$block = $this->declaration()->fieldsBlock(
+			statusType: [
+				'fieldRules' => [
+					[
+						'rule' => 'required',
+						'field' => 'motivering',
+						'condition' => ['kind' => 'fieldPresent', 'field' => '   '],
+					],
+					[
+						'rule' => 'required',
+						'field' => 'besluit',
+						'condition' => 'fieldPresent',
+					],
+				],
+			]
+		);
+
+		$this->assertSame(
+			expected: ['required' => [['fields' => ['motivering']], ['fields' => ['besluit']]]],
+			actual: $block
+		);
+	}//end testAConditionWithoutAFieldIsDropped()
 }//end class

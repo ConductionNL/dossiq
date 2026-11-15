@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\Lifecycle\CaseActSources;
 use OCA\Dossiq\Controller\CaseActsController;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -53,6 +54,7 @@ use Psr\Log\LoggerInterface;
  * Nine acts, their statuses and their refusal bodies.
  *
  * @covers \OCA\Dossiq\Controller\CaseActsController
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseActSources
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseActs
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseActsMenu
@@ -172,10 +174,12 @@ class CaseActsControllerContractTest extends TestCase {
 	private function overview(): CaseActsOverview {
 		return new CaseActsOverview(
 			store: $this->store,
-			menu: new CaseActsMenu(gate: $this->gate),
-			endings: $this->endings,
-			holds: $this->holds,
-			drafts: $this->drafts,
+			acts: new CaseActSources(
+				menu: new CaseActsMenu(gate: $this->gate),
+				endings: $this->endings,
+				holds: $this->holds,
+				drafts: $this->drafts,
+			),
 			incompleteness: $this->incompleteness,
 			processStatus: $this->processStatus,
 		);
@@ -226,6 +230,7 @@ class CaseActsControllerContractTest extends TestCase {
 
 		$this->caseAccessGuard = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
 		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('ahmed');
@@ -269,6 +274,77 @@ class CaseActsControllerContractTest extends TestCase {
 		$this->assertTrue(condition: $acts['finish']['allowed']);
 		$this->assertSame(expected: '', actual: $acts['finish']['reason'], message: 'a permitted act carries no reason');
 	}//end testTheActsReadListsRefusedActsWithTheirReason()
+
+	/**
+	 * A controller signed in as someone the guard answers for.
+	 *
+	 * @param bool $reads Whether the caller may read the case.
+	 * @param bool $acts  Whether the caller may act on it.
+	 *
+	 * @return CaseActsController
+	 */
+	private function controllerFor(bool $reads, bool $acts): CaseActsController {
+		$guard = $this->createMock(originalClassName: CaseAccessGuard::class);
+		$guard->method('hasCaseReadAccess')->willReturn($reads);
+		$guard->method('hasCaseMutationAccess')->willReturn($acts);
+		$user = $this->createMock(originalClassName: IUser::class);
+		$user->method('getUID')->willReturn('thomas');
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		return new CaseActsController(
+			appName: 'dossiq',
+			request: $this->request,
+			acts: $this->facade(),
+			overview: $this->overview(),
+			caseAccessGuard: $guard,
+			userSession: $session,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+	}//end controllerFor()
+
+	/**
+	 * A handling team member reads an unclaimed case's acts, each refused until they claim it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	public function testAReaderWhoIsNotTheHandlerSeesEveryActRefused(): void {
+		$this->holds->method('isHeld')->willReturn(false);
+		$this->drafts->method('isDraft')->willReturn(false);
+		$this->endings->method('endingOf')->willReturn([]);
+
+		$response = $this->controllerFor(reads: true, acts: false)->acts(caseId: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$acts = $response->getData()['acts'];
+		$this->assertNotSame(expected: [], actual: $acts);
+		foreach ($acts as $act) {
+			$this->assertFalse(condition: $act['allowed'], message: $act['act'] . ' is refused to a reader');
+			$this->assertStringContainsString(needle: 'Claim this case first', haystack: $act['reason']);
+		}
+
+		$handler = $this->controllerFor(reads: true, acts: true)->acts(caseId: 'case-1')->getData()['acts'];
+		$this->assertTrue(condition: array_column(array: $handler, column_key: 'allowed', index_key: 'act')['finish'], message: 'the handler keeps the act');
+	}//end testAReaderWhoIsNotTheHandlerSeesEveryActRefused()
+
+	/**
+	 * Someone who may not read the case gets 403 on the acts read, and the case is never loaded.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	public function testANonReaderGetsNoActs(): void {
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->expects($this->never())->method('loadCase');
+
+		$response = $this->controllerFor(reads: false, acts: false)->acts(caseId: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		$this->assertSame(expected: 'not-authorized', actual: $response->getData()['error']);
+	}//end testANonReaderGetsNoActs()
 
 	/**
 	 * Marking a case a draft answers with what the draft now is.
@@ -453,4 +529,57 @@ class CaseActsControllerContractTest extends TestCase {
 		$this->assertStringNotContainsString(needle: 'db-01', haystack: json_encode($response->getData()));
 		$this->assertSame(expected: 'act-failed', actual: $response->getData()['error']);
 	}//end testAnUnexpectedFailureNeverLeaksItsMessage()
+	/**
+	 * A reader who may not act still reads the archive checklist: read access is enough.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testAReaderReadsTheArchiveChecklist(): void {
+		$response = $this->controllerFor(reads: true, acts: false)->archiveReadiness(caseId: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['caseId' => 'case-1', 'checklist' => []], actual: $response->getData());
+	}//end testAReaderReadsTheArchiveChecklist()
+
+	/**
+	 * Somebody who may not read the case gets a 403 and no checklist.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testANonReaderGetsNoArchiveChecklist(): void {
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->expects($this->never())->method('loadCase');
+
+		$response = $this->controllerFor(reads: false, acts: false)->archiveReadiness(caseId: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		$this->assertSame(expected: 'not-authorized', actual: $response->getData()['error']);
+	}//end testANonReaderGetsNoArchiveChecklist()
+
+	/**
+	 * With nobody signed in the archive checklist answers 401.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testNoSessionGetsNoArchiveChecklist(): void {
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn(null);
+		$controller = new CaseActsController(
+			appName: 'dossiq',
+			request: $this->request,
+			acts: $this->facade(),
+			overview: $this->overview(),
+			caseAccessGuard: $this->caseAccessGuard,
+			userSession: $session,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $controller->archiveReadiness(caseId: 'case-1')->getStatus());
+	}//end testNoSessionGetsNoArchiveChecklist()
 }//end class

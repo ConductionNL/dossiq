@@ -1,0 +1,308 @@
+{
+    "full": {
+        "answer": {
+            "templateId": "full",
+            "caseType": "uuid-1",
+            "statuses": [
+                "uuid-2",
+                "uuid-3",
+                "uuid-4",
+                "uuid-5"
+            ],
+            "properties": [
+                "uuid-6",
+                "uuid-7"
+            ],
+            "documents": [
+                "uuid-8"
+            ],
+            "decisions": [
+                "uuid-9",
+                "uuid-10"
+            ],
+            "roles": [
+                "uuid-11"
+            ],
+            "workflow": "uuid-12"
+        },
+        "saves": [
+            {
+                "object": {
+                    "title": "Permit"
+                },
+                "register": "dossiq",
+                "schema": "schema:case_type_schema"
+            },
+            {
+                "object": {
+                    "name": " Received ",
+                    "order": 1,
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:status_type_schema"
+            },
+            {
+                "object": {
+                    "name": "Decided",
+                    "order": 2,
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:status_type_schema"
+            },
+            {
+                "object": {
+                    "order": 3,
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:status_type_schema"
+            },
+            {
+                "object": {
+                    "name": "Decided",
+                    "order": 4,
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:status_type_schema"
+            },
+            {
+                "object": {
+                    "name": "size",
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:property_definition_schema"
+            },
+            {
+                "object": {
+                    "name": "colour",
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:property_definition_schema"
+            },
+            {
+                "object": {
+                    "name": "letter",
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:document_type_schema"
+            },
+            {
+                "object": {
+                    "name": "grant",
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:decision_type_schema"
+            },
+            {
+                "object": {
+                    "name": "refuse",
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:decision_type_schema"
+            },
+            {
+                "object": {
+                    "name": "applicant",
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:role_type_schema"
+            },
+            {
+                "object": {
+                    "title": "Flow",
+                    "transitions": [
+                        {
+                            "label": "decide",
+                            "fourEyes": true,
+                            "fromStatus": "uuid-2",
+                            "toStatus": "uuid-5"
+                        },
+                        {
+                            "fromStatus": "uuid-4",
+                            "toStatus": "uuid-4"
+                        },
+                        {
+                            "label": "back",
+                            "fromStatus": "uuid-5",
+                            "toStatus": "uuid-2"
+                        }
+                    ],
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:workflow_template_schema"
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Template transition names a status the template does not declare, dropped: ghost"
+            ],
+            [
+                "warning",
+                "Template transition names a status the template does not declare, dropped: from nowhere"
+            ],
+            [
+                "info",
+                "Template activated: full -> caseType uuid-1"
+            ]
+        ]
+    },
+    "bare": {
+        "answer": {
+            "templateId": "bare",
+            "caseType": "uuid-1",
+            "statuses": [],
+            "properties": [],
+            "documents": [],
+            "decisions": [],
+            "roles": [],
+            "workflow": ""
+        },
+        "saves": [
+            {
+                "object": [],
+                "register": "dossiq",
+                "schema": "schema:case_type_schema"
+            }
+        ],
+        "logs": [
+            [
+                "info",
+                "Template activated: bare -> caseType uuid-1"
+            ]
+        ]
+    },
+    "no transitions resolve": {
+        "answer": {
+            "templateId": "no transitions resolve",
+            "caseType": "uuid-1",
+            "statuses": [
+                "uuid-2"
+            ],
+            "properties": [],
+            "documents": [],
+            "decisions": [],
+            "roles": [],
+            "workflow": ""
+        },
+        "saves": [
+            {
+                "object": {
+                    "title": "X"
+                },
+                "register": "dossiq",
+                "schema": "schema:case_type_schema"
+            },
+            {
+                "object": {
+                    "name": "A",
+                    "caseType": "uuid-1"
+                },
+                "register": "dossiq",
+                "schema": "schema:status_type_schema"
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Template transition names a status the template does not declare, dropped: "
+            ],
+            [
+                "info",
+                "Template activated: no transitions resolve -> caseType uuid-1"
+            ]
+        ]
+    },
+    "workflow not an array": {
+        "answer": {
+            "templateId": "workflow not an array",
+            "caseType": "uuid-1",
+            "statuses": [],
+            "properties": [],
+            "documents": [],
+            "decisions": [],
+            "roles": [],
+            "workflow": ""
+        },
+        "saves": [
+            {
+                "object": {
+                    "title": "Y"
+                },
+                "register": "dossiq",
+                "schema": "schema:case_type_schema"
+            }
+        ],
+        "logs": [
+            [
+                "info",
+                "Template activated: workflow not an array -> caseType uuid-1"
+            ]
+        ]
+    },
+    "workflow without transitions": {
+        "answer": {
+            "templateId": "workflow without transitions",
+            "caseType": "uuid-1",
+            "statuses": [],
+            "properties": [],
+            "documents": [],
+            "decisions": [],
+            "roles": [],
+            "workflow": ""
+        },
+        "saves": [
+            {
+                "object": {
+                    "title": "Z"
+                },
+                "register": "dossiq",
+                "schema": "schema:case_type_schema"
+            }
+        ],
+        "logs": [
+            [
+                "info",
+                "Template activated: workflow without transitions -> caseType uuid-1"
+            ]
+        ]
+    },
+    "document": {
+        "answer": {
+            "refused": "Template is not a case type and cannot be activated: document"
+        },
+        "saves": [],
+        "logs": []
+    },
+    "missing": {
+        "answer": {
+            "refused": "Template not found: missing"
+        },
+        "saves": [],
+        "logs": []
+    },
+    "no store": {
+        "answer": {
+            "refused": "OpenRegister is not available"
+        },
+        "saves": [],
+        "logs": []
+    },
+    "no register": {
+        "answer": {
+            "refused": "Dossiq register not configured"
+        },
+        "saves": [],
+        "logs": []
+    }
+}
