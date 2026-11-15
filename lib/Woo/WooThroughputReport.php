@@ -27,6 +27,7 @@ use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
 use OCA\Dossiq\Service\Csv\CsvWriter;
+use OCA\Dossiq\Service\Support\ObjectSearch;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserManager;
 use Throwable;
@@ -247,26 +248,24 @@ class WooThroughputReport implements WooThroughputReportInterface {
 			throw $this->unavailable(previous: null);
 		}
 
-		return $this->pagedAssessments(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
+		return $this->pagedAssessments(
+			search: new ObjectSearch(objectService: $objectService, register: $register, schema: $schema, filters: $filters, scope: [])
+		);
 	}//end readAssessments()
 
 	/**
 	 * Page through the assessments in the register, up to the page cap.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The assessment schema.
-	 * @param array<string, mixed> $filters       The object filters.
+	 * @param ObjectSearch $search The object service, register, assessment schema and object filters.
 	 *
 	 * @return array{rows: list<array<string, mixed>>, truncated: bool} The rows, and whether the page cap cut them short.
 	 *
 	 * @throws RefusedException When OpenRegister cannot be read.
 	 */
-	private function pagedAssessments(object $objectService, string $register, string $schema, array $filters): array {
+	private function pagedAssessments(ObjectSearch $search): array {
 		$rows = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			$pageFilters = $filters + ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)];
-			$batch = $this->assessmentPage(objectService: $objectService, register: $register, schema: $schema, filters: $pageFilters);
+			$batch = $this->assessmentPage(search: $search, page: $page);
 			array_push($rows, ...$batch);
 			if (count($batch) < self::PAGE) {
 				return ['rows' => $rows, 'truncated' => false];
@@ -279,22 +278,20 @@ class WooThroughputReport implements WooThroughputReportInterface {
 	/**
 	 * Read one page of assessments.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The assessment schema.
-	 * @param array<string, mixed> $filters       The object filters with the page's limit and offset.
+	 * @param ObjectSearch $search The object service, register, assessment schema and object filters.
+	 * @param int          $page   The page, from 0.
 	 *
 	 * @return list<array<string, mixed>> The page.
 	 *
 	 * @throws RefusedException When OpenRegister cannot be read.
 	 */
-	private function assessmentPage(object $objectService, string $register, string $schema, array $filters): array {
+	private function assessmentPage(ObjectSearch $search, int $page): array {
 		try {
 			$batch = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: $filters,
+				objectService: $search->objectService,
+				register: $search->register,
+				schema: $search->schema,
+				filters: $search->filters + ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)],
 			);
 		} catch (Throwable $e) {
 			throw $this->unavailable(previous: $e);

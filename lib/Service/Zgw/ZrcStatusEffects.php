@@ -205,17 +205,15 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function moveCase(bool|string|null $final, array $loaded, mixed $submitted): void {
-		[$caseUuid, $caseConfig, $caseData] = $loaded;
-
 		if ($final === true) {
-			$this->closeCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig, submitted: $submitted);
+			$this->closeCase(loaded: $loaded, submitted: $submitted);
 		}
 
 		// 🔑 Only a status type that says FALSE reopens. A flag stored as
 		// 'false' or 0 is neither true nor false here and reopens nothing,
 		// exactly as before this moved out of the controller.
 		if ($final === false) {
-			$this->reopenCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
+			$this->reopenCase(loaded: $loaded);
 		}
 	}//end moveCase()
 
@@ -273,7 +271,7 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 
 			$caseData = $this->deriveArchiveActionDate(caseData: $caseData, dateStatusGezet: $endDate);
 			$caseData = $this->withStringFields(caseData: $caseData);
-			$this->saveCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
+			$this->saveCase(loaded: [$caseUuid, $caseConfig, $caseData]);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'zrc-021: handleResultaatCreated failed: ' . $e->getMessage(),
@@ -307,14 +305,13 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	/**
 	 * Close the zaak on its eindstatus.
 	 *
-	 * @param string $caseUuid The zaak.
-	 * @param array $caseData The zaak, ready to re-save.
-	 * @param array $caseConfig The case mapping.
-	 * @param mixed $submitted The datumStatusGezet of the status body, else of the stored status, else null.
+	 * @param array{0: string, 1: array, 2: array} $loaded    The zaak uuid, its mapping and its data, ready to re-save.
+	 * @param mixed                                $submitted The datumStatusGezet of the status body, else of the stored status, else null.
 	 *
 	 * @return void
 	 */
-	private function closeCase(string $caseUuid, array $caseData, array $caseConfig, mixed $submitted): void {
+	private function closeCase(array $loaded, mixed $submitted): void {
+		[$caseUuid, $caseConfig, $caseData] = $loaded;
 		// Zrc-007a: the submitted datumStatusGezet, or today, through the one date write path.
 		$dateStatusGezet = $this->dates->todayAsCalendarDate();
 		if ($submitted !== null && $submitted !== '') {
@@ -324,7 +321,7 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 		$caseData['endDate'] = $dateStatusGezet;
 		// Zrc-021: Derive archiefactiedatum from resultaat.resultaattype.brondatumArchiefprocedure.
 		$caseData = $this->deriveArchiveActionDate(caseData: $caseData, dateStatusGezet: $dateStatusGezet);
-		$this->saveCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
+		$this->saveCase(loaded: [$caseUuid, $caseConfig, $caseData]);
 
 		// Zrc-007b: Set indicatieGebruiksrecht on all related informatieobjecten.
 		$this->usageRights->settleOnClose(zaakUuid: $caseUuid);
@@ -333,13 +330,12 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	/**
 	 * Reopen a closed zaak on a non-eindstatus (zrc-008).
 	 *
-	 * @param string $caseUuid The zaak.
-	 * @param array $caseData The zaak, ready to re-save.
-	 * @param array $caseConfig The case mapping.
+	 * @param array{0: string, 1: array, 2: array} $loaded The zaak uuid, its mapping and its data, ready to re-save.
 	 *
 	 * @return void
 	 */
-	private function reopenCase(string $caseUuid, array $caseData, array $caseConfig): void {
+	private function reopenCase(array $loaded): void {
+		[$caseUuid, $caseConfig, $caseData] = $loaded;
 		$existingEndDate = $caseData['endDate'] ?? null;
 		if ($existingEndDate === null || $existingEndDate === '') {
 			return;
@@ -348,7 +344,7 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 		$caseData['endDate'] = null;
 		$caseData['archiveActionDate'] = null;
 		$caseData['archiveNomination'] = null;
-		$this->saveCase(caseUuid: $caseUuid, caseData: $caseData, caseConfig: $caseConfig);
+		$this->saveCase(loaded: [$caseUuid, $caseConfig, $caseData]);
 
 		$this->zgwService->getLogger()->info(
 			'zrc-008: Heropened zaak ' . $caseUuid . ' — cleared endDate, archiveActionDate, archiveNomination'
@@ -407,13 +403,12 @@ class ZrcStatusEffects implements ZrcStatusEffectsInterface {
 	/**
 	 * Re-save the zaak under its uuid.
 	 *
-	 * @param string $caseUuid The zaak.
-	 * @param array $caseData The zaak.
-	 * @param array $caseConfig The case mapping.
+	 * @param array{0: string, 1: array, 2: array} $loaded The zaak uuid, its mapping and its data.
 	 *
 	 * @return void
 	 */
-	private function saveCase(string $caseUuid, array $caseData, array $caseConfig): void {
+	private function saveCase(array $loaded): void {
+		[$caseUuid, $caseConfig, $caseData] = $loaded;
 		$caseData['id'] = $caseUuid;
 		$this->zgwService->getObjectService()->saveObject(
 			register: $caseConfig['sourceRegister'],
