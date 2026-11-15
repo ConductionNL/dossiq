@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAttentionFlagServiceInterface;
@@ -65,6 +66,7 @@ use RuntimeException;
  * @spec openspec/specs/case-management/spec.md
  */
 class CaseAttentionController extends Controller {
+	use AnswersSignedOutCallers;
 
 	/**
 	 * The status each refusal answers with.
@@ -248,18 +250,6 @@ class CaseAttentionController extends Controller {
 			(self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST)
 		);
 	}//end refusal()
-
-	/**
-	 * The answer for a caller with no session.
-	 *
-	 * @return JSONResponse
-	 */
-	private function notSignedIn(): JSONResponse {
-		return new JSONResponse(
-			['error' => $this->l10n->t('You are not signed in.')],
-			Http::STATUS_UNAUTHORIZED
-		);
-	}//end notSignedIn()
 
 	/**
 	 * The answer for a caller who may read this case but not change it.
