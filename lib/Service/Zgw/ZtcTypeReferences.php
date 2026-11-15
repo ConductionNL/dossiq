@@ -116,7 +116,7 @@ class ZtcTypeReferences {
 				continue;
 			}
 
-			array_push($resolved, ...$this->resolveReference(ref: $ref, scope: $scope, lookupField: $lookupField));
+			array_push($resolved, ...$this->resolveReference(ref: $ref, lookup: ['scope' => $scope, 'field' => $lookupField]));
 		}
 
 		$body[$field] = $resolved;
@@ -132,12 +132,13 @@ class ZtcTypeReferences {
 	 * resolves to nothing.
 	 *
 	 * @param string $ref The reference
-	 * @param array{0: string, 1: string} $scope The register and schema to search
-	 * @param string $lookupField The OpenRegister field to search by
+	 * @param array{scope: array{0: string, 1: string}, field: string} $lookup The register and schema to search,
+	 *                                                                     and the OpenRegister field to search by
 	 *
 	 * @return array<string> The resolved uuids
 	 */
-	private function resolveReference(string $ref, array $scope, string $lookupField): array {
+	private function resolveReference(string $ref, array $lookup): array {
+		['scope' => $scope, 'field' => $lookupField] = $lookup;
 		// If it's a URL containing a UUID, extract and store just the UUID.
 		if (str_starts_with($ref, 'http://') === true || str_starts_with($ref, 'https://') === true) {
 			$urlUuid = $this->fieldValidator->extractUuid(url: $ref);
@@ -229,19 +230,19 @@ class ZtcTypeReferences {
 			return [$rel];
 		}
 
-		return $this->relationsByIdentifier(rel: $rel, scope: $scope, caseTypeRef: $caseTypeRef);
+		return $this->relationsByIdentifier(rel: $rel, scope: $scope);
 	}//end resolvedRelations()
 
 	/**
 	 * One relation per zaaktype whose identificatie matches the reference.
 	 *
-	 * @param mixed  $rel         The relation.
-	 * @param array  $scope       The register and the case type schema.
-	 * @param string $caseTypeRef The identificatie.
+	 * @param mixed $rel   The relation, naming the identificatie as its caseType.
+	 * @param array $scope The register and the case type schema.
 	 *
 	 * @return array The relations.
 	 */
-	private function relationsByIdentifier(mixed $rel, array $scope, string $caseTypeRef): array {
+	private function relationsByIdentifier(mixed $rel, array $scope): array {
+		$caseTypeRef = (string)$rel['caseType'];
 		$resolved = [];
 		$foundIds = $this->lookups->findAllObjectsByField(register: $scope[0], schema: $scope[1], field: 'identifier', value: $caseTypeRef);
 		foreach ($foundIds as $id) {
