@@ -17,6 +17,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RunsOnce;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
@@ -40,6 +41,7 @@ use Throwable;
  */
 class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	use RunsUnderSystemIdentity;
+	use RunsOnce;
 	use SearchesObjects;
 
 	/**
@@ -57,6 +59,13 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	 * version 2 still skipped.
 	 */
 	public const DONE_VERSION = '3';
+
+	/**
+	 * What the upgrade output says when OpenRegister is unavailable.
+	 *
+	 * @var string
+	 */
+	private const UNAVAILABLE_NOTE = 'Dossiq documents: OpenRegister unavailable; documents stay where they are.';
 
 	/**
 	 * How many records one page holds.
@@ -100,22 +109,7 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
-			return;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$output->info('Dossiq documents: OpenRegister unavailable; documents stay where they are.');
-			return;
-		}
-
-		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $output): void {
-				$this->moveAll(objectService: $objectService, output: $output);
-			}
-		);
+		$this->onceWithObjectService(output: $output, work: fn (object $objectService) => $this->moveAll(objectService: $objectService, output: $output));
 	}//end run()
 
 	/**

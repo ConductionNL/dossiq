@@ -16,6 +16,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RunsOnce;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
@@ -38,11 +39,19 @@ use Throwable;
  */
 class RemoveDocumentRecordTwins implements IRepairStep {
 	use RunsUnderSystemIdentity;
+	use RunsOnce;
 	use SearchesObjects;
 
 	public const DONE_KEY = 'document_record_twins_removed';
 
 	public const DONE_VERSION = '1';
+
+	/**
+	 * What the upgrade output says when OpenRegister is unavailable.
+	 *
+	 * @var string
+	 */
+	private const UNAVAILABLE_NOTE = 'Dossiq documents: OpenRegister unavailable; document records stay as they are.';
 
 	private const PAGE_SIZE = 200;
 
@@ -77,22 +86,7 @@ class RemoveDocumentRecordTwins implements IRepairStep {
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
-			return;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$output->info('Dossiq documents: OpenRegister unavailable; document records stay as they are.');
-			return;
-		}
-
-		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $output): void {
-				$this->removeAll(objectService: $objectService, output: $output);
-			}
-		);
+		$this->onceWithObjectService(output: $output, work: fn (object $objectService) => $this->removeAll(objectService: $objectService, output: $output));
 	}//end run()
 
 	/**
