@@ -79,6 +79,24 @@ final class MigrationConsole {
 	public string $rowSeparator = ' — ';
 
 	/**
+	 * A console that resolves users through `$users` and writes to `$output`.
+	 *
+	 * @param OutputInterface $output Console output.
+	 * @param IUserManager    $users  Resolves the acting user.
+	 *
+	 * @return self
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/tasks.md
+	 */
+	public static function writingTo(OutputInterface $output, IUserManager $users): self {
+		$console = new self();
+		$console->userManager = $users;
+		$console->output = $output;
+
+		return $console;
+	}//end writingTo()
+
+	/**
 	 * Add `--user` and `--dry-run` to a migrate command.
 	 *
 	 * `--user` is REQUIRED and has no default. The created flows inherit that
