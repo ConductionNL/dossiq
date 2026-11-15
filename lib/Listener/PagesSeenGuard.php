@@ -77,26 +77,25 @@ class PagesSeenGuard implements IEventListener {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->inspect(event: $event, incoming: $event->getObject(), stored: null);
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->inspect(event: $event, incoming: $event->getNewObject(), stored: $event->getOldObject());
+		if ($event instanceof ObjectCreatingEvent === true || $event instanceof ObjectUpdatingEvent === true) {
+			$this->inspect(event: $event);
 		}
 	}//end handle()
 
 	/**
 	 * Refuse the write when it sets a verdict on a document with unseen required pages.
 	 *
-	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event The event.
-	 * @param ObjectEntity $incoming The object being written.
-	 * @param ObjectEntity|null $stored The stored object on an update.
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event The event: the object being written, and the stored one on an update.
 	 *
 	 * @return void
 	 */
-	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $incoming, ?ObjectEntity $stored): void {
+	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event): void {
+		$incoming = $this->incomingOf(event: $event);
+		$stored = null;
+		if ($event instanceof ObjectUpdatingEvent === true) {
+			$stored = $event->getOldObject();
+		}
+
 		if ($this->isAssessment(object: $incoming) === false) {
 			return;
 		}
@@ -112,8 +111,23 @@ class PagesSeenGuard implements IEventListener {
 			return;
 		}
 
-		$this->refuse(event: $event, documentRef: $documentRef, unseen: $unseen);
+		$this->refuse(event: $event, refusal: ['documentRef' => $documentRef, 'pages' => $unseen]);
 	}//end inspect()
+
+	/**
+	 * The object being written.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event The event.
+	 *
+	 * @return ObjectEntity The new object.
+	 */
+	private function incomingOf(ObjectCreatingEvent|ObjectUpdatingEvent $event): ObjectEntity {
+		if ($event instanceof ObjectCreatingEvent === true) {
+			return $event->getObject();
+		}
+
+		return $event->getNewObject();
+	}//end incomingOf()
 
 	/**
 	 * Whether the incoming assessment carries a verdict the stored one does not.
@@ -139,23 +153,25 @@ class PagesSeenGuard implements IEventListener {
 	/**
 	 * Refuse the write, naming the pages not yet seen.
 	 *
-	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event       The event to stop.
-	 * @param string                                  $documentRef The document.
-	 * @param array<int, mixed>                       $unseen      The pages not yet seen.
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent              $event   The event to stop.
+	 * @param array{documentRef: string, pages: array<int, mixed>} $refusal The document and the pages not yet seen.
 	 *
 	 * @return void
 	 */
-	private function refuse(ObjectCreatingEvent|ObjectUpdatingEvent $event, string $documentRef, array $unseen): void {
+	private function refuse(ObjectCreatingEvent|ObjectUpdatingEvent $event, array $refusal): void {
 		$event->setErrors(
 			[
-				'message' => $this->pagesSeen->sentence(pages: $unseen),
+				'message' => $this->pagesSeen->sentence(pages: $refusal['pages']),
 				'code' => self::ERROR_CODE,
-				'documentRef' => $documentRef,
-				'pages' => $unseen,
+				'documentRef' => $refusal['documentRef'],
+				'pages' => $refusal['pages'],
 			]
 		);
 		$event->stopPropagation();
-		$this->logger->info('Dossiq: refused a verdict before every required page was seen', ['document' => $documentRef, 'pages' => $unseen]);
+		$this->logger->info(
+			'Dossiq: refused a verdict before every required page was seen',
+			['document' => $refusal['documentRef'], 'pages' => $refusal['pages']]
+		);
 	}//end refuse()
 
 	/**

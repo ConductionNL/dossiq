@@ -79,7 +79,8 @@ class CasePlanProjectionListener implements IEventListener {
 			return;
 		}
 
-		[$caseId, $caseTypeId] = $this->caseAndType(payload: $payload);
+		$case = $this->caseAndType(payload: $payload);
+		[$caseId, $caseTypeId] = $case;
 		if ($caseId === '' || $caseTypeId === '') {
 			return;
 		}
@@ -89,7 +90,7 @@ class CasePlanProjectionListener implements IEventListener {
 			return;
 		}
 
-		$this->reportUnplanned(caseId: $caseId, caseTypeId: $caseTypeId, result: $result);
+		$this->reportUnplanned(case: $case, result: $result);
 	}//end handle()
 
 	/**
@@ -134,15 +135,14 @@ class CasePlanProjectionListener implements IEventListener {
 	/**
 	 * Warn about a CMMN case that started without a plan.
 	 *
-	 * @param string               $caseId     The new case.
-	 * @param string               $caseTypeId Its case type.
-	 * @param array<string, mixed> $result     The projection result.
+	 * @param array{0: string, 1: string} $case   The new case's id and its case type id.
+	 * @param array<string, mixed>        $result The projection result.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
 	 */
-	private function reportUnplanned(string $caseId, string $caseTypeId, array $result): void {
+	private function reportUnplanned(array $case, array $result): void {
 		if ($result['projected'] === true || $result['reason'] === 'case_not_cmmn_managed') {
 			return;
 		}
@@ -153,7 +153,7 @@ class CasePlanProjectionListener implements IEventListener {
 		// somebody has to see.
 		$this->logger->warning(
 			'Dossiq case plan: a new case started without an OpenRegister case plan',
-			['case' => $caseId, 'caseType' => $caseTypeId, 'reason' => $result['reason']]
+			['case' => $case[0], 'caseType' => $case[1], 'reason' => $result['reason']]
 		);
 	}//end reportUnplanned()
 }//end class
