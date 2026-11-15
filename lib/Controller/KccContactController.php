@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use Closure;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CallbackServiceInterface;
 use OCA\Dossiq\Service\Kcc\ContactMomentService;
@@ -77,28 +78,18 @@ class KccContactController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function index(): JSONResponse {
-		$agentId = $this->requireAgentId();
-		if ($agentId === null) {
-			return $this->unauthorized();
-		}
-
-		$filters = [
-			'channel' => $this->request->getParam('channel', ''),
-			'outcome' => $this->request->getParam('outcome', ''),
-			'assignedTeam' => $this->request->getParam('assignedTeam', ''),
-		];
-
-		try {
-			$moments = $this->contactMomentService->list(
-				filters: $filters,
+		return $this->asAgent(
+			call: fn (string $agentId): JSONResponse => new JSONResponse(['results' => $this->contactMomentService->list(
+				filters: [
+					'channel' => $this->request->getParam('channel', ''),
+					'outcome' => $this->request->getParam('outcome', ''),
+					'assignedTeam' => $this->request->getParam('assignedTeam', ''),
+				],
 				agentId: $agentId,
 				isPrivileged: $this->isPrivileged(userId: $agentId),
-			);
-		} catch (OCSBadRequestException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-
-		return new JSONResponse(['results' => $moments]);
+			)]),
+			failStatus: Http::STATUS_BAD_REQUEST
+		);
 	}//end index()
 
 	/**
@@ -111,18 +102,13 @@ class KccContactController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function create(): JSONResponse {
-		$agentId = $this->requireAgentId();
-		if ($agentId === null) {
-			return $this->unauthorized();
-		}
-
-		try {
-			$moment = $this->contactMomentService->create(data: $this->bodyParams(), agentId: $agentId);
-		} catch (OCSBadRequestException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-
-		return new JSONResponse($moment, Http::STATUS_CREATED);
+		return $this->asAgent(
+			call: fn (string $agentId): JSONResponse => new JSONResponse(
+				$this->contactMomentService->create(data: $this->bodyParams(), agentId: $agentId),
+				Http::STATUS_CREATED
+			),
+			failStatus: Http::STATUS_BAD_REQUEST
+		);
 	}//end create()
 
 	/**
@@ -137,22 +123,14 @@ class KccContactController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function show(string $id): JSONResponse {
-		$agentId = $this->requireAgentId();
-		if ($agentId === null) {
-			return $this->unauthorized();
-		}
-
-		try {
-			$moment = $this->contactMomentService->get(
+		return $this->asAgent(
+			call: fn (string $agentId): JSONResponse => new JSONResponse($this->contactMomentService->get(
 				id: $id,
 				agentId: $agentId,
 				isPrivileged: $this->isPrivileged(userId: $agentId),
-			);
-		} catch (OCSBadRequestException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse($moment);
+			)),
+			failStatus: Http::STATUS_NOT_FOUND
+		);
 	}//end show()
 
 	/**
@@ -167,23 +145,15 @@ class KccContactController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function update(string $id): JSONResponse {
-		$agentId = $this->requireAgentId();
-		if ($agentId === null) {
-			return $this->unauthorized();
-		}
-
-		try {
-			$moment = $this->contactMomentService->update(
+		return $this->asAgent(
+			call: fn (string $agentId): JSONResponse => new JSONResponse($this->contactMomentService->update(
 				id: $id,
 				data: $this->bodyParams(),
 				agentId: $agentId,
 				isPrivileged: $this->isPrivileged(userId: $agentId),
-			);
-		} catch (OCSBadRequestException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-
-		return new JSONResponse($moment);
+			)),
+			failStatus: Http::STATUS_BAD_REQUEST
+		);
 	}//end update()
 
 	/**
@@ -198,22 +168,14 @@ class KccContactController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function related(string $id): JSONResponse {
-		$agentId = $this->requireAgentId();
-		if ($agentId === null) {
-			return $this->unauthorized();
-		}
-
-		try {
-			$related = $this->contactMomentService->related(
+		return $this->asAgent(
+			call: fn (string $agentId): JSONResponse => new JSONResponse(['results' => $this->contactMomentService->related(
 				id: $id,
 				agentId: $agentId,
 				isPrivileged: $this->isPrivileged(userId: $agentId),
-			);
-		} catch (OCSBadRequestException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse(['results' => $related]);
+			)]),
+			failStatus: Http::STATUS_NOT_FOUND
+		);
 	}//end related()
 
 	/**
@@ -226,18 +188,13 @@ class KccContactController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function scheduleCallback(): JSONResponse {
-		$agentId = $this->requireAgentId();
-		if ($agentId === null) {
-			return $this->unauthorized();
-		}
-
-		try {
-			$callback = $this->callbackService->schedule(data: $this->bodyParams(), agentId: $agentId);
-		} catch (OCSBadRequestException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-
-		return new JSONResponse($callback, Http::STATUS_CREATED);
+		return $this->asAgent(
+			call: fn (string $agentId): JSONResponse => new JSONResponse(
+				$this->callbackService->schedule(data: $this->bodyParams(), agentId: $agentId),
+				Http::STATUS_CREATED
+			),
+			failStatus: Http::STATUS_BAD_REQUEST
+		);
 	}//end scheduleCallback()
 
 	/**
@@ -250,24 +207,14 @@ class KccContactController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function indexCallbacks(): JSONResponse {
-		$agentId = $this->requireAgentId();
-		if ($agentId === null) {
-			return $this->unauthorized();
-		}
-
-		$filters = ['status' => $this->request->getParam('status', '')];
-
-		try {
-			$callbacks = $this->callbackService->list(
-				filters: $filters,
+		return $this->asAgent(
+			call: fn (string $agentId): JSONResponse => new JSONResponse(['results' => $this->callbackService->list(
+				filters: ['status' => $this->request->getParam('status', '')],
 				agentId: $agentId,
 				isPrivileged: $this->isPrivileged(userId: $agentId),
-			);
-		} catch (OCSBadRequestException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-
-		return new JSONResponse(['results' => $callbacks]);
+			)]),
+			failStatus: Http::STATUS_BAD_REQUEST
+		);
 	}//end indexCallbacks()
 
 	/**
@@ -282,23 +229,36 @@ class KccContactController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function cancelCallback(string $id): JSONResponse {
+		return $this->asAgent(
+			call: fn (string $agentId): JSONResponse => new JSONResponse($this->callbackService->cancel(
+				id: $id,
+				agentId: $agentId,
+				isPrivileged: $this->isPrivileged(userId: $agentId),
+			)),
+			failStatus: Http::STATUS_NOT_FOUND
+		);
+	}//end cancelCallback()
+
+	/**
+	 * Run a call for the signed-in agent, answering a refused call with its message.
+	 *
+	 * @param Closure(string): JSONResponse $call       The call, given the agent's user id.
+	 * @param int                          $failStatus The status of a refused call.
+	 *
+	 * @return JSONResponse 401 without a signed-in agent, else the call's answer or its refusal.
+	 */
+	private function asAgent(Closure $call, int $failStatus): JSONResponse {
 		$agentId = $this->requireAgentId();
 		if ($agentId === null) {
 			return $this->unauthorized();
 		}
 
 		try {
-			$callback = $this->callbackService->cancel(
-				id: $id,
-				agentId: $agentId,
-				isPrivileged: $this->isPrivileged(userId: $agentId),
-			);
+			return $call($agentId);
 		} catch (OCSBadRequestException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => $e->getMessage()], $failStatus);
 		}
-
-		return new JSONResponse($callback);
-	}//end cancelCallback()
+	}//end asAgent()
 
 	/**
 	 * Resolve the authenticated agent's user id, or null when unauthenticated.
