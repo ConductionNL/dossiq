@@ -154,7 +154,7 @@ class DomainCopyService implements DomainCopyServiceInterface {
 			['source' => $copy->sourceId, 'created' => $copy->newId, 'notCarried' => $notCarried]
 		);
 
-		return $this->copyAnswer(copy: $copy, map: $map, templates: $templates, notCarried: $notCarried);
+		return $this->copyAnswer(copy: $copy, carried: ['map' => $map, 'templates' => $templates, 'notCarried' => $notCarried]);
 	}//end copyContent()
 
 	/**
@@ -179,14 +179,14 @@ class DomainCopyService implements DomainCopyServiceInterface {
 	/**
 	 * The answer of a copy that wrote its domain.
 	 *
-	 * @param DomainCopy            $copy       The copy, with its new domain.
-	 * @param array<string, string> $map        Old case type id to new case type id.
-	 * @param int                   $templates  How many templates came along.
-	 * @param array<int, string>    $notCarried Collected reasons.
+	 * @param DomainCopy           $copy    The copy, with its new domain.
+	 * @param array<string, mixed> $carried Old case type id to new case type id (`map`), how many templates came
+	 *                                      along (`templates`) and the collected reasons (`notCarried`).
 	 *
 	 * @return array{complete: bool, domain: string, carried: array<string, int>, notCarried: array<int, string>, reason: string}
 	 */
-	private function copyAnswer(DomainCopy $copy, array $map, int $templates, array $notCarried): array {
+	private function copyAnswer(DomainCopy $copy, array $carried): array {
+		['map' => $map, 'templates' => $templates, 'notCarried' => $notCarried] = $carried;
 		return [
 			'complete' => ($notCarried === []),
 			'domain' => $copy->newId,
@@ -278,20 +278,23 @@ class DomainCopyService implements DomainCopyServiceInterface {
 			return 0;
 		}
 
-		return $this->copyEachTemplate(templates: $templates, map: $map, notCarried: $notCarried);
+		$each = $this->copyEachTemplate(templates: $templates, map: $map);
+		array_push($notCarried, ...$each['notCarried']);
+
+		return $each['copied'];
 	}//end copyTemplates()
 
 	/**
 	 * Copy each template scoped to one of the copied case types.
 	 *
-	 * @param array<int, array<string, mixed>> $templates  The stored templates.
-	 * @param array<string, string>            $map        Old case type id to new case type id.
-	 * @param array<int, string>               $notCarried Collected reasons, by reference.
+	 * @param array<int, array<string, mixed>> $templates The stored templates.
+	 * @param array<string, string>            $map       Old case type id to new case type id.
 	 *
 	 * @return integer How many templates came along.
 	 */
-	private function copyEachTemplate(array $templates, array $map, array &$notCarried): int {
+	private function copyEachTemplate(array $templates, array $map): array {
 		$copied = 0;
+		$notCarried = [];
 		foreach ($templates as $template) {
 			$repointed = $this->repointedScope(template: $template, map: $map);
 			if ($repointed === []) {
@@ -306,7 +309,7 @@ class DomainCopyService implements DomainCopyServiceInterface {
 			$notCarried[] = ('contentTemplate:' . $this->text->textOf(value: ($template['name'] ?? '')));
 		}//end foreach
 
-		return $copied;
+		return ['copied' => $copied, 'notCarried' => $notCarried];
 	}//end copyEachTemplate()
 
 	/**
