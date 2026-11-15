@@ -133,14 +133,7 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 		$run->calculation['status'] = 'completed';
 		$this->saveCalculation(run: $run);
 
-		$uitbetalingen = $this->findUitbetalingen(run: $run);
-		foreach ($uitbetalingen as $u) {
-			$u['amount'] = $newAmountCents;
-			$u['status'] = 'voorbereid';
-			$this->raisePayoutAgain(run: $run, payout: $u);
-		}
-
-		$this->raiseFinanceOnlyPayoutAgain(run: $run, decided: ['amountCents' => $newAmountCents, 'stored' => $uitbetalingen]);
+		$this->raisePayoutsAgain(run: $run, newAmountCents: $newAmountCents);
 
 		$run->basis = $basis;
 		$run->rationale = 'Bezwaar opgelost; bedrag herzien';
@@ -149,6 +142,25 @@ class AmountObjectionService implements AmountObjectionServiceInterface {
 		$this->logger->info('Objection against an accruing amount resolved', ['berekening' => $calculationId, 'newBedrag' => $newAmountCents]);
 		return $run->calculation;
 	}//end resolveObjection()
+
+	/**
+	 * Raise every payout of the calculation again with the decided amount, the ones finance holds included.
+	 *
+	 * @param ObjectionRun $run            The objection step, for the calculation.
+	 * @param int          $newAmountCents The decided amount.
+	 *
+	 * @return void
+	 */
+	private function raisePayoutsAgain(ObjectionRun $run, int $newAmountCents): void {
+		$uitbetalingen = $this->findUitbetalingen(run: $run);
+		foreach ($uitbetalingen as $u) {
+			$u['amount'] = $newAmountCents;
+			$u['status'] = 'voorbereid';
+			$this->raisePayoutAgain(run: $run, payout: $u);
+		}
+
+		$this->raiseFinanceOnlyPayoutAgain(run: $run, decided: ['amountCents' => $newAmountCents, 'stored' => $uitbetalingen]);
+	}//end raisePayoutsAgain()
 
 	/**
 	 * Read the configuration and the accruing amount the objection is about.

@@ -169,11 +169,26 @@ final class StepConfigValidator {
 			return [self::entryError(path: "steps[$stepIndex].config", code: 'malformed_config')];
 		}
 
+		return self::configErrors(
+			config: $config,
+			against: ['caseTypeSchema' => $caseTypeSchema, 'actionCatalog' => $actionCatalog, 'base' => "steps[$stepIndex].config"]
+		);
+	}//end validate()
+
+	/**
+	 * Every error a step's config carries: its sla, required fields, auto actions and escalation rules.
+	 *
+	 * @param array<string, mixed> $config  The step's config.
+	 * @param array<string, mixed> $against The linked caseType, the recognised action keys and the path prefix.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}>
+	 */
+	private static function configErrors(array $config, array $against): array {
 		$scope = new StepConfigScope();
 		$scope->config = $config;
-		$scope->caseTypeSchema = $caseTypeSchema;
-		$scope->actionCatalog = $actionCatalog;
-		$scope->base = "steps[$stepIndex].config";
+		$scope->caseTypeSchema = $against['caseTypeSchema'];
+		$scope->actionCatalog = $against['actionCatalog'];
+		$scope->base = $against['base'];
 
 		return array_merge(
 			self::validateSla(sla: ($config['sla'] ?? null), path: $scope->base . '.sla'),
@@ -181,7 +196,7 @@ final class StepConfigValidator {
 			self::validateAutoActions(scope: $scope),
 			self::escalationErrors(scope: $scope)
 		);
-	}//end validate()
+	}//end configErrors()
 
 	/**
 	 * The escalation rule's errors, read against the step's SLA and the case type's roles.
