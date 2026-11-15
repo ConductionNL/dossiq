@@ -112,6 +112,7 @@ import GenerateDocumentDialog from './dialogs/GenerateDocumentDialog.vue'
 import LinkProgrammeDialog from './dialogs/LinkProgrammeDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import NoticeOfDefaultDialog from './dialogs/NoticeOfDefaultDialog.vue'
+import PartnerAskDialog from './dialogs/PartnerAskDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 import RecordStepsDialog from './dialogs/RecordStepsDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
@@ -689,6 +690,15 @@ const registry = {
 		component: PortalMessageDialog,
 		propsSchema: {},
 		_note: "Writes one portaalBericht from the handler to the applicant's portal inbox. Opened by the CaseDetail `message-applicant` header action (visible only on a case with a portalSubject) and by Reply on a resident's message in the timeline tab, which closes that message's follow-up on `sent`. recipientRef is the case's portalSubject, never a user id: the inbox is scoped on it. caseId may arrive as the unresolved `@objectId` token and the route answers instead, as for BerichtenboxComposeDialog.",
+	},
+
+	// --- Ask a partner, the CaseDetail `ask-partner` header action (capability-rows-said-and-planned T04). ---
+	// @spec openspec/specs/partner-tasks-in-the-portal/spec.md (portaliq, REQ-PTP-002)
+	PartnerAskDialog: {
+		kind: 'modal',
+		component: PartnerAskDialog,
+		propsSchema: {},
+		_note: "Asks a partner (an advisory body, a supplier) for something from the case through portaliq's POST /api/partner-tasks/ask, which refuses a handler without write on the case, finds or pre-provisions the partner's portal account from the KvK number and e-mail address, and puts the task in the partner's portal inbox with the due date and upload rules frozen on it. Opened by the CaseDetail `ask-partner` header action. A refusal keeps the dialog open with the reason; a 404 says portaliq is not installed. caseId may arrive as the unresolved `@objectId` token and the route answers instead.",
 	},
 
 	// --- A record written through steps, a CaseDetail header action. ---
