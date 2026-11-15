@@ -111,9 +111,28 @@ final class DossierRegister {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requireCase(string $caseId, string $rule, string $sentence): array {
+		$case = $this->readCase(caseId: $caseId, refusal: ['rule' => $rule, 'sentence' => $sentence]);
+		if ($case === null) {
+			throw new RefusedException(rule: $rule, sentence: $sentence, status: RefusedException::STATUS_UNPROCESSABLE);
+		}
+
+		return $case;
+	}//end requireCase()
+
+	/**
+	 * The stored case, or null when it is not there.
+	 *
+	 * @param string                                $caseId  The case uuid.
+	 * @param array{rule: string, sentence: string} $refusal The rule and sentence of the refusal of a failed read.
+	 *
+	 * @return array<string, mixed>|null The stored case.
+	 *
+	 * @throws RefusedException When the read fails (indeterminate).
+	 */
+	private function readCase(string $caseId, array $refusal): ?array {
 		try {
 			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
+			return $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $this->schema(key: 'case_schema'),
@@ -121,23 +140,13 @@ final class DossierRegister {
 			);
 		} catch (Throwable $e) {
 			throw new RefusedException(
-				rule: $rule,
-				sentence: $sentence,
+				rule: $refusal['rule'],
+				sentence: $refusal['sentence'],
 				status: RefusedException::STATUS_INDETERMINATE,
 				previous: $e,
 			);
 		}
-
-		if ($case === null) {
-			throw new RefusedException(
-				rule: $rule,
-				sentence: $sentence,
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end requireCase()
+	}//end readCase()
 
 	/**
 	 * Save a case's payload over the stored case.

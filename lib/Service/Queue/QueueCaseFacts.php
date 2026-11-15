@@ -170,26 +170,7 @@ class QueueCaseFacts {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function profileForCaseType(object $objectService, string $register, string $caseTypeId, UrgencyProfile $profile): UrgencyProfile {
-		$caseTypeSchema = (string)$this->settingsService->getConfigValue('case_type_schema');
-		if ($caseTypeId === '' || $caseTypeSchema === '') {
-			return $profile;
-		}
-
-		try {
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseTypeSchema,
-				id: $caseTypeId
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'WorkQueue: case type read failed, scoring with the instance thresholds',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
-			);
-			return $profile;
-		}
-
+		$caseType = $this->caseTypeRow(location: [$objectService, $register], caseTypeId: $caseTypeId);
 		if ($caseType === null) {
 			return $profile;
 		}
@@ -199,6 +180,36 @@ class QueueCaseFacts {
 			warningDays: ($caseType['queueWarningDays'] ?? null)
 		);
 	}//end profileForCaseType()
+
+	/**
+	 * The case type row, or null when there is no id or no case type schema, the read fails (logged) or it is not found.
+	 *
+	 * @param array{0: object, 1: string} $location   OpenRegister ObjectService and the register slug/id.
+	 * @param string                      $caseTypeId The case type id, or ''.
+	 *
+	 * @return array<string, mixed>|null The case type.
+	 */
+	private function caseTypeRow(array $location, string $caseTypeId): ?array {
+		$caseTypeSchema = (string)$this->settingsService->getConfigValue('case_type_schema');
+		if ($caseTypeId === '' || $caseTypeSchema === '') {
+			return null;
+		}
+
+		try {
+			return $this->findObjectAsArray(
+				objectService: $location[0],
+				register: $location[1],
+				schema: $caseTypeSchema,
+				id: $caseTypeId
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'WorkQueue: case type read failed, scoring with the instance thresholds',
+				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end caseTypeRow()
 
 	/**
 	 * Resolve a case's nearest active termijn deadline, falling back to the
