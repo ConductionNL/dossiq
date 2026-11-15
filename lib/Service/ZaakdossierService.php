@@ -164,27 +164,38 @@ class ZaakdossierService implements ZaakdossierServiceInterface {
 			infoSchema: $this->settingsService->getConfigValue('dossier_informatieobject_schema'),
 		);
 
-		// Who the document came from and who it went to, resolved against the
-		// parties this case has. See CorrespondentWriter::resolveFor().
-		$direction = $this->normaliser->direction(value: ($metadata['direction'] ?? null));
-		$correspondents = $this->correspondentsOf(upload: $upload, direction: $direction);
-
-		$informatieobject = $this->uploadedRecord(
-			upload: $upload,
-			profile: new UploadedDocumentProfile(
-				type: $type,
-				classification: $classification,
-				direction: $direction,
-				correspondents: $correspondents,
-			),
-		);
+		$profile = $this->profileOf(upload: $upload, typed: [$type, $classification]);
+		$informatieobject = $this->uploadedRecord(upload: $upload, profile: $profile);
 
 		$infoId = $this->storeUploadedRecord(store: $store, upload: $upload, informatieobject: $informatieobject);
 
-		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $infoId, correspondents: $correspondents);
+		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $infoId, correspondents: $profile->correspondents);
 
 		return $this->uploadSummary(infoId: $infoId, informatieobject: $informatieobject);
 	}//end uploadDocument()
+
+	/**
+	 * The upload's type and classification, with who it came from and who it went to.
+	 *
+	 * @param DocumentUpload              $upload The upload: its case and metadata.
+	 * @param array{0: string, 1: string} $typed  The resolved type and classification.
+	 *
+	 * @return UploadedDocumentProfile The profile.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function profileOf(DocumentUpload $upload, array $typed): UploadedDocumentProfile {
+		// Who the document came from and who it went to, resolved against the
+		// parties this case has. See CorrespondentWriter::resolveFor().
+		$direction = $this->normaliser->direction(value: ($upload->metadata['direction'] ?? null));
+
+		return new UploadedDocumentProfile(
+			type: $typed[0],
+			classification: $typed[1],
+			direction: $direction,
+			correspondents: $this->correspondentsOf(upload: $upload, direction: $direction),
+		);
+	}//end profileOf()
 
 	/**
 	 * Who the document came from and who it went to, resolved against the case's parties.
