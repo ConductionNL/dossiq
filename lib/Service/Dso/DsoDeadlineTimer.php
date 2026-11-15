@@ -203,7 +203,7 @@ class DsoDeadlineTimer implements DsoDeadlineTimerInterface {
 	 * @return array<string, mixed>
 	 */
 	private function rule(string $trigger, int $offset, string $unit, string $message): array {
-		return FlowTimerEngine::rule(trigger: $trigger, offset: $offset, unit: $unit, message: $message);
+		return $this->timers()->rule(trigger: $trigger, offset: $offset, unit: $unit, message: $message);
 	}//end rule()
 
 	/**

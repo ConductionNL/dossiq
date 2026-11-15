@@ -58,10 +58,9 @@ use OCA\Dossiq\Service\Cases\CaseRebindTerms;
 use OCA\Dossiq\Service\Cases\RebindMove;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding;
-use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
+use OCA\Dossiq\Service\Support\CaseRecordAccess;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Validate, migrate, write and re-arm: one case onto another case type.
@@ -71,8 +70,6 @@ use Throwable;
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindService implements CaseRebindServiceInterface {
-
-	use RefusesWhenIndeterminate;
 
 	/**
 	 * The one group that may rebind a running case (D-3).
@@ -559,28 +556,7 @@ class CaseRebindService implements CaseRebindServiceInterface {
 	 * @throws RefusedException When it cannot be read.
 	 */
 	private function readCase(string $caseId): array {
-		[$objectService, $register, $schema] = $this->scope();
-
-		try {
-			$found = $objectService->find($caseId, register: $register, schema: $schema);
-		} catch (Throwable $e) {
-			$this->refuseIndeterminate(
-				rule: 'case-unreadable',
-				sentence: 'This case could not be read, so it was not rebound.',
-				previous: $e,
-			);
-		}
-
-		$case = $this->store->asRow(value: $found);
-		if ($case === []) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
+		return $this->records()->read(caseId: $caseId);
 	}//end readCase()
 
 	/**
@@ -594,39 +570,15 @@ class CaseRebindService implements CaseRebindServiceInterface {
 	 * @throws RefusedException When the write fails.
 	 */
 	private function write(string $caseId, array $case): void {
-		[$objectService, $register, $schema] = $this->scope();
-
-		try {
-			$objectService->updateObject(objectId: $caseId, data: $case);
-		} catch (Throwable $e) {
-			$this->refuseIndeterminate(
-				rule: 'rebind-not-written',
-				sentence: 'The case was not rebound, because the change could not be saved.',
-				previous: $e,
-			);
-		}
+		$this->records()->write(caseId: $caseId, case: $case, rule: 'rebind-not-written');
 	}//end write()
 
 	/**
-	 * The object service and the case scope, or a refusal.
+	 * The case read and written back, refusing what cannot be done.
 	 *
-	 * @return array{0: object, 1: string, 2: string} The service, register and schema.
-	 *
-	 * @throws RefusedException When OpenRegister or the case schema is absent.
+	 * @return CaseRecordAccess
 	 */
-	private function scope(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-
-		if ($objectService === null || $register === '' || $schema === '') {
-			throw new RefusedException(
-				rule: 'case-store-unavailable',
-				sentence: 'The case register could not be reached, so nothing was rebound.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
-		}
-
-		return [$objectService, $register, $schema];
-	}//end scope()
+	private function records(): CaseRecordAccess {
+		return new CaseRecordAccess(settingsService: $this->settingsService, store: $this->store, done: 'rebound');
+	}//end records()
 }//end class

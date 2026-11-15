@@ -149,7 +149,7 @@ final class FlowTimerEngine {
 	 *
 	 * @spec exclude shared plumbing of the timer services; each timer carries its own spec
 	 */
-	public static function rule(string $trigger, int $offset, string $unit, string $message): array {
+	public function rule(string $trigger, int $offset, string $unit, string $message): array {
 		return [
 			'trigger'        => $trigger,
 			'offset'         => $offset,

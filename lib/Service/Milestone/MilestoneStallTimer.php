@@ -178,7 +178,7 @@ class MilestoneStallTimer implements MilestoneStallTimerInterface {
 	 * @return array<int, array<string, mixed>> The escalation rules.
 	 */
 	private function escalationRules(): array {
-		return [FlowTimerEngine::rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'mijlpaal-vertraagd')];
+		return [$this->timers()->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'mijlpaal-vertraagd')];
 	}//end escalationRules()
 
 	/**

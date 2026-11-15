@@ -161,7 +161,7 @@ final class FlowTimerEngineTest extends TestCase {
 				'message'        => 'm',
 				'openIncident'   => false,
 			],
-			FlowTimerEngine::rule(trigger: 'preBreach', offset: 5, unit: 'businessDays', message: 'm')
+			$this->timers(engine: null, logger: $this->createMock(LoggerInterface::class))->rule(trigger: 'preBreach', offset: 5, unit: 'businessDays', message: 'm')
 		);
 	}//end testRuleShape()
 }//end class

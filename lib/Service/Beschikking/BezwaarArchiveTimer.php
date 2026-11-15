@@ -224,7 +224,7 @@ class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 	 * @return array<int, array<string, mixed>> The escalation rules.
 	 */
 	private function escalationRules(): array {
-		return [FlowTimerEngine::rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'bezwaartermijn-verstreken')];
+		return [$this->timers()->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'bezwaartermijn-verstreken')];
 	}//end escalationRules()
 
 	/**
