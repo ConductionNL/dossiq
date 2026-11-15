@@ -86,31 +86,43 @@ class ZtcUrlValidityFilter implements ZtcUrlValidityFilterInterface {
 				continue;
 			}
 
-			$filtered = [];
-			foreach ($data[$field] as $item) {
-				if ($this->isValidListItem(item: $item, config: $config, today: $today) === true) {
-					$filtered[] = $item;
-				}
-			}
-
-			$data[$field] = $filtered;
+			$data[$field] = $this->keptItems(items: $data[$field], config: $config + ['today' => $today]);
 		}
 
 		return $data;
 	}//end filter()
 
 	/**
+	 * The list items that may stay.
+	 *
+	 * @param array<int, mixed>                                     $items  The list.
+	 * @param array{schemaKey: string, nested: bool, today: string} $config The list's target and today's date in
+	 *                                                                      Y-m-d format.
+	 *
+	 * @return array<int, mixed> The items that stay.
+	 */
+	private function keptItems(array $items, array $config): array {
+		$filtered = [];
+		foreach ($items as $item) {
+			if ($this->isValidListItem(item: $item, config: $config) === true) {
+				$filtered[] = $item;
+			}
+		}
+
+		return $filtered;
+	}//end keptItems()
+
+	/**
 	 * Whether one list item may stay: a URL string, or (nested) a relation whose caseType URL is valid.
 	 *
 	 * @param mixed $item The list item
-	 * @param array{schemaKey: string, nested: bool} $config The list's target
-	 * @param string $today Today's date in Y-m-d format
+	 * @param array{schemaKey: string, nested: bool, today: string} $config The list's target and today's date in Y-m-d format
 	 *
 	 * @return bool True when the item may stay
 	 */
-	private function isValidListItem(mixed $item, array $config, string $today): bool {
+	private function isValidListItem(mixed $item, array $config): bool {
 		// GerelateerdeZaaktypen: array of objects with 'caseType' URL field.
-		$target = ['schemaKey' => $config['schemaKey'], 'today' => $today];
+		$target = ['schemaKey' => $config['schemaKey'], 'today' => $config['today']];
 		if ($config['nested'] === true) {
 			return $this->isUrlValid(url: $item['caseType'] ?? '', target: $target);
 		}

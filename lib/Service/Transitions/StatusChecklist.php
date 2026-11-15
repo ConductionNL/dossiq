@@ -154,6 +154,20 @@ class StatusChecklist {
 		$existing = $this->existingTitles(statusTypeId: $statusTypeId, case: $case, actor: $actor);
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
 
+		return $this->newActions(items: $items, entering: ['caseId' => $caseId, 'statusTypeId' => $statusTypeId, 'existing' => $existing]);
+	}//end actionsFor()
+
+	/**
+	 * One action per checklist item that has no task standing for it on this status yet.
+	 *
+	 * @param array<int, array<string, mixed>> $items    The status's checklist items.
+	 * @param array<string, mixed>             $entering The case, the status being entered and the titles of the
+	 *                                                   tasks already standing for it (`existing`).
+	 *
+	 * @return array<int, array<string, mixed>> The actions.
+	 */
+	private function newActions(array $items, array $entering): array {
+		['caseId' => $caseId, 'statusTypeId' => $statusTypeId, 'existing' => $existing] = $entering;
 		$actions = [];
 		foreach ($items as $item) {
 			// D3: open or completed, a task already standing for this item on
@@ -170,7 +184,7 @@ class StatusChecklist {
 		}
 
 		return $actions;
-	}//end actionsFor()
+	}//end newActions()
 
 	/**
 	 * The createTask action for one checklist item, or null when this case type switched the task off.
