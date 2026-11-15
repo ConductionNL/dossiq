@@ -166,6 +166,18 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
 	 */
 	public function isAllowed(array $matrix, string $role, string $action): bool {
+		return self::anyGrants(candidates: self::entriesFor(matrix: $matrix, role: $role), action: $action);
+	}//end isAllowed()
+
+	/**
+	 * The matrix entries that apply to a role: its own, then the wildcard role's.
+	 *
+	 * @param array<string, array<string, bool>> $matrix Active mandate matrix.
+	 * @param string                             $role   Resolved user role.
+	 *
+	 * @return array<int, array<string, bool>> The entries.
+	 */
+	private static function entriesFor(array $matrix, string $role): array {
 		$roleEntry = ($matrix[$role] ?? null);
 		$wildcardEntry = ($matrix['*'] ?? null);
 
@@ -178,6 +190,18 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 			$candidates[] = $wildcardEntry;
 		}
 
+		return $candidates;
+	}//end entriesFor()
+
+	/**
+	 * Whether any entry grants the action, by name or by wildcard.
+	 *
+	 * @param array<int, array<string, bool>> $candidates The entries that apply.
+	 * @param string                          $action     Requested action.
+	 *
+	 * @return bool True when one grants it.
+	 */
+	private static function anyGrants(array $candidates, string $action): bool {
 		foreach ($candidates as $entry) {
 			if (($entry[$action] ?? false) === true) {
 				return true;
@@ -189,7 +213,7 @@ class TenantAuthenticationService implements TenantAuthenticationServiceInterfac
 		}
 
 		return false;
-	}//end isAllowed()
+	}//end anyGrants()
 
 	/**
 	 * Load the active mandate matrix for the tenant.
