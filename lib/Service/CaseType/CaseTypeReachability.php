@@ -85,11 +85,12 @@ final class CaseTypeReachability {
 
 		$broken = $this->brokenMoves(statuses: $statuses, moves: $moves);
 		$sound = $this->soundMoves(statuses: $statuses, moves: $moves);
-		$walk = new ReachableStatuses(
-			statuses: $statuses,
-			initial: $initial,
-			reached: $this->reachedFrom(initial: $initial, statuses: $statuses, moves: $sound)
-		);
+		$reached = [];
+		if ($initial !== '' && isset($statuses[$initial]) === true) {
+			$reached = $this->reachedFrom(initial: $initial, moves: $sound);
+		}
+
+		$walk = new ReachableStatuses(statuses: $statuses, initial: $initial, reached: $reached);
 
 		return array_merge(
 			array_column($broken, 'finding'),
@@ -211,17 +212,12 @@ final class CaseTypeReachability {
 	/**
 	 * Every status a case can get to, starting where a new case starts.
 	 *
-	 * @param string                                           $initial  The status a new case starts in.
-	 * @param array<string, array{title: string, final: bool}> $statuses The declared statuses, by id.
-	 * @param array<int, array{from: string, to: string}>      $moves    The sound moves.
+	 * @param string                                      $initial The declared status a new case starts in.
+	 * @param array<int, array{from: string, to: string}> $moves   The sound moves.
 	 *
 	 * @return array<string, true> The reachable status ids, the initial one included.
 	 */
-	private function reachedFrom(string $initial, array $statuses, array $moves): array {
-		if ($initial === '' || isset($statuses[$initial]) === false) {
-			return [];
-		}
-
+	private function reachedFrom(string $initial, array $moves): array {
 		$reached = [$initial => true];
 		$frontier = [$initial];
 
