@@ -407,19 +407,32 @@ class TermijnTimerService implements TermijnTimerServiceInterface {
 			return null;
 		}
 
-		$config = (new TermTimerFields())->subject(instance: $instance, label: 'Hersteltermijn') + [
-			'legalEffect' => 'none',
-			'sla' => [
-				'value' => $durationDays,
-				'unit' => 'calendarDays',
-			],
-			'escalationRules' => (new TermTimerFields())->pauseRules(offsets: $chaseOffsets),
-			'anchorEvent' => 'hersteltermijn_start',
-			'metadata' => (new TermTimerFields())->metadata(instance: $instance, kind: self::KIND_HERSTELTERMIJN) + ['basis' => 'AWB 4:5'],
-		];
+		$config = $this->hersteltermijnConfig(instance: $instance, chase: ['days' => $durationDays, 'offsets' => $chaseOffsets]);
 
 		return $this->arm(config: $config, term: ['kind' => 'hersteltermijn', 'instance' => $instanceId]);
 	}//end armHersteltermijn()
+
+	/**
+	 * The engine arm configuration of a hersteltermijn (AWB 4:5).
+	 *
+	 * @param array<string, mixed>                                $instance The TermijnInstance row.
+	 * @param array{days: int, offsets: array<int, int>}          $chase    How many calendar days the hersteltermijn runs,
+	 *                                                                      and the days before its end to chase on.
+	 *
+	 * @return array<string, mixed> The arm configuration.
+	 */
+	private function hersteltermijnConfig(array $instance, array $chase): array {
+		return (new TermTimerFields())->subject(instance: $instance, label: 'Hersteltermijn') + [
+			'legalEffect' => 'none',
+			'sla' => [
+				'value' => $chase['days'],
+				'unit' => 'calendarDays',
+			],
+			'escalationRules' => (new TermTimerFields())->pauseRules(offsets: $chase['offsets']),
+			'anchorEvent' => 'hersteltermijn_start',
+			'metadata' => (new TermTimerFields())->metadata(instance: $instance, kind: self::KIND_HERSTELTERMIJN) + ['basis' => 'AWB 4:5'],
+		];
+	}//end hersteltermijnConfig()
 
 	/**
 	 * Suspend the beslistermijn timer (opschorting, AWB 4:5).

@@ -546,18 +546,31 @@ class DeadlinePauseService implements DeadlinePauseServiceInterface {
 		$this->timerService?->resumeBeslistermijn(instance: $instance, reason: self::EXPIRED_RESUME_REASON);
 		$updated = $this->termService->updateTermijnInstance($termInstanceId, (['endDateCurrent' => $newEnd] + self::RESUME_CLEARS));
 
+		$this->recordExpiredResume(termInstanceId: $termInstanceId, event: ['moment' => $moment, 'notice' => (['endDate' => $newEnd] + $notice)]);
+
+		return $updated ?? $instance;
+	}//end resumeAfterExpiry()
+
+	/**
+	 * Record that the term resumed because its pause ran out.
+	 *
+	 * @param string                                                        $termInstanceId Instance id.
+	 * @param array{moment: DateTimeImmutable, notice: array<string, string>} $event          When the pause ran out, and who
+	 *                                                                                       to tell with the new end date.
+	 *
+	 * @return void
+	 */
+	private function recordExpiredResume(string $termInstanceId, array $event): void {
 		$this->termService->recordEvent(
 			termInstanceId: $termInstanceId,
 			type: 'hervat',
 			basis: 'AWB 4:15',
 			rationale: self::EXPIRED_RESUME_REASON,
 			daysImpact: 0,
-			moment: $moment,
-			notice: (['endDate' => $newEnd] + $notice),
+			moment: $event['moment'],
+			notice: $event['notice'],
 		);
-
-		return $updated ?? $instance;
-	}//end resumeAfterExpiry()
+	}//end recordExpiredResume()
 
 	/**
 	 * The instance a resume applies to.
