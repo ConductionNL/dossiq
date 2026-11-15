@@ -170,8 +170,18 @@ class QueueCaseFacts {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function profileForCaseType(object $objectService, string $register, string $caseTypeId, UrgencyProfile $profile): UrgencyProfile {
+		$caseTypeSchema = (string)$this->settingsService->getConfigValue('case_type_schema');
+		if ($caseTypeId === '' || $caseTypeSchema === '') {
+			return $profile;
+		}
+
 		try {
-			$caseType = $this->caseTypeRow(location: [$objectService, $register], caseTypeId: $caseTypeId);
+			$caseType = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseTypeSchema,
+				id: $caseTypeId
+			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'WorkQueue: case type read failed, scoring with the instance thresholds',
@@ -189,30 +199,6 @@ class QueueCaseFacts {
 			warningDays: ($caseType['queueWarningDays'] ?? null)
 		);
 	}//end profileForCaseType()
-
-	/**
-	 * The case type row, or null when there is no id or no case type schema, or it is not found.
-	 *
-	 * @param array{0: object, 1: string} $location   OpenRegister ObjectService and the register slug/id.
-	 * @param string                      $caseTypeId The case type id, or ''.
-	 *
-	 * @return array<string, mixed>|null The case type.
-	 *
-	 * @throws \Throwable When the case type cannot be read.
-	 */
-	private function caseTypeRow(array $location, string $caseTypeId): ?array {
-		$caseTypeSchema = (string)$this->settingsService->getConfigValue('case_type_schema');
-		if ($caseTypeId === '' || $caseTypeSchema === '') {
-			return null;
-		}
-
-		return $this->findObjectAsArray(
-			objectService: $location[0],
-			register: $location[1],
-			schema: $caseTypeSchema,
-			id: $caseTypeId
-		);
-	}//end caseTypeRow()
 
 	/**
 	 * Resolve a case's nearest active termijn deadline, falling back to the
