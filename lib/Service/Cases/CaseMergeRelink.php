@@ -66,7 +66,7 @@ class CaseMergeRelink {
 		$moves = [];
 
 		foreach ($this->rule->relinkDeclarations() as $declaration) {
-			$moves = array_merge($moves, $this->moveDeclared(declaration: $declaration, fromId: $fromId, toId: $toId));
+			$moves = array_merge($moves, $this->moveDeclared(declaration: $declaration, merge: ['from' => $fromId, 'to' => $toId]));
 		}
 
 		return $moves;
@@ -75,13 +75,12 @@ class CaseMergeRelink {
 	/**
 	 * Move one declared kind of row from the merged case to the survivor.
 	 *
-	 * @param array<string, mixed> $declaration The relink declaration: schema slug and field.
-	 * @param string               $fromId      The merged case.
-	 * @param string               $toId        The survivor.
+	 * @param array<string, mixed>            $declaration The relink declaration: schema slug and field.
+	 * @param array{from: string, to: string} $merge       The merged case, and the survivor.
 	 *
 	 * @return array<int, array{schema: string, id: string}> The moves, for a reversal.
 	 */
-	private function moveDeclared(array $declaration, string $fromId, string $toId): array {
+	private function moveDeclared(array $declaration, array $merge): array {
 		$slug = (string)($declaration['schema'] ?? '');
 		$field = (string)($declaration['field'] ?? '');
 		$schemaId = $this->store->schemaId(slug: $slug);
@@ -90,7 +89,7 @@ class CaseMergeRelink {
 		}
 
 		$moves = [];
-		foreach ($this->moveRows(schemaId: $schemaId, field: $field, fromId: $fromId, toId: $toId) as $id) {
+		foreach ($this->moveRows(schemaId: $schemaId, field: $field, fromId: $merge['from'], toId: $merge['to']) as $id) {
 			$moves[] = ['schema' => $slug, 'id' => $id];
 		}
 
