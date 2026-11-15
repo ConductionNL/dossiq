@@ -33,7 +33,6 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use RuntimeException;
 
 /**
  * Reads the ids of the cases a document belongs to, whoever asks.
@@ -41,6 +40,7 @@ use RuntimeException;
  * @spec openspec/specs/document-writes-need-every-case/spec.md
  */
 class DocumentCaseIds {
+	use ReadsDossierRegister;
 	use SearchesObjects;
 
 	/**
@@ -133,33 +133,4 @@ class DocumentCaseIds {
 
 		return $ids;
 	}//end documentIdsOf()
-
-	/**
-	 * The object service and register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The object service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister or the register is not configured.
-	 */
-	private function requireRegister(): array {
-		return $this->dossierRegister->context();
-	}//end requireRegister()
-
-	/**
-	 * A configured schema slug or id, or an exception when unset.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema.
-	 *
-	 * @throws RuntimeException When the key is not configured.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossier schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
 }//end class
