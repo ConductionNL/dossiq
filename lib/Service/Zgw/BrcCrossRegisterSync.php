@@ -234,9 +234,8 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 			return;
 		}
 
-		[$objectService, $oioScope] = $target;
 		try {
-			$this->deleteOiosMatching(objectService: $objectService, oioScope: $oioScope, requestParams: ['object' => $decisionUrl]);
+			$this->deleteOiosMatching(target: $target, requestParams: ['object' => $decisionUrl]);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'brc-009: the objectinformatieobjecten of a besluit were not all deleted from the DRC: ' . $e->getMessage(),
@@ -264,9 +263,8 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 			return;
 		}
 
-		[$objectService, $oioScope] = $target;
 		try {
-			$this->deleteOiosMatching(objectService: $objectService, oioScope: $oioScope, requestParams: ['object' => $decisionUrl, 'document' => $ioUrl]);
+			$this->deleteOiosMatching(target: $target, requestParams: ['object' => $decisionUrl, 'document' => $ioUrl]);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'brc-005b: the besluitinformatieobject was deleted, but its objectinformatieobject in the DRC was not: ' . $e->getMessage(),
@@ -333,15 +331,15 @@ class BrcCrossRegisterSync implements BrcCrossRegisterSyncInterface {
 	/**
 	 * Delete every OIO in the DRC that matches the search parameters.
 	 *
-	 * @param object $objectService OpenRegister's object service
-	 * @param ZgwSearchScope $oioScope The OIO register and schema
-	 * @param array<string, string> $requestParams The search parameters
+	 * @param array{0: object, 1: ZgwSearchScope} $target        OpenRegister's object service, and the OIO register and schema
+	 * @param array<string, string>               $requestParams The search parameters
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	private function deleteOiosMatching(object $objectService, ZgwSearchScope $oioScope, array $requestParams): void {
+	private function deleteOiosMatching(array $target, array $requestParams): void {
+		[$objectService, $oioScope] = $target;
 		$query = $objectService->buildSearchQuery(
 			requestParams: $requestParams,
 			register: $oioScope->register,

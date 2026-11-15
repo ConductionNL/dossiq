@@ -287,7 +287,7 @@ class BesluitMigrationService implements BesluitMigrationServiceInterface {
 	 * @return string `migrated`, `skipped` or `failed`.
 	 */
 	private function migrateRow(BesluitMigrationRun $run, array $row): string {
-		$sourceId = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
+		$sourceId = self::sourceIdOf(row: $row);
 		if ($sourceId === '') {
 			// No stable identity means no idempotency key, so a re-run would
 			// duplicate it. Reported rather than guessed at.
@@ -298,18 +298,24 @@ class BesluitMigrationService implements BesluitMigrationServiceInterface {
 			return 'skipped';
 		}
 
-		$written = ($run->commit === false || $this->write(
-			objectService: $run->objectService,
-			schema: $run->targetSchema,
-			row: $row,
-			sourceId: $sourceId,
-		) === true);
+		$written = ($run->commit === false || $this->write(run: $run, row: $row) === true);
 		if ($written === false) {
 			return 'failed';
 		}
 
 		return 'migrated';
 	}//end migrateRow()
+
+	/**
+	 * A local decision row's id, however it is spelled, or '' when it has none.
+	 *
+	 * @param array<string, mixed> $row A local decision row.
+	 *
+	 * @return string The id.
+	 */
+	private static function sourceIdOf(array $row): string {
+		return trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
+	}//end sourceIdOf()
 
 	/**
 	 * Reasons the migration cannot run at all.
@@ -458,14 +464,15 @@ class BesluitMigrationService implements BesluitMigrationServiceInterface {
 	/**
 	 * Write one besluit into decidiq's schema.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $schema The target schema id.
-	 * @param array<string, mixed> $row The source besluit.
-	 * @param string $sourceId The source uuid.
+	 * @param BesluitMigrationRun  $run The run: the OpenRegister object service and the target schema id.
+	 * @param array<string, mixed> $row The source besluit, with its source uuid.
 	 *
 	 * @return bool True when written.
 	 */
-	private function write(object $objectService, string $schema, array $row, string $sourceId): bool {
+	private function write(BesluitMigrationRun $run, array $row): bool {
+		$objectService = $run->objectService;
+		$schema = $run->targetSchema;
+		$sourceId = self::sourceIdOf(row: $row);
 		$targetRegisterId = $this->registerId(slug: self::TARGET_REGISTER);
 		if ($targetRegisterId === '') {
 			return false;

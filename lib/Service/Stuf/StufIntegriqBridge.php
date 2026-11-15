@@ -110,6 +110,19 @@ class StufIntegriqBridge implements StufIntegriqBridgeInterface {
 		);
 		$this->dispatcher->dispatchTyped($event);
 
+		return $this->vrijBerichtAnswer(event: $event);
+	}//end vrijBericht()
+
+	/**
+	 * What integriq answered to a dispatched vrijBericht request.
+	 *
+	 * @param object $event The dispatched request event.
+	 *
+	 * @return array<string, mixed> The result integriq gave.
+	 *
+	 * @throws StufException When integriq did not answer or refused the message.
+	 */
+	private function vrijBerichtAnswer(object $event): array {
 		if ($event->isHandled() === false) {
 			$this->logger->warning(message: 'StUF outbound: integriq did not answer the vrijBericht request');
 			throw new StufException(message: 'Integriq did not answer; nothing was sent.', code: Http::STATUS_SERVICE_UNAVAILABLE);
@@ -121,7 +134,7 @@ class StufIntegriqBridge implements StufIntegriqBridgeInterface {
 		}
 
 		return (array)$event->getResult();
-	}//end vrijBericht()
+	}//end vrijBerichtAnswer()
 
 	/**
 	 * Hand a confirmation envelope to integriq and return its answer.

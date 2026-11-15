@@ -207,21 +207,7 @@ class BounceAction implements BounceActionInterface {
 			return false;
 		}
 
-		return $this->send(message: $message, recipient: $recipient, sender: new BounceSender(fromAddress: $fromAddress, fromName: $fromName));
-	}//end forward()
-
-	/**
-	 * Build the outbound copy and hand it to the mailer.
-	 *
-	 * @param InboundMessage $message   The message.
-	 * @param string         $recipient The address it goes to.
-	 * @param BounceSender   $sender    The configured from-address and from-name.
-	 *
-	 * @return boolean True when the mailer accepted it.
-	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
-	 */
-	private function send(InboundMessage $message, string $recipient, BounceSender $sender): bool {
+		$sender = new BounceSender(fromAddress: $fromAddress, fromName: $fromName);
 		try {
 			$outbound = $this->outboundCopy(message: $message, recipient: $recipient, sender: $sender);
 			$this->mailer->send($outbound);
@@ -234,7 +220,7 @@ class BounceAction implements BounceActionInterface {
 		}
 
 		return true;
-	}//end send()
+	}//end forward()
 
 	/**
 	 * The outbound copy: the covering note, with the original attached when its source was read.

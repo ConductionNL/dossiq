@@ -86,7 +86,7 @@ class SessionService {
 	public function sessionsFor(string $caseId): array {
 		$objectService = $this->reads()->objectService();
 		$register      = $this->settingsService->getConfigValue(key: 'register');
-		$definitions   = $this->definitionsFor(objectService: $objectService, register: $register, caseId: $caseId);
+		$definitions   = $this->definitionsFor(location: [$objectService, $register], caseId: $caseId);
 
 		return [
 			'definitions' => array_values(array_map(static fn (SessionDefinition $def): array => $def->toArray(), $definitions)),
@@ -199,7 +199,7 @@ class SessionService {
 		$write->objectService = $this->reads()->objectService();
 		$write->register = $this->settingsService->getConfigValue(key: 'register');
 		$write->definition = $this->declared(
-			definitions: $this->definitionsFor(objectService: $write->objectService, register: $write->register, caseId: $caseId),
+			definitions: $this->definitionsFor(location: [$write->objectService, $write->register], caseId: $caseId),
 			sessionKey: $sessionKey
 		);
 		$write->caseId = $caseId;
@@ -434,8 +434,7 @@ class SessionService {
 		}
 
 		$definitions = $this->definitionsFor(
-			objectService: $objectService,
-			register: $register,
+			location: [$objectService, $register],
 			caseId: CaseRegisterReads::uuidOf(value: ($current['case'] ?? ''))
 		);
 
@@ -472,20 +471,19 @@ class SessionService {
 	/**
 	 * The sessions declared by the case type of a case.
 	 *
-	 * @param object $objectService The object service.
-	 * @param string $register      The register.
-	 * @param string $caseId        The case uuid.
+	 * @param array{0: object, 1: string} $location The object service and the register.
+	 * @param string                      $caseId   The case uuid.
 	 *
 	 * @return array<string, SessionDefinition> The sessions, keyed by key.
 	 *
 	 * @throws RuntimeException When the case or its case type cannot be read.
 	 */
-	private function definitionsFor(object $objectService, string $register, string $caseId): array {
+	private function definitionsFor(array $location, string $caseId): array {
 		if ($caseId === '') {
 			throw new RuntimeException('Case not found');
 		}
 
-		$caseType = $this->reads()->caseTypeOf(location: [$objectService, $register], caseId: $caseId);
+		$caseType = $this->reads()->caseTypeOf(location: $location, caseId: $caseId);
 		if ($caseType === null) {
 			return [];
 		}

@@ -244,8 +244,9 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	 */
 	public function getApplicableMandaten(string $decisionType, string $caseType, ?DateTimeImmutable $date = null): array {
 		$out = [];
-		foreach ($this->activeRows(date: ($date ?? new DateTimeImmutable()), context: ['decisionType' => $decisionType, 'caseType' => $caseType]) as $row) {
-			if ($this->matchesTypeTerms(row: $row, decisionType: $decisionType, caseType: $caseType) === false) {
+		$context = ['decisionType' => $decisionType, 'caseType' => $caseType];
+		foreach ($this->activeRows(date: ($date ?? new DateTimeImmutable()), context: $context) as $row) {
+			if ($this->matchesTypeTerms(row: $row, request: $context) === false) {
 				continue;
 			}
 
@@ -475,13 +476,14 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	 * An empty list means "no restriction"; an empty case type skips the
 	 * case-type filter entirely.
 	 *
-	 * @param array<string, mixed> $row Mandaat row.
-	 * @param string $decisionType Decision type slug.
-	 * @param string $caseType Case type slug (may be empty).
+	 * @param array<string, mixed>                          $row     Mandaat row.
+	 * @param array{decisionType: string, caseType: string} $request The decision type slug and the case type slug (may be empty).
 	 *
 	 * @return bool True when the mandaat applies to the pair.
 	 */
-	private function matchesTypeTerms(array $row, string $decisionType, string $caseType): bool {
+	private function matchesTypeTerms(array $row, array $request): bool {
+		$decisionType = $request['decisionType'];
+		$caseType = $request['caseType'];
 		$voorw = (array)($row['terms'] ?? []);
 		$decTypes = (array)($voorw['decisionTypes'] ?? []);
 		if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
@@ -517,18 +519,45 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 	 */
 	public function getApplicableForUser(string $userId, string $caseType = '', string $decisionType = ''): array {
 		$date = new DateTimeImmutable();
-		$role = $this->resolveUserRole(userId: $userId, date: $date);
-		if ($role === null) {
-			return [];
-		}
-
-		$roleId = (string)($role['roleId'] ?? '');
+		$roleId = $this->roleIdOf(userId: $userId, date: $date);
 		if ($roleId === '') {
 			return [];
 		}
 
-		$rows = $this->getApplicableMandaten(decisionType: $decisionType, caseType: $caseType, date: $date);
+		return $this->forRole(
+			rows: $this->getApplicableMandaten(decisionType: $decisionType, caseType: $caseType, date: $date),
+			roleId: $roleId
+		);
+	}//end getApplicableForUser()
 
+	/**
+	 * The id of the user's active role on the date, or '' when they hold none.
+	 *
+	 * @param string            $userId The user.
+	 * @param DateTimeImmutable $date   The date.
+	 *
+	 * @return string The role id, or ''.
+	 */
+	private function roleIdOf(string $userId, DateTimeImmutable $date): string {
+		$role = $this->resolveUserRole(userId: $userId, date: $date);
+		if ($role === null) {
+			return '';
+		}
+
+		return (string)($role['roleId'] ?? '');
+	}//end roleIdOf()
+
+	/**
+	 * The mandates a role may use: those given to the role, and those given to no role.
+	 *
+	 * Each carries `unilateral`: whether it was given to this role.
+	 *
+	 * @param array<int, array<string, mixed>> $rows   The applicable mandates.
+	 * @param string                           $roleId The role id.
+	 *
+	 * @return array<int, array<string, mixed>> The mandates.
+	 */
+	private function forRole(array $rows, string $roleId): array {
 		$out = [];
 		foreach ($rows as $row) {
 			$mandateRoleId = (string)($row['mandateeRole'] ?? '');
@@ -541,7 +570,7 @@ class MandaatCheckService implements MandaatCheckServiceInterface {
 		}
 
 		return $out;
-	}//end getApplicableForUser()
+	}//end forRole()
 
 	/**
 	 * Resolve the user's *primary* active role at the given date.

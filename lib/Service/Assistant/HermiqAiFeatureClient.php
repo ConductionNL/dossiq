@@ -321,7 +321,7 @@ class HermiqAiFeatureClient implements HermiqAiFeatureClientInterface {
 		$options = self::requestOptions(credentials: [$uid, $password], payload: $payload);
 
 		try {
-			return $this->dispatch(url: $url, options: $options, payload: $payload);
+			return $this->dispatch(url: $url, options: $options);
 		} catch (Throwable $e) {
 			throw $call->unreachable(url: $url, failure: $e);
 		}
@@ -379,16 +379,15 @@ class HermiqAiFeatureClient implements HermiqAiFeatureClientInterface {
 	/**
 	 * Send the request: a GET without a body, a POST with one.
 	 *
-	 * @param string                    $url     The full URL.
-	 * @param array<string, mixed>      $options The request options.
-	 * @param array<string, mixed>|null $payload The body, or null for a GET.
+	 * @param string               $url     The full URL.
+	 * @param array<string, mixed> $options The request options, carrying the body as `json` when there is one.
 	 *
 	 * @return IResponse The response.
 	 */
-	private function dispatch(string $url, array $options, ?array $payload): IResponse {
+	private function dispatch(string $url, array $options): IResponse {
 		$client = $this->clientService->newClient();
 
-		if ($payload === null) {
+		if (array_key_exists('json', $options) === false) {
 			return $client->get($url, $options);
 		}
 

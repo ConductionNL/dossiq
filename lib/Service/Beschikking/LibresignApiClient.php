@@ -115,7 +115,7 @@ class LibresignApiClient {
 			'users' => $signers,
 		];
 
-		return $this->call(method: 'POST', path: self::REQUEST_SIGNATURE_PATH, payload: $payload);
+		return $this->call(path: self::REQUEST_SIGNATURE_PATH, payload: $payload);
 	}//end requestSignature()
 
 	/**
@@ -132,21 +132,25 @@ class LibresignApiClient {
 	public function getStatus(string $uuid): array {
 		$path = sprintf(self::STATUS_PATH_TEMPLATE, rawurlencode($uuid));
 
-		return $this->call(method: 'GET', path: $path, payload: null);
+		return $this->call(path: $path, payload: null);
 	}//end getStatus()
 
 	/**
-	 * Perform the HTTP call and unwrap the OCS envelope.
+	 * Perform the HTTP call and unwrap the OCS envelope: a POST with a body, a GET without one.
 	 *
-	 * @param string $method 'GET' or 'POST'.
-	 * @param string $path The OCS route path (leading slash).
-	 * @param array<string, mixed>|null $payload The JSON body for POST requests.
+	 * @param string                    $path    The OCS route path (leading slash).
+	 * @param array<string, mixed>|null $payload The JSON body of a POST, or null for a GET.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @throws RuntimeException 'libresign_api_error' on any transport/decode failure.
 	 */
-	private function call(string $method, string $path, ?array $payload): array {
+	private function call(string $path, ?array $payload): array {
+		$method = 'POST';
+		if ($payload === null) {
+			$method = 'GET';
+		}
+
 		$url = rtrim($this->urlGenerator->getBaseUrl(), '/') . $path;
 
 		$options = $this->requestOptions(payload: $payload);

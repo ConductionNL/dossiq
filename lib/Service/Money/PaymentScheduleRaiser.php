@@ -116,7 +116,8 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 		[$schedule, $raised] = $this->raiseInstalments(decision: $decision, today: $today);
 
 		if ($raised > 0) {
-			$this->saveSchedule(objectService: $objectService, decision: $decision, schedule: $schedule);
+			$decision['paymentSchedule'] = $schedule;
+			$this->saveSchedule(objectService: $objectService, decision: $decision);
 		}
 
 		return $raised;
@@ -197,15 +198,13 @@ class PaymentScheduleRaiser implements PaymentScheduleRaiserInterface {
 	 * Save the decision with its updated payment schedule.
 	 *
 	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param array<string, mixed> $decision      The decision.
-	 * @param array<string, mixed> $schedule      The schedule with the raised instalments marked.
+	 * @param array<string, mixed> $decision      The decision, its payment schedule with the raised instalments marked.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/grant-cases-from-application-to-settlement/specs/subsidieverlening-keten/spec.md#requirement-advances-are-a-payment-schedule-raised-with-finance-when-due-req-sub-case-02
 	 */
-	private function saveSchedule(object $objectService, array $decision, array $schedule): void {
-		$decision['paymentSchedule'] = $schedule;
+	private function saveSchedule(object $objectService, array $decision): void {
 		$objectService->saveObject(
 			object: $decision,
 			register: AppIdentity::REGISTER_SLUG,

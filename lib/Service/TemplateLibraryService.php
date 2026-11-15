@@ -274,23 +274,7 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 			throw new RuntimeException('Dossiq register not configured');
 		}
 
-		return $this->activateInto(template: $template, templateId: $templateId, objectService: $objectService, register: $register);
-	}//end activateTemplate()
-
-	/**
-	 * Create the template's case type and its linked entities in the register.
-	 *
-	 * @param array<string, mixed> $template      The template.
-	 * @param string               $templateId    The template identifier.
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param string               $register      The register.
-	 *
-	 * @return array<string, mixed> Result with created object IDs
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function activateInto(array $template, string $templateId, object $objectService, string $register): array {
-		$caseTypeId = $this->createCaseType(template: $template, objectService: $objectService, register: $register);
+		$caseTypeId = $this->createCaseType(template: $template, store: [$objectService, $register]);
 
 		$created = $this->createTemplateEntities(
 			activation: new TemplateActivation(objectService: $objectService, register: $register, caseTypeId: $caseTypeId),
@@ -305,20 +289,20 @@ class TemplateLibraryService implements TemplateLibraryServiceInterface {
 		);
 
 		return $result;
-	}//end activateInto()
+	}//end activateTemplate()
 
 	/**
 	 * Create the template's case type and answer its id.
 	 *
-	 * @param array<string, mixed> $template      The template, with a case type.
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param string               $register      The register.
+	 * @param array<string, mixed>        $template The template, with a case type.
+	 * @param array{0: object, 1: string} $store    OpenRegister's ObjectService and the register.
 	 *
 	 * @return string The new case type's id.
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function createCaseType(array $template, object $objectService, string $register): string {
+	private function createCaseType(array $template, array $store): string {
+		[$objectService, $register] = $store;
 		// Create the case type.
 		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
 		// No `?? []`: the refusal above already proved this is an array, so

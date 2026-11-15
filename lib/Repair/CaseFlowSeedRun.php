@@ -58,6 +58,13 @@ final class CaseFlowSeedRun {
 	public bool $complete = true;
 
 	/**
+	 * The id of the case type whose statuses or cases are being seeded now.
+	 *
+	 * @var string
+	 */
+	public string $caseTypeId = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param object                $objectService OpenRegister's object service.

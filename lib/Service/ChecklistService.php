@@ -145,7 +145,7 @@ class ChecklistService {
 			throw new RuntimeException($violation);
 		}
 
-		$checklist['responses'] = $this->withResponse(previous: $this->reader->responses(checklist: $checklist), itemId: $itemId, response: $response);
+		$checklist['responses'] = $this->withResponse(previous: $this->reader->responses(checklist: $checklist), response: $response);
 
 		return $checklist;
 	}//end completeItem()
@@ -154,12 +154,12 @@ class ChecklistService {
 	 * The responses with this item's response replacing its earlier one, or added after them.
 	 *
 	 * @param array<int, array<string, mixed>> $previous The responses so far.
-	 * @param string                           $itemId   The item answered.
-	 * @param array<string, mixed>             $response The new response.
+	 * @param array<string, mixed>             $response The new response, naming the item answered as `itemId`.
 	 *
 	 * @return array<int, array<string, mixed>> The responses.
 	 */
-	private function withResponse(array $previous, string $itemId, array $response): array {
+	private function withResponse(array $previous, array $response): array {
+		$itemId = $response['itemId'];
 		$responses = [];
 		$replaced = false;
 		foreach ($previous as $existing) {

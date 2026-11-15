@@ -131,15 +131,18 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function copy(string $caseId, array $options = []): array {
-		$context = $this->context();
+		$context = $this->context() + ['sourceId' => $caseId];
 		$source = $this->requireSource(context: $context, caseId: $caseId);
 
 		$payload = $this->buildPayload(source: $source, caseId: $caseId, options: $options);
 
-		$created = $this->writeCopy(context: $context, payload: $payload, caseId: $caseId);
+		$created = $this->writeCopy(context: $context, payload: $payload);
 		$newId = (string)($created['id'] ?? '');
 
-		$linked = $this->linkIfAsked(context: $context, caseId: $caseId, newId: $newId, options: $options);
+		$linked = 0;
+		if (($options['documents'] ?? false) === true) {
+			$linked = $this->linkDocuments(context: $context, newId: $newId);
+		}
 
 		$this->logger->info(
 			'CaseCopyService: copied a case',
@@ -176,9 +179,8 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	/**
 	 * Write the copy.
 	 *
-	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service, register and case schema.
+	 * @param array{objectService: object, register: string, caseSchema: string, sourceId: string} $context The store and the source's id.
 	 * @param array<string, mixed> $payload The new case's properties.
-	 * @param string               $caseId  The source case's id.
 	 *
 	 * @return array<string, mixed> The new case.
 	 *
@@ -186,7 +188,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function writeCopy(array $context, array $payload, string $caseId): array {
+	private function writeCopy(array $context, array $payload): array {
 		try {
 			$created = $this->toArray(
 				value: $context['objectService']->saveObject(
@@ -198,7 +200,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CaseCopyService: could not write the copy',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
+				['caseId' => $context['sourceId'], 'exception' => $e->getMessage()]
 			);
 
 			throw new RuntimeException('copy_failed');
@@ -211,27 +213,6 @@ class CaseCopyService implements CaseCopyServiceInterface {
 
 		return $created;
 	}//end writeCopy()
-
-	/**
-	 * Link the source's documents to the copy when the caller asked for them.
-	 *
-	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service, register and case schema.
-	 * @param string                                  $caseId  The source case's id.
-	 * @param string                                  $newId   The copy's id.
-	 * @param array{title?: string, documents?: bool} $options The caller's options.
-	 *
-	 * @return int The number of documents linked.
-	 *
-	 * @spec openspec/specs/case-management/spec.md
-	 */
-	private function linkIfAsked(array $context, string $caseId, string $newId, array $options): int {
-		$linked = 0;
-		if (($options['documents'] ?? false) === true) {
-			$linked = $this->linkDocuments(context: $context, sourceId: $caseId, newId: $newId);
-		}
-
-		return $linked;
-	}//end linkIfAsked()
 
 	/**
 	 * The payload the copy is written from.
@@ -364,15 +345,14 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	 * so a document the copier may not read is not among them and is therefore
 	 * never linked onto a case they can write.
 	 *
-	 * @param array{objectService: object, register: string, caseSchema: string} $context  The object service and register.
-	 * @param string $sourceId The source case's id.
-	 * @param string $newId    The copy's id.
+	 * @param array{objectService: object, register: string, caseSchema: string, sourceId: string} $context The store and the source's id.
+	 * @param string $newId The copy's id.
 	 *
 	 * @return integer How many documents were linked.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function linkDocuments(array $context, string $sourceId, string $newId): int {
+	private function linkDocuments(array $context, string $newId): int {
 		$schema = $this->settingsService->getConfigValue('case_document_schema');
 		if ($schema === '') {
 			return 0;
@@ -380,7 +360,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 
 		$store  = new DocumentLinkStore(objectService: $context['objectService'], register: $context['register'], schema: $schema);
 		$linked = 0;
-		$links  = $this->documentsOf(store: $store, caseId: $sourceId);
+		$links  = $this->documentsOf(store: $store, caseId: $context['sourceId']);
 		foreach ($this->linkRows(links: $links, newId: $newId) as $row) {
 			if ($this->saveLink(store: $store, row: $row) === true) {
 				$linked++;

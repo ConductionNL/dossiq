@@ -94,11 +94,9 @@ class CaseTypeRetirementService implements CaseTypeRetirementServiceInterface {
 		// day, which is not what the administrator pressed the button for.
 		$caseType['validUntil'] = gmdate('Y-m-d', strtotime('yesterday'));
 
-		return $this->record(
-			caseType: $caseType,
-			caseTypeId: $caseTypeId,
-			act: 'retired',
-		);
+		$caseType['lifecycleAct'] = 'retired';
+
+		return $this->record(caseType: $caseType, caseTypeId: $caseTypeId);
 	}//end retire()
 
 	/**
@@ -130,11 +128,9 @@ class CaseTypeRetirementService implements CaseTypeRetirementServiceInterface {
 			$caseType['validFrom'] = gmdate('Y-m-d');
 		}
 
-		return $this->record(
-			caseType: $caseType,
-			caseTypeId: $caseTypeId,
-			act: 'restored',
-		);
+		$caseType['lifecycleAct'] = 'restored';
+
+		return $this->record(caseType: $caseType, caseTypeId: $caseTypeId);
 	}//end restore()
 
 	/**
@@ -146,20 +142,19 @@ class CaseTypeRetirementService implements CaseTypeRetirementServiceInterface {
 	 * with none of its tasks done. Two fields on the row are readable today and
 	 * move into that record when it lands, rather than waiting for it.
 	 *
-	 * @param array<string, mixed> $caseType   The case type, already amended.
+	 * @param array<string, mixed> $caseType   The case type, already amended, its `lifecycleAct` either retired or restored.
 	 * @param string               $caseTypeId The case type's id.
-	 * @param string               $act        Either retired or restored.
 	 *
 	 * @return array{ok: bool, reason: string, state: string} What happened.
 	 */
-	private function record(array $caseType, string $caseTypeId, string $act): array {
+	private function record(array $caseType, string $caseTypeId): array {
+		$act = $caseType['lifecycleAct'];
 		$user = $this->session->getUser();
 		$actor = '';
 		if ($user !== null) {
 			$actor = $user->getUID();
 		}
 
-		$caseType['lifecycleAct'] = $act;
 		$caseType['lifecycleActBy'] = $actor;
 		$caseType['lifecycleActAt'] = gmdate('c');
 

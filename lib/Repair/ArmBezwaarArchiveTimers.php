@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
 use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTriggerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchema;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
@@ -94,7 +95,9 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 			return;
 		}
 
-		$counts = $this->syncAll(objectService: $objectService, register: $register, schema: $schema);
+		$target = new RepairSchema(objectService: $objectService, register: $register);
+		$target->schema = $schema;
+		$counts = $this->syncAll(target: $target);
 
 		$this->report(output: $output, counts: $counts);
 	}//end run()
@@ -102,23 +105,21 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 	/**
 	 * Sync every active trigger under the system identity.
 	 *
-	 * @param object|null $objectService OpenRegister's object service.
-	 * @param string      $register      The register.
-	 * @param string      $schema        The bezwaarTrigger schema.
+	 * @param RepairSchema $target The bezwaarTrigger schema in its register.
 	 *
 	 * @return array<string, int> The armed, due and failed counts.
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
-	private function syncAll(?object $objectService, string $register, string $schema): array {
+	private function syncAll(RepairSchema $target): array {
 		$counts = ['armed' => 0, 'due' => 0, 'failed' => 0];
 
 		// No session, so OpenRegister sees Anonymous: the read and the archive
 		// writes run under the system identity every other writing step uses.
 		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $register, $schema, &$counts): void {
-				$triggers = $this->activeTriggers(objectService: $objectService, register: $register, schema: $schema);
+			objectService: $target->objectService,
+			work: function () use ($target, &$counts): void {
+				$triggers = $this->activeTriggers(target: $target);
 				foreach ($triggers as $trigger) {
 					$this->syncOne(trigger: $trigger, counts: $counts);
 				}
@@ -166,18 +167,16 @@ class ArmBezwaarArchiveTimers implements IRepairStep {
 	/**
 	 * Read the active bezwaar archive triggers, or none when they cannot be read.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $schema        The bezwaarTrigger schema.
+	 * @param RepairSchema $target The bezwaarTrigger schema in its register.
 	 *
 	 * @return array<int, array<string, mixed>> The triggers.
 	 */
-	private function activeTriggers(object $objectService, string $register, string $schema): array {
+	private function activeTriggers(RepairSchema $target): array {
 		try {
 			$triggers = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $target->objectService,
+				register: $target->register,
+				schema: $target->schema,
 				filters: ['archiveTriggerActive' => true, '_limit' => 1000],
 			);
 		} catch (Throwable $e) {
