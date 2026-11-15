@@ -48,6 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Advice;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -231,17 +232,6 @@ class AdviceAuthorizationGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	private function linkedCase(string $caseId): array|null {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($caseSchema) === true) {
-			return null;
-		}
-
-		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'case_schema', id: $caseId);
 	}//end linkedCase()
 }//end class
