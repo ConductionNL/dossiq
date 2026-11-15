@@ -75,8 +75,7 @@ import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateOcsUrl, generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
-import { caseDialog } from '../mixins/caseDialog.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
 
 /** Nextcloud's share types for a person and a group. */
 const SHARE_TYPE_USER = 0
@@ -107,7 +106,7 @@ export default {
 	name: 'DocumentAccessExceptionDialog',
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect, NcTextField },
 
-	mixins: [caseDialog],
+	mixins: [caseDialogResolved],
 
 	props: {
 		/** The selected file's Nextcloud id, merged on by CnFilesBrowser. */
@@ -140,15 +139,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The case, from the prop unless it still holds an `@` token.
-		 *
-		 * @return {string} The case id, or ''.
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
-		},
-
 		/**
 		 * What the picker offers: what is picked, then what the search found.
 		 *

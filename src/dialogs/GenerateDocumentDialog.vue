@@ -127,10 +127,9 @@ import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import ClockOutline from 'vue-material-design-icons/ClockOutline.vue'
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
 import { openable } from '../mixins/openable.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 import { templateFillRows } from '../utils/templateFills.js'
 
 /**
@@ -166,7 +165,7 @@ export default {
 		NcNoteCard,
 	},
 
-	mixins: [caseDialog, openable],
+	mixins: [caseDialogResolved, openable],
 
 	emits: ['close', 'generated'],
 	data() {
@@ -182,19 +181,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The case this dialog files a document on.
-		 *
-		 * An `open-modal` action's `props` are forwarded verbatim, so a prop
-		 * still holding an `@` token is not a case id — the route is.
-		 *
-		 * @return {string} The case id, or empty string.
-		 * @spec openspec/specs/beschikking-generatie/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
-		},
-
 		/**
 		 * The library templates that render a document, by name, for the picker.
 		 *

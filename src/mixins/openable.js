@@ -16,3 +16,23 @@ export const openable = {
 		},
 	},
 }
+
+/**
+ * An openable dialog that reads `isOpen`, so a watcher can load what it
+ * shows the moment it opens.
+ *
+ * @spec exclude shared prop declaration, no behaviour of its own
+ */
+export const openableDialog = {
+	mixins: [openable],
+
+	computed: {
+		/**
+		 * @return {boolean} Whether the dialog is showing.
+		 * @spec exclude shared prop declaration
+		 */
+		isOpen() {
+			return this.open === true
+		},
+	},
+}

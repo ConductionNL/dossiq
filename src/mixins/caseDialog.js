@@ -63,3 +63,23 @@ export const caseDialogTokenAware = {
 		},
 	},
 }
+
+/**
+ * A case dialog that exposes its case as `resolvedCaseId`: the `caseId` prop,
+ * or the route's when the prop is empty or still an unresolved `@` token.
+ *
+ * @spec exclude shared declaration of the case dialogs, no behaviour of its own
+ */
+export const caseDialogResolved = {
+	mixins: [caseDialog],
+
+	computed: {
+		/**
+		 * @return {string} The case id, from the prop or the route.
+		 * @spec exclude shared declaration of the case dialogs
+		 */
+		resolvedCaseId() {
+			return resolveCaseId(this.caseId, this.$route)
+		},
+	},
+}

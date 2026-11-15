@@ -112,9 +112,8 @@ import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcNoteCard, NcSelect } from '@nextcloud/vue'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
 import { classificationOptions as buildClassificationOptions } from '../utils/dossierHelpers.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * The gesture each named mode runs on the dialog; any other mode downloads the ZIP.
@@ -151,7 +150,7 @@ export default {
 	name: 'BulkDocumentActionDialog',
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect },
 
-	mixins: [caseDialog],
+	mixins: [caseDialogResolved],
 
 	props: {
 		/**
@@ -225,19 +224,6 @@ export default {
 		 */
 		classificationOptions() {
 			return buildClassificationOptions(this.t.bind(this))
-		},
-
-		/**
-		 * The case the `zip` mode downloads, resolved the same defensive way
-		 * as GenerateDocumentDialog / DocumentMetadataDialog: an
-		 * `open-modal` action's `props` are forwarded verbatim, so a prop
-		 * still holding an `@` token is not a case id — the route is.
-		 *
-		 * @return {string} The case id, or empty string.
-		 * @spec openspec/specs/document-zaakdossier/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**
