@@ -296,14 +296,13 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 
 		$transitions = $this->json->decodeList(raw: ($current['transitions'] ?? ''));
 
-		$caseTypeId = (string)($current['caseType'] ?? '');
-		$variant = $this->guard->variantOf(row: $current);
+		$route = ['caseTypeId' => (string)($current['caseType'] ?? ''), 'variant' => $this->guard->variantOf(row: $current), 'id' => $id];
 
 		// Resolve each transition's assignee role to its NC group id(s) and
 		// freeze the result into the transition `authorization` list (OR PR
 		// #153 declarative gate, ADR-022).
 		$authoredTransitions = $this->stamper->stamp(transitions: $transitions);
-		if ($this->deprecatePreviousActive(caseTypeId: $caseTypeId, variant: $variant, id: $id) === false) {
+		if ($this->deprecatePreviousActive(route: $route) === false) {
 			return null;
 		}
 
@@ -320,7 +319,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 
 		// Take the case type's default route, but only when this publish is
 		// entitled to it. See takeDefaultWhenEntitled().
-		$this->takeDefaultWhenEntitled(caseTypeId: $caseTypeId, id: $id, variant: $variant);
+		$this->takeDefaultWhenEntitled(route: $route);
 
 		return $updated;
 	}//end publish()
@@ -468,7 +467,7 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 		}
 
 		$version = $this->draftVersion(payload: $payload, caseTypeId: $caseTypeId);
-		$draft = $this->draftRow(payload: $payload, caseTypeId: $caseTypeId, version: $version);
+		$draft = $this->draftRow(payload: $payload, version: $version);
 
 		return $this->repository->save(payload: $draft);
 	}//end createDraft()
@@ -495,45 +494,43 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	/**
 	 * The draft row to store.
 	 *
-	 * @param array<string, mixed> $payload    The draft payload
-	 * @param string               $caseTypeId The case type
-	 * @param int                  $version    The version
+	 * @param array<string, mixed> $payload The draft payload, naming its case type
+	 * @param int                  $version The version
 	 *
 	 * @return array<string, mixed> The row
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function draftRow(array $payload, string $caseTypeId, int $version): array {
+	private function draftRow(array $payload, int $version): array {
 		$stepsValue = $this->json->encode(value: ($payload['steps'] ?? []));
 		$transitionsValue = $this->json->encode(value: ($payload['transitions'] ?? []));
 
 		return [
 			'title' => (string)$payload['title'],
 			'description' => (string)($payload['description'] ?? ''),
-			'caseType' => $caseTypeId,
+			'caseType' => (string)($payload['caseType'] ?? ''),
 			'variant' => $this->guard->variantOf(row: $payload),
 			'version' => $version,
-		] + $this->draftState(stepsValue: $stepsValue, transitionsValue: $transitionsValue, payload: $payload);
+		] + $this->draftState(encoded: ['steps' => $stepsValue, 'transitions' => $transitionsValue], payload: $payload);
 	}//end draftRow()
 
 	/**
 	 * The draft's lifecycle flags and its content.
 	 *
-	 * @param string|false         $stepsValue       The encoded steps
-	 * @param string|false         $transitionsValue The encoded transitions
-	 * @param array<string, mixed> $payload          The draft payload
+	 * @param array{steps: string|false, transitions: string|false} $encoded The encoded steps and transitions
+	 * @param array<string, mixed>                                 $payload The draft payload
 	 *
 	 * @return array<string, mixed> The fields
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function draftState(string|false $stepsValue, string|false $transitionsValue, array $payload): array {
+	private function draftState(array $encoded, array $payload): array {
 		return [
 			'isActive' => false,
 			'isDraft' => true,
 			'lifecycleStatus' => self::STATUS_DRAFT,
-			'steps' => $stepsValue,
-			'transitions' => $transitionsValue,
+			'steps' => $encoded['steps'],
+			'transitions' => $encoded['transitions'],
 			'nodePositions' => (string)($payload['nodePositions'] ?? ''),
 		];
 	}//end draftState()
@@ -558,15 +555,15 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	 *   - the recorded default no longer resolves, so it is repaired;
 	 *   - the recorded default is on the same route.
 	 *
-	 * @param string $caseTypeId The caseType UUID.
-	 * @param string $id The definition UUID just published.
-	 * @param string $variant The route it is on.
+	 * @param array{caseTypeId: string, variant: string, id: string} $route The caseType UUID, the route the
+	 *                                                                     definition is on and its UUID.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/workflow-variants/spec.md
 	 */
-	private function takeDefaultWhenEntitled(string $caseTypeId, string $id, string $variant): void {
+	private function takeDefaultWhenEntitled(array $route): void {
+		['caseTypeId' => $caseTypeId, 'variant' => $variant, 'id' => $id] = $route;
 		$pinned = $this->guard->defaultDefinitionIdFor(caseTypeId: $caseTypeId);
 		if ($pinned !== '' && $pinned !== $id) {
 			$pinnedRow = $this->repository->findById(id: $pinned);
@@ -595,17 +592,16 @@ class WorkflowDefinitionService implements WorkflowDefinitionServiceInterface {
 	 * Scoped to the route on purpose. A case type may carry several routes, and
 	 * publishing one of them must leave the others backing new cases.
 	 *
-	 * @param string $caseTypeId The caseType UUID.
-	 * @param string $variant The route being published.
-	 * @param string $id The definition UUID being published.
+	 * @param array{caseTypeId: string, variant: string, id: string} $route The caseType UUID, the route being
+	 *                                                                     published and the definition UUID.
 	 *
 	 * @return bool True when nothing had to change or the write succeeded.
 	 *
 	 * @spec openspec/specs/workflow-variants/spec.md
 	 */
-	private function deprecatePreviousActive(string $caseTypeId, string $variant, string $id): bool {
-		$previousActive = $this->getActiveDefinitionFor(caseTypeId: $caseTypeId, variant: $variant);
-		if ($previousActive === null || (string)($previousActive['id'] ?? '') === $id) {
+	private function deprecatePreviousActive(array $route): bool {
+		$previousActive = $this->getActiveDefinitionFor(caseTypeId: $route['caseTypeId'], variant: $route['variant']);
+		if ($previousActive === null || (string)($previousActive['id'] ?? '') === $route['id']) {
 			return true;
 		}
 
