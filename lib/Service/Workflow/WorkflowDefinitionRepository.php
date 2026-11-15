@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ResolvesSchemaStore;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -53,6 +54,7 @@ use Psr\Log\LoggerInterface;
 class WorkflowDefinitionRepository {
 
 	use SearchesObjects;
+	use ResolvesSchemaStore;
 
 	/**
 	 * Configuration key holding the workflowTemplate schema id.
@@ -117,40 +119,6 @@ class WorkflowDefinitionRepository {
 	}//end __construct()
 
 	/**
-	 * Resolve the ObjectService bridge plus the register and schema ids for
-	 * one schema configuration key.
-	 *
-	 * A null return means OpenRegister is absent or the register/schema pair
-	 * is not configured — the two cases every caller collapses into its own
-	 * "cannot reach the store" answer.
-	 *
-	 * @param string $schemaKey One of the SCHEMA_* configuration keys.
-	 *
-	 * @return array{objectService: object, register: string, schema: string}|null
-	 *                                                                             The resolved context, or null when the store is unreachable.
-	 *
-	 * @spec openspec/specs/workflow-definition-model/spec.md
-	 */
-	private function context(string $schemaKey): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue($schemaKey);
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		return [
-			'objectService' => $objectService,
-			'register' => $register,
-			'schema' => $schema,
-		];
-	}//end context()
-
-	/**
 	 * Whether the store is reachable and the given schema is configured.
 	 *
 	 * @param string $schemaKey One of the SCHEMA_* configuration keys.
@@ -160,7 +128,7 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function isConfiguredFor(string $schemaKey): bool {
-		return ($this->context(schemaKey: $schemaKey) !== null);
+		return ($this->schemaStore(schemaKey: $schemaKey) !== null);
 	}//end isConfiguredFor()
 
 	/**
@@ -194,7 +162,7 @@ class WorkflowDefinitionRepository {
 			return null;
 		}
 
-		$context = $this->context(schemaKey: $schemaKey);
+		$context = $this->schemaStore(schemaKey: $schemaKey);
 		if ($context === null) {
 			return null;
 		}
@@ -244,7 +212,7 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function listVersionsForCaseType(string $caseTypeId): array {
-		$context = $this->context(schemaKey: self::SCHEMA_DEFINITION);
+		$context = $this->schemaStore(schemaKey: self::SCHEMA_DEFINITION);
 		if ($context === null) {
 			return [];
 		}
@@ -375,7 +343,7 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function save(array $payload, ?string $uuid = null): ?array {
-		$context = $this->context(schemaKey: self::SCHEMA_DEFINITION);
+		$context = $this->schemaStore(schemaKey: self::SCHEMA_DEFINITION);
 		if ($context === null) {
 			return null;
 		}
@@ -556,7 +524,7 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function pinWorkflowDefinition(string $caseTypeId, string $definitionId): void {
-		$context = $this->context(schemaKey: self::SCHEMA_CASE_TYPE);
+		$context = $this->schemaStore(schemaKey: self::SCHEMA_CASE_TYPE);
 		if ($context === null) {
 			return;
 		}
@@ -608,7 +576,7 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function listStatusTypeIds(string $caseTypeId): array {
-		$context = $this->context(schemaKey: self::SCHEMA_STATUS_TYPE);
+		$context = $this->schemaStore(schemaKey: self::SCHEMA_STATUS_TYPE);
 		if ($context === null) {
 			return [];
 		}
@@ -670,7 +638,7 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function hasCasesFor(string $caseTypeId): bool {
-		$context = $this->context(schemaKey: self::SCHEMA_CASE);
+		$context = $this->schemaStore(schemaKey: self::SCHEMA_CASE);
 		if ($context === null) {
 			return true;
 		}
