@@ -134,6 +134,7 @@ class SchemaSlugMap {
 		'automaticAction' => 'automatic_action_schema',
 		'lhsMatrix' => 'lhs_matrix_schema',
 		'lhsRecommendation' => 'lhs_recommendation_schema',
+		'decisionAdvice' => 'decision_advice_schema',
 		'case-location' => 'location_schema',
 		'objectionProceeding' => 'bezwaar_schema',
 		'bezwaaradviescommissie' => 'bezwaaradviescommissie_schema',
@@ -241,6 +242,11 @@ class SchemaSlugMap {
 		'recallSample' => 'recall_sample_schema',
 		// What a Woo delivery sent out, frozen with its publication (woo-delivered-set-is-a-record).
 		'wooDeliveredSet' => 'woo_delivered_set_schema',
+		// The records a tender is worked with (tenders-run-on-the-tender-case-type).
+		'bid' => 'bid_schema',
+		'tenderQuestion' => 'tender_question_schema',
+		'evaluation' => 'evaluation_schema',
+		'scoringFormula' => 'scoring_formula_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

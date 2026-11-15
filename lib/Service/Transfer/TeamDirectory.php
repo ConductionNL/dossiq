@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IGroupManager;
 /**
  * Resolves an internal team and answers who is in it.
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class TeamDirectory {
 
@@ -57,7 +57,7 @@ class TeamDirectory {
 	 *
 	 * @param IGroupManager $groups Nextcloud's group manager, the one authority on a team.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly IGroupManager $groups,
@@ -71,7 +71,7 @@ class TeamDirectory {
 	 *
 	 * @return bool True when the group is there.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function exists(string $team): bool {
 		$team = trim($team);
@@ -91,7 +91,7 @@ class TeamDirectory {
 	 *
 	 * @throws RefusedException When no such group exists.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
 	 */
 	public function require(string $team): string {
 		$team = trim($team);
@@ -117,7 +117,7 @@ class TeamDirectory {
 	 *
 	 * @return bool True when the person is a member.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	public function holds(string $uid, string $team): bool {
 		$uid = trim($uid);

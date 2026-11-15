@@ -61,4 +61,29 @@ describe('the line under a held conversation', () => {
 		expect(conversationEnded({ durationSeconds: 60 })).toBe(true)
 		expect(conversationEnded({ startedAt: record.startedAt })).toBe(false)
 	})
+
+	it('rounds the minutes and counts a short conversation as one minute', () => {
+		expect(conversationSummary({ durationSeconds: 20 }, { now, locale: 'nl' })).toBe('1 minute')
+		expect(conversationSummary({ durationSeconds: 90 }, { now, locale: 'nl' })).toBe('2 minutes')
+		expect(conversationSummary({ durationSeconds: -5 }, { now, locale: 'nl' })).toBe('')
+		expect(conversationSummary({ durationSeconds: 'soon' }, { now, locale: 'nl' })).toBe('')
+	})
+
+	it('lists only the named people', () => {
+		expect(conversationSummary({ participants: ['', 7, null, 'Sanne de Vries'] }, { now, locale: 'nl' }))
+			.toBe('Sanne de Vries')
+		expect(conversationSummary({ participants: 'Pieter Jansen' }, { now, locale: 'nl' })).toBe('')
+	})
+
+	it('joins the people with commas when the locale cannot format a list', () => {
+		expect(conversationSummary({ participants: ['Pieter Jansen', 'Sanne de Vries'] }, { now, locale: '!!' }))
+			.toBe('Pieter Jansen, Sanne de Vries')
+	})
+
+	it('falls back to the user language without options', () => {
+		expect(conversationSummary({ participants: ['Pieter Jansen', 'Sanne de Vries'] }))
+			.toBe('Pieter Jansen en Sanne de Vries')
+		expect(conversationSummary(null)).toBe('')
+		expect(conversationWhen({ startedAt: 'not a date' }, { now, locale: 'nl' })).toBe('')
+	})
 })

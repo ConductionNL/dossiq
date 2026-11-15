@@ -30,7 +30,7 @@ use OCP\IL10N;
 /**
  * Guard: verifies a named case field is non-empty.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T05
  */
 class RequiredFieldGuard implements GuardEvaluatorInterface {
 	/**

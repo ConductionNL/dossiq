@@ -22,9 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\FilinqMergeClient;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FilinqMergeClientInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -48,21 +48,21 @@ class CaseDocumentMergeController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest          $request         The request.
-	 * @param CaseAccessGuard   $caseAccessGuard The per-case access check.
+	 * @param CaseAccessGuardInterface   $caseAccessGuard The per-case access check.
 	 * @param IUserSession      $userSession     The session.
-	 * @param FilinqMergeClient $merges          Filinq's merge.
+	 * @param FilinqMergeClientInterface $merges          Filinq's merge.
 	 * @param IL10N             $l10n            The translations.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
-		private readonly FilinqMergeClient $merges,
+		private readonly FilinqMergeClientInterface $merges,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -78,6 +78,47 @@ class CaseDocumentMergeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function merge(string $caseId, array $fileIds=[], string $name=''): JSONResponse {
+		$refusal = $this->mergeAccessRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$ids = array_values(array_filter(array_map('intval', $fileIds), static fn (int $id): bool => $id > 0));
+		if (count($ids) < 2) {
+			return new JSONResponse(
+				['error' => 'too-few', 'message' => $this->l10n->t('Choose at least two documents to merge')],
+				Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		return $this->runMerge(ids: $ids, name: $name, caseId: $caseId);
+	}//end merge()
+
+	/**
+	 * Merge the documents into one and answer it, or the failure.
+	 *
+	 * @param array<int> $ids The file ids, at least two.
+	 * @param string $name The merged document's name.
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 */
+	private function runMerge(array $ids, string $name, string $caseId): JSONResponse {
+		try {
+			return new JSONResponse($this->merges->merge(fileIds: $ids, name: $name, caseId: $caseId));
+		} catch (Throwable $e) {
+			return $this->mergeFailure(e: $e);
+		}
+	}//end runMerge()
+
+	/**
+	 * Refuse a merge to an anonymous caller or a user who may not add documents to the case.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the merge may run.
+	 */
+	private function mergeAccessRefusal(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -90,25 +131,24 @@ class CaseDocumentMergeController extends Controller {
 			);
 		}
 
-		$ids = array_values(array_filter(array_map('intval', $fileIds), static fn (int $id): bool => $id > 0));
-		if (count($ids) < 2) {
+		return null;
+	}//end mergeAccessRefusal()
+
+	/**
+	 * Answer a failed merge: 503 when Filinq is missing, else 422 with the reason.
+	 *
+	 * @param Throwable $e The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function mergeFailure(Throwable $e): JSONResponse {
+		if (str_starts_with(haystack: $e->getMessage(), needle: 'filinq_unavailable') === true) {
 			return new JSONResponse(
-				['error' => 'too-few', 'message' => $this->l10n->t('Choose at least two documents to merge')],
-				Http::STATUS_BAD_REQUEST
+				['error' => 'filinq-unavailable', 'message' => $this->l10n->t('Filinq is not installed, so documents cannot be merged')],
+				Http::STATUS_SERVICE_UNAVAILABLE
 			);
 		}
 
-		try {
-			return new JSONResponse($this->merges->merge(fileIds: $ids, name: $name, caseId: $caseId));
-		} catch (Throwable $e) {
-			if (str_starts_with(haystack: $e->getMessage(), needle: 'filinq_unavailable') === true) {
-				return new JSONResponse(
-					['error' => 'filinq-unavailable', 'message' => $this->l10n->t('Filinq is not installed, so documents cannot be merged')],
-					Http::STATUS_SERVICE_UNAVAILABLE
-				);
-			}
-
-			return new JSONResponse(['error' => 'merge-refused', 'message' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
-		}
-	}//end merge()
+		return new JSONResponse(['error' => 'merge-refused', 'message' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+	}//end mergeFailure()
 }//end class

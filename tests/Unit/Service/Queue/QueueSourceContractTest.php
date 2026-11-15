@@ -140,6 +140,9 @@ class FakeQueueSource implements QueueSource {
  * @uses \OCA\Dossiq\Service\WorkQueueService
  * @uses \OCA\Dossiq\Service\Queue\UrgencyScorer
  * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Queue\JsonPreference
+ * @uses \OCA\Dossiq\Service\Queue\PersonalQueueRun
+ * @uses \OCA\Dossiq\Service\Queue\UrgencyScoreRun
  */
 class QueueSourceContractTest extends TestCase {
 	use MakesCaseDateNormaliser;

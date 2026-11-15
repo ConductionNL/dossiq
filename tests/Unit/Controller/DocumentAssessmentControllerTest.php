@@ -190,4 +190,73 @@ class DocumentAssessmentControllerTest extends TestCase {
 		$this->assertSame(503, $response->getStatus());
 		$this->assertArrayNotHasKey('count', $response->getData());
 	}//end testAnUnreadableRegisterAnswers503ForTheFullList()
+
+	/**
+	 * Both endpoints refuse and fail with the same exact bodies.
+	 *
+	 * @param string $endpoint The action under test.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider endpoints
+	 */
+	public function testRefusalsAndFailuresCarryTheirExactBodies(string $endpoint): void {
+		$response = $this->controller(signedIn: false, mayRead: true)->$endpoint(id: 'case-1');
+		$this->assertSame([401, ['error' => 'not_authenticated']], [$response->getStatus(), $response->getData()]);
+
+		$response = $this->controller(signedIn: true, mayRead: false)->$endpoint(id: 'case-1');
+		$this->assertSame(
+			[403, ['error' => 'forbidden', 'message' => 'You do not have access to this case.']],
+			[$response->getStatus(), $response->getData()]
+		);
+
+		$outstanding = $this->createMock(OutstandingDocuments::class);
+		$outstanding->method('forCase')->willThrowException(new RuntimeException('down'));
+		$assessed = $this->createMock(AssessedDocuments::class);
+		$assessed->method('forCase')->willThrowException(new RuntimeException('down'));
+		$response = $this->controller(signedIn: true, mayRead: true, outstanding: $outstanding, assessed: $assessed)->$endpoint(id: 'case-1');
+		$this->assertSame(
+			[503, ['error' => 'unavailable', 'message' => 'OpenRegister is not available.']],
+			[$response->getStatus(), $response->getData()]
+		);
+	}//end testRefusalsAndFailuresCarryTheirExactBodies()
+
+	/**
+	 * The guard is asked about the case in the route, for the signed-in user.
+	 *
+	 * @param string $endpoint The action under test.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider endpoints
+	 */
+	public function testTheGuardIsAskedAboutTheRoutedCase(string $endpoint): void {
+		$user = $this->createMock(IUser::class);
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+		$guard = $this->createMock(CaseAccessGuard::class);
+		$guard->expects($this->once())->method('hasCaseReadAccess')->with('case-7', $user)->willReturn(false);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+
+		$controller = new DocumentAssessmentController(
+			request: $this->createMock(IRequest::class),
+			outstanding: $this->createMock(OutstandingDocuments::class),
+			assessed: $this->createMock(AssessedDocuments::class),
+			guard: $guard,
+			userSession: $session,
+			l10n: $l10n,
+		);
+
+		$this->assertSame(403, $controller->$endpoint(id: 'case-7')->getStatus());
+	}//end testTheGuardIsAskedAboutTheRoutedCase()
+
+	/**
+	 * The two endpoints.
+	 *
+	 * @return array<string, array{0: string}>
+	 */
+	public static function endpoints(): array {
+		return ['outstanding' => ['outstanding'], 'index' => ['index']];
+	}//end endpoints()
 }//end class

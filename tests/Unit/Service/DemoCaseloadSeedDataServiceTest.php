@@ -40,6 +40,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\DemoCaseloadGateway;
 use OCA\Dossiq\Service\DemoCaseloadSeedDataService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\App\IAppManager;
@@ -47,11 +48,14 @@ use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Demo caseload seeding.
  */
 final class DemoCaseloadSeedDataServiceTest extends TestCase {
+	use MatchesGoldenFiles;
+
 	/**
 	 * The shipped dataset, decoded once.
 	 *
@@ -236,6 +240,21 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 		}
 
 		$this->assertFalse(condition: $ran);
+	}
+
+	/**
+	 * Every save, every engine task and the summary of one whole seed, with the
+	 * first case already present, compared with the recorded run.
+	 *
+	 * @return void
+	 */
+	public function testAWholeSeedMatchesItsRecordedRun(): void {
+		$existingTitle = (string)$this->seedFile['cases'][0]['title'];
+
+		$service = $this->service(existingCaseTitles: [$existingTitle], saved: $saved);
+		$result = $service->seed(new DateTimeImmutable('2026-09-02'));
+
+		$this->assertMatchesGolden('demo-caseload-seed-run', ['result' => $result, 'saved' => $saved, 'tasks' => $this->engineTasks]);
 	}
 
 	/**
@@ -590,10 +609,13 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = [],
-				mixed $register = null,
-				mixed $schema = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
 			): object {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saved[] = ['schema' => (string)$schema, 'data' => $object, 'system' => ($this->depth > 0)];
 				$this->sequence++;
 

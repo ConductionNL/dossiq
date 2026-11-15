@@ -30,15 +30,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\EmailArchivalService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\EmailArchivalServiceInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Retries failed PDF archival attempts on a 15-minute cadence.
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
  */
 class EmailPdfRetryJob extends TimedJob {
 	/**
@@ -55,13 +55,13 @@ class EmailPdfRetryJob extends TimedJob {
 	 *
 	 * @param ITimeFactory $time Time factory.
 	 * @param IAppManager $appManager App manager.
-	 * @param EmailArchivalService $archivalService Archival service.
+	 * @param EmailArchivalServiceInterface $archivalService Archival service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly IAppManager $appManager,
-		private readonly EmailArchivalService $archivalService,
+		private readonly EmailArchivalServiceInterface $archivalService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -78,7 +78,7 @@ class EmailPdfRetryJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
 	 */
 	protected function run($argument): void {
 		try {
@@ -109,7 +109,7 @@ class EmailPdfRetryJob extends TimedJob {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'EmailPdfRetryJob failed',
-				['error' => $e->getMessage(), 'app' => Application::APP_ID]
+				['error' => $e->getMessage(), 'app' => AppIdentity::APP_ID]
 			);
 		}//end try
 	}//end run()

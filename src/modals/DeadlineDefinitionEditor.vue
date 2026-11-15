@@ -201,7 +201,7 @@ export default {
 		 * The two modes a term can count in.
 		 *
 		 * @return {Array} The options.
-		 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+		 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 		 */
 		countingModeOptions() {
 			return [
@@ -214,7 +214,7 @@ export default {
 		 * The option the form currently holds.
 		 *
 		 * @return {object} The option.
-		 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+		 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 		 */
 		selectedCountingMode() {
 			return (
@@ -223,7 +223,7 @@ export default {
 			)
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		title() {
 			return this.definition
 				? t('dossiq', 'New version of {z}', {
@@ -232,7 +232,7 @@ export default {
 				: t('dossiq', 'New term definition')
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedZaaktype() {
 			if (!this.form.case_type) return null
 			const hit = this.zaaktypeOptions.find(
@@ -241,7 +241,7 @@ export default {
 			return hit || { id: this.form.case_type, label: this.form.case_type }
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		categorieOptions() {
 			return [
 				{ id: 'beslis', label: t('dossiq', 'Decision deadline') },
@@ -254,7 +254,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedCategorie() {
 			return (
 				this.categorieOptions.find((o) => o.id === this.form.category)
@@ -265,7 +265,7 @@ export default {
 
 	methods: {
 		t,
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		validate() {
 			const errs = {}
 			if (!this.form.case_type)
@@ -279,7 +279,7 @@ export default {
 			return Object.keys(errs).length === 0
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		async save() {
 			if (!this.validate()) return
 			this.saving = true

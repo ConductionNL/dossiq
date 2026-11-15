@@ -51,6 +51,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Custody\ConsentStanding
  * @uses \OCA\Dossiq\Service\Custody\ConsentRefusal
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */

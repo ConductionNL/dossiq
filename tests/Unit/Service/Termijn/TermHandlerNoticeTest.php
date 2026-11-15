@@ -30,6 +30,7 @@ use OCP\Notification\IManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The handler is told on the rungs the term definition names, and on no other.
@@ -76,7 +77,9 @@ class TermHandlerNoticeTest extends TestCase {
 			/**
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, string $register, string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->rows[$schema][$id] ?? null;
 			}
 		};
@@ -190,6 +193,21 @@ class TermHandlerNoticeTest extends TestCase {
 		$instance = $this->term(tellHandlerAt: null);
 
 		self::assertFalse($this->notice()->tell(instance: $instance, threshold: 7));
+		self::assertSame([], $this->sent);
+	}
+
+	/**
+	 * A definition whose `tellHandlerAt` is not a list of rungs (a mistyped
+	 * string, say) names no rung at all, rather than being read as one: the
+	 * handler is told on nothing and nothing goes out.
+	 *
+	 * @return void
+	 */
+	public function testADefinitionWhoseRungsAreNotAListTellsNobody(): void {
+		$instance = $this->term(tellHandlerAt: '7,0');
+
+		self::assertFalse($this->notice()->tell(instance: $instance, threshold: 7));
+		self::assertFalse($this->notice()->tell(instance: $instance, threshold: 0));
 		self::assertSame([], $this->sent);
 	}
 

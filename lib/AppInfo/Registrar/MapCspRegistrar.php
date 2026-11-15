@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Service\Map\MapLayerHosts;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\Security\IContentSecurityPolicyManager;
 
@@ -76,6 +77,12 @@ class MapCspRegistrar {
 			$policy->addAllowedImageDomain('https://service.pdok.nl');
 			// Address search (forward geocoding) in the location widget.
 			$policy->addAllowedConnectDomain('https://nominatim.openstreetmap.org');
+			// The hosts of the map layers an administrator configured (WMS, WFS,
+			// ArcGIS): each is an image per tile, and a host left out draws blank.
+			foreach ($this->layerHosts(server: $server) as $host) {
+				$policy->addAllowedImageDomain($host);
+			}
+
 			$cspManager->addDefaultPolicy($policy);
 		} catch (\Throwable $e) {
 			// CSP manager unavailable. Degrade to "no base map" rather than
@@ -83,4 +90,27 @@ class MapCspRegistrar {
 			unset($e);
 		}
 	}//end register()
+
+	/**
+	 * The configured map layer hosts, or none when they cannot be read.
+	 *
+	 * @param mixed $server Server container.
+	 *
+	 * @return list<string>
+	 *
+	 * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/gis-integration/spec.md#requirement-the-map-can-show-layers-from-an-arcgis-service-req-crs-41
+	 */
+	private function layerHosts($server): array {
+		try {
+			$hosts = $server->get(MapLayerHosts::class);
+		} catch (\Throwable) {
+			return [];
+		}
+
+		if ($hosts instanceof MapLayerHosts === false) {
+			return [];
+		}
+
+		return $hosts->hosts();
+	}//end layerHosts()
 }//end class

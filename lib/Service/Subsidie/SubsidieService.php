@@ -32,10 +32,12 @@ namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\SubsidieServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
-use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Service\Support\RowList;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -45,9 +47,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
-class SubsidieService {
+class SubsidieService implements SubsidieServiceInterface {
 
 	use SearchesObjects;
 
@@ -82,11 +84,6 @@ class SubsidieService {
 	];
 
 	/**
-	 * Default AWB 4:13 decision term in weeks when the regeling is silent.
-	 */
-	public const DEFAULT_AANVRAAG_TERMIJN_WEKEN = 13;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge.
@@ -115,7 +112,7 @@ class SubsidieService {
 	 *
 	 * @return bool True when the transition is allowed.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function isTransitionAllowed(string $from, string $to): bool {
 		$allowed = self::TRANSITIONS[$from] ?? null;
@@ -134,7 +131,7 @@ class SubsidieService {
 	 *
 	 * @return string The formatted beschikkingnummer.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function generateBeschikkingnummer(int $sequence, ?DateTimeImmutable $now = null): string {
 		$now = ($now ?? new DateTimeImmutable());
@@ -152,7 +149,7 @@ class SubsidieService {
 	 *
 	 * @return DateTimeImmutable The decision deadline, on a working day.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBeslistermijn(DateTimeImmutable $registration, int $weken, array $definitie = []): DateTimeImmutable {
 		$weken = max(1, $weken);
@@ -170,7 +167,7 @@ class SubsidieService {
 	 *
 	 * @return bool True when the schedule reconciles to the granted amount.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function voorschotSchemaReconciles(array $advanceSchema, float $grantedAmount): bool {
 		$sum = 0.0;
@@ -193,7 +190,7 @@ class SubsidieService {
 	 *
 	 * @return bool True when the voorschot is releasable.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function isVoorschotReleasable(array $voorschot, array $approvedReports): bool {
 		$voorwaarde = trim((string)($voorschot['voorwaarde'] ?? ''));
@@ -218,7 +215,7 @@ class SubsidieService {
 	 *
 	 * @return array<int, array<string, mixed>> The unmet conditions.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function unmetVerplichtingen(array $verplichtingen): array {
 		$unmet = [];
@@ -346,22 +343,7 @@ class SubsidieService {
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
 	private function rowsOf(mixed $value): array {
-		if (is_string($value) === true) {
-			$value = json_decode($value, true);
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
+		return RowList::from(value: $value);
 	}//end rowsOf()
 
 	/**
@@ -459,17 +441,7 @@ class SubsidieService {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(string $schemaConfigKey): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue($schemaConfigKey);
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('Subsidie-schema is niet geconfigureerd');
-		}
-
-		return [$objectService, $register, $schema];
+		$lookup = new SubsidieSchemaLookup(settingsService: $this->settingsService);
+		return $lookup->resolve(schemaConfigKey: $schemaConfigKey, unconfiguredMessage: 'Subsidie-schema is niet geconfigureerd');
 	}//end resolve()
 }//end class

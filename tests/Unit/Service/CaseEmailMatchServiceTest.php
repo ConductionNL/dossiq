@@ -55,6 +55,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
 use Stringable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for CaseEmailMatchService.
@@ -68,6 +69,8 @@ use Stringable;
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRelink
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRule
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\CaseEmailMatchRun
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class CaseEmailMatchServiceTest extends TestCase {
 
@@ -349,11 +352,14 @@ class CaseEmailMatchServiceTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				?array $_extend = null,
-				bool $files = false,
-				int|string|null $register = null,
-				int|string|null $schema = null,
+				?ObjectFindOptions $options = null,
+				bool $_rbac = true,
+				bool $_multitenancy = true
 			): array {
+				$_extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->merged[(string)$id] ?? ['id' => (string)$id]);
 			}
 

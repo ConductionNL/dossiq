@@ -39,6 +39,8 @@ use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden test for CaseRelationService.
@@ -49,6 +51,12 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationLabels
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationStore
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Notice\CaseActNotices
+ * @uses \OCA\Dossiq\Service\Relation\RelationLabelRun
+ * @uses \OCA\Dossiq\Service\Relation\SubjectLinkRule
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseRelationServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -110,7 +118,9 @@ class CaseRelationServiceGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The case.
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $id, $register, $schema];
 				if (in_array($id, ($this->knobs['findThrows'] ?? []), true) === true) {
 					throw new RuntimeException('find failed on ' . $id);
@@ -128,7 +138,9 @@ class CaseRelationServiceGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['save', $object, $register, $schema];
 				$id = (string)($object['id'] ?? '');
 				if (in_array($id, ($this->knobs['saveThrows'] ?? []), true) === true) {

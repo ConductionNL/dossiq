@@ -160,6 +160,111 @@ import { collectUnresolved } from '../../../utils/emailTemplatePreview.js'
 import { MESSAGE_CHANNELS, MESSAGE_MOMENTS } from '../../../utils/messageDelivery.js'
 
 /**
+ * The fields of a template draft, each with its empty value, in draft order.
+ *
+ * @type {object}
+ */
+const DRAFT_FIELDS = { id: null, name: '', subject: '', body: '', moment: null, channel: null }
+
+/**
+ * The path of a case type's email templates.
+ *
+ * @param {string} caseTypeId The case type id.
+ * @return {string} The path, before generateUrl.
+ */
+function caseTypeTemplatesPath(caseTypeId) {
+	return `/apps/dossiq/api/casetypes/${encodeURIComponent(caseTypeId)}/email-templates`
+}
+
+/**
+ * GET a url with the request token.
+ *
+ * @param {string} url The url.
+ * @return {Promise<Response>} The response.
+ */
+function fetchWithToken(url) {
+	return fetch(url, {
+		headers: { requesttoken: OC.requestToken },
+	})
+}
+
+/**
+ * The template list from the templates response: a bare list, `results` or `templates`.
+ *
+ * @param {Array|object} data The response body.
+ * @return {Array<object>} The templates.
+ */
+function templatesFrom(data) {
+	return Array.isArray(data) ? data : data.results || data.templates || []
+}
+
+/**
+ * A draft of a template, every missing field emptied.
+ *
+ * @param {object} tpl The template.
+ * @return {object} The draft.
+ */
+function draftFrom(tpl) {
+	const draft = {}
+	for (const [field, empty] of Object.entries(DRAFT_FIELDS)) {
+		draft[field] = tpl[field] || empty
+	}
+	return draft
+}
+
+/**
+ * Where a draft is saved: its own url with PUT once it exists, else the case
+ * type's templates with POST.
+ *
+ * @param {object} draft The draft.
+ * @param {string} caseTypeId The case type id.
+ * @return {{url: string, method: string}} The target.
+ */
+function saveTarget(draft, caseTypeId) {
+	if (draft.id) {
+		return {
+			url: generateUrl(`/apps/dossiq/api/email-templates/${encodeURIComponent(draft.id)}`),
+			method: 'PUT',
+		}
+	}
+	return { url: generateUrl(caseTypeTemplatesPath(caseTypeId)), method: 'POST' }
+}
+
+/**
+ * The saved body of a draft, an unset moment or channel as null.
+ *
+ * @param {object} draft The draft.
+ * @return {string} The JSON body.
+ */
+function templatePayload(draft) {
+	return JSON.stringify({
+		name: draft.name,
+		subject: draft.subject,
+		body: draft.body,
+		moment: draft.moment || null,
+		channel: draft.channel || null,
+	})
+}
+
+/**
+ * The fetch options that save a draft as JSON with the request token.
+ *
+ * @param {object} draft The draft.
+ * @param {string} method PUT or POST.
+ * @return {object} The fetch options.
+ */
+function saveInit(draft, method) {
+	return {
+		method,
+		headers: {
+			'Content-Type': 'application/json',
+			requesttoken: OC.requestToken,
+		},
+		body: templatePayload(draft),
+	}
+}
+
+/**
  * Per-case-type email template CRUD with click-to-insert variables and a
  * plain-text body editor that previews it and marks unresolved {{placeholders}}. No
  * compose/thread/queue components — display, compose and link come from the
@@ -302,37 +407,32 @@ export default {
 		async load() {
 			this.loading = true
 			try {
+				const path = caseTypeTemplatesPath(this.caseTypeId)
 				const [tplRes, varRes] = await Promise.all([
-					fetch(
-						generateUrl(
-							`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
-						),
-						{
-							headers: { requesttoken: OC.requestToken },
-						},
-					),
-					fetch(
-						generateUrl(
-							`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates/variables`,
-						),
-						{
-							headers: { requesttoken: OC.requestToken },
-						},
-					),
+					fetchWithToken(generateUrl(path)),
+					fetchWithToken(generateUrl(`${path}/variables`)),
 				])
-				if (tplRes.ok) {
-					const data = await tplRes.json()
-					this.templates = Array.isArray(data)
-						? data
-						: data.results || data.templates || []
-				}
-				if (varRes.ok) {
-					this.variables = await varRes.json()
-				}
+				await this.keepLoaded(tplRes, varRes)
 			} catch (error) {
 				// Non-fatal — empty editor still works for create.
 			} finally {
 				this.loading = false
+			}
+		},
+
+		/**
+		 * Keep the templates and the variables whose read succeeded.
+		 *
+		 * @param {Response} tplRes The templates response.
+		 * @param {Response} varRes The variables response.
+		 * @return {Promise<void>}
+		 */
+		async keepLoaded(tplRes, varRes) {
+			if (tplRes.ok) {
+				this.templates = templatesFrom(await tplRes.json())
+			}
+			if (varRes.ok) {
+				this.variables = await varRes.json()
 			}
 		},
 
@@ -348,14 +448,7 @@ export default {
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		selectTemplate(tpl) {
-			this.draft = {
-				id: tpl.id || null,
-				name: tpl.name || '',
-				subject: tpl.subject || '',
-				body: tpl.body || '',
-				moment: tpl.moment || null,
-				channel: tpl.channel || null,
-			}
+			this.draft = draftFrom(tpl)
 			this.editing = true
 			this.activeField = 'body'
 		},
@@ -381,28 +474,8 @@ export default {
 		async save() {
 			this.saving = true
 			try {
-				const isUpdate = !!this.draft.id
-				const url = isUpdate
-					? generateUrl(
-							`/apps/dossiq/api/email-templates/${encodeURIComponent(this.draft.id)}`,
-						)
-					: generateUrl(
-							`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
-						)
-				await fetch(url, {
-					method: isUpdate ? 'PUT' : 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
-					},
-					body: JSON.stringify({
-						name: this.draft.name,
-						subject: this.draft.subject,
-						body: this.draft.body,
-						moment: this.draft.moment || null,
-						channel: this.draft.channel || null,
-					}),
-				})
+				const { url, method } = saveTarget(this.draft, this.caseTypeId)
+				await fetch(url, saveInit(this.draft, method))
 				this.editing = false
 				await this.load()
 			} finally {

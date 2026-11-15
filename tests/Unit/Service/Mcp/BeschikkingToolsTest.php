@@ -114,4 +114,15 @@ class BeschikkingToolsTest extends TestCase {
 			}
 		}
 	}//end testTheToolClassOffersNoApproveSignOrSend()
+
+	public function testNoSessionDraftsNothing(): void {
+		$this->session->method('getUser')->willReturn(null);
+		$this->guard->expects($this->never())->method('hasCaseMutationAccess');
+		$this->decisions->expects($this->never())->method('compose');
+
+		$this->assertSame(
+			['error' => 'not_authenticated', 'message' => 'No user session.'],
+			$this->tools->draftBeschikking(caseId: 'c-1')
+		);
+	}//end testNoSessionDraftsNothing()
 }//end class

@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ZtcTypeNameResolverInterface;
 use OCA\Dossiq\Support\NormalisesObjectRows;
 
 /**
@@ -36,16 +37,16 @@ use OCA\Dossiq\Support\NormalisesObjectRows;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-class ZtcTypeNameResolver {
+class ZtcTypeNameResolver implements ZtcTypeNameResolverInterface {
 	use NormalisesObjectRows;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param ZgwService $zgwService The shared ZGW service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
 	 */
 	public function __construct(
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 	) {
 	}//end __construct()
 
@@ -67,28 +68,17 @@ class ZtcTypeNameResolver {
 			return;
 		}
 
-		// Already a UUID or URL — no resolution needed.
-		if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $iotValue) === 1) {
+		if ($this->isUuidOrUrl(value: $iotValue) === true) {
 			return;
 		}
 
-		if (filter_var($iotValue, FILTER_VALIDATE_URL) !== false) {
-			return;
-		}
-
-		// Try to look up by omschrijving (internal field: name).
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return;
-		}
-
-		$iotMapping = $this->zgwService->loadMappingConfig('catalogi', 'informatieobjecttypen');
-		if ($iotMapping === null) {
+		$lookup = $this->iotLookup();
+		if ($lookup === null) {
 			return;
 		}
 
 		try {
-			$iotUuid = $this->findIotUuidByOmschrijving(objectService: $objectService, iotMapping: $iotMapping, omschrijving: $iotValue);
+			$iotUuid = $this->findIotUuidByOmschrijving(lookup: $lookup, omschrijving: $iotValue);
 			if ($iotUuid !== '') {
 				$this->zgwService->updateCachedBodyField('informatieobjecttype', $iotUuid);
 			}
@@ -100,15 +90,55 @@ class ZtcTypeNameResolver {
 	}//end resolveInformatieobjecttype()
 
 	/**
+	 * Whether a reference is already a UUID or URL, so needs no resolution.
+	 *
+	 * @param string $value The informatieobjecttype reference.
+	 *
+	 * @return bool True for a UUID or URL.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	private function isUuidOrUrl(string $value): bool {
+		// Already a UUID or URL — no resolution needed.
+		if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $value) === 1) {
+			return true;
+		}
+
+		return filter_var($value, FILTER_VALIDATE_URL) !== false;
+	}//end isUuidOrUrl()
+
+	/**
+	 * The object service and informatieobjecttypen mapping to look an omschrijving up in, or null.
+	 *
+	 * @return array{0: object, 1: array}|null The object service and the mapping.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	private function iotLookup(): ?array {
+		// Try to look up by omschrijving (internal field: name).
+		$objectService = $this->zgwService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$iotMapping = $this->zgwService->loadMappingConfig('catalogi', 'informatieobjecttypen');
+		if ($iotMapping === null) {
+			return null;
+		}
+
+		return [$objectService, $iotMapping];
+	}//end iotLookup()
+
+	/**
 	 * The uuid of the informatieobjecttype with this omschrijving, by name and else by full text.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array $iotMapping The informatieobjecttypen mapping.
-	 * @param string $omschrijving The omschrijving.
+	 * @param array{0: object, 1: array} $lookup       The OpenRegister ObjectService and the informatieobjecttypen mapping.
+	 * @param string                    $omschrijving The omschrijving.
 	 *
 	 * @return string The uuid, or '' when nothing matches.
 	 */
-	private function findIotUuidByOmschrijving(object $objectService, array $iotMapping, string $omschrijving): string {
+	private function findIotUuidByOmschrijving(array $lookup, string $omschrijving): string {
+		[$objectService, $iotMapping] = $lookup;
 		$result = ['total' => 0];
 		foreach ([['name' => $omschrijving, '_limit' => 1], ['_search' => $omschrijving, '_limit' => 1]] as $params) {
 			$query = $objectService->buildSearchQuery(

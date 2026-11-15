@@ -30,12 +30,31 @@ export const TITLE_SEPARATOR = ' - '
  * @spec openspec/specs/page-titles/spec.md
  */
 export function pageForRoute(manifest, route) {
-	const id = route?.meta?.cnPageId || route?.name || ''
+	const id = routePageId(route)
 	if (id === '') {
 		return null
 	}
-	const pages = Array.isArray(manifest?.pages) ? manifest.pages : []
-	return pages.find((page) => page?.id === id) || null
+	return manifestPages(manifest).find((page) => page?.id === id) || null
+}
+
+/**
+ * The page id a route names: its `meta.cnPageId`, else its name.
+ *
+ * @param {object|null} route A vue-router route.
+ * @return {string} The id, or the empty string.
+ */
+function routePageId(route) {
+	return route?.meta?.cnPageId || route?.name || ''
+}
+
+/**
+ * The manifest's pages, none when it carries no list.
+ *
+ * @param {object|null} manifest The built manifest.
+ * @return {Array<object>} The pages.
+ */
+function manifestPages(manifest) {
+	return Array.isArray(manifest?.pages) ? manifest.pages : []
 }
 
 /**

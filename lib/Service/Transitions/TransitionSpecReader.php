@@ -63,7 +63,7 @@ class TransitionSpecReader {
 	 * @return array<int, array<string, mixed>> The guards to evaluate, in order.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	public function guardsWithImplicit(array $transition, bool $approvalsWired, bool $entryGuardWired): array {
 		$guards = $this->extractGuards(transition: $transition);

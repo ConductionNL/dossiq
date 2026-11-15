@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 
 import axios from '@nextcloud/axios'
@@ -39,7 +39,7 @@ const SCHEMA = 'case'
  * @param {object} candidate The unsaved case, as the form holds it.
  * @return {Promise<{matches: Array<object>, total: number, threshold: number, checked: boolean}>} What the platform answered.
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 export async function checkForDuplicates(candidate) {
 	const empty = { matches: [], total: 0, threshold: 0, checked: false }
@@ -79,7 +79,7 @@ export async function checkForDuplicates(candidate) {
  * @param {Array<string>} uuids The match uuids.
  * @return {Promise<Array<object>>} The cases that could be read.
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 export async function fetchMatchedCases(uuids) {
 	const ids = Array.isArray(uuids) ? uuids.filter(Boolean) : []

@@ -153,7 +153,7 @@ class BeroepService {
 	 *                          are unconfigured, or the contested decision
 	 *                          cannot be loaded.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function register(
 		string $caseId,
@@ -162,17 +162,6 @@ class BeroepService {
 		string $filingDate,
 		array $payload = [],
 	): array {
-		$payload = array_diff_key($payload, CallerIdentity::KEYS);
-		$store = $this->appealStore(otherSchemaKey: 'appeal_decision_schema');
-		if (in_array('', [$store['register'], $store['schema'], $store['otherSchema']], true) === true) {
-			throw new RuntimeException('Beroep schemas are not configured');
-		}
-
-		$contested = $this->findIn(store: ['schema' => $store['otherSchema']] + $store, id: $contestedDecisionId);
-		if ($contested === null) {
-			throw new RuntimeException('Contested beslissing not found');
-		}
-
 		$filing = [
 			'case' => $caseId,
 			'sourceObjection' => $sourceObjectionId,
@@ -180,8 +169,32 @@ class BeroepService {
 			'appellantFilingDate' => $filingDate,
 		];
 
-		return $this->saveAppeal(store: $store, record: $this->appealRecord(filing: $filing + ['payload' => $payload], contested: $contested));
+		return $this->registerFiling(filing: $filing, payload: array_diff_key($payload, CallerIdentity::KEYS));
 	}//end register()
+
+	/**
+	 * Store the beroep against the contested beslissing it names.
+	 *
+	 * @param array<string, string> $filing  The zaak, the objection it follows, the contested beslissing and the filing date.
+	 * @param array<string, mixed>  $payload The caller's payload, without caller identity.
+	 *
+	 * @return array<string, mixed> The stored beroep.
+	 *
+	 * @throws RuntimeException When the schemas are not configured or the contested beslissing is not found.
+	 */
+	private function registerFiling(array $filing, array $payload): array {
+		$store = $this->appealStore(otherSchemaKey: 'appeal_decision_schema');
+		if (in_array('', [$store['register'], $store['schema'], $store['otherSchema']], true) === true) {
+			throw new RuntimeException('Beroep schemas are not configured');
+		}
+
+		$contested = $this->findIn(store: ['schema' => $store['otherSchema']] + $store, id: $filing['contestedDecision']);
+		if ($contested === null) {
+			throw new RuntimeException('Contested beslissing not found');
+		}
+
+		return $this->saveAppeal(store: $store, record: $this->appealRecord(filing: $filing + ['payload' => $payload], contested: $contested));
+	}//end registerFiling()
 
 	/**
 	 * The new appeal record: defaults, then the caller's extra fields, then
@@ -253,16 +266,31 @@ class BeroepService {
 	 * @throws RuntimeException When OpenRegister is unavailable or the
 	 *                          beroep cannot be loaded.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function addFileInspectionRequest(
-		string $appealId,
-		string $requestedAt,
-		?string $fileBundle = null,
-	): array {
+	public function addFileInspectionRequest(string $appealId, string $requestedAt, ?string $fileBundle = null): array {
 		$store = $this->appealStore(otherSchemaKey: null);
 		$current = $this->requireAppeal(store: $store, appealId: $appealId);
 
+		$entry = $this->inspectionEntry(requestedAt: $requestedAt, fileBundle: $fileBundle);
+
+		$requests = (array)($current['fileInspectionRequests'] ?? []);
+		$requests[] = $entry;
+
+		return $this->patchInspectionRequests(store: $store, appeal: ['id' => $appealId, 'current' => $current, 'requests' => $requests]);
+	}//end addFileInspectionRequest()
+
+	/**
+	 * A file-inspection request entry with its deadline.
+	 *
+	 * @param string      $requestedAt ISO date the rechtbank issued the request
+	 * @param string|null $fileBundle  Optional NC file ID / dossier ref
+	 *
+	 * @return array<string, string> The entry.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function inspectionEntry(string $requestedAt, ?string $fileBundle): array {
 		$entry = [
 			'requestedAt' => $requestedAt,
 			'deadline' => $this->shiftDate(base: $requestedAt, modifier: self::FILE_INSPECTION_WINDOW),
@@ -271,20 +299,34 @@ class BeroepService {
 			$entry['fileBundle'] = $fileBundle;
 		}
 
-		$requests = (array)($current['fileInspectionRequests'] ?? []);
-		$requests[] = $entry;
+		return $entry;
+	}//end inspectionEntry()
 
+	/**
+	 * Write the beroep's file-inspection requests.
+	 *
+	 * @param array<string, mixed>             $store    The beroep store.
+	 * @param array<string, mixed>             $appeal   UUID of the beroep (`id`), the stored beroep (`current`) and
+	 *                                                   the requests, with the new one (`requests`).
+	 *
+	 * @return array<string, mixed> The updated beroep record
+	 *
+	 * @throws RuntimeException When the write fails.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function patchInspectionRequests(array $store, array $appeal): array {
 		return $this->patchAppeal(
 			store: $store,
 			patch: [
-				'id' => $appealId,
-				'current' => $current,
-				'changes' => ['fileInspectionRequests' => $requests],
+				'id' => $appeal['id'],
+				'current' => $appeal['current'],
+				'changes' => ['fileInspectionRequests' => $appeal['requests']],
 				'log' => 'Dossiq beroep: failed to add file-inspection request: ',
 				'error' => 'Could not add file-inspection request',
 			]
 		);
-	}//end addFileInspectionRequest()
+	}//end patchInspectionRequests()
 
 	/*
 	 * NO recordJudgment() HERE.
@@ -321,7 +363,7 @@ class BeroepService {
 	 *                          is unavailable, or the beroep cannot be
 	 *                          loaded.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function executeCascade(string $appealId, string $action): array {
 		if (in_array($action, self::VALID_CASCADES, true) === false) {

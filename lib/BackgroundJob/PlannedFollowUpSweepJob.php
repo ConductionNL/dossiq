@@ -39,17 +39,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Flow\CaseFlowActions;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseFlowActionsInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -61,7 +60,7 @@ use Psr\Log\LoggerInterface;
  * It runs as the background service account, because cron has no user and
  * OpenRegister refuses a write from nobody.
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 class PlannedFollowUpSweepJob extends TimedJob {
 
@@ -69,14 +68,14 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The time factory.
-	 * @param CaseFlowActions $flowActions Owns the retirement rule.
+	 * @param CaseFlowActionsInterface $flowActions Owns the retirement rule.
 	 * @param IAppManager $appManager Tells whether OpenRegister is here at all.
 	 * @param LoggerInterface $logger The logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly CaseFlowActions $flowActions,
+		private readonly CaseFlowActionsInterface $flowActions,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
@@ -93,18 +92,15 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
 	protected function run($argument): void {
-		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->work());
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// read, sent or written; the next run tries again.
-			return;
-		}
+		// Without a usable account this runs nothing: that is already logged as an
+		// error and told to the admins. Nothing was read, sent or
+		// written; the next run tries again.
+		$this->serviceAccount->runAsWhenAvailable(operation: fn () => $this->work());
 	}//end run()
 
 	/**
@@ -112,7 +108,7 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	private function work(): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
@@ -128,7 +124,7 @@ class PlannedFollowUpSweepJob extends TimedJob {
 		// hour is an hourly job nobody reads.
 		$this->logger->info(
 			'Dossiq: retired ' . $retired . ' planned follow-up(s) that were spent',
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 	}//end work()
 }//end class

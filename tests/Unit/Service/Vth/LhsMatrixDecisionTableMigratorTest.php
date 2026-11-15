@@ -22,6 +22,7 @@ use OCP\IUser;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator
@@ -117,7 +118,9 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->written[] = $object + ['@target' => $register . '/' . $schema];
 
 				return $object;
@@ -333,6 +336,64 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 		$this->assertStringContainsString('not on its axis', $summary['rows'][0]['detail']);
 
 	}//end testACellOffItsAxisRefusesTheMatrix()
+
+	/**
+	 * The whole projected table, field by field, and the defaults for a matrix without name or version.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeProjectedTable(): void {
+		$matrix = $this->matrix();
+		$matrix['cells'][1]['note'] = 'Second time';
+		$this->matrices = [$matrix];
+
+		$this->migrator()->migrate($this->user(), false);
+		$table = $this->written[0];
+
+		$this->assertSame(
+			['name', 'key', 'owner', 'description', 'hitPolicy', 'inputs', 'outputs', 'rules', '@target'],
+			array_keys($table)
+		);
+		$this->assertSame('LHS 2024', $table['name']);
+		$this->assertSame('dossiq', $table['owner']);
+		$this->assertStringStartsWith('Projected from the LHS matrix "LHS 2024" (version 3). ', $table['description']);
+		$this->assertStringEndsWith('a re-run of the projection refuses to overwrite changed rules rather than discarding them.', $table['description']);
+		$this->assertSame(
+			[
+				'id' => 'gering:calculerend:burger',
+				'annotation' => 'Second time',
+				'inputEntries' => ['gering', 'calculerend', 'burger'],
+				'outputEntries' => ['fine'],
+			],
+			$table['rules'][1]
+		);
+		$this->assertSame('', $table['rules'][0]['annotation']);
+
+		unset($matrix['name'], $matrix['version']);
+		$this->matrices = [$matrix];
+		$this->written = [];
+		$this->migrator()->migrate($this->user(), false);
+		$this->assertSame('LHS', $this->written[0]['name']);
+		$this->assertStringStartsWith('Projected from the LHS matrix "" (version 1). ', $this->written[0]['description']);
+	}//end testTheWholeProjectedTable()
+
+	/**
+	 * A matrix without cells, or with an empty axis, is refused and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyMatrixIsRefused(): void {
+		$noCells = $this->matrix();
+		$noCells['cells'] = [];
+		$noAxis = $this->matrix();
+		$noAxis['behaviourAxis'] = '[]';
+		$this->matrices = [$noCells, $noAxis];
+
+		$summary = $this->migrator()->migrate($this->user(), false);
+
+		$this->assertSame([], $this->written);
+		$this->assertSame(2, $summary['skipped']);
+	}//end testAnEmptyMatrixIsRefused()
 
 	/**
 	 * A dry run writes nothing and still reports the rule count.

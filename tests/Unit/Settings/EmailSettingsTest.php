@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCA\Dossiq\Settings\EmailSettings;
 use OCP\Settings\IDelegatedSettings;
 use PHPUnit\Framework\TestCase;
@@ -73,4 +74,19 @@ class EmailSettingsTest extends TestCase {
 		$this->assertContains('email_mail_account_id', $keys);
 		$this->assertContains('email_imap_folder', $keys);
 	}//end testItStillDelegatesTheMailboxKeys()
+	/**
+	 * The entry sits in the same section as the admin settings and orders
+	 * after them, so the admin page mounts once at the top, and it is named.
+	 *
+	 * @return void
+	 */
+	public function testTheEntryOrdersAfterTheAdminSettingsInTheirSection(): void {
+		$email = new EmailSettings();
+		$admin = (new \ReflectionClass(objectOrClass: AdminSettings::class))->newInstanceWithoutConstructor();
+
+		$this->assertSame(expected: $admin->getSection(), actual: $email->getSection());
+		$this->assertSame(expected: 'dossiq', actual: $email->getSection());
+		$this->assertGreaterThan(expected: $admin->getPriority(), actual: $email->getPriority());
+		$this->assertSame(expected: 'Case email (shared mailbox)', actual: $email->getName());
+	}//end testTheEntryOrdersAfterTheAdminSettingsInTheirSection()
 }//end class

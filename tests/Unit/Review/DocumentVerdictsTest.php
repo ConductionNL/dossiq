@@ -33,6 +33,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Review\DocumentVerdicts
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Review\CaseAssessmentRows
  */
 class DocumentVerdictsTest extends TestCase {
 

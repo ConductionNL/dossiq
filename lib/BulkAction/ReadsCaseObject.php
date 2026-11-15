@@ -31,7 +31,7 @@ use OCA\OpenRegister\Db\ObjectEntity;
  * uuid. This is the whole of the translation between them, kept in one place
  * so four actions cannot disagree about where a case id lives.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 trait ReadsCaseObject {
 
@@ -45,7 +45,7 @@ trait ReadsCaseObject {
 	 *
 	 * @return string The case uuid, or an empty string when the object has none.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseId(ObjectEntity $object): string {
 		$uuid = trim((string)($object->getUuid() ?? ''));
@@ -65,7 +65,7 @@ trait ReadsCaseObject {
 	 *
 	 * @return array<string, mixed> The case payload.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseData(ObjectEntity $object): array {
 		return $object->getObject();

@@ -27,8 +27,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Money\PaymentScheduleOverview;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\PaymentScheduleOverviewInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,16 +49,16 @@ class PaymentScheduleController extends Controller {
 	 *
 	 * @param string                  $appName     The app name.
 	 * @param IRequest                $request     The request.
-	 * @param PaymentScheduleOverview $overview    Reads the schedule.
+	 * @param PaymentScheduleOverviewInterface $overview    Reads the schedule.
 	 * @param IUserSession            $userSession The user session.
-	 * @param CaseAccessGuard         $caseAccess  Per-case authorization guard.
+	 * @param CaseAccessGuardInterface         $caseAccess  Per-case authorization guard.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PaymentScheduleOverview $overview,
+		private readonly PaymentScheduleOverviewInterface $overview,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccess,
+		private readonly CaseAccessGuardInterface $caseAccess,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

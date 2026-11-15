@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\MapCspRegistrar;
+use OCA\Dossiq\Service\Map\MapLayerHosts;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\Security\IContentSecurityPolicyManager;
 use PHPUnit\Framework\TestCase;
@@ -58,6 +59,70 @@ class MapCspRegistrarTest extends TestCase {
 		$this->assertContains(needle: 'https://service.pdok.nl', haystack: $imageSources);
 		$this->assertContains(needle: 'https://*.tile.openstreetmap.org', haystack: $imageSources);
 	}//end testPdokMapLayersMayLoadTheirImages()
+
+	/**
+	 * The hosts of the configured map layers are allowed image sources too.
+	 *
+	 * @return void
+	 */
+	public function testConfiguredLayerHostsMayLoadTheirImages(): void {
+		$hosts = $this->createMock(originalClassName: MapLayerHosts::class);
+		$hosts->method('hosts')->willReturn(['https://gis.example.nl', 'https://services.arcgis.com']);
+
+		$imageSources = $this->directive(policy: $this->policyWith(hosts: $hosts)->buildPolicy(), directive: 'img-src');
+
+		$this->assertContains(needle: 'https://gis.example.nl', haystack: $imageSources);
+		$this->assertContains(needle: 'https://services.arcgis.com', haystack: $imageSources);
+		$this->assertContains(needle: 'https://service.pdok.nl', haystack: $imageSources);
+	}//end testConfiguredLayerHostsMayLoadTheirImages()
+
+	/**
+	 * Hosts that cannot be read leave the base policy standing.
+	 *
+	 * @return void
+	 */
+	public function testUnreadableLayerHostsLeaveTheBasePolicy(): void {
+		$imageSources = $this->directive(policy: $this->policyWith(hosts: new \RuntimeException('no config'))->buildPolicy(), directive: 'img-src');
+
+		$this->assertContains(needle: 'https://service.pdok.nl', haystack: $imageSources);
+		$this->assertNotContains(needle: 'https://gis.example.nl', haystack: $imageSources);
+	}//end testUnreadableLayerHostsLeaveTheBasePolicy()
+
+	/**
+	 * The policy registered over a container that answers these layer hosts.
+	 *
+	 * @param MapLayerHosts|\Throwable $hosts The hosts, or what resolving them throws.
+	 *
+	 * @return ContentSecurityPolicy
+	 */
+	private function policyWith(MapLayerHosts|\Throwable $hosts): ContentSecurityPolicy {
+		$policy  = null;
+		$manager = $this->createMock(originalClassName: IContentSecurityPolicyManager::class);
+		$manager->method('addDefaultPolicy')->willReturnCallback(
+			static function (ContentSecurityPolicy $added) use (&$policy): void {
+				$policy = $added;
+			}
+		);
+		$server = $this->createMock(originalClassName: ContainerInterface::class);
+		$server->method('get')->willReturnCallback(
+			static function (string $id) use ($manager, $hosts): object {
+				if ($id === MapLayerHosts::class) {
+					if ($hosts instanceof \Throwable) {
+						throw $hosts;
+					}
+
+					return $hosts;
+				}
+
+				return $manager;
+			}
+		);
+
+		(new MapCspRegistrar())->register(server: $server);
+
+		$this->assertInstanceOf(expected: ContentSecurityPolicy::class, actual: $policy);
+		return $policy;
+	}//end policyWith()
 
 	/**
 	 * The sources of one directive of a built policy.

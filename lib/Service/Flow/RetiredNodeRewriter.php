@@ -41,12 +41,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
+use OCA\Dossiq\Kernel\Contracts\RetiredNodeRewriterInterface;
+
 /**
  * Applies {@see RetiredNodeMap} to a flow's nodes and edges.
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
-class RetiredNodeRewriter {
+class RetiredNodeRewriter implements RetiredNodeRewriterInterface {
 
 	/**
 	 * Constructor.
@@ -80,120 +82,154 @@ class RetiredNodeRewriter {
 	 * @spec openspec/specs/automatic-actions/spec.md
 	 */
 	public function rewrite(array $nodes, array $edges): array {
-		$changes = [];
-		$kept = [];
-
+		$run = new NodeRewrite();
+		$run->edges = $edges;
 		foreach ($nodes as $node) {
-			$type = '';
-			if (is_array($node) === true) {
-				$type = (string)($node['type'] ?? '');
-			}
+			$this->rewriteNode(run: $run, node: $node);
+		}
 
-			$row = $this->map->rowFor(type: $type);
-			if ($row === null) {
-				$kept[] = $node;
-				continue;
-			}
-
-			$stepId = (string)($node['id'] ?? '');
-
-			if (isset($row['translation']) === true) {
-				$translated = $this->translateStep(node: $node, row: $row, type: $type, edges: $edges);
-				array_push($kept, ...$translated['nodes']);
-				$edges = $translated['edges'];
-				$changes[] = $translated['change'];
-				continue;
-			}
-
-			if ($row['replacement'] !== null) {
-				$node['type'] = $row['replacement'];
-				$kept[] = $node;
-				$changes[] = [
-					'step' => $stepId,
-					'type' => $type,
-					'outcome' => 'replaced',
-					'replacement' => $row['replacement'],
-					'reason' => $row['reason'],
-					'orphaned' => false,
-				];
-				continue;
-			}
-
-			$bridged = $this->bridge(edges: $edges, stepId: $stepId);
-			$edges = $bridged['edges'];
-			$changes[] = [
-				'step' => $stepId,
-				'type' => $type,
-				'outcome' => 'removed',
-				'replacement' => null,
-				'reason' => $row['reason'],
-				'orphaned' => $bridged['orphaned'],
-			];
-		}//end foreach
-
-		return ['nodes' => $kept, 'edges' => $edges, 'changes' => $changes];
+		return ['nodes' => $run->kept, 'edges' => $run->edges, 'changes' => $run->changes];
 	}//end rewrite()
 
 	/**
-	 * Translate one step into the steps that replace it, or leave it and say why.
+	 * Keep a node of a live type; translate, rename or remove one of a retired type.
 	 *
-	 * @param array<string, mixed>                                               $node  The retired step.
-	 * @param array{replacement: string|null, reason: string, translation?: string} $row   Its row.
-	 * @param string                                                             $type  Its type.
-	 * @param array<int, mixed>                                                  $edges The current edges.
+	 * @param NodeRewrite $run  The rewrite so far.
+	 * @param mixed       $node One stored node.
 	 *
-	 * @return array{
-	 *     nodes: array<int, mixed>,
-	 *     edges: array<int, mixed>,
-	 *     change: array{step: string, type: string, outcome: string, replacement: string|null, reason: string, orphaned: bool}
-	 * } The step's replacement nodes, the edges, and the change row.
+	 * @return void
 	 */
-	private function translateStep(array $node, array $row, string $type, array $edges): array {
-		$stepId = (string)($node['id'] ?? '');
-		$change = [
-			'step' => $stepId,
-			'type' => $type,
-			'outcome' => 'unmappable',
-			'replacement' => null,
-			'reason' => $row['reason'],
-			'orphaned' => false,
+	private function rewriteNode(NodeRewrite $run, mixed $node): void {
+		$type = '';
+		if (is_array($node) === true) {
+			$type = (string)($node['type'] ?? '');
+		}
+
+		$row = $this->map->rowFor(type: $type);
+		if ($row === null) {
+			$run->kept[] = $node;
+			return;
+		}
+
+		$step = new RetiredStep();
+		$step->node = $node;
+		$step->row = $row;
+		$step->type = $type;
+		$step->stepId = (string)($node['id'] ?? '');
+		$this->retire(run: $run, step: $step);
+	}//end rewriteNode()
+
+	/**
+	 * Translate, rename or remove one retired step, as its map row says.
+	 *
+	 * @param NodeRewrite $run  The rewrite so far.
+	 * @param RetiredStep $step The retired step.
+	 *
+	 * @return void
+	 */
+	private function retire(NodeRewrite $run, RetiredStep $step): void {
+		if (isset($step->row['translation']) === true) {
+			$translated = $this->translateStep(step: $step, edges: $run->edges);
+			array_push($run->kept, ...$translated['nodes']);
+			$run->edges = $translated['edges'];
+			$run->changes[] = $translated['change'];
+			return;
+		}
+
+		if ($step->row['replacement'] !== null) {
+			$node = $step->node;
+			$node['type'] = $step->row['replacement'];
+			$run->kept[] = $node;
+			$run->changes[] = $this->stepChange(
+				step: $step,
+				outcome: ['outcome' => 'replaced', 'replacement' => $step->row['replacement'], 'orphaned' => false]
+			);
+			return;
+		}
+
+		$bridged = $this->bridge(edges: $run->edges, stepId: $step->stepId);
+		$run->edges = $bridged['edges'];
+		$run->changes[] = $this->stepChange(step: $step, outcome: ['outcome' => 'removed', 'replacement' => null, 'orphaned' => $bridged['orphaned']]);
+	}//end retire()
+
+	/**
+	 * The change recorded for one retired step.
+	 *
+	 * @param RetiredStep                                                    $step    The retired step.
+	 * @param array{outcome: string, replacement: ?string, orphaned: bool} $outcome What became of it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function stepChange(RetiredStep $step, array $outcome): array {
+		return [
+			'step' => $step->stepId,
+			'type' => $step->type,
+			'outcome' => $outcome['outcome'],
+			'replacement' => $outcome['replacement'],
+			'reason' => $step->row['reason'],
+			'orphaned' => $outcome['orphaned'],
 		];
+	}//end stepChange()
+
+	/**
+	 * Translate a retired step into the steps of its translation, or leave it in place
+	 * when there is no translator or the step cannot be translated.
+	 *
+	 * @param RetiredStep       $step  The retired step.
+	 * @param array<int, mixed> $edges The edges as they now stand.
+	 *
+	 * @return array{nodes: array<int, array<string, mixed>>, edges: array<int, mixed>, change: array<string, mixed>}
+	 */
+	private function translateStep(RetiredStep $step, array $edges): array {
+		$change = $this->stepChange(step: $step, outcome: ['outcome' => 'unmappable', 'replacement' => null, 'orphaned' => false]);
 
 		if ($this->translator === null) {
 			$change['reason'] .= '; the step was left in place because no translator was available';
-			return ['nodes' => [$node], 'edges' => $edges, 'change' => $change];
+			return ['nodes' => [$step->node], 'edges' => $edges, 'change' => $change];
 		}
 
 		try {
 			$steps = $this->translator->translate(
-				translation: (string)$row['translation'],
-				config: (array)($node['config'] ?? [])
+				translation: (string)$step->row['translation'],
+				config: (array)($step->node['config'] ?? [])
 			);
 		} catch (UnmappableStep $e) {
 			$change['reason'] .= '; the step was left in place because ' . $e->getMessage();
-			return ['nodes' => [$node], 'edges' => $edges, 'change' => $change];
+			return ['nodes' => [$step->node], 'edges' => $edges, 'change' => $change];
 		}
 
+		$nodes = $this->replacementNodes(step: $step, steps: $steps);
+		$change['outcome'] = 'replaced';
+		$change['replacement'] = implode(' + ', array_column($steps, 'type'));
+		$ids = array_map(static fn (array $node): string => (string)$node['id'], $nodes);
+
+		return ['nodes' => $nodes, 'edges' => $this->chain(edges: $edges, ids: $ids), 'change' => $change];
+	}//end translateStep()
+
+	/**
+	 * The nodes a translated step becomes: the first keeps the id, the rest are numbered after it.
+	 *
+	 * @param RetiredStep                      $step  The retired step.
+	 * @param array<int, array<string, mixed>> $steps The translation's steps.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function replacementNodes(RetiredStep $step, array $steps): array {
 		$nodes = [];
-		$ids = [];
-		foreach ($steps as $index => $step) {
-			$replacement = $node;
-			$replacement['type'] = $step['type'];
-			$replacement['config'] = $step['config'];
+		foreach ($steps as $index => $translated) {
+			$replacement = $step->node;
+			$replacement['type'] = $translated['type'];
+			$replacement['config'] = $translated['config'];
 			if ($index > 0) {
-				$replacement['id'] = $stepId . '--' . ($index + 1);
+				$replacement['id'] = $step->stepId . '--' . ($index + 1);
 				unset($replacement['_note']);
 			}
 
 			$nodes[] = $replacement;
-			$ids[] = (string)$replacement['id'];
 		}
 
-		$change['outcome'] = 'replaced';
-		$change['replacement'] = implode(' + ', array_column($steps, 'type'));
-
-		return ['nodes' => $nodes, 'edges' => $this->chain(edges: $edges, ids: $ids), 'change' => $change];
-	}//end translateStep()
+		return $nodes;
+	}//end replacementNodes()
 
 	/**
 	 * Wire a step that became several: outgoing edges leave from the last, and each links to the next.
@@ -267,45 +303,94 @@ class RetiredNodeRewriter {
 	 *         inbound edges were dropped because the step had no successor.
 	 */
 	private function bridge(array $edges, string $stepId): array {
-		$successors = $this->successorsOf(edges: $edges, stepId: $stepId);
+		$removed = new RemovedStep(stepId: $stepId, successors: $this->successorsOf(edges: $edges, stepId: $stepId));
 		$orphaned = false;
 		$out = [];
 
 		foreach ($edges as $edge) {
-			if (is_array($edge) === false) {
-				$out[] = $edge;
-				continue;
-			}
-
-			$from = $this->endpoints(value: ($edge['from'] ?? null));
-			if (in_array($stepId, $from, true) === true) {
-				// An edge out of the removed step goes with it, unless it also
-				// leaves from another step, which keeps it.
-				$rest = array_values(array_diff($from, [$stepId]));
-				if ($rest === []) {
-					continue;
-				}
-
-				$edge['from'] = $rest;
-			}
-
-			$targets = $this->endpoints(value: ($edge['to'] ?? null));
-			if (in_array($stepId, $targets, true) === false) {
-				$out[] = $edge;
-				continue;
-			}
-
-			$retargeted = array_values(array_unique(array_merge(array_diff($targets, [$stepId]), $successors)));
-			if ($retargeted === []) {
+			$bridged = $this->bridgedEdge(edge: $edge, removed: $removed);
+			if ($bridged === null) {
 				$orphaned = true;
 				continue;
 			}
 
-			array_push($out, ...$this->reshape(edge: $edge, targets: $retargeted));
-		}//end foreach
+			array_push($out, ...$bridged);
+		}
 
 		return ['edges' => $out, 'orphaned' => $orphaned];
 	}//end bridge()
+
+	/**
+	 * What one edge becomes once the step is removed.
+	 *
+	 * @param mixed       $edge    One edge.
+	 * @param RemovedStep $removed The step being removed and its successors.
+	 *
+	 * @return array<int, mixed>|null The edges it becomes ([] when dropped), or null when it was orphaned.
+	 */
+	private function bridgedEdge(mixed $edge, RemovedStep $removed): ?array {
+		if (is_array($edge) === false) {
+			return [$edge];
+		}
+
+		$edge = $this->withoutSource(edge: $edge, stepId: $removed->stepId);
+		if ($edge === null) {
+			return [];
+		}
+
+		return $this->retargeted(edge: $edge, removed: $removed);
+	}//end bridgedEdge()
+
+	/**
+	 * Point an edge into the step at the step's successors instead.
+	 *
+	 * @param array<string, mixed> $edge    One edge, no longer leaving the step.
+	 * @param RemovedStep          $removed The step being removed and its successors.
+	 *
+	 * @return array<int, mixed>|null The edges it becomes, or null when the step had no successor.
+	 */
+	private function retargeted(array $edge, RemovedStep $removed): ?array {
+		$stepId = $removed->stepId;
+		$successors = $removed->successors;
+		$targets = $this->endpoints(value: ($edge['to'] ?? null));
+		if (in_array($stepId, $targets, true) === false) {
+			return [$edge];
+		}
+
+		$retargeted = array_values(array_unique(array_merge(array_diff($targets, [$stepId]), $successors)));
+		if ($retargeted === []) {
+			return null;
+		}
+
+		return $this->reshape(edge: $edge, targets: $retargeted);
+	}//end retargeted()
+
+	/**
+	 * The edge without the removed step among its sources, or null when it left from that step alone.
+	 *
+	 * An edge out of the removed step goes with it, unless it also leaves
+	 * from another step, which keeps it.
+	 *
+	 * @param array<string, mixed> $edge   One edge.
+	 * @param string               $stepId The removed step.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function withoutSource(array $edge, string $stepId): ?array {
+		$from = $this->endpoints(value: ($edge['from'] ?? null));
+		if (in_array($stepId, $from, true) === false) {
+			return $edge;
+		}
+
+		$rest = array_values(array_diff($from, [$stepId]));
+		if ($rest === []) {
+			return null;
+		}
+
+		$edge['from'] = $rest;
+
+		return $edge;
+	}//end withoutSource()
 
 	/**
 	 * The steps a step leads to, itself excluded.

@@ -32,6 +32,7 @@ use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * A forfeited penalty raises an invoice when its case type says so.
@@ -73,6 +74,7 @@ final class ForfeitInvoiceRaiserTest extends TestCase {
 				 * @return never
 				 */
 				public function find(mixed ...$arguments): never {
+					$arguments = LegacyObjectArgs::flatten(args: $arguments);
 					throw new RuntimeException('database is gone');
 				}
 			};
@@ -169,6 +171,22 @@ final class ForfeitInvoiceRaiserTest extends TestCase {
 			$payload
 		);
 	}//end testAForfeitRaisesAnInvoiceToThePayerOnTheCase()
+
+	/**
+	 * Without a request type, an administration or an amount, the invoice takes the defaults.
+	 *
+	 * @return void
+	 */
+	public function testTheInvoiceDefaults(): void {
+		$raiser = $this->raiser(
+			caseType: ['forfeitRaisesInvoice' => true, 'forfeitPayerRoleType' => 'rt-offender'],
+			people: [['role' => 'rt-offender', 'displayName' => 'X', 'email' => 'x@example.nl']],
+		);
+
+		self::assertSame('pr-1', $raiser->raise(action: ['case' => 'case-7']));
+		$payload = $this->leaf->calls[0][4];
+		self::assertSame(['dwangsom', 0.0, ''], [$payload['requestType'], $payload['amount'], $payload['administrationId']]);
+	}//end testTheInvoiceDefaults()
 
 	public function testNothingIsRaisedWhenTheCaseTypeDoesNotSaySoOrNobodyCanPay(): void {
 		$payer = [['role' => 'rt-offender', 'displayName' => 'X', 'email' => 'x@example.nl']];

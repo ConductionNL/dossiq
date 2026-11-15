@@ -28,6 +28,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The duck-typed slice of OpenRegister's ObjectService this migration uses.
@@ -55,7 +56,7 @@ interface BesluitMigrationObjectServiceStub {
 	 *
 	 * @return array<string, mixed> The stored object.
 	 */
-	public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }
 
 /**
@@ -133,7 +134,10 @@ final class BesluitMigrationServiceTest extends TestCase {
 			}
 		);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, int|string $register, int|string $schema, ?string $uuid = null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->written[] = $object;
 				return $object;
 			}
@@ -254,6 +258,27 @@ final class BesluitMigrationServiceTest extends TestCase {
 			'responsibleOrganisation' => 'gemeente',
 		];
 	}//end besluit()
+
+	/**
+	 * The whole summary of a blocked run, and of a dry run that meets a row
+	 * without an id.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryKeepsItsWholeShape(): void {
+		$blocked = $this->service('', [$this->besluit('a')])->migrate(commit: true);
+		$this->assertSame(['status', 'total', 'migrated', 'skipped', 'failed', 'detached', 'message'], array_keys($blocked));
+		$this->assertSame(['blocked', 0, 0, 0, 0, false], array_slice(array_values($blocked), 0, 6));
+		$this->assertNotSame('', $blocked['message']);
+
+		$noId = $this->besluit('a');
+		unset($noId['id']);
+		$dry = $this->service('166', [$noId, $this->besluit('b')])->migrate(commit: false);
+		$this->assertSame(
+			['status' => 'ok', 'total' => 2, 'migrated' => 1, 'skipped' => 0, 'failed' => 1, 'detached' => false, 'message' => ''],
+			$dry
+		);
+	}//end testTheSummaryKeepsItsWholeShape()
 
 	/**
 	 * Without decidiq there is nothing to migrate onto, and the run must say so

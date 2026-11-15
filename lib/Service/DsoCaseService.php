@@ -17,20 +17,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use DateTimeImmutable;
 use Exception;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
+use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -44,7 +47,7 @@ use RuntimeException;
  * and computes statutory deadlines in working days (excluding weekends and
  * Dutch national holidays).
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) ADR-083 replaced a lazy
  * container lookup with a typed ObjectServiceInterface dependency, which is
@@ -53,7 +56,7 @@ use RuntimeException;
  * container stays because IGroupManager is still resolved through it.
  * 29 classes in this app already carry this suppression.
  */
-class DsoCaseService {
+class DsoCaseService implements DsoCaseServiceInterface {
 
 	use SearchesObjects;
 
@@ -175,7 +178,7 @@ class DsoCaseService {
 		$this->logger->info(
 			'Dossiq DsoCaseService: zaak created',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'vergunningaanvraagId' => $permitApplicationId,
 				'caseType' => $case['caseType'],
 				'procedureType' => $case['procedureType'],
@@ -330,7 +333,7 @@ class DsoCaseService {
 	 * @return string The value, or '' when unset
 	 */
 	private function config(string $key): string {
-		return $this->appConfig->getValueString(app: Application::APP_ID, key: $key, default: '');
+		return $this->appConfig->getValueString(app: AppIdentity::APP_ID, key: $key, default: '');
 	}//end config()
 
 	/**
@@ -346,7 +349,7 @@ class DsoCaseService {
 	 *
 	 * @return string ISO 8601 date string of the computed deadline
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
 	 */
 	public function computeDeadline(string $submissionDate, string $procedureType): string {
 		$workingDaysTarget = 40;
@@ -381,7 +384,7 @@ class DsoCaseService {
 	 *
 	 * @throws \Exception When the user is not authorised to mutate the zaak
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T03
 	 */
 	public function authorizeZaakMutation(array $case, IUser $user): void {
 		$uid = $user->getUID();
@@ -400,7 +403,7 @@ class DsoCaseService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq DsoCaseService: could not resolve IGroupManager for auth check: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 
@@ -437,18 +440,7 @@ class DsoCaseService {
 	 * @return array<string, mixed> The normalised array (empty when not coercible).
 	 */
 	private function normalizeToArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $value) ?? []);
 	}//end normalizeToArray()
 
 	/**
@@ -466,7 +458,9 @@ class DsoCaseService {
 	}//end isWorkingDay()
 
 	/**
-	 * Sync the vergunningaanvraag status to match the zaak's new status.
+	 * Sync the vergunningaanvraag status to match the zaak's new status, and its
+	 * besluitdatum when given. Nothing is written when the vergunningaanvraag
+	 * schema is not configured or the vergunningaanvraag is not found.
 	 *
 	 * Best-effort: errors are logged but do not propagate to the caller.
 	 *
@@ -478,16 +472,16 @@ class DsoCaseService {
 	private function syncPermitApplicationStatus(object $objectService, array $change): void {
 		try {
 			$requestSchema = $this->config(key: 'dso_vergunningaanvraag_schema');
-			$request = null;
-			if ($requestSchema !== '') {
-				$request = $this->findObjectAsArray(
-					objectService: $objectService,
-					register: 'dso',
-					schema: $requestSchema,
-					id: $change['requestRef']
-				);
+			if ($requestSchema === '') {
+				return;
 			}
 
+			$request = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: 'dso',
+				schema: $requestSchema,
+				id: $change['requestRef']
+			);
 			if ($request === null) {
 				return;
 			}
@@ -497,11 +491,14 @@ class DsoCaseService {
 				$request['besluitdatum'] = $change['besluitdatum'];
 			}
 
-			$objectService->saveObject(register: 'dso', schema: $requestSchema, object: $request);
+			$objectService->saveObject(
+				object: $request,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dso', schema: $requestSchema))
+			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq DsoCaseService: could not sync vergunningaanvraag status: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'permitApplicationRef' => $change['requestRef']]
+				['app' => AppIdentity::APP_ID, 'permitApplicationRef' => $change['requestRef']]
 			);
 		}//end try
 	}//end syncPermitApplicationStatus()

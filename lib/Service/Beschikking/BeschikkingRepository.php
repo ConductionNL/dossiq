@@ -36,6 +36,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Beschikking;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -80,7 +84,7 @@ class BeschikkingRepository {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($decisionId, register: $register, schema: $schema));
+			return $this->toArray(value: $objectService->find($decisionId, new ObjectFindOptions(register: $register, schema: $schema)));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BeschikkingService: find failed',
@@ -137,7 +141,12 @@ class BeschikkingRepository {
 			throw new RuntimeException('beschikking_schema_not_configured');
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $decision, register: $register, schema: $schema));
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $decision,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			)
+		);
 	}//end save()
 
 	/**
@@ -164,17 +173,6 @@ class BeschikkingRepository {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

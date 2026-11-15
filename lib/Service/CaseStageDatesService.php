@@ -29,14 +29,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseStageDatesServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 /**
  * Reads when one case reached each status.
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseStageDatesService {
+class CaseStageDatesService implements CaseStageDatesServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -115,7 +117,7 @@ class CaseStageDatesService {
 			return '';
 		}
 
-		$case = $objectService->find($caseId, register: $register, schema: $caseSchema);
+		$case = $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $caseSchema));
 		if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
 			$case = $case->jsonSerialize();
 		}

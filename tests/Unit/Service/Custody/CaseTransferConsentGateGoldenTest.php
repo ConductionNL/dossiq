@@ -31,6 +31,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Golden test for CaseTransferConsentGate::assess(): the verdict, every store and settings call, and the logs.
@@ -38,6 +39,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
  * @uses   \OCA\Dossiq\Service\Custody\ConsentStanding
  * @uses   \OCA\Dossiq\Service\Custody\ConsentRefusal
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CaseTransferConsentGateGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -90,7 +92,9 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			 *
 			 * @return mixed The object.
 			 */
-			public function find(int|string $id, int|string $register = '', int|string $schema = ''): mixed {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->calls[] = ['find', $id, $register, $schema];
 				$found = ($this->world['objects'][$schema][$id] ?? 'missing');
 				if ($found === 'missing') {

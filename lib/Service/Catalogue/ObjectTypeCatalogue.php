@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Catalogue;
 
+use OCA\Dossiq\Kernel\Contracts\ObjectTypeCatalogueInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IL10N;
@@ -43,7 +44,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
  */
-class ObjectTypeCatalogue {
+class ObjectTypeCatalogue implements ObjectTypeCatalogueInterface {
 
 	use SearchesObjects;
 
@@ -98,17 +99,55 @@ class ObjectTypeCatalogue {
 			return [];
 		}
 
+		$objectService = $this->requireObjectService();
+
+		$target = new CatalogueRegister(objectService: $objectService, register: $register);
+		$collected = $this->collectAll(target: $target, schema: $schema);
+
+		$caseTypeOf = $this->caseTypesOf(target: $target, caseIds: $this->caseIdsIn(casesByType: $collected[0]));
+
+		$rows = $this->rowsFor(collected: $collected, caseTypeOf: $caseTypeOf);
+
+		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
+
+		return $rows;
+	}//end list()
+
+	/**
+	 * OpenRegister's ObjectService.
+	 *
+	 * @return object The ObjectService.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 *
+	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 */
+	private function requireObjectService(): object {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * Page through the case-object links, collecting the cases and an object url per type.
+	 *
+	 * @param CatalogueRegister $target OpenRegister's ObjectService and the register.
+	 * @param string            $schema The case-object schema.
+	 *
+	 * @return array{0: array<string, array<string, true>>, 1: array<string, string>} The cases and the urls, by type.
+	 *
+	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 */
+	private function collectAll(CatalogueRegister $target, string $schema): array {
 		$casesByType = [];
 		$urlByType   = [];
 		for ($page = 1; $page <= self::MAX_PAGES; $page++) {
 			$links = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
+				objectService: $target->objectService,
+				register: $target->register,
 				schema: $schema,
 				filters: ['_limit' => self::PAGE_SIZE, '_offset' => (($page - 1) * self::PAGE_SIZE)]
 			);
@@ -119,8 +158,21 @@ class ObjectTypeCatalogue {
 			}
 		}
 
-		$caseTypeOf = $this->caseTypesOf(objectService: $objectService, register: $register, caseIds: $this->caseIdsIn(casesByType: $casesByType));
+		return [$casesByType, $urlByType];
+	}//end collectAll()
 
+	/**
+	 * One catalogue row per object type, with its case type count.
+	 *
+	 * @param array{0: array<string, array<string, true>>, 1: array<string, string>} $collected  The cases by type, and an object url by type.
+	 * @param array<string, string>|null                                         $caseTypeOf The case type of each case, null when unknown.
+	 *
+	 * @return array<int, array<string, mixed>> The unsorted rows.
+	 *
+	 * @spec openspec/changes/catalogue-object-types/specs/catalogue/spec.md
+	 */
+	private function rowsFor(array $collected, ?array $caseTypeOf): array {
+		[$casesByType, $urlByType] = $collected;
 		$rows = [];
 		foreach ($casesByType as $type => $cases) {
 			$row = $this->rowFor(type: (string)$type, cases: count($cases), objectUrl: ($urlByType[$type] ?? ''));
@@ -128,10 +180,8 @@ class ObjectTypeCatalogue {
 			$rows[] = $row;
 		}
 
-		usort($rows, static fn (array $left, array $right): int => self::compareRows(left: $left, right: $right));
-
 		return $rows;
-	}//end list()
+	}//end rowsFor()
 
 	/**
 	 * Add one page of case-object links to the cases seen per object type.
@@ -293,15 +343,14 @@ class ObjectTypeCatalogue {
 	 * The case type of each case, read in batches; null when the case schema
 	 * is not configured, so the count stays unknown rather than zero.
 	 *
-	 * @param object             $objectService The OpenRegister ObjectService.
-	 * @param string             $register      The register id.
-	 * @param array<int, string> $caseIds       The cases to read.
+	 * @param CatalogueRegister  $target  The OpenRegister ObjectService and the register id.
+	 * @param array<int, string> $caseIds The cases to read.
 	 *
 	 * @return array<string, string>|null The case type id per case id.
 	 *
 	 * @spec openspec/specs/catalogue/spec.md
 	 */
-	private function caseTypesOf(object $objectService, string $register, array $caseIds): ?array {
+	private function caseTypesOf(CatalogueRegister $target, array $caseIds): ?array {
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 		if ($schema === '') {
 			return null;
@@ -309,27 +358,65 @@ class ObjectTypeCatalogue {
 
 		$caseTypeOf = [];
 		foreach (array_chunk($caseIds, self::PAGE_SIZE) as $chunk) {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_ids' => $chunk, '_limit' => count($chunk)]
-			);
-			foreach ($cases as $case) {
-				$id = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-				$type = ($case['caseType'] ?? '');
-				if (is_array($type) === true) {
-					$type = ($type['id'] ?? ($type['uuid'] ?? ''));
-				}
-
-				if ($id !== '' && is_string($type) === true && $type !== '') {
-					$caseTypeOf[$id] = $type;
-				}
-			}
+			$caseTypeOf = $this->withCaseTypes(caseTypeOf: $caseTypeOf, cases: $this->casesIn(target: $target, schema: $schema, chunk: $chunk));
 		}
 
 		return $caseTypeOf;
 	}//end caseTypesOf()
+
+	/**
+	 * One chunk of cases, read by id.
+	 *
+	 * @param CatalogueRegister  $target The register the cases live in.
+	 * @param string             $schema The case schema.
+	 * @param array<int, string> $chunk  The case ids.
+	 *
+	 * @return array<int, array<string, mixed>> The cases.
+	 */
+	private function casesIn(CatalogueRegister $target, string $schema, array $chunk): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $schema,
+			filters: ['_ids' => $chunk, '_limit' => count($chunk)]
+		);
+	}//end casesIn()
+
+	/**
+	 * Add each case's case type id, keyed by the case id, skipping a case without either.
+	 *
+	 * @param array<string, string>            $caseTypeOf The case type ids so far.
+	 * @param array<int, array<string, mixed>> $cases      The cases.
+	 *
+	 * @return array<string, string> The case type ids.
+	 */
+	private function withCaseTypes(array $caseTypeOf, array $cases): array {
+		foreach ($cases as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+			$type = $this->caseTypeRef(row: $row);
+			if ($id !== '' && is_string($type) === true && $type !== '') {
+				$caseTypeOf[$id] = $type;
+			}
+		}
+
+		return $caseTypeOf;
+	}//end withCaseTypes()
+
+	/**
+	 * The case type a case names: the id or uuid of an object, or the value itself.
+	 *
+	 * @param array<string, mixed> $row The case.
+	 *
+	 * @return mixed The case type reference.
+	 */
+	private function caseTypeRef(array $row): mixed {
+		$type = ($row['caseType'] ?? '');
+		if (is_array($type) === true) {
+			$type = ($type['id'] ?? ($type['uuid'] ?? ''));
+		}
+
+		return $type;
+	}//end caseTypeRef()
 
 	/**
 	 * How many distinct case types the given cases are of.

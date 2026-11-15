@@ -22,6 +22,7 @@ use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * Task 2.4: a case filed before portalParty existed gets subject:<portalSubject>, once.
@@ -67,7 +68,11 @@ class BackfillPortalPartyTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->writes++;
 				if ($this->asSystem === false) {
 					$this->wroteAsCaller = true;

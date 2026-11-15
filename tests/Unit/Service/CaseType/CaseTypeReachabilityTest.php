@@ -345,4 +345,28 @@ class CaseTypeReachabilityTest extends TestCase {
 
 		self::assertSame(expected: [], actual: $findings);
 	}//end testAnUnresolvableInitialStatusSaysNothingHere()
+	/**
+	 * A move with no name and no start is named as unnamed; a non-row is skipped.
+	 *
+	 * The non-row is neither broken nor sound: the rest of the lifecycle still
+	 * runs end to end, so the only finding is the nameless move.
+	 *
+	 * @return void
+	 */
+	public function testAnUnnamedMoveIsCalledUnnamedAndANonRowIsSkipped(): void {
+		$moves = $this->soundMoves();
+		$moves[] = 'not a move';
+		$moves[] = ['fromStatus' => '', 'toStatus' => 's3', 'label' => '  '];
+
+		$findings = (new CaseTypeReachability())->findings(
+			statuses: $this->statuses(),
+			initial: 's1',
+			moves: $moves
+		);
+
+		self::assertSame(
+			['The move "an unnamed move" starts from no status, so nothing can ever offer it. Name the status it starts from.'],
+			$findings
+		);
+	}//end testAnUnnamedMoveIsCalledUnnamedAndANonRowIsSkipped()
 }//end class

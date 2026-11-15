@@ -99,4 +99,41 @@ class QueueFiguresTest extends TestCase {
 		$this->assertSame(expected: 'Woo-verzoek', actual: $figures['queueOldestType']);
 		$this->assertSame(expected: 4, actual: $figures['queueOldestDueDays']);
 	}//end testTheOldestWaitingCaseNamesItsTypeAndDeadline()
+
+	/**
+	 * Every figure at once: new today, due within the week, the first of two
+	 * equally old cases named, an unreadable deadline read as none, and the
+	 * types ordered by how many are open.
+	 *
+	 * @return void
+	 */
+	public function testEveryFigureAtOnce(): void {
+		$figures = (new QueueFigures(new DayCount()))->fold(
+			openCases: [
+				['startDate' => '2026-10-16', 'caseType' => 'bezwaar', 'deadline' => '2026-10-22'],
+				['startDate' => '2026-10-09T08:00:00', 'caseType' => 'woo', 'deadline' => 'soon'],
+				['startDate' => '2026-10-09', 'caseType' => 'bezwaar', 'deadline' => '2026-10-23'],
+				['startDate' => '2026-10-02', 'caseType' => 'bezwaar', 'assignee' => 'pieter'],
+				['startDate' => '2026-10-15', 'caseType' => 'woo', 'deadline' => '2026-10-16'],
+			],
+			today: new DateTimeImmutable('2026-10-16'),
+			typeTitles: ['bezwaar' => 'Bezwaar']
+		);
+
+		$this->assertSame(
+			[
+				'queueCount' => 4,
+				'queueNewToday' => 1,
+				'queueDueSoon' => 2,
+				'queueOldestDays' => 7,
+				'queueOldestType' => 'woo',
+				'queueOldestDueDays' => null,
+				'queueByType' => [
+					['caseType' => 'bezwaar', 'title' => 'Bezwaar', 'open' => 3, 'waiting' => 2],
+					['caseType' => 'woo', 'title' => 'woo', 'open' => 2, 'waiting' => 2],
+				],
+			],
+			$figures
+		);
+	}//end testEveryFigureAtOnce()
 }//end class

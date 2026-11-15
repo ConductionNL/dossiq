@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * evaluator uses. `requiredItems` narrows that corpus to named labels, and a
  * named label the checklist does not carry counts as missing.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T05
  */
 class ChecklistGuard implements GuardEvaluatorInterface {
 
@@ -83,8 +83,7 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 
 		return $this->evaluateCaseTasks(
 			case: $case,
-			userId: $userId,
-			requiredItems: ($guardConfig['requiredItems'] ?? null),
+			check: ['userId' => $userId, 'requiredItems' => ($guardConfig['requiredItems'] ?? null)],
 		);
 	}//end evaluate()
 
@@ -118,12 +117,13 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 	 * Evaluate the checklists of every task linked to the case.
 	 *
 	 * @param array<string, mixed> $case The case object.
-	 * @param string $userId The acting identity the engine records.
-	 * @param mixed $requiredItems Optional allow-list of required labels.
+	 * @param array{userId: string, requiredItems: mixed} $check The acting identity the engine records, and the
+	 *                                                           optional allow-list of required labels.
 	 *
 	 * @return GuardResult
 	 */
-	private function evaluateCaseTasks(array $case, string $userId, mixed $requiredItems): GuardResult {
+	private function evaluateCaseTasks(array $case, array $check): GuardResult {
+		['userId' => $userId, 'requiredItems' => $requiredItems] = $check;
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
 		if ($caseId === '') {
 			return new GuardResult(passed: false, failureMessage: $this->l10n->t('Case not recognised for the checklist check'));

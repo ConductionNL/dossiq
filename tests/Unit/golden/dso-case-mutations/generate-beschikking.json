@@ -1,0 +1,93 @@
+{
+    "no session": [
+        {
+            "status": 401,
+            "data": {
+                "error": "Not authenticated"
+            }
+        }
+    ],
+    "missing field": [
+        {
+            "status": 400,
+            "data": {
+                "error": "outcome is required"
+            }
+        }
+    ],
+    "unknown case": [
+        {
+            "findZaak": "case-1"
+        },
+        {
+            "status": 404,
+            "data": {
+                "error": "Case not found"
+            }
+        }
+    ],
+    "guard refuses": [
+        {
+            "findZaak": "case-1"
+        },
+        {
+            "authorizeZaakMutation": [
+                "case-1",
+                "behandelaar"
+            ]
+        },
+        {
+            "status": 403,
+            "data": {
+                "error": "Forbidden"
+            }
+        }
+    ],
+    "done": [
+        {
+            "findZaak": "case-1"
+        },
+        {
+            "authorizeZaakMutation": [
+                "case-1",
+                "behandelaar"
+            ]
+        },
+        {
+            "generateBeschikking": [
+                "case-1",
+                "granted",
+                "Past in het plan"
+            ]
+        },
+        {
+            "status": 201,
+            "data": {
+                "id": "b-1"
+            }
+        }
+    ],
+    "store fails": [
+        {
+            "findZaak": "case-1"
+        },
+        {
+            "error": "Dossiq DsoController::generateBeschikking failed: store down",
+            "context": []
+        },
+        {
+            "status": 500,
+            "data": {
+                "error": "Could not generate beschikking"
+            }
+        }
+    ],
+    "invalid field": [
+        {
+            "status": 400,
+            "data": {
+                "error": "Invalid outcome value"
+            }
+        }
+    ]
+}

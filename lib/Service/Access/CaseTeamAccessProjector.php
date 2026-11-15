@@ -45,7 +45,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTeamAccessProjectorInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
@@ -61,7 +62,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-access-control/spec.md
  */
-class CaseTeamAccessProjector {
+class CaseTeamAccessProjector implements CaseTeamAccessProjectorInterface {
 
 	/**
 	 * The schema the rules are written onto.
@@ -203,34 +204,80 @@ class CaseTeamAccessProjector {
 			return false;
 		}
 
+		return $this->projectOnto(schemaMapper: $schemaMapper, schema: $schema);
+	}//end writeToSchema()
+
+	/**
+	 * Merge the team rules into the case schema's block, write it when it changed, and record the baseline.
+	 *
+	 * @param object $schemaMapper OpenRegister's schema mapper.
+	 * @param object $schema The case schema.
+	 *
+	 * @return bool True when the schema was written.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function projectOnto($schemaMapper, $schema): bool {
 		$caseTypes = $this->caseTypeTeams();
 		$desired = $this->rules->block(shipped: $this->shippedBlock(), caseTypes: $caseTypes);
 		$live = ($schema->getAuthorization() ?? []);
 		$managed = $this->managedTeams(current: $caseTypes);
-		$merge = (new CaseAuthorizationMerge())->merge(
-			desired: $desired,
-			live: $live,
-			baseline: $this->recordedAuthorization(),
-			managed: $managed,
-		);
-		$block = $merge['block'];
-		$this->reportKeptLocal(conflicts: $merge['conflicts']);
-		$this->reportRestored(restored: $merge['restored']);
+		$block = $this->mergedBlock(desired: $desired, live: $live, managed: $managed);
 		$changed = ($block !== $live);
 		if ($changed === true) {
-			$schema->setAuthorization($block);
-			$schemaMapper->update($schema);
-			$this->logger->info(
-				'Dossiq: wrote the handling team rules onto the case schema',
-				['teams' => count($this->rules->teamEntries(caseTypes: $caseTypes))]
-			);
+			$this->writeBlock(schemaMapper: $schemaMapper, schema: $schema, block: $block, caseTypes: $caseTypes);
 		}
 
 		$this->alignShippedBaseline(block: $desired);
 		$this->rememberManagedTeams(teams: $managed);
 
 		return $changed;
-	}//end writeToSchema()
+	}//end projectOnto()
+
+	/**
+	 * The merged authorization block, with kept-local and restored rules reported.
+	 *
+	 * @param array<string, mixed> $desired The block the rules ask for.
+	 * @param array<string, mixed> $live The block on the schema now.
+	 * @param array<int, string> $managed The teams the projector manages.
+	 *
+	 * @return array<string, mixed> The block to hold.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function mergedBlock(array $desired, array $live, array $managed): array {
+		$merge = (new CaseAuthorizationMerge())->merge(
+			desired: $desired,
+			live: $live,
+			baseline: $this->recordedAuthorization(),
+			managed: $managed,
+		);
+		$this->reportKeptLocal(conflicts: $merge['conflicts']);
+		$this->reportRestored(restored: $merge['restored']);
+
+		return $merge['block'];
+	}//end mergedBlock()
+
+	/**
+	 * Write the block onto the case schema.
+	 *
+	 * @param object $schemaMapper OpenRegister's schema mapper.
+	 * @param object $schema The case schema.
+	 * @param array<string, mixed> $block The block to write.
+	 * @param array<int, array<string, mixed>> $caseTypes The case types and their teams.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function writeBlock($schemaMapper, $schema, array $block, array $caseTypes): void {
+		$schema->setAuthorization($block);
+		$schemaMapper->update($schema);
+		$this->logger->info(
+			'Dossiq: wrote the handling team rules onto the case schema',
+			['teams' => count($this->rules->teamEntries(caseTypes: $caseTypes))]
+		);
+	}//end writeBlock()
 
 	/**
 	 * Every team the projector manages: the teams the case types name now, and every team it wrote a rule for before.
@@ -245,7 +292,7 @@ class CaseTeamAccessProjector {
 	 */
 	private function managedTeams(array $current): array {
 		$teams = array_column($this->rules->teamEntries(caseTypes: $current), 'group');
-		$stored = json_decode($this->appConfig()->getValueString(app: Application::APP_ID, key: self::MANAGED_TEAMS_KEY, default: '[]'), true);
+		$stored = json_decode($this->appConfig()->getValueString(app: AppIdentity::APP_ID, key: self::MANAGED_TEAMS_KEY, default: '[]'), true);
 		if (is_array($stored) === true) {
 			$teams = array_merge($teams, array_filter($stored, 'is_string'));
 		}
@@ -264,7 +311,7 @@ class CaseTeamAccessProjector {
 	 * @return void
 	 */
 	private function rememberManagedTeams(array $teams): void {
-		$this->appConfig()->setValueString(app: Application::APP_ID, key: self::MANAGED_TEAMS_KEY, value: (string)json_encode($teams));
+		$this->appConfig()->setValueString(app: AppIdentity::APP_ID, key: self::MANAGED_TEAMS_KEY, value: (string)json_encode($teams));
 	}//end rememberManagedTeams()
 
 	/**
@@ -372,23 +419,7 @@ class CaseTeamAccessProjector {
 		}
 
 		try {
-			$baselines = $this->container->get(self::BASELINE_STORE);
-			$subject = $baselines->schemaSubject(slug: self::CASE_SCHEMA_SLUG);
-			$baseline = $baselines->read(subject: $subject);
-			if (is_array($baseline['definition'] ?? null) === false || ($baseline['definition']['authorization'] ?? null) === $block) {
-				return;
-			}
-
-			$definition = $baseline['definition'];
-			$definition['authorization'] = $block;
-			$recorded = $baselines->record(
-				subject: $subject,
-				shipped: new ShippedDefinition(
-					definition: $definition,
-					app: $baseline['app'],
-					appVersion: $baseline['appVersion'],
-				),
-			);
+			$recorded = $this->recordAlignedBaseline(block: $block);
 		} catch (Throwable) {
 			$recorded = false;
 		}
@@ -397,4 +428,27 @@ class CaseTeamAccessProjector {
 			$this->logger->warning('Dossiq: the case schema\'s shipped baseline was not aligned with the handling team rules');
 		}
 	}//end alignShippedBaseline()
+
+	/**
+	 * Record the shipped baseline with the derived authorization block.
+	 *
+	 * @param array<string, mixed> $block The block the projector derives.
+	 *
+	 * @return bool False when the record failed; true when it succeeded or there was nothing to align.
+	 */
+	private function recordAlignedBaseline(array $block): bool {
+		$baselines = $this->container->get(self::BASELINE_STORE);
+		$subject = $baselines->schemaSubject(slug: self::CASE_SCHEMA_SLUG);
+		$baseline = $baselines->read(subject: $subject);
+		if (is_array($baseline['definition'] ?? null) === false || ($baseline['definition']['authorization'] ?? null) === $block) {
+			return true;
+		}
+
+		$definition = $baseline['definition'];
+		$definition['authorization'] = $block;
+		return $baselines->record(
+			subject: $subject,
+			shipped: new ShippedDefinition(definition: $definition, app: $baseline['app'], appVersion: $baseline['appVersion']),
+		);
+	}//end recordAlignedBaseline()
 }//end class

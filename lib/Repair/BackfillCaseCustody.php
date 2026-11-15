@@ -36,9 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Custody\CaseCustodyChain;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseCustodyChainInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -65,16 +65,16 @@ class BackfillCaseCustody implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService Bridge to OpenRegister.
-	 * @param CaseCustodyChain $custody         The chain the holdings are written into.
+	 * @param SettingsServiceInterface  $settingsService Bridge to OpenRegister.
+	 * @param CaseCustodyChainInterface $custody         The chain the holdings are written into.
 	 * @param IAppConfig       $appConfig       App configuration.
 	 * @param LoggerInterface  $logger          Logger.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseCustodyChain $custody,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseCustodyChainInterface $custody,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -111,9 +111,9 @@ class BackfillCaseCustody implements IRepairStep {
 			return;
 		}
 
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$caseSchema = $this->appConfig->getValueString(Application::APP_ID, 'case_schema', '');
-		$custodySchema = $this->appConfig->getValueString(Application::APP_ID, 'case_custody_schema', '');
+		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$caseSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_schema', '');
+		$custodySchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_custody_schema', '');
 		if ($register === '' || $caseSchema === '' || $custodySchema === '') {
 			$output->info('The case or custody schema is not configured, so the custody backfill was skipped.');
 			return;
@@ -149,6 +149,22 @@ class BackfillCaseCustody implements IRepairStep {
 			return;
 		}
 
+		$tally = $this->backfillAll(rows: $rows);
+
+		$output->info(
+			'Custody backfill: ' . $tally['opened'] . ' holdings opened, '
+			. $tally['skipped'] . ' cases already had one, ' . $tally['failed'] . ' failed.'
+		);
+	}//end backfill()
+
+	/**
+	 * Open a holding for every case row that lacks one, counting what happened.
+	 *
+	 * @param array<int, mixed> $rows The case rows, as arrays or serialisable objects.
+	 *
+	 * @return array{opened: int, skipped: int, failed: int} The tally.
+	 */
+	private function backfillAll(array $rows): array {
 		$tally = ['opened' => 0, 'skipped' => 0, 'failed' => 0];
 		foreach ($rows as $row) {
 			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
@@ -158,11 +174,8 @@ class BackfillCaseCustody implements IRepairStep {
 			$tally[$this->backfillOne(case: (array)$row)] += 1;
 		}
 
-		$output->info(
-			'Custody backfill: ' . $tally['opened'] . ' holdings opened, '
-			. $tally['skipped'] . ' cases already had one, ' . $tally['failed'] . ' failed.'
-		);
-	}//end backfill()
+		return $tally;
+	}//end backfillAll()
 
 	/**
 	 * Open one case's first holding, and say which tally it belongs to.

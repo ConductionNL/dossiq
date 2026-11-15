@@ -11,7 +11,7 @@
  * case's own case type and hands it over as `value`, so these handlers only
  * deal in concrete statusType ids.
  *
- * @spec openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+ * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
  */
 
 import axios from '@nextcloud/axios'
@@ -61,6 +61,19 @@ export async function moveCaseStatus({ card, value, toKey }) {
 		await offeredTransitions(caseId),
 		value,
 	)
+	requireMovable(transition, toKey)
+	return postTransition(caseId, transition)
+}
+
+/**
+ * Refuse a move that is not on offer, or that a guard holds.
+ *
+ * @param {object|null} transition The transition that ends on the status, or null.
+ * @param {string} toKey The column (status name).
+ * @return {void}
+ * @throws {Error} With the sentence the board shows.
+ */
+function requireMovable(transition, toKey) {
 	if (transition === null) {
 		throw new Error(
 			t('dossiq', 'You cannot move this case to {status} from here.', {
@@ -74,6 +87,17 @@ export async function moveCaseStatus({ card, value, toKey }) {
 				|| t('dossiq', 'Something is holding this case here.'),
 		)
 	}
+}
+
+/**
+ * Post the transition, warn about actions that failed, and answer the engine.
+ *
+ * @param {string} caseId The case id.
+ * @param {object} transition The transition.
+ * @return {Promise<object>} The engine's answer.
+ * @throws {Error} With the engine's refusal, the failure as its cause.
+ */
+async function postTransition(caseId, transition) {
 	try {
 		const { data } = await axios.post(
 			generateUrl(
@@ -105,7 +129,7 @@ export async function moveCaseStatus({ card, value, toKey }) {
  * @param {object} query The board's question.
  * @param {object} query.card The case row.
  * @return {Promise<Array<{key: string, allowed: boolean, reason: string}>>} One entry per target statusType id.
- * @spec openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+ * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
  */
 export async function caseStatusTargets({ card }) {
 	const caseId = card?.id ?? card?.['@self']?.id

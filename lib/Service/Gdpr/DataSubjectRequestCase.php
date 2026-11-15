@@ -43,7 +43,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+ * @spec openspec/specs/avg-processing-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -51,6 +51,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Gdpr;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\DataSubjectRequestCaseInterface;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -61,9 +62,9 @@ use OCA\Dossiq\Service\Transitions\FourEyesRule;
  *
  * @psalm-suppress UnusedClass Injected into DataSubjectRequestController.
  *
- * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+ * @spec openspec/specs/avg-processing-surface/spec.md
  */
-class DataSubjectRequestCase {
+class DataSubjectRequestCase implements DataSubjectRequestCaseInterface {
 
 	/**
 	 * The label of the transition that prepares an erasure.
@@ -116,30 +117,12 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When the case names no subject, or the platform refuses.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function preview(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
-		// A preview on an inzage case would be an erasure preview nobody
-		// asked for, sitting on a case whose closing transition does not read
-		// it. The kind is what the whole case type branches on, so it is
-		// checked here rather than left to the screen that offered the button.
-		if (trim((string)($case['dataSubjectRequestType'] ?? '')) !== self::KIND_VERWIJDERING) {
-			throw new RefusedException(
-				rule: 'not-an-erasure-request',
-				sentence: 'Only a verwijdering is previewed. This case asks for something else.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		$subject = trim((string)($case['dataSubject'] ?? ''));
-		if ($subject === '') {
-			throw new RefusedException(
-				rule: 'data-subject-missing',
-				sentence: 'This case names no data subject, so there is nothing to look for.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		self::refuseUnlessErasure(case: $case);
+		$subject = self::subjectOf(case: $case, sentence: 'This case names no data subject, so there is nothing to look for.');
 
 		$preview = $this->platform->previewErasure(
 			subject: $subject,
@@ -147,11 +130,65 @@ class DataSubjectRequestCase {
 			eraseMode: (string)($case['erasureMode'] ?? PlatformDataSubjectRights::MODE_PSEUDONYMISE),
 			requestId: $caseId,
 		);
+		$this->writePreview(case: $case, preview: $preview);
+		$this->recordPreview(caseId: $caseId, preview: $preview);
 
-		$report = (array)($preview['report'] ?? []);
-		$counts = (array)($report['counts'] ?? []);
-		$protected = (array)($report['protected'] ?? []);
+		return $preview;
+	}//end preview()
 
+	/**
+	 * Refuse a preview on a case that does not ask for an erasure.
+	 *
+	 * A preview on an inzage case would be an erasure preview nobody asked
+	 * for, sitting on a case whose closing transition does not read it. The
+	 * kind is what the whole case type branches on, so it is checked here
+	 * rather than left to the screen that offered the button.
+	 *
+	 * @param array<string, mixed> $case The data subject request case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case is not a verwijdering.
+	 */
+	private static function refuseUnlessErasure(array $case): void {
+		if (trim((string)($case['dataSubjectRequestType'] ?? '')) !== self::KIND_VERWIJDERING) {
+			throw new RefusedException(
+				rule: 'not-an-erasure-request',
+				sentence: 'Only a verwijdering is previewed. This case asks for something else.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+	}//end refuseUnlessErasure()
+
+	/**
+	 * The data subject the case names; refused when it names none.
+	 *
+	 * @param array<string, mixed> $case     The data subject request case.
+	 * @param string               $sentence What the refusal says.
+	 *
+	 * @return string The subject.
+	 *
+	 * @throws RefusedException When the case names no data subject.
+	 */
+	private static function subjectOf(array $case, string $sentence): string {
+		$subject = trim((string)($case['dataSubject'] ?? ''));
+		if ($subject === '') {
+			throw new RefusedException(rule: 'data-subject-missing', sentence: $sentence, status: RefusedException::STATUS_UNPROCESSABLE);
+		}
+
+		return $subject;
+	}//end subjectOf()
+
+	/**
+	 * Write the preview onto the case, clearing the previous run's outcome.
+	 *
+	 * @param array<string, mixed> $case    The data subject request case.
+	 * @param array<string, mixed> $preview The platform's preview.
+	 *
+	 * @return void
+	 */
+	private function writePreview(array $case, array $preview): void {
+		[$counts, $protected] = self::previewReport(preview: $preview);
 		$case['erasurePreviewId'] = (string)($preview['uuid'] ?? '');
 		$case['erasureDigest'] = (string)($preview['digest'] ?? '');
 		$case['erasureCounts'] = $counts;
@@ -161,7 +198,18 @@ class DataSubjectRequestCase {
 		// a complete run as covering counts nobody has approved.
 		$case['erasureOutcome'] = [];
 		$this->cases->saveCase($case);
+	}//end writePreview()
 
+	/**
+	 * Record on the timeline that the preview was taken, with its totals.
+	 *
+	 * @param string               $caseId  The data subject request case.
+	 * @param array<string, mixed> $preview The platform's preview.
+	 *
+	 * @return void
+	 */
+	private function recordPreview(string $caseId, array $preview): void {
+		[$counts, $protected] = self::previewReport(preview: $preview);
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::DATA_SUBJECT_REQUEST,
@@ -174,9 +222,20 @@ class DataSubjectRequestCase {
 				'protected' => count($protected),
 			],
 		);
+	}//end recordPreview()
 
-		return $preview;
-	}//end preview()
+	/**
+	 * The counts and the protected records of a preview's report.
+	 *
+	 * @param array<string, mixed> $preview The platform's preview.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<int|string, mixed>} The counts and the protected records.
+	 */
+	private static function previewReport(array $preview): array {
+		$report = (array)($preview['report'] ?? []);
+
+		return [(array)($report['counts'] ?? []), (array)($report['protected'] ?? [])];
+	}//end previewReport()
 
 	/**
 	 * Run the approved erasure, and write back what the platform did.
@@ -187,19 +246,11 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When the approving act was not taken, or the platform refuses.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function run(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
-		$previewId = trim((string)($case['erasurePreviewId'] ?? ''));
-		if ($previewId === '') {
-			throw new RefusedException(
-				rule: 'erasure-preview-unknown',
-				sentence: 'This case carries no erasure preview. Prepare the erasure first.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
+		$previewId = self::previewIdOf(case: $case);
 		$approval = $this->approvingAct(caseId: $caseId);
 
 		$this->platform->approvePreview(previewId: $previewId);
@@ -209,7 +260,43 @@ class DataSubjectRequestCase {
 		$case['erasureApprovedBy'] = $approval['actor'];
 		$case['erasureApprovedAt'] = $approval['at'];
 		$this->cases->saveCase($case);
+		$this->recordRun(caseId: $caseId, case: $case);
 
+		return $outcome;
+	}//end run()
+
+	/**
+	 * The erasure preview the case carries; refused when it carries none.
+	 *
+	 * @param array<string, mixed> $case The data subject request case.
+	 *
+	 * @return string The preview id.
+	 *
+	 * @throws RefusedException When the case carries no erasure preview.
+	 */
+	private static function previewIdOf(array $case): string {
+		$previewId = trim((string)($case['erasurePreviewId'] ?? ''));
+		if ($previewId === '') {
+			throw new RefusedException(
+				rule: 'erasure-preview-unknown',
+				sentence: 'This case carries no erasure preview. Prepare the erasure first.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $previewId;
+	}//end previewIdOf()
+
+	/**
+	 * Record on the timeline what the run did, read off the case as just written.
+	 *
+	 * @param string               $caseId The data subject request case.
+	 * @param array<string, mixed> $case   The case, carrying the preview and the run's outcome.
+	 *
+	 * @return void
+	 */
+	private function recordRun(string $caseId, array $case): void {
+		$outcome = (array)$case['erasureOutcome'];
 		$withheld = $this->leftBehind(outcome: $outcome);
 		$this->timeline->record(
 			caseId: $caseId,
@@ -217,14 +304,12 @@ class DataSubjectRequestCase {
 			message: $this->runSentence(outcome: $outcome, withheld: $withheld),
 			fields: [
 				'act' => 'run',
-				'previewId' => $previewId,
+				'previewId' => self::previewIdOf(case: $case),
 				'withheld' => $withheld,
 				'complete' => (($outcome['complete'] ?? false) === true),
 			],
 		);
-
-		return $outcome;
-	}//end run()
+	}//end recordRun()
 
 	/**
 	 * Ask the platform for this subject's own export, and record it.
@@ -235,13 +320,33 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When the case names no subject, or the platform refuses.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function requestExport(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
-		// A verwijdering is answered by erasing, not by handing the person a
-		// copy of what we are about to destroy. Inzage and correctie both
-		// need the export: you cannot correct what you have not been shown.
+		self::refuseIfErasure(case: $case);
+		$subject = self::subjectOf(case: $case, sentence: 'This case names no data subject, so there is nothing to export.');
+		$export = $this->platform->requestExport(subject: $subject, type: $this->optional(value: ($case['dataSubjectType'] ?? null)), requestId: $caseId);
+		$this->writeExport(case: $case, export: $export);
+		$this->recordExport(caseId: $caseId, export: $export);
+
+		return $export;
+	}//end requestExport()
+
+	/**
+	 * Refuse an export on a case that asks for an erasure.
+	 *
+	 * A verwijdering is answered by erasing, not by handing the person a copy
+	 * of what we are about to destroy. Inzage and correctie both need the
+	 * export: you cannot correct what you have not been shown.
+	 *
+	 * @param array<string, mixed> $case The data subject request case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case is a verwijdering.
+	 */
+	private static function refuseIfErasure(array $case): void {
 		if (trim((string)($case['dataSubjectRequestType'] ?? '')) === self::KIND_VERWIJDERING) {
 			throw new RefusedException(
 				rule: 'not-an-access-request',
@@ -249,36 +354,24 @@ class DataSubjectRequestCase {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
+	}//end refuseIfErasure()
 
-		$subject = trim((string)($case['dataSubject'] ?? ''));
-		if ($subject === '') {
-			throw new RefusedException(
-				rule: 'data-subject-missing',
-				sentence: 'This case names no data subject, so there is nothing to export.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		$export = $this->platform->requestExport(
-			subject: $subject,
-			type: $this->optional(value: ($case['dataSubjectType'] ?? null)),
-			requestId: $caseId,
-		);
-
-		$this->writeExport(case: $case, export: $export);
-
+	/**
+	 * Record on the timeline that the export was asked for.
+	 *
+	 * @param string               $caseId The data subject request case.
+	 * @param array<string, mixed> $export The platform's export record.
+	 *
+	 * @return void
+	 */
+	private function recordExport(string $caseId, array $export): void {
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::DATA_SUBJECT_REQUEST,
 			message: 'The subject export was asked for. It is ready when the platform says so.',
-			fields: [
-				'act' => 'export',
-				'exportId' => (string)($export['uuid'] ?? ''),
-			],
+			fields: ['act' => 'export', 'exportId' => (string)($export['uuid'] ?? '')],
 		);
-
-		return $export;
-	}//end requestExport()
+	}//end recordExport()
 
 	/**
 	 * What the case can offer the data subject right now.
@@ -292,7 +385,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return array<string, mixed> `{exportId, downloadable, expiresAt, expired}`.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function exportState(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -331,7 +424,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When nobody approved, or the preparer approved themselves.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function approvingAct(string $caseId): array {
 		$records = (array)($this->cases->findStatusRecords(caseId: $caseId) ?? []);
@@ -371,7 +464,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function requireCase(string $caseId): array {
 		$case = $this->cases->loadCase(caseId: $caseId);
@@ -394,7 +487,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function writeExport(array $case, array $export): void {
 		$case['subjectExportId'] = (string)($export['uuid'] ?? '');
@@ -410,7 +503,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return int The withheld, refused and failed together.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function leftBehind(array $outcome): int {
 		$total = 0;
@@ -429,7 +522,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function runSentence(array $outcome, int $withheld): string {
 		$destroyed = count((array)($outcome['destroyed'] ?? []));
@@ -450,7 +543,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function countSentence(array $counts): string {
 		return $this->bucketTotal(counts: $counts, bucket: 'erasable') . ' erasable, '
@@ -466,7 +559,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function bucketTotal(array $counts, string $bucket): int {
 		$total = 0;
@@ -484,7 +577,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function optional(mixed $value): ?string {
 		$text = trim((string)($value ?? ''));

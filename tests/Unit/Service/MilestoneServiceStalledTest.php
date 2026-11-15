@@ -48,6 +48,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @covers \OCA\Dossiq\Service\Milestone\StallCandidate
  * @covers \OCA\Dossiq\Service\Milestone\StallWindow
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class MilestoneServiceStalledTest extends TestCase {
 	use MatchesGoldenFiles;

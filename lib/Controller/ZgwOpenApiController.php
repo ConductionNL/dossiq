@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -72,7 +72,7 @@ class ZgwOpenApiController extends Controller {
 	 * @param IRequest $request The incoming request
 	 */
 	public function __construct(IRequest $request) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -125,26 +125,17 @@ class ZgwOpenApiController extends Controller {
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function spec(string $api): DataDisplayResponse|JSONResponse {
 		if (isset(self::APIS[$api]) === false) {
-			return new JSONResponse(
-				data: ['detail' => 'Unknown ZGW API: ' . $api],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return $this->notFound(detail: 'Unknown ZGW API: ' . $api);
 		}
 
 		$path = $this->specFilePath(api: $api);
 		if (is_file($path) === false) {
-			return new JSONResponse(
-				data: ['detail' => 'OpenAPI document not found for: ' . $api],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return $this->notFound(detail: 'OpenAPI document not found for: ' . $api);
 		}
 
 		$yaml = file_get_contents($path);
 		if ($yaml === false) {
-			return new JSONResponse(
-				data: ['detail' => 'Failed to read OpenAPI document for: ' . $api],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return $this->notFound(detail: 'Failed to read OpenAPI document for: ' . $api);
 		}
 
 		return new DataDisplayResponse(
@@ -153,6 +144,22 @@ class ZgwOpenApiController extends Controller {
 			headers: ['Content-Type' => 'application/yaml']
 		);
 	}//end spec()
+
+	/**
+	 * The 404 answer, saying which document could not be served.
+	 *
+	 * @param string $detail What could not be served.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/zgw-openapi-publication/spec.md
+	 */
+	private function notFound(string $detail): JSONResponse {
+		return new JSONResponse(
+			data: ['detail' => $detail],
+			statusCode: Http::STATUS_NOT_FOUND
+		);
+	}//end notFound()
 
 	/**
 	 * Resolve the on-disk path of an allow-listed API's OpenAPI document.

@@ -37,7 +37,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -53,7 +53,7 @@ use Throwable;
 /**
  * Whether the thing behind a marker is true of this case, and why.
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseAttentionConditionService {
 
@@ -109,7 +109,7 @@ class CaseAttentionConditionService {
 	 *
 	 * @return boolean True when the rows it reads were not fetched.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function unanswerable(string $condition, array $context): bool {
 		$needs = (string)(self::CONTEXT[$condition] ?? '');
@@ -132,38 +132,88 @@ class CaseAttentionConditionService {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The context.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function contextFor(string $caseId): array {
 		$caseId = trim($caseId);
-		if ($caseId === '' || $this->settingsService === null) {
-			return [];
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '') {
+		$store = $this->adviceStore(caseId: $caseId);
+		if ($store === null) {
 			return [];
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: 'adviceRequest',
-				filters: ['case' => $caseId, '_limit' => 100]
-			);
+			$rows = $this->adviceRequestsOf(store: $store, caseId: $caseId);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the advice requests behind a marker could not be read; '
-				. 'every marker that reads them is left exactly as it stood',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
-			);
+			$this->warnUnread(caseId: $caseId, error: $e);
 			return [];
 		}
 
 		return ['adviceRequests' => $rows];
 	}//end contextFor()
+
+	/**
+	 * The object service and register to read a case's advice requests from, or null when they cannot be asked.
+	 *
+	 * @param string $caseId The case UUID, trimmed.
+	 *
+	 * @return array{0: object, 1: string}|null The object service and the register.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function adviceStore(string $caseId): ?array {
+		if ($caseId === '' || $this->settingsService === null) {
+			return null;
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '') {
+			return null;
+		}
+
+		return [$objectService, $register];
+	}//end adviceStore()
+
+	/**
+	 * The case's advice requests.
+	 *
+	 * @param array{0: object, 1: string} $store  The object service and the register.
+	 * @param string                      $caseId The case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The advice requests.
+	 *
+	 * @throws Throwable When OpenRegister cannot be read.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function adviceRequestsOf(array $store, string $caseId): array {
+		[$objectService, $register] = $store;
+
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: 'adviceRequest',
+			filters: ['case' => $caseId, '_limit' => 100]
+		);
+	}//end adviceRequestsOf()
+
+	/**
+	 * Log that the advice requests behind a marker could not be read.
+	 *
+	 * @param string    $caseId The case UUID.
+	 * @param Throwable $error  Why the read failed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function warnUnread(string $caseId, Throwable $error): void {
+		$this->logger->warning(
+			'Dossiq: the advice requests behind a marker could not be read; '
+			. 'every marker that reads them is left exactly as it stood',
+			['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $error->getMessage()]
+		);
+	}//end warnUnread()
 
 	/**
 	 * Why a condition is true on this case, or the empty string.
@@ -180,7 +230,7 @@ class CaseAttentionConditionService {
 	 *
 	 * @return string The reason, or the empty string when the condition is false.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function reasonFor(
 		string $condition,

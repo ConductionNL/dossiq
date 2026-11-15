@@ -38,6 +38,7 @@ use OCP\IConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Minimal hand-written ObjectService double with a REAL `find(string $id,
@@ -67,7 +68,9 @@ class FakeCaseObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, string $register, string $schema): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		if ($this->throws !== null) {
 			throw $this->throws;
 		}

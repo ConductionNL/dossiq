@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * One translation per retired step type.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class RetiredNodeTranslator {
 
@@ -139,8 +139,8 @@ class RetiredNodeTranslator {
 	 *
 	 * @throws UnmappableStep When the configuration has no faithful equivalent.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
-	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function translate(string $translation, array $config): array {
 		return match ($translation) {
@@ -172,7 +172,7 @@ class RetiredNodeTranslator {
 	 *
 	 * @throws UnmappableStep When nothing replaces the step, or its configuration cannot be carried.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function stepsFor(array $row, array $config): array {
 		if (isset($row['translation']) === true) {
@@ -195,20 +195,10 @@ class RetiredNodeTranslator {
 	 */
 	private function emailFromAction(array $config): array {
 		$recipient = $this->syntax->recipientFromRef(ref: trim((string)($config['recipientRef'] ?? '')));
-		$body = $this->syntax->forMessaging(template: (string)($config['bodyTemplate'] ?? ''), what: 'body');
-		if (trim($body) === '') {
-			throw new UnmappableStep(message: 'the step has no body, which the send-email step refuses');
-		}
+		$body = self::withBody(body: $this->syntax->forMessaging(template: (string)($config['bodyTemplate'] ?? ''), what: 'body'));
+		$subject = $this->syntax->forMessaging(template: (string)($config['subjectTemplate'] ?? ''), what: 'subject');
 
-		return [
-			'type' => self::SEND_EMAIL,
-			'config' => [
-				'recipients' => [$recipient],
-				'externalRecipients' => self::EXTERNAL_OBJECT,
-				'subject' => $this->syntax->forMessaging(template: (string)($config['subjectTemplate'] ?? ''), what: 'subject'),
-				'body' => $body,
-			],
-		];
+		return self::sendEmail(recipient: $recipient, message: ['subject' => $subject, 'body' => $body]);
 	}//end emailFromAction()
 
 	/**
@@ -235,21 +225,47 @@ class RetiredNodeTranslator {
 			throw new UnmappableStep(message: 'the step names no recipient');
 		}
 
-		$body = (string)($config['body'] ?? '');
+		$body = self::withBody(body: (string)($config['body'] ?? ''));
+
+		return self::sendEmail(recipient: $recipient, message: ['subject' => (string)($config['subject'] ?? ''), 'body' => $body]);
+	}//end emailFromTransition()
+
+	/**
+	 * The body of a mail; refused when it is blank, which the send-email step refuses.
+	 *
+	 * @param string $body The body.
+	 *
+	 * @return string The body.
+	 *
+	 * @throws UnmappableStep When the body is blank.
+	 */
+	private static function withBody(string $body): string {
 		if (trim($body) === '') {
 			throw new UnmappableStep(message: 'the step has no body, which the send-email step refuses');
 		}
 
+		return $body;
+	}//end withBody()
+
+	/**
+	 * The send-email step for one recipient.
+	 *
+	 * @param string                $recipient The recipient.
+	 * @param array<string, string> $message   The `subject` and `body`.
+	 *
+	 * @return array{type: string, config: array<string, mixed>} The send-email step.
+	 */
+	private static function sendEmail(string $recipient, array $message): array {
 		return [
 			'type' => self::SEND_EMAIL,
 			'config' => [
 				'recipients' => [$recipient],
 				'externalRecipients' => self::EXTERNAL_OBJECT,
-				'subject' => (string)($config['subject'] ?? ''),
-				'body' => $body,
+				'subject' => $message['subject'],
+				'body' => $message['body'],
 			],
 		];
-	}//end emailFromTransition()
+	}//end sendEmail()
 
 	/**
 	 * `dossiq.action.notifyRole`: tell everyone who holds a role on the case.
@@ -373,6 +389,30 @@ class RetiredNodeTranslator {
 		}
 
 		[$storedKey, $table] = $this->decisionTable(key: $key);
+		$fields = $this->decisionOutputFields(table: $table, config: $config, key: $key);
+
+		$step = $this->decisionStep(storedKey: $storedKey, config: $config);
+
+		return [
+			['type' => self::DECISION_TABLE, 'config' => $step],
+			$this->caseWrite(fields: $fields, output: (string)($config['output'] ?? '')),
+		];
+	}//end decision()
+
+	/**
+	 * The case fields the decision table's outputs are written to.
+	 *
+	 * @param array<string, mixed> $table The stored table definition.
+	 * @param array<string, mixed> $config The retired configuration.
+	 * @param string $key The table's dossiq key.
+	 *
+	 * @return array<int, string> The fields.
+	 *
+	 * @throws UnmappableStep When the table declares no outputs.
+	 *
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
+	 */
+	private function decisionOutputFields(array $table, array $config, string $key): array {
 		$outputMapping = (array)($config['outputMapping'] ?? []);
 		$fields = [];
 		foreach ((array)($table['outputs'] ?? []) as $output) {
@@ -386,6 +426,20 @@ class RetiredNodeTranslator {
 			throw new UnmappableStep(message: 'the decision table "' . $key . '" declares no outputs to write');
 		}
 
+		return $fields;
+	}//end decisionOutputFields()
+
+	/**
+	 * The decision-table step's configuration: the stored table and the mappings the step declared.
+	 *
+	 * @param string $storedKey The stored table's key.
+	 * @param array<string, mixed> $config The retired configuration.
+	 *
+	 * @return array<string, mixed> The step configuration.
+	 *
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
+	 */
+	private function decisionStep(string $storedKey, array $config): array {
 		$step = ['tableRef' => $storedKey];
 		foreach (['inputMapping', 'outputMapping'] as $mapping) {
 			if (is_array($config[$mapping] ?? null) === true && $config[$mapping] !== []) {
@@ -393,11 +447,8 @@ class RetiredNodeTranslator {
 			}
 		}
 
-		return [
-			['type' => self::DECISION_TABLE, 'config' => $step],
-			$this->caseWrite(fields: $fields, output: (string)($config['output'] ?? '')),
-		];
-	}//end decision()
+		return $step;
+	}//end decisionStep()
 
 	/**
 	 * Read a stored decision table from OpenRegister's register by its dossiq key.
