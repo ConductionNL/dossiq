@@ -89,14 +89,12 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 		string $aangezochtGezag,
 		string $rationale,
 	): array {
-		$objectService = $this->getObjectService();
-
-		$register = $this->configString(key: 'register', default: '');
-		$case = $this->requireCase(objectService: $objectService, register: $register, caseId: $caseId);
+		$store = ['objectService' => $this->getObjectService(), 'register' => $this->configString(key: 'register', default: '')];
+		$case = $this->requireCase(store: $store, caseId: $caseId);
 
 		$requestRef = (string)($case['permitApplicationRef'] ?? '');
 
-		$requestSchema = $this->configString(key: 'dso_samenwerkverzoek_schema', default: 'samenwerkverzoek');
+		$store['schema'] = $this->configString(key: 'dso_samenwerkverzoek_schema', default: 'samenwerkverzoek');
 
 		$samenwerkverzoek = [
 			'caseId' => $caseId,
@@ -107,19 +105,33 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 			'requestedOn' => date('c'),
 		];
 
+		return $this->saveAndAnnounce(store: $store, samenwerkverzoek: $samenwerkverzoek);
+	}//end initiateSamenwerking()
+
+	/**
+	 * Store a new samenwerkverzoek and announce it.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store            The OpenRegister
+	 *                                                                                         ObjectService, register
+	 *                                                                                         and samenwerkverzoek schema.
+	 * @param array<string,mixed>                                             $samenwerkverzoek The samenwerkverzoek as submitted.
+	 *
+	 * @return array<string,mixed> The created samenwerkverzoek object
+	 */
+	private function saveAndAnnounce(array $store, array $samenwerkverzoek): array {
 		// The saveObject() call returns an ObjectEntityInterface (which extends
 		// JsonSerializable), never an array — returning it straight out of a
 		// method declared `: array` is a TypeError.
-		$created = $objectService->saveObject(
-			register: $register,
-			schema: $requestSchema,
+		$created = $store['objectService']->saveObject(
+			register: $store['register'],
+			schema: $store['schema'],
 			object: $samenwerkverzoek
 		)->jsonSerialize();
 
 		$this->announceInitiated(created: $created, samenwerkverzoek: $samenwerkverzoek);
 
 		return $created;
-	}//end initiateSamenwerking()
+	}//end saveAndAnnounce()
 
 	/**
 	 * Respond to a pending samenwerkverzoek.
@@ -151,7 +163,7 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 		);
 
 		$request = $this->requirePending(request: $request, samenwerkId: $samenwerkId);
-		$request = $this->withResponse(request: $request, accept: $accept, advies: $advies);
+		$request = $this->withResponse(request: $request, response: ['accept' => $accept, 'advies' => $advies]);
 
 		// See initiateSamenwerking() — saveObject() returns an entity, not an
 		// array.
@@ -194,9 +206,8 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 	/**
 	 * Load the zaak a samenwerkverzoek is initiated for.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param string $register      The register id
-	 * @param string $caseId        The UUID of the zaak
+	 * @param array{objectService: object, register: string} $store  The OpenRegister ObjectService and the register id
+	 * @param string                                         $caseId The UUID of the zaak
 	 *
 	 * @return array<string,mixed> The zaak
 	 *
@@ -204,12 +215,12 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
 	 */
-	private function requireCase(object $objectService, string $register, string $caseId): array {
+	private function requireCase(array $store, string $caseId): array {
 		$caseSchema = $this->configString(key: 'case_schema', default: '');
 
 		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
+			objectService: $store['objectService'],
+			register: $store['register'],
 			schema: $caseSchema,
 			id: $caseId
 		);
@@ -285,21 +296,20 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 	/**
 	 * Stamp the response onto a samenwerkverzoek.
 	 *
-	 * @param array<string,mixed> $request The pending samenwerkverzoek
-	 * @param bool                $accept  True to accept, false to reject
-	 * @param string              $advies  The advies/reasoning text
+	 * @param array<string,mixed>                  $request  The pending samenwerkverzoek
+	 * @param array{accept: bool, advies: string} $response True to accept, false to reject, and the advies/reasoning text
 	 *
 	 * @return array<string,mixed> The samenwerkverzoek with status, advice and respondedOn set
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T05
 	 */
-	private function withResponse(array $request, bool $accept, string $advies): array {
+	private function withResponse(array $request, array $response): array {
 		$request['status'] = 'refused';
-		if ($accept === true) {
+		if ($response['accept'] === true) {
 			$request['status'] = 'accepted';
 		}
 
-		$request['advice'] = $advies;
+		$request['advice'] = $response['advies'];
 		$request['respondedOn'] = date('c');
 
 		return $request;
