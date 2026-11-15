@@ -72,7 +72,7 @@ class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandl
 		}
 
 		try {
-			$this->writeAnswer(objects: $objects, caseId: $caseId, name: $name, actionConfig: $actionConfig);
+			$this->writeAnswer(objects: $objects, answer: ['caseId' => $caseId, 'name' => $name, 'value' => ($actionConfig['value'] ?? null)]);
 		} catch (Throwable $e) {
 			$this->logger->error('SetCaseAnswerHandler: the answer was not written', ['case' => $caseId, 'exception' => $e->getMessage()]);
 
@@ -85,21 +85,19 @@ class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandl
 	/**
 	 * Read the stored case, set the answer on it and save it.
 	 *
-	 * @param object $objects The OpenRegister object service.
-	 * @param string $caseId The case id.
-	 * @param string $name The property definition's name.
-	 * @param array<string, mixed> $actionConfig `{name, value}`.
+	 * @param object                                            $objects The OpenRegister object service.
+	 * @param array{caseId: string, name: string, value: mixed} $answer  The case id, the property definition's name and the value.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
-	private function writeAnswer(object $objects, string $caseId, string $name, array $actionConfig): void {
-		$stored = $this->storedCase(objects: $objects, caseId: $caseId);
+	private function writeAnswer(object $objects, array $answer): void {
+		$stored = $this->storedCase(objects: $objects, caseId: $answer['caseId']);
 		$stored['properties'] = self::withAnswer(
 			answers: (array)($stored['properties'] ?? []),
-			name: $name,
-			value: ($actionConfig['value'] ?? null)
+			name: $answer['name'],
+			value: $answer['value']
 		);
 		$objects->saveObject(
 			object: $stored,

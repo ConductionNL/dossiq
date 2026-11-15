@@ -445,7 +445,7 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		}
 
 		$lookup = new StartableFlowLookup(objectService: $objectService, register: $register, typeSchema: $typeSchema);
-		$case = $this->fetch(lookup: $lookup, schema: $caseSchema, id: $caseId);
+		$case = $this->fetch(lookup: $lookup, object: ['schema' => $caseSchema, 'id' => $caseId]);
 		if ($case === null) {
 			throw new RuntimeException('case_not_found');
 		}
@@ -463,7 +463,7 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	 */
 	private function flowIdsOfType(StartableFlowLookup $lookup, array $caseRow): array {
 		$caseTypeId = (string)($caseRow['caseType'] ?? '');
-		$caseType = $this->fetch(lookup: $lookup, schema: $lookup->typeSchema, id: $caseTypeId);
+		$caseType = $this->fetch(lookup: $lookup, object: ['schema' => $lookup->typeSchema, 'id' => $caseTypeId]);
 		if ($caseType === null) {
 			return [];
 		}
@@ -552,19 +552,19 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 	/**
 	 * Fetch one object, tolerating a fail-closed miss.
 	 *
-	 * @param StartableFlowLookup $lookup The ObjectService and register.
-	 * @param string              $schema The schema slug.
-	 * @param string              $id     The object id.
+	 * @param StartableFlowLookup                $lookup The ObjectService and register.
+	 * @param array{schema: string, id: string} $object The schema slug and the object id.
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	private function fetch(StartableFlowLookup $lookup, string $schema, string $id): ?array {
+	private function fetch(StartableFlowLookup $lookup, array $object): ?array {
+		$id = $object['id'];
 		if ($id === '') {
 			return null;
 		}
 
 		try {
-			$found = $lookup->objectService->find($id, register: $lookup->register, schema: $schema);
+			$found = $lookup->objectService->find($id, register: $lookup->register, schema: $object['schema']);
 		} catch (Throwable $e) {
 			$this->logger->debug('CaseFlowActions: object lookup failed', ['id' => $id, 'exception' => $e->getMessage()]);
 
