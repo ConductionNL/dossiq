@@ -36,11 +36,12 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\External\Woz\WozApiAdapter
  * @covers \OCA\Dossiq\Service\External\Woz\LogWozAdapter
+ * @covers \OCA\Dossiq\Service\External\Woz\WozLookupResult
  *
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
- * @uses \OCA\Dossiq\Service\External\Woz\WozLookupResult
  * @uses \OCA\Dossiq\Service\External\Woz\WozResponseMapper
  * @uses \OCA\Dossiq\Service\External\RegisterValues
+ * @uses \OCA\Dossiq\Service\External\HalResponseBody
  */
 class WozAdapterTest extends TestCase {
 	/**

@@ -38,12 +38,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Lifecycle;
 
+use OCA\Dossiq\Kernel\Contracts\CaseActsInterface;
+
 /**
  * One seam over the classes that own the acts on a case.
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseActs {
+class CaseActs implements CaseActsInterface {
 
 	/**
 	 * Constructor.

@@ -31,10 +31,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Consultation;
 
+use OCA\Dossiq\Kernel\Contracts\ConsultationAccessGuardInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\Support\SessionUid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
@@ -47,7 +49,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
-class ConsultationAccessGuard {
+class ConsultationAccessGuard implements ConsultationAccessGuardInterface {
 	/**
 	 * Constructor.
 	 *
@@ -165,12 +167,7 @@ class ConsultationAccessGuard {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function currentUid(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new SessionUid(userSession: $this->userSession))->uid();
 	}//end currentUid()
 
 	/**

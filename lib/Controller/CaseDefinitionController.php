@@ -31,9 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseDefinitionExportService;
-use OCA\Dossiq\Service\CaseDefinitionImportService;
-use OCA\Dossiq\Service\CaseTypeCopyService;
+use OCA\Dossiq\Kernel\Contracts\CaseDefinitionExportServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseDefinitionImportServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeCopyServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -56,17 +56,17 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request object.
-	 * @param CaseDefinitionExportService $exportService The export service.
-	 * @param CaseDefinitionImportService $importService The import service.
-	 * @param CaseTypeCopyService $copyService The copy/guarded-delete service.
+	 * @param CaseDefinitionExportServiceInterface $exportService The export service.
+	 * @param CaseDefinitionImportServiceInterface $importService The import service.
+	 * @param CaseTypeCopyServiceInterface $copyService The copy/guarded-delete service.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseDefinitionExportService $exportService,
-		private readonly CaseDefinitionImportService $importService,
-		private readonly CaseTypeCopyService $copyService,
+		private readonly CaseDefinitionExportServiceInterface $exportService,
+		private readonly CaseDefinitionImportServiceInterface $importService,
+		private readonly CaseTypeCopyServiceInterface $copyService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);

@@ -43,6 +43,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseJournal
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class CaseJournalReadingCopiesTest extends TestCase {
 	/**

@@ -34,6 +34,7 @@ use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The `findAll`/`saveObject` seam this test drives.
@@ -65,7 +66,7 @@ interface QuotaWritePathObjectServiceStub {
 	 *
 	 * @return array<string, mixed> The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }
 
 /**
@@ -103,7 +104,10 @@ class TenantQuotaWritePathsTest extends TestCase {
 		$objectService = $this->createMock(QuotaWritePathObjectServiceStub::class);
 		$objectService->method('findAll')->willReturn($rows);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = $object;
 
 				return $object;
@@ -141,9 +145,9 @@ class TenantQuotaWritePathsTest extends TestCase {
 	 * Seeding a tier puts each limit in exactly one place.
 	 *
 	 * The whole point of decision 2b, asserted as a partition rather than as
-	 * two separate facts: `storage_gb` and `api_calls_per_hour` go to the
-	 * Organisation and carry NO `limit` on their row, `cases_per_month` and
-	 * `active_users` keep theirs on the row and never reach the Organisation.
+	 * two separate facts: `storage_mb`, `api_calls_per_hour` and `active_users`
+	 * go to the Organisation and carry NO `limit` on their row, `cases_per_month`
+	 * keeps its own on the row and never reaches the Organisation.
 	 * Nothing may appear in both places, which is the drift this removes.
 	 *
 	 * @return void
@@ -163,8 +167,8 @@ class TenantQuotaWritePathsTest extends TestCase {
 			$onTheOrganisation[$write['quotaType']] = $write['limit'];
 		}
 
-		$this->assertSame(['cases_per_month' => 100, 'active_users' => 5], $onTheRow);
-		$this->assertSame(['storage_gb' => 10, 'api_calls_per_hour' => 1000], $onTheOrganisation);
+		$this->assertSame(['cases_per_month' => 100], $onTheRow);
+		$this->assertSame(['storage_mb' => 10240, 'active_users' => 5, 'api_calls_per_hour' => 1000], $onTheOrganisation);
 		$this->assertSame(
 			[],
 			array_intersect_key($onTheRow, $onTheOrganisation),
@@ -189,7 +193,7 @@ class TenantQuotaWritePathsTest extends TestCase {
 		sort($written);
 
 		$this->assertSame(
-			['active_users', 'api_calls_per_hour', 'cases_per_month', 'storage_gb'],
+			['active_users', 'api_calls_per_hour', 'cases_per_month', 'storage_mb'],
 			$written
 		);
 
@@ -218,9 +222,11 @@ class TenantQuotaWritePathsTest extends TestCase {
 			$byType[$write['quotaType']] = $write['limit'];
 		}
 
-		$this->assertArrayHasKey('storage_gb', $byType);
+		$this->assertArrayHasKey('storage_mb', $byType);
 		$this->assertArrayHasKey('api_calls_per_hour', $byType);
-		$this->assertNull($byType['storage_gb']);
+		$this->assertArrayHasKey('active_users', $byType);
+		$this->assertNull($byType['storage_mb']);
+		$this->assertNull($byType['active_users']);
 		$this->assertNull($byType['api_calls_per_hour']);
 	}
 

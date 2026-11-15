@@ -105,22 +105,38 @@ class ZtcConceptRules {
 		?array $existingObject,
 		?bool $parentCaseTypeDraft,
 	): ?array {
-		$change = new ZtcChange(resource: $resource, action: $action, body: $body);
+		return $this->conceptRefusal(
+			change: new ZtcChange(resource: $resource, action: $action, body: $body),
+			stored: ['existingObject' => $existingObject, 'parentCaseTypeDraft' => $parentCaseTypeDraft]
+		);
+	}//end checkConceptProtection()
+
+	/**
+	 * The refusal of a change to a published concept resource or to a sub-resource of a published zaaktype, or null.
+	 *
+	 * @param ZtcChange            $change The resource, the action and the request body.
+	 * @param array<string, mixed> $stored The `existingObject` (or null) and whether the parent zaaktype is a
+	 *                                     draft as `parentCaseTypeDraft` (or null).
+	 *
+	 * @return array|null The refusal, or null when the change may go ahead.
+	 */
+	private function conceptRefusal(ZtcChange $change, array $stored): ?array {
+		$resource = $change->resource;
 
 		// Ztc-009: Direct concept resources (zaaktypen, besluittypen, informatieobjecttypen).
 		if (in_array($resource, self::CONCEPT_RESOURCES, true) === true) {
-			return $this->checkDirectDraftProtection(change: $change, existingObject: $existingObject);
+			return $this->checkDirectDraftProtection(change: $change, existingObject: $stored['existingObject']);
 		}
 
 		// Ztc-010: Sub-resources of zaaktypen.
 		if (in_array($resource, self::ZAAKTYPE_SUB_RESOURCES, true) === true
-			&& $parentCaseTypeDraft === false
+			&& $stored['parentCaseTypeDraft'] === false
 		) {
 			return $this->publishedParentRefusal(change: $change);
 		}
 
 		return null;
-	}//end checkConceptProtection()
+	}//end conceptRefusal()
 
 	/**
 	 * The refusal for a change to a sub-resource of a published zaaktype (ztc-010).
@@ -196,6 +212,19 @@ class ZtcConceptRules {
 			return $body;
 		}
 
+		$body['concept'] = $this->storedDraft(existingObject: $existingObject);
+
+		return $body;
+	}//end preserveConcept()
+
+	/**
+	 * The concept value the stored object carries, its string and integer spellings read as booleans.
+	 *
+	 * @param array $existingObject The existing object data
+	 *
+	 * @return mixed True or false when it is spelled as one, else the value as stored
+	 */
+	private function storedDraft(array $existingObject): mixed {
 		$existingDraft = $existingObject['isDraft'] ?? ($existingObject['concept'] ?? true);
 		if ($existingDraft === 'true' || $existingDraft === '1' || $existingDraft === 1) {
 			$existingDraft = true;
@@ -203,10 +232,8 @@ class ZtcConceptRules {
 			$existingDraft = false;
 		}
 
-		$body['concept'] = $existingDraft;
-
-		return $body;
-	}//end preserveConcept()
+		return $existingDraft;
+	}//end storedDraft()
 
 	/**
 	 * Check if a direct concept resource is published (ztc-009).

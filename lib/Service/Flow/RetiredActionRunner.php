@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Flow;
 
 use OCA\OpenRegister\Service\Flow\FlowNodeCall;
+use OCA\OpenRegister\Service\Flow\FlowNodeInvoker;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -164,6 +165,23 @@ class RetiredActionRunner {
 			return ['type' => $type, 'ok' => false, 'error' => 'retired_action_needs_openregister'];
 		}
 
+		return ['type' => $type] + $this->runSteps(
+			registry: $registry,
+			run: ['steps' => $steps, 'case' => $case, 'context' => $this->runContext(context: $context)],
+		);
+	}//end run()
+
+	/**
+	 * The context the steps run in: the acting user fills an empty run-as and triggered-by.
+	 *
+	 * @param array<string, mixed> $context The transition or task context; `userId` is who acts.
+	 *
+	 * @return array<string, mixed> The run context.
+	 *
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
+	 */
+	private function runContext(array $context): array {
 		$runContext = $context;
 		foreach ([self::RUN_AS, self::TRIGGERED_BY] as $ownerKey) {
 			if (trim((string)($runContext[$ownerKey] ?? '')) === '' && trim((string)($context['userId'] ?? '')) !== '') {
@@ -171,10 +189,28 @@ class RetiredActionRunner {
 			}
 		}
 
-		$items = [['json' => $case]];
+		return $runContext;
+	}//end runContext()
+
+	/**
+	 * Run the steps in order, each on the previous one's items.
+	 *
+	 * @param FlowNodeRegistry     $registry OpenRegister's node catalogue.
+	 * @param array<string, mixed> $run      The `steps`, the `case` they start on and the run `context`.
+	 *
+	 * @return array{ok: bool, error?: string} The result row, without its type.
+	 *
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
+	 */
+	private function runSteps(FlowNodeRegistry $registry, array $run): array {
+		$items = [['json' => $run['case']]];
 		try {
-			foreach ($steps as $step) {
-				$items = $registry->get(type: $step['type'])->execute(call: new FlowNodeCall(items: $items, config: $step['config'], context: $runContext));
+			foreach ($run['steps'] as $step) {
+				$items = (new FlowNodeInvoker())->execute(
+					node: $registry->get(type: $step['type']),
+					call: new FlowNodeCall(items: $items, config: $step['config'], context: $run['context'])
+				);
 			}
 		} catch (Throwable $e) {
 			$message = $e->getMessage();
@@ -182,11 +218,11 @@ class RetiredActionRunner {
 				$message = 'action_failed';
 			}
 
-			return ['type' => $type, 'ok' => false, 'error' => $message];
+			return ['ok' => false, 'error' => $message];
 		}
 
-		return ['type' => $type, 'ok' => true];
-	}//end run()
+		return ['ok' => true];
+	}//end runSteps()
 
 	/**
 	 * The steps a declaration becomes.

@@ -43,6 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
 use OCA\Dossiq\Service\Cases\CaseMergeRelink;
 use OCA\Dossiq\Service\Cases\CaseMergeRule;
 use OCA\Dossiq\Service\Cases\CaseMergeStore;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
  */
-class CaseMergeService {
+class CaseMergeService implements CaseMergeServiceInterface {
 
 	/**
 	 * Term statuses that still count as running, and so are the ones a merge
@@ -137,6 +138,25 @@ class CaseMergeService {
 			return $caseId;
 		}
 
+		$survivor = $this->walkMergeChain(caseId: $caseId, current: $current);
+		if ($survivor !== null) {
+			return $survivor;
+		}
+
+		$this->logger->warning('Dossiq: a merged-case chain is longer than ' . self::MAX_HOPS . ' hops');
+
+		return $caseId;
+	}//end resolveSurvivor()
+
+	/**
+	 * Follow `mergedInto` for at most MAX_HOPS hops.
+	 *
+	 * @param string $caseId  The case uuid a caller matched.
+	 * @param string $current The trimmed uuid to start from.
+	 *
+	 * @return string|null The survivor, the input on a cycle, or null when the chain is too long.
+	 */
+	private function walkMergeChain(string $caseId, string $current): string|null {
 		$seen = [];
 		for ($hop = 0; $hop < self::MAX_HOPS; $hop++) {
 			if (isset($seen[$current]) === true) {
@@ -145,24 +165,37 @@ class CaseMergeService {
 			}
 
 			$seen[$current] = true;
-
-			$case = $this->store->readCase(caseId: $current);
-			if ($case === null) {
-				return $current;
-			}
-
-			$next = $this->store->referencedId(value: ($case['mergedInto'] ?? null));
-			if ($next === '' || $next === $current) {
+			$next = $this->mergedInto(current: $current);
+			if ($next === '') {
 				return $current;
 			}
 
 			$current = $next;
 		}
 
-		$this->logger->warning('Dossiq: a merged-case chain is longer than ' . self::MAX_HOPS . ' hops');
+		return null;
+	}//end walkMergeChain()
 
-		return $caseId;
-	}//end resolveSurvivor()
+	/**
+	 * The case one case was merged into, '' when it is unreadable or was not merged.
+	 *
+	 * @param string $current The case uuid.
+	 *
+	 * @return string
+	 */
+	private function mergedInto(string $current): string {
+		$case = $this->store->readCase(caseId: $current);
+		if ($case === null) {
+			return '';
+		}
+
+		$next = $this->store->referencedId(value: ($case['mergedInto'] ?? null));
+		if ($next === '' || $next === $current) {
+			return '';
+		}
+
+		return $next;
+	}//end mergedInto()
 
 	/**
 	 * Whether this case may be merged away.
@@ -231,24 +264,48 @@ class CaseMergeService {
 	public function requestMerge(string $mergedId, string $survivorId, string $reason, string $actor): array {
 		$merger = $this->settingsService->getOpenRegisterClass(class: self::MERGE_SERVICE_CLASS);
 
-		$refusal = $this->mergeRefusal(mergedId: $mergedId, survivorId: $survivorId, merger: $merger);
+		$refusal = $this->mergeRefusal(mergedId: $mergedId, survivorId: $survivorId);
 		if ($refusal !== '') {
 			return ['refused' => $refusal];
 		}
 
+		if ($this->canExecuteMerge(merger: $merger) === false) {
+			return ['refused' => 'platform-unavailable'];
+		}
+
+		return $this->merge(
+			merger: $merger,
+			instruction: ['from' => $mergedId, 'into' => $survivorId, 'reason' => $reason, 'mergedBy' => $actor]
+		);
+	}//end requestMerge()
+
+	/**
+	 * Hand the merge to OpenRegister; a refusal is logged and answered as `platform-refused`.
+	 *
+	 * @param ObjectMergerInterface $merger      OpenRegister's object merger.
+	 * @param array<string, string>  $instruction The merged case (`from`), the survivor (`into`), the reason and the actor (`mergedBy`).
+	 *
+	 * @return array<string, mixed> The operation, or the refusal.
+	 */
+	private function merge(ObjectMergerInterface $merger, array $instruction): array {
 		try {
 			$operation = $merger->merge(
-				instruction: new MergeInstruction(from: $mergedId, into: $survivorId, reason: $reason, mergedBy: $actor)
+				instruction: new MergeInstruction(
+					from: $instruction['from'],
+					into: $instruction['into'],
+					reason: $instruction['reason'],
+					mergedBy: $instruction['mergedBy']
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Dossiq: OpenRegister refused the merge of "' . $mergedId . '": ' . $e->getMessage()
+				'Dossiq: OpenRegister refused the merge of "' . $instruction['from'] . '": ' . $e->getMessage()
 			);
 			return ['refused' => 'platform-refused'];
 		}
 
 		return ['operation' => (array)$operation];
-	}//end requestMerge()
+	}//end merge()
 
 	/**
 	 * The reason a merge is refused, or '' when it may go ahead.
@@ -256,15 +313,16 @@ class CaseMergeService {
 	 * Every refusal is a slug rather than a sentence, because the caller turns
 	 * it into the one a handler reads and the timeline stores the slug.
 	 *
+	 * The platform's merge service is checked by the caller, after these.
+	 *
 	 * @param string $mergedId   The case being merged away.
 	 * @param string $survivorId The case it would merge into.
-	 * @param mixed  $merger     OpenRegister's merge service, or null when it is absent.
 	 *
 	 * @return string The refusal slug, or ''.
 	 *
 	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
-	private function mergeRefusal(string $mergedId, string $survivorId, mixed $merger): string {
+	private function mergeRefusal(string $mergedId, string $survivorId): string {
 		if ($mergedId === '' || $survivorId === '' || $mergedId === $survivorId) {
 			return 'same-case';
 		}
@@ -282,10 +340,6 @@ class CaseMergeService {
 
 		if ($this->store->referencedId(value: ($survivor['mergedInto'] ?? null)) !== '') {
 			return 'survivor-already-merged';
-		}
-
-		if ($this->canExecuteMerge(merger: $merger) === false) {
-			return 'platform-unavailable';
 		}
 
 		return '';

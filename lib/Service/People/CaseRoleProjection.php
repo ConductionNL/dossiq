@@ -13,9 +13,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\CaseRoleProjectionInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -30,7 +34,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md
  */
-class CaseRoleProjection {
+class CaseRoleProjection implements CaseRoleProjectionInterface {
 
 	use SearchesObjects;
 
@@ -83,27 +87,62 @@ class CaseRoleProjection {
 			return '';
 		}
 
-		$roleType = $this->findRow(schemaKey: 'role_type_schema', id: $roleTypeId);
+		$seat = new PersonRoleOnCase(caseId: $caseId, personUid: $personUid, roleTypeId: $roleTypeId);
+		$roleType = $this->linkedRoleType(seat: $seat);
 		if ($roleType === null) {
-			$this->logger->info(
-				'Dossiq people: a link names no role type of this instance, so no role record was written',
-				['case' => $caseId, 'person' => $personUid, 'role' => $roleTypeId]
-			);
 			return '';
 		}
 
-		$record = $this->existingRole(caseId: $caseId, personUid: $personUid, roleTypeId: $roleTypeId);
-		$record['case'] = $caseId;
-		$record['roleType'] = $roleTypeId;
-		$record['participant'] = $personUid;
-		$record['name'] = $this->people->nameOf(link: $link);
-		$record['description'] = trim((string)($link['note'] ?? ''));
+		$record = $this->roleRecord(link: $link, seat: $seat);
 
 		$uuid = $this->saveRole(record: $record);
 		$this->nameInitiator(case: $case, link: $link, roleType: $roleType);
 
 		return $uuid;
 	}//end project()
+
+	/**
+	 * The role type a link names, or null (logged) when this instance has no such role type.
+	 *
+	 * @param PersonRoleOnCase $seat The case, the person and the role type the link names.
+	 *
+	 * @return array<string, mixed>|null The role type.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+	 */
+	private function linkedRoleType(PersonRoleOnCase $seat): ?array {
+		$roleType = $this->findRow(schemaKey: 'role_type_schema', id: $seat->roleTypeId);
+		if ($roleType === null) {
+			$this->logger->info(
+				'Dossiq people: a link names no role type of this instance, so no role record was written',
+				['case' => $seat->caseId, 'person' => $seat->personUid, 'role' => $seat->roleTypeId]
+			);
+			return null;
+		}
+
+		return $roleType;
+	}//end linkedRoleType()
+
+	/**
+	 * The role record for a link: the stored one, brought up to date, or a new one.
+	 *
+	 * @param array<string, mixed> $link The link as OpenRegister stores it.
+	 * @param PersonRoleOnCase     $seat The case, the person and the role type.
+	 *
+	 * @return array<string, mixed> The record to save.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+	 */
+	private function roleRecord(array $link, PersonRoleOnCase $seat): array {
+		$record = $this->existingRole(seat: $seat);
+		$record['case'] = $seat->caseId;
+		$record['roleType'] = $seat->roleTypeId;
+		$record['participant'] = $seat->personUid;
+		$record['name'] = $this->people->nameOf(link: $link);
+		$record['description'] = trim((string)($link['note'] ?? ''));
+
+		return $record;
+	}//end roleRecord()
 
 	/**
 	 * Remove the role record of a link that is gone.
@@ -121,7 +160,9 @@ class CaseRoleProjection {
 			return false;
 		}
 
-		$record = $this->existingRole(caseId: $caseId, personUid: $personUid, roleTypeId: trim((string)($link['role'] ?? '')));
+		$record = $this->existingRole(
+			seat: new PersonRoleOnCase(caseId: $caseId, personUid: $personUid, roleTypeId: trim((string)($link['role'] ?? '')))
+		);
 		$uuid = trim((string)($record['id'] ?? ''));
 		$case = $this->findRow(schemaKey: 'case_schema', id: $caseId);
 		if ($case !== null) {
@@ -133,7 +174,9 @@ class CaseRoleProjection {
 		}
 
 		[$objectService, $register] = $this->requireRegister();
-		$objectService->deleteObject(uuid: $uuid, register: $register, schema: $this->schema(key: 'role_schema'));
+		$objectService->deleteObject(
+			new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'role_schema')))
+		);
 
 		return true;
 	}//end retire()
@@ -141,17 +184,12 @@ class CaseRoleProjection {
 	/**
 	 * The role record this projection already wrote for a link, or a fresh one.
 	 *
-	 * @param string $caseId The case uuid.
-	 * @param string $personUid The person's uid.
-	 * @param string $roleTypeId The role type uuid.
+	 * @param PersonRoleOnCase $seat The case uuid, the person's uid and the role type uuid.
 	 *
 	 * @return array<string, mixed> The record, [] when there is none yet.
 	 */
-	private function existingRole(string $caseId, string $personUid, string $roleTypeId): array {
-		$filters = ['case' => $caseId, 'participant' => $personUid, '_limit' => 50];
-		if ($roleTypeId !== '') {
-			$filters['roleType'] = $roleTypeId;
-		}
+	private function existingRole(PersonRoleOnCase $seat): array {
+		$filters = $this->roleFilters(seat: $seat);
 
 		try {
 			[$objectService, $register] = $this->requireRegister();
@@ -165,6 +203,33 @@ class CaseRoleProjection {
 			return [];
 		}
 
+		return $this->firstWithId(rows: $rows);
+	}//end existingRole()
+
+	/**
+	 * The filters that find a person's role on a case, of one role type when named.
+	 *
+	 * @param PersonRoleOnCase $seat The case, the person and the role type, or ''.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function roleFilters(PersonRoleOnCase $seat): array {
+		$filters = ['case' => $seat->caseId, 'participant' => $seat->personUid, '_limit' => 50];
+		if ($seat->roleTypeId !== '') {
+			$filters['roleType'] = $seat->roleTypeId;
+		}
+
+		return $filters;
+	}//end roleFilters()
+
+	/**
+	 * The first row that carries an id, flattened, or [] when none does.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The role rows.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function firstWithId(array $rows): array {
 		foreach ($rows as $row) {
 			$self = (array)($row['@self'] ?? []);
 			$id = trim((string)($row['id'] ?? ($self['id'] ?? '')));
@@ -176,7 +241,7 @@ class CaseRoleProjection {
 		}
 
 		return [];
-	}//end existingRole()
+	}//end firstWithId()
 
 	/**
 	 * Store a role record, new or existing.
@@ -192,10 +257,20 @@ class CaseRoleProjection {
 		unset($record['id']);
 
 		if ($uuid === '') {
-			return $this->uuidOf(saved: $objectService->saveObject(object: $record, register: $register, schema: $schema));
+			return $this->uuidOf(
+				saved: $objectService->saveObject(
+					object: $record,
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+				)
+			);
 		}
 
-		return $this->uuidOf(saved: $objectService->saveObject(object: $record, register: $register, schema: $schema, uuid: $uuid));
+		return $this->uuidOf(
+			saved: $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid)
+			)
+		);
 	}//end saveRole()
 
 	/**
@@ -260,9 +335,10 @@ class CaseRoleProjection {
 		[$objectService, $register] = $this->requireRegister();
 		$objectService->saveObject(
 			object: $case,
-			register: $register,
-			schema: $this->schema(key: 'case_schema'),
-			uuid: $uuid,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'case_schema')),
+				uuid: $uuid
+			)
 		);
 	}//end saveCase()
 

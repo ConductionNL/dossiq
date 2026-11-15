@@ -48,10 +48,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\Dossiq\Listener\Support\ReadsPayloadIdentifier;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -65,6 +66,7 @@ use OCP\EventDispatcher\IEventListener;
  * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalMessageTimelineListener implements IEventListener {
+	use ReadsPayloadIdentifier;
 
 	/**
 	 * The schema whose creates this listener answers to.
@@ -104,12 +106,12 @@ class PortalMessageTimelineListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTimeline             $timeline     The one seam that writes a timeline entry.
-	 * @param ObjectSchemaSlugResolver $slugResolver Resolves a schema id to its slug.
+	 * @param CaseTimelineInterface             $timeline     The one seam that writes a timeline entry.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Resolves a schema id to its slug.
 	 */
 	public function __construct(
-		private readonly CaseTimeline $timeline,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly CaseTimelineInterface $timeline,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 	) {
 	}//end __construct()
 
@@ -163,14 +165,14 @@ class PortalMessageTimelineListener implements IEventListener {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::PORTAL_MESSAGE,
+			kind: TimelineKindsInterface::PORTAL_MESSAGE,
 			message: $subject,
 			fields: [
 				'subject' => $subject,
 				'messageId' => $this->identifier(payload: $payload),
 				'status' => 'sent',
 			],
-			visibility: CaseTimeline::PUBLIC_ENTRY,
+			visibility: CaseTimelineInterface::PUBLIC_ENTRY,
 		);
 	}//end recordAnswer()
 
@@ -187,7 +189,7 @@ class PortalMessageTimelineListener implements IEventListener {
 
 		$this->timeline->record(
 			caseId: $caseId,
-			kind: TimelineKinds::PORTAL_MESSAGE_IN,
+			kind: TimelineKindsInterface::PORTAL_MESSAGE_IN,
 			message: $subject,
 			fields: [
 				'subject' => $subject,
@@ -195,7 +197,7 @@ class PortalMessageTimelineListener implements IEventListener {
 				'sender' => (string)($payload['senderName'] ?? ''),
 				'sentAt' => (string)($payload['sentAt'] ?? ''),
 			],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: CaseTimelineInterface::INTERNAL,
 		);
 	}//end recordQuestion()
 
@@ -215,22 +217,6 @@ class PortalMessageTimelineListener implements IEventListener {
 
 		return $subject;
 	}//end subject()
-
-	/**
-	 * The message's own id, so the handler's Reply can open it.
-	 *
-	 * @param array<string, mixed> $payload The stored record.
-	 *
-	 * @return string The id, or ''.
-	 */
-	private function identifier(array $payload): string {
-		$fromSelf = (string)($payload['@self']['id'] ?? '');
-		if ($fromSelf !== '') {
-			return $fromSelf;
-		}
-
-		return (string)($payload['id'] ?? '');
-	}//end identifier()
 
 	/**
 	 * The created object as a plain array.

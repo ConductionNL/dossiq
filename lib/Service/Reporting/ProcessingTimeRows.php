@@ -87,6 +87,19 @@ class ProcessingTimeRows {
 		// Counted between calendar dates in one zone, so a reference day at
 		// the tenant's midnight does not lose a day against a UTC start date.
 		$scan->today = new DateTimeImmutable($today->format('Y-m-d'));
+
+		return $this->rowsAtRisk(scan: $scan, open: $open);
+	}//end atRisk()
+
+	/**
+	 * The at-risk row of every open record the scan lists, least time left first.
+	 *
+	 * @param AtRiskScan                       $scan The scan.
+	 * @param array<int, array<string, mixed>> $open The open records.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function rowsAtRisk(AtRiskScan $scan, array $open): array {
 		$rows = [];
 		foreach ($open as $record) {
 			$measure = $this->measure(scan: $scan, record: $record);
@@ -101,7 +114,7 @@ class ProcessingTimeRows {
 		);
 
 		return $rows;
-	}//end atRisk()
+	}//end rowsAtRisk()
 
 	/**
 	 * Measure an open record against its type's target, or null when it has no target or start.
@@ -124,7 +137,7 @@ class ProcessingTimeRows {
 		$measure->typeId  = $typeId;
 		$measure->target  = $target;
 		$measure->elapsed = $this->days->signed(from: new DateTimeImmutable($start), to: $scan->today);
-		$term = $this->runningTerm(record: $record, start: $start, target: (int)$target);
+		$term = $this->runningTerm(measure: $measure);
 		$measure->remaining   = ($term - $measure->elapsed);
 		$measure->percentUsed = ($measure->elapsed / max(1, $term));
 
@@ -168,7 +181,7 @@ class ProcessingTimeRows {
 			'percentUsed'        => $shownUsed,
 			'percentUsedDisplay' => (int)round($shownUsed * 100),
 			'isOverdue'          => ($measure->remaining < 0),
-			'severity'           => $this->severity(remaining: $measure->remaining, percentUsed: $measure->percentUsed, threshold: $scan->threshold),
+			'severity'           => $this->severity(scan: $scan, measure: $measure),
 		];
 	}//end riskRow()
 
@@ -190,32 +203,71 @@ class ProcessingTimeRows {
 
 		$rows = [];
 		foreach ($tallies as $typeId => $tally) {
-			$type   = $types[$typeId];
-			$target = $type['targetDays'];
-			$avg    = null;
-			$rate   = null;
-			if ($tally['total'] > 0) {
-				$avg = (int)round($tally['totalDays'] / $tally['total']);
-			}
-
-			if ($target !== null) {
-				$rate = $this->calculator->percent(part: $tally['withinSla'], whole: $tally['total']);
-			}
-
-			$rows[] = [
-				'id'             => (string)$typeId,
-				'name'           => (string)$type['name'],
-				'targetDays'     => $target,
-				'avgActualDays'  => $avg,
-				'complianceRate' => $rate,
-				'total'          => $tally['total'],
-				'withinSla'      => $tally['withinSla'],
-				'status'         => $this->performanceStatus(rate: $rate),
-			];
-		}//end foreach
+			$rows[] = $this->performanceRow(typed: ['id' => $typeId, 'type' => $types[$typeId]], tally: $tally);
+		}
 
 		return $rows;
 	}//end performance()
+
+	/**
+	 * The performance row of one case type.
+	 *
+	 * @param array{id: int|string, type: array<string, mixed>} $typed The type id, and the prepared type.
+	 * @param array<string, mixed>                              $tally Its tally.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function performanceRow(array $typed, array $tally): array {
+		$typeId = $typed['id'];
+		$type = $typed['type'];
+		$target = $type['targetDays'];
+		$avg    = $this->averageDays(tally: $tally);
+		$rate   = $this->complianceRate(target: $target, tally: $tally);
+
+		return [
+			'id'             => (string)$typeId,
+			'name'           => (string)$type['name'],
+			'targetDays'     => $target,
+			'avgActualDays'  => $avg,
+			'complianceRate' => $rate,
+			'total'          => $tally['total'],
+			'withinSla'      => $tally['withinSla'],
+			'status'         => $this->performanceStatus(rate: $rate),
+		];
+	}//end performanceRow()
+
+	/**
+	 * The average processing time in days, or null when nothing completed.
+	 *
+	 * @param array<string, mixed> $tally The tally.
+	 *
+	 * @return int|null
+	 */
+	private function averageDays(array $tally): ?int {
+		$avg = null;
+		if ($tally['total'] > 0) {
+			$avg = (int)round($tally['totalDays'] / $tally['total']);
+		}
+
+		return $avg;
+	}//end averageDays()
+
+	/**
+	 * The share completed within the target, or null when the type has no target.
+	 *
+	 * @param mixed                $target The target in days, or null.
+	 * @param array<string, mixed> $tally  The tally.
+	 *
+	 * @return int|null
+	 */
+	private function complianceRate(mixed $target, array $tally): ?int {
+		$rate = null;
+		if ($target !== null) {
+			$rate = $this->calculator->percent(part: $tally['withinSla'], whole: $tally['total']);
+		}
+
+		return $rate;
+	}//end complianceRate()
 
 	/**
 	 * The tallies of every version of one case type added together, under the
@@ -285,16 +337,16 @@ class ProcessingTimeRows {
 	 * norm the type was given. Measuring a case against the target alone put a
 	 * Woo request four days from its deadline in the "on track" half (r33).
 	 *
-	 * @param array<string, mixed> $record The open record.
-	 * @param string               $start  Its start date.
-	 * @param int                  $target Its type's target days.
+	 * @param RiskMeasure $measure The open record, with a start date, and its type's target days.
 	 *
 	 * @return int The term in days.
 	 *
 	 * @spec openspec/specs/at-risk-reads-the-running-term/spec.md#requirement-at-risk-reads-the-cases-running-term
 	 */
-	private function runningTerm(array $record, string $start, int $target): int {
-		$deadline = ($record['deadline'] ?? null);
+	private function runningTerm(RiskMeasure $measure): int {
+		$start    = (string)$measure->record['startDate'];
+		$target   = (int)$measure->target;
+		$deadline = ($measure->record['deadline'] ?? null);
 		if (is_string($deadline) === false || $deadline === '') {
 			return $target;
 		}
@@ -310,13 +362,13 @@ class ProcessingTimeRows {
 	/**
 	 * The severity band of one open record.
 	 *
-	 * @param int   $remaining   Days left until the target.
-	 * @param float $percentUsed Share of the target used.
-	 * @param float $threshold   Remaining share at or below which a record is at risk.
+	 * @param AtRiskScan  $scan    The scan, with the remaining share at or below which a record is at risk.
+	 * @param RiskMeasure $measure The days left until the target and the share of the target used.
 	 *
 	 * @return string One of overdue, critical, warning, ok.
 	 */
-	private function severity(int $remaining, float $percentUsed, float $threshold): string {
+	private function severity(AtRiskScan $scan, RiskMeasure $measure): string {
+		$remaining = $measure->remaining;
 		if ($remaining < 0) {
 			return 'overdue';
 		}
@@ -325,7 +377,7 @@ class ProcessingTimeRows {
 			return 'critical';
 		}
 
-		if ($remaining <= self::WARNING_DAYS || (1 - $percentUsed) <= min($threshold, 0.25)) {
+		if ($remaining <= self::WARNING_DAYS || (1 - $measure->percentUsed) <= min($scan->threshold, 0.25)) {
 			return 'warning';
 		}
 

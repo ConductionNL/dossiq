@@ -46,6 +46,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\SavedMailImportInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -57,7 +58,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-email-integration/spec.md
  */
-class SavedMailImport {
+class SavedMailImport implements SavedMailImportInterface {
 
 	/**
 	 * integriq's parser, relative to integriq's own namespace.
@@ -73,11 +74,6 @@ class SavedMailImport {
 	 * The message was read and filed on the case.
 	 */
 	public const OUTCOME_IMPORTED = 'imported';
-
-	/**
-	 * The file is still there and nobody could read it.
-	 */
-	public const OUTCOME_KEPT = 'kept';
 
 	/**
 	 * Constructor.
@@ -121,15 +117,27 @@ class SavedMailImport {
 			);
 		}
 
-		$file = new SavedMailFile(caseId: $caseId, fileName: $fileName);
+		return $this->parseOntoCase(parser: $parser, mail: ['file' => new SavedMailFile(caseId: $caseId, fileName: $fileName), 'raw' => $raw]);
+	}//end import()
+
+	/**
+	 * Parse the saved mail and file it on the case; a file the reader refuses is kept as it is.
+	 *
+	 * @param object                                 $parser integriq's mail reader.
+	 * @param array{file: SavedMailFile, raw: string} $mail   The case and file name, and the file's bytes.
+	 *
+	 * @return array<string, mixed> What the import did.
+	 */
+	private function parseOntoCase(object $parser, array $mail): array {
+		$file = $mail['file'];
 		try {
-			$parsed = $parser->parse($fileName, $raw);
+			$parsed = $parser->parse($file->fileName, $mail['raw']);
 		} catch (Throwable $e) {
 			return $this->unreadableFile(file: $file, failure: $e);
 		}
 
 		return $this->fileOnCase(file: $file, parsed: $parsed);
-	}//end import()
+	}//end parseOntoCase()
 
 	/**
 	 * Why the input cannot be read at all, or '' when it can: no case, no

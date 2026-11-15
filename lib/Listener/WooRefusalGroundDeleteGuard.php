@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCP\EventDispatcher\Event;
@@ -71,12 +71,12 @@ class WooRefusalGroundDeleteGuard implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister plus app config.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus app config.
 	 * @param IL10N           $l10n            Translation service, for the refusal sentence.
 	 * @param LoggerInterface $logger          Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {

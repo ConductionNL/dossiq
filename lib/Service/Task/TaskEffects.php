@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Kernel\Contracts\TaskEffectsInterface;
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/task-management/spec.md
  */
-class TaskEffects {
+class TaskEffects implements TaskEffectsInterface {
 
 	/**
 	 * Where a task carries the effects dossiq declared on it.
@@ -88,6 +89,17 @@ class TaskEffects {
 	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function declaredOn(array $task): array {
+		return $this->typedEffects(effects: $this->rawEffects(task: $task));
+	}//end declaredOn()
+
+	/**
+	 * The effects list under the task's metadata, as stored.
+	 *
+	 * @param array<string, mixed> $task The task, as the engine answers it.
+	 *
+	 * @return array<mixed> The raw effects; empty when the metadata holds none.
+	 */
+	private function rawEffects(array $task): array {
 		$metadata = ($task['metadata'] ?? []);
 		if (is_array($metadata) === false) {
 			return [];
@@ -103,6 +115,17 @@ class TaskEffects {
 			return [];
 		}
 
+		return $effects;
+	}//end rawEffects()
+
+	/**
+	 * The effects that are arrays with a type, in declared order.
+	 *
+	 * @param array<mixed> $effects The raw effects.
+	 *
+	 * @return array<int, array<string, mixed>> The effects, each with a trimmed type.
+	 */
+	private function typedEffects(array $effects): array {
 		$declared = [];
 		foreach ($effects as $effect) {
 			if (is_array($effect) === false) {
@@ -119,7 +142,7 @@ class TaskEffects {
 		}
 
 		return $declared;
-	}//end declaredOn()
+	}//end typedEffects()
 
 	/**
 	 * The declared effects no handler answers to, by name.

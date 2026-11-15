@@ -42,20 +42,20 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Advice;
 
+use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\AdviceTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FlowTimerEngine;
 use OCA\Dossiq\Service\Term\DayCount;
-use OCA\OpenRegister\Kernel\Contracts\TimerChange;
-use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Keeps one engine timer per open advice request in step with the request.
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class AdviceTimer {
+class AdviceTimer implements AdviceTimerInterface {
 
 	/**
 	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
@@ -65,25 +65,11 @@ class AdviceTimer {
 	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
 
 	/**
-	 * The metadata source the fired listener recognises the timer by.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-advice';
-
-	/**
 	 * The status of a request still waiting for its advisor.
 	 *
 	 * @var string
 	 */
 	public const OPEN_STATUS = 'requested';
-
-	/**
-	 * Outcome: a timer is armed.
-	 *
-	 * @var string
-	 */
-	public const ARMED = 'armed';
 
 	/**
 	 * Outcome: the request is closed and its timers are cancelled.
@@ -93,25 +79,11 @@ class AdviceTimer {
 	public const CANCELLED = 'cancelled';
 
 	/**
-	 * Outcome: the deadline is already past; the caller expires the request.
-	 *
-	 * @var string
-	 */
-	public const OVERDUE = 'overdue';
-
-	/**
 	 * Outcome: nothing to time (no id, no deadline, or a status this ignores).
 	 *
 	 * @var string
 	 */
 	public const SKIPPED = 'skipped';
-
-	/**
-	 * Outcome: the engine is absent or refused.
-	 *
-	 * @var string
-	 */
-	public const UNAVAILABLE = 'unavailable';
 
 	/**
 	 * The statuses that end the wait.
@@ -153,7 +125,7 @@ class AdviceTimer {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function sync(array $advice): string {
-		$adviceId = (string) ($advice['id'] ?? ($advice['uuid'] ?? ($advice['@self']['id'] ?? '')));
+		$adviceId = self::idOf(advice: $advice);
 		$status   = (string) ($advice['status'] ?? '');
 		if ($adviceId === '') {
 			return self::SKIPPED;
@@ -163,11 +135,51 @@ class AdviceTimer {
 			return $this->cancel(adviceId: $adviceId, reason: 'Advice request '.$status) ?? self::CANCELLED;
 		}
 
+		return $this->syncOpen(advice: $advice, status: $status);
+	}//end sync()
+
+	/**
+	 * The request's id: its `id`, else its `uuid`, else its `@self` id.
+	 *
+	 * @param array<string, mixed> $advice The adviesAanvraag object.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private static function idOf(array $advice): string {
+		return (string) ($advice['id'] ?? ($advice['uuid'] ?? ($advice['@self']['id'] ?? '')));
+	}//end idOf()
+
+	/**
+	 * Re-arm the timer of a request that is still open and has a deadline.
+	 *
+	 * @param array<string, mixed> $advice   The adviesAanvraag object.
+	 * @param string               $status   Its status.
+	 *
+	 * @return string One of the outcome constants.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function syncOpen(array $advice, string $status): string {
 		$deadline = $this->dates->tryParse($advice['deadline'] ?? null);
 		if ($status !== self::OPEN_STATUS || $deadline === null) {
 			return self::SKIPPED;
 		}
 
+		return $this->rearm(advice: $advice, deadline: $deadline);
+	}//end syncOpen()
+
+	/**
+	 * Cancel the running timer and arm one for the current deadline.
+	 *
+	 * @param array<string, mixed> $advice   The adviesAanvraag object.
+	 * @param DateTimeImmutable    $deadline Its deadline.
+	 *
+	 * @return string One of the outcome constants.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function rearm(array $advice, DateTimeImmutable $deadline): string {
+		$adviceId = self::idOf(advice: $advice);
 		$today    = $this->dates->today();
 		$deadline = $deadline->setTimezone($this->dates->timeZone())->setTime(0, 0, 0);
 		$daysLeft = $this->days->signed(from: $today, to: $deadline);
@@ -181,55 +193,37 @@ class AdviceTimer {
 			return self::OVERDUE;
 		}
 
-		return $this->arm(advice: $advice, adviceId: $adviceId, anchor: $today, slaDays: ($daysLeft + 1));
-	}//end sync()
+		return $this->arm(advice: $advice, window: new TimerWindow(anchor: $today, slaDays: ($daysLeft + 1)));
+	}//end rearm()
 
 	/**
 	 * Arm the timer.
 	 *
-	 * @param array<string, mixed>   $advice   The request.
-	 * @param string                 $adviceId Its id.
-	 * @param \DateTimeImmutable     $anchor   Midnight today.
-	 * @param int                    $slaDays  Days from the anchor to the breach.
+	 * @param array<string, mixed> $advice   The request.
+	 * @param TimerWindow          $window   Midnight today, and the days from it to the breach.
 	 *
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
-	private function arm(array $advice, string $adviceId, \DateTimeImmutable $anchor, int $slaDays): string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
+	private function arm(array $advice, TimerWindow $window): string {
+		return $this->timers()->arm(
+			config: fn (): array => $this->timerConfig(advice: $advice, window: $window),
+			logContext: ['advice' => self::idOf(advice: $advice)]
+		);
+	}//end arm()
 
-		$rules = [
-			[
-				'trigger'        => 'slaBreached',
-				'offset'         => 0,
-				'offsetUnit'     => 'calendarDays',
-				'notifyRole'     => [],
-				'escalateToRole' => [],
-				'priority'       => 'medium',
-				'message'        => 'advies-verlopen',
-				'openIncident'   => false,
-			],
-		];
-
-		// The rung sits reminderDays + 1 before the breach, which is the
-		// deadline minus reminderDays. Only when that day is still ahead: the
-		// job never reminded a request inside the window, and the engine
-		// refuses a rung before its anchor.
-		$lead = ($this->reminderDays() + 1);
-		if ($lead < $slaDays) {
-			$rules[] = [
-				'trigger'        => 'preBreach',
-				'offset'         => $lead,
-				'offsetUnit'     => 'calendarDays',
-				'notifyRole'     => [],
-				'escalateToRole' => [],
-				'priority'       => 'medium',
-				'message'        => 'advies-herinnering',
-				'openIncident'   => false,
-			];
-		}
+	/**
+	 * The engine config of the request's timer.
+	 *
+	 * @param array<string, mixed> $advice   The request.
+	 * @param TimerWindow          $window   Midnight today, and the days from it to the breach.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function timerConfig(array $advice, TimerWindow $window): array {
+		$adviceId = self::idOf(advice: $advice);
+		$anchor = $window->anchor;
+		$slaDays = $window->slaDays;
+		$rules = $this->escalationRules(slaDays: $slaDays);
 
 		$config = [
 			'subjectType'     => 'object',
@@ -242,25 +236,86 @@ class AdviceTimer {
 			'escalationRules' => $rules,
 			'anchorEvent'     => 'advice_requested',
 			'anchorEventAt'   => $anchor,
-			'metadata'        => [
-				'source'   => self::METADATA_SOURCE,
-				'adviceId' => $adviceId,
-				'caseId'   => (string) ($advice['case'] ?? ''),
-			],
+			'metadata'        => $this->timerMetadata(advice: $advice),
 		];
 
-		try {
-			$engine->arm(config: $config, actor: null);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq advice: the engine refused the advice timer',
-				['advice' => $adviceId, 'error' => $e->getMessage()]
-			);
-			return self::UNAVAILABLE;
+		return $config;
+	}//end timerConfig()
+
+	/**
+	 * The breach rung, plus the reminder rung when its day is still ahead.
+	 *
+	 * @param int $slaDays Days from the anchor to the breach.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 */
+	private function escalationRules(int $slaDays): array {
+		$rules = [$this->breachRung()];
+
+		// The rung sits reminderDays + 1 before the breach, which is the
+		// deadline minus reminderDays. Only when that day is still ahead: the
+		// job never reminded a request inside the window, and the engine
+		// refuses a rung before its anchor.
+		$lead = ($this->reminderDays() + 1);
+		if ($lead < $slaDays) {
+			$rules[] = $this->reminderRung(lead: $lead);
 		}
 
-		return self::ARMED;
-	}//end arm()
+		return $rules;
+	}//end escalationRules()
+
+	/**
+	 * The rung that fires on the breach itself.
+	 *
+	 * @return array<string, mixed> The rule.
+	 */
+	private function breachRung(): array {
+		return [
+			'trigger'        => 'slaBreached',
+			'offset'         => 0,
+			'offsetUnit'     => 'calendarDays',
+			'notifyRole'     => [],
+			'escalateToRole' => [],
+			'priority'       => 'medium',
+			'message'        => 'advies-verlopen',
+			'openIncident'   => false,
+		];
+	}//end breachRung()
+
+	/**
+	 * The reminder rung, the given number of days before the breach.
+	 *
+	 * @param int $lead Days before the breach.
+	 *
+	 * @return array<string, mixed> The rule.
+	 */
+	private function reminderRung(int $lead): array {
+		return [
+			'trigger'        => 'preBreach',
+			'offset'         => $lead,
+			'offsetUnit'     => 'calendarDays',
+			'notifyRole'     => [],
+			'escalateToRole' => [],
+			'priority'       => 'medium',
+			'message'        => 'advies-herinnering',
+			'openIncident'   => false,
+		];
+	}//end reminderRung()
+
+	/**
+	 * The metadata that ties a timer back to its request and case.
+	 *
+	 * @param array<string, mixed> $advice The request.
+	 *
+	 * @return array<string, string> The metadata.
+	 */
+	private function timerMetadata(array $advice): array {
+		return [
+			'source'   => self::METADATA_SOURCE,
+			'adviceId' => self::idOf(advice: $advice),
+			'caseId'   => (string) ($advice['case'] ?? ''),
+		];
+	}//end timerMetadata()
 
 	/**
 	 * Cancel the request's open timers.
@@ -271,25 +326,7 @@ class AdviceTimer {
 	 * @return string|null UNAVAILABLE when the engine is absent or refused, null when done.
 	 */
 	private function cancel(string $adviceId, string $reason): ?string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		try {
-			$engine->cancelForSubject(
-				subject: new TimerSubjectRef(type: 'object', uuid: $adviceId),
-				change: new TimerChange(reason: $reason, actor: null)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq advice: the engine refused to cancel the advice timer',
-				['advice' => $adviceId, 'error' => $e->getMessage()]
-			);
-			return self::UNAVAILABLE;
-		}
-
-		return null;
+		return $this->timers()->cancel(subjectUuid: $adviceId, reason: $reason, logContext: ['advice' => $adviceId]);
 	}//end cancel()
 
 	/**
@@ -307,11 +344,11 @@ class AdviceTimer {
 	}//end reminderDays()
 
 	/**
-	 * The engine, or null when OpenRegister does not ship it.
+	 * OpenRegister's flow timer engine for this timer.
 	 *
-	 * @return object|null
+	 * @return FlowTimerEngine
 	 */
-	private function engine(): ?object {
-		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
-	}//end engine()
+	private function timers(): FlowTimerEngine {
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq advice', timer: 'advice timer');
+	}//end timers()
 }//end class

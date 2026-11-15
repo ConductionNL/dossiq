@@ -35,18 +35,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\IntakeRoleGate;
-use OCA\Dossiq\Service\Email\BounceAction;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BounceActionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\FilterPipelineInterface;
+use OCA\Dossiq\Kernel\Contracts\InboundMailIntakeInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
+use OCA\Dossiq\Kernel\Contracts\JunkRulesInterface;
+use OCA\Dossiq\Kernel\Contracts\MoveActionInterface;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
-use OCA\Dossiq\Service\Email\InboundMailIntake;
 use OCA\Dossiq\Service\Email\InboundMessage;
-use OCA\Dossiq\Service\Email\IntakeLog;
-use OCA\Dossiq\Service\Email\IntakePolicy;
-use OCA\Dossiq\Service\Email\JunkRules;
-use OCA\Dossiq\Service\Email\MoveAction;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -91,31 +91,31 @@ class MailIntakeController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest          $request     Inbound request.
-	 * @param IntakeLog         $log         The intake log.
-	 * @param IntakePolicy      $policy      Who may run intake, and the per-case-type policy.
-	 * @param FilterPipeline    $pipeline    The declared filter order.
-	 * @param JunkRules         $junkRules   The readable junk rules.
-	 * @param BounceAction      $bounce      The doorzendplicht act.
-	 * @param MoveAction        $move        The mailbox act.
-	 * @param InboundMailIntake $intake      The intake path, for a released message.
+	 * @param IntakeLogInterface         $log         The intake log.
+	 * @param IntakePolicyInterface      $policy      Who may run intake, and the per-case-type policy.
+	 * @param FilterPipelineInterface    $pipeline    The declared filter order.
+	 * @param JunkRulesInterface         $junkRules   The readable junk rules.
+	 * @param BounceActionInterface      $bounce      The doorzendplicht act.
+	 * @param MoveActionInterface        $move        The mailbox act.
+	 * @param InboundMailIntakeInterface $intake      The intake path, for a released message.
 	 * @param IUserSession      $userSession The caller.
 	 * @param ITimeFactory      $time        Clock.
-	 * @param CaseAccessGuard   $caseAccessGuard Per-case authorization, for the case a handler picks.
+	 * @param CaseAccessGuardInterface   $caseAccessGuard Per-case authorization, for the case a handler picks.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly IntakeLog $log,
-		private readonly IntakePolicy $policy,
-		private readonly FilterPipeline $pipeline,
-		private readonly JunkRules $junkRules,
-		private readonly BounceAction $bounce,
-		private readonly MoveAction $move,
-		private readonly InboundMailIntake $intake,
+		private readonly IntakeLogInterface $log,
+		private readonly IntakePolicyInterface $policy,
+		private readonly FilterPipelineInterface $pipeline,
+		private readonly JunkRulesInterface $junkRules,
+		private readonly BounceActionInterface $bounce,
+		private readonly MoveActionInterface $move,
+		private readonly InboundMailIntakeInterface $intake,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -192,7 +192,7 @@ class MailIntakeController extends Controller {
 			return $entry;
 		}
 
-		if ((string)($entry['outcome'] ?? '') !== IntakeLog::OUTCOME_QUARANTINED) {
+		if ((string)($entry['outcome'] ?? '') !== IntakeLogInterface::OUTCOME_QUARANTINED) {
 			return new JSONResponse(['message' => 'not_quarantined'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -236,7 +236,7 @@ class MailIntakeController extends Controller {
 		$this->log->amend(
 			entryId: $entryId,
 			changes: [
-				'outcome' => IntakeLog::OUTCOME_RELEASED,
+				'outcome' => IntakeLogInterface::OUTCOME_RELEASED,
 				'releasedBy' => $this->callerId(),
 				'releasedAt' => $this->time->getDateTime()->format(DATE_ATOM),
 			]
@@ -268,7 +268,7 @@ class MailIntakeController extends Controller {
 			$this->log->amend(
 				entryId: $entryId,
 				changes: [
-					'outcome' => IntakeLog::OUTCOME_QUARANTINED,
+					'outcome' => IntakeLogInterface::OUTCOME_QUARANTINED,
 					'junkRule' => 'corrected-by-' . $this->callerId(),
 					'reason' => 'Marked as junk by hand.',
 				]
@@ -307,29 +307,53 @@ class MailIntakeController extends Controller {
 			return $entry;
 		}
 
+		return $this->bounceEntry(entry: $entry, forward: ['entryId' => $entryId, 'address' => $address, 'reason' => $reason]);
+	}//end bounce()
+
+	/**
+	 * Send the entry's message on, and answer whether it was sent.
+	 *
+	 * @param array<string, mixed>                                $entry   The workable entry.
+	 * @param array{entryId: string, address: string, reason: string} $forward The entry, the address it goes to and why.
+	 *
+	 * @return JSONResponse Whether it was sent.
+	 */
+	private function bounceEntry(array $entry, array $forward): JSONResponse {
 		$result = $this->bounce->bounce(
 			message: $this->messageOf(entry: $entry),
-			toAddress: $address,
-			reason: $reason,
+			toAddress: $forward['address'],
+			reason: $forward['reason'],
 			actorId: $this->callerId(),
 			results: $this->resultsOf(entry: $entry)
 		);
+		return $this->bounced(result: $result, forward: $forward);
+	}//end bounceEntry()
+
+	/**
+	 * Log a sent bounce on its entry and answer it, or answer that it failed.
+	 *
+	 * @param array<string, mixed>                                $result  What the bounce answered.
+	 * @param array{entryId: string, address: string, reason: string} $forward The entry, the address it went to and why.
+	 *
+	 * @return JSONResponse Whether it was sent.
+	 */
+	private function bounced(array $result, array $forward): JSONResponse {
 		if ($result['sent'] === false) {
 			return new JSONResponse(['message' => 'bounce_failed'], Http::STATUS_BAD_REQUEST);
 		}
 
 		$this->log->amend(
-			entryId: $entryId,
+			entryId: $forward['entryId'],
 			changes: [
-				'outcome' => IntakeLog::OUTCOME_FORWARDED,
-				'forwardedTo' => InboundMessage::addressIn(value: $address),
+				'outcome' => IntakeLogInterface::OUTCOME_FORWARDED,
+				'forwardedTo' => InboundMessage::addressIn(value: $forward['address']),
 				'forwardedBy' => $this->callerId(),
-				'forwardedReason' => $reason,
+				'forwardedReason' => $forward['reason'],
 			]
 		);
 
 		return new JSONResponse(['sent' => true, 'entryId' => $result['entryId']]);
-	}//end bounce()
+	}//end bounced()
 
 	/**
 	 * File a message in another folder of the same account.
@@ -349,28 +373,52 @@ class MailIntakeController extends Controller {
 			return $entry;
 		}
 
+		return $this->moveEntry(entry: $entry, filing: ['entryId' => $entryId, 'target' => $target, 'note' => $note]);
+	}//end move()
+
+	/**
+	 * File the entry's message in the target folder, and answer whether the mail server confirmed it.
+	 *
+	 * @param array<string, mixed>                               $entry  The workable entry.
+	 * @param array{entryId: string, target: string, note: string} $filing The entry, the folder it goes to and why.
+	 *
+	 * @return JSONResponse Whether the mail server confirmed it.
+	 */
+	private function moveEntry(array $entry, array $filing): JSONResponse {
 		$result = $this->move->move(
 			message: $this->messageOf(entry: $entry),
-			target: $target,
-			note: $note,
+			target: $filing['target'],
+			note: $filing['note'],
 			actorId: $this->callerId(),
 			results: $this->resultsOf(entry: $entry)
 		);
+		return $this->moved(result: $result, filed: ['entryId' => $filing['entryId'], 'target' => $filing['target']]);
+	}//end moveEntry()
+
+	/**
+	 * Log a confirmed move on its entry and answer it, or answer that it failed.
+	 *
+	 * @param array<string, mixed>                   $result What the move answered.
+	 * @param array{entryId: string, target: string} $filed  The entry, and the folder it went to.
+	 *
+	 * @return JSONResponse Whether the mail server confirmed it.
+	 */
+	private function moved(array $result, array $filed): JSONResponse {
 		if ($result['moved'] === false) {
 			return new JSONResponse(['message' => 'move_failed'], Http::STATUS_BAD_REQUEST);
 		}
 
 		$this->log->amend(
-			entryId: $entryId,
+			entryId: $filed['entryId'],
 			changes: [
-				'outcome' => IntakeLog::OUTCOME_MOVED,
-				'movedTo' => $target,
+				'outcome' => IntakeLogInterface::OUTCOME_MOVED,
+				'movedTo' => $filed['target'],
 				'movedBy' => $this->callerId(),
 			]
 		);
 
 		return new JSONResponse(['moved' => true, 'entryId' => $result['entryId']]);
-	}//end move()
+	}//end moved()
 
 	/**
 	 * File a logged message on a case a handler picked.
@@ -529,7 +577,7 @@ class MailIntakeController extends Controller {
 		$this->log->amend(
 			entryId: $filing->entryId,
 			changes: [
-				'outcome' => IntakeLog::OUTCOME_CASE,
+				'outcome' => IntakeLogInterface::OUTCOME_CASE,
 				'case' => $filing->caseId,
 				'reason' => $filing->reason,
 				'filedBy' => $this->callerId(),

@@ -202,4 +202,75 @@ class BrkResponseMapperTest extends TestCase {
 		$this->assertSame(99, $mapped['perceelnummer']);
 		$this->assertSame(500, $mapped['oppervlakte']);
 	}//end testNumericStringFieldsAreCoercedToInt()
+
+	/**
+	 * A scalar `kadastraleAanduiding` is ignored and the flat top-level
+	 * fields are read instead.
+	 *
+	 * @return void
+	 */
+	public function testScalarKadastraleAanduidingFallsBackToFlatFields(): void {
+		$mapped = (new BrkResponseMapper())->map(
+			[
+				'kadastraleAanduiding' => 'VBSTD A 1234',
+				'kadastraleGemeenteNaam' => 'Voorbeeldstad',
+				'kadastraleGemeenteCode' => 'VBSTD',
+				'sectie' => 'A',
+				'perceelnummer' => '1234',
+				'appartementsrechtVolgnummer' => 'A0001',
+				'aanduiding' => 'VBSTD A 1234 A0001',
+			]
+		);
+
+		$this->assertSame('Voorbeeldstad', $mapped['kadastraleGemeente']);
+		$this->assertSame('VBSTD', $mapped['kadastraleGemeenteCode']);
+		$this->assertSame('A', $mapped['sectie']);
+		$this->assertSame(1234, $mapped['perceelnummer']);
+		$this->assertSame('A0001', $mapped['appartementsrechtVolgnummer']);
+		$this->assertSame('VBSTD A 1234 A0001', $mapped['kadastraleAanduiding']);
+	}//end testScalarKadastraleAanduidingFallsBackToFlatFields()
+
+	/**
+	 * A scalar zakelijkGerechtigden fragment maps to an empty list, and
+	 * non-array entries inside a list are skipped.
+	 *
+	 * @return void
+	 */
+	public function testMalformedZakelijkGerechtigdenAreDropped(): void {
+		$mapper = new BrkResponseMapper();
+
+		$this->assertSame([], $mapper->map(['zakelijkGerechtigden' => 'ZG0001'])['zakelijkGerechtigden']);
+
+		$mapped = $mapper->map(
+			[
+				'zakelijkGerechtigdheid' => [
+					'ZG0001',
+					['identificatie' => 'ZG0002', 'aardZakelijkRecht' => 'Erfpacht'],
+					null,
+				],
+			]
+		);
+
+		$this->assertSame(
+			[['identificatie' => 'ZG0002', 'aardZakelijkRecht' => 'Erfpacht']],
+			$mapped['zakelijkGerechtigden']
+		);
+	}//end testMalformedZakelijkGerechtigdenAreDropped()
+
+	/**
+	 * A centroid with fewer than two coordinates, or without a coordinate
+	 * list, yields no geo point; the snake_case `centroide_ll` is read too.
+	 *
+	 * @return void
+	 */
+	public function testIncompleteCentroidYieldsNoGeo(): void {
+		$mapper = new BrkResponseMapper();
+
+		$this->assertNull($mapper->map(['centroideLL' => ['coordinates' => [4.4699]]])['geo']);
+		$this->assertNull($mapper->map(['centroideLL' => ['coordinates' => 'x']])['geo']);
+		$this->assertSame(
+			['lng' => 4.5, 'lat' => 52.0],
+			$mapper->map(['centroide_ll' => ['coordinates' => ['4.5', '52']]])['geo']
+		);
+	}//end testIncompleteCentroidYieldsNoGeo()
 }//end class

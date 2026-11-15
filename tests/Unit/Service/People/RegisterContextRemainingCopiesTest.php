@@ -42,6 +42,7 @@ use stdClass;
  *
  * @covers \OCA\Dossiq\Service\People\CaseRoleVocabulary
  * @covers \OCA\Dossiq\Service\Zaakdossier\DocumentCaseIds
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  *
  * @spec openspec/specs/case-management/spec.md
  */

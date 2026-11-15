@@ -42,6 +42,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Custody\TakeoverStore
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class StoreRegisterContextTest extends TestCase {
 	/**

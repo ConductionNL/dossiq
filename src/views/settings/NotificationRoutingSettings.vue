@@ -129,6 +129,7 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import { loadOnMount } from '../../mixins/loadOnMount.js'
 import {
 	channelsOnFor,
 	keyFor,
@@ -153,6 +154,8 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
+	mixins: [loadOnMount],
 
 	props: {
 		isAdmin: {
@@ -244,16 +247,6 @@ export default {
 		canWriteGroupDefault() {
 			return this.group.trim() !== '' && this.selectedGroupEntry !== null
 		},
-	},
-
-	/**
-	 * Read the reader's own effective preferences.
-	 *
-	 * @return {Promise<void>} When the read has finished.
-	 * @spec openspec/specs/case-management/spec.md
-	 */
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

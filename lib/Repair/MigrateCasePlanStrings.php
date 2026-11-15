@@ -45,11 +45,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\CasePlanGoalsInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePlanInterventionsInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SociaalDomeinStoreInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
-use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -98,13 +98,13 @@ class MigrateCasePlanStrings implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SociaalDomeinStore $store           The one reader and writer of these schemas.
-	 * @param SettingsService    $settingsService The object service the elevation runs on.
+	 * @param SociaalDomeinStoreInterface $store           The one reader and writer of these schemas.
+	 * @param SettingsServiceInterface    $settingsService The object service the elevation runs on.
 	 * @param LoggerInterface    $logger          The logger.
 	 */
 	public function __construct(
-		private readonly SociaalDomeinStore $store,
-		private readonly SettingsService $settingsService,
+		private readonly SociaalDomeinStoreInterface $store,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -190,36 +190,8 @@ class MigrateCasePlanStrings implements IRepairStep {
 			return 0;
 		}
 
-		$written = 0;
-
-		foreach ($this->textsOf(plan: $plan, key: 'goals') as $text) {
-			$this->store->write(
-				schema: CasePlanGoals::SCHEMA,
-				object: [
-					'plan' => $planId,
-					'title' => $text,
-					// The text stands in for itself: see the class docblock.
-					'metWhen' => $text,
-					'state' => 'open',
-					'migratedFrom' => self::FROM_GOALS,
-				]
-			);
-			$written++;
-		}
-
-		foreach ($this->textsOf(plan: $plan, key: 'deploymentTrajectories') as $text) {
-			$this->store->write(
-				schema: CasePlanInterventions::SCHEMA,
-				object: [
-					'plan' => $planId,
-					'title' => $text,
-					'provider' => self::NO_PROVIDER,
-					'state' => 'planned',
-					'migratedFrom' => self::FROM_TRAJECTORIES,
-				]
-			);
-			$written++;
-		}
+		$written = $this->writeGoals(plan: $plan, planId: $planId);
+		$written += $this->writeInterventions(plan: $plan, planId: $planId);
 
 		if ($written > 0) {
 			$this->logger->info(
@@ -233,6 +205,61 @@ class MigrateCasePlanStrings implements IRepairStep {
 	}//end migrateOne()
 
 	/**
+	 * Write one goal per old goal text.
+	 *
+	 * @param array<string, mixed> $plan   The plan.
+	 * @param string               $planId The plan id.
+	 *
+	 * @return integer How many records were written.
+	 */
+	private function writeGoals(array $plan, string $planId): int {
+		$written = 0;
+		foreach ($this->textsOf(plan: $plan, key: 'goals') as $text) {
+			$this->store->write(
+				schema: CasePlanGoalsInterface::SCHEMA,
+				object: [
+					'plan' => $planId,
+					'title' => $text,
+					// The text stands in for itself: see the class docblock.
+					'metWhen' => $text,
+					'state' => 'open',
+					'migratedFrom' => self::FROM_GOALS,
+				]
+			);
+			$written++;
+		}
+
+		return $written;
+	}//end writeGoals()
+
+	/**
+	 * Write one intervention per old deployment trajectory text.
+	 *
+	 * @param array<string, mixed> $plan   The plan.
+	 * @param string               $planId The plan id.
+	 *
+	 * @return integer How many records were written.
+	 */
+	private function writeInterventions(array $plan, string $planId): int {
+		$written = 0;
+		foreach ($this->textsOf(plan: $plan, key: 'deploymentTrajectories') as $text) {
+			$this->store->write(
+				schema: CasePlanInterventionsInterface::SCHEMA,
+				object: [
+					'plan' => $planId,
+					'title' => $text,
+					'provider' => self::NO_PROVIDER,
+					'state' => 'planned',
+					'migratedFrom' => self::FROM_TRAJECTORIES,
+				]
+			);
+			$written++;
+		}
+
+		return $written;
+	}//end writeInterventions()
+
+	/**
 	 * Whether this plan already has records from the old shape.
 	 *
 	 * @param string $planId The plan.
@@ -240,7 +267,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 * @return boolean True when it has been migrated.
 	 */
 	private function alreadyMigrated(string $planId): bool {
-		foreach ([CasePlanGoals::SCHEMA, CasePlanInterventions::SCHEMA] as $schema) {
+		foreach ([CasePlanGoalsInterface::SCHEMA, CasePlanInterventionsInterface::SCHEMA] as $schema) {
 			foreach ($this->store->rows(schema: $schema, filters: ['plan' => $planId]) as $row) {
 				if (trim((string)($row['migratedFrom'] ?? '')) !== '') {
 					return true;

@@ -37,6 +37,7 @@ use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Tests for {@see EndOfDayService}.
@@ -65,7 +66,9 @@ class EndOfDayServiceTest extends TestCase {
 			 *
 			 * @return object The object, its own `updated` always today.
 			 */
-			public function find(string $id, string $register, string $schema): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($schema === 'task') {
 					throw new RuntimeException('not an object');
 				}

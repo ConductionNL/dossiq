@@ -113,28 +113,25 @@ class CitizenLookupRecorder {
 	 *
 	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
-	public function record(
-		string $employeeId,
-		string $subjectId,
-		bool $allowed,
-		array $fields = [],
-		string $ground = '',
-	): bool {
+	public function record(string $employeeId, string $subjectId, bool $allowed, array $fields = [], string $ground = ''): bool {
+		return $this->recorded(
+			lookup: new CitizenLookup(employeeId: $employeeId, subjectId: $subjectId, allowed: $allowed, fields: $fields, ground: $ground)
+		);
+	}//end record()
+
+	/**
+	 * Write the lookup's row, answering false and logging when it could not be written.
+	 *
+	 * @param CitizenLookup $lookup Who looked, at whom, whether it was permitted, the fields answered and the ground.
+	 *
+	 * @return bool Whether the row was written.
+	 */
+	private function recorded(CitizenLookup $lookup): bool {
 		try {
 			[$objectService, $register] = $this->target();
 
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: self::SCHEMA,
-				object: $this->row(
-					employeeId: $employeeId,
-					subjectId: $subjectId,
-					allowed: $allowed,
-					fields: $fields,
-					ground: $ground,
-				),
-			);
+			$row = $this->row(lookup: $lookup);
+			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: self::SCHEMA, object: $row);
 
 			return true;
 		} catch (Throwable $e) {
@@ -142,19 +139,33 @@ class CitizenLookupRecorder {
 			// a PHP Error, and an audit that cannot be written must not take the
 			// contact centre down with it. See the class comment for why this
 			// fail-open is the right one here and nowhere else.
-			$this->logger->error(
-				'Dossiq: a citizen lookup could not be recorded. The lookup itself was not affected, '
-				. 'and it is now unaccountable.',
-				[
-					'employee' => $employeeId,
-					'allowed' => $allowed,
-					'exception' => $e->getMessage(),
-				]
-			);
+			return $this->unrecorded(error: $e, lookup: $lookup);
+		}
+	}//end recorded()
 
-			return false;
-		}//end try
-	}//end record()
+	/**
+	 * Log that a lookup could not be recorded.
+	 *
+	 * @param Throwable     $error  Why the row could not be written.
+	 * @param CitizenLookup $lookup The lookup: the account that looked and whether the guard permitted it.
+	 *
+	 * @return bool Always false: the row was not written.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 */
+	private function unrecorded(Throwable $error, CitizenLookup $lookup): bool {
+		$this->logger->error(
+			'Dossiq: a citizen lookup could not be recorded. The lookup itself was not affected, '
+			. 'and it is now unaccountable.',
+			[
+				'employee' => $lookup->employeeId,
+				'allowed' => $lookup->allowed,
+				'exception' => $error->getMessage(),
+			]
+		);
+
+		return false;
+	}//end unrecorded()
 
 	/**
 	 * The row one lookup writes.
@@ -163,34 +174,24 @@ class CitizenLookupRecorder {
 	 * answer no case at all, which is why the schema stopped requiring it at
 	 * 1.1.0. `subjectId` is what an inzageverzoek searches on.
 	 *
-	 * @param string             $employeeId The account that looked.
-	 * @param string             $subjectId  The citizen reference.
-	 * @param bool               $allowed    Whether it was permitted.
-	 * @param array<int, string> $fields     The sensitive fields answered.
-	 * @param string             $ground     The ground.
+	 * @param CitizenLookup $lookup Who looked, at whom, whether it was permitted, the fields answered and the ground.
 	 *
 	 * @return array<string, mixed> The row.
 	 */
-	private function row(
-		string $employeeId,
-		string $subjectId,
-		bool $allowed,
-		array $fields,
-		string $ground,
-	): array {
+	private function row(CitizenLookup $lookup): array {
 		$result = self::RESULT_REFUSED;
-		if ($allowed === true) {
+		if ($lookup->allowed === true) {
 			$result = self::RESULT_ALLOWED;
 		}
 
 		return [
-			'employeeId' => $employeeId,
-			'subjectId' => $subjectId,
+			'employeeId' => $lookup->employeeId,
+			'subjectId' => $lookup->subjectId,
 			'action' => 'read',
 			'moment' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
 			'ipAddress' => $this->request->getRemoteAddress(),
-			'geraadpleegdeVelden' => array_values($fields),
-			'authorisationGround' => $ground,
+			'geraadpleegdeVelden' => array_values($lookup->fields),
+			'authorisationGround' => $lookup->ground,
 			'result' => $result,
 		];
 	}//end row()

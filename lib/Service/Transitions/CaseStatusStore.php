@@ -41,6 +41,9 @@ namespace OCA\Dossiq\Service\Transitions;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -92,7 +95,7 @@ class CaseStatusStore {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($caseId, register: $register, schema: $caseSchema));
+			return $this->toArray(value: $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $caseSchema)));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StatusTransitionService: loadCase failed',
@@ -125,7 +128,12 @@ class CaseStatusStore {
 			throw new RuntimeException('case_schema_not_configured');
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $case, register: $register, schema: $caseSchema));
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $case,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $caseSchema))
+			)
+		);
 	}//end saveCase()
 
 	/**
@@ -156,16 +164,7 @@ class CaseStatusStore {
 		bool $noWorkflowTemplate,
 		string $actor = '',
 	): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('storage_unavailable');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
-		if ($register === '' || $recordSchema === '') {
-			throw new RuntimeException('status_record_schema_not_configured');
-		}
+		[$objectService, $register, $recordSchema] = $this->statusRecordStore();
 
 		$payload = [
 			'case' => $caseId,
@@ -176,25 +175,15 @@ class CaseStatusStore {
 			'noWorkflowTemplate' => $noWorkflowTemplate,
 		];
 
-		// WHO made this move. The four-eyes rule reads this chain to find who
-		// performed a named earlier act, and before this property the only
-		// answer was the row's OpenRegister owner, which is a fact about who
-		// wrote the record rather than about who took the step. They agree
-		// today and they are not the same claim. Written only when the caller
-		// names somebody: an empty string is not an actor, and a record
-		// stamped with one would read as a move nobody made.
-		if (trim($actor) !== '') {
-			$payload['actor'] = $actor;
-		}
-		if ($fromStatus !== '') {
-			$payload['fromStatus'] = $fromStatus;
-		}
+		$payload = $this->withActor(payload: $payload, actor: $actor);
+		$payload = $this->withGiven(payload: $payload, fields: ['fromStatus' => $fromStatus, 'description' => $comment]);
 
-		if ($comment !== null && $comment !== '') {
-			$payload['description'] = $comment;
-		}
-
-		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
+		$record = $this->toArray(
+			value: $objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $recordSchema))
+			)
+		);
 
 		$this->moveEntry?->record(
 			caseId: $caseId,
@@ -208,6 +197,75 @@ class CaseStatusStore {
 
 		return $record;
 	}//end writeStatusRecord()
+
+	/**
+	 * The object service, register and statusRecord schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The store.
+	 *
+	 * @throws RuntimeException When OpenRegister or the statusRecord schema is unavailable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function statusRecordStore(): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('storage_unavailable');
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
+		if ($register === '' || $recordSchema === '') {
+			throw new RuntimeException('status_record_schema_not_configured');
+		}
+
+		return [$objectService, $register, $recordSchema];
+	}//end statusRecordStore()
+
+	/**
+	 * The statusRecord payload with the actor, when the caller names one.
+	 *
+	 * @param array<string, mixed> $payload The statusRecord payload.
+	 * @param string               $actor   Who made the move, or the empty string when the caller names nobody.
+	 *
+	 * @return array<string, mixed> The payload.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withActor(array $payload, string $actor): array {
+		// WHO made this move. The four-eyes rule reads this chain to find who
+		// performed a named earlier act, and before this property the only
+		// answer was the row's OpenRegister owner, which is a fact about who
+		// wrote the record rather than about who took the step. They agree
+		// today and they are not the same claim. Written only when the caller
+		// names somebody: an empty string is not an actor, and a record
+		// stamped with one would read as a move nobody made.
+		if (trim($actor) !== '') {
+			$payload['actor'] = $actor;
+		}
+
+		return $payload;
+	}//end withActor()
+
+	/**
+	 * The statusRecord payload with each field that is neither null nor empty.
+	 *
+	 * @param array<string, mixed>       $payload The statusRecord payload.
+	 * @param array<string, string|null> $fields  The prior statusType UUID as `fromStatus`, the comment as `description`.
+	 *
+	 * @return array<string, mixed> The payload.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function withGiven(array $payload, array $fields): array {
+		foreach ($fields as $key => $value) {
+			if ((string)$value !== '') {
+				$payload[$key] = $value;
+			}
+		}
+
+		return $payload;
+	}//end withGiven()
 
 	/**
 	 * Where the move's timeline entry is built.
@@ -250,7 +308,12 @@ class CaseStatusStore {
 			return $record;
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $record, register: $register, schema: $recordSchema));
+		return $this->toArray(
+			value: $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $recordSchema))
+			)
+		);
 	}//end updateStatusRecord()
 
 	/**

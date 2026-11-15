@@ -40,10 +40,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use Closure;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 /**
  * OpenRegister persistence and lookup for case-integrated email.
  *
@@ -51,7 +56,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseEmailRepository {
+class CaseEmailRepository implements CaseEmailRepositoryInterface {
 
 	use SearchesObjects;
 
@@ -83,24 +88,7 @@ class CaseEmailRepository {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function findTemplate(string $templateId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('email_template_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $templateId
-		);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'email_template_schema', id: $templateId);
 	}//end findTemplate()
 
 	/**
@@ -147,7 +135,7 @@ class CaseEmailRepository {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
-		$caseObj = $objectService->find($caseId, register: $register, schema: $schema);
+		$caseObj = $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $schema));
 		if ($caseObj === null) {
 			return [];
 		}
@@ -276,32 +264,16 @@ class CaseEmailRepository {
 		// Store as activity on the case.
 		$messageId = 'msg-' . uniqid();
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return $messageId;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('email_message_schema');
-
-		if (empty($register) === false && empty($schema) === false) {
-			$objectService->saveObject(
-				object: [
-					'case' => $caseId,
-					'direction' => 'outbound',
-					'from' => $fromAddress,
-					'to' => $to,
-					'subject' => $subject,
-					'body' => $body,
-					'messageId' => $messageId,
-					'sentAt' => date('Y-m-d\TH:i:s'),
-				],
-				register: $register,
-				schema: $schema,
-			);
-		}
-
-		return $messageId;
+		return $this->recordMessage(messageId: $messageId, message: fn (): array => [
+			'case' => $caseId,
+			'direction' => 'outbound',
+			'from' => $fromAddress,
+			'to' => $to,
+			'subject' => $subject,
+			'body' => $body,
+			'messageId' => $messageId,
+			'sentAt' => date('Y-m-d\TH:i:s'),
+		]);
 	}//end recordSentEmail()
 
 	/**
@@ -328,6 +300,28 @@ class CaseEmailRepository {
 	): string {
 		$messageId = 'msg-' . uniqid();
 
+		return $this->recordMessage(messageId: $messageId, message: fn (): array => [
+			'case' => $caseId,
+			'direction' => 'inbound',
+			'from' => $from,
+			'to' => $recipient,
+			'subject' => $subject,
+			'body' => $body,
+			'messageId' => $messageId,
+			'inReplyTo' => $inReplyTo,
+			'receivedAt' => date('Y-m-d\TH:i:s'),
+		]);
+	}//end recordReceivedEmail()
+
+	/**
+	 * Store one email message on the case, when OpenRegister and the message schema are there.
+	 *
+	 * @param string                         $messageId The message ID, answered either way.
+	 * @param Closure(): array<string, mixed> $message   Builds the stored message.
+	 *
+	 * @return string The message ID.
+	 */
+	private function recordMessage(string $messageId, Closure $message): string {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return $messageId;
@@ -338,24 +332,13 @@ class CaseEmailRepository {
 
 		if (empty($register) === false && empty($schema) === false) {
 			$objectService->saveObject(
-				object: [
-					'case' => $caseId,
-					'direction' => 'inbound',
-					'from' => $from,
-					'to' => $recipient,
-					'subject' => $subject,
-					'body' => $body,
-					'messageId' => $messageId,
-					'inReplyTo' => $inReplyTo,
-					'receivedAt' => date('Y-m-d\TH:i:s'),
-				],
-				register: $register,
-				schema: $schema,
+				object: $message(),
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
 			);
 		}
 
 		return $messageId;
-	}//end recordReceivedEmail()
+	}//end recordMessage()
 
 	/**
 	 * Find a case UUID by its human-readable identifier.

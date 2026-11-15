@@ -64,24 +64,37 @@ class ZtcTypeReferences {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function withDirectFields(array $body, array $map, array $jsonFields=[]): array {
-		$directFields = [];
-		foreach ($map as $field => $directField) {
-			if (isset($body[$field]) === false || is_array($body[$field]) === false) {
-				continue;
-			}
-
-			$directFields[$directField] = $body[$field];
-			if (in_array($directField, $jsonFields, true) === true) {
-				$directFields[$directField] = json_encode($body[$field]);
-			}
-		}
-
+		$directFields = $this->directFieldsOf(body: $body, fields: ['map' => $map, 'jsonFields' => $jsonFields]);
 		if (empty($directFields) === false) {
 			$body['_directFields'] = $directFields;
 		}
 
 		return $body;
 	}//end withDirectFields()
+
+	/**
+	 * The mapped fields the body carries as arrays, JSON-encoded where the schema stores them as strings.
+	 *
+	 * @param array $body   The request body
+	 * @param array $fields The ZGW field to direct field map (`map`) and the direct fields stored as JSON (`jsonFields`)
+	 *
+	 * @return array<string, mixed> The direct fields
+	 */
+	private function directFieldsOf(array $body, array $fields): array {
+		$directFields = [];
+		foreach ($fields['map'] as $field => $directField) {
+			if (isset($body[$field]) === false || is_array($body[$field]) === false) {
+				continue;
+			}
+
+			$directFields[$directField] = $body[$field];
+			if (in_array($directField, $fields['jsonFields'], true) === true) {
+				$directFields[$directField] = json_encode($body[$field]);
+			}
+		}
+
+		return $directFields;
+	}//end directFieldsOf()
 
 	/**
 	 * Resolve non-URL references in a type array field to actual object UUIDs.
@@ -110,19 +123,32 @@ class ZtcTypeReferences {
 			return $body;
 		}
 
+		$body[$field] = $this->resolvedAll(refs: $body[$field], lookup: ['scope' => $scope, 'field' => $lookupField]);
+
+		return $body;
+	}//end resolveTypeReferences()
+
+	/**
+	 * Every reference in the list resolved to the uuids it names, in order.
+	 *
+	 * @param array<int, mixed>                                       $refs   The references.
+	 * @param array{scope: array{0: string, 1: string}, field: string} $lookup The register and schema to search, and the
+	 *                                                                        OpenRegister field to search by.
+	 *
+	 * @return array<int, string> The uuids.
+	 */
+	private function resolvedAll(array $refs, array $lookup): array {
 		$resolved = [];
-		foreach ($body[$field] as $ref) {
+		foreach ($refs as $ref) {
 			if (is_string($ref) === false || $ref === '') {
 				continue;
 			}
 
-			array_push($resolved, ...$this->resolveReference(ref: $ref, scope: $scope, lookupField: $lookupField));
+			array_push($resolved, ...$this->resolveReference(ref: $ref, lookup: $lookup));
 		}
 
-		$body[$field] = $resolved;
-
-		return $body;
-	}//end resolveTypeReferences()
+		return $resolved;
+	}//end resolvedAll()
 
 	/**
 	 * Resolve one type reference to the uuids it names.
@@ -132,12 +158,13 @@ class ZtcTypeReferences {
 	 * resolves to nothing.
 	 *
 	 * @param string $ref The reference
-	 * @param array{0: string, 1: string} $scope The register and schema to search
-	 * @param string $lookupField The OpenRegister field to search by
+	 * @param array{scope: array{0: string, 1: string}, field: string} $lookup The register and schema to search,
+	 *                                                                     and the OpenRegister field to search by
 	 *
 	 * @return array<string> The resolved uuids
 	 */
-	private function resolveReference(string $ref, array $scope, string $lookupField): array {
+	private function resolveReference(string $ref, array $lookup): array {
+		['scope' => $scope, 'field' => $lookupField] = $lookup;
 		// If it's a URL containing a UUID, extract and store just the UUID.
 		if (str_starts_with($ref, 'http://') === true || str_starts_with($ref, 'https://') === true) {
 			$urlUuid = $this->fieldValidator->extractUuid(url: $ref);
@@ -203,26 +230,53 @@ class ZtcTypeReferences {
 
 		$resolved = [];
 		foreach ($body['gerelateerdeZaaktypen'] as $rel) {
-			$caseTypeRef = $rel['caseType'] ?? '';
-			if ($caseTypeRef === '' || is_string($caseTypeRef) === false) {
-				continue;
-			}
-
-			if (str_starts_with($caseTypeRef, 'http://') === true || str_starts_with($caseTypeRef, 'https://') === true) {
-				$resolved[] = $rel;
-				continue;
-			}
-
-			$foundIds = $this->lookups->findAllObjectsByField(register: $scope[0], schema: $scope[1], field: 'identifier', value: $caseTypeRef);
-			foreach ($foundIds as $id) {
-				$entry = $rel;
-				$entry['caseType'] = $id;
-				$resolved[] = $entry;
-			}
+			$resolved = array_merge($resolved, $this->resolvedRelations(rel: $rel, scope: $scope));
 		}//end foreach
 
 		$body['gerelateerdeZaaktypen'] = $resolved;
 
 		return $body;
 	}//end resolveGerelateerdeZaaktypen()
+
+	/**
+	 * One gerelateerdeZaaktype relation resolved: kept by URL, one per match by identificatie, or dropped.
+	 *
+	 * @param mixed $rel   The relation.
+	 * @param array $scope The register and the case type schema.
+	 *
+	 * @return array The resolved relations.
+	 */
+	private function resolvedRelations(mixed $rel, array $scope): array {
+		$caseTypeRef = $rel['caseType'] ?? '';
+		if ($caseTypeRef === '' || is_string($caseTypeRef) === false) {
+			return [];
+		}
+
+		if (str_starts_with($caseTypeRef, 'http://') === true || str_starts_with($caseTypeRef, 'https://') === true) {
+			return [$rel];
+		}
+
+		return $this->relationsByIdentifier(rel: $rel, scope: $scope);
+	}//end resolvedRelations()
+
+	/**
+	 * One relation per zaaktype whose identificatie matches the reference.
+	 *
+	 * @param mixed $rel   The relation, naming the identificatie as its caseType.
+	 * @param array $scope The register and the case type schema.
+	 *
+	 * @return array The relations.
+	 */
+	private function relationsByIdentifier(mixed $rel, array $scope): array {
+		$caseTypeRef = (string)$rel['caseType'];
+		$resolved = [];
+		$foundIds = $this->lookups->findAllObjectsByField(register: $scope[0], schema: $scope[1], field: 'identifier', value: $caseTypeRef);
+		foreach ($foundIds as $id) {
+			$entry = $rel;
+			$entry['caseType'] = $id;
+			$resolved[] = $entry;
+		}
+
+		return $resolved;
+	}//end relationsByIdentifier()
 }//end class

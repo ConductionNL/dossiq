@@ -35,8 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Access\ReadableObjects;
-use OCA\Dossiq\Service\Pipelinq\PipelinqGateway;
+use OCA\Dossiq\Kernel\Contracts\PipelinqGatewayInterface;
+use OCA\Dossiq\Kernel\Contracts\ReadableObjectsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -63,14 +63,14 @@ class PartyTicketController extends Controller {
 	 *
 	 * @param string          $appName The app name.
 	 * @param IRequest        $request The HTTP request.
-	 * @param PipelinqGateway $gateway     The one seam that names pipelinq.
-	 * @param ReadableObjects $readable    Whether a caller is signed in, and which master entities they may read.
+	 * @param PipelinqGatewayInterface $gateway     The one seam that names pipelinq.
+	 * @param ReadableObjectsInterface $readable    Whether a caller is signed in, and which master entities they may read.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PipelinqGateway $gateway,
-		private readonly ReadableObjects $readable,
+		private readonly PipelinqGatewayInterface $gateway,
+		private readonly ReadableObjectsInterface $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -85,6 +85,24 @@ class PartyTicketController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function openTicketCounts(): JSONResponse {
+		$keys = $this->readableKeys();
+		if ($keys instanceof JSONResponse) {
+			return $keys;
+		}
+
+		if ($keys === []) {
+			return new JSONResponse(['available' => true, 'values' => []]);
+		}
+
+		return $this->openTicketCountsOf(keys: $keys);
+	}//end openTicketCounts()
+
+	/**
+	 * The requested parties the caller may read, or why they cannot be read.
+	 *
+	 * @return array|JSONResponse The readable master-entity keys, or the refusal.
+	 */
+	private function readableKeys(): array|JSONResponse {
 		if ($this->readable->hasCaller() === false) {
 			return new JSONResponse(['error' => 'Sign in to read these parties.'], Http::STATUS_UNAUTHORIZED);
 		}
@@ -100,10 +118,17 @@ class PartyTicketController extends Controller {
 			return new JSONResponse(['error' => 'The parties could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
-		if ($keys === []) {
-			return new JSONResponse(['available' => true, 'values' => []]);
-		}
+		return $keys;
+	}//end readableKeys()
 
+	/**
+	 * Count the open tickets of each party, or answer unavailable when the tickets cannot be read.
+	 *
+	 * @param array $keys The readable master-entity keys.
+	 *
+	 * @return JSONResponse
+	 */
+	private function openTicketCountsOf(array $keys): JSONResponse {
 		$tickets = $this->gateway->openTicketsByMasterEntity(refs: $keys);
 		if ($tickets === null) {
 			return new JSONResponse(['available' => false]);
@@ -115,7 +140,7 @@ class PartyTicketController extends Controller {
 		}
 
 		return new JSONResponse(['available' => true, 'values' => $values]);
-	}//end openTicketCounts()
+	}//end openTicketCountsOf()
 
 	/**
 	 * One party's tickets: the open ones, or with `status` `closed` or `all`

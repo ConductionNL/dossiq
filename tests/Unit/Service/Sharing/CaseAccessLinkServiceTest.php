@@ -44,6 +44,8 @@ use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Fake of OpenRegister's AccessLinkService.
@@ -179,6 +181,7 @@ final class CalFakeObjectService {
 	 * @return array<string, mixed>|null
 	 */
 	public function find($id, ...$args) {
+		$args = LegacyObjectArgs::flatten(args: $args);
 		unset($args);
 		return ($this->objects[(string)$id] ?? null);
 	}//end find()
@@ -188,7 +191,10 @@ final class CalFakeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, int $register, int $schema, ?string $uuid = null): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		unset($register, $schema);
 		$id = ($object['id'] ?? $uuid ?? ('share-' . $this->autoId++));
 		$object['id'] = $id;
@@ -351,6 +357,30 @@ class CaseAccessLinkServiceTest extends TestCase {
 		self::assertSame('active', $share['status']);
 		self::assertArrayNotHasKey('token', $share, 'dossiq mints no token of its own.');
 	}//end testAShareMintsALinkOverTheCase()
+
+	/**
+	 * A share asked for without an expiry still mints with one: OpenRegister
+	 * refuses a link with none, so the link gets the default thirty days.
+	 *
+	 * @return void
+	 */
+	public function testAShareWithoutAnExpiryMintsWithTheDefaultTtl(): void {
+		$before = new \DateTimeImmutable(CaseAccessLinkService::DEFAULT_TTL . ' -1 second');
+		$result = $this->service->createTokenShare(
+			caseId: 'case-1',
+			label: 'Brandweer',
+			createdBy: 'anja',
+			expiresAt: '  ',
+		);
+		$after = new \DateTimeImmutable(CaseAccessLinkService::DEFAULT_TTL . ' +1 second');
+
+		self::assertArrayNotHasKey('error', $result);
+		$minted = $this->links->minted[array_key_first($this->links->minted)];
+		$expires = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, (string)$minted['expiresAt']);
+		self::assertInstanceOf(\DateTimeImmutable::class, $expires, 'The default expiry is an ISO 8601 date.');
+		self::assertGreaterThanOrEqual($before->getTimestamp(), $expires->getTimestamp());
+		self::assertLessThanOrEqual($after->getTimestamp(), $expires->getTimestamp());
+	}//end testAShareWithoutAnExpiryMintsWithTheDefaultTtl()
 
 	/**
 	 * A capability that is not one refuses the whole share, and nothing is

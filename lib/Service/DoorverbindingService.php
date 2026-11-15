@@ -29,9 +29,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DoorverbindingServiceInterface;
 use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -41,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
  */
-class DoorverbindingService {
+class DoorverbindingService implements DoorverbindingServiceInterface {
 
 	use SearchesObjects;
 
@@ -85,9 +89,28 @@ class DoorverbindingService {
 			throw new RuntimeException('contactmomentId and vanMedewerkerId are required');
 		}
 
-		[$objectService, $register, $schema] = $this->resolve();
+		$target = $this->resolve();
 
-		$record = [
+		$record = $this->transferRecord(data: $data, interactionId: $interactionId, fromEmployeeId: $fromEmployeeId);
+
+		$created = $this->saveTransferRecord(target: $target, record: $record);
+
+		return $this->toArray(result: $created);
+	}//end initiateWarmTransfer()
+
+	/**
+	 * The doorverbinding record a warm transfer starts with.
+	 *
+	 * @param array<string, mixed> $data           The transfer fields.
+	 * @param string               $interactionId  The trimmed contactmoment id.
+	 * @param string               $fromEmployeeId The trimmed transferring employee id.
+	 *
+	 * @return array<string, mixed> The record to save.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
+	 */
+	private function transferRecord(array $data, string $interactionId, string $fromEmployeeId): array {
+		return [
 			'interactionId' => $interactionId,
 			'fromEmployeeId' => $fromEmployeeId,
 			'toEmployeeId' => ($data['toEmployeeId'] ?? null),
@@ -98,19 +121,36 @@ class DoorverbindingService {
 			'accepted' => null,
 			'warmTransferStarted' => date('c'),
 		];
+	}//end transferRecord()
+
+	/**
+	 * Save a new doorverbinding record, turning any failure into one RuntimeException.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $target The ObjectService, register and schema.
+	 * @param array<string, mixed>                   $record The record to save.
+	 *
+	 * @return mixed The created object.
+	 *
+	 * @throws RuntimeException When the write fails.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
+	 */
+	private function saveTransferRecord(array $target, array $record): mixed {
+		[$objectService, $register, $schema] = $target;
 
 		try {
-			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to initiate doorverbinding: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException('Could not initiate doorverbinding');
 		}
-
-		return $this->toArray(result: $created);
-	}//end initiateWarmTransfer()
+	}//end saveTransferRecord()
 
 	/**
 	 * Mark a doorverbinding as accepted by the receiving specialist.
@@ -221,7 +261,7 @@ class DoorverbindingService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		try {
-			$record = $objectService->find($doorverbindingId, register: $register, schema: $schema);
+			$record = $objectService->find($doorverbindingId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			throw new RuntimeException('Doorverbinding not found');
 		}
@@ -247,7 +287,7 @@ class DoorverbindingService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to update doorverbinding: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			throw new RuntimeException('Could not update doorverbinding');
 		}

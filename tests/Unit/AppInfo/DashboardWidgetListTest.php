@@ -16,12 +16,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\DashboardWidgetList;
+use OCA\Dossiq\Dashboard\DashboardWidgetList;
 use OCA\Dossiq\Dashboard\MyOpenWorkWidget;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\DashboardWidgetList
+ * @covers \OCA\Dossiq\Dashboard\DashboardWidgetList
  */
 class DashboardWidgetListTest extends TestCase {
 	public function testEveryListedWidgetClassExistsOnce(): void {

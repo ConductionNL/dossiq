@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\TemplateLibraryService;
+use OCA\Dossiq\Kernel\Contracts\TemplateLibraryServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -44,13 +44,13 @@ class TemplateController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param TemplateLibraryService $templateService The template service
+	 * @param TemplateLibraryServiceInterface $templateService The template service
 	 * @param IUserSession $userSession The user session
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TemplateLibraryService $templateService,
+		private readonly TemplateLibraryServiceInterface $templateService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

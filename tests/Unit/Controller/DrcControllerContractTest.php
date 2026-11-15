@@ -51,6 +51,8 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\UnlockRequest;
 
 /**
  * Minimal OpenRegister ObjectService stub for the DRC contract tests.
@@ -80,7 +82,7 @@ interface DrcContractObjectServiceStub {
 	 *
 	 * @return mixed The saved object row.
 	 */
-	public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Release OpenRegister's own lock on an object.
@@ -89,7 +91,7 @@ interface DrcContractObjectServiceStub {
 	 *
 	 * @return mixed The unlocked object row.
 	 */
-	public function unlockObject(string $identifier): mixed;
+	public function unlockObject(UnlockRequest $request): mixed;
 }//end interface
 
 /**
@@ -363,15 +365,13 @@ class DrcControllerContractTest extends TestCase {
 		$objectService->method('find')->willReturn(['lockId' => 'the-real-lock', 'locked' => true]);
 		$objectService->expects($this->once())
 			->method('unlockObject')
-			->with('doc-1')
+			->with($this->callback(static fn (UnlockRequest $request): bool => $request->identifier === 'doc-1'))
 			->willReturn(['id' => 'doc-1']);
 		$objectService->method('saveObject')->willReturnCallback(
-			static function (
-				string $register,
-				string $schema,
-				array $object,
-				?string $uuid = null,
-			) use (&$saved): array {
+			static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saved): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$saved = $object;
 				return $object;
 			}

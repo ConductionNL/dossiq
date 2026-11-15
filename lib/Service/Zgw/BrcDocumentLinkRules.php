@@ -95,17 +95,40 @@ class BrcDocumentLinkRules extends ZgwRulesBase {
 			return null;
 		}
 
+		$btData = $this->decisionTypeOf(decisionUrl: $decisionUrl);
+		if ($btData === null) {
+			return null;
+		}
+
+		return $this->documentTypeNotAllowed(btData: $btData, ioUrl: $ioUrl);
+	}//end validateBioInformatieobjecttype()
+
+	/**
+	 * The besluittype of a besluit.
+	 *
+	 * @param string $decisionUrl The besluit URL
+	 *
+	 * @return array|null The besluittype, or null when the besluit or its besluittype is unresolvable.
+	 */
+	private function decisionTypeOf(string $decisionUrl): ?array {
 		// Get the besluit to find its besluittype, then the besluittype.
 		$decisionTypeId = $this->getObjectByUrl(url: $decisionUrl, schemaKey: 'decision_schema')['decisionType'] ?? '';
 		if (empty($decisionTypeId) === true) {
 			return null;
 		}
 
-		$btData = $this->getObjectByUrl(url: $decisionTypeId, schemaKey: 'decision_type_schema');
-		if ($btData === null) {
-			return null;
-		}
+		return $this->getObjectByUrl(url: $decisionTypeId, schemaKey: 'decision_type_schema');
+	}//end decisionTypeOf()
 
+	/**
+	 * Validate the document's documenttype against the besluittype's allowed documenttypes.
+	 *
+	 * @param array  $btData The besluittype.
+	 * @param string $ioUrl  The informatieobject URL
+	 *
+	 * @return array|null Validation error, or null if valid
+	 */
+	private function documentTypeNotAllowed(array $btData, string $ioUrl): ?array {
 		// Get the allowed documentTypes from besluittype.
 		$allowedDocTypes = $this->decodeList(value: $btData['documentTypes'] ?? '[]');
 		if (empty($allowedDocTypes) === true) {
@@ -117,15 +140,26 @@ class BrcDocumentLinkRules extends ZgwRulesBase {
 			return null;
 		}
 
-		// Check if the documentType is in the allowed list, by name or by uuid.
-		if (in_array($docType['name'], $allowedDocTypes, true) === true
-			|| in_array($docType['uuid'], $allowedDocTypes, true) === true
-		) {
+		if ($this->isAllowedType(docType: $docType, allowedDocTypes: $allowedDocTypes) === true) {
 			return null;
 		}
 
 		return $this->missingInformatieobjecttypeError();
-	}//end validateBioInformatieobjecttype()
+	}//end documentTypeNotAllowed()
+
+	/**
+	 * Whether the documenttype is in the allowed list, by name or by uuid.
+	 *
+	 * @param array{uuid: string, name: mixed} $docType         The document's documenttype.
+	 * @param array                            $allowedDocTypes The besluittype's allowed documenttypes.
+	 *
+	 * @return bool True when allowed.
+	 */
+	private function isAllowedType(array $docType, array $allowedDocTypes): bool {
+		// Check if the documentType is in the allowed list, by name or by uuid.
+		return in_array($docType['name'], $allowedDocTypes, true) === true
+			|| in_array($docType['uuid'], $allowedDocTypes, true) === true;
+	}//end isAllowedType()
 
 	/**
 	 * The documenttype of the document an informatieobject URL points at.

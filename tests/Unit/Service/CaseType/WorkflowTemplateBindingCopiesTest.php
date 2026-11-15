@@ -32,6 +32,7 @@ use ReflectionNamedType;
  * @covers \OCA\Dossiq\Service\CaseType\CaseVersionMove
  *
  * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @uses \OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding
  */
 class WorkflowTemplateBindingCopiesTest extends TestCase {
 	/**

@@ -25,8 +25,8 @@ namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseType\CaseVersionMove;
-use OCA\OpenRegister\BulkAction\BulkActionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseVersionMoveInterface;
+use OCA\OpenRegister\BulkAction\StepBulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
@@ -63,7 +63,7 @@ use Throwable;
  * design so the four outcomes read as four named things rather than as four
  * flags. There is no instance to call, so the rule cannot be satisfied here.
  */
-class MoveCaseTypeVersionAction implements BulkActionInterface {
+class MoveCaseTypeVersionAction implements StepBulkActionInterface {
 
 	use ReadsCaseObject;
 
@@ -79,7 +79,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseVersionMove $move The one answer to what a move changes.
+	 * @param CaseVersionMoveInterface $move The one answer to what a move changes.
 	 * @param IL10N           $l10n Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -87,7 +87,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
-		private readonly CaseVersionMove $move,
+		private readonly CaseVersionMoveInterface $move,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
@@ -150,7 +150,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function getGuards(): array {
-		return [BulkActionInterface::GUARD_HOMOGENEITY];
+		return [StepBulkActionInterface::GUARD_HOMOGENEITY];
 	}//end getGuards()
 
 	/**
@@ -192,37 +192,60 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
-		$object = $step->object;
-		$parameters = $step->parameters;
-		$commit = $step->commit;
-		$actor = $step->actor;
-		$caseId = $this->caseId(object: $object);
+		$caseId = $this->caseId(object: $step->object);
 		if ($caseId === '') {
 			return BulkActionResult::skipped(reason: 'no_case_id');
 		}
 
+		return $this->attempt(step: $step, caseId: $caseId);
+	}//end apply()
+
+	/**
+	 * Rehearse or perform the move for a case that has an id.
+	 *
+	 * @param BulkStep $step   The member object, the parameters, whether to commit and who started the job.
+	 * @param string   $caseId The case uuid.
+	 *
+	 * @return BulkActionResult What happened, or what would.
+	 */
+	private function attempt(BulkStep $step, string $caseId): BulkActionResult {
+		$parameters = $step->parameters;
 		$target = trim((string)($parameters['target'] ?? ''));
 		$reason = trim((string)($parameters['reason'] ?? ''));
 
 		try {
-			if ($commit === false) {
+			if ($step->commit === false) {
 				return $this->rehearse(caseId: $caseId, target: $target);
 			}
 
-			$this->move->move(
-				caseId: $caseId,
-				targetCaseTypeId: $target,
-				reason: $reason,
-				actorUid: $this->uidOf(actor: $actor),
-			);
-
-			return BulkActionResult::applied();
+			return $this->commitMove(caseId: $caseId, target: $target, reason: $reason, actor: $step->actor);
 		} catch (RefusedException $e) {
 			return BulkActionResult::refused(rule: $e->getSentence());
 		} catch (Throwable $e) {
 			return BulkActionResult::failed(message: $e->getMessage());
 		}//end try
-	}//end apply()
+	}//end attempt()
+
+	/**
+	 * Move the case to the target version.
+	 *
+	 * @param string     $caseId The case uuid.
+	 * @param string     $target The target case type version.
+	 * @param string     $reason Why the case moves.
+	 * @param IUser|null $actor  Who started the job.
+	 *
+	 * @return BulkActionResult Applied.
+	 */
+	private function commitMove(string $caseId, string $target, string $reason, ?IUser $actor): BulkActionResult {
+		$this->move->move(
+			caseId: $caseId,
+			targetCaseTypeId: $target,
+			reason: $reason,
+			actorUid: $this->uidOf(actor: $actor),
+		);
+
+		return BulkActionResult::applied();
+	}//end commitMove()
 
 	/**
 	 * What the move would do to this case, without writing it.

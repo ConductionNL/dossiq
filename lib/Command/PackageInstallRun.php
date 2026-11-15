@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
+use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -41,9 +41,9 @@ final class PackageInstallRun {
 	/**
 	 * The installer, over the shipped packages or the given root.
 	 *
-	 * @var PackageInstaller
+	 * @var PackageInstallerInterface
 	 */
-	public PackageInstaller $installer;
+	public PackageInstallerInterface $installer;
 
 	/**
 	 * The package ids to install.

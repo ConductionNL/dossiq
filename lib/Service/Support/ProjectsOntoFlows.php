@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use Throwable;
 
 /**
@@ -75,7 +75,7 @@ trait ProjectsOntoFlows {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Flow projection could not resolve FlowService: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 
 			return null;
@@ -99,7 +99,7 @@ trait ProjectsOntoFlows {
 		$offset = 0;
 
 		while (true) {
-			$page = $flowService->findAll(Application::APP_ID, null, null, self::FLOW_PAGE, $offset);
+			$page = $flowService->findAll(AppIdentity::APP_ID, null, null, self::FLOW_PAGE, $offset);
 			if (is_array($page) === false || $page === []) {
 				return $map;
 			}
@@ -136,7 +136,7 @@ trait ProjectsOntoFlows {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not project onto a flow',
-				['app' => Application::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
 			);
 
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => $e->getMessage()];

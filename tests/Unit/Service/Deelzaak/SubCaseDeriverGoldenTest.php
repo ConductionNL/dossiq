@@ -38,6 +38,8 @@ use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden test for SubCaseDeriver::derive().
@@ -45,6 +47,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseStore
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseLink
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class SubCaseDeriverGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -183,7 +187,9 @@ class SubCaseDeriverGoldenTest extends TestCase {
 			 *
 			 * @return mixed The object.
 			 */
-			public function find(string|int $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string|int $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->test->calls[] = ['find', ['id' => $id, 'register' => $register, 'schema' => $schema]];
 				if ($id !== 'parent-1') {
 					throw new DoesNotExistException('Object not found');
@@ -201,7 +207,9 @@ class SubCaseDeriverGoldenTest extends TestCase {
 			 *
 			 * @return mixed The saved object.
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null): mixed {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->test->calls[] = [
 					'saveObject',
 					['object' => SubCaseDeriverGoldenTest::shown(value: $object), 'register' => $register, 'schema' => $schema],

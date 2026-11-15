@@ -14,8 +14,8 @@ SPDX-License-Identifier: EUPL-1.2
 
 <script>
 import { subscribe, unsubscribe } from '@nextcloud/event-bus'
+import { objectStoreAccess } from '../../mixins/objectStore.js'
 import { companyResult, personResult } from '../../services/initiatorSearch.js'
-import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 
 /**
@@ -116,17 +116,7 @@ function projectionUnchanged(caseObject, projection) {
 export default {
 	name: 'RequesterProjection',
 
-	computed: {
-		/**
-		 * The object store the case and the register rows are read from.
-		 *
-		 * @return {object} The store.
-		 * @spec openspec/specs/initiator-display/spec.md
-		 */
-		objectStore() {
-			return useObjectStore()
-		},
-	},
+	mixins: [objectStoreAccess],
 
 	watch: {
 		'$route.params.id': function () {

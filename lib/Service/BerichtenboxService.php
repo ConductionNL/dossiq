@@ -29,10 +29,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\BerichtenboxServiceInterface;
 use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -42,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/berichtenbox-integration/spec.md
  */
-class BerichtenboxService {
+class BerichtenboxService implements BerichtenboxServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -212,8 +215,7 @@ class BerichtenboxService {
 
 		$saved = $sent['objectService']->saveObject(
 			object: $messageData,
-			register: (int)$register,
-			schema: (int)$schema,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema))
 		);
 
 		$this->journal->recordSend(caseId: $letter['caseId'], subject: $letter['subject'], result: $sent['result'], messageData: $messageData);
@@ -232,8 +234,6 @@ class BerichtenboxService {
 
 		return $stored;
 	}//end storedSend()
-
-
 
 	/**
 	 * Log what became of the send, at the level the outcome deserves.
@@ -302,9 +302,7 @@ class BerichtenboxService {
 			return $this->serviceAccount->runAsWhenNobodyIsSignedIn(
 				operation: fn (): bool => $this->recordStatus(
 					externalMessageId: $externalMessageId,
-					status: $status,
-					lastError: $lastError,
-					simulated: $simulated,
+					stamp: ['status' => $status, 'lastError' => $lastError, 'simulated' => $simulated]
 				)
 			);
 		} catch (ServiceAccountUnavailableException $e) {
@@ -315,59 +313,81 @@ class BerichtenboxService {
 	/**
 	 * Record one status, as whoever is acting.
 	 *
-	 * @param string $externalMessageId The id integriq tracks the message by.
-	 * @param string $status            The status it moved to.
-	 * @param string $lastError         The provider's reason, when it failed.
-	 * @param bool   $simulated         Whether the binding that handled it sends nothing.
+	 * @param string                                                  $externalMessageId The id integriq tracks the message by.
+	 * @param array{status: string, lastError: string, simulated: bool} $stamp             The status it moved to, the provider's
+	 *                                                                                     reason and whether the binding sends nothing.
 	 *
 	 * @return bool True when a stored message was updated.
 	 */
-	private function recordStatus(
-		string $externalMessageId,
-		string $status,
-		string $lastError,
-		bool $simulated,
-	): bool {
-		if (trim($externalMessageId) === '' || trim($status) === '') {
+	private function recordStatus(string $externalMessageId, array $stamp): bool {
+		if (trim($externalMessageId) === '' || trim($stamp['status']) === '') {
 			return false;
 		}
 
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
+		$tracked = $this->trackedMessage(externalMessageId: $externalMessageId);
+		if ($tracked === null) {
 			return false;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
+		[$objectService, $register, $schema, $data] = $tracked;
 
-		$data = $this->storedMessage(
-			objectService: $objectService,
-			externalMessageId: $externalMessageId,
-			register: (int)$register,
-			schema: (int)$schema,
-		);
-		if ($data === null) {
-			return false;
-		}
+		$data = $this->withStatus(data: $data, stamp: $stamp);
 
-		$data['status'] = $status;
-		$data['lastError'] = $lastError;
-		$data['simulated'] = $simulated;
-		if ($status === 'read') {
-			$data['readAt'] = (new DateTime())->format('c');
-		}
-
-		$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+		$objectService->saveObject(object: $data, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema)));
 
 		$this->journal->recordStatus(
 			data: $data,
 			externalMessageId: $externalMessageId,
-			status: $status,
-			lastError: $lastError,
+			status: $stamp['status'],
+			lastError: $stamp['lastError']
 		);
 
 		return true;
 	}//end recordStatus()
+
+	/**
+	 * The object service, register, schema and stored message for an external id.
+	 *
+	 * @param string $externalMessageId The id integriq tracks the message by.
+	 *
+	 * @return array{0: object, 1: int, 2: int, 3: array<string, mixed>}|null The store and the message, or null.
+	 */
+	private function trackedMessage(string $externalMessageId): ?array {
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = (int)$this->settingsService->getConfigValue('register');
+		$schema = (int)$this->settingsService->getConfigValue('berichtenbox_message_schema');
+
+		$filters = ['register' => $register, 'schema' => $schema, 'externalMessageId' => $externalMessageId];
+		$data = $this->storedMessage(objectService: $objectService, filters: $filters);
+		if ($data === null) {
+			return null;
+		}
+
+		return [$objectService, $register, $schema, $data];
+	}//end trackedMessage()
+
+	/**
+	 * The stored message with the new status stamped onto it.
+	 *
+	 * @param array<string, mixed>                                    $data  The stored message.
+	 * @param array{status: string, lastError: string, simulated: bool} $stamp The status, the reason and the binding kind.
+	 *
+	 * @return array<string, mixed> The message with status, lastError, simulated and readAt set.
+	 */
+	private function withStatus(array $data, array $stamp): array {
+		$data['status'] = $stamp['status'];
+		$data['lastError'] = $stamp['lastError'];
+		$data['simulated'] = $stamp['simulated'];
+		if ($stamp['status'] === 'read') {
+			$data['readAt'] = (new DateTime())->format('c');
+		}
+
+		return $data;
+	}//end withStatus()
 
 	/**
 	 * The stored message integriq is tracking under this external id, as an array.
@@ -376,33 +396,29 @@ class BerichtenboxService {
 	 * send is not ours to record, and it is not an error, so an absent row and
 	 * a row in a shape this cannot read both answer null.
 	 *
-	 * @param object $objectService     The OpenRegister object service.
-	 * @param string $externalMessageId The id integriq tracks the message by.
-	 * @param int    $register          The register the messages live in.
-	 * @param int    $schema            The message schema.
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $filters       The register, the message schema and the external id.
 	 *
 	 * @return array<string, mixed>|null The stored message, or null.
 	 */
-	private function storedMessage(
-		object $objectService,
-		string $externalMessageId,
-		int $register,
-		int $schema,
-	): ?array {
-		$matches = $objectService->findAll(
-			[
-				'filters' => [
-					'register' => $register,
-					'schema' => $schema,
-					'externalMessageId' => $externalMessageId,
-				],
-			],
-		);
+	private function storedMessage(object $objectService, array $filters): ?array {
+		$matches = $objectService->findAll(['filters' => $filters]);
 
 		if ($matches === []) {
 			return null;
 		}
 
+		return $this->firstMatchAsArray(matches: $matches);
+	}//end storedMessage()
+
+	/**
+	 * The first found message as an array, or null when it is in a shape this cannot read.
+	 *
+	 * @param array<int, mixed> $matches The found messages, at least one.
+	 *
+	 * @return array<string, mixed>|null The stored message, or null.
+	 */
+	private function firstMatchAsArray(array $matches): ?array {
 		$data = $matches[0];
 		if (is_object($data) === true && method_exists($data, 'jsonSerialize') === true) {
 			$data = $data->jsonSerialize();
@@ -413,9 +429,7 @@ class BerichtenboxService {
 		}
 
 		return $data;
-	}//end storedMessage()
-
-
+	}//end firstMatchAsArray()
 
 	/**
 	 * Get sent messages for a case.

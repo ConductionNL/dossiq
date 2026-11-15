@@ -46,9 +46,13 @@ use Psr\Container\ContainerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Service\Task\FormCompletionRequest;
+use OCA\OpenRegister\Db\Task;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\EngineTaskGateway
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskPayload
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskRow
  */
 class EngineTaskGatewayTest extends TestCase {
 
@@ -697,12 +701,10 @@ class EngineTaskGatewayTest extends TestCase {
 		$completion->expects($this->once())
 			->method('complete')
 			->with(
-				'task-1',
-				$this->callback(static fn (TaskAnswer $answer): bool => $answer->outcome === 'approved'),
-				['verslag' => 'klaar'],
+				$this->callback(static fn (FormCompletionRequest $request): bool => $request->uuid === 'task-1' && $request->answer->outcome === 'approved' && $request->data === ['verslag' => 'klaar']),
 				'behandelaar'
 			)
-			->willReturn(new \stdClass());
+			->willReturn(new Task());
 		$gateway = new EngineTaskGateway($this->settings('1'), $this->container($completion), new NullLogger());
 
 		$this->assertTrue($gateway->complete(taskId: 'task-1', data: ['verslag' => 'klaar'], outcome: 'approved', actor: 'behandelaar'));

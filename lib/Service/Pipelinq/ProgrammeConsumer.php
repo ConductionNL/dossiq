@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pipelinq;
 
+use OCA\Dossiq\Kernel\Contracts\ProgrammeConsumerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -36,7 +37,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
  */
-class ProgrammeConsumer {
+class ProgrammeConsumer implements ProgrammeConsumerInterface {
 
 	/**
 	 * The figure when pipelinq cannot answer for a programme's progress.
@@ -101,6 +102,18 @@ class ProgrammeConsumer {
 			]
 		);
 
+		return $this->linkOutcome(answer: $answer, where: ['case' => $caseId, 'programme' => $programmeId]);
+	}//end linkCase()
+
+	/**
+	 * What pipelinq's answer to the link means: linked, unanswered, or refused.
+	 *
+	 * @param array{answered: bool, value: mixed, reason: string} $answer The gateway's answer.
+	 * @param array{case: string, programme: string}             $where  The case and the programme, for a refusal.
+	 *
+	 * @return array{linked: bool, reason: string} The outcome.
+	 */
+	private function linkOutcome(array $answer, array $where): array {
 		if ($answer['answered'] === false || is_array($answer['value']) === false) {
 			return ['linked' => false, 'reason' => $answer['reason']];
 		}
@@ -109,8 +122,8 @@ class ProgrammeConsumer {
 			return ['linked' => true, 'reason' => ''];
 		}
 
-		return $this->refuseLink(result: $answer['value'], where: ['case' => $caseId, 'programme' => $programmeId]);
-	}//end linkCase()
+		return $this->refuseLink(result: $answer['value'], where: $where);
+	}//end linkOutcome()
 
 	/**
 	 * Ask pipelinq to put a piece of work under a programme.

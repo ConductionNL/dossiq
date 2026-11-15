@@ -25,12 +25,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use RuntimeException;
+use OCA\Dossiq\Kernel\Contracts\ZgwDocumentServiceInterface;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for managing binary document storage in the DRC.
@@ -64,7 +65,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
-class ZgwDocumentService {
+class ZgwDocumentService implements ZgwDocumentServiceInterface {
 	/**
 	 * The account documents were stored under before this service moved to the
 	 * OpenRegister object folder. Read-only, and nothing writes here any more.
@@ -305,29 +306,56 @@ class ZgwDocumentService {
 	 */
 	public function mergeChunks(string $uuid, string $fileName, int $totalParts): int {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
+		$content = $this->readChunks(folder: $folder, document: ['uuid' => $uuid, 'totalParts' => $totalParts]);
+
+		// Write the merged file.
+		$file = $folder->newFile(path: $fileName);
+		$file->putContent(data: $content);
+
+		$this->deleteChunks(folder: $folder, totalParts: $totalParts);
+
+		return strlen(string: $content);
+	}//end mergeChunks()
+
+	/**
+	 * Concatenate every `_part_{n}` file in order.
+	 *
+	 * @param Folder                                 $folder   The document folder.
+	 * @param array{uuid: string, totalParts: int} $document The document UUID and the total number of parts.
+	 *
+	 * @return string The merged content.
+	 *
+	 * @throws InvalidArgumentException If not all chunks are present.
+	 */
+	private function readChunks(Folder $folder, array $document): string {
+		['uuid' => $uuid, 'totalParts' => $totalParts] = $document;
 		$content = '';
 
 		for ($i = 1; $i <= $totalParts; $i++) {
-			$partName = '_part_' . $i;
 			try {
-				$part = $folder->get(path: $partName);
+				$part = $folder->get(path: '_part_' . $i);
 				if ($part instanceof File === false) {
 					throw new InvalidArgumentException('Chunk ' . $i . ' is not a file');
 				}
 
 				$content .= $part->getContent();
 			} catch (NotFoundException $e) {
-				throw new InvalidArgumentException(
-					'Missing chunk ' . $i . ' of ' . $totalParts . ' for document ' . $uuid
-				);
+				throw new InvalidArgumentException('Missing chunk ' . $i . ' of ' . $totalParts . ' for document ' . $uuid);
 			}
 		}
 
-		// Write the merged file.
-		$file = $folder->newFile(path: $fileName);
-		$file->putContent(data: $content);
+		return $content;
+	}//end readChunks()
 
-		// Clean up chunk files.
+	/**
+	 * Delete the chunk files, skipping any that are already gone.
+	 *
+	 * @param Folder $folder     The document folder.
+	 * @param int    $totalParts The total number of parts.
+	 *
+	 * @return void
+	 */
+	private function deleteChunks(Folder $folder, int $totalParts): void {
 		for ($i = 1; $i <= $totalParts; $i++) {
 			try {
 				$folder->get(path: '_part_' . $i)->delete();
@@ -335,9 +363,7 @@ class ZgwDocumentService {
 				// Already gone.
 			}
 		}
-
-		return strlen(string: $content);
-	}//end mergeChunks()
+	}//end deleteChunks()
 
 	/**
 	 * Get or create the storage folder a document is WRITTEN to.

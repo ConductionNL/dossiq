@@ -31,9 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SerialisedObject;
-use OCA\Dossiq\Service\RoleResolverService;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -53,13 +53,13 @@ class RoleMutationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param RoleResolverService $resolver Resolver to invalidate
-	 * @param SettingsService $settingsService Schema slug bridge
+	 * @param RoleResolverServiceInterface $resolver Resolver to invalidate
+	 * @param SettingsServiceInterface $settingsService Schema slug bridge
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private readonly RoleResolverService $resolver,
-		private readonly SettingsService $settingsService,
+		private readonly RoleResolverServiceInterface $resolver,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -85,27 +85,38 @@ class RoleMutationListener implements IEventListener {
 		}
 
 		try {
-			$object = $this->extractObject(event: $event);
-			if ($object === null) {
-				return;
-			}
-
-			if ($this->isRoleSchema(object: $object) === false) {
-				return;
-			}
-
-			$caseId = (string)($object['case'] ?? '');
-			if ($caseId === '') {
-				return;
-			}
-
-			$this->resolver->invalidateCache($caseId);
+			$this->invalidateFor(event: $event);
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: role mutation listener swallowed exception: ' . $e->getMessage(),
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Drop the role cache of the case a mutated role row belongs to.
+	 *
+	 * @param Event $event The object event.
+	 *
+	 * @return void
+	 */
+	private function invalidateFor(Event $event): void {
+		$object = $this->extractObject(event: $event);
+		if ($object === null) {
+			return;
+		}
+
+		if ($this->isRoleSchema(object: $object) === false) {
+			return;
+		}
+
+		$caseId = (string)($object['case'] ?? '');
+		if ($caseId === '') {
+			return;
+		}
+
+		$this->resolver->invalidateCache($caseId);
+	}//end invalidateFor()
 
 	/**
 	 * Whether the given object belongs to the `role` schema.

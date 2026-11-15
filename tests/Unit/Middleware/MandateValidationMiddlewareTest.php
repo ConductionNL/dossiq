@@ -48,6 +48,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\TenantAuditTrailService
  * @uses \OCA\Dossiq\Service\TenantService
  * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class MandateValidationMiddlewareTest extends TestCase {
 	use MakesActiveOrganisationContext;

@@ -65,7 +65,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ShippedFlowAdoptionInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -77,7 +78,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class ShippedFlowAdoption {
+class ShippedFlowAdoption implements ShippedFlowAdoptionInterface {
 
 	/**
 	 * OpenRegister's flow service, resolved by name.
@@ -143,25 +144,32 @@ class ShippedFlowAdoption {
 		try {
 			$mapper = $this->container->get(self::FLOW_MAPPER);
 		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: no OpenRegister flow store to inspect: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
+			$this->logger->debug('Dossiq: no OpenRegister flow store to inspect: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 
 			return ['available' => false, 'note' => 'OpenRegister exposes no flow store on this instance.', 'flows' => []];
 		}
 
 		try {
-			$flows = $mapper->findAllFlows(app: Application::APP_ID, limit: self::PAGE);
+			$flows = $mapper->findAllFlows(app: AppIdentity::APP_ID, limit: self::PAGE);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not read the shipped flows: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
+			$this->logger->warning('Dossiq: could not read the shipped flows: ' . $e->getMessage(), ['app' => AppIdentity::APP_ID]);
 
 			return ['available' => false, 'note' => 'The flow store could not be read: ' . $e->getMessage(), 'flows' => []];
 		}
 
+		return ['available' => true, 'note' => '', 'flows' => $this->rowsOf(flows: $flows)];
+	}//end census()
+
+	/**
+	 * One census row per flow.
+	 *
+	 * @param mixed $flows The flows the store answered.
+	 *
+	 * @return array<int, array{uuid: string, name: string, enabled: bool, owner: string}> The rows.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function rowsOf(mixed $flows): array {
 		$rows = [];
 		foreach ((array)$flows as $flow) {
 			$rows[] = [
@@ -172,8 +180,8 @@ class ShippedFlowAdoption {
 			];
 		}
 
-		return ['available' => true, 'note' => '', 'flows' => $rows];
-	}//end census()
+		return $rows;
+	}//end rowsOf()
 
 	/**
 	 * The shipped flows that still need an administrator.
@@ -233,6 +241,22 @@ class ShippedFlowAdoption {
 			return ['note' => $flowService, 'rows' => []];
 		}
 
+		return $this->adoptStored(
+			user: $user,
+			adopt: ['objectService' => $objectService, 'flowService' => $flowService, 'enable' => $enable, 'dryRun' => $dryRun]
+		);
+	}//end adoptAll()
+
+	/**
+	 * Adopt every stored dossiq flow as the administrator, or say none is stored yet.
+	 *
+	 * @param IUser                $user  The administrator volunteering to own the flows.
+	 * @param array<string, mixed> $adopt The object service, the flow service, whether to enable each adopted flow
+	 *                                    and whether to write nothing.
+	 *
+	 * @return array{note: string, rows: array<int, array<string, mixed>>}
+	 */
+	private function adoptStored(IUser $user, array $adopt): array {
 		$census = $this->census();
 		if ($census['flows'] === []) {
 			return [
@@ -241,15 +265,15 @@ class ShippedFlowAdoption {
 			];
 		}
 
-		$run = new AdoptionRun(flowService: $flowService, uid: $user->getUID());
-		$run->enable = $enable;
-		$run->dryRun = $dryRun;
+		$run = new AdoptionRun(flowService: $adopt['flowService'], uid: $user->getUID());
+		$run->enable = $adopt['enable'];
+		$run->dryRun = $adopt['dryRun'];
 
-		return $objectService->runAs(
+		return $adopt['objectService']->runAs(
 			$user,
 			fn (): array => ['note' => '', 'rows' => $this->adoptEach(run: $run, flows: $census['flows'])]
 		);
-	}//end adoptAll()
+	}//end adoptStored()
 
 	/**
 	 * Why OpenRegister cannot run an adoption pass, or an empty string when it can.
@@ -281,7 +305,7 @@ class ShippedFlowAdoption {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not resolve FlowService for adoption: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 
 			return 'OpenRegister exposes no FlowService on this instance.';
@@ -318,7 +342,7 @@ class ShippedFlowAdoption {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function adoptOne(AdoptionRun $run, array $row): array {
-		$skip = $this->skipReason(row: $row, uid: $run->uid, enable: $run->enable);
+		$skip = $this->skipReason(row: $row, run: $run);
 		if ($skip !== '') {
 			return ['name' => $row['name'], 'uuid' => $row['uuid'], 'outcome' => 'skipped', 'detail' => $skip];
 		}
@@ -354,7 +378,7 @@ class ShippedFlowAdoption {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not adopt a shipped flow',
-				['app' => Application::APP_ID, 'flow' => $row['uuid'], 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'flow' => $row['uuid'], 'exception' => $e->getMessage()]
 			);
 
 			return ['name' => $row['name'], 'uuid' => $row['uuid'], 'outcome' => 'failed', 'detail' => $e->getMessage()];
@@ -376,14 +400,14 @@ class ShippedFlowAdoption {
 	 * identity existing runs resolve as.
 	 *
 	 * @param array{uuid: string, name: string, enabled: bool, owner: string} $row The census row.
-	 * @param string $uid The adopting user.
-	 * @param bool $enable Whether enabling was asked for.
+	 * @param AdoptionRun $run The adopting user, and whether enabling was asked for.
 	 *
 	 * @return string The reason to skip, or an empty string.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	private function skipReason(array $row, string $uid, bool $enable): string {
+	private function skipReason(array $row, AdoptionRun $run): string {
+		$uid = $run->uid;
 		if ($row['owner'] !== '' && $row['owner'] !== $uid) {
 			return 'already owned by "' . $row['owner'] . '"; adoption is not a takeover';
 		}
@@ -392,7 +416,7 @@ class ShippedFlowAdoption {
 			return '';
 		}
 
-		if ($row['enabled'] === true || $enable === false) {
+		if ($row['enabled'] === true || $run->enable === false) {
 			return 'already adopted';
 		}
 

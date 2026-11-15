@@ -34,9 +34,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Portal\PortalAssertionVerifier;
-use OCA\Dossiq\Portal\PortalSubmissionLedger;
-use OCA\Dossiq\Woo\WooRequestIntake;
+use OCA\Dossiq\Controller\Support\VerifiesPortalAssertions;
+use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
+use OCA\Dossiq\Kernel\Contracts\PortalSubmissionLedgerInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Woo\WooRequestRefused;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,6 +58,7 @@ use Throwable;
  * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
  */
 class PortalWooRequestController extends Controller {
+	use VerifiesPortalAssertions;
 
 	/**
 	 * The brute-force action a rejected assertion counts against.
@@ -107,22 +109,22 @@ class PortalWooRequestController extends Controller {
 	 *
 	 * @param string                  $appName   The app name.
 	 * @param IRequest                $request   The request.
-	 * @param PortalAssertionVerifier $verifier  Verifies portaliq's assertion.
-	 * @param WooRequestIntake        $intake    The one Woo request creation path.
+	 * @param PortalAssertionVerifierInterface $verifier  Verifies portaliq's assertion.
+	 * @param WooRequestIntakeInterface        $intake    The one Woo request creation path.
 	 * @param IThrottler              $throttler Counts rejected assertions.
 	 * @param LoggerInterface         $logger    Logger.
 	 * @param IFactory|null           $l10n      Gives the translator a refusal is worded in.
-	 * @param PortalSubmissionLedger|null $ledger Makes a submission once (REQ-PSM-001); none when null.
+	 * @param PortalSubmissionLedgerInterface|null $ledger Makes a submission once (REQ-PSM-001); none when null.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalAssertionVerifier $verifier,
-		private readonly WooRequestIntake $intake,
+		private readonly PortalAssertionVerifierInterface $verifier,
+		private readonly WooRequestIntakeInterface $intake,
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
 		private readonly ?IFactory $l10n = null,
-		private readonly ?PortalSubmissionLedger $ledger = null,
+		private readonly ?PortalSubmissionLedgerInterface $ledger = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -142,14 +144,9 @@ class PortalWooRequestController extends Controller {
 	#[AnonRateLimit(limit: 20, period: 60)]
 	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function start(): JSONResponse {
-		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifier::HEADER));
-		if ($claims === null) {
-			$this->registerRejectedAssertion();
-			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if (in_array((string)($claims['audience'] ?? ''), self::AUDIENCES, true) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$claims = $this->portalClaims();
+		if ($claims instanceof JSONResponse) {
+			return $claims;
 		}
 
 		$request = $this->intakeRequest(claims: $claims);
@@ -270,7 +267,7 @@ class PortalWooRequestController extends Controller {
 			return '';
 		}
 
-		return $this->ledger->keyOf((string)$this->request->getHeader(PortalSubmissionLedger::HEADER));
+		return $this->ledger->keyOf((string)$this->request->getHeader(PortalSubmissionLedgerInterface::HEADER));
 	}//end submissionKey()
 
 	/**
@@ -334,17 +331,4 @@ class PortalWooRequestController extends Controller {
 
 		return 'nl';
 	}//end readerLanguage()
-
-	/**
-	 * Count a rejected assertion; bookkeeping never turns a 401 into a 500.
-	 *
-	 * @return void
-	 */
-	private function registerRejectedAssertion(): void {
-		try {
-			$this->throttler->registerAttempt(action: self::THROTTLE_ACTION, ip: $this->request->getRemoteAddress());
-		} catch (Throwable $e) {
-			$this->logger->warning('PortalWooRequestController: registerAttempt failed', ['error' => $e->getMessage()]);
-		}
-	}//end registerRejectedAssertion()
 }//end class

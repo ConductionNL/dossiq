@@ -42,6 +42,11 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Controller\ZtcController
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
+ * @uses \OCA\Dossiq\Controller\ZgwController
+ * @uses \OCA\Dossiq\Service\Zgw\ZtcCrossReferenceEnricher
+ * @uses \OCA\Dossiq\Service\Zgw\ZtcRelatedTypeLookup
+ * @uses \OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter
+ * @uses \OCA\Dossiq\Service\Zgw\ZtcStoredUuidUrls
  */
 class ZtcWriteGateGoldenTest extends TestCase {
 	/**

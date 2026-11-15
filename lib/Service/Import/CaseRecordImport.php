@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Import;
 use DateInterval;
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\CaseRecordImportInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -47,9 +48,11 @@ use Throwable;
 /**
  * Moves another app's stored records onto cases, by the case type's declaration.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
  */
-class CaseRecordImport {
+class CaseRecordImport implements CaseRecordImportInterface {
 
 	use SearchesObjects;
 
@@ -138,7 +141,7 @@ class CaseRecordImport {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
 	public function run(string $caseType, string $importKey = ''): array {
-		return $this->runAll(caseType: $caseType, importKey: $importKey, dryRun: false);
+		return $this->runAll(request: new RecordImportRequest(caseType: $caseType, importKey: $importKey, dryRun: false));
 	}//end run()
 
 	/**
@@ -152,7 +155,7 @@ class CaseRecordImport {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
 	public function dryRun(string $caseType, string $importKey = ''): array {
-		return $this->runAll(caseType: $caseType, importKey: $importKey, dryRun: true);
+		return $this->runAll(request: new RecordImportRequest(caseType: $caseType, importKey: $importKey, dryRun: true));
 	}//end dryRun()
 
 	/**
@@ -193,13 +196,11 @@ class CaseRecordImport {
 	/**
 	 * Both runs.
 	 *
-	 * @param string $caseType  The case type.
-	 * @param string $importKey The import key, or ''.
-	 * @param bool   $dryRun    Count only.
+	 * @param RecordImportRequest $request The case type, the import key or '', and whether to count only.
 	 *
 	 * @return array{caseType: string, imports: list<array<string, mixed>>}
 	 */
-	private function runAll(string $caseType, string $importKey, bool $dryRun): array {
+	private function runAll(RecordImportRequest $request): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return ['caseType' => '', 'imports' => []];
@@ -210,26 +211,38 @@ class CaseRecordImport {
 		// type's own declaration.
 		return (array)$this->runAsSystemIfAvailable(
 			objectService: $objectService,
-			operation: function () use ($objectService, $caseType, $importKey, $dryRun): array {
-				$type = $this->steps->store->caseType(objectService: $objectService, caseType: $caseType);
-				if ($type === null) {
-					return ['caseType' => '', 'imports' => []];
-				}
-
-				$imports = [];
-				foreach ((array)($type['recordImports'] ?? []) as $import) {
-					$import = (array)$import;
-					if ($importKey !== '' && (string)($import['key'] ?? '') !== $importKey) {
-						continue;
-					}
-
-					$imports[] = $this->runOne(run: ['objectService' => $objectService, 'caseType' => $type, 'import' => $import, 'dryRun' => $dryRun]);
-				}
-
-				return ['caseType' => $this->steps->store->idOf(row: $type), 'imports' => $imports];
+			operation: function () use ($objectService, $request): array {
+				return $this->importAll(objectService: $objectService, request: $request);
 			}
 		);
 	}//end runAll()
+
+	/**
+	 * Run the case type's declared imports, or the one the key names.
+	 *
+	 * @param object              $objectService The OpenRegister ObjectService.
+	 * @param RecordImportRequest $request       The case type, the import key or '', and whether to count only.
+	 *
+	 * @return array{caseType: string, imports: list<array<string, mixed>>}
+	 */
+	private function importAll(object $objectService, RecordImportRequest $request): array {
+		$type = $this->steps->store->caseType(objectService: $objectService, caseType: $request->caseType);
+		if ($type === null) {
+			return ['caseType' => '', 'imports' => []];
+		}
+
+		$imports = [];
+		foreach ((array)($type['recordImports'] ?? []) as $import) {
+			$import = (array)$import;
+			if ($request->importKey !== '' && (string)($import['key'] ?? '') !== $request->importKey) {
+				continue;
+			}
+
+			$imports[] = $this->runOne(run: ['objectService' => $objectService, 'caseType' => $type, 'import' => $import, 'dryRun' => $request->dryRun]);
+		}
+
+		return ['caseType' => $this->steps->store->idOf(row: $type), 'imports' => $imports];
+	}//end importAll()
 
 	/**
 	 * Run one declared import.
@@ -259,7 +272,7 @@ class CaseRecordImport {
 
 		$state = ['cases' => null, 'byKey' => null];
 		foreach ($sources as $source) {
-			$outcome = $this->moveRecord(run: $run, source: $source, state: $state);
+			$outcome = $this->moveRecord(run: $run + ['source' => $source], state: $state);
 			if ($outcome['kind'] === 'stop') {
 				$answer['failed'][] = $outcome['row'];
 				return $answer;
@@ -295,13 +308,14 @@ class CaseRecordImport {
 	/**
 	 * Move one source record onto a case, or say why it was not.
 	 *
-	 * @param array<string, mixed> $run The run: objectService, caseType, import, dryRun.
-	 * @param array<string, mixed> $source The source record.
-	 * @param array<string, mixed> $state  The cases read so far, by source and by number; read once, on first need.
+	 * @param array<string, mixed> $run   The run: objectService, caseType, import, dryRun, and the source record as `source`.
+	 * @param array<string, mixed> $state The cases read so far, by source and by number; read once, on first need.
 	 *
 	 * @return array{kind: string, row: array<string, mixed>} `kind` is alreadyImported, unmigrated, failed, duplicate, migrated or stop.
 	 */
-	private function moveRecord(array $run, array $source, array &$state): array {
+	private function moveRecord(array $run, array &$state): array {
+		$source = $run['source'];
+		unset($run['source']);
 		$skipped = $this->skippedAs(source: $source, run: $run);
 		if ($skipped !== '') {
 			return ['kind' => $skipped, 'row' => []];
@@ -420,33 +434,42 @@ class CaseRecordImport {
 			return $failed($placed['reason']);
 		}
 
-		$caseId = $placed['caseId'];
+		$moved = $this->moveAndStamp(run: $run + ['caseId' => $placed['caseId']], source: $source);
+		if (isset($moved['reason']) === true) {
+			return $failed($moved['reason']);
+		}
 
+		return ['requestId' => $sourceId, 'reference' => $reference, 'caseId' => $placed['caseId'],
+			'sourceTimer' => (string)($source[(string)($run['import']['sourceTimerField'] ?? '')] ?? ''), 'repointed' => $moved['repointed']];
+	}//end importOne()
+
+	/**
+	 * Move the records pointing at the source onto the case, then stamp the source as moved.
+	 *
+	 * @param array<string, mixed> $run    The run: objectService, caseType, import, existing, and the case written for the source as `caseId`.
+	 * @param array<string, mixed> $source The source record.
+	 *
+	 * @return array{repointed?: mixed, reason?: string} How many references moved, or why the record is not moved.
+	 */
+	private function moveAndStamp(array $run, array $source): array {
+		$caseId = (string)$run['caseId'];
+		$sourceId = $this->steps->store->idOf(row: $source);
 		// References are moved before the stamp: a record whose references
 		// could not all be moved stays unstamped, so the next run tries again.
 		try {
-			$repointed = $this->references->repoint(
-				objectService: $run['objectService'],
-				import: $run['import'],
-				oldValues: [$sourceId, (string)($source['@self']['slug'] ?? '')],
-				caseId: $caseId
-			);
+			$oldValues = [$sourceId, (string)($source['@self']['slug'] ?? '')];
+			$repointed = $this->references->repoint(objectService: $run['objectService'], import: $run['import'], oldValues: $oldValues, caseId: $caseId);
 		} catch (Throwable $e) {
-			return $failed('The case ' . $caseId . ' was written, but the records pointing at the source could not all be moved onto it: ' . $e->getMessage());
+			$reason = 'The case ' . $caseId . ' was written, but the records pointing at the source could not all be moved onto it: ' . $e->getMessage();
+			return ['reason' => $reason];
 		}
 
 		if ($this->steps->store->stamp(objectService: $run['objectService'], import: $run['import'], sourceId: $sourceId, caseId: $caseId) === false) {
-			return $failed('The source app did not keep the stamp, so the record is not counted as moved.');
+			return ['reason' => 'The source app did not keep the stamp, so the record is not counted as moved.'];
 		}
 
-		return [
-			'requestId' => $sourceId,
-			'reference' => $reference,
-			'caseId' => $caseId,
-			'sourceTimer' => (string)($source[(string)($run['import']['sourceTimerField'] ?? '')] ?? ''),
-			'repointed' => $repointed,
-		];
-	}//end importOne()
+		return ['repointed' => $repointed];
+	}//end moveAndStamp()
 
 	/**
 	 * Map a record, write its case unless it has one, and carry its term.
@@ -465,32 +488,70 @@ class CaseRecordImport {
 			return ['reason' => $e->getMessage()];
 		}
 
+		$caseId = $this->existingOrWritten(run: $run, mapped: $mapped);
+		if ($caseId === '') {
+			return ['reason' => 'The case could not be written.'];
+		}
+
+		return $this->withTerm(run: $run, written: ['caseId' => $caseId, 'mapped' => $mapped]);
+	}//end placeCase()
+
+	/**
+	 * The case the record already has, or the one written for it ('' when the write failed).
+	 *
+	 * @param array<string, mixed> $run    The run: objectService, existing.
+	 * @param array<string, mixed> $mapped The mapped record.
+	 *
+	 * @return string The case id, or ''.
+	 */
+	private function existingOrWritten(array $run, array $mapped): string {
 		$caseId = $run['existing'];
 		if ($caseId === '') {
 			$caseId = $this->steps->store->writeCase(objectService: $run['objectService'], mapped: $mapped);
 		}
 
-		if ($caseId === '') {
-			return ['reason' => 'The case could not be written.'];
-		}
+		return $caseId;
+	}//end existingOrWritten()
 
+	/**
+	 * Carry the record's term onto its case, unless the import carries no term.
+	 *
+	 * @param array<string, mixed>                                $run     The run: caseType, import.
+	 * @param array{caseId: string, mapped: array<string, mixed>} $written The case, and the mapped record with its `term`.
+	 *
+	 * @return array{caseId: string}|array{reason: string} The case, or why its term could not be armed.
+	 */
+	private function withTerm(array $run, array $written): array {
+		$caseId = $written['caseId'];
+		$mapped = $written['mapped'];
 		if (($run['import']['carriesTerm'] ?? true) === false) {
 			return ['caseId' => $caseId];
 		}
 
-		$carried = $this->steps->term->carry(
-			caseId: $caseId,
-			term: $mapped['term'],
-			definitionSlug: (string)($caseType['identifier'] ?? ''),
-			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
-		);
+		$carried = $this->carryTerm(caseType: $run['caseType'], onto: ['caseId' => $caseId, 'term' => $mapped['term']]);
 		if ($mapped['term']['state'] !== TermCarryOver::STATE_CLOSED && in_array($carried['outcome'], self::ARMED, true) === false) {
 			return ['reason' => 'The case ' . $caseId . ' was written, but its term could not be armed (' . $carried['outcome'] . ').'];
 		}
 
 		return ['caseId' => $caseId];
-	}//end placeCase()
+	}//end withTerm()
 
+	/**
+	 * Carry the mapped term onto the case.
+	 *
+	 * @param array<string, mixed>              $caseType The case type.
+	 * @param array{caseId: string, term: mixed} $onto     The case, and the mapped record's `term`.
+	 *
+	 * @return array<string, mixed> The carry result, with its `outcome`.
+	 */
+	private function carryTerm(array $caseType, array $onto): array {
+		return $this->steps->term->carry(
+			caseId: $onto['caseId'],
+			term: $onto['term'],
+			definitionSlug: (string)($caseType['identifier'] ?? ''),
+			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
+		);
+	}//end carryTerm()
 
 	/**
 	 * An ISO 8601 period as days, 0 when absent or unreadable.

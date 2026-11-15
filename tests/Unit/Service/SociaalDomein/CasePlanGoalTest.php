@@ -249,4 +249,67 @@ class CasePlanGoalTest extends TestCase {
 		$this->expectExceptionMessage('sociaal_domein_unreadable');
 		$this->goals->ofPlan(planId: 'plan-1');
 	}//end testAnUnreadableStoreRefusesRatherThanAnsweringEmpty()
+
+	/**
+	 * A goal of the case is closed through the case, with today as its day.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	public function testAGoalOfTheCaseIsClosedThroughTheCase(): void {
+		$saved = $this->goals->save(goal: ['case' => 'case-1', 'title' => 'De verzoeker weet waarom', 'metWhen' => 'Het besluit noemt de reden']);
+
+		$closed = $this->goals->closeOfCase(caseId: 'case-1', goalId: (string)$saved['id'], state: 'withdrawn', observation: 'De verzoeker trok het verzoek in');
+
+		self::assertSame('withdrawn', $closed['state']);
+		self::assertSame('De verzoeker trok het verzoek in', $closed['closedObservation']);
+		self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $closed['closedDate']);
+		self::assertCount(1, $this->objects->rowsOf('casePlanGoal'));
+	}//end testAGoalOfTheCaseIsClosedThroughTheCase()
+
+	/**
+	 * 🔴 A goal of another case, or of a family plan only, is not found through this case and stays open.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	public function testAGoalOfAnotherOwnerIsNotFoundThroughTheCase(): void {
+		$other = $this->goals->save(goal: ['case' => 'case-2', 'title' => 'Iets', 'metWhen' => 'Iets anders']);
+		$planGoal = $this->goals->save(goal: ['plan' => 'plan-1', 'title' => 'Sem gaat naar school', 'metWhen' => 'Vier weken op school']);
+
+		foreach ([['case-1', (string)$other['id']], ['case-1', (string)$planGoal['id']], ['', (string)$other['id']], ['case-1', 'no-such-goal']] as [$caseId, $goalId]) {
+			try {
+				$this->goals->closeOfCase(caseId: $caseId, goalId: $goalId, state: 'met', observation: 'Gezien');
+				self::fail('closed ' . $goalId . ' through ' . $caseId);
+			} catch (RefusedException $e) {
+				self::assertSame('goal-not-found', $e->getRule());
+			}
+		}
+
+		foreach ($this->objects->rowsOf('casePlanGoal') as $row) {
+			self::assertSame('open', $row['state']);
+		}
+	}//end testAGoalOfAnotherOwnerIsNotFoundThroughTheCase()
+
+	/**
+	 * Closing through the case keeps close()'s rules: a closing state and an observation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-goals/tasks.md#2.1
+	 */
+	public function testClosingThroughTheCaseKeepsTheCloseRules(): void {
+		$saved = $this->goals->save(goal: ['case' => 'case-1', 'title' => 'Iets', 'metWhen' => 'Het besluit noemt de reden']);
+
+		foreach ([['open', 'Gezien', 'goal-close-needs-a-closing-state'], ['met', '  ', 'goal-close-needs-an-observation']] as [$state, $observation, $rule]) {
+			try {
+				$this->goals->closeOfCase(caseId: 'case-1', goalId: (string)$saved['id'], state: $state, observation: $observation);
+				self::fail('closed as ' . $state);
+			} catch (RefusedException $e) {
+				self::assertSame($rule, $e->getRule());
+			}
+		}
+	}//end testClosingThroughTheCaseKeepsTheCloseRules()
 }//end class

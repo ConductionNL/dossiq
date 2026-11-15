@@ -36,6 +36,10 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Redaction\DocumentRedactionService
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Redaction\FilinqRedaction
+ * @uses \OCA\Dossiq\Service\Redaction\RedactedUpload
+ * @uses \OCA\Dossiq\Service\Redaction\RedactionRun
  */
 class DocumentRedactionStepsGoldenTest extends TestCase {
 
@@ -201,7 +205,7 @@ class DocumentRedactionStepsGoldenTest extends TestCase {
 		$answer = $this->service()->redact('case-1', 'doc-1', 'cas');
 
 		$this->assertSame(['findAssessment', 'meta', 'anonymize', 'recordFile', 'saveRedaction'], $this->called());
-		$this->assertSame(['anonymize', 7, ['E'], 'cas'], $this->calls[2]);
+		$this->assertSame(['anonymize', 7, ['E'], 'cas', true], $this->calls[2]);
 		$this->assertSame(['recordFile', 'case-1', ['title' => 'Nota', 'fileId' => 7], 9], $this->calls[3]);
 		$redaction = $answer['redaction'];
 		unset($redaction['redactedAt']);

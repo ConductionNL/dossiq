@@ -45,9 +45,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseAttentionFlagService;
+use OCA\Dossiq\Controller\Support\AnswersCaseGestures;
+use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAttentionFlagServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -57,7 +59,6 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Raise and clear the attention flag, and read what a case is saying.
@@ -65,6 +66,8 @@ use RuntimeException;
  * @spec openspec/specs/case-management/spec.md
  */
 class CaseAttentionController extends Controller {
+	use AnswersCaseGestures;
+	use AnswersSignedOutCallers;
 
 	/**
 	 * The status each refusal answers with.
@@ -82,21 +85,21 @@ class CaseAttentionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                 $request         The HTTP request.
-	 * @param CaseAttentionFlagService $flags           Raise and clear.
-	 * @param CaseAccessGuard          $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAttentionFlagServiceInterface $flags           Raise and clear.
+	 * @param CaseAccessGuardInterface          $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession             $userSession     The current session.
 	 * @param IL10N                    $l10n            The translations.
 	 * @param LoggerInterface          $logger          The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAttentionFlagService $flags,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAttentionFlagServiceInterface $flags,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -132,19 +135,11 @@ class CaseAttentionController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function raise(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->caseMutator(caseId: $caseId);
-		if ($user instanceof JSONResponse) {
-			return $user;
-		}
-
-		return $this->answer(
+		return $this->asMutator(caseId: $caseId, run: fn (IUser $user): array => $this->flags->raise(
 			caseId: $caseId,
-			run: fn (): array => $this->flags->raise(
-				caseId: $caseId,
-				userId: $user->getUID(),
-				reason: $reason
-			),
-		);
+			userId: $user->getUID(),
+			reason: $reason
+		));
 	}//end raise()
 
 	/**
@@ -159,20 +154,29 @@ class CaseAttentionController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function clear(string $caseId, string $reason = ''): JSONResponse {
+		return $this->asMutator(caseId: $caseId, run: fn (IUser $user): array => $this->flags->clear(
+			caseId: $caseId,
+			userId: $user->getUID(),
+			reason: $reason
+		));
+	}//end clear()
+
+	/**
+	 * Run a gesture for a caller who may change the case.
+	 *
+	 * @param string   $caseId The case.
+	 * @param callable $run    The gesture, given the caller.
+	 *
+	 * @return JSONResponse The refusal of the caller, or the gesture's answer.
+	 */
+	private function asMutator(string $caseId, callable $run): JSONResponse {
 		$user = $this->caseMutator(caseId: $caseId);
 		if ($user instanceof JSONResponse) {
 			return $user;
 		}
 
-		return $this->answer(
-			caseId: $caseId,
-			run: fn (): array => $this->flags->clear(
-				caseId: $caseId,
-				userId: $user->getUID(),
-				reason: $reason
-			),
-		);
-	}//end clear()
+		return $this->answer(caseId: $caseId, run: fn (): array => $run($user));
+	}//end asMutator()
 
 	/**
 	 * The signed-in user when they may change the case, else the refusal.
@@ -195,70 +199,21 @@ class CaseAttentionController extends Controller {
 	}//end caseMutator()
 
 	/**
-	 * Run a gesture and answer it, turning a refusal into its status.
+	 * The sentence a refusal reads as; an unknown code reads as the failure.
 	 *
-	 * @param string                           $caseId The case UUID.
-	 * @param callable(): array<string, mixed> $run    The gesture.
+	 * @param string $code The rule that refused.
 	 *
-	 * @return JSONResponse
+	 * @return string
 	 */
-	private function answer(string $caseId, callable $run): JSONResponse {
-		try {
-			return new JSONResponse($run());
-		} catch (RuntimeException $e) {
-			return $this->refusal(code: $e->getMessage(), caseId: $caseId);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseAttentionController: the gesture failed',
-				['exception' => $e->getMessage(), 'caseId' => $caseId]
-			);
-
-			return new JSONResponse(
-				['error' => $this->l10n->t('The attention flag could not be changed.')],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end answer()
-
-	/**
-	 * One refusal, as a sentence a handler reads and a code a surface acts on.
-	 *
-	 * @param string $code   The rule that refused.
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return JSONResponse
-	 */
-	private function refusal(string $code, string $caseId): JSONResponse {
-		$this->logger->info(
-			'CaseAttentionController: the gesture was refused',
-			['code' => $code, 'caseId' => $caseId]
-		);
-
-		$message = match ($code) {
+	protected function refusalSentence(string $code): string {
+		return match ($code) {
 			'case_not_found' => $this->l10n->t('This case could not be found.'),
 			'reason_required' => $this->l10n->t('Write down why, and the flag will change. Both raising and clearing keep the reason.'),
 			'already_raised' => $this->l10n->t('This case is already flagged as needing attention.'),
 			'not_raised' => $this->l10n->t('This case is not flagged as needing attention.'),
 			default => $this->l10n->t('The attention flag could not be changed.'),
 		};
-
-		return new JSONResponse(
-			['error' => $message, 'code' => $code],
-			(self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST)
-		);
-	}//end refusal()
-
-	/**
-	 * The answer for a caller with no session.
-	 *
-	 * @return JSONResponse
-	 */
-	private function notSignedIn(): JSONResponse {
-		return new JSONResponse(
-			['error' => $this->l10n->t('You are not signed in.')],
-			Http::STATUS_UNAUTHORIZED
-		);
-	}//end notSignedIn()
+	}//end refusalSentence()
 
 	/**
 	 * The answer for a caller who may read this case but not change it.

@@ -40,6 +40,8 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Listener\CustodyCaseCreatedListener
  * @uses \OCA\Dossiq\Listener\Support\EventObjectPayload
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CustodyCaseCreatedListenerGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

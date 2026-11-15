@@ -13,10 +13,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\KeepsLookupsInSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use RuntimeException;
 use Throwable;
 
@@ -31,7 +35,8 @@ use Throwable;
  *
  * @spec openspec/specs/document-projection/spec.md
  */
-class DocumentRecordStore {
+class DocumentRecordStore implements DocumentRecordStoreInterface {
+	use ReadsDossierRegister;
 	use KeepsLookupsInSchema;
 	use SearchesObjects;
 
@@ -110,10 +115,18 @@ class DocumentRecordStore {
 		$schema = $this->schema(key: 'dossier_informatieobject_schema');
 		$object = $this->withoutSelf(row: $record);
 		if ($uuid === '') {
-			return $this->resolveSavedUuid(saved: $objectService->saveObject(object: $object, register: $register, schema: $schema));
+			return $this->resolveSavedUuid(
+				saved: $objectService->saveObject(
+					object: $object,
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+				)
+			);
 		}
 
-		$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		$saved = $objectService->saveObject(
+			object: $object,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid)
+		);
 
 		return $this->resolveSavedUuid(saved: $saved);
 	}//end saveRecord()
@@ -129,7 +142,12 @@ class DocumentRecordStore {
 	 */
 	public function deleteRecord(string $recordId): void {
 		[$objectService, $register] = $this->requireRegister();
-		$objectService->deleteObject(uuid: $recordId, register: $register, schema: $this->schema(key: 'dossier_informatieobject_schema'));
+		$objectService->deleteObject(
+			new ObjectDeletion(
+				uuid: $recordId,
+				target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'dossier_informatieobject_schema'))
+			)
+		);
 	}//end deleteRecord()
 
 	/**
@@ -189,8 +207,10 @@ class DocumentRecordStore {
 					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 				]
 			),
-			register: $register,
-			schema: $this->schema(key: 'dossier_zaakinformatieobject_schema'),
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(
+					register: $register,
+					schema: $this->schema(key: 'dossier_zaakinformatieobject_schema')
+				))
 		);
 
 		return true;
@@ -216,7 +236,7 @@ class DocumentRecordStore {
 				continue;
 			}
 
-			$objectService->deleteObject(uuid: $joinId, register: $register, schema: $joinSchema);
+			$objectService->deleteObject(new ObjectDeletion(uuid: $joinId, target: new ObjectFindTarget(register: $register, schema: $joinSchema)));
 			$deleted++;
 		}
 
@@ -335,35 +355,6 @@ class DocumentRecordStore {
 		$self = (array)($row['@self'] ?? []);
 		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
 	}//end idOf()
-
-	/**
-	 * The object service and register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The object service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister or the register is not configured.
-	 */
-	private function requireRegister(): array {
-		return $this->dossierRegister->context();
-	}//end requireRegister()
-
-	/**
-	 * A configured schema slug or id, or an exception when unset.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema.
-	 *
-	 * @throws RuntimeException When the key is not configured.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossier schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
 
 	/**
 	 * A saved object's uuid.

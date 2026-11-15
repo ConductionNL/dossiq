@@ -42,6 +42,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Kcc\CitizenLookupRecorder
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CitizenLookupRecorderTargetTest extends TestCase {
 	/**

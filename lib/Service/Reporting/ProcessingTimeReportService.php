@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Reporting;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\ProcessingTimeReportServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\Support\LanguageMapText;
@@ -41,22 +42,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
-class ProcessingTimeReportService {
-
-	/**
-	 * The blocks a `view` may name.
-	 *
-	 * @var string[]
-	 */
-	public const VIEWS = ['sla', 'distribution', 'trend', 'throughput', 'atRisk', 'breakdown'];
-
-	/**
-	 * The remaining share of the target at or below which an open record is
-	 * listed as at risk, unless the request names another.
-	 *
-	 * @var float
-	 */
-	public const DEFAULT_THRESHOLD = 0.25;
+class ProcessingTimeReportService implements ProcessingTimeReportServiceInterface {
 
 	/**
 	 * Constructor.
@@ -142,7 +128,7 @@ class ProcessingTimeReportService {
 		$typeIds = $this->resolveTypes(types: $run->types, key: $run->caseType);
 		$scoped  = [];
 		foreach ($records as $row) {
-			$record = $this->prepareRecord(row: $row, types: $run->types, finals: $run->finals);
+			$record = $this->prepareRecord(row: $row, run: $run);
 			if ($run->caseType === null || in_array($record['caseType'], $typeIds, true) === true) {
 				$scoped[] = $record;
 			}
@@ -465,22 +451,21 @@ class ProcessingTimeReportService {
 	 *
 	 * A record that names its type by slug is filed under the type's id.
 	 *
-	 * @param array<string, mixed>                $row    The stored record.
-	 * @param array<string, array<string, mixed>> $types  Prepared types.
-	 * @param array<string, true>                 $finals Ids of the final status types.
+	 * @param array<string, mixed> $row The stored record.
+	 * @param ProcessingTimeRun    $run The report being built: its prepared types and the ids of the final status types.
 	 *
 	 * @return array<string, mixed> The prepared record.
 	 */
-	private function prepareRecord(array $row, array $types, array $finals): array {
+	private function prepareRecord(array $row, ProcessingTimeRun $run): array {
 		return [
 			'id'         => (string)($row['id'] ?? ''),
 			'title'      => (string)($row['title'] ?? ''),
 			'identifier' => (string)($row['identifier'] ?? ''),
-			'caseType'   => (string)$this->resolveType(types: $types, key: (string)($row['caseType'] ?? '')),
+			'caseType'   => (string)$this->resolveType(types: $run->types, key: (string)($row['caseType'] ?? '')),
 			'startDate'  => $this->dates->toCalendarDateOrNull(value: ($row['startDate'] ?? null)),
 			'endDate'    => $this->dates->toCalendarDateOrNull(value: ($row['endDate'] ?? null)),
 			'deadline'   => $this->dates->toCalendarDateOrNull(value: ($row['deadline'] ?? null)),
-			'isFinal'    => isset($finals[(string)($row['status'] ?? '')]),
+			'isFinal'    => isset($run->finals[(string)($row['status'] ?? '')]),
 		];
 	}//end prepareRecord()
 

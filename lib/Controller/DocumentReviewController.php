@@ -22,13 +22,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\AnswersNoCaseAccess;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Review\BatchSelection;
-use OCA\Dossiq\Review\ReviewBatches;
-use OCA\Dossiq\Review\ReviewSummary;
-use OCA\Dossiq\Review\ReviewWrites;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BatchSelectionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewBatchesInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewSummaryInterface;
+use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -48,16 +49,17 @@ use OCP\IUserSession;
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
  */
 class DocumentReviewController extends Controller {
+	use AnswersNoCaseAccess;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param ReviewWrites $writes A person's writes on a review.
-	 * @param ReviewSummary $summary The case summary.
-	 * @param ReviewBatches $batches The review batches.
-	 * @param BatchSelection $selection Which documents a batch takes.
-	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
+	 * @param ReviewWritesInterface $writes A person's writes on a review.
+	 * @param ReviewSummaryInterface $summary The case summary.
+	 * @param ReviewBatchesInterface $batches The review batches.
+	 * @param BatchSelectionInterface $selection Which documents a batch takes.
+	 * @param CaseAccessGuardInterface $caseAccessGuard The per-case access check.
 	 * @param IUserSession $userSession The session.
 	 * @param IL10N $l10n The translations.
 	 *
@@ -65,15 +67,15 @@ class DocumentReviewController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ReviewWrites $writes,
-		private readonly ReviewSummary $summary,
-		private readonly ReviewBatches $batches,
-		private readonly BatchSelection $selection,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly ReviewWritesInterface $writes,
+		private readonly ReviewSummaryInterface $summary,
+		private readonly ReviewBatchesInterface $batches,
+		private readonly BatchSelectionInterface $selection,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -303,18 +305,6 @@ class DocumentReviewController extends Controller {
 
 		return $user;
 	}//end caseWriter()
-
-	/**
-	 * The refusal of a user without access to the case.
-	 *
-	 * @return JSONResponse The refusal.
-	 */
-	private function noAccess(): JSONResponse {
-		return new JSONResponse(
-			['error' => 'no-case-access', 'message' => $this->l10n->t('You do not have access to this case')],
-			Http::STATUS_FORBIDDEN
-		);
-	}//end noAccess()
 
 	/**
 	 * The answer for a refused review write: the rule, its sentence and its status.

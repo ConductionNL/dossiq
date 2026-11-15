@@ -296,4 +296,31 @@ class CaseLeafProviderTest extends TestCase {
 		);
 		self::assertSame(['status' => 200, 'cases' => []], $leaf->byMasterEntity(ref: ''));
 	}//end testAnUnconfiguredSurfaceAnswers503()
+	/**
+	 * Open cases sort by deadline, earliest first, and a case without a
+	 * deadline sorts after every dated one.
+	 *
+	 * @return void
+	 */
+	public function testOpenCasesSortByDeadlineWithUndatedLast(): void {
+		$rows = [
+			'brpPerson' => [['id' => 'p-1', 'masterEntityRef' => 'master-9']],
+			'kvkCompany' => [],
+			'case' => [
+				['id' => 'c-undated', 'requester' => 'p-1', 'isFinalStatus' => false],
+				['id' => 'c-late', 'requester' => 'p-1', 'isFinalStatus' => false, 'deadline' => '2026-12-01'],
+				['id' => 'c-early', 'requester' => 'p-1', 'isFinalStatus' => false, 'deadline' => '2026-03-15'],
+			],
+			'caseType' => [],
+			'statusType' => [],
+		];
+
+		$answer = $this->leaf(rows: $rows)->byMasterEntity(ref: 'master-9', status: 'open');
+
+		self::assertSame(expected: 200, actual: $answer['status']);
+		self::assertSame(
+			expected: ['c-early', 'c-late', 'c-undated'],
+			actual: array_column(array: $answer['cases'], column_key: 'id')
+		);
+	}//end testOpenCasesSortByDeadlineWithUndatedLast()
 }//end class

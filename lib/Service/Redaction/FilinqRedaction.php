@@ -132,7 +132,15 @@ final class FilinqRedaction {
 	 */
 	private function anonymized(RedactionRun $run): array {
 		try {
-			return $this->filinq->anonymize(fileId: $run->fileId, entities: (array)($run->redaction['entities'] ?? []), userId: $run->userId);
+			// Every dossiq redaction is of a document a Woo assessment judged
+			// partly public, so it is a Woo run for filinq's four-eyes setting
+			// (redaction-four-eyes-setting REQ-RWB-09).
+			return $this->filinq->anonymize(
+				fileId: $run->fileId,
+				entities: (array)($run->redaction['entities'] ?? []),
+				userId: $run->userId,
+				wooCase: true
+			);
 		} catch (RuntimeException $e) {
 			throw new RefusedException(
 				rule: 'redaction-failed',
@@ -158,6 +166,14 @@ final class FilinqRedaction {
 					'Entity detection is off, so filinq makes no redacted copy. Ask an administrator to turn it on, or upload a redacted version.'
 				),
 				status: RefusedException::STATUS_INDETERMINATE
+			),
+			'same_person' => new RefusedException(
+				rule: 'same-person',
+				sentence: $this->l10n->t('You checked these passages yourself. A colleague must make the redacted copy.')
+			),
+			'anonymiser_unknown' => new RefusedException(
+				rule: 'anonymiser-unknown',
+				sentence: $this->l10n->t('It is not known who asks for the redacted copy. Sign in and try again.')
 			),
 			'not_checked' => new RefusedException(
 				rule: 'not-checked',

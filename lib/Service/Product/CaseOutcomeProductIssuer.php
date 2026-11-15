@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Product;
 
+use OCA\Dossiq\Kernel\Contracts\CaseOutcomeProductIssuerInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
  */
-class CaseOutcomeProductIssuer {
+class CaseOutcomeProductIssuer implements CaseOutcomeProductIssuerInterface {
 	use SearchesObjects;
 
 	/**
@@ -117,46 +118,75 @@ class CaseOutcomeProductIssuer {
 	 * @spec openspec/changes/archive/2026-10-30-portal-permits-as-held-products/tasks.md#2.1
 	 */
 	public function issueFor(string $caseId, string $decisionId, string $status, ?string $decidedAt): ?array {
+		$outcome = $this->outcomeOf(caseId: $caseId);
+		if ($outcome === null) {
+			return null;
+		}
+
+		return $this->issueOrChange(outcome: $outcome, decision: ['status' => $status, 'id' => $decisionId, 'decidedAt' => $decidedAt]);
+	}//end issueFor()
+
+	/**
+	 * The case and the product its case type declares, or null without a store, a case or a declaration.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return ProductOutcome|null The outcome to issue on.
+	 */
+	private function outcomeOf(string $caseId): ?ProductOutcome {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '' || trim($caseId) === '') {
 			return null;
 		}
 
-		$case = $this->read(objectService: $objectService, register: $register, schema: 'case', id: $caseId);
-		$declared = $this->declarationFor(objectService: $objectService, register: $register, caseObject: $case);
+		$store = ['objectService' => $objectService, 'register' => $register];
+		$case = $this->read(store: $store, object: ['schema' => 'case', 'id' => $caseId]);
+		$declared = $this->declarationFor(store: $store, caseObject: $case);
 		if ($case === null || $declared === null) {
 			return null;
 		}
 
+		return new ProductOutcome(objectService: $objectService, register: $register, caseObject: $case, declared: $declared);
+	}//end outcomeOf()
+
+	/**
+	 * Issue the product, or change the one a change case names, when the decision's status is one the case type
+	 * issues on.
+	 *
+	 * @param ProductOutcome       $outcome  The case, its declaration, the object service and the register.
+	 * @param array<string, mixed> $decision The outcome status, the decision id and when it concluded, or null.
+	 *
+	 * @return array<string, mixed>|null The product written, or null when none is.
+	 */
+	private function issueOrChange(ProductOutcome $outcome, array $decision): ?array {
+		$declared = $outcome->declared;
 		$issueOn = (array)($declared['issueOn'] ?? self::DEFAULT_ISSUE_ON);
-		if (in_array(strtolower(trim($status)), array_map('strtolower', $issueOn), true) === false) {
+		if (in_array(strtolower(trim($decision['status'])), array_map('strtolower', $issueOn), true) === false) {
 			return null;
 		}
 
-		$outcome = new ProductOutcome(objectService: $objectService, register: $register, caseObject: $case, declared: $declared);
 		if (is_array($declared['changesProduct'] ?? null) === true) {
 			return $this->change(outcome: $outcome);
 		}
 
-		return $this->issue(outcome: $outcome, decision: new ProductDecision(id: $decisionId, decidedAt: $decidedAt));
-	}//end onConcludedDecision()
+		return $this->issue(outcome: $outcome, decision: new ProductDecision(id: $decision['id'], decidedAt: $decision['decidedAt']));
+	}//end issueOrChange()
 
 	/**
 	 * The product declaration of the case's type, or null when it declares none.
 	 *
-	 * @param object                    $objectService OpenRegister's object service.
-	 * @param string                    $register      The register.
-	 * @param array<string, mixed>|null $caseObject    The case.
+	 * @param array{objectService: object, register: string} $store      OpenRegister's object service and the register.
+	 * @param array<string, mixed>|null                      $caseObject The case.
 	 *
 	 * @return array<string, mixed>|null The declaration.
 	 */
-	private function declarationFor(object $objectService, string $register, ?array $caseObject): ?array {
+	private function declarationFor(array $store, ?array $caseObject): ?array {
 		if ($caseObject === null) {
 			return null;
 		}
 
-		$type = $this->read(objectService: $objectService, register: $register, schema: 'caseType', id: (string)($caseObject['caseType'] ?? ''));
+		$type = $this->read(store: $store, object: ['schema' => 'caseType', 'id' => (string)($caseObject['caseType'] ?? '')]);
 		$declared = (($type ?? [])['issuesPermit'] ?? null);
 		if (is_array($declared) === false || $declared === []) {
 			return null;
@@ -260,18 +290,8 @@ class CaseOutcomeProductIssuer {
 	 */
 	private function change(ProductOutcome $outcome): ?array {
 		$changes = (array)$outcome->declared['changesProduct'];
-		$schema = $this->schemaOf(declared: $outcome->declared);
 		$productId = $outcome->answer(name: (string)($changes['answer'] ?? ''));
-		$product = $this->read(objectService: $outcome->objectService, register: $outcome->register, schema: $schema, id: $productId);
-		if ($product === null) {
-			return null;
-		}
-
-		if ($this->inForceFor(outcome: $outcome, product: $product) === false) {
-			$this->logger->warning(
-				'Dossiq: a change case names a product that is not its requester\'s or not in force',
-				['case' => ($outcome->caseObject['id'] ?? ''), 'product' => $productId]
-			);
+		if ($this->changeableProduct(outcome: $outcome, productId: $productId) === false) {
 			return null;
 		}
 
@@ -280,17 +300,58 @@ class CaseOutcomeProductIssuer {
 			return null;
 		}
 
+		return $this->patchProduct(outcome: $outcome, patch: ['id' => $productId, 'set' => $set]);
+	}//end change()
+
+	/**
+	 * Whether the product a change case names exists and is its requester's own and in force; logged when not.
+	 *
+	 * @param ProductOutcome $outcome   The change case and its declaration, which names the product schema.
+	 * @param string         $productId The product the change case names.
+	 *
+	 * @return bool True when the product may be changed.
+	 */
+	private function changeableProduct(ProductOutcome $outcome, string $productId): bool {
+		$product = $this->read(
+			store: ['objectService' => $outcome->objectService, 'register' => $outcome->register],
+			object: ['schema' => $this->schemaOf(declared: $outcome->declared), 'id' => $productId]
+		);
+		if ($product === null) {
+			return false;
+		}
+
+		if ($this->inForceFor(outcome: $outcome, product: $product) === false) {
+			$this->logger->warning(
+				'Dossiq: a change case names a product that is not its requester\'s or not in force',
+				['case' => ($outcome->caseObject['id'] ?? ''), 'product' => $productId]
+			);
+			return false;
+		}
+
+		return true;
+	}//end changeableProduct()
+
+	/**
+	 * Write the change set onto the product, as the system when the object service offers it.
+	 *
+	 * @param ProductOutcome                              $outcome The change case and its declaration, which names the product schema.
+	 * @param array{id: string, set: array<string, mixed>} $patch   The product and the fields to set.
+	 *
+	 * @return array<string, mixed>|null The product, changed.
+	 */
+	private function patchProduct(ProductOutcome $outcome, array $patch): ?array {
+		$schema = $this->schemaOf(declared: $outcome->declared);
 		return $this->runAsSystemIfAvailable(
 			objectService: $outcome->objectService,
 			operation: fn (): ?array => $this->patchObjectAsArray(
 				objectService: $outcome->objectService,
 				register: $outcome->register,
 				schema: $schema,
-				id: $productId,
-				changes: $set
+				id: $patch['id'],
+				changes: $patch['set']
 			)
 		);
-	}//end change()
+	}//end patchProduct()
 
 	/**
 	 * Whether a product is the change case requester's own and still in force.
@@ -390,18 +451,19 @@ class CaseOutcomeProductIssuer {
 	/**
 	 * Read one object as the system, or null.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $schema        The schema slug.
-	 * @param string $id            The object id.
+	 * @param array{objectService: object, register: string} $store  OpenRegister's object service and the register.
+	 * @param array{schema: string, id: string}             $object The schema slug and the object id.
 	 *
 	 * @return array<string, mixed>|null The object.
 	 */
-	private function read(object $objectService, string $register, string $schema, string $id): ?array {
+	private function read(array $store, array $object): ?array {
+		['schema' => $schema, 'id' => $id] = $object;
 		if (trim($id) === '') {
 			return null;
 		}
 
+		$objectService = $store['objectService'];
+		$register = $store['register'];
 		$found = $this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): ?array => $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id)

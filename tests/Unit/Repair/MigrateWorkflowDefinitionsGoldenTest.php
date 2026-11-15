@@ -33,6 +33,8 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Pins every store call (with its system scope), every log and output line
@@ -241,7 +243,10 @@ class MigrateWorkflowDefinitionsGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->trace->append(['save', $this->system, $register, $schema, $uuid, $object]);
 				$this->maybeFail(key: 'save:' . $schema . ':' . ($uuid ?? (string)($object['caseType'] ?? '')));
 				if ($uuid === null && ($object['caseType'] ?? '') === 'ct-anon') {
@@ -259,7 +264,11 @@ class MigrateWorkflowDefinitionsGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->trace->append(['patch', $this->system, $register, $schema, $objectId, $data]);
 				$this->maybeFail(key: 'patch:' . $objectId);
 				return $data;

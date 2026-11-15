@@ -45,6 +45,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Bulk\BulkJobHandoff
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class ResultArrayRemainingCopiesTest extends TestCase {
 	/**

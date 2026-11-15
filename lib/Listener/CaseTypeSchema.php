@@ -27,7 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 
 /**
  * Whether a payload is a case type.
@@ -39,10 +40,10 @@ final class CaseTypeSchema {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Holds the configured case type schema.
+	 * @param SettingsServiceInterface $settingsService Holds the configured case type schema.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 	) {
 	}//end __construct()
 
@@ -54,18 +55,10 @@ final class CaseTypeSchema {
 	 * @return bool True when this is a case type.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) SchemaMembership::belongsTo() is a pure predicate on the payload.
 	 */
 	public function contains(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('case_type_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('case_type_schema'));
 	}//end contains()
 }//end class

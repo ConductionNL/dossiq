@@ -44,7 +44,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BesluitMigrationServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -57,7 +58,7 @@ use Throwable;
  *
  * @spec openspec/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
  */
-class BesluitMigrationService {
+class BesluitMigrationService implements BesluitMigrationServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -233,7 +234,7 @@ class BesluitMigrationService {
 	 */
 	private function migrateFrom(BesluitMigrationRun $run, string $sourceSchema): array {
 		try {
-			$sources = $this->rows(objectService: $run->objectService, register: self::SOURCE_REGISTER, schema: $sourceSchema);
+			$sources = $this->rows(objectService: $run->objectService, where: ['register' => self::SOURCE_REGISTER, 'schema' => $sourceSchema]);
 			$run->alreadyThere = $this->migratedSourceIds(objectService: $run->objectService, schema: $run->targetSchema);
 		} catch (Throwable $e) {
 			return $this->blockedSummary(message: 'Could not read the decision rows: ' . $e->getMessage());
@@ -286,7 +287,7 @@ class BesluitMigrationService {
 	 * @return string `migrated`, `skipped` or `failed`.
 	 */
 	private function migrateRow(BesluitMigrationRun $run, array $row): string {
-		$sourceId = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
+		$sourceId = self::sourceIdOf(row: $row);
 		if ($sourceId === '') {
 			// No stable identity means no idempotency key, so a re-run would
 			// duplicate it. Reported rather than guessed at.
@@ -297,18 +298,24 @@ class BesluitMigrationService {
 			return 'skipped';
 		}
 
-		$written = ($run->commit === false || $this->write(
-			objectService: $run->objectService,
-			schema: $run->targetSchema,
-			row: $row,
-			sourceId: $sourceId,
-		) === true);
+		$written = ($run->commit === false || $this->write(run: $run, row: $row) === true);
 		if ($written === false) {
 			return 'failed';
 		}
 
 		return 'migrated';
 	}//end migrateRow()
+
+	/**
+	 * A local decision row's id, however it is spelled, or '' when it has none.
+	 *
+	 * @param array<string, mixed> $row A local decision row.
+	 *
+	 * @return string The id.
+	 */
+	private static function sourceIdOf(array $row): string {
+		return trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
+	}//end sourceIdOf()
 
 	/**
 	 * Reasons the migration cannot run at all.
@@ -338,7 +345,7 @@ class BesluitMigrationService {
 	 * @return string The stored id, or '' when the key is unset.
 	 */
 	private function localSchemaId(): string {
-		return trim($this->appConfig->getValueString(Application::APP_ID, self::DECISION_SCHEMA_KEY, ''));
+		return trim($this->appConfig->getValueString(AppIdentity::APP_ID, self::DECISION_SCHEMA_KEY, ''));
 	}//end localSchemaId()
 
 	/**
@@ -398,14 +405,13 @@ class BesluitMigrationService {
 	/**
 	 * Read a schema's rows.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $schema The schema id.
+	 * @param object                                  $objectService The OpenRegister object service.
+	 * @param array{register: string, schema: string} $where         The register slug and the schema id.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function rows(object $objectService, string $register, string $schema): array {
-		$registerId = $this->registerId(slug: $register);
+	private function rows(object $objectService, array $where): array {
+		$registerId = $this->registerId(slug: $where['register']);
 		if ($registerId === '') {
 			return [];
 		}
@@ -413,7 +419,7 @@ class BesluitMigrationService {
 		$read = fn (): array => $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: (int)$registerId,
-			schema: (int)$schema,
+			schema: (int)$where['schema'],
 			// NO `_rbac`/`_multitenancy` here. On `ObjectService::searchObjects()`
 			// those are PARAMETERS, not query keys, and this bridge passes the
 			// array through as the query — so a key named `_rbac` reads as a
@@ -442,7 +448,7 @@ class BesluitMigrationService {
 	 */
 	private function migratedSourceIds(object $objectService, string $schema): array {
 		$seen = [];
-		foreach ($this->rows(objectService: $objectService, register: self::TARGET_REGISTER, schema: $schema) as $row) {
+		foreach ($this->rows(objectService: $objectService, where: ['register' => self::TARGET_REGISTER, 'schema' => $schema]) as $row) {
 			$reference = (string)($row['externalReference'] ?? '');
 			if (str_starts_with($reference, self::PROVENANCE_PREFIX) === false) {
 				continue;
@@ -457,14 +463,15 @@ class BesluitMigrationService {
 	/**
 	 * Write one besluit into decidiq's schema.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $schema The target schema id.
-	 * @param array<string, mixed> $row The source besluit.
-	 * @param string $sourceId The source uuid.
+	 * @param BesluitMigrationRun  $run The run: the OpenRegister object service and the target schema id.
+	 * @param array<string, mixed> $row The source besluit, with its source uuid.
 	 *
 	 * @return bool True when written.
 	 */
-	private function write(object $objectService, string $schema, array $row, string $sourceId): bool {
+	private function write(BesluitMigrationRun $run, array $row): bool {
+		$objectService = $run->objectService;
+		$schema = $run->targetSchema;
+		$sourceId = self::sourceIdOf(row: $row);
 		$targetRegisterId = $this->registerId(slug: self::TARGET_REGISTER);
 		if ($targetRegisterId === '') {
 			return false;
@@ -573,7 +580,7 @@ class BesluitMigrationService {
 			return false;
 		}
 
-		$this->appConfig->deleteKey(app: Application::APP_ID, key: self::DECISION_SCHEMA_KEY);
+		$this->appConfig->deleteKey(app: AppIdentity::APP_ID, key: self::DECISION_SCHEMA_KEY);
 
 		return true;
 	}//end detachLocalSchema()

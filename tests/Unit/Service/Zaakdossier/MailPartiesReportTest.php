@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class MailPartiesReportTest extends TestCase {
 

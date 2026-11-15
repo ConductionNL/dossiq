@@ -54,34 +54,28 @@ trait WritesReassignments {
 	/**
 	 * Reassign one item and append the audit entry.
 	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $schema        The schema.
-	 * @param string               $id            The object id.
-	 * @param array<string, mixed> $item          The stored object.
-	 * @param ReassignmentBatch    $batch         Who, to whom, and under which batch.
+	 * @param ReassignedItem    $target The object service, schema, id and stored object.
+	 * @param ReassignmentBatch $batch  Who, to whom, and under which batch.
 	 *
 	 * @return boolean Whether the write succeeded.
 	 *
 	 * @spec openspec/specs/reassignment-bulk-action/spec.md
 	 */
-	private function reassignItem(
-		object $objectService,
-		string $schema,
-		string $id,
-		array $item,
-		ReassignmentBatch $batch,
-	): bool {
+	private function reassignItem(ReassignedItem $target, ReassignmentBatch $batch): bool {
+		$id = $target->id;
+		$schema = $target->schema;
 		if ($id === '' || $schema === '') {
 			return false;
 		}
 
 		try {
+			$item = $target->item;
 			$item['assignee'] = $batch->toUser;
 			if ($this->keepsActivityLog(item: $item, schema: $schema) === true) {
 				$item['activity'] = json_encode($this->withReassignmentEntry(item: $item, batch: $batch));
 			}
 
-			$objectService->updateObject(objectId: $id, data: $item);
+			$target->objectService->updateObject(objectId: $id, data: $item);
 
 			return true;
 		} catch (Throwable $e) {

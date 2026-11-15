@@ -37,6 +37,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * ObjectService stub matching the named-arg signatures used in ConsultationService.
@@ -72,7 +73,7 @@ interface ConsultationObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function find(string $id, string $register, string $schema): array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array;
 
 	/**
 	 * Save or update an object.
@@ -109,6 +110,7 @@ interface ConsultationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  * @uses   \OCA\Dossiq\Service\Obligations\ObligationDeclaration
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ConsultationServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

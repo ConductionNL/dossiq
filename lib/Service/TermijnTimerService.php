@@ -37,7 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
 use OCA\Dossiq\Service\Term\ThresholdShares;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermEndRoll;
@@ -51,13 +51,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
  */
-class TermijnTimerService {
-	/**
-	 * The engine service class, resolved lazily.
-	 *
-	 * @var string
-	 */
-	public const ENGINE_CLASS = 'OCA\OpenRegister\Service\Flow\Timer\FlowTimerService';
+class TermijnTimerService implements TermijnTimerServiceInterface {
 
 	/**
 	 * The engine's working-calendar resolver, resolved lazily.
@@ -91,20 +85,10 @@ class TermijnTimerService {
 	 */
 	public const LADDER_DEFAULT = 'nl-termijn-default';
 
-
-	/**
-	 * Metadata marker the listener filters on.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-termijn';
-
 	/**
 	 * Metadata kinds.
 	 */
 	public const KIND_BESLISTERMIJN = 'beslistermijn';
-
-	public const KIND_HERSTELTERMIJN = 'hersteltermijn';
 
 	/**
 	 * Constructor.
@@ -206,8 +190,6 @@ class TermijnTimerService {
 		);
 	}//end rollTermEndFor()
 
-
-
 	/**
 	 * Resolves a declared ladder's rungs to offsets. Built here when it was
 	 * not injected: it computes and reads nothing, so an instance that did not
@@ -244,7 +226,7 @@ class TermijnTimerService {
 
 		$run = new TimerArmRun(instance: $instance, definitie: $definitie, instanceId: $instanceId, start: $start);
 
-		return $this->arm(config: $this->beslistermijnConfig(run: $run), context: 'beslistermijn', instanceId: $instanceId);
+		return $this->arm(config: $this->beslistermijnConfig(run: $run), term: ['kind' => 'beslistermijn', 'instance' => $instanceId]);
 	}//end armBeslistermijn()
 
 	/**
@@ -425,19 +407,32 @@ class TermijnTimerService {
 			return null;
 		}
 
-		$config = (new TermTimerFields())->subject(instance: $instance, label: 'Hersteltermijn') + [
+		$config = $this->hersteltermijnConfig(instance: $instance, chase: ['days' => $durationDays, 'offsets' => $chaseOffsets]);
+
+		return $this->arm(config: $config, term: ['kind' => 'hersteltermijn', 'instance' => $instanceId]);
+	}//end armHersteltermijn()
+
+	/**
+	 * The engine arm configuration of a hersteltermijn (AWB 4:5).
+	 *
+	 * @param array<string, mixed>                                $instance The TermijnInstance row.
+	 * @param array{days: int, offsets: array<int, int>}          $chase    How many calendar days the hersteltermijn runs,
+	 *                                                                      and the days before its end to chase on.
+	 *
+	 * @return array<string, mixed> The arm configuration.
+	 */
+	private function hersteltermijnConfig(array $instance, array $chase): array {
+		return (new TermTimerFields())->subject(instance: $instance, label: 'Hersteltermijn') + [
 			'legalEffect' => 'none',
 			'sla' => [
-				'value' => $durationDays,
+				'value' => $chase['days'],
 				'unit' => 'calendarDays',
 			],
-			'escalationRules' => (new TermTimerFields())->pauseRules(offsets: $chaseOffsets),
+			'escalationRules' => (new TermTimerFields())->pauseRules(offsets: $chase['offsets']),
 			'anchorEvent' => 'hersteltermijn_start',
 			'metadata' => (new TermTimerFields())->metadata(instance: $instance, kind: self::KIND_HERSTELTERMIJN) + ['basis' => 'AWB 4:5'],
 		];
-
-		return $this->arm(config: $config, context: 'hersteltermijn', instanceId: $instanceId);
-	}//end armHersteltermijn()
+	}//end hersteltermijnConfig()
 
 	/**
 	 * Suspend the beslistermijn timer (opschorting, AWB 4:5).
@@ -525,19 +520,43 @@ class TermijnTimerService {
 			return false;
 		}
 
+		return $this->extend(
+			engine: $engine,
+			extension: ['timerId' => $timerId, 'days' => $days, 'rationale' => $rationale, 'supervisor' => $supervisor]
+		);
+	}//end extendBeslistermijn()
+
+	/**
+	 * Extend the engine timer, through the supervisor override when asked; a refusal is logged.
+	 *
+	 * @param object                                                               $engine    The engine timer service.
+	 * @param array{timerId: string, days: int, rationale: string, supervisor: bool} $extension The timer, how many days the
+	 *                                                                                        deadline moves, the motivering
+	 *                                                                                        and whether it is the override.
+	 *
+	 * @return bool True when the engine extended the timer.
+	 */
+	private function extend(object $engine, array $extension): bool {
+		$timerId = $extension['timerId'];
 		try {
-			if ($supervisor === true) {
-				$engine->extendWithOverride(uuid: $timerId, amount: $days, unit: 'calendarDays', rationale: $rationale, actor: 'supervisor');
+			if ($extension['supervisor'] === true) {
+				$engine->extendWithOverride(
+					uuid: $timerId,
+					amount: $extension['days'],
+					unit: 'calendarDays',
+					rationale: $extension['rationale'],
+					actor: 'supervisor'
+				);
 				return true;
 			}
 
-			$engine->extend(uuid: $timerId, amount: $days, unit: 'calendarDays', rationale: $rationale, actor: null);
+			$engine->extend(uuid: $timerId, amount: $extension['days'], unit: 'calendarDays', rationale: $extension['rationale'], actor: null);
 			return true;
 		} catch (\Throwable $e) {
 			$this->logFailure(operation: 'extend', timerId: $timerId, error: $e);
 			return false;
 		}
-	}//end extendBeslistermijn()
+	}//end extend()
 
 	/**
 	 * Cancel every open timer of an instance, in the operation that made
@@ -567,22 +586,15 @@ class TermijnTimerService {
 		}
 	}//end cancelForInstance()
 
-
-
-
-
-
-
 	/**
 	 * Arm one timer, returning the persisted uuid.
 	 *
-	 * @param array<string, mixed> $config The engine arm configuration.
-	 * @param string $context Which term kind, for logging.
-	 * @param string $instanceId The instance, for logging.
+	 * @param array<string, mixed>                 $config The engine arm configuration.
+	 * @param array{kind: string, instance: string} $term   Which term kind and which instance, for logging.
 	 *
 	 * @return string|null The timer uuid, or null on an unavailable or refusing engine.
 	 */
-	private function arm(array $config, string $context, string $instanceId): ?string {
+	private function arm(array $config, array $term): ?string {
 		$engine = $this->engine();
 		if ($engine === null) {
 			return null;
@@ -593,11 +605,11 @@ class TermijnTimerService {
 			$uuid = (string)$timer->getUuid();
 			$this->logger->info(
 				'Dossiq termijn: engine timer armed',
-				['kind' => $context, 'instance' => $instanceId, 'timer' => $uuid]
+				['kind' => $term['kind'], 'instance' => $term['instance'], 'timer' => $uuid]
 			);
 			return $uuid;
 		} catch (\Throwable $e) {
-			$this->logFailure(operation: 'arm ' . $context, timerId: $instanceId, error: $e);
+			$this->logFailure(operation: 'arm ' . $term['kind'], timerId: $term['instance'], error: $e);
 			return null;
 		}
 	}//end arm()
@@ -650,7 +662,6 @@ class TermijnTimerService {
 
 		return $this->roll?->daysBetween(from: $from, to: $to, mode: $mode);
 	}//end spanFor()
-
 
 	/**
 	 * Resolve the engine, or null when OpenRegister (or the timer stack) is absent.

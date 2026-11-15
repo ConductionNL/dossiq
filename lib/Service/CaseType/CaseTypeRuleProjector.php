@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
@@ -96,7 +96,7 @@ class CaseTypeRuleProjector {
 			}
 
 			foreach ((array)($rule['actions'] ?? []) as $action) {
-				if ($this->entryRequirementOf(rule: $rule, action: (array)$action, caseTypeId: $caseTypeId) !== null) {
+				if ($this->entryRequirementOf(rule: $rule, scoped: ['action' => (array)$action, 'caseTypeId' => $caseTypeId]) !== null) {
 					continue;
 				}
 
@@ -158,8 +158,7 @@ class CaseTypeRuleProjector {
 			foreach ((array)($rule['actions'] ?? []) as $action) {
 				$requirement = $this->entryRequirementOf(
 					rule: $rule,
-					action: (array)$action,
-					caseTypeId: (string)($caseType['id'] ?? '')
+					scoped: ['action' => (array)$action, 'caseTypeId' => (string)($caseType['id'] ?? '')]
 				);
 				if ($requirement !== null) {
 					$requirements[(string)$rule['when']['status']][] = $requirement;
@@ -173,13 +172,13 @@ class CaseTypeRuleProjector {
 	/**
 	 * The entry requirement one action is, or null when it is not one.
 	 *
-	 * @param array<string, mixed> $rule The rule.
-	 * @param array<string, mixed> $action The action.
-	 * @param string $caseTypeId The case type uuid.
+	 * @param array<string, mixed>                                     $rule   The rule.
+	 * @param array{action: array<string, mixed>, caseTypeId: string} $scoped The action, and the case type uuid.
 	 *
 	 * @return array{documentType: string, rule: string, condition?: array<string, mixed>}|null The requirement.
 	 */
-	private function entryRequirementOf(array $rule, array $action, string $caseTypeId): ?array {
+	private function entryRequirementOf(array $rule, array $scoped): ?array {
+		$action = $scoped['action'];
 		$documentType = trim((string)($action['documentType'] ?? ''));
 		$status = trim((string)($rule['when']['status'] ?? ''));
 		if (($action['action'] ?? null) !== 'requireDocument' || $documentType === '' || $status === ''
@@ -191,7 +190,7 @@ class CaseTypeRuleProjector {
 		$requirement = ['documentType' => $documentType, 'rule' => (string)($rule['id'] ?? '')];
 		$conditions = (array)($rule['conditions'] ?? []);
 		if ($conditions !== []) {
-			$requirement['condition'] = $this->sources->logic->forRule(caseTypeId: $caseTypeId, conditions: $conditions);
+			$requirement['condition'] = $this->sources->logic->forRule(caseTypeId: $scoped['caseTypeId'], conditions: $conditions);
 		}
 
 		return $requirement;
@@ -224,11 +223,7 @@ class CaseTypeRuleProjector {
 	 */
 	public function publish(string $caseTypeId): array {
 		$plan = $this->plan(caseTypeId: $caseTypeId);
-		$warnings = [];
-		foreach ($plan['unprojected'] as $action) {
-			$warnings[] = 'Rule action ' . $action . ' is not carried out: it names no target, or a required document '
-				. 'names no status to enter.';
-		}
+		$warnings = $this->unprojectedWarnings(unprojected: $plan['unprojected']);
 
 		$flowService = $this->service(name: 'OCA\OpenRegister\Service\Flow\FlowService');
 		if ($flowService === null) {
@@ -239,6 +234,39 @@ class CaseTypeRuleProjector {
 			return $warnings;
 		}
 
+		$warnings = array_merge($warnings, $this->removeExisting(flowService: $flowService, caseTypeId: $caseTypeId));
+		$warnings = array_merge($warnings, $this->createFlows(flowService: $flowService, flows: $plan['flows']));
+
+		return $warnings;
+	}//end publish()
+
+	/**
+	 * One warning per rule action the plan could not carry out.
+	 *
+	 * @param array<int, string> $unprojected The rule actions left out of the plan.
+	 *
+	 * @return array<int, string> The warnings.
+	 */
+	private function unprojectedWarnings(array $unprojected): array {
+		$warnings = [];
+		foreach ($unprojected as $action) {
+			$warnings[] = 'Rule action ' . $action . ' is not carried out: it names no target, or a required document '
+				. 'names no status to enter.';
+		}
+
+		return $warnings;
+	}//end unprojectedWarnings()
+
+	/**
+	 * Delete the rule flows published earlier for the case type.
+	 *
+	 * @param object $flowService OpenRegister's FlowService.
+	 * @param string $caseTypeId  The case type uuid.
+	 *
+	 * @return array<int, string> A warning per flow that could not be removed.
+	 */
+	private function removeExisting(object $flowService, string $caseTypeId): array {
+		$warnings = [];
 		foreach ($this->existing(flowService: $flowService, caseTypeId: $caseTypeId) as $uuid) {
 			try {
 				$flowService->delete($uuid);
@@ -247,7 +275,20 @@ class CaseTypeRuleProjector {
 			}
 		}
 
-		foreach ($plan['flows'] as $document) {
+		return $warnings;
+	}//end removeExisting()
+
+	/**
+	 * Create the planned rule flows.
+	 *
+	 * @param object                           $flowService OpenRegister's FlowService.
+	 * @param array<int, array<string, mixed>> $flows       The flow documents.
+	 *
+	 * @return array<int, string> A warning per flow that could not be created.
+	 */
+	private function createFlows(object $flowService, array $flows): array {
+		$warnings = [];
+		foreach ($flows as $document) {
 			$warning = $this->create(flowService: $flowService, document: $document);
 			if ($warning !== null) {
 				$warnings[] = $warning;
@@ -255,7 +296,7 @@ class CaseTypeRuleProjector {
 		}
 
 		return $warnings;
-	}//end publish()
+	}//end createFlows()
 
 	/**
 	 * Store and publish one rule flow.
@@ -272,7 +313,7 @@ class CaseTypeRuleProjector {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a case type rule flow could not be published',
-				['app' => Application::APP_ID, 'flow' => $document['notes'] ?? '', 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'flow' => $document['notes'] ?? '', 'exception' => $e->getMessage()]
 			);
 			return 'Rule ' . (string)($document['name'] ?? '') . ' was not published: ' . $e->getMessage();
 		}
@@ -295,7 +336,7 @@ class CaseTypeRuleProjector {
 		$more = true;
 
 		while ($more === true) {
-			$page = $flowService->findAll(Application::APP_ID, null, null, self::FLOW_PAGE, $offset);
+			$page = $flowService->findAll(AppIdentity::APP_ID, null, null, self::FLOW_PAGE, $offset);
 			if (is_array($page) === false) {
 				break;
 			}

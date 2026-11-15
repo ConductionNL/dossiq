@@ -40,6 +40,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Listener\CaseCompletedSatisfactionListener
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class ReferenceIdRemainingCopyTest extends TestCase {
 	/**

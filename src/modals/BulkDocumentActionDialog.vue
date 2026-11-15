@@ -112,8 +112,9 @@ import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcNoteCard, NcSelect } from '@nextcloud/vue'
+import { caseDialogResolved } from '../mixins/caseDialog.js'
+import { fileNodeDialog } from '../mixins/fileNodeDialog.js'
 import { classificationOptions as buildClassificationOptions } from '../utils/dossierHelpers.js'
-import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * The gesture each named mode runs on the dialog; any other mode downloads the ZIP.
@@ -150,6 +151,8 @@ export default {
 	name: 'BulkDocumentActionDialog',
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect },
 
+	mixins: [caseDialogResolved, fileNodeDialog],
+
 	props: {
 		/**
 		 * The selected ZAAKINFORMATIEOBJECT ids, handed in by
@@ -175,34 +178,12 @@ export default {
 		},
 
 		/**
-		 * The clicked node's Nextcloud file id, merged onto an `open-modal`
-		 * row action's props by CnFilesBrowser.
-		 */
-		fileId: {
-			type: [String, Number],
-			default: '',
-		},
-
-		/**
 		 * The Nextcloud file ids of the files ticked in the Files tab, handed
 		 * in by CnFilesBrowser's bulk bar.
 		 */
 		fileIds: {
 			type: Array,
 			default: () => [],
-		},
-
-		/** The clicked node's name, for the dialog's own sentence. */
-		fileName: {
-			type: String,
-			default: '',
-		},
-
-		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
-		// Only used by `zip`, which downloads scoped to one case.
-		caseId: {
-			type: String,
-			default: '',
 		},
 	},
 
@@ -229,19 +210,6 @@ export default {
 		 */
 		classificationOptions() {
 			return buildClassificationOptions(this.t.bind(this))
-		},
-
-		/**
-		 * The case the `zip` mode downloads, resolved the same defensive way
-		 * as GenerateDocumentDialog / DocumentMetadataDialog: an
-		 * `open-modal` action's `props` are forwarded verbatim, so a prop
-		 * still holding an `@` token is not a case id — the route is.
-		 *
-		 * @return {string} The case id, or empty string.
-		 * @spec openspec/specs/document-zaakdossier/spec.md
-		 */
-		resolvedCaseId() {
-			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**

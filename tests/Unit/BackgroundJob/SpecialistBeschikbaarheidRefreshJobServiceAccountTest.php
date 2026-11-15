@@ -42,6 +42,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  * @uses \OCA\Dossiq\BackgroundJob\OpenRegisterObjects
+ * @uses \OCA\Dossiq\Service\Support\CastArray
  */
 class SpecialistBeschikbaarheidRefreshJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

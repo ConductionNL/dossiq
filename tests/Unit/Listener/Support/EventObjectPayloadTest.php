@@ -44,6 +44,8 @@ use ReflectionMethod;
  * @uses \OCA\Dossiq\Listener\PortalMessageTimelineListener
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
+ * @uses \OCA\Dossiq\Listener\DependentTermListener
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class EventObjectPayloadTest extends TestCase {
 

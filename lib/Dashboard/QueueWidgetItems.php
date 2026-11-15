@@ -24,8 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Dashboard;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCP\IURLGenerator;
 
 /**
@@ -38,7 +38,7 @@ class QueueWidgetItems {
 	 * Constructor.
 	 *
 	 * @param IURLGenerator      $url   Builds absolute addresses.
-	 * @param CaseDateNormaliser $dates The organisation's calendar.
+	 * @param CaseDateNormaliserInterface $dates The organisation's calendar.
 	 *
 	 * @return void
 	 *
@@ -46,7 +46,7 @@ class QueueWidgetItems {
 	 */
 	public function __construct(
 		private readonly IURLGenerator $url,
-		private readonly CaseDateNormaliser $dates,
+		private readonly CaseDateNormaliserInterface $dates,
 	) {
 	}//end __construct()
 
@@ -69,7 +69,7 @@ class QueueWidgetItems {
 	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function iconUrl(): string {
-		return $this->url->getAbsoluteURL($this->url->imagePath(Application::APP_ID, 'app-dark.svg'));
+		return $this->url->getAbsoluteURL($this->url->imagePath(AppIdentity::APP_ID, 'app-dark.svg'));
 	}//end iconUrl()
 
 	/**
@@ -91,6 +91,6 @@ class QueueWidgetItems {
 	 * @return string The address.
 	 */
 	private function appUrl(string $path): string {
-		return rtrim($this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page'), '/') . '/' . $path;
+		return rtrim($this->url->linkToRouteAbsolute(AppIdentity::APP_ID . '.dashboard.page'), '/') . '/' . $path;
 	}//end appUrl()
 }//end class

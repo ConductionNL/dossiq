@@ -48,6 +48,7 @@ interface OrganisationMapperStub {
 
 /**
  * @covers \OCA\Dossiq\Service\TenantOrganisationResolver
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class TenantOrganisationResolverTest extends TestCase {
 	/**

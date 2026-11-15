@@ -39,7 +39,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\Dossiq\Kernel\Contracts\OwningCaseResolverInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -48,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class OwningCaseResolver {
+class OwningCaseResolver implements OwningCaseResolverInterface {
 	/**
 	 * Constructor.
 	 *
@@ -154,7 +156,7 @@ class OwningCaseResolver {
 		}
 
 		try {
-			$object = $objectService->find($objectId, register: (int)$register, schema: (int)$schema);
+			$object = $objectService->find($objectId, new ObjectFindOptions(register: (int)$register, schema: (int)$schema));
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: owning-case lookup failed — denying: ' . $e->getMessage()

@@ -1901,6 +1901,12 @@
         },
         "calls": [
             {
+                "CaseTransferConsentGate.assessSharing": {
+                    "caseId": "case-1",
+                    "party": "p@remote.example"
+                }
+            },
+            {
                 "FederatedCaseShareService.createFederatedShare": {
                     "caseId": "case-1",
                     "remoteCloudId": "p@remote.example",

@@ -33,8 +33,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Deelzaak;
 
+use OCA\Dossiq\Kernel\Contracts\CaseObjectReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -42,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/deelzaak-support/spec.md
  */
-class CaseObjectReader {
+class CaseObjectReader implements CaseObjectReaderInterface {
 	/**
 	 * Constructor.
 	 *
@@ -67,23 +69,19 @@ class CaseObjectReader {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function fetchCaseById(string $caseUuid): ?array {
-		if ($caseUuid === '') {
-			return null;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
+		$objectService = $this->objectServiceFor(caseUuid: $caseUuid);
 		if ($objectService === null) {
 			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
-		if (empty($register) === true || empty($schema) === true) {
+		if ($this->hasCaseTable(register: $register, schema: $schema) === false) {
 			return null;
 		}
 
 		try {
-			$obj = $objectService->find($caseUuid, register: $register, schema: $schema);
+			$obj = $objectService->find($caseUuid, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'Case lookup failed',
@@ -94,6 +92,33 @@ class CaseObjectReader {
 
 		return $this->toArray(obj: $obj);
 	}//end fetchCaseById()
+
+	/**
+	 * OpenRegister's object service to look a case up with, null for an empty uuid or when it is absent.
+	 *
+	 * @param string $caseUuid The case uuid.
+	 *
+	 * @return object|null
+	 */
+	private function objectServiceFor(string $caseUuid): ?object {
+		if ($caseUuid === '') {
+			return null;
+		}
+
+		return $this->settingsService->getObjectService();
+	}//end objectServiceFor()
+
+	/**
+	 * Whether both the register and the case schema are configured.
+	 *
+	 * @param mixed $register The register id.
+	 * @param mixed $schema   The case schema id.
+	 *
+	 * @return bool
+	 */
+	private function hasCaseTable(mixed $register, mixed $schema): bool {
+		return empty($register) === false && empty($schema) === false;
+	}//end hasCaseTable()
 
 	/**
 	 * Load a caseType by id or slug.
@@ -117,7 +142,7 @@ class CaseObjectReader {
 		}
 
 		try {
-			$obj = $objectService->find($caseTypeId, register: $register, schema: $schema);
+			$obj = $objectService->find($caseTypeId, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable) {
 			return null;
 		}

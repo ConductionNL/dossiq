@@ -34,9 +34,12 @@ namespace OCA\Dossiq\Service\Cases;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Custody\DossierRegister;
+use OCA\Dossiq\Service\Custody\ReadsDossierRows;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use RuntimeException;
 use Throwable;
 
@@ -47,6 +50,7 @@ use Throwable;
  */
 class CaseSplitStore {
 
+	use ReadsDossierRows;
 	use SearchesObjects;
 
 	/**
@@ -125,29 +129,50 @@ class CaseSplitStore {
 		}
 
 		try {
-			$this->ledger->close(
-				case: ['caseType' => (string)($source['caseType'] ?? '')],
-				caseId: '',
-				toStatus: $status,
-				resultTypeId: null,
-			);
+			$this->ledger->close(case: ['caseType' => (string)($source['caseType'] ?? '')], caseId: '', toStatus: $status, resultTypeId: null);
 		} catch (RefusedException $refused) {
-			throw new RefusedException(
-				rule: $refused->getRule(),
-				sentence: 'This case is closed, and its case type closes a case only with a result, so it cannot be split.'
-					. ' Nothing was opened or moved.',
-				status: $refused->getStatus(),
-				previous: $refused,
-			);
+			throw $this->closedWithResultRefusal(refused: $refused);
 		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: CaseSplitExecutor::UNWRITABLE,
-				sentence: 'We could not check the status of this case, so it was not split. Nothing was opened or moved.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->statusUncheckedRefusal(error: $e);
 		}
 	}//end refuseUnreachableStatus()
+
+	/**
+	 * The refusal of a split whose status closes a case only with a result.
+	 *
+	 * @param RefusedException $refused The engine's refusal.
+	 *
+	 * @return RefusedException The refusal to throw.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function closedWithResultRefusal(RefusedException $refused): RefusedException {
+		return new RefusedException(
+			rule: $refused->getRule(),
+			sentence: 'This case is closed, and its case type closes a case only with a result, so it cannot be split.'
+				. ' Nothing was opened or moved.',
+			status: $refused->getStatus(),
+			previous: $refused,
+		);
+	}//end closedWithResultRefusal()
+
+	/**
+	 * The refusal of a split whose status could not be checked.
+	 *
+	 * @param Throwable $error Why the check failed.
+	 *
+	 * @return RefusedException The refusal to throw.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function statusUncheckedRefusal(Throwable $error): RefusedException {
+		return new RefusedException(
+			rule: CaseSplitExecutor::UNWRITABLE,
+			sentence: 'We could not check the status of this case, so it was not split. Nothing was opened or moved.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $error,
+		);
+	}//end statusUncheckedRefusal()
 
 	/**
 	 * Remove a second case that could not take over the status of the first, or else mark it.
@@ -197,10 +222,14 @@ class CaseSplitStore {
 				filters: ['case' => $caseId],
 			);
 			foreach ($records as $record) {
-				$objectService->deleteObject(uuid: $this->uuidOf(row: $record), register: $register, schema: $recordSchema);
+				$objectService->deleteObject(
+					new ObjectDeletion(uuid: $this->uuidOf(row: $record), target: new ObjectFindTarget(register: $register, schema: $recordSchema))
+				);
 			}
 
-			return ($objectService->deleteObject(uuid: $caseId, register: $register, schema: $this->schema(key: 'case_schema')) !== false);
+			return ($objectService->deleteObject(
+				new ObjectDeletion(uuid: $caseId, target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'case_schema')))
+			) !== false);
 		} catch (Throwable) {
 			return false;
 		}
@@ -243,66 +272,10 @@ class CaseSplitStore {
 	 * @throws RefusedException When it cannot be read.
 	 */
 	public function requireCase(string $caseId): array {
-		try {
-			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				id: $caseId,
-			);
-		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: CaseSplitExecutor::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so it was not split.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}
-
-		if ($case === null) {
-			throw new RefusedException(
-				rule: CaseSplitExecutor::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so it was not split.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
+		return $this->dossierRegister->requireCase(
+			caseId: $caseId,
+			rule: CaseSplitExecutor::CASE_UNREADABLE,
+			sentence: 'We could not read that case, so it was not split.',
+		);
 	}//end requireCase()
-
-	/**
-	 * The uuid of a stored row, however the register spelled it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or an empty string.
-	 */
-	public function uuidOf(array $row): string {
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
-	}//end uuidOf()
-
-	/**
-	 * The object service and the register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	public function context(): array {
-		return $this->dossierRegister->context();
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	public function schema(string $key): string {
-		return $this->dossierRegister->schema(key: $key);
-	}//end schema()
 }//end class

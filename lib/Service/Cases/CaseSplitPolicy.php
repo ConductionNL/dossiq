@@ -100,22 +100,66 @@ class CaseSplitPolicy {
 	public function whyRefused(array $selected, ?array $caseType): string {
 		$allowed = $this->allowedFor(caseType: $caseType);
 
-		$refused = [];
+		$unknown = $this->unknownPart(selected: $selected);
+		if ($unknown !== '') {
+			return $unknown;
+		}
+
+		$refused = $this->refusedParts(selected: $selected, allowed: $allowed);
+		if ($refused === []) {
+			return '';
+		}
+
+		return $this->refusalSentence(refused: $refused, allowed: $allowed);
+	}//end whyRefused()
+
+	/**
+	 * The sentence for the first selected part that is not a part of a case, '' when all are.
+	 *
+	 * @param array<mixed> $selected The parts the handler selected.
+	 *
+	 * @return string
+	 */
+	private function unknownPart(array $selected): string {
 		foreach ($selected as $part) {
 			$part = (string)$part;
 			if (in_array($part, self::PARTS, true) === false) {
 				return sprintf('A split divides documents, parties or tasks, and "%s" is none of those.', $part);
 			}
+		}
 
+		return '';
+	}//end unknownPart()
+
+	/**
+	 * The selected parts the case type does not allow to be divided.
+	 *
+	 * @param array<mixed>  $selected The parts the handler selected.
+	 * @param array<string> $allowed  The parts the case type allows.
+	 *
+	 * @return array<int, string>
+	 */
+	private function refusedParts(array $selected, array $allowed): array {
+		$refused = [];
+		foreach ($selected as $part) {
+			$part = (string)$part;
 			if (in_array($part, $allowed, true) === false) {
 				$refused[] = $part;
 			}
 		}
 
-		if ($refused === []) {
-			return '';
-		}
+		return $refused;
+	}//end refusedParts()
 
+	/**
+	 * The refusal naming the refused parts and what may still be divided.
+	 *
+	 * @param array<int, string> $refused The parts refused.
+	 * @param array<string>      $allowed The parts the case type allows.
+	 *
+	 * @return string
+	 */
+	private function refusalSentence(array $refused, array $allowed): string {
 		// The sentence names what may still be divided, because a handler told
 		// only what they may not do has to guess at the rest.
 		$remaining = 'This case type allows no part of a case to be divided.';
@@ -128,5 +172,5 @@ class CaseSplitPolicy {
 			implode(' and ', $refused),
 			$remaining
 		);
-	}//end whyRefused()
+	}//end refusalSentence()
 }//end class

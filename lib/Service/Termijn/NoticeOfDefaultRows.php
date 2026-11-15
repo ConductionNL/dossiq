@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
+use OCA\Dossiq\Kernel\Contracts\NoticeOfDefaultRowsInterface;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\SettingsService;
@@ -49,7 +50,7 @@ use Throwable;
  * @spec openspec/specs/termijn-reporting/spec.md
  * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-definitive-penalty-is-prepared-for-payout-from-its-notice-req-ing-case-02
  */
-class NoticeOfDefaultRows {
+class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 	use SearchesObjects;
 
 	/**
@@ -70,6 +71,35 @@ class NoticeOfDefaultRows {
 		private readonly ?PayoutReader $payoutReader = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The notices of default on one case, newest receipt first.
+	 *
+	 * The same rows as the deadlines report, kept to the case the notice's
+	 * term belongs to, so the case page and the report never disagree about a
+	 * notice's assessment, penalty or payout.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array{notices: list<array<string, mixed>>}
+	 *
+	 * @throws Throwable When the notices or the penalty calculations cannot be read.
+	 *
+	 * @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md
+	 */
+	public function forCase(string $caseId): array {
+		$caseId = trim($caseId);
+		if ($caseId === '') {
+			return ['notices' => []];
+		}
+
+		$rows = array_filter(
+			$this->list()['notices'],
+			static fn (array $row): bool => ($row['caseId'] ?? '') === $caseId
+		);
+
+		return ['notices' => array_values($rows)];
+	}//end forCase()
 
 	/**
 	 * The notices of default, newest receipt first.
@@ -157,13 +187,8 @@ class NoticeOfDefaultRows {
 	 */
 	private function rowOf(NoticeListRun $run, array $notice): array {
 		$id = (string)($notice['id'] ?? ($notice['@self']['id'] ?? ''));
-		$term = $this->read(
-			objectService: $run->objectService,
-			register: $run->register,
-			schemaKey: 'termijn_instance_schema',
-			id: (string)($notice['deadlineInstance'] ?? '')
-		);
-		$case = $this->read(objectService: $run->objectService, register: $run->register, schemaKey: 'case_schema', id: (string)($term['case'] ?? ''));
+		$term = $this->read(run: $run, ref: ['schemaKey' => 'termijn_instance_schema', 'id' => (string)($notice['deadlineInstance'] ?? '')]);
+		$case = $this->read(run: $run, ref: ['schemaKey' => 'case_schema', 'id' => (string)($term['case'] ?? '')]);
 
 		return ['id' => $id]
 			+ $this->caseColumns(case: $case, term: $term)
@@ -335,14 +360,13 @@ class NoticeOfDefaultRows {
 	/**
 	 * Read one object by the schema a setting names, once per call.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register id.
-	 * @param string $schemaKey     The setting that names the schema.
-	 * @param string $id            The object id.
+	 * @param NoticeListRun                        $run The listing: the OpenRegister object service and the register id.
+	 * @param array{schemaKey: string, id: string} $ref The setting that names the schema, and the object id.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function read(object $objectService, string $register, string $schemaKey, string $id): array {
+	private function read(NoticeListRun $run, array $ref): array {
+		['schemaKey' => $schemaKey, 'id' => $id] = $ref;
 		$schema = (string)$this->settingsService->getConfigValue($schemaKey);
 		if ($id === '' || $schema === '') {
 			return [];
@@ -351,7 +375,7 @@ class NoticeOfDefaultRows {
 		$key = $schemaKey.':'.$id;
 		if (array_key_exists($key, $this->found) === false) {
 			try {
-				$this->found[$key] = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
+				$this->found[$key] = $this->findObjectAsArray(objectService: $run->objectService, register: $run->register, schema: $schema, id: $id);
 			} catch (Throwable $e) {
 				$this->found[$key] = null;
 			}

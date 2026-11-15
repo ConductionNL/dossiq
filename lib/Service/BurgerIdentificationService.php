@@ -31,7 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BurgerIdentificationServiceInterface;
 use OCP\Contacts\IManager as IContactsManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -41,7 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
  */
-class BurgerIdentificationService {
+class BurgerIdentificationService implements BurgerIdentificationServiceInterface {
 	/**
 	 * Weighting per identificatievraag dimension (must sum to 1.0).
 	 *
@@ -143,7 +144,7 @@ class BurgerIdentificationService {
 		$this->logger->info(
 			'Dossiq: DigiD identification processed (BSN masked)',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'bsn' => $this->maskBsn(bsn: $bsn),
 			],
 		);
@@ -174,21 +175,49 @@ class BurgerIdentificationService {
 			return '';
 		}
 
-		$field = 'TEL';
-		if (str_contains($identifier, '@') === true) {
-			$field = 'EMAIL';
-		}
+		$field = $this->searchFieldFor(identifier: $identifier);
 
 		try {
 			$matches = $manager->search($identifier, [$field]);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: contacts lookup failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return '';
 		}
 
+		return $this->firstContactRef(matches: $matches);
+	}//end lookupByIdentifier()
+
+	/**
+	 * The contacts field an identifier is searched in: EMAIL for an address, TEL otherwise.
+	 *
+	 * @param string $identifier A phone number or email address.
+	 *
+	 * @return string The field.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+	 */
+	private function searchFieldFor(string $identifier): string {
+		$field = 'TEL';
+		if (str_contains($identifier, '@') === true) {
+			$field = 'EMAIL';
+		}
+
+		return $field;
+	}//end searchFieldFor()
+
+	/**
+	 * The burger reference of the first match that carries a UID.
+	 *
+	 * @param mixed $matches The contacts search results.
+	 *
+	 * @return string The burger reference, or empty string when none carries one.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+	 */
+	private function firstContactRef(mixed $matches): string {
 		foreach ((array)$matches as $match) {
 			$uid = (string)($match['UID'] ?? '');
 			if ($uid !== '') {
@@ -197,7 +226,7 @@ class BurgerIdentificationService {
 		}
 
 		return '';
-	}//end lookupByIdentifier()
+	}//end firstContactRef()
 
 	/**
 	 * Resolve the optional Nextcloud contacts manager.

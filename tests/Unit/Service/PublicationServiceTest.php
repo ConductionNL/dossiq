@@ -31,6 +31,8 @@ use OCA\Integriq\Event\DeliveryRequestedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * ObjectService stub matching the named-argument signatures used by PublicationService.
@@ -45,7 +47,7 @@ interface PublicationObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, string $register, string $schema): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Save or update an object.
@@ -56,7 +58,7 @@ interface PublicationObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function saveObject(array $object, string $register, string $schema): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**

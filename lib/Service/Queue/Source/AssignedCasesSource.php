@@ -28,6 +28,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Status\StatusDeclaration;
+use OCA\Dossiq\Service\Support\ReadsQueueCaseSchema;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCP\IL10N;
 use Throwable;
@@ -38,6 +39,8 @@ use Throwable;
  * @spec openspec/specs/my-work/spec.md
  */
 class AssignedCasesSource extends RegisterBackedSource {
+	use ReadsQueueCaseSchema;
+
 	/**
 	 * Constructor.
 	 *
@@ -93,12 +96,16 @@ class AssignedCasesSource extends RegisterBackedSource {
 	/**
 	 * The mechanisms this source covers.
 	 *
+	 * `termResumedAfterPause` tells the case's assignee that its term runs
+	 * again, so the case it names is one this source already lists for them.
+	 *
 	 * @return array<int, string> The mechanism ids.
 	 *
 	 * @spec openspec/specs/add-work-queue/spec.md
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
 	 */
 	public function mechanisms(): array {
-		return ['notification:caseAssigned', 'notification:caseHandoffIntake'];
+		return ['notification:caseAssigned', 'notification:caseHandoffIntake', 'notification:termResumedAfterPause'];
 	}//end mechanisms()
 
 	/**
@@ -111,17 +118,11 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function itemsFor(string $userId): array {
-		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
-		if ($schema === '') {
-			$schema = 'case';
-		}
+		$schema = $this->caseSchema();
 
 		// `0`, not `false`: OpenRegister answers a boolean filter value with
 		// no rows, so `false` emptied every queue and every digest.
-		$rows = $this->rows(
-			schema: $schema,
-			filters: ['assignee' => $userId, 'isFinalStatus' => 0]
-		);
+		$rows = $this->rows(schema: $schema, filters: ['assignee' => $userId, 'isFinalStatus' => 0]);
 
 		$items = [];
 		foreach ($rows as $row) {
@@ -130,22 +131,36 @@ class AssignedCasesSource extends RegisterBackedSource {
 				continue;
 			}
 
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'case',
-				subjectId: $id,
-				title: (string)($row['title'] ?? $id),
-				priority: (string)($row['priority'] ?? ''),
-				dueAt: $this->dateOf(row: $row, key: 'deadline'),
-				coveredFor: null,
-				route: ['name' => 'CaseDetail', 'params' => ['id' => $id]],
-				waiting: $this->waitingFactsOf(row: $row),
-				subject: $row
-			);
+			$items[] = $this->itemOf(row: $row, id: $id);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * The queue item of one assigned case.
+	 *
+	 * @param array<string, mixed> $row The case.
+	 * @param string               $id  The case's id.
+	 *
+	 * @return QueueItem The item.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function itemOf(array $row, string $id): QueueItem {
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'case',
+			subjectId: $id,
+			title: (string)($row['title'] ?? $id),
+			priority: (string)($row['priority'] ?? ''),
+			dueAt: $this->dateOf(row: $row, key: 'deadline'),
+			coveredFor: null,
+			route: ['name' => 'CaseDetail', 'params' => ['id' => $id]],
+			waiting: $this->waitingFactsOf(row: $row),
+			subject: $row
+		);
+	}//end itemOf()
 
 	/**
 	 * Who this case is waiting on, since when, and how often it has been chased.

@@ -135,24 +135,53 @@ class EngineTaskSource implements QueueSource {
 				continue;
 			}
 
-			$raw = ($row['dueAt'] ?? ($row['dueDate'] ?? null));
-			$due = null;
-			if (is_string($raw) === true && trim($raw) !== '') {
-				$due = trim($raw);
-			}
-
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'task',
-				subjectId: $id,
-				title: (string)($row['title'] ?? ($row['name'] ?? $id)),
-				priority: (string)($row['priority'] ?? ''),
-				dueAt: $due,
-				coveredFor: null,
-				route: ['name' => 'TaskDetail', 'params' => ['id' => $id]]
-			);
+			$items[] = $this->taskItem(row: $row, id: $id);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * The queue item for one open task.
+	 *
+	 * @param array<string, mixed> $row The task row.
+	 * @param string               $id  The task id.
+	 *
+	 * @return QueueItem The item.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function taskItem(array $row, string $id): QueueItem {
+		$due = $this->dueOf(row: $row);
+
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'task',
+			subjectId: $id,
+			title: (string)($row['title'] ?? ($row['name'] ?? $id)),
+			priority: (string)($row['priority'] ?? ''),
+			dueAt: $due,
+			coveredFor: null,
+			route: ['name' => 'TaskDetail', 'params' => ['id' => $id]]
+		);
+	}//end taskItem()
+
+	/**
+	 * The task's due moment, or null when it has none.
+	 *
+	 * @param array<string, mixed> $row The task row.
+	 *
+	 * @return string|null The due moment.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function dueOf(array $row): ?string {
+		$raw = ($row['dueAt'] ?? ($row['dueDate'] ?? null));
+		$due = null;
+		if (is_string($raw) === true && trim($raw) !== '') {
+			$due = trim($raw);
+		}
+
+		return $due;
+	}//end dueOf()
 }//end class

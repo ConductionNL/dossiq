@@ -45,6 +45,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\Subsidie\SubsidieService
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class RowListCopiesTest extends TestCase {
 	/**

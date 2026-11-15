@@ -27,12 +27,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\Dossiq\Kernel\Contracts\FlowDecisionSubjectInterface;
+
 /**
  * Reads a concluded decision's subject as a dossiq case.
  *
  * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
-class FlowDecisionSubject {
+class FlowDecisionSubject implements FlowDecisionSubjectInterface {
 
 	/**
 	 * The source Decidiq's flow step raises its decisions under.

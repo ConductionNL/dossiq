@@ -35,7 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\People\LeaverHandoverService;
+use OCA\Dossiq\Kernel\Contracts\LeaverHandoverServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -59,7 +59,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @param string                $appName     The app name.
 	 * @param IRequest              $request     The request.
-	 * @param LeaverHandoverService $handover    The act itself.
+	 * @param LeaverHandoverServiceInterface $handover    The act itself.
 	 * @param IGroupManager         $groups      Administrator resolution.
 	 * @param IUserSession          $userSession The session.
 	 * @param LoggerInterface       $logger      The logger.
@@ -71,7 +71,7 @@ class LeaverHandoverController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly LeaverHandoverService $handover,
+		private readonly LeaverHandoverServiceInterface $handover,
 		private readonly IGroupManager $groups,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,

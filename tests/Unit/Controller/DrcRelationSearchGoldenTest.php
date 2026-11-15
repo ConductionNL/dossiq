@@ -34,6 +34,7 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The object service methods a delete reads through.
@@ -46,7 +47,7 @@ interface DrcRelationSearchObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(mixed $id, mixed $register, mixed $schema): mixed;
+	public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * @param array<string, mixed> $requestParams The search.
@@ -70,6 +71,8 @@ interface DrcRelationSearchObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Controller\ZgwController
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Controller\EioRelationLookup
+ * @uses \OCA\Dossiq\Service\Zgw\RelationSearch
  */
 class DrcRelationSearchGoldenTest extends TestCase {
 

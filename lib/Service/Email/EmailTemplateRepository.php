@@ -35,8 +35,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Kernel\Contracts\EmailTemplateRepositoryInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use RuntimeException;
 
 /**
@@ -46,7 +51,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
-class EmailTemplateRepository {
+class EmailTemplateRepository implements EmailTemplateRepositoryInterface {
 
 	use SearchesObjects;
 
@@ -70,21 +75,8 @@ class EmailTemplateRepository {
 	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function findActiveByCaseType(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('email_template_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		$rows = (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(
+			schemaKey: 'email_template_schema',
 			filters: [
 				'caseType' => $caseTypeId,
 				'_limit' => 100,
@@ -126,8 +118,7 @@ class EmailTemplateRepository {
 
 		$saved = $objectService->saveObject(
 			object: $payload,
-			register: $register,
-			schema: $schema,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
 		);
 
 		$saved = $this->toArrayOrNull(value: $saved);
@@ -192,7 +183,7 @@ class EmailTemplateRepository {
 		}
 
 		try {
-			$obj = $objectService->find($id, register: $register, schema: $schema);
+			$obj = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable) {
 			return null;
 		}

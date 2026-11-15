@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\AdvisoryBodyService;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryBodyServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -55,7 +55,7 @@ class AdvisoryBodyController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param AdvisoryBodyService $advisoryBodyService The advisory body service
+	 * @param AdvisoryBodyServiceInterface $advisoryBodyService The advisory body service
 	 * @param IUserSession $userSession The user session
 	 *
 	 * @return void
@@ -63,7 +63,7 @@ class AdvisoryBodyController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly AdvisoryBodyService $advisoryBodyService,
+		private readonly AdvisoryBodyServiceInterface $advisoryBodyService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

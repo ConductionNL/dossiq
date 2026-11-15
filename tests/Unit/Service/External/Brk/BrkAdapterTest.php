@@ -36,11 +36,12 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\External\Brk\BrkApiAdapter
  * @covers \OCA\Dossiq\Service\External\Brk\LogBrkAdapter
+ * @covers \OCA\Dossiq\Service\External\Brk\BrkLookupResult
  *
- * @uses \OCA\Dossiq\Service\External\Brk\BrkLookupResult
  * @uses \OCA\Dossiq\Service\External\Brk\BrkResponseMapper
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
  * @uses \OCA\Dossiq\Service\External\RegisterValues
+ * @uses \OCA\Dossiq\Service\External\HalResponseBody
  */
 class BrkAdapterTest extends TestCase {
 	/**

@@ -39,11 +39,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\PhaseTermServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Service\PhaseTermService;
 use OCA\Dossiq\Service\TermKind;
-use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -66,15 +66,15 @@ class CasePhaseTermListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param PhaseTermService $phases Starting and stopping phase clocks.
-	 * @param TermijnService $termService The term instances on a case.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param PhaseTermServiceInterface $phases Starting and stopping phase clocks.
+	 * @param TermijnServiceInterface $termService The term instances on a case.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly PhaseTermService $phases,
-		private readonly TermijnService $termService,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly PhaseTermServiceInterface $phases,
+		private readonly TermijnServiceInterface $termService,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -94,23 +94,7 @@ class CasePhaseTermListener implements IEventListener {
 		}
 
 		try {
-			$case = $this->extractObject(event: $event);
-			if ($case === null || $this->slugResolver->resolveFromPayload(payload: $case) !== 'case') {
-				return;
-			}
-
-			$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-			$statusId = $this->reference(value: ($case['status'] ?? ''));
-			$caseTypeId = $this->reference(value: ($case['caseType'] ?? ''));
-			if ($caseId === '' || $statusId === '') {
-				return;
-			}
-
-			if ($this->alreadyClocked(caseId: $caseId, statusTypeId: $statusId) === true) {
-				return;
-			}
-
-			$this->phases->enterPhase(caseId: $caseId, caseTypeId: $caseTypeId, statusTypeId: $statusId);
+			$this->enterPhaseFor(event: $event);
 		} catch (Throwable $e) {
 			// A phase clock that could not start must never stop the case from
 			// moving. The warning is the operator's signal that the phase
@@ -121,6 +105,44 @@ class CasePhaseTermListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Start the phase clock of the updated object when it is a case.
+	 *
+	 * @param Event $event The object-updated event.
+	 *
+	 * @return void
+	 */
+	private function enterPhaseFor(Event $event): void {
+		$case = $this->extractObject(event: $event);
+		if ($case === null || $this->slugResolver->resolveFromPayload(payload: $case) !== 'case') {
+			return;
+		}
+
+		$this->enterPhaseOf(caseData: $case);
+	}//end enterPhaseFor()
+
+	/**
+	 * Start the phase clock of the case's current status, unless it already runs.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return void
+	 */
+	private function enterPhaseOf(array $caseData): void {
+		$caseId = (string)($caseData['id'] ?? ($caseData['uuid'] ?? ''));
+		$statusId = $this->reference(value: ($caseData['status'] ?? ''));
+		$caseTypeId = $this->reference(value: ($caseData['caseType'] ?? ''));
+		if ($caseId === '' || $statusId === '') {
+			return;
+		}
+
+		if ($this->alreadyClocked(caseId: $caseId, statusTypeId: $statusId) === true) {
+			return;
+		}
+
+		$this->phases->enterPhase(caseId: $caseId, caseTypeId: $caseTypeId, statusTypeId: $statusId);
+	}//end enterPhaseOf()
 
 	/**
 	 * Whether the case already has a running clock for this phase.

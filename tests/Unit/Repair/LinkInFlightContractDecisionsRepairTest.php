@@ -23,11 +23,13 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Characterisation tests for the in-flight contract decision link.
  *
  * @covers \OCA\Dossiq\Repair\LinkInFlightContractDecisionsRepair
+ * @uses \OCA\Dossiq\Repair\InFlightDecisionLinkRun
  */
 class LinkInFlightContractDecisionsRepairTest extends TestCase {
 
@@ -143,7 +145,10 @@ class LinkInFlightContractDecisionsRepairTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function saveObject(array $object, string $register='', string $schema='', ?string $uuid=null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->calls[] = 'save '.$uuid.' '.$object['decisionRef'];
 				return $object;
 			}

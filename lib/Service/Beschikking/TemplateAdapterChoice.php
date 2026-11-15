@@ -31,7 +31,7 @@ use OCP\App\IAppManager;
  * ONE RULE FOR THE SEAM AND THE CARD. A named class is what the admin chose;
  * an empty `beschikking_template_adapter` binds filinq's adapter when filinq is
  * enabled and the mock otherwise. The template seam
- * ({@see \OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar}) and the
+ * ({@see \OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar}) and the
  * Document templates card ({@see \OCA\Dossiq\Service\IntegrationStatusService})
  * both ask this class, so the card cannot read Live while the seam binds the
  * mock. The probe goes through FleetAppId, never a literal app id: filinq

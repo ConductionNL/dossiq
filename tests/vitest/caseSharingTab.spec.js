@@ -25,6 +25,7 @@ for (const name of ['CaseTransferDialog', 'CreateAccessLinkDialog', 'CreateFeder
 	vi.doMock(`../../src/dialogs/${name}.vue`, () => ({ default: stub(name) }))
 }
 vi.mock('../../src/views/cases/components/ShareTab.vue', () => ({ default: stub('ShareTab') }))
+vi.mock('../../src/views/cases/components/CaseAccessGrants.vue', () => ({ default: stub('CaseAccessGrants') }))
 vi.mock('../../src/utils/federatedShareHelpers.js', () => ({
 	createFederatedShareEndpoint: () => '/apps/dossiq/api/federated',
 	federatedActivityEndpoint: (id) => `/apps/dossiq/api/federated/${id}/activity`,
@@ -220,5 +221,14 @@ describe('shares, transfers and federation', () => {
 		objectStore.fetchCollection.mockResolvedValueOnce([{ id: 'only' }])
 		const w = await mountTab()
 		expect(w.vm.inheritanceWarning).toBe('This case has one sub-case. Sharing this case lets the holder read it too.')
+	})
+})
+
+describe('user and group access', () => {
+	it('places the case access grants on the tab for this case (REQ-CRS-43)', async () => {
+		routeGets({})
+		objectStore.fetchCollection.mockResolvedValueOnce([])
+		const w = await mountTab({ objectId: 'case-9' })
+		expect(w.findComponent({ name: 'CaseAccessGrants' }).attributes('objectid')).toBe('case-9')
 	})
 })

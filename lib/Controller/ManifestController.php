@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseTypeViews;
-use OCA\Dossiq\Service\MenuCaseTypesService;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeViewsInterface;
+use OCA\Dossiq\Kernel\Contracts\MenuCaseTypesServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -49,16 +49,16 @@ class ManifestController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param MenuCaseTypesService $menuCaseTypes The per-user menu choice
+	 * @param MenuCaseTypesServiceInterface $menuCaseTypes The per-user menu choice
 	 * @param IUserSession $userSession User session
-	 * @param CaseTypeViews $caseTypeViews The view of the case list per case type
+	 * @param CaseTypeViewsInterface $caseTypeViews The view of the case list per case type
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly MenuCaseTypesService $menuCaseTypes,
+		private readonly MenuCaseTypesServiceInterface $menuCaseTypes,
 		private readonly IUserSession $userSession,
-		private readonly CaseTypeViews $caseTypeViews,
+		private readonly CaseTypeViewsInterface $caseTypeViews,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -92,25 +92,49 @@ class ManifestController extends Controller {
 			return new JSONResponse(['menu' => []]);
 		}
 
-		// The case types a user pinned are views of the case list, which the
-		// library's "My views" section lists; no menu entry of dossiq's own.
-		$chosen = $this->menuCaseTypes->chosen(userId: $user->getUID(), visible: $offered);
-		$identifiers = array_column($this->caseTypeViews->declaredViews(), 'caseTypeIdentifier');
-		$views = array_merge(
-			$this->caseTypeViews->instanceViews(byIdentifier: $this->menuCaseTypes->byIdentifier(identifiers: $identifiers)),
-			$this->caseTypeViews->views(caseTypes: $chosen)
-		);
+		$views = $this->viewsFor(uid: $user->getUID(), offered: $offered);
 		if ($views === []) {
 			return new JSONResponse(['menu' => []]);
 		}
 
+		return $this->pagesResponse(views: $views);
+	}//end manifest()
+
+	/**
+	 * The case list views: the instance's declared views and the case types the user pinned.
+	 *
+	 * The case types a user pinned are views of the case list, which the
+	 * library's "My views" section lists; no menu entry of dossiq's own.
+	 *
+	 * @param string            $uid     The user.
+	 * @param array<int, mixed> $offered The case types offered to the user.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function viewsFor(string $uid, array $offered): array {
+		$chosen = $this->menuCaseTypes->chosen(userId: $uid, visible: $offered);
+		$identifiers = array_column($this->caseTypeViews->declaredViews(), 'caseTypeIdentifier');
+		return array_merge(
+			$this->caseTypeViews->instanceViews(byIdentifier: $this->menuCaseTypes->byIdentifier(identifiers: $identifiers)),
+			$this->caseTypeViews->views(caseTypes: $chosen)
+		);
+	}//end viewsFor()
+
+	/**
+	 * The manifest that carries the views on the case list page.
+	 *
+	 * @param array<int, mixed> $views The case list views.
+	 *
+	 * @return JSONResponse
+	 */
+	private function pagesResponse(array $views): JSONResponse {
 		return new JSONResponse(
 			[
 				'menu' => [],
 				'pages' => [
-					['id' => CaseTypeViews::PAGE, 'config' => [CaseTypeViews::DEFAULT_VIEWS_KEY => $views]],
+					['id' => CaseTypeViewsInterface::PAGE, 'config' => [CaseTypeViewsInterface::DEFAULT_VIEWS_KEY => $views]],
 				],
 			]
 		);
-	}//end manifest()
+	}//end pagesResponse()
 }//end class

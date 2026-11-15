@@ -25,6 +25,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use UnexpectedValueException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Covers the `dossiq.ensureCommittee` flow node.
@@ -69,6 +71,13 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 	private bool $saveThrows = false;
 
 	/**
+	 * What the settings answer for the register and schema keys.
+	 *
+	 * @var string
+	 */
+	private string $configValue = 'configured';
+
+	/**
 	 * Build the node.
 	 *
 	 * @param CommitteeDelegationService|null $delegation A delegation double, or null for a default.
@@ -104,7 +113,9 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				if ($this->readThrows === true) {
 					throw new RuntimeException('register unavailable');
 				}
@@ -120,7 +131,10 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				if ($this->saveThrows === true) {
 					throw new RuntimeException('write refused');
 				}
@@ -133,7 +147,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($withStore === true ? $objectService : null);
-		$settings->method('getConfigValue')->willReturn('configured');
+		$settings->method('getConfigValue')->willReturnCallback(fn (): string => $this->configValue);
 
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
@@ -442,4 +456,60 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 
 	}//end testAnUnusableRelationIsTreatedAsAbsent()
 
+
+	/**
+	 * Without a committee register and schema there is nowhere to read the
+	 * committee from, so the step fails rather than guessing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredCommitteeRegisterFails(): void {
+		$this->seed();
+		$this->configValue = '';
+		$delegation = $this->createMock(CommitteeDelegationService::class);
+		$delegation->expects($this->never())->method('ensureGovernanceBody');
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('The committee register/schema is not configured');
+
+		$this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
+
+	}//end testAnUnconfiguredCommitteeRegisterFails()
+
+
+	/**
+	 * A committee row that carries no id of its own cannot be written back, so
+	 * the mapping is skipped while the item is still stamped.
+	 *
+	 * @return void
+	 */
+	public function testACommitteeWithoutAnIdIsStampedButNotWrittenBack(): void {
+		$this->rows['cmte-1'] = ['name' => 'Bezwaarcommissie', 'active' => true, 'governanceBodyId' => ''];
+		$delegation = $this->createMock(CommitteeDelegationService::class);
+		$delegation->expects($this->once())->method('ensureGovernanceBody')->willReturn('gb-7');
+
+		$out = $this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
+
+		$this->assertSame('gb-7', $out[0]['json']['governanceBodyId']);
+		$this->assertNull($this->saved, 'nothing is written for a row without an id');
+
+	}//end testACommitteeWithoutAnIdIsStampedButNotWrittenBack()
+
+
+	/**
+	 * The id under `@self` is the one written back when the row has no top-level id.
+	 *
+	 * @return void
+	 */
+	public function testTheSelfIdIsUsedToWriteTheMappingBack(): void {
+		$this->rows['cmte-1'] = ['@self' => ['id' => 'cmte-1'], 'name' => 'BAC', 'active' => true, 'governanceBodyId' => ''];
+		$delegation = $this->createMock(CommitteeDelegationService::class);
+		$delegation->method('ensureGovernanceBody')->willReturn('gb-8');
+
+		$this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
+
+		$this->assertSame('gb-8', $this->saved['governanceBodyId'] ?? null);
+		$this->assertSame('BAC', $this->saved['name'] ?? null);
+
+	}//end testTheSelfIdIsUsedToWriteTheMappingBack()
 }//end class

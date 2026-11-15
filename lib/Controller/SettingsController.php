@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
@@ -71,7 +71,7 @@ class SettingsController extends Controller {
 	 * @param IRequest $request The request object
 	 * @param ContainerInterface $container The container
 	 * @param IAppManager $appManager The app manager
-	 * @param SettingsService $settingsService The settings service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param IGroupManager $groupManager The group manager
 	 * @param IUserSession $userSession The user session
 	 * @param IL10N $l10n The translation service (libresign-besluit-signing hint).
@@ -82,12 +82,12 @@ class SettingsController extends Controller {
 		IRequest $request,
 		private readonly ContainerInterface $container,
 		private readonly IAppManager $appManager,
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -137,12 +137,47 @@ class SettingsController extends Controller {
 		$user = $this->userSession->getUser();
 		$isAdmin = $user !== null && $this->groupManager->isAdmin($user->getUID());
 
-		$config = match ($isAdmin) {
+		$config = $this->settingsFor(isAdmin: $isAdmin);
+
+		$libresignAvailable = $this->appManager->isEnabledForUser('libresign');
+		$libresignHint = $this->libresignHint(libresignAvailable: $libresignAvailable);
+
+		return new JSONResponse([
+			'success' => true,
+			'openRegisters' => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
+			'isAdmin' => $isAdmin,
+			'config' => $config,
+			'libresignAvailable' => $libresignAvailable,
+			'libresignHint' => $libresignHint,
+		]);
+	}//end index()
+
+	/**
+	 * The settings the caller may read: all of them for an admin, the public ones otherwise.
+	 *
+	 * @param bool $isAdmin Whether the caller is an admin.
+	 *
+	 * @return array<string, mixed> The settings.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function settingsFor(bool $isAdmin): array {
+		return match ($isAdmin) {
 			true => $this->settingsService->getSettings(),
 			default => $this->settingsService->getPublicSettings(),
 		};
+	}//end settingsFor()
 
-		$libresignAvailable = $this->appManager->isEnabledForUser('libresign');
+	/**
+	 * The hint shown when LibreSign is not available, or null when it is.
+	 *
+	 * @param bool $libresignAvailable Whether LibreSign is enabled for the user.
+	 *
+	 * @return string|null The hint.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function libresignHint(bool $libresignAvailable): ?string {
 		$libresignHint = null;
 		if ($libresignAvailable === false) {
 			$libresignHint = $this->l10n->t(
@@ -152,17 +187,8 @@ class SettingsController extends Controller {
 			);
 		}
 
-		return new JSONResponse(
-			[
-				'success' => true,
-				'openRegisters' => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
-				'isAdmin' => $isAdmin,
-				'config' => $config,
-				'libresignAvailable' => $libresignAvailable,
-				'libresignHint' => $libresignHint,
-			]
-		);
-	}//end index()
+		return $libresignHint;
+	}//end libresignHint()
 
 	/**
 	 * Update settings with provided data.

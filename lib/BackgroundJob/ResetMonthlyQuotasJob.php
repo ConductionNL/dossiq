@@ -25,10 +25,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantQuotaServiceInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
-use OCA\Dossiq\Service\TenantQuotaService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -61,7 +61,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	 */
 	private const QUOTA_QUERY = [
 		'filters' => [
-			'register' => Application::REGISTER_SLUG,
+			'register' => AppIdentity::REGISTER_SLUG,
 			'schema' => 'tenantQuota',
 		],
 		'limit' => 1000,
@@ -72,7 +72,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Time factory.
-	 * @param TenantQuotaService $quotaService Tenant quota service.
+	 * @param TenantQuotaServiceInterface $quotaService Tenant quota service.
 	 * @param IAppManager $appManager App manager.
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
@@ -80,7 +80,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly TenantQuotaService $quotaService,
+		private readonly TenantQuotaServiceInterface $quotaService,
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,

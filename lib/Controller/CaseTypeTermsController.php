@@ -28,14 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Access\ReadableObjects;
-use OCA\Dossiq\Service\CaseType\CaseTypeTerms;
+use OCA\Dossiq\Controller\Support\RefusesUnreadableCaseTypes;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeTermsInterface;
+use OCA\Dossiq\Kernel\Contracts\ReadableObjectsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use Throwable;
 
 /**
  * Answers a case type's terms in words.
@@ -43,22 +43,23 @@ use Throwable;
  * @spec openspec/specs/case-types/spec.md
  */
 class CaseTypeTermsController extends Controller {
+	use RefusesUnreadableCaseTypes;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param string         $appName The app name.
 	 * @param IRequest       $request The request.
-	 * @param CaseTypeTerms $terms  Groups the workflow steps under the statuses.
-	 * @param ReadableObjects $readable Whether a caller is signed in and may read the requested object.
+	 * @param CaseTypeTermsInterface $terms  Groups the workflow steps under the statuses.
+	 * @param ReadableObjectsInterface $readable Whether a caller is signed in and may read the requested object.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTypeTerms $terms,
-		private readonly ReadableObjects $readable,
+		private readonly CaseTypeTermsInterface $terms,
+		private readonly ReadableObjectsInterface $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -78,18 +79,9 @@ class CaseTypeTermsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(string $id): JSONResponse {
-		if ($this->readable->hasCaller() === false) {
-			return new JSONResponse(['error' => 'Sign in to read this case type.'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$readable = $this->readable->findsAsCaller(schema: 'caseType', id: $id);
-		} catch (Throwable) {
-			return new JSONResponse(['error' => 'The case type could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
-
-		if ($readable === false) {
-			return new JSONResponse(['error' => 'Case type not found'], Http::STATUS_NOT_FOUND);
+		$refusal = $this->caseTypeRefusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$terms = $this->terms->termsFor(caseTypeId: $id);

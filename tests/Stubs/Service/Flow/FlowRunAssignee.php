@@ -64,13 +64,12 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunAssignee', false) =
         /**
          * Whether this user may answer.
          *
-         * @param FlowRun     $run    The run.
-         * @param string|null $uid    The user.
-         * @param string|null $nodeId The node being answered.
+         * @param FlowRun   $run    The run.
+         * @param RunSignal $signal The answer, naming its actor and node.
          *
          * @return boolean Always true — see the file docblock.
          */
-        public function mayAnswer(FlowRun $run, ?string $uid, ?string $nodeId = null): bool {
+        public function mayAnswer(FlowRun $run, RunSignal $signal): bool {
             return true;
         }
     }

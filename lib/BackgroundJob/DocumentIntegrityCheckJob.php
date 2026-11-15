@@ -27,9 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
+use OCA\Dossiq\Kernel\Contracts\DocumentIntegrityVerifierInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
-use OCA\Dossiq\Service\Zaakdossier\DocumentIntegrityVerifier;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 
@@ -54,14 +54,14 @@ class DocumentIntegrityCheckJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory              $time           Time factory.
-	 * @param DocumentIntegrityVerifier $verifier       Checks the stored checksums.
+	 * @param DocumentIntegrityVerifierInterface $verifier       Checks the stored checksums.
 	 * @param BackgroundServiceAccount  $serviceAccount The account the run writes as.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly DocumentIntegrityVerifier $verifier,
+		private readonly DocumentIntegrityVerifierInterface $verifier,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);

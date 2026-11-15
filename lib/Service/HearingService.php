@@ -23,11 +23,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -78,13 +80,7 @@ class HearingService {
 	 */
 	public function scheduleHearing(string $complaintId, array $data): array {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
-		if (empty($data['date']) === true) {
-			throw new RuntimeException('Hearing datum is required');
-		}
-
-		if (empty($data['type']) === true) {
-			throw new RuntimeException('Hearing type is required');
-		}
+		$this->requireHearingFields(data: $data);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -100,6 +96,57 @@ class HearingService {
 
 		$data['complaint'] = $complaintId;
 
+		$data = $this->withTalkRoom(complaintId: $complaintId, data: $data);
+
+		// Put the hearing on every participant's calendar before it is stored,
+		// so the id the schema reserves is written with the hearing itself.
+		$data['calendarEventId'] = $this->calendarService->createEvent(data: $data);
+
+		$hearing = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
+
+		$this->logger->info(
+			'Hearing scheduled for complaint ' . $complaintId . ' on ' . $data['date'],
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return $this->hearingAnswer(hearing: $hearing, data: $data);
+	}//end scheduleHearing()
+
+	/**
+	 * Refuse a hearing without a date or a type.
+	 *
+	 * @param array<string, mixed> $data Hearing data (datum, locatie, type, deelnemers)
+	 *
+	 * @return void
+	 *
+	 * @throws \RuntimeException If required fields missing
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function requireHearingFields(array $data): void {
+		if (empty($data['date']) === true) {
+			throw new RuntimeException('Hearing datum is required');
+		}
+
+		if (empty($data['type']) === true) {
+			throw new RuntimeException('Hearing type is required');
+		}
+	}//end requireHearingFields()
+
+	/**
+	 * The hearing data with a Talk room for a video hearing.
+	 *
+	 * @param string               $complaintId Complaint UUID
+	 * @param array<string, mixed> $data        Hearing data
+	 *
+	 * @return array<string, mixed> The hearing data.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function withTalkRoom(string $complaintId, array $data): array {
 		// Create Talk room for video hearings.
 		if ($data['type'] === 'videogesprek') {
 			$talkUrl = $this->createTalkRoom(complaintId: $complaintId);
@@ -109,23 +156,26 @@ class HearingService {
 			}
 		}
 
-		// Put the hearing on every participant's calendar before it is stored,
-		// so the id the schema reserves is written with the hearing itself.
-		$data['calendarEventId'] = $this->calendarService->createEvent(data: $data);
+		return $data;
+	}//end withTalkRoom()
 
-		$hearing = $objectService->saveObject(object: $data, register: $register, schema: $schema);
-
-		$this->logger->info(
-			'Hearing scheduled for complaint ' . $complaintId . ' on ' . $data['date'],
-			['app' => Application::APP_ID],
-		);
-
+	/**
+	 * The created hearing as an array.
+	 *
+	 * @param mixed                $hearing The saveObject() result.
+	 * @param array<string, mixed> $data    The hearing data that was saved.
+	 *
+	 * @return array<string, mixed> Created hearing
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function hearingAnswer(mixed $hearing, array $data): array {
 		if (is_array($hearing) === true) {
 			return $hearing;
 		}
 
 		return array_merge($data, ['id' => $hearing->getUuid()]);
-	}//end scheduleHearing()
+	}//end hearingAnswer()
 
 	/**
 	 * Get a hearing by ID.
@@ -137,24 +187,7 @@ class HearingService {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function getHearing(string $id): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('hearing_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id
-		);
+		return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->find(schemaKey: 'hearing_schema', id: $id);
 	}//end getHearing()
 
 	/**
@@ -209,7 +242,7 @@ class HearingService {
 
 		$this->logger->info(
 			'Hearing outcome recorded for hearing ' . $id,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		if (is_array($result) === true) {
@@ -239,7 +272,7 @@ class HearingService {
 
 		$this->logger->debug(
 			'Creating Talk room for complaint hearing',
-			['complaintId' => $complaintId, 'roomName' => $roomName, 'app' => Application::APP_ID],
+			['complaintId' => $complaintId, 'roomName' => $roomName, 'app' => AppIdentity::APP_ID],
 		);
 
 		$room = $this->talkBroker->createRoom(name: $roomName);

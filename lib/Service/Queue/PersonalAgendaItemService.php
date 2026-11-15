@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\PersonalAgendaItemServiceInterface;
 use OCP\Calendar\ICalendarIsWritable;
 use OCP\Calendar\ICreateFromString;
 use OCP\Calendar\IManager as ICalendarManager;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class PersonalAgendaItemService {
+class PersonalAgendaItemService implements PersonalAgendaItemServiceInterface {
 	/**
 	 * The category that marks an event as one of ours.
 	 *
@@ -133,32 +134,71 @@ class PersonalAgendaItemService {
 			throw new RuntimeException($this->l10n->t('A planned item needs a title.'));
 		}
 
-		try {
-			$start = new DateTimeImmutable($startsAt);
-		} catch (Throwable $e) {
-			throw new RuntimeException($this->l10n->t('That is not a moment this calendar can read.'), 0, $e);
-		}
+		return $this->planned(userId: $userId, item: ['title' => $title, 'startsAt' => $startsAt, 'template' => $template]);
+	}//end plan()
 
-		$minutes = $this->minutesFor(template: $template);
-		$builder = $this->calendars->createEventBuilder();
-		$builder->setSummary($title);
-		$builder->setStartDate($start);
-		$builder->setEndDate($start->setTimestamp($start->getTimestamp() + ($minutes * 60)));
-		$builder->setDescription($this->l10n->t('Planned from your queue. It is not attached to a case.'));
-		$ics = $builder->toIcs();
-
-		$ics = str_replace("BEGIN:VEVENT\r\n", "BEGIN:VEVENT\r\nCATEGORIES:" . self::CATEGORY . "\r\n", $ics);
+	/**
+	 * Write the planned item into the user's calendar and answer what was written.
+	 *
+	 * @param string                $userId The user whose calendar it goes in.
+	 * @param array<string, string> $item   The trimmed `title`, the `startsAt` moment and the `template` that sets its length.
+	 *
+	 * @return array{uid: string, startsAt: string, minutes: int} The written item.
+	 *
+	 * @throws RuntimeException When the item could not be written.
+	 */
+	private function planned(string $userId, array $item): array {
+		$title = $item['title'];
+		$start = $this->startOf(startsAt: $item['startsAt']);
+		$minutes = $this->minutesFor(template: $item['template']);
+		$ics = $this->eventIcs(title: $title, span: [$start, $start->setTimestamp($start->getTimestamp() + ($minutes * 60))]);
 		$uid = $this->uidOf(ics: $ics);
 		if ($uid === '') {
 			throw new RuntimeException($this->l10n->t('The planned item could not be written.'));
 		}
 
-		if ($this->write(userId: $userId, uid: $uid, ics: $ics) === false) {
+		if ($this->write(userId: $userId, event: ['uid' => $uid, 'ics' => $ics]) === false) {
 			throw new RuntimeException($this->l10n->t('You have no calendar this item can be written to.'));
 		}
 
 		return ['uid' => $uid, 'startsAt' => $start->format('Y-m-d\TH:i:sP'), 'minutes' => $minutes];
-	}//end plan()
+	}//end planned()
+
+	/**
+	 * The moment a planned item starts.
+	 *
+	 * @param string $startsAt When it starts, any format DateTimeImmutable reads.
+	 *
+	 * @return DateTimeImmutable The start.
+	 *
+	 * @throws RuntimeException When the moment is unreadable.
+	 */
+	private function startOf(string $startsAt): DateTimeImmutable {
+		try {
+			return new DateTimeImmutable($startsAt);
+		} catch (Throwable $e) {
+			throw new RuntimeException($this->l10n->t('That is not a moment this calendar can read.'), 0, $e);
+		}
+	}//end startOf()
+
+	/**
+	 * The planned item as ICS, carrying the planned-item category.
+	 *
+	 * @param string                                      $title What the item is.
+	 * @param array{0: DateTimeImmutable, 1: DateTimeImmutable} $span  When it starts and ends.
+	 *
+	 * @return string The event.
+	 */
+	private function eventIcs(string $title, array $span): string {
+		$builder = $this->calendars->createEventBuilder();
+		$builder->setSummary($title);
+		$builder->setStartDate($span[0]);
+		$builder->setEndDate($span[1]);
+		$builder->setDescription($this->l10n->t('Planned from your queue. It is not attached to a case.'));
+		$ics = $builder->toIcs();
+
+		return str_replace("BEGIN:VEVENT\r\n", "BEGIN:VEVENT\r\nCATEGORIES:" . self::CATEGORY . "\r\n", $ics);
+	}//end eventIcs()
 
 	/**
 	 * The planned items on this person's calendar in the next fortnight.
@@ -178,18 +218,7 @@ class PersonalAgendaItemService {
 
 		$found = [];
 		foreach ($this->calendarsOf(userId: $userId) as $calendar) {
-			try {
-				$rows = $calendar->search(
-					self::CATEGORY,
-					['CATEGORIES'],
-					['timerange' => ['start' => $now, 'end' => $until]],
-					100
-				);
-			} catch (Throwable $e) {
-				throw new RuntimeException($e->getMessage(), 0, $e);
-			}
-
-			foreach ($rows as $row) {
+			foreach ($this->plannedRowsIn(calendar: $calendar, timerange: ['start' => $now, 'end' => $until]) as $row) {
 				$item = $this->itemOf(row: $row);
 				if ($item !== null) {
 					$found[$item['uid']] = $item;
@@ -199,6 +228,31 @@ class PersonalAgendaItemService {
 
 		return array_values($found);
 	}//end upcomingFor()
+
+	/**
+	 * The planned rows of one calendar between two moments.
+	 *
+	 * @param \OCP\Calendar\ICalendar                                    $calendar  The calendar.
+	 * @param array{start: DateTimeImmutable, end: DateTimeImmutable} $timerange The moment to look from, and the end of the horizon.
+	 *
+	 * @return array<int, array<string, mixed>> The rows the calendar answered.
+	 *
+	 * @throws RuntimeException When the calendar cannot be read.
+	 */
+	private function plannedRowsIn(\OCP\Calendar\ICalendar $calendar, array $timerange): array {
+		try {
+			$rows = $calendar->search(
+				self::CATEGORY,
+				['CATEGORIES'],
+				['timerange' => $timerange],
+				100
+			);
+		} catch (Throwable $e) {
+			throw new RuntimeException($e->getMessage(), 0, $e);
+		}
+
+		return $rows;
+	}//end plannedRowsIn()
 
 	/**
 	 * One search row as a planned item.
@@ -248,15 +302,14 @@ class PersonalAgendaItemService {
 	/**
 	 * Write the event into the first calendar that will take it.
 	 *
-	 * @param string $userId The person.
-	 * @param string $uid    The event uid.
-	 * @param string $ics    The event.
+	 * @param string                           $userId The person.
+	 * @param array{uid: string, ics: string} $event  The event uid, and the event.
 	 *
 	 * @return bool TRUE when it was written.
 	 *
 	 * @spec openspec/specs/my-work/spec.md
 	 */
-	private function write(string $userId, string $uid, string $ics): bool {
+	private function write(string $userId, array $event): bool {
 		foreach ($this->calendarsOf(userId: $userId) as $calendar) {
 			if (($calendar instanceof ICreateFromString) === false) {
 				continue;
@@ -267,7 +320,7 @@ class PersonalAgendaItemService {
 			}
 
 			try {
-				$calendar->createFromString($uid . '.ics', $ics);
+				$calendar->createFromString($event['uid'] . '.ics', $event['ics']);
 
 				return true;
 			} catch (Throwable $e) {

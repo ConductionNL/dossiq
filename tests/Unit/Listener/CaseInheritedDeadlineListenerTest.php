@@ -22,7 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -35,15 +35,19 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseInheritedDeadlineListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar
  * @uses   \OCA\Dossiq\Service\CaseTypeResolver
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\CaseType\InheritedRowValues
  * @uses \OCA\Dossiq\Listener\Support\PreSaveCheck
  * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseInheritedDeadlineListenerTest extends TestCase {
 
@@ -97,7 +101,9 @@ class CaseInheritedDeadlineListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row, or an empty array.
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->stored[$id] ?? []);
 			}
 		};

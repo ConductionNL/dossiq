@@ -53,6 +53,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * In-memory ObjectService fake.
@@ -86,7 +89,9 @@ class FakeObjectService {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, string $register = '', string $schema = ''): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+		$register = $options?->register ?? '';
+		$schema = $options?->schema ?? '';
 		return ($this->store[$schema][$id] ?? null);
 	}//end find()
 
@@ -133,7 +138,9 @@ class FakeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(string $register, string $schema, array $object): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		if (empty($object['id']) === true) {
 			$this->seq++;
 			$object['id'] = $schema . '-' . $this->seq;
@@ -166,6 +173,10 @@ class FakeObjectService {
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingSendRecorder
+ * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingSendRun
+ * @uses \OCA\Dossiq\Service\Beschikking\SuccessorRequest
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class BeschikkingServiceTest extends TestCase {
 
@@ -326,8 +337,6 @@ class BeschikkingServiceTest extends TestCase {
 
 		// Seed a WMO mandaatregeling covering the afdelingsmanager level.
 		$this->objects->saveObject(
-			'dossiq',
-			'mandaatRegeling',
 			[
 				'id' => 'mr-2024-007-wmo',
 				'name' => 'Mandaatregeling WMO',
@@ -335,7 +344,8 @@ class BeschikkingServiceTest extends TestCase {
 					['level' => 'consulent', 'to_amount' => 5000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning']],
 					['level' => 'afdelingsmanager', 'to_amount' => 25000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning', 'rejection']],
 				],
-			]
+			],
+			new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'mandaatRegeling'))
 		);
 	}//end setUp()
 

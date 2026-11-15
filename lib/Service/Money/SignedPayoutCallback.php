@@ -30,7 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SignedPayoutCallbackInterface;
 use OCP\IAppConfig;
 use OCP\IRequest;
 
@@ -39,14 +40,7 @@ use OCP\IRequest;
  *
  * @spec openspec/specs/payout/spec.md
  */
-class SignedPayoutCallback {
-
-	/**
-	 * The app config key of the shared secret. A stored key: frozen.
-	 *
-	 * @var string
-	 */
-	public const SECRET_KEY = MoneyConfigKeys::PAYOUT_CALLBACK_SECRET_KEY;
+class SignedPayoutCallback implements SignedPayoutCallbackInterface {
 
 	/**
 	 * The header the finance app signs with.
@@ -150,20 +144,8 @@ class SignedPayoutCallback {
 			throw new InvalidArgumentException('Invalid JSON body');
 		}
 
-		$reference = trim((string)($body['reference'] ?? ''));
-		$status = strtolower(trim((string)($body['status'] ?? '')));
-		if ($reference === '' || $status === '') {
-			throw new InvalidArgumentException('reference and status are required');
-		}
-
-		if (array_key_exists($status, self::STATUS_MAP) === false) {
-			throw new InvalidArgumentException('Unknown payout status: ' . $status);
-		}
-
-		$bankReference = (string)($body['bankReference'] ?? '');
-		if ($bankReference === '') {
-			$bankReference = (string)($body['betalingsreferentie'] ?? '');
-		}
+		[$reference, $status] = $this->referenceAndStatus(body: $body);
+		$bankReference = $this->bankReferenceOf(body: $body);
 
 		return [
 			'reference' => $reference,
@@ -175,14 +157,53 @@ class SignedPayoutCallback {
 	}//end read()
 
 	/**
+	 * The reference and the lower-cased status, both required and the status known.
+	 *
+	 * @param array<mixed> $body The decoded callback body.
+	 *
+	 * @return array{0: string, 1: string}
+	 *
+	 * @throws InvalidArgumentException When the reference or status is missing, or the status is unknown.
+	 */
+	private function referenceAndStatus(array $body): array {
+		$reference = trim((string)($body['reference'] ?? ''));
+		$status = strtolower(trim((string)($body['status'] ?? '')));
+		if ($reference === '' || $status === '') {
+			throw new InvalidArgumentException('reference and status are required');
+		}
+
+		if (array_key_exists($status, self::STATUS_MAP) === false) {
+			throw new InvalidArgumentException('Unknown payout status: ' . $status);
+		}
+
+		return [$reference, $status];
+	}//end referenceAndStatus()
+
+	/**
+	 * The bank reference, under either of its two names.
+	 *
+	 * @param array<mixed> $body The decoded callback body.
+	 *
+	 * @return string
+	 */
+	private function bankReferenceOf(array $body): string {
+		$bankReference = (string)($body['bankReference'] ?? '');
+		if ($bankReference === '') {
+			$bankReference = (string)($body['betalingsreferentie'] ?? '');
+		}
+
+		return $bankReference;
+	}//end bankReferenceOf()
+
+	/**
 	 * The configured secret, from the legacy key while the current one is missing.
 	 *
 	 * @return string The secret, or empty.
 	 */
 	private function secret(): string {
-		$secret = trim($this->appConfig->getValueString(Application::APP_ID, self::SECRET_KEY, ''));
-		if ($secret === '' && $this->appConfig->hasKey(Application::APP_ID, self::SECRET_KEY) === false) {
-			$secret = trim($this->appConfig->getValueString(Application::APP_ID, MoneyConfigKeys::LEGACY_KEYS[self::SECRET_KEY], ''));
+		$secret = trim($this->appConfig->getValueString(AppIdentity::APP_ID, self::SECRET_KEY, ''));
+		if ($secret === '' && $this->appConfig->hasKey(AppIdentity::APP_ID, self::SECRET_KEY) === false) {
+			$secret = trim($this->appConfig->getValueString(AppIdentity::APP_ID, MoneyConfigKeys::LEGACY_KEYS[self::SECRET_KEY], ''));
 		}
 
 		return $secret;

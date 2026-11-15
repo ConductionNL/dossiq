@@ -33,6 +33,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\CaseVoorbladService
+ * @uses \OCA\Dossiq\Service\Support\CastArray
  */
 class CaseVoorbladServiceTest extends TestCase {
 

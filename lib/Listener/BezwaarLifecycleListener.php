@@ -36,8 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
@@ -70,11 +70,11 @@ class BezwaarLifecycleListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private ObjectSchemaSlugResolver $slugResolver,
+		private ObjectSchemaSlugResolverInterface $slugResolver,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -115,7 +115,7 @@ class BezwaarLifecycleListener implements IEventListener {
 		$this->logger->debug(
 			'Dossiq bezwaar-lifecycle: observed ' . $schemaSlug . ' ' . $event::class,
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'schema' => $schemaSlug,
 				'objectId' => (string)($payload['id'] ?? ''),
 				'caseId' => (string)($payload['case'] ?? ''),
@@ -127,6 +127,10 @@ class BezwaarLifecycleListener implements IEventListener {
 	/**
 	 * Extract the OR object array from an event.
 	 *
+	 * `ObjectUpdatedEvent` carries the post-update entity on `getNewObject()`
+	 * and has no `getObject()`; reading only `getObject()` dropped every
+	 * update on the floor, so it is tried first.
+	 *
 	 * @param Event $event Event instance
 	 *
 	 * @return array<string, mixed>|null
@@ -134,7 +138,9 @@ class BezwaarLifecycleListener implements IEventListener {
 	private function extractObject(Event $event): ?array {
 		$object = null;
 
-		if (method_exists($event, 'getObject') === true) {
+		if (method_exists($event, 'getNewObject') === true) {
+			$object = $event->getNewObject();
+		} elseif (method_exists($event, 'getObject') === true) {
 			$object = $event->getObject();
 		}
 

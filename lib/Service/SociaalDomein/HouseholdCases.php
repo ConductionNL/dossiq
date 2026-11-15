@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\SociaalDomein;
 
+use OCA\Dossiq\Kernel\Contracts\HouseholdCasesInterface;
 use OCA\Dossiq\Service\Support\TrustedRevealRead;
 
 /**
@@ -43,7 +44,7 @@ use OCA\Dossiq\Service\Support\TrustedRevealRead;
  *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
-class HouseholdCases {
+class HouseholdCases implements HouseholdCasesInterface {
 	/**
 	 * The case type categories of each domain, as the case types spell them.
 	 *
@@ -237,9 +238,22 @@ class HouseholdCases {
 	public function otherDomains(array $bsns, string $ownDomain, string $ground, string $requester): array {
 		$this->existence->assertGround(ground: $ground);
 
+		return $this->foundElsewhere(bsns: $bsns, asking: ['ownDomain' => $ownDomain, 'ground' => $ground, 'requester' => $requester]);
+	}//end otherDomains()
+
+	/**
+	 * The other domains that know the household, once per domain and contact.
+	 *
+	 * @param array<int, string>    $bsns   The BSNs of the household.
+	 * @param array<string, string> $asking The asking domain, the ground and the requester.
+	 *
+	 * @return array<int, array{exists: bool, domain: string, contact: string}>
+	 */
+	private function foundElsewhere(array $bsns, array $asking): array {
 		$rows = [];
 		foreach ($bsns as $bsn) {
-			foreach ($this->existence->lookUp(bsn: $bsn, ownDomain: $ownDomain, ground: $ground, requester: $requester) as $found) {
+			$answers = $this->existence->lookUp(bsn: $bsn, ownDomain: $asking['ownDomain'], ground: $asking['ground'], requester: $asking['requester']);
+			foreach ($answers as $found) {
 				$row = [
 					'exists'  => (bool)($found['exists'] ?? false),
 					'domain'  => (string)($found['domain'] ?? ''),
@@ -250,7 +264,7 @@ class HouseholdCases {
 		}
 
 		return array_values($rows);
-	}//end otherDomains()
+	}//end foundElsewhere()
 
 	/**
 	 * A case type, read once per request.

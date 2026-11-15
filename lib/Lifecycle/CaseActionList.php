@@ -43,12 +43,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Lifecycle;
 
-use OCA\Dossiq\Service\Cases\ExternalHome;
-use OCA\Dossiq\Service\Money\CasePaymentReader;
-use OCA\Dossiq\Service\Money\UnpaidCaseGate;
-use OCA\Dossiq\Service\Transitions\CaseResultWriter;
+use OCA\Dossiq\Kernel\Contracts\CasePaymentReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseResultWriterInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\ExternalHomeInterface;
+use OCA\Dossiq\Kernel\Contracts\UnpaidCaseGateInterface;
 use OCP\IL10N;
-use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 
 /**
  * The acts a case offers, and what blocks them.
@@ -76,19 +76,19 @@ class CaseActionList {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseResultWriter  $resultWriter Decides whether a target status closes the case.
-	 * @param ExternalHome      $externalHome Whether the work on this case lives in another app.
-	 * @param CaseTypeReader    $caseTypes    What the case type declares about paying first.
-	 * @param UnpaidCaseGate    $unpaidCases  Whether an unpaid case proceeds.
-	 * @param CasePaymentReader $payments     The live payment state of one case.
+	 * @param CaseResultWriterInterface  $resultWriter Decides whether a target status closes the case.
+	 * @param ExternalHomeInterface      $externalHome Whether the work on this case lives in another app.
+	 * @param CaseTypeReaderInterface    $caseTypes    What the case type declares about paying first.
+	 * @param UnpaidCaseGateInterface    $unpaidCases  Whether an unpaid case proceeds.
+	 * @param CasePaymentReaderInterface $payments     The live payment state of one case.
 	 * @param IL10N|null        $l10n         Names the closing input; without it the input carries no label.
 	 */
 	public function __construct(
-		private readonly CaseResultWriter $resultWriter,
-		private readonly ExternalHome $externalHome,
-		private readonly CaseTypeReader $caseTypes,
-		private readonly UnpaidCaseGate $unpaidCases,
-		private readonly CasePaymentReader $payments,
+		private readonly CaseResultWriterInterface $resultWriter,
+		private readonly ExternalHomeInterface $externalHome,
+		private readonly CaseTypeReaderInterface $caseTypes,
+		private readonly UnpaidCaseGateInterface $unpaidCases,
+		private readonly CasePaymentReaderInterface $payments,
 		private readonly ?IL10N $l10n=null,
 	) {
 	}//end __construct()
@@ -316,6 +316,18 @@ class CaseActionList {
 			return $actions;
 		}
 
+		return self::allBlocked(actions: $actions, sentence: $sentence);
+	}//end honourPaymentRule()
+
+	/**
+	 * Every action blocked, carrying the sentence that says why.
+	 *
+	 * @param array<int, array<string, mixed>> $actions  The actions.
+	 * @param string                           $sentence Why they are blocked.
+	 *
+	 * @return array<int, array<string, mixed>> The actions, blocked.
+	 */
+	private static function allBlocked(array $actions, string $sentence): array {
 		$disabled = [];
 		foreach ($actions as $action) {
 			$action['blocked'] = true;
@@ -324,7 +336,7 @@ class CaseActionList {
 		}
 
 		return $disabled;
-	}//end honourPaymentRule()
+	}//end allBlocked()
 
 	/**
 	 * The payment rule's verdict on this case, as a sentence or an empty string.

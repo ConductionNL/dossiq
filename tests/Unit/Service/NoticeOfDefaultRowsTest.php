@@ -311,4 +311,32 @@ class NoticeOfDefaultRowsTest extends TestCase {
 			actual: $byId['nod-lost']
 		);
 	}
+
+	/**
+	 * The notices of one case are that case's rows of the report, newest first.
+	 *
+	 * @return void
+	 */
+	public function testForCaseKeepsOnlyThatCasesNotices(): void {
+		$this->objects->seed(
+			schema: 'noticeOfDefault',
+			object: ['id' => 'nod-4863-b', 'deadlineInstance' => 'ti-4863', 'receiptDate' => '2026-09-01', 'validityStatus' => 'unknown']
+		);
+
+		$notices = $this->rows->forCase(caseId: ' case-4863 ')['notices'];
+
+		$this->assertSame(['nod-4863-b', 'nod-4863'], array_column($notices, 'id'));
+		$this->assertSame(['case-4863', 'case-4863'], array_column($notices, 'caseId'));
+		$this->assertSame('definitive', $notices[1]['penaltyState']);
+		$this->assertSame(['notices' => []], $this->rows->forCase(caseId: 'case-unknown'));
+	}
+
+	/**
+	 * Without a case id there is nothing to list.
+	 *
+	 * @return void
+	 */
+	public function testForCaseWithoutAnIdIsEmpty(): void {
+		$this->assertSame(['notices' => []], $this->rows->forCase(caseId: '  '));
+	}
 }

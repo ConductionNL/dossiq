@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\EvidenceMetadataServiceInterface;
 
 /**
  * Validates and enriches offline field-evidence metadata.
@@ -44,7 +45,7 @@ use InvalidArgumentException;
  *
  * @psalm-suppress UnusedClass
  */
-class EvidenceMetadataService {
+class EvidenceMetadataService implements EvidenceMetadataServiceInterface {
 	/**
 	 * GPS accuracy threshold (metres) above which a warning is raised.
 	 */
@@ -99,18 +100,52 @@ class EvidenceMetadataService {
 			|| isset($reading['lat']) === false
 			|| isset($reading['lon']) === false
 		) {
-			return [
-				'quality' => self::GPS_QUALITY_SENSORLESS,
-				'warning' => null,
-				'location' => [
-					'lat' => ($caseAddress['lat'] ?? null),
-					'lon' => ($caseAddress['lon'] ?? null),
-					'accuracy' => null,
-					'source' => self::GPS_QUALITY_SENSORLESS,
-				],
-			];
+			return $this->sensorlessFix(caseAddress: $caseAddress);
 		}
 
+		return $this->sensorFix(reading: $reading);
+	}//end classifyGps()
+
+	/**
+	 * The fix of a capture without a sensor reading: the case address, if any.
+	 *
+	 * @param array{lat?: float, lon?: float}|null $caseAddress Fallback case-address coordinates.
+	 *
+	 * @return array{
+	 *     quality: string,
+	 *     warning: string|null,
+	 *     location: array{lat: float|null, lon: float|null, accuracy: float|null, source: string}
+	 * }
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-7
+	 */
+	private function sensorlessFix(?array $caseAddress): array {
+		return [
+			'quality' => self::GPS_QUALITY_SENSORLESS,
+			'warning' => null,
+			'location' => [
+				'lat' => ($caseAddress['lat'] ?? null),
+				'lon' => ($caseAddress['lon'] ?? null),
+				'accuracy' => null,
+				'source' => self::GPS_QUALITY_SENSORLESS,
+			],
+		];
+	}//end sensorlessFix()
+
+	/**
+	 * The fix of a sensor reading, flagged poor when its accuracy is over the warning threshold.
+	 *
+	 * @param array{lat: float, lon: float, accuracy?: float} $reading The sensor reading.
+	 *
+	 * @return array{
+	 *     quality: string,
+	 *     warning: string|null,
+	 *     location: array{lat: float|null, lon: float|null, accuracy: float|null, source: string}
+	 * }
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-7
+	 */
+	private function sensorFix(array $reading): array {
 		$accuracy = ((float)($reading['accuracy'] ?? 0.0));
 		$quality = self::GPS_QUALITY_GOOD;
 		$warning = null;
@@ -133,7 +168,7 @@ class EvidenceMetadataService {
 				'source' => 'sensor',
 			],
 		];
-	}//end classifyGps()
+	}//end sensorFix()
 
 	/**
 	 * Build the EXIF UserComment context block embedded in captured photos.
@@ -212,16 +247,27 @@ class EvidenceMetadataService {
 		$this->refuseCaptureOverItsLimit(type: $type, extra: $extra);
 
 		$gps = $this->classifyGps(reading: $gpsReading, caseAddress: $caseAddress);
+		$payload = ['inspectionRef' => $inspectionRef] + $this->capturePayload(type: $type, extra: $extra);
 
-		$transcriptionStatus = 'not_applicable';
-		if ($type === 'voice_memo') {
-			$transcriptionStatus = 'pending';
-		}
+		return $this->withGpsLocation(payload: $payload, gps: $gps);
+	}//end buildEvidencePayload()
+
+	/**
+	 * The capture fields of a fieldEvidence payload, after its inspectionRef.
+	 *
+	 * @param string               $type  One of photo/voice_memo/document/sketch.
+	 * @param array<string, mixed> $extra Additional fields (localBlobRef, tags, etc.).
+	 *
+	 * @return array<string, mixed> The payload fields from `type` on.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function capturePayload(string $type, array $extra): array {
+		$transcriptionStatus = $this->transcriptionStatusFor(type: $type);
 
 		$capturedAt = ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM));
 
-		$payload = [
-			'inspectionRef' => $inspectionRef,
+		return [
 			'type' => $type,
 			'localBlobRef' => ((string)($extra['localBlobRef'] ?? '')),
 			'cloudUrl' => null,
@@ -231,7 +277,37 @@ class EvidenceMetadataService {
 			'tags' => ($extra['tags'] ?? []),
 			'sensitivityLevel' => ((string)($extra['sensitivityLevel'] ?? 'internal')),
 		];
+	}//end capturePayload()
 
+	/**
+	 * The transcription status a new capture starts with.
+	 *
+	 * @param string $type One of photo/voice_memo/document/sketch.
+	 *
+	 * @return string "pending" for a voice memo, "not_applicable" otherwise.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function transcriptionStatusFor(string $type): string {
+		$transcriptionStatus = 'not_applicable';
+		if ($type === 'voice_memo') {
+			$transcriptionStatus = 'pending';
+		}
+
+		return $transcriptionStatus;
+	}//end transcriptionStatusFor()
+
+	/**
+	 * The payload with its gpsLocation block, when the fix has coordinates.
+	 *
+	 * @param array<string, mixed> $payload The fieldEvidence payload, with its capture timestamp as `capturedAt`.
+	 * @param array<string, mixed> $gps     The classified GPS fix.
+	 *
+	 * @return array<string, mixed> The fieldEvidence payload.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function withGpsLocation(array $payload, array $gps): array {
 		// 🔴 A SENSORLESS CAPTURE WITH NO FALLBACK CARRIES NO LOCATION AT ALL.
 		// classifyGps() answers `lat: null, lon: null` when the device had no
 		// fix and no case address was passed, and this method wrote that block
@@ -244,12 +320,12 @@ class EvidenceMetadataService {
 				'lat' => $gps['location']['lat'],
 				'lon' => $gps['location']['lon'],
 				'accuracy' => $gps['location']['accuracy'],
-				'timestamp' => $capturedAt,
+				'timestamp' => $payload['capturedAt'],
 			];
 		}
 
 		return $payload;
-	}//end buildEvidencePayload()
+	}//end withGpsLocation()
 
 	/**
 	 * Refuse a capture that is over the limit declared for its kind.

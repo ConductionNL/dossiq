@@ -46,6 +46,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\ZaakdossierService
  *
  * @spec openspec/specs/case-management/spec.md
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class ZaakdossierRegisterContextTest extends TestCase {
 	/**

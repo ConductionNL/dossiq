@@ -39,6 +39,7 @@ use OCA\OpenRegister\Db\ObjectEntity;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The shared read of record() and check(), and its refusals.
@@ -46,6 +47,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\CaseAccessPurposeService
  *
  * @spec openspec/specs/case-access-purpose/spec.md#requirement-opening-a-sensitive-case-records-its-purpose
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class AccessPurposeReadGoldenTest extends TestCase {
 	/**
@@ -208,7 +210,9 @@ class AccessPurposeReadGoldenTest extends TestCase {
 			 *
 			 * @return object The entity.
 			 */
-			public function find(string $id, string $register, string $schema): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->reads++;
 				if (isset($this->objects[$id]) === false) {
 					throw new RuntimeException('Object not found');

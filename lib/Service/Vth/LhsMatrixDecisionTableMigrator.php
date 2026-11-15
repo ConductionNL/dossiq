@@ -16,10 +16,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Vth;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\LhsMatrixDecisionTableMigratorInterface;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -53,9 +56,11 @@ use Throwable;
  * longer has a settings page, so an overwrite would replace an administrator's
  * work with a source they cannot even read.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/specs/lhs-decision-table/spec.md
  */
-class LhsMatrixDecisionTableMigrator {
+class LhsMatrixDecisionTableMigrator implements LhsMatrixDecisionTableMigratorInterface {
 
 	use SearchesObjects;
 
@@ -169,8 +174,6 @@ class LhsMatrixDecisionTableMigrator {
 			$row = $this->migrateOne(
 				matrix: $matrix,
 				objectService: $objectService,
-				register: StoredDecisionTables::REGISTER,
-				tableSchema: StoredDecisionTables::SCHEMA,
 				dryRun: $dryRun,
 			);
 
@@ -188,22 +191,65 @@ class LhsMatrixDecisionTableMigrator {
 	/**
 	 * Project one matrix.
 	 *
+	 * The table is written to StoredDecisionTables::REGISTER and ::SCHEMA.
+	 *
 	 * @param array<string, mixed> $matrix        The stored matrix.
 	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param string               $tableSchema   The decision-table schema.
 	 * @param boolean              $dryRun        Report only.
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
 	 *
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
-	private function migrateOne(array $matrix, object $objectService, string $register, string $tableSchema, bool $dryRun): array {
+	private function migrateOne(array $matrix, object $objectService, bool $dryRun): array {
 		$id = (string)($matrix['id'] ?? ($matrix['@self']['id'] ?? ''));
 		$marker = (self::MARKER_PREFIX . $id);
 
-		if ($id === '' || $tableSchema === '') {
-			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => 'no matrix id, or no decision-table schema configured'];
+		$projected = $this->projectedTable(matrix: $matrix, marker: $marker);
+		if ($projected['refusal'] !== null) {
+			return $projected['refusal'];
+		}
+
+		$table = $projected['table'];
+
+		$existing = $this->existingTable(objectService: $objectService, marker: $marker);
+
+		$reconciled = $this->reconcileWithExisting(existing: $existing, table: $table, marker: $marker);
+		if ($reconciled['refusal'] !== null) {
+			return $reconciled['refusal'];
+		}
+
+		$outcome = $reconciled['outcome'];
+		$table = $reconciled['table'];
+
+		if ($dryRun === true) {
+			return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
+		}
+
+		return $this->storeTable(objectService: $objectService, reconciled: ($reconciled + ['marker' => $marker]));
+
+	}//end migrateOne()
+
+	/**
+	 * The matrix projected as a decision table, or the refusal row when it cannot be.
+	 *
+	 * The table is projected onto StoredDecisionTables::SCHEMA, which is always set.
+	 *
+	 * @param array<string, mixed> $matrix The stored matrix, with its id.
+	 * @param string               $marker The migration marker.
+	 *
+	 * @return array{refusal: array{outcome: string, marker: string, detail: string}|null, table: array<string, mixed>}
+	 *         The refusal, else the table.
+	 *
+	 * @spec openspec/specs/lhs-decision-table/spec.md
+	 */
+	private function projectedTable(array $matrix, string $marker): array {
+		$id = (string)($matrix['id'] ?? ($matrix['@self']['id'] ?? ''));
+		if ($id === '') {
+			return [
+				'refusal' => ['outcome' => 'failed', 'marker' => $marker, 'detail' => 'no matrix id, or no decision-table schema configured'],
+				'table' => [],
+			];
 		}
 
 		$table = $this->tableFor(matrix: $matrix, marker: $marker);
@@ -213,16 +259,28 @@ class LhsMatrixDecisionTableMigrator {
 			// exactly as the cell is unreachable in the matrix, and projecting
 			// it would carry the defect across while looking like a migration
 			// that worked. dossiq#1596 is that defect.
-			return ['outcome' => 'skipped', 'marker' => $marker, 'detail' => 'a cell names a value that is not on its axis'];
+			return [
+				'refusal' => ['outcome' => 'skipped', 'marker' => $marker, 'detail' => 'a cell names a value that is not on its axis'],
+				'table' => [],
+			];
 		}
 
-		$existing = $this->existingTable(
-			objectService: $objectService,
-			register: $register,
-			tableSchema: $tableSchema,
-			marker: $marker
-		);
+		return ['refusal' => null, 'table' => $table];
+	}//end projectedTable()
 
+	/**
+	 * Decide between creating and updating the projected table.
+	 *
+	 * @param array<string, mixed>|null $existing The table already projected, if any.
+	 * @param array<string, mixed>      $table    The projected table.
+	 * @param string                    $marker   The provenance marker.
+	 *
+	 * @return array{refusal: array{outcome: string, marker: string, detail: string}|null, outcome: string, table: array<string, mixed>}
+	 *         The refusal when the existing table was edited, else the outcome and the table to save.
+	 *
+	 * @spec openspec/specs/lhs-decision-table/spec.md
+	 */
+	private function reconcileWithExisting(?array $existing, array $table, string $marker): array {
 		$outcome = 'created';
 		if ($existing !== null) {
 			// 🔴 AN EDITED TABLE IS NOT OVERWRITTEN.
@@ -237,10 +295,14 @@ class LhsMatrixDecisionTableMigrator {
 			// Refuse, name it, and let a human decide.
 			if ($this->rulesDiffer(existing: $existing, projected: $table) === true) {
 				return [
-					'outcome' => 'skipped',
-					'marker' => $marker,
-					'detail' => 'the projected table has been edited since it was created; '
-						. 'refusing to overwrite it',
+					'refusal' => [
+						'outcome' => 'skipped',
+						'marker' => $marker,
+						'detail' => 'the projected table has been edited since it was created; '
+							. 'refusing to overwrite it',
+					],
+					'outcome' => $outcome,
+					'table' => $table,
 				];
 			}
 
@@ -248,16 +310,34 @@ class LhsMatrixDecisionTableMigrator {
 			$table['id'] = (string)($existing['id'] ?? '');
 		}
 
-		if ($dryRun === true) {
-			return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
-		}
+		return ['refusal' => null, 'outcome' => $outcome, 'table' => $table];
 
+	}//end reconcileWithExisting()
+
+	/**
+	 * Save the projected table.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param array<string, mixed> $reconciled    The `outcome` (`created` or `updated`), the projected `table`
+	 *                                            and the provenance `marker`.
+	 *
+	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
+	 *
+	 * @spec openspec/specs/lhs-decision-table/spec.md
+	 */
+	private function storeTable(object $objectService, array $reconciled): array {
+		['outcome' => $outcome, 'table' => $table, 'marker' => $marker] = $reconciled;
 		try {
-			$objectService->saveObject(object: $table, register: $register, schema: $tableSchema);
+			$objectService->saveObject(
+				object: $table,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: StoredDecisionTables::REGISTER, schema: StoredDecisionTables::SCHEMA)
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not project an LHS matrix onto a decision table',
-				['app' => Application::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
 			);
 
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => $e->getMessage()];
@@ -265,7 +345,7 @@ class LhsMatrixDecisionTableMigrator {
 
 		return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
 
-	}//end migrateOne()
+	}//end storeTable()
 
 	/**
 	 * Find the table already projected from this matrix, if any.
@@ -275,26 +355,24 @@ class LhsMatrixDecisionTableMigrator {
 	 * second table the moment somebody renamed the first.
 	 *
 	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $tableSchema   The decision-table schema.
 	 * @param string $marker        The provenance marker.
 	 *
 	 * @return array<string, mixed>|null The existing table.
 	 *
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
-	private function existingTable(object $objectService, string $register, string $tableSchema, string $marker): ?array {
+	private function existingTable(object $objectService, string $marker): ?array {
 		try {
 			$rows = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
-				register: $register,
-				schema: $tableSchema,
-				filters: ['owner' => Application::APP_ID, '_limit' => 200],
+				register: StoredDecisionTables::REGISTER,
+				schema: StoredDecisionTables::SCHEMA,
+				filters: ['owner' => AppIdentity::APP_ID, '_limit' => 200],
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not read existing decision tables',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 
 			return null;
@@ -490,7 +568,7 @@ class LhsMatrixDecisionTableMigrator {
 		return [
 			'name' => (string)($matrix['name'] ?? 'LHS'),
 			'key' => $this->tables->keyFor(key: LhsDecisionTableLookup::KEY_STEM . $version),
-			'owner' => Application::APP_ID,
+			'owner' => AppIdentity::APP_ID,
 			'description' => $this->descriptionFor(matrix: $matrix, marker: $marker),
 			// UNIQUE: the matrix is a grid, so exactly one cell answers a
 			// triple. Declaring UNIQUE means an overlapping pair is REFUSED
@@ -577,7 +655,7 @@ class LhsMatrixDecisionTableMigrator {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not list LHS matrices',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 
 			return [];

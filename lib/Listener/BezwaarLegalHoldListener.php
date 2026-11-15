@@ -36,9 +36,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Support\OptionalService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Service\HoldOrder;
 use OCP\EventDispatcher\Event;
@@ -97,12 +98,12 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The DI container (OR services resolved lazily).
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -137,7 +138,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			return;
 		}
 
-		$this->applyHold(caseId: $caseId, place: $place, reason: $this->holdReason(schemaSlug: $schemaSlug, place: $place));
+		$this->applyHold(caseId: $caseId, hold: ['place' => $place, 'reason' => $this->holdReason(schemaSlug: $schemaSlug, place: $place)]);
 	}//end handle()
 
 	/**
@@ -183,12 +184,13 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 * the case in its current hold state and is logged.
 	 *
 	 * @param string $caseId The case UUID to hold/release.
-	 * @param bool $place True to place a hold, false to release.
-	 * @param string $reason Human-readable reason recorded on the hold.
+	 * @param array{place: bool, reason: string} $hold True to place a hold, false to release, and the
+	 *                                                 human-readable reason recorded on the hold.
 	 *
 	 * @return void
 	 */
-	private function applyHold(string $caseId, bool $place, string $reason): void {
+	private function applyHold(string $caseId, array $hold): void {
+		['place' => $place, 'reason' => $reason] = $hold;
 		$target = $this->holdTarget(caseId: $caseId, place: $place);
 		if ($target === []) {
 			return;
@@ -204,7 +206,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			$this->logger->warning(
 				'Dossiq legal-hold: could not apply hold',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'caseId' => $caseId,
 					'place' => $place,
 					'error' => $e->getMessage(),
@@ -230,7 +232,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			$this->logger->warning(
 				'Dossiq legal-hold: NOT applied, collaborator or case unresolved',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'caseId' => $caseId,
 					'place' => $place,
 					'haveService' => ($legalHoldService !== null),
@@ -274,36 +276,62 @@ class BezwaarLegalHoldListener implements IEventListener {
 		}
 
 		try {
-			// MagicMapper has no findByUuid(); calling it raised a fatal Error that
-			// the \Throwable catch below swallowed on EVERY invocation, so no Awb
-			// legal hold was ever placed. RBAC and multitenancy are disabled because
-			// this runs inside an event handler where there is no session user or
-			// active organisation to filter by — an organisation-scoped read would
-			// find nothing and silently reopen the same hole.
-			$caseObject = $objectMapper->find(
-				identifier: $caseId,
-				_rbac: false,
-				_multitenancy: false
-			);
-			if (is_object($caseObject) === true) {
-				return $caseObject;
-			}
-
-			return null;
+			return $this->findCaseObject(objectMapper: $objectMapper, caseId: $caseId);
 		} catch (\Throwable $e) {
 			// A legal hold is an archiving-law control: failing to resolve the case
 			// means the hold is NOT applied, so it must never be silent again.
-			$this->logger->warning(
-				'Dossiq legal-hold: could not resolve case object',
-				[
-					'app' => Application::APP_ID,
-					'caseId' => $caseId,
-					'error' => $e->getMessage(),
-				]
-			);
+			$this->logUnresolvedCase(caseId: $caseId, error: $e);
 			return null;
 		}//end try
 	}//end resolveCaseObject()
+
+	/**
+	 * Find the case ObjectEntity, without RBAC or multitenancy.
+	 *
+	 * @param object $objectMapper OpenRegister's object mapper.
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return object|null The ObjectEntity, or null when the mapper answers no object.
+	 *
+	 * @throws \Throwable When the mapper cannot find the case.
+	 */
+	private function findCaseObject(object $objectMapper, string $caseId): ?object {
+		// MagicMapper has no findByUuid(); calling it raised a fatal Error that
+		// the \Throwable catch in resolveCaseObject() swallowed on EVERY invocation, so no Awb
+		// legal hold was ever placed. RBAC and multitenancy are disabled because
+		// this runs inside an event handler where there is no session user or
+		// active organisation to filter by — an organisation-scoped read would
+		// find nothing and silently reopen the same hole.
+		$caseObject = $objectMapper->find(
+			identifier: $caseId,
+			_rbac: false,
+			_multitenancy: false
+		);
+		if (is_object($caseObject) === true) {
+			return $caseObject;
+		}
+
+		return null;
+	}//end findCaseObject()
+
+	/**
+	 * Log a case object that could not be resolved, so the missing hold is not silent.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param \Throwable $error Why it could not be resolved.
+	 *
+	 * @return void
+	 */
+	private function logUnresolvedCase(string $caseId, \Throwable $error): void {
+		$this->logger->warning(
+			'Dossiq legal-hold: could not resolve case object',
+			[
+				'app' => AppIdentity::APP_ID,
+				'caseId' => $caseId,
+				'error' => $error->getMessage(),
+			]
+		);
+	}//end logUnresolvedCase()
 
 	/**
 	 * Resolve an OpenRegister collaborator by FQN, or null when unavailable.
@@ -313,20 +341,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 * @return object|null
 	 */
 	private function resolveOr(string $fqn): ?object {
-		if (class_exists($fqn) === false) {
-			return null;
-		}
-
-		try {
-			$service = $this->container->get($fqn);
-			if (is_object($service) === true) {
-				return $service;
-			}
-
-			return null;
-		} catch (\Throwable $e) {
-			return null;
-		}
+		return (new OptionalService())->from(container: $this->container, fqn: $fqn);
 	}//end resolveOr()
 
 	/**
@@ -380,7 +395,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			$this->logger->warning(
 				'Dossiq legal-hold: could not resolve objection for case linkage',
 				[
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'bezwaarId' => $objectionId,
 					'error' => $e->getMessage(),
 				]

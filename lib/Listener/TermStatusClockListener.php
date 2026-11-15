@@ -33,11 +33,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermStatusClockInterface;
 use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ReferencedUuid;
-use OCA\Dossiq\Service\Term\TermStatusClock;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -54,13 +54,13 @@ class TermStatusClockListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema ids.
-	 * @param TermStatusClock $clock           Suspends and resumes the timer.
+	 * @param SettingsServiceInterface $settingsService Schema ids.
+	 * @param TermStatusClockInterface $clock           Suspends and resumes the timer.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly TermStatusClock $clock,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly TermStatusClockInterface $clock,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -76,31 +76,54 @@ class TermStatusClockListener implements IEventListener {
 	 */
 	public function handle(Event $event): void {
 		try {
-			$case = EventObjectPayload::firstOf(event: $event, methods: ['getNewObject', 'getObject']);
-			if ($case === null || $this->isCaseSchema(object: $case) === false) {
-				return;
-			}
-
-			$caseId = (string)($case['id'] ?? '');
-			if ($caseId === '') {
-				$caseId = (string)($case['@self']['id'] ?? '');
-			}
-
-			if ($caseId === '') {
-				return;
-			}
-
-			$this->clock->reconcile(
-				caseId: $caseId,
-				statusId: $this->referenced(value: ($case['status'] ?? null)),
-				caseType: $this->referenced(value: ($case['caseType'] ?? null))
-			);
+			$this->reconcileFrom(event: $event);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: a term clock could not be reconciled with the case status: ' . $e->getMessage()
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Reconcile the clock of the case an event carries.
+	 *
+	 * @param Event $event The dispatched OpenRegister event.
+	 *
+	 * @return void
+	 */
+	private function reconcileFrom(Event $event): void {
+		$caseData = EventObjectPayload::firstOf(event: $event, methods: ['getNewObject', 'getObject']);
+		if ($caseData === null || $this->isCaseSchema(object: $caseData) === false) {
+			return;
+		}
+
+		$caseId = $this->caseIdOf(caseData: $caseData);
+		if ($caseId === '') {
+			return;
+		}
+
+		$this->clock->reconcile(
+			caseId: $caseId,
+			statusId: $this->referenced(value: ($caseData['status'] ?? null)),
+			caseType: $this->referenced(value: ($caseData['caseType'] ?? null))
+		);
+	}//end reconcileFrom()
+
+	/**
+	 * The case's id, from the payload or its `@self` block.
+	 *
+	 * @param array<string, mixed> $caseData The case payload.
+	 *
+	 * @return string The id, empty when there is none.
+	 */
+	private function caseIdOf(array $caseData): string {
+		$caseId = (string)($caseData['id'] ?? '');
+		if ($caseId === '') {
+			$caseId = (string)($caseData['@self']['id'] ?? '');
+		}
+
+		return $caseId;
+	}//end caseIdOf()
 
 	/**
 	 * The uuid behind a reference, bare or extended.

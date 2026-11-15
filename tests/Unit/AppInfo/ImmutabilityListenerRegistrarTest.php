@@ -22,27 +22,27 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\ImmutabilityListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ImmutabilityListenerRegistrar;
 use OCA\Dossiq\Listener\WooDeliveredSetGuard;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\ImmutabilityListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseAccessListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseActivityListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseLinkListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseRequesterListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\ContactListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\DocumentListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\ForfeitInvoiceListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\OnboardingListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\ImmutabilityListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseAccessListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseActivityListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseLinkListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseRequesterListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ContactListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\DocumentListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ForfeitInvoiceListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\OnboardingListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\PersonListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ReviewListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\WooListenerRegistrar
  */
 class ImmutabilityListenerRegistrarTest extends TestCase {
 
@@ -82,8 +82,8 @@ class ImmutabilityListenerRegistrarTest extends TestCase {
 		);
 
 		(new ImmutabilityListenerRegistrar())->register(context: $context);
-		(new \OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar())->register(context: $context);
-		(new \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar())->register(context: $context);
+		(new \OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar())->register(context: $context);
+		(new \OCA\Dossiq\Listener\Registrar\ReviewListenerRegistrar())->register(context: $context);
 
 		$deleting = array_unique($registered['OCA\OpenRegister\Event\ObjectDeletingEvent'] ?? []);
 		$this->assertNotSame([], $deleting);

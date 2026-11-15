@@ -33,6 +33,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * Tests for the caseTypeIdentifier backfill: existing cases get the
@@ -110,7 +111,11 @@ final class BackfillCaseTypeIdentifierTest extends TestCase {
 			 *
 			 * @throws RuntimeException When the write changes the readOnly field.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$stored = $this->rows[(string)$schema][$objectId];
 				if (array_key_exists('caseTypeIdentifier', $data) === true
 					&& $data['caseTypeIdentifier'] !== ($stored['caseTypeIdentifier'] ?? null)

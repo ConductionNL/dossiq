@@ -87,10 +87,37 @@ class CorrespondentWriter {
 	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	public function applyEdit(string $documentId, array $current, array $metadata, string $direction): array {
+		$edited = $this->editedCorrespondents(current: $current, metadata: $metadata);
+		if ($edited === null) {
+			return [];
+		}
+
+		$caseId = $this->caseOf(documentId: $documentId);
+		$resolved = $this->resolveFor(
+			caseId: $caseId,
+			sender: $edited['sender'],
+			recipients: $edited['recipients'],
+			direction: $direction,
+		);
+
+		$this->recordDispatches(caseId: $caseId, documentId: $documentId, correspondents: $resolved);
+
+		return ['sender' => $resolved['sender'], 'recipients' => $resolved['recipients']];
+	}//end applyEdit()
+
+	/**
+	 * The sender and recipients after the edit, or null when the edit names neither.
+	 *
+	 * @param array<string, mixed> $current  The stored document.
+	 * @param array<string, mixed> $metadata The submitted edit.
+	 *
+	 * @return array{sender: mixed, recipients: mixed}|null The submitted value of each, else the stored one.
+	 */
+	private function editedCorrespondents(array $current, array $metadata): ?array {
 		$namesSender = array_key_exists('sender', $metadata);
 		$namesRecipients = array_key_exists('recipients', $metadata);
 		if ($namesSender === false && $namesRecipients === false) {
-			return [];
+			return null;
 		}
 
 		$sender = ($current['sender'] ?? null);
@@ -103,18 +130,8 @@ class CorrespondentWriter {
 			$recipients = $metadata['recipients'];
 		}
 
-		$caseId = $this->caseOf(documentId: $documentId);
-		$resolved = $this->resolveFor(
-			caseId: $caseId,
-			sender: $sender,
-			recipients: $recipients,
-			direction: $direction,
-		);
-
-		$this->recordDispatches(caseId: $caseId, documentId: $documentId, correspondents: $resolved);
-
-		return ['sender' => $resolved['sender'], 'recipients' => $resolved['recipients']];
-	}//end applyEdit()
+		return ['sender' => $sender, 'recipients' => $recipients];
+	}//end editedCorrespondents()
 
 	/**
 	 * The case a document is filed on, read from its joins.
@@ -245,6 +262,22 @@ class CorrespondentWriter {
 	 */
 	public function describeAll(string $caseId, array $documents, string $correspondent = ''): array {
 		$parties = $this->partiesOf(caseId: $caseId);
+
+		return $this->labels->label(documents: $this->described(documents: $documents, reader: ['correspondent' => $correspondent, 'parties' => $parties]));
+	}//end describeAll()
+
+	/**
+	 * The documents that mention the correspondent, each with its correspondents described.
+	 *
+	 * @param array<int, mixed>                                            $documents The documents.
+	 * @param array{correspondent: string, parties: array<int|string, mixed>} $reader    The correspondent to filter on ('' for
+	 *                                                                                all), and the case's parties.
+	 *
+	 * @return array<int, array<string, mixed>> The described documents.
+	 */
+	private function described(array $documents, array $reader): array {
+		$parties = $reader['parties'];
+		$correspondent = $reader['correspondent'];
 		$described = [];
 		foreach ($documents as $document) {
 			if (is_array($document) === false) {
@@ -261,8 +294,8 @@ class CorrespondentWriter {
 			);
 		}
 
-		return $this->labels->label(documents: $described);
-	}//end describeAll()
+		return $described;
+	}//end described()
 
 	/**
 	 * Record one dispatch per correspondent of a document.
@@ -285,16 +318,28 @@ class CorrespondentWriter {
 			return 0;
 		}
 
+		return $this->dispatchedTo(document: ['caseId' => $caseId, 'documentId' => $documentId], correspondents: $correspondents);
+	}//end recordDispatches()
+
+	/**
+	 * Write one dispatch of the document per wanted correspondent.
+	 *
+	 * @param array{caseId: string, documentId: string}             $document       The case, and the informatieobject uuid.
+	 * @param array{sender: string, recipients: array<int, string>} $correspondents What the document names.
+	 *
+	 * @return int How many dispatch rows were created.
+	 */
+	private function dispatchedTo(array $document, array $correspondents): int {
 		$written = 0;
 		foreach (self::wantedDispatches(correspondents: $correspondents) as [$party, $role]) {
-			$dispatch = new Dispatch(caseId: $caseId, documentId: $documentId, party: $party, role: $role);
+			$dispatch = new Dispatch(caseId: $document['caseId'], documentId: $document['documentId'], party: $party, role: $role);
 			if ($this->writeDispatch(dispatch: $dispatch) === true) {
 				$written++;
 			}
 		}
 
 		return $written;
-	}//end recordDispatches()
+	}//end dispatchedTo()
 
 	/**
 	 * The party and role of every dispatch a document's correspondents ask for, sender first.

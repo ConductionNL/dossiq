@@ -23,8 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\Support\CaseAssigneeWriter;
-use OCA\OpenRegister\BulkAction\BulkActionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAssigneeWriterInterface;
+use OCA\OpenRegister\BulkAction\StepBulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
 use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
@@ -52,7 +52,7 @@ use Throwable;
  * design so the four outcomes read as four named things rather than as four
  * flags. There is no instance to call, so the rule cannot be satisfied here.
  */
-class ReassignCasesAction implements BulkActionInterface {
+class ReassignCasesAction implements StepBulkActionInterface {
 
 	use ReadsCaseObject;
 
@@ -68,7 +68,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseAssigneeWriter $writer The single-case write and its audit entry.
+	 * @param CaseAssigneeWriterInterface $writer The single-case write and its audit entry.
 	 * @param IL10N              $l10n   Localisation, for the label an operator reads.
 	 *
 	 * @return void
@@ -76,7 +76,7 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly CaseAssigneeWriter $writer,
+		private readonly CaseAssigneeWriterInterface $writer,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
@@ -168,36 +168,44 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
-		$object = $step->object;
-		$parameters = $step->parameters;
-		$commit = $step->commit;
-		$actor = $step->actor;
-		$caseId = $this->caseId(object: $object);
+		$caseId = $this->caseId(object: $step->object);
 		if ($caseId === '') {
 			return BulkActionResult::skipped(reason: 'no_case_id');
 		}
 
-		$case = $this->caseData(object: $object);
-		$toUser = trim((string)($parameters['toUser'] ?? ''));
+		$caseData = $this->caseData(object: $step->object);
+		$toUser = trim((string)($step->parameters['toUser'] ?? ''));
 
 		// Not a failure, and not work either. Rewriting the row would stamp an
 		// audit entry saying a case moved from somebody to themselves.
-		if (trim((string)($case['assignee'] ?? '')) === $toUser) {
+		if (trim((string)($caseData['assignee'] ?? '')) === $toUser) {
 			return BulkActionResult::skipped(reason: 'already_assigned');
 		}
 
-		if ($commit === false) {
+		if ($step->commit === false) {
 			return BulkActionResult::applied();
 		}
 
+		return $this->reassign(step: $step, caseId: $caseId, caseData: $caseData, toUser: $toUser);
+	}//end apply()
+
+	/**
+	 * Write the reassignment of one case.
+	 *
+	 * @param BulkStep             $step     The member object, the parameters, whether to commit and who started the job.
+	 * @param string               $caseId   The case.
+	 * @param array<string, mixed> $caseData The case's data.
+	 * @param string               $toUser   Who receives the case.
+	 *
+	 * @return BulkActionResult What happened.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function reassign(BulkStep $step, string $caseId, array $caseData, string $toUser): BulkActionResult {
 		try {
-			$written = $this->writer->reassignOne(
-				caseId: $caseId,
-				case: $case,
-				toUser: $toUser,
-				actorId: ($actor?->getUID() ?? ''),
-				batchId: (string)($parameters['batchId'] ?? $this->writer->newBatchId()),
-			);
+			$actorId = ($step->actor?->getUID() ?? '');
+			$batchId = (string)($step->parameters['batchId'] ?? $this->writer->newBatchId());
+			$written = $this->writer->reassignOne(caseId: $caseId, case: $caseData, toUser: $toUser, actorId: $actorId, batchId: $batchId);
 		} catch (Throwable $e) {
 			return BulkActionResult::failed(message: $e->getMessage());
 		}
@@ -207,5 +215,5 @@ class ReassignCasesAction implements BulkActionInterface {
 		}
 
 		return BulkActionResult::applied();
-	}//end apply()
+	}//end reassign()
 }//end class

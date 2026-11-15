@@ -29,6 +29,8 @@ use RuntimeException;
  * Characterisation tests for the retired flow rewrite walk.
  *
  * @covers \OCA\Dossiq\Repair\RewriteRetiredFlowNodes
+ * @uses \OCA\Dossiq\Repair\FlowRewrite
+ * @uses \OCA\Dossiq\Repair\FlowRewriteRun
  */
 class RetiredFlowRewriteTest extends TestCase {
 

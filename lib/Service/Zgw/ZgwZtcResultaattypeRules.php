@@ -136,12 +136,25 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		$body = self::withGenericDescription(body: $body, rtoData: $rtoData);
 		$body = self::withArchiveFields(body: $body, selectielijstData: $selectielijstData);
 
+		return $this->validateEnriched(body: $body, selectielijstData: $selectielijstData);
+	}//end rulesResultaattypenCreate()
+
+	/**
+	 * Validate an enriched resultaattype body: its procestype and its archive procedure.
+	 *
+	 * The references it was enriched from were all fetched without an error.
+	 *
+	 * @param array      $body              The enriched body.
+	 * @param array|null $selectielijstData The selectielijstklasse, null when none was fetched.
+	 *
+	 * @return array The rule result.
+	 */
+	private function validateEnriched(array $body, ?array $selectielijstData): array {
+		$errors = [];
 		// Ztc-002e: Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype.
-		if ($selectielijstData !== null) {
-			$procestypeError = $this->validateProcestypeMatch(body: $body, selectielijstData: $selectielijstData);
-			if ($procestypeError !== null) {
-				return $procestypeError;
-			}
+		$procestypeError = $this->procestypeError(body: $body, selectielijstData: $selectielijstData);
+		if ($procestypeError !== null) {
+			return $procestypeError;
 		}
 
 		// Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
@@ -155,7 +168,23 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		}
 
 		return $this->isValid(body: $body);
-	}//end rulesResultaattypenCreate()
+	}//end validateEnriched()
+
+	/**
+	 * The procestype mismatch error, null when there is no selectielijstklasse or it matches.
+	 *
+	 * @param array      $body              The enriched body.
+	 * @param array|null $selectielijstData The selectielijstklasse, null when none was fetched.
+	 *
+	 * @return array|null
+	 */
+	private function procestypeError(array $body, ?array $selectielijstData): ?array {
+		if ($selectielijstData === null) {
+			return null;
+		}
+
+		return $this->validateProcestypeMatch(body: $body, selectielijstData: $selectielijstData);
+	}//end procestypeError()
 
 	/**
 	 * Fetch the two external VNG references a resultaattype is built from (ztc-002).
@@ -308,22 +337,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function validateProcestypeMatch(array $body, array $selectielijstData): ?array {
-		$caseTypeUrl = $body['caseType'] ?? '';
-		if (empty($caseTypeUrl) === true || $this->objectService === null) {
-			return null;
-		}
-
-		$zaaktypeUuid = $this->extractUuid(url: $caseTypeUrl);
-		if ($zaaktypeUuid === null) {
-			return null;
-		}
-
-		$ztData = $this->findBySchemaKey(uuid: $zaaktypeUuid, schemaKey: 'case_type_schema');
-		if ($ztData === null) {
-			return null;
-		}
-
-		$caseTypeProcestype = $ztData['selectionListProcessType'] ?? '';
+		$caseTypeProcestype = $this->caseTypeProcestypeOf(body: $body);
 		$selectieProcestype = $selectielijstData['procesType'] ?? '';
 
 		if (empty($caseTypeProcestype) === true || empty($selectieProcestype) === true) {
@@ -331,16 +345,55 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		}
 
 		if ($caseTypeProcestype !== $selectieProcestype) {
-			$detail = 'Het procestype van de selectielijstklasse komt niet overeen met het procestype van het zaaktype.';
-			return $this->error(
-				status: 400,
-				detail: $detail,
-				invalidParams: [
-					$this->fieldError(fieldName: 'nonFieldErrors', code: 'procestype-mismatch', reason: $detail),
-				]
-			);
+			return $this->procestypeMismatch();
 		}
 
 		return null;
 	}//end validateProcestypeMatch()
+
+	/**
+	 * The selectielijst procestype of the zaaktype the body names, or '' when it cannot be read.
+	 *
+	 * @param array $body The request body (with zaaktype URL)
+	 *
+	 * @return mixed The procestype, or ''.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function caseTypeProcestypeOf(array $body): mixed {
+		$caseTypeUrl = $body['caseType'] ?? '';
+		if (empty($caseTypeUrl) === true || $this->objectService === null) {
+			return '';
+		}
+
+		$zaaktypeUuid = $this->extractUuid(url: $caseTypeUrl);
+		if ($zaaktypeUuid === null) {
+			return '';
+		}
+
+		$ztData = $this->findBySchemaKey(uuid: $zaaktypeUuid, schemaKey: 'case_type_schema');
+		if ($ztData === null) {
+			return '';
+		}
+
+		return $ztData['selectionListProcessType'] ?? '';
+	}//end caseTypeProcestypeOf()
+
+	/**
+	 * The ztc-002e error for a selectielijstklasse whose procestype is not the zaaktype's.
+	 *
+	 * @return array The validation error result.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	private function procestypeMismatch(): array {
+		$detail = 'Het procestype van de selectielijstklasse komt niet overeen met het procestype van het zaaktype.';
+		return $this->error(
+			status: 400,
+			detail: $detail,
+			invalidParams: [
+				$this->fieldError(fieldName: 'nonFieldErrors', code: 'procestype-mismatch', reason: $detail),
+			]
+		);
+	}//end procestypeMismatch()
 }//end class

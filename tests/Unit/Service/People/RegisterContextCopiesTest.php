@@ -46,6 +46,8 @@ use stdClass;
  * @covers \OCA\Dossiq\Service\People\CaseSeats
  * @covers \OCA\Dossiq\Service\People\LeaverHandoverService
  * @covers \OCA\Dossiq\Service\Transfer\InternalHandover
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  *
  * @spec openspec/specs/case-management/spec.md
  */

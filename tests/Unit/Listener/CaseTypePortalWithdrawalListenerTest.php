@@ -32,6 +32,7 @@ use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener
@@ -43,6 +44,9 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
  * @uses \OCA\Dossiq\Listener\CaseTypeSchema
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseTypePortalWithdrawalListenerTest extends TestCase {
 
@@ -100,7 +104,9 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($schema === 'workflow-template-schema-id') {
 					if (isset($this->named[$id]) === false) {
 						throw new \RuntimeException('not found');

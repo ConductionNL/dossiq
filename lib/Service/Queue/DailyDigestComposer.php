@@ -36,13 +36,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\DailyDigestComposerInterface;
 
 /**
  * Composes one person's digest, or decides there is none.
  *
  * @spec openspec/specs/my-work/spec.md
  */
-class DailyDigestComposer {
+class DailyDigestComposer implements DailyDigestComposerInterface {
 	/**
 	 * How many items the digest names before it says "and the rest".
 	 *

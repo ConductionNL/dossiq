@@ -96,7 +96,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -237,12 +237,12 @@ class MigrateAppConfigKeys implements IRepairStep {
 			return 'emptySource';
 		}
 
-		$existing = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		$existing = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		if ($existing !== '') {
 			return 'alreadyPresent';
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, $key, $old);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $old);
 
 		return 'migrated';
 	}//end copyValue()

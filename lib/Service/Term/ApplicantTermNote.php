@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Term;
 
 use DateInterval;
+use OCA\Dossiq\Kernel\Contracts\ApplicantTermNoteInterface;
 use OCA\Dossiq\Service\Support\ReadableDay;
 use Throwable;
 
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-applicant-reads-the-decision-date-and-the-state-of-the-term-req-wds-002
  */
-class ApplicantTermNote {
+class ApplicantTermNote implements ApplicantTermNoteInterface {
 
 	/**
 	 * The case field that holds the sentence.
@@ -113,18 +114,31 @@ class ApplicantTermNote {
 			];
 		}
 
+		return $this->runningFields(case: $case, term: ['date' => $date, 'extensionPeriod' => $extensionPeriod]);
+	}//end fieldsFor()
+
+	/**
+	 * The fields of a running term: the extension note when it was extended, and the date.
+	 *
+	 * @param array<string, mixed>                              $case The case.
+	 * @param array{date: string|null, extensionPeriod: callable} $term The date the applicant sees, and what reads the
+	 *                                                                  extension period of a case type.
+	 *
+	 * @return array<string, string|null> The note and the date.
+	 */
+	private function runningFields(array $case, array $term): array {
 		$reason = $this->extensionReason(case: $case);
 		if ($reason === null) {
-			return [self::NOTE_FIELD => '', self::DATE_FIELD => $date];
+			return [self::NOTE_FIELD => '', self::DATE_FIELD => $term['date']];
 		}
 
-		$period = $this->periodInWords(period: (string)$extensionPeriod((string)($case['caseType'] ?? '')));
+		$period = $this->periodInWords(period: (string)($term['extensionPeriod'])((string)($case['caseType'] ?? '')));
 
 		return [
 			self::NOTE_FIELD => $this->extended(period: $period, reason: $reason),
-			self::DATE_FIELD => $date,
+			self::DATE_FIELD => $term['date'],
 		];
-	}//end fieldsFor()
+	}//end runningFields()
 
 	/**
 	 * The sentence while the term stands still.

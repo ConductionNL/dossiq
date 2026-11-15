@@ -51,6 +51,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\CaseRiskAssessmentServiceInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -59,7 +60,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseRiskAssessmentService {
+class CaseRiskAssessmentService implements CaseRiskAssessmentServiceInterface {
 
 	/**
 	 * Constructor.
