@@ -96,36 +96,63 @@ class RecallSamples implements RecallSamplesInterface {
 	 */
 	public function draw(string $caseId, int $size, string $assignee, string $userId, ?int $seed = null): array {
 		$this->assertAssigneeChosen(assignee: $assignee);
+		$record = $this->drawnRecord(caseId: $caseId, draw: ['size' => $size, 'seed' => $seed, 'drawnBy' => $userId]);
+
+		return $this->handOut(record: $record, assignee: $assignee);
+	}//end draw()
+
+	/**
+	 * Draw the sample from the case's null set as the record to store.
+	 *
+	 * @param string                                             $caseId The case UUID.
+	 * @param array{size: int, seed: int|null, drawnBy: string} $draw   The sample size, the seed (null for a fresh one) and who draws it.
+	 *
+	 * @return array<string, mixed> The sample record, not yet stored.
+	 *
+	 * @throws RefusedException When the size does not fit the null set.
+	 */
+	private function drawnRecord(string $caseId, array $draw): array {
 		[$nullSet, $found] = $this->nullSetOf(caseId: $caseId);
-		$this->assertSampleSizeFits(size: $size, nullSetSize: count($nullSet));
+		$this->assertSampleSizeFits(size: $draw['size'], nullSetSize: count($nullSet));
 
-		$seed = ($seed ?? random_int(1, PHP_INT_MAX));
-		$documents = $this->depth->drawSample(items: $nullSet, size: $size, seed: $seed);
-		$sample = $this->save(
-			sample: [
-				'case' => $caseId,
-				'seed' => $seed,
-				'drawnBy' => $userId,
-				'drawnAt' => date(DATE_ATOM),
-				'nullSetSize' => count($nullSet),
-				'found' => $found,
-				'documents' => $documents,
-				'judgements' => [],
-			]
-		);
+		$seed = ($draw['seed'] ?? random_int(1, PHP_INT_MAX));
+		$documents = $this->depth->drawSample(items: $nullSet, size: $draw['size'], seed: $seed);
 
-		$sampleId = self::idOf(row: $sample);
+		return [
+			'case' => $caseId,
+			'seed' => $seed,
+			'drawnBy' => $draw['drawnBy'],
+			'drawnAt' => date(DATE_ATOM),
+			'nullSetSize' => count($nullSet),
+			'found' => $found,
+			'documents' => $documents,
+			'judgements' => [],
+		];
+	}//end drawnRecord()
+
+	/**
+	 * Store a drawn sample and hand it to its reviewer as a sample batch.
+	 *
+	 * @param array<string, mixed> $record   The drawn sample record.
+	 * @param string               $assignee The reviewer of the sample.
+	 *
+	 * @return array<string, mixed> The stored sample, with its batch.
+	 *
+	 * @throws RefusedException When the sample cannot be stored.
+	 */
+	private function handOut(array $record, string $assignee): array {
+		$sample = $this->save(sample: $record);
 		$batch = $this->batches->createSampleBatch(
-			caseId: $caseId,
-			sampleId: $sampleId,
+			caseId: $record['case'],
+			sampleId: self::idOf(row: $sample),
 			assignee: $assignee,
-			documents: $documents,
-			userId: $userId
+			documents: $record['documents'],
+			userId: $record['drawnBy']
 		);
 		$sample['batch'] = self::idOf(row: $batch);
 
 		return $this->save(sample: $sample);
-	}//end draw()
+	}//end handOut()
 
 	/**
 	 * Refuse a sample without a reviewer, or with one not admitted to review.
