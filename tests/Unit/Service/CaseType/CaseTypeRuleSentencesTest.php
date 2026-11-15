@@ -249,4 +249,16 @@ class CaseTypeRuleSentencesTest extends TestCase {
 		$this->assertSame(['rules' => []], $this->sentences(caseType: ['id' => 'ct-1', 'rules' => 'nope'])->rulesFor(caseTypeId: 'ct-1'));
 		$this->assertNull($this->sentences(caseType: [])->rulesFor(caseTypeId: 'ct-1'));
 	}//end testNoRulesIsEmptyAndAMissingCaseTypeIsNull()
+
+	/**
+	 * Conditions or actions stored as something other than a list read as none.
+	 *
+	 * @return void
+	 */
+	public function testConditionsAndActionsThatAreNotAListReadAsNone(): void {
+		$rows = $this->rows(rules: [['id' => 'r', 'conditions' => 'bouwkosten > 1', 'actions' => 'addTask']]);
+
+		$this->assertSame('Always', $rows[0]['title']);
+		$this->assertSame('then nothing happens', $rows[0]['line']);
+	}//end testConditionsAndActionsThatAreNotAListReadAsNone()
 }//end class
