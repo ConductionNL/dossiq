@@ -132,30 +132,55 @@ class OutboundCaseMail {
 		array $attachments = [],
 		?string $plain = null,
 	): array {
+		$mail = ['to' => $to, 'subject' => $subject, 'body' => $body, 'unsubscribe' => $unsubscribe, 'attachments' => $attachments, 'plain' => $plain];
 		if ($sender['transport'] === MailTransportPolicy::TRANSPORT_MAIL_ACCOUNT) {
-			$bodies = $this->transport->optOut->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain);
-			return $this->throughAccount(
-				account: (array)$sender['account'],
-				message: [
-					'to' => [$to],
-					'subject' => $subject,
-					'html' => $bodies['html'],
-					'plain' => $bodies['plain'],
-					'attachments' => array_values(array_map('strval', $attachments)),
-				]
-			);
+			return $this->viaAccount(sender: $sender, mail: $mail);
 		}
 
-		$this->refuseAttachments(attachments: $attachments);
+		return $this->viaMailer(sender: $sender, mail: $mail);
+	}//end send()
 
-		$message = $this->mailerMessage(sender: $sender, to: $to);
-		$message->setSubject($subject);
-		$this->transport->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe, plain: $plain);
+	/**
+	 * Send the mail through the sender's own mail account.
+	 *
+	 * @param array<string, mixed> $sender From senderFor(), carrying the `account`.
+	 * @param array<string, mixed> $mail   The recipient, subject, bodies, link material and attachments.
+	 *
+	 * @return array{state: string, outboxId: int|null}
+	 */
+	private function viaAccount(array $sender, array $mail): array {
+		$bodies = $this->transport->optOut->bodies(body: $mail['body'], unsubscribe: $mail['unsubscribe'], plain: $mail['plain']);
+		return $this->throughAccount(
+			account: (array)$sender['account'],
+			message: [
+				'to' => [$mail['to']],
+				'subject' => $mail['subject'],
+				'html' => $bodies['html'],
+				'plain' => $bodies['plain'],
+				'attachments' => array_values(array_map('strval', $mail['attachments'])),
+			]
+		);
+	}//end viaAccount()
+
+	/**
+	 * Send the mail through the Nextcloud mailer, which carries no attachments.
+	 *
+	 * @param array<string, mixed> $sender From senderFor().
+	 * @param array<string, mixed> $mail   The recipient, subject, bodies, link material and attachments.
+	 *
+	 * @return array{state: string, outboxId: int|null}
+	 */
+	private function viaMailer(array $sender, array $mail): array {
+		$this->refuseAttachments(attachments: $mail['attachments']);
+
+		$message = $this->mailerMessage(sender: $sender, to: $mail['to']);
+		$message->setSubject($mail['subject']);
+		$this->transport->optOut->dress(message: $message, body: $mail['body'], unsubscribe: $mail['unsubscribe'], plain: $mail['plain']);
 
 		$this->sendThroughMailer(message: $message);
 
 		return ['state' => OutboundState::SENT, 'outboxId' => null];
-	}//end send()
+	}//end viaMailer()
 
 	/**
 	 * Refuse attachments on the mailer path: only a Mail account reads them from the sender's files.
