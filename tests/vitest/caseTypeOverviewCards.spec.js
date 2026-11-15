@@ -5,7 +5,7 @@
  * The case type Overview carries the board's cards and the phase board opens
  * the case type's workflow (boards DqZaaktypeOverzicht, DqZaaktype).
  *
- * @spec openspec/changes/case-type-overview-cards/specs/case-type-overview-cards/spec.md#requirement-the-case-type-overview-shows-the-boards-cards
+ * @spec openspec/specs/case-type-overview-cards/spec.md#requirement-the-case-type-overview-shows-the-boards-cards
  */
 
 import fs from 'fs'
@@ -20,25 +20,25 @@ const overview = widget('case-type-panels').content.tabs.find((tab) => tab.id ==
 
 describe('case type Overview cards', () => {
 	it('shows the board\'s cards in its order', () => {
-		expect(overview.widgetIds).toEqual(['case-type-statuses', 'case-type-rules-summary', 'case-type-rights', 'case-type-privacy', 'case-type-translations'])
+		expect(overview.widgetIds).toEqual(['case-type-statuses', 'case-type-rules-summary', 'case-type-rights-summary', 'case-type-privacy-summary', 'case-type-translations-summary'])
 		expect(overview.layout.map((entry) => [entry.widgetId, entry.gridWidth])).toEqual([
-			['case-type-statuses', 12], ['case-type-rules-summary', 12], ['case-type-rights', 12], ['case-type-privacy', 6], ['case-type-translations', 6],
+			['case-type-statuses', 12], ['case-type-rules-summary', 12], ['case-type-rights-summary', 12], ['case-type-privacy-summary', 6], ['case-type-translations-summary', 6],
 		])
 		overview.widgetIds.forEach((id) => expect(widget(id)).toBeTruthy())
 	})
 
-	it('lists the case schema rules with an On or Off pill', () => {
-		const rules = widget('case-type-rules-summary').content
-		expect(rules.endpointSource).toEqual({ url: '/apps/openregister/api/schemas/case/rules', responsePath: 'rules' })
-		expect(rules.pill.field).toBe('enabled')
+	it('lists the case type\'s own rules, as the Rules tab does (case-type-rules-summary-sentences)', () => {
+		expect(widget('case-type-rules-summary').type).toBe('CaseTypeRulesWidget')
+		expect(widget('case-type-rules-summary').content).toEqual({ mode: 'summary' })
 	})
 })
 
 /**
- * @spec openspec/changes/case-type-overview-cards/specs/case-type-overview-cards/spec.md#requirement-the-phase-board-opens-the-case-types-workflow
+ * @spec openspec/specs/case-type-overview-cards/spec.md#requirement-the-phase-board-opens-the-case-types-workflow
  */
 describe('phase board', () => {
-	it('links View as flow to the case type\'s workflow', () => {
-		expect(widget('case-type-phase-board').headerLink).toEqual({ label: 'View as flow', route: 'WorkflowDefinitionDetail', params: { id: '@object.workflowDefinition' } })
+	it('links View as flow to the case type\'s workflow canvas', () => {
+		// The canvas sits on a page of its own (case-type-page-follows-its-boards).
+		expect(widget('case-type-phase-board').content.actions[0]).toEqual(expect.objectContaining({ type: 'navigate', label: 'View as flow', target: '/settings/case-types/@objectId/flow' }))
 	})
 })

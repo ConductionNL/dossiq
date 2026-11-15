@@ -33,6 +33,8 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for CaseCopyService.
@@ -140,7 +142,9 @@ class CaseCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The object.
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->store[$id] ?? null);
 			}//end find()
 
@@ -164,7 +168,9 @@ class CaseCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The written object.
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$object['id'] = 'new-' . (count($this->writes) + 1);
 				$this->writes[] = ['schema' => (string)$schema, 'object' => $object];
 

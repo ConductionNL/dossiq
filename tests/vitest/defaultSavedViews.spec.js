@@ -7,7 +7,7 @@
  * equal to the chip it came from: a default that drifted from its chip would
  * count one set of cases while the chip beside it counts another.
  *
- * @spec openspec/changes/saved-views-default-views/specs/case-lists/spec.md
+ * @spec openspec/specs/case-lists/spec.md
  */
 
 import fs from 'node:fs'
@@ -28,13 +28,19 @@ const defaults = byslug('Cases')
 
 describe('default views on Cases', () => {
 
-	it('ships nine, each with a Dutch name', () => {
+	// DqFilterBeheren leads with the board's three (default-views-board-first);
+	// the ten before them follow, re-integration pathways among them.
+	it('ships thirteen, the board\'s three first, each with a Dutch name', () => {
 		expect(Object.keys(defaults)).toEqual([
+			'my-cases',
+			'all-open-cases',
+			'deadline-passed',
 			'mine-overdue',
 			'mine-due-this-week',
 			'unclaimed-overdue',
 			'woo-requests',
 			'subsidies',
+			're-integration-pathways',
 			'my-work',
 			'team-queue',
 			'unclaimed-due-this-week',
@@ -61,8 +67,8 @@ describe('Woo requests as a view of Cases', () => {
 })
 
 describe('lists that were pages, as views of Cases', () => {
-	it('keeps the team queue equal to the Unclaimed chip, with its late and this-week windows', () => {
-		expect(defaults['team-queue']).toEqual(chip('Unclaimed'))
+	it('keeps the team queue equal to the Unclaimed chip on the reader\'s team, with its late and this-week windows', () => {
+		expect(defaults['team-queue']).toEqual({ ...chip('Unclaimed'), assignedGroup: '@myTeam' })
 		expect(defaults['unclaimed-overdue']).toEqual({ ...chip('Unclaimed'), ...chip('Overdue') })
 		expect(defaults['unclaimed-due-this-week']).toEqual({ ...chip('Unclaimed'), ...chip('Due this week') })
 	})
@@ -77,5 +83,13 @@ describe('lists that were pages, as views of Cases', () => {
 
 	it('keeps the data subject requests on the request kind', () => {
 		expect(defaults['data-subject-requests']).toEqual({ dataSubjectRequestType: ['inzage', 'correctie', 'verwijdering'] })
+	})
+})
+
+describe('Re-integration pathways as a view of Cases', () => {
+	it('lists the cases of the re-integration case type, newest start first', () => {
+		const view = page('Cases').config.defaultSavedViews.find((d) => d.slug === 're-integration-pathways')
+		expect(view.filters).toEqual({ caseTypeIdentifier: 're-integratietraject', statusHiddenInLists: false, isDraft: false })
+		expect(view.overrides.defaultSort).toEqual([{ key: 'startDate', order: 'desc' }])
 	})
 })

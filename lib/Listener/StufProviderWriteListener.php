@@ -33,9 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Cases\ConnectedSystemCaseWriter;
-use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ConnectedSystemCaseWriterInterface;
+use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -51,12 +51,12 @@ class StufProviderWriteListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param StufRegisterAccess        $register The stufEndpoint rows.
-	 * @param ConnectedSystemCaseWriter $writer   Carries out a write as the service account.
+	 * @param StufRegisterAccessInterface        $register The stufEndpoint rows.
+	 * @param ConnectedSystemCaseWriterInterface $writer   Carries out a write as the service account.
 	 */
 	public function __construct(
-		private readonly StufRegisterAccess $register,
-		private readonly ConnectedSystemCaseWriter $writer,
+		private readonly StufRegisterAccessInterface $register,
+		private readonly ConnectedSystemCaseWriterInterface $writer,
 	) {
 
 	}//end __construct()
@@ -78,12 +78,7 @@ class StufProviderWriteListener implements IEventListener {
 			return;
 		}
 
-		$sourceId = $event->getSourceId();
-		if ($sourceId === '') {
-			return;
-		}
-
-		$endpoint = $this->register->findOne(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: ['integriqSource' => $sourceId]);
+		$endpoint = $this->endpointOf(event: $event);
 		if ($endpoint === null) {
 			return;
 		}
@@ -91,30 +86,57 @@ class StufProviderWriteListener implements IEventListener {
 		// A message integriq did not map onto an operation is refused, never guessed from its StUF fields.
 		// An integriq from before decision 206 has no getOperation(): that call fails, integriq catches
 		// it and answers a server fault, so no write is confirmed there either.
-		$operation = $event->getOperation();
-		if ($operation === []) {
-			$event->refuse(appId: Application::APP_ID, reason: 'Dossiq neemt wijzigingen alleen aan als bewerking van integriq.');
+		if ($event->getOperation() === []) {
+			$event->refuse(appId: AppIdentity::APP_ID, reason: 'Dossiq neemt wijzigingen alleen aan als bewerking van integriq.');
 			return;
 		}
 
+		$this->carryOut(event: $event, endpoint: $endpoint);
+	}//end handle()
+
+	/**
+	 * The endpoint configured for the message's source, or null when this app serves none.
+	 *
+	 * @param \OCA\Integriq\Event\StufCaseMutationEvent|\OCA\Integriq\Event\StufDocumentMutationEvent $event The mutation.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function endpointOf(\OCA\Integriq\Event\StufCaseMutationEvent|\OCA\Integriq\Event\StufDocumentMutationEvent $event): ?array {
+		$sourceId = $event->getSourceId();
+		if ($sourceId === '') {
+			return null;
+		}
+
+		return $this->register->findOne(schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT, filters: ['integriqSource' => $sourceId]);
+	}//end endpointOf()
+
+	/**
+	 * Carry the operation out within what the endpoint allows, and answer the message.
+	 *
+	 * @param \OCA\Integriq\Event\StufCaseMutationEvent|\OCA\Integriq\Event\StufDocumentMutationEvent $event    The mutation.
+	 * @param array<string, mixed> $endpoint The source's endpoint.
+	 *
+	 * @return void
+	 */
+	private function carryOut(\OCA\Integriq\Event\StufCaseMutationEvent|\OCA\Integriq\Event\StufDocumentMutationEvent $event, array $endpoint): void {
 		$outcome = $this->writer->carryOut(
-			operation: $operation,
+			operation: $event->getOperation(),
 			connection: [
 				'acceptsWrites' => (($endpoint['acceptsWrites'] ?? false) === true),
 				'caseTypes' => (array)($endpoint['zaaktypeMappings'] ?? []),
 				'documentTypes' => (array)($endpoint['documentTypeMappings'] ?? []),
 			],
-			system: $sourceId
+			system: $event->getSourceId()
 		);
 		if (isset($outcome['refusal']) === true) {
 			$event->refuse(
-				appId: Application::APP_ID,
+				appId: AppIdentity::APP_ID,
 				reason: (string)$outcome['refusal'],
-				kind: (string)($outcome['kind'] ?? ConnectedSystemCaseWriter::REFUSED)
+				kind: (string)($outcome['kind'] ?? ConnectedSystemCaseWriterInterface::REFUSED)
 			);
 			return;
 		}
 
-		$event->accept(appId: Application::APP_ID, identification: (string)($outcome['identifier'] ?? ''));
-	}//end handle()
+		$event->accept(appId: AppIdentity::APP_ID, identification: (string)($outcome['identifier'] ?? ''));
+	}//end carryOut()
 }//end class

@@ -6,7 +6,7 @@
  * DqZakenKaart: the map list's line under a title is the case's address and
  * number, and its pills name the case type and the status.
  *
- * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
+ * @spec openspec/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
  */
 
 import fs from 'fs'
@@ -69,19 +69,10 @@ describe('the simple profile\'s map list', () => {
 		expect(lists(layout)[0].sub).toEqual(['{id|caseAddress} · {identifier}', '{identifier}'])
 	})
 
-	it('names the case type and the status in pills, the status in its type\'s colour', () => {
-		expect(lists(layout)[0].pills).toEqual([{ path: 'caseType', formatter: 'caseTypeName' }, { path: 'status', formatter: 'statusTypeName', resolve: { schema: 'statusType', colorField: 'colour' } }])
-	})
-})
-
-/**
- * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-the-empty-locations-line-sits-on-the-cards-inset
- */
-describe('CaseLocationMap empty line', () => {
-	it('has no padding of its own', () => {
-		const sfc = fs.readFileSync(path.join(__dirname, '../../src/components/case/CaseLocationMap.vue'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
-		const body = (sfc.match(/\.case-location-map__empty\s*\{([^}]*)\}/) || [])[1] || ''
-		expect(body).toContain('font-size: 14px;')
-		expect(body).not.toContain('padding')
+	it('names the case type and the status in pills, each in its own colour', () => {
+		expect(lists(layout)[0].pills).toEqual([
+			{ path: 'caseType', formatter: 'caseTypeName', resolve: { register: 'dossiq', schema: 'caseType', colorField: 'colour' } },
+			{ path: 'status', formatter: 'statusTypeName', resolve: { schema: 'statusType', colorField: 'colour' } },
+		])
 	})
 })

@@ -35,7 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Advice;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -81,7 +81,7 @@ class AdviceNotifier {
 		try {
 			$notification = $this->notificationManager->createNotification();
 			$notification
-				->setApp(Application::APP_ID)
+				->setApp(AppIdentity::APP_ID)
 				->setUser($userId)
 				->setDateTime(new DateTime())
 				->setObject('advice', $objectId)
@@ -95,7 +95,7 @@ class AdviceNotifier {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to send advice notification: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 	}//end sendUserNotification()
@@ -107,6 +107,7 @@ class AdviceNotifier {
 	 * @param array<string, mixed> $current Current advice record (pre-update).
 	 * @param string $adviceId The advice UUID.
 	 * @param string $callerId The acting caller's UID, or '' in a session-less context.
+	 * @param string $summary  The received advice's conclusion and text, for the notification.
 	 *
 	 * @return void
 	 *
@@ -117,17 +118,10 @@ class AdviceNotifier {
 		array $current,
 		string $adviceId,
 		string $callerId,
+		string $summary='',
 	): void {
 		if ($to === 'requested') {
-			$advisor = (string)($current['advisor'] ?? '');
-			if ($advisor !== '') {
-				$this->sendUserNotification(
-					userId: $advisor,
-					subject: 'advies_aangevraagd',
-					objectId: $adviceId,
-					message: (string)($current['subject'] ?? '')
-				);
-			}
+			$this->notifyRequested(current: $current, adviceId: $adviceId);
 
 			return;
 		}
@@ -136,10 +130,31 @@ class AdviceNotifier {
 			$this->sendUserNotification(
 				userId: $callerId,
 				subject: 'advies_ontvangen',
-				objectId: $adviceId
+				objectId: $adviceId,
+				message: $summary
 			);
 		}
 	}//end fireTransitionNotification()
+
+	/**
+	 * Tell the advisor an advice was requested of them, when the advice names one.
+	 *
+	 * @param array<string, mixed> $current  The advice as it stands.
+	 * @param string               $adviceId The advice id.
+	 *
+	 * @return void
+	 */
+	private function notifyRequested(array $current, string $adviceId): void {
+		$advisor = (string)($current['advisor'] ?? '');
+		if ($advisor !== '') {
+			$this->sendUserNotification(
+				userId: $advisor,
+				subject: 'advies_aangevraagd',
+				objectId: $adviceId,
+				message: (string)($current['subject'] ?? '')
+			);
+		}
+	}//end notifyRequested()
 
 	/**
 	 * Notify the adviseur that an advice request was created.

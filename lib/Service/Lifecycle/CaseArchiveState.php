@@ -38,7 +38,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -54,7 +55,7 @@ use Throwable;
 /**
  * Put a case in the archive, take it back out, and say whether it is in one.
  *
- * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseArchiveState {
 
@@ -98,7 +99,7 @@ class CaseArchiveState {
 	 *
 	 * @return bool True when the case is archived.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isArchived(array $case): bool {
 		return ($this->markerOn(case: $case) !== []);
@@ -111,7 +112,7 @@ class CaseArchiveState {
 	 *
 	 * @return array<string, mixed> The marker, empty when the case is not archived.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function markerOn(array $case): array {
 		$self = ($case['@self'] ?? []);
@@ -137,7 +138,7 @@ class CaseArchiveState {
 	 *
 	 * @throws RefusedException When the platform refuses or cannot be reached.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function mark(string $caseId, string $reason): array {
 		return $this->call(verb: 'archive', caseId: $caseId, reason: $reason);
@@ -153,7 +154,7 @@ class CaseArchiveState {
 	 *
 	 * @throws RefusedException When the platform refuses or cannot be reached.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function clear(string $caseId, string $reason): array {
 		return $this->call(verb: 'unarchive', caseId: $caseId, reason: $reason);
@@ -169,7 +170,7 @@ class CaseArchiveState {
 	 * platform gave is carried through unchanged, because the reason the user
 	 * reads has to be the reason the server gave (ADR-105).
 	 *
-	 * @param string $verb `archive` or `unarchive`.
+	 * @param string $verb `archive` or `unarchive`; the handler answers it as `<verb>With()`.
 	 * @param string $caseId The case UUID.
 	 * @param string $reason Why.
 	 *
@@ -178,6 +179,36 @@ class CaseArchiveState {
 	 * @throws RefusedException When the platform refuses or cannot be reached.
 	 */
 	private function call(string $verb, string $caseId, string $reason): array {
+		[$register, $schema] = $this->caseTarget();
+
+		$handler = $this->handler();
+
+		try {
+			// The handler is resolved by name, so its methods are called by name too.
+			$answer = $handler->{$verb . 'With'}(
+				new ObjectStateRequest(identifier: $caseId, reason: $reason, register: $register, schema: $schema)
+			);
+		} catch (RefusedException $e) {
+			throw $e;
+		} catch (Throwable $e) {
+			throw $this->platformRefusal(failure: $e, context: ['caseId' => $caseId, 'verb' => $verb]);
+		}
+
+		if (is_array($answer) === false) {
+			return [];
+		}
+
+		return $answer;
+	}//end call()
+
+	/**
+	 * The configured case register and schema.
+	 *
+	 * @return array{0: string, 1: string} The register and the case schema.
+	 *
+	 * @throws RefusedException When either is not configured.
+	 */
+	private function caseTarget(): array {
 		$register = $this->settings->getConfigValue(key: 'register');
 		$schema = $this->settings->getConfigValue(key: 'case_schema');
 		if ($register === '' || $schema === '') {
@@ -188,32 +219,29 @@ class CaseArchiveState {
 			);
 		}
 
-		$handler = $this->handler();
+		return [$register, $schema];
+	}//end caseTarget()
 
-		try {
-			// The handler is resolved by name, so its methods are called by name too.
-			$answer = $handler->{$verb}($caseId, $reason, $register, $schema);
-		} catch (RefusedException $e) {
-			throw $e;
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'CaseArchiveState: the platform refused an archive state change',
-				['caseId' => $caseId, 'verb' => $verb, 'exception' => $e->getMessage()],
-			);
+	/**
+	 * Log a failed archive state change and turn it into a refusal that carries the platform's sentence.
+	 *
+	 * @param Throwable            $failure What the handler threw.
+	 * @param array<string, string> $context The case id and the verb, for the log.
+	 *
+	 * @return RefusedException The refusal to throw.
+	 */
+	private function platformRefusal(Throwable $failure, array $context): RefusedException {
+		$this->logger->error(
+			'CaseArchiveState: the platform refused an archive state change',
+			[...$context, 'exception' => $failure->getMessage()],
+		);
 
-			throw new RefusedException(
-				rule: 'archive-state-refused',
-				sentence: $e->getMessage(),
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		if (is_array($answer) === false) {
-			return [];
-		}
-
-		return $answer;
-	}//end call()
+		return new RefusedException(
+			rule: 'archive-state-refused',
+			sentence: $failure->getMessage(),
+			status: RefusedException::STATUS_REFUSED,
+		);
+	}//end platformRefusal()
 
 	/**
 	 * OpenRegister's archive handler, or a refusal naming its absence.

@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 
 declare(strict_types=1);
@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Role permissions from group membership.
+ *
+ * @covers \OCA\Dossiq\Service\Access\RolePermissions
  */
 final class RolePermissionsTest extends TestCase {
 

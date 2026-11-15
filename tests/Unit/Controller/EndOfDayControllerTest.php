@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/end-of-day-manifest/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
+ * @spec openspec/specs/end-of-day-manifest/spec.md#requirement-the-day-lists-are-worked-out-on-the-server
  */
 
 declare(strict_types=1);

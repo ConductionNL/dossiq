@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-lindelaan-to-portaliq/specs/example-set-lindelaan-to-portaliq/spec.md#requirement-the-lindelaan-woo-case-is-written-once-by-portaliq
+ * @spec openspec/specs/example-set-lindelaan-to-portaliq/spec.md#requirement-the-lindelaan-woo-case-is-written-once-by-portaliq
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * No duplicate Lindelaan case; a findable Woo document type.
  *
- * @spec openspec/changes/example-set-lindelaan-to-portaliq/specs/example-set-lindelaan-to-portaliq/spec.md#requirement-the-lindelaan-woo-case-is-written-once-by-portaliq
+ * @spec openspec/specs/example-set-lindelaan-to-portaliq/spec.md#requirement-the-lindelaan-woo-case-is-written-once-by-portaliq
  */
 class ZuiddrechtLindelaanIsPortaliqsTest extends TestCase {
 

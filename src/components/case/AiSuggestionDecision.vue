@@ -6,7 +6,7 @@
   reject it. Using copies the text. The parent reports the decision to the AI
   oversight trail; this component only asks.
 
-  @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+  @spec openspec/specs/ai-oversight-dispatch/spec.md
 -->
 <template>
 	<div class="ai-suggestion-decision" :data-testid="testid">
@@ -69,7 +69,7 @@ export default {
 		/**
 		 * The suggestion as shown.
 		 *
-		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+		 * @spec openspec/specs/ai-oversight-dispatch/spec.md
 		 */
 		text: {
 			type: String,
@@ -97,7 +97,7 @@ export default {
 		/**
 		 * A new suggestion starts undecided.
 		 *
-		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+		 * @spec openspec/specs/ai-oversight-dispatch/spec.md
 		 */
 		text() {
 			this.editing = false
@@ -113,7 +113,7 @@ export default {
 		 * Open the suggestion for editing.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+		 * @spec openspec/specs/ai-oversight-dispatch/spec.md
 		 */
 		startEditing() {
 			this.draft = this.text
@@ -125,7 +125,7 @@ export default {
 		 *
 		 * @param {string} userAction accepted, modified or rejected.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/ai-oversight-dispatch/specs/ai-oversight-dispatch/spec.md
+		 * @spec openspec/specs/ai-oversight-dispatch/spec.md
 		 */
 		async decide(userAction) {
 			const used = userAction === 'modified' ? this.draft : this.text

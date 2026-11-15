@@ -44,7 +44,8 @@
             "order": "asc"
           }
         ]
-      }
+      },
+      "initialStatus": "0f70296e-265f-54b2-8fb4-7be31558fa31"
     },
     {
       "id": "4f6f897c-20c9-5f3e-9242-025df86ca038",
@@ -56,7 +57,8 @@
       "suspensionAllowed": false,
       "confidentiality": "openbaar",
       "origin": "melden",
-      "identifier": "sloopmelding"
+      "identifier": "sloopmelding",
+      "initialStatus": "9073ad9c-9a40-5778-9ba8-2c77c2729a34"
     },
     {
       "id": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
@@ -81,7 +83,9 @@
             "order": "asc"
           }
         ]
-      }
+      },
+      "initialStatus": "f20608d3-c6af-5a46-83fa-be67234eb9ea",
+      "inspectionChecklist": "3015a8a5-2eda-5fc6-bb3b-d3753f30512d"
     },
     {
       "id": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
@@ -91,7 +95,8 @@
       "description": "Toezichtzaak voor milieuactiviteiten (periodiek of incidenteel).",
       "confidentiality": "intern",
       "origin": "ambtshalve",
-      "identifier": "toezichtzaak-milieu"
+      "identifier": "toezichtzaak-milieu",
+      "initialStatus": "d6529b26-2e23-58bd-9862-3acc3e6d2915"
     },
     {
       "id": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
@@ -102,6 +107,7 @@
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
       "identifier": "handhavingszaak",
+      "adviceDecisionTable": "dossiq.lhs-intervention",
       "workflowDefinition": "6f5b5055-b2a5-5008-a177-528e4b2b4a72",
       "x-index": {
         "columns": [
@@ -117,7 +123,8 @@
             "order": "desc"
           }
         ]
-      }
+      },
+      "initialStatus": "77c260b4-aa92-5dd8-9091-4ef0f9242e20"
     },
     {
       "id": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
@@ -127,12 +134,14 @@
       "description": "Invorderingszaak voor verbeurde dwangsommen.",
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
-      "identifier": "invorderingszaak"
+      "identifier": "invorderingszaak",
+      "initialStatus": "03658fcb-6e3e-5cc3-8625-3ad8691893f2"
     }
   ],
   "statusTypes": [
     {
       "id": "0f70296e-265f-54b2-8fb4-7be31558fa31",
+      "phase": "Ontvangst",
       "name": "Ontvangen",
       "description": "Aanvraag is ontvangen",
       "order": 1,
@@ -143,6 +152,7 @@
     },
     {
       "id": "3f1d1df0-5bb6-5f1e-8291-1b33faba41eb",
+      "phase": "Ontvangst",
       "name": "Ontvankelijkheidstoets",
       "description": "Controle op volledigheid van de aanvraag",
       "order": 2,
@@ -152,6 +162,7 @@
     },
     {
       "id": "49a76389-5119-5f0f-9292-8b3050d9b7ee",
+      "phase": "Beoordeling",
       "name": "In behandeling",
       "description": "Aanvraag wordt inhoudelijk beoordeeld",
       "order": 3,
@@ -162,6 +173,7 @@
     },
     {
       "id": "31b95147-5ddf-53a5-8e0f-cde7066c25a7",
+      "phase": "Advies",
       "name": "Advies",
       "description": "Advies wordt ingewonnen bij interne/externe partijen",
       "order": 4,
@@ -171,6 +183,7 @@
     },
     {
       "id": "8f57f93c-d5ab-5d8c-bb87-4d5d3d2922e2",
+      "phase": "Besluit",
       "name": "Besluitvorming",
       "description": "Besluit wordt genomen over de vergunning",
       "order": 5,
@@ -181,6 +194,7 @@
     },
     {
       "id": "cf2e1552-77a6-532f-8cd2-965317d25858",
+      "phase": "Verzending",
       "name": "Bekendmaking",
       "description": "Besluit wordt bekendgemaakt",
       "order": 6,
@@ -200,6 +214,7 @@
     },
     {
       "id": "9073ad9c-9a40-5778-9ba8-2c77c2729a34",
+      "phase": "Ontvangst",
       "name": "Ontvangen",
       "description": "Melding ontvangen",
       "order": 1,
@@ -210,6 +225,7 @@
     },
     {
       "id": "6ca89972-2c9d-5a4d-a982-a43d379ba77b",
+      "phase": "Beoordeling",
       "name": "Beoordeling",
       "description": "Melding wordt beoordeeld",
       "order": 2,
@@ -220,6 +236,7 @@
     },
     {
       "id": "77f363f3-8823-526f-b429-50dd3cb89b0e",
+      "phase": "Besluit",
       "name": "Akkoord",
       "description": "Melding akkoord bevonden",
       "order": 3,
@@ -239,6 +256,7 @@
     },
     {
       "id": "f20608d3-c6af-5a46-83fa-be67234eb9ea",
+      "phase": "Beoordeling",
       "name": "Gepland",
       "description": "Inspectie is gepland",
       "order": 1,
@@ -249,6 +267,7 @@
     },
     {
       "id": "fdc5fb65-ee0f-5555-b4ba-1d254318427e",
+      "phase": "Beoordeling",
       "name": "Inspectie fase 1",
       "description": "Fundering-inspectie",
       "order": 2,
@@ -259,6 +278,7 @@
     },
     {
       "id": "43f31ad2-7ab5-5d32-9297-e9f7bc347d14",
+      "phase": "Beoordeling",
       "name": "Inspectie fase 2",
       "description": "Ruwbouw-inspectie",
       "order": 3,
@@ -268,6 +288,7 @@
     },
     {
       "id": "4f010be8-553c-599a-a18a-0e3da6abe584",
+      "phase": "Beoordeling",
       "name": "Inspectie fase 3",
       "description": "Oplevering-inspectie",
       "order": 4,
@@ -277,6 +298,7 @@
     },
     {
       "id": "6708b73f-76f8-548b-9d03-bfda94c82a06",
+      "phase": "Beoordeling",
       "name": "Rapport",
       "description": "Eindrapportage wordt opgesteld",
       "order": 5,
@@ -291,7 +313,8 @@
       "order": 6,
       "isFinal": false,
       "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
-      "colour": "purple"
+      "colour": "purple",
+      "phase": "Uitvoering"
     },
     {
       "id": "0dafe7a0-cb02-561e-a5c9-d1983a45f2d6",
@@ -305,6 +328,7 @@
     },
     {
       "id": "d6529b26-2e23-58bd-9862-3acc3e6d2915",
+      "phase": "Beoordeling",
       "name": "Gepland",
       "description": "Inspectie gepland",
       "order": 1,
@@ -315,6 +339,7 @@
     },
     {
       "id": "73c02cf3-2bd6-593b-b5d2-c64128e6e784",
+      "phase": "Beoordeling",
       "name": "Inspectie",
       "description": "Inspectie wordt uitgevoerd",
       "order": 2,
@@ -325,6 +350,7 @@
     },
     {
       "id": "99ec1774-2aac-5da5-91f0-158eb10f7153",
+      "phase": "Beoordeling",
       "name": "Rapport",
       "description": "Rapportage",
       "order": 3,
@@ -339,7 +365,8 @@
       "order": 4,
       "isFinal": false,
       "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
-      "colour": "purple"
+      "colour": "purple",
+      "phase": "Uitvoering"
     },
     {
       "id": "3556fed1-057c-5154-ac70-e23e549a21ca",
@@ -353,6 +380,7 @@
     },
     {
       "id": "77c260b4-aa92-5dd8-9091-4ef0f9242e20",
+      "phase": "Beoordeling",
       "name": "Constatering",
       "description": "Overtreding is geconstateerd",
       "order": 1,
@@ -363,6 +391,7 @@
     },
     {
       "id": "f8b82073-0d78-5712-a98a-e7bb2d577276",
+      "phase": "Advies",
       "name": "Vooraankondiging",
       "description": "Vooraankondiging verstuurd",
       "order": 2,
@@ -373,6 +402,7 @@
     },
     {
       "id": "b5d9837f-dbe5-5062-b145-d1f7275cb144",
+      "phase": "Advies",
       "name": "Zienswijze",
       "description": "Zienswijzetermijn loopt",
       "order": 3,
@@ -382,6 +412,7 @@
     },
     {
       "id": "3f733edd-9ea7-55e8-8950-dac293c48152",
+      "phase": "Besluit",
       "name": "Handhavingsbesluit",
       "description": "Handhavingsbesluit genomen",
       "order": 4,
@@ -397,10 +428,12 @@
       "order": 5,
       "isFinal": false,
       "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
-      "colour": "orange"
+      "colour": "orange",
+      "phase": "Uitvoering"
     },
     {
       "id": "730b3d39-9b6f-57c5-a660-1263b5b2a177",
+      "phase": "Beoordeling",
       "name": "Hercontrole",
       "description": "Hercontrole wordt uitgevoerd",
       "order": 6,
@@ -426,7 +459,8 @@
       "isFinal": false,
       "role": "intake",
       "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
-      "colour": "red"
+      "colour": "red",
+      "phase": "Uitvoering"
     },
     {
       "id": "086b4d8a-0b58-5e8c-b1b3-0deeb6b9240a",
@@ -436,7 +470,8 @@
       "isFinal": false,
       "role": "in-progress",
       "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
-      "colour": "red"
+      "colour": "red",
+      "phase": "Uitvoering"
     },
     {
       "id": "9f64fdfd-e195-589b-ad34-8138ddf0f92d",
@@ -445,7 +480,8 @@
       "order": 3,
       "isFinal": false,
       "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
-      "colour": "green"
+      "colour": "green",
+      "phase": "Uitvoering"
     },
     {
       "id": "9d668ca1-222f-5595-aacd-9e05529faac1",

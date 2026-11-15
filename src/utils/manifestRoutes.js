@@ -16,13 +16,15 @@
  */
 
 import { buildManifestRoutes } from '@conduction/nextcloud-vue'
+import { generateUrl } from '@nextcloud/router'
+import { caseIdByReference } from '../services/caseByReference.js'
 import { currentPermissions, permits } from './permissions.js'
 
 /**
  * Addresses of retired pages, each sent on to the page that replaced it, so a
  * bookmark lands where the feature now lives instead of on the dashboard.
  *
- * @type {Array<{path: string, redirect: (object|function(object): object)}>}
+ * @type {Array<{path: string, redirect?: (object|function(object): object), component?: object, beforeEnter?: function(): boolean}>}
  */
 export const RETIRED_ROUTES = [
 	{
@@ -60,7 +62,72 @@ export const RETIRED_ROUTES = [
 		path: '/cases/:parentId/deelzaken/:id',
 		redirect: (to) => ({ name: 'CaseDetail', params: { id: to.params.id } }),
 	},
+	// Substitution admin lives only in the Substitution tab of the admin
+	// settings (Ruben, 20 October 2026). That page is not one of the app's
+	// routes, so the browser goes there instead of the router.
+	{
+		path: '/substitution-admin',
+		component: { render: () => null },
+		beforeEnter: () => {
+			window.location.assign(substitutionAdminUrl())
+			return false
+		},
+	},
+	// Re-integration trajectories are cases of their case type (Ruben, 23
+	// October 2026). An old link to one trajectory opens the case it moved to.
+	...movedRecordRoutes('/settings/re-integratietrajecten', 'default:re-integration-pathways', 'reIntegratieTraject'),
+	// Pages renamed to say what they do (dq-abstract L7).
+	{
+		path: '/woo-reports',
+		redirect: { name: 'DocumentReviewReports' },
+	},
+	// The catalogue's folders are entries under Advanced (Ruben, 23 October
+	// 2026). A case type folder opens the case types on that folder; the
+	// catalogue itself opens its main card, the object types.
+	{
+		path: '/settings/catalogue',
+		redirect: (to) => (to.query?.category
+			? { name: 'CaseTypes', query: to.query }
+			: { name: 'ObjectTypes', query: to.query ?? {} }),
+	},
 ]
+
+/**
+ * The addresses of a list whose records moved onto cases: the list opens the
+ * case list's view, and one record opens the case that carries its id as
+ * `externalReference` (or that the record names in its `migratedTo`), or
+ * the view when none does.
+ *
+ * @param {string} path         The retired list's address.
+ * @param {string} savedView    The view of the case list that replaced it.
+ * @param {string} sourceSchema The schema the moved records are kept in.
+ * @return {Array<object>} The two route records.
+ * @spec openspec/specs/dossiq-sociaal-domein-participatiewet/spec.md
+ */
+export function movedRecordRoutes(path, savedView, sourceSchema) {
+	const view = { name: 'Cases', query: { savedView } }
+	return [
+		{ path, redirect: view },
+		{
+			path: `${path}/:id`,
+			component: { render: () => null },
+			beforeEnter: async (to) => {
+				const caseId = await caseIdByReference(String(to.params.id || ''), sourceSchema)
+				return caseId ? { name: 'CaseDetail', params: { id: caseId } } : view
+			},
+		},
+	]
+}
+
+/**
+ * The Substitution tab of dossiq's admin settings.
+ *
+ * @return {string} The address.
+ * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+ */
+export function substitutionAdminUrl() {
+	return generateUrl('/settings/admin/dossiq') + '?tab=substitution'
+}
 
 /**
  * Build the vue-router config from the manifest.

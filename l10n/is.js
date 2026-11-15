@@ -1374,6 +1374,7 @@ OC.L10N.register(
         "SLA": "SLA",
         "SLA Compliance": "SLA-reglufylgni",
         "SLA Compliance %": "SLA-reglufylgni %",
+        "SLA Compliance %%": "SLA-reglufylgni %%",
         "SLA Target: {days}d": "SLA-markmið: {days}d",
         "SLA adherence and processing time analysis": "Fylgni við SLA og greining vinnslutíma",
         "SLA breaches": "SLA-brot",

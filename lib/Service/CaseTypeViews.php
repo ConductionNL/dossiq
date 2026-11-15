@@ -30,34 +30,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeViewsInterface;
+
 /**
  * The view of the case list for one case type, and its menu entry.
  *
  * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
  */
-final class CaseTypeViews {
-
-	/**
-	 * The page the views filter.
-	 *
-	 * @var string
-	 */
-	public const PAGE = 'Cases';
-
-	/**
-	 * The manifest key a page declares its default views under.
-	 *
-	 * @var string
-	 */
-	public const DEFAULT_VIEWS_KEY = 'defaultSavedViews';
-
-	/**
-	 * The user preference (PreferencesController's `pref_` namespace) the
-	 * library keeps the views a user added to the menu under.
-	 *
-	 * @var string
-	 */
-	public const MENU_PREFERENCE = 'pref_cn_saved_view_menu';
+final class CaseTypeViews implements CaseTypeViewsInterface {
 
 	/**
 	 * The slug of the Woo requests view the Cases page ships for everybody.
@@ -94,12 +74,13 @@ final class CaseTypeViews {
 	/**
 	 * The default views to add for the case types a user pinned: one per case
 	 * type, filtering on it with the working-list rule of the Woo view, with
-	 * the case type's icon for its menu entry. The Woo request case type is
-	 * left out: the page ships that view itself.
+	 * the case type's icon for its menu entry, described by the case type's
+	 * title and placed under "More default views" (`secondary`). The Woo
+	 * request case type is left out: the page ships that view itself.
 	 *
 	 * @param array<int, array{id: string, title: string, icon?: string}> $caseTypes The pinned case types.
 	 *
-	 * @return array<int, array{slug: string, name: string, filters: array<string, mixed>, icon?: string}> The views.
+	 * @return array<int, array{slug: string, name: string, description: string, secondary: bool, filters: array<string, mixed>, icon?: string}>
 	 *
 	 * @spec openspec/changes/case-type-pins-are-views/specs/case-type-navigation/spec.md
 	 */
@@ -114,6 +95,8 @@ final class CaseTypeViews {
 			$view = [
 				'slug' => $this->slugFor(caseTypeId: $id),
 				'name' => (string)$caseType['title'],
+				'description' => (string)$caseType['title'],
+				'secondary' => true,
 				'filters' => ['caseType' => $id, 'statusHiddenInLists' => false, 'isDraft' => false],
 			];
 			$icon = $this->iconOf(caseType: $caseType);
@@ -131,16 +114,21 @@ final class CaseTypeViews {
 	 * The views every user gets for case types the instance names by
 	 * identifier (lib/Settings/case-type-views.json).
 	 *
-	 * @return array<int, array{slug: string, name: string, caseTypeIdentifier: string}> The declared views.
+	 * @return array<int, array{slug: string, name: string, description: string, caseTypeIdentifier: string}> The declared views.
 	 *
-	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+	 * @spec openspec/specs/case-lists/spec.md
 	 */
 	public function declaredViews(): array {
 		$decoded = json_decode((string)file_get_contents(__DIR__ . '/../Settings/case-type-views.json'), true);
 		$views = [];
 		foreach ((array)($decoded['views'] ?? []) as $view) {
 			if (is_array($view) === true && is_string($view['slug'] ?? null) === true && is_string($view['caseTypeIdentifier'] ?? null) === true) {
-				$views[] = ['slug' => $view['slug'], 'name' => (string)($view['name'] ?? $view['slug']), 'caseTypeIdentifier' => $view['caseTypeIdentifier']];
+				$views[] = [
+					'slug'               => $view['slug'],
+					'name'               => (string)($view['name'] ?? $view['slug']),
+					'description'        => (string)($view['description'] ?? ''),
+					'caseTypeIdentifier' => $view['caseTypeIdentifier'],
+				];
 			}
 		}
 
@@ -148,13 +136,15 @@ final class CaseTypeViews {
 	}//end declaredViews()
 
 	/**
-	 * The declared views whose case type this instance has, each filtering on it.
+	 * The declared views whose case type this instance has, each filtering on it,
+	 * under "More default views" (`secondary`) and described so the panel does
+	 * not show the case type's id while it resolves the filter.
 	 *
 	 * @param array<string, array{id: string, title: string}> $byIdentifier The instance's case types, by identifier.
 	 *
-	 * @return array<int, array{slug: string, name: string, filters: array<string, mixed>}> The views.
+	 * @return array<int, array{slug: string, name: string, description: string, secondary: bool, filters: array<string, mixed>}> The views.
 	 *
-	 * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+	 * @spec openspec/specs/case-lists/spec.md
 	 */
 	public function instanceViews(array $byIdentifier): array {
 		$views = [];
@@ -164,10 +154,17 @@ final class CaseTypeViews {
 				continue;
 			}
 
+			$description = $view['description'];
+			if ($description === '') {
+				$description = (string)$caseType['title'];
+			}
+
 			$views[] = [
-				'slug' => $view['slug'],
-				'name' => $view['name'],
-				'filters' => ['caseType' => (string)$caseType['id'], 'statusHiddenInLists' => false, 'isDraft' => false],
+				'slug'        => $view['slug'],
+				'name'        => $view['name'],
+				'description' => $description,
+				'secondary'   => true,
+				'filters'     => ['caseType' => (string)$caseType['id'], 'statusHiddenInLists' => false, 'isDraft' => false],
 			];
 		}
 
@@ -209,7 +206,7 @@ final class CaseTypeViews {
 	 *
 	 * @return string The icon name.
 	 *
-	 * @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
 	 */
 	private function iconOf(array $caseType): string {
 		$icon = ($caseType['icon'] ?? '');

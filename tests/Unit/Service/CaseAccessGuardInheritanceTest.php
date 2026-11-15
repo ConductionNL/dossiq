@@ -49,10 +49,13 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Rbac\GrantLookup;
+use OCA\OpenRegister\Service\Rbac\ObjectGrantResolverInterface;
 use OCP\IGroupManager;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Unit tests for the seam between dossiq's guard and the platform's grants.
@@ -133,7 +136,9 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The object, or null when absent.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->cases[$id] ?? null);
 			}
 		};
@@ -151,7 +156,7 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 			return;
 		}
 
-		$resolver = new class($grants) {
+		$resolver = new class($grants) implements ObjectGrantResolverInterface {
 
 			/**
 			 * @param array<int, string> $grants Granted `uid|objectUuid` pairs.
@@ -164,14 +169,32 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 			/**
 			 * Mimic ObjectGrantResolver::isGranted().
 			 *
-			 * @param string|null $userId The caller.
-			 * @param string|null $objectUuid The object.
-			 * @param string $action The action.
+			 * @param GrantLookup $lookup The caller and the object.
+			 * @param string      $action The action.
 			 *
 			 * @return bool Whether a grant carries it.
 			 */
-			public function isGranted(?string $userId, ?string $objectUuid, string $action = 'read'): bool {
-				return in_array($userId . '|' . $objectUuid . '|' . $action, $this->grants, true);
+			public function isGranted(GrantLookup $lookup, string $action = 'read'): bool {
+				return in_array($lookup->userId . '|' . $lookup->objectUuid . '|' . $action, $this->grants, true);
+			}
+
+			/**
+			 * @param string|null $userId The caller.
+			 *
+			 * @return bool Unused here.
+			 */
+			public function hasAnyGrant(?string $userId): bool {
+				return false;
+			}
+
+			/**
+			 * @param string|null $userId The caller.
+			 * @param string      $action The action.
+			 *
+			 * @return array<int, string> Unused here.
+			 */
+			public function grantedObjectUuidsFor(?string $userId, string $action): array {
+				return [];
 			}
 		};
 
@@ -376,7 +399,9 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 				 *
 				 * @return array<string, mixed> The object.
 				 */
-				public function find(string $id, mixed $register = null, mixed $schema = null): array {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					return ['id' => $id, 'assignee' => 'carol'];
 				}
 			}
@@ -412,7 +437,9 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 				 *
 				 * @return array<string, mixed>|null The object.
 				 */
-				public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					return null;
 				}
 			}
@@ -424,21 +451,38 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 			]
 		);
 		$this->settingsService->method('getObjectGrantResolver')->willReturn(
-			new class {
+			new class implements ObjectGrantResolverInterface {
 
 				/**
 				 * Mimic a resolver whose backend is down.
 				 *
-				 * @param string|null $userId The caller.
-				 * @param string|null $objectUuid The object.
-				 * @param string $action The action.
+				 * @param GrantLookup $lookup The caller and the object.
+				 * @param string      $action The action.
 				 *
 				 * @return bool Never returns.
 				 *
 				 * @throws \RuntimeException Always.
 				 */
-				public function isGranted(?string $userId, ?string $objectUuid, string $action = 'read'): bool {
+				public function isGranted(GrantLookup $lookup, string $action = 'read'): bool {
 					throw new \RuntimeException('share backend down');
+				}
+				/**
+				 * @param string|null $userId The caller.
+				 *
+				 * @return bool Unused here.
+				 */
+				public function hasAnyGrant(?string $userId): bool {
+					return false;
+				}
+
+				/**
+				 * @param string|null $userId The caller.
+				 * @param string      $action The action.
+				 *
+				 * @return array<int, string> Unused here.
+				 */
+				public function grantedObjectUuidsFor(?string $userId, string $action): array {
+					return [];
 				}
 			}
 		);

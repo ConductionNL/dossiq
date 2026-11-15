@@ -9,7 +9,7 @@
  * leaves of filinq, shillinq and planninq, and no longer places planninq's
  * projects as a widget of its own.
  *
- * @spec openspec/changes/case-linked-card/specs/case-linked-card/spec.md#requirement-the-case-page-lists-its-links-in-one-side-card
+ * @spec openspec/specs/case-linked-card/spec.md#requirement-the-case-page-lists-its-links-in-one-side-card
  */
 
 import fs from 'fs'
@@ -43,13 +43,41 @@ describe('the Linked side card on the case page', () => {
 		expect(ids.indexOf('side-linked')).toBe(ids.indexOf('side-handling') + 1)
 	})
 
-	it('lists the render leaves in the board order: documents, fees, contract, projects', () => {
-		expect(linked.content.leaves).toEqual([
+	it('lists the leaves in the board order: documents, the pipelinq question, fees, contract, projects', () => {
+		const ids = linked.content.leaves.map((leaf) =>
+			typeof leaf === 'object' ? leaf.id : leaf,
+		)
+		expect(ids).toEqual([
 			'filinq-documents',
-			'shillinq-payment-requests-panel',
+			'pipelinq-requests',
+			'shillinq-financial-documents-panel',
 			'shillinq-contracts-panel',
 			'planninq-projects',
 		])
+	})
+
+	it('names the finance leaf "fees and payments" in its own words, as the board writes the line', () => {
+		for (const leaves of [linked.content.leaves, fullCase.widgets.find((widget) => widget.id === 'case-linked').content.leaves]) {
+			expect(leaves).toContainEqual({ id: 'shillinq-financial-documents-panel', noun: 'fees and payments' })
+		}
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).translations
+		expect(nl['fees and payments']).toBe('leges en betalingen')
+	})
+
+	// The noun stays blank: the board's nothing-linked line names only leges, contract and projects.
+	it('reads "Vraag in pipelinq" from the pipelinq request that points at this case, as configuration', () => {
+		const requests = linked.content.leaves.find(
+			(leaf) => typeof leaf === 'object' && leaf.id === 'pipelinq-requests',
+		)
+		expect(requests).toMatchObject({
+			register: 'pipelinq',
+			schema: 'ticket',
+			filter: { caseReference: '@objectId', ticketType: 'request' },
+			requiredApp: 'pipelinq',
+			noun: '',
+			label: 'Question in pipelinq',
+			href: '/apps/pipelinq/tickets/{id}',
+		})
 	})
 
 	it('no longer places the projects leaf as a widget or a grid cell', () => {
@@ -90,8 +118,17 @@ describe('the Linked card in the full profile, which has no side column', () => 
 })
 
 describe('the money placements mount the leaves shillinq registers', () => {
+	it('tells the financial documents panel what a case shows and offers', () => {
+		const widget = fullCase.widgets.find((w) => w.id === 'case-payment-requests')
+		expect(widget.props).toEqual({
+			kinds: ['quote', 'invoice', 'credit-note', 'payment-request', 'payout'],
+			actions: ['issue-invoice', 'new-quote', 'raise-payout', 'request-payment', 'credit-invoice', 'send-link', 'record-payment'],
+			objectType: 'case',
+		})
+	})
+
 	it.each([
-		['case-payment-requests', 'shillinq-payment-requests-panel'],
+		['case-payment-requests', 'shillinq-financial-documents-panel'],
 		['case-contract', 'shillinq-contracts-panel'],
 	])('%s places %s', (id, integrationId) => {
 		expect(fullCase.widgets.find((w) => w.id === id).integrationId).toBe(

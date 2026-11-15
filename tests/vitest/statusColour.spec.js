@@ -200,13 +200,13 @@ describe('statusBadgeStyle', () => {
 		}
 	})
 
-	it('is what the status cell draws, while the settings swatches keep the hue', () => {
-		const cell = fs.readFileSync(
-			path.join(ROOT, 'src/components/cells/StatusBadgeCell.vue'),
-			'utf8',
+	it('is drawn by the library badge on the Status column, with the colour read off the status type', () => {
+		const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/manifest.json'), 'utf8'))
+		const status = manifest.pages.find((p) => p.id === 'Cases').config.columns.find(
+			(c) => typeof c === 'object' && c.key === 'status',
 		)
-		expect(cell).toContain('statusBadgeStyle(this.colour)')
-		expect(cell).not.toContain('statusColourStyle(')
+		expect(status.widget).toBe('badge')
+		expect(status.widgetProps.resolve).toEqual({ register: 'dossiq', schema: 'statusType', colorField: 'colour' })
 	})
 })
 

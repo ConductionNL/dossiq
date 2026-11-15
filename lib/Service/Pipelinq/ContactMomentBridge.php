@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pipelinq;
 
+use OCA\Dossiq\Kernel\Contracts\ContactMomentBridgeInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -40,7 +41,17 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02
  */
-class ContactMomentBridge {
+class ContactMomentBridge implements ContactMomentBridgeInterface {
+
+	/**
+	 * What each filing act does, as the log names it.
+	 *
+	 * @var array<string, string>
+	 */
+	private const ACT_VERBS = [
+		'fileOnAlsoCase' => 'filed',
+		'unfileFromCase' => 'unfiled',
+	];
 
 	/**
 	 * How dossiq's `notificationChannel` values read in pipelinq's vocabulary.
@@ -58,6 +69,7 @@ class ContactMomentBridge {
 		'chat' => 'chat',
 		'social_media' => 'social',
 		'balie' => 'balie',
+		'brief' => 'brief',
 	];
 
 	/**
@@ -101,7 +113,18 @@ class ContactMomentBridge {
 			return ['appended' => false, 'reason' => $answer['reason'], 'indicators' => []];
 		}
 
-		$result = ($answer['value'] ?? []);
+		return $this->outcomeOf(result: ($answer['value'] ?? []), caseId: $caseId);
+	}//end append()
+
+	/**
+	 * What pipelinq's answer to an append means: written, or refused with its reason and indicators.
+	 *
+	 * @param mixed  $result What pipelinq answered.
+	 * @param string $caseId The case the moment was logged on, for the log.
+	 *
+	 * @return array{appended: bool, reason: string, indicators: array<int|string, mixed>} The outcome.
+	 */
+	private function outcomeOf(mixed $result, string $caseId): array {
 		if (is_array($result) === false) {
 			return ['appended' => false, 'reason' => 'pipelinq answered an unusable shape', 'indicators' => []];
 		}
@@ -124,7 +147,7 @@ class ContactMomentBridge {
 			'reason' => $reason,
 			'indicators' => (array)($result['indicators'] ?? []),
 		];
-	}//end append()
+	}//end outcomeOf()
 
 	/**
 	 * The contact moments on a case, by MEMBERSHIP, with the shared marker.
@@ -159,24 +182,33 @@ class ContactMomentBridge {
 			return ['available' => false, 'moments' => [], 'indicators' => []];
 		}
 
-		$moments = [];
-		foreach ((array)($result['contactMoments'] ?? []) as $moment) {
-			if (is_array($moment) === false) {
-				continue;
-			}
-
-			$moments[] = array_merge(
-				$moment,
-				['sharedLabel' => $this->sharedLabel(moment: $moment)]
-			);
-		}
-
 		return [
 			'available' => true,
-			'moments' => $moments,
+			'moments' => $this->labelledMoments(moments: (array)($result['contactMoments'] ?? [])),
 			'indicators' => (array)($result['indicators'] ?? []),
 		];
 	}//end onCase()
+
+	/**
+	 * The contact moments that are rows, each with its shared label.
+	 *
+	 * @param array<int|string, mixed> $moments What pipelinq listed.
+	 *
+	 * @return array<int, array<string, mixed>> The moments.
+	 */
+	private function labelledMoments(array $moments): array {
+		$labelled = [];
+		foreach ($moments as $moment) {
+			if (is_array($moment) === true) {
+				$labelled[] = array_merge(
+					$moment,
+					['sharedLabel' => $this->sharedLabel(moment: $moment)]
+				);
+			}
+		}
+
+		return $labelled;
+	}//end labelledMoments()
 
 	/**
 	 * File an existing contact moment onto a further case.
@@ -195,7 +227,6 @@ class ContactMomentBridge {
 		return $this->act(
 			method: 'fileOnAlsoCase',
 			arguments: ['momentId' => trim($momentId), 'caseId' => trim($caseId)],
-			verb: 'filed',
 		);
 	}//end fileOnAlsoCase()
 
@@ -218,7 +249,6 @@ class ContactMomentBridge {
 				'caseId' => trim($caseId),
 				'newPrimary' => $newPrimary,
 			],
-			verb: 'unfiled',
 		);
 	}//end unfileFromCase()
 
@@ -332,13 +362,12 @@ class ContactMomentBridge {
 	/**
 	 * Run one filing act and read its answer.
 	 *
-	 * @param string $method The act.
+	 * @param string               $method    The act, one of {@see self::ACT_VERBS}.
 	 * @param array<string, mixed> $arguments Its named arguments.
-	 * @param string $verb What the act did, for the log.
 	 *
 	 * @return array{filed: bool, reason: string} The outcome.
 	 */
-	private function act(string $method, array $arguments, string $verb): array {
+	private function act(string $method, array $arguments): array {
 		$answer = $this->gateway->ask(
 			class: PipelinqGateway::CONTACT_MOMENT_FILING,
 			method: $method,
@@ -357,6 +386,7 @@ class ContactMomentBridge {
 			return ['filed' => true, 'reason' => ''];
 		}
 
+		$verb = self::ACT_VERBS[$method];
 		$this->logger->info(
 			"Dossiq pipelinq: a contact moment was not {$verb}, and the refusal is what a handler reads: "
 			. (string)($result['error'] ?? ''),

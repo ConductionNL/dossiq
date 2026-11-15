@@ -33,6 +33,8 @@ use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * In-memory ObjectService fake for VaststellingServiceTest, pinned to
@@ -66,7 +68,11 @@ class VaststellingFakeObjectService {
 	 *
 	 * @throws DoesNotExistException When the id is unknown.
 	 */
-	public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+		$_extend = $options?->extend ?? [];
+		$files = $options?->files ?? false;
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$row = ($this->store[(string)$schema][(string)$id] ?? null);
 		if ($row === null) {
 			throw new DoesNotExistException('Object ' . $id . ' does not exist');
@@ -87,7 +93,11 @@ class VaststellingFakeObjectService {
 	 *
 	 * @return FakeStoredObject The merged row.
 	 */
-	public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+		$extend = $options->extend ?? [];
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$schema = (string)$schema;
 		$uuid = ($uuid ?? ('generated-' . count($this->store[$schema] ?? [])));
 		$existing = ($this->store[$schema][$uuid] ?? []);
@@ -102,9 +112,10 @@ class VaststellingFakeObjectService {
  * @covers \OCA\Dossiq\Service\Subsidie\VaststellingService
  *
  * @uses \OCA\Dossiq\Service\Subsidie\TerugvorderingService
+ * @uses \OCA\Dossiq\Service\Subsidie\SubsidieSchemaLookup
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-20
- * @spec openspec/changes/subsidie-settlement-case-costs/specs/subsidie-settlement-case-costs/spec.md
+ * @spec openspec/specs/subsidie-settlement-case-costs/spec.md#requirement-settling-a-grant-records-the-settled-amount-on-the-vaststelling-and-writes-nothing-to-the-linked-case-req-ssc-005
  */
 class VaststellingServiceTest extends TestCase {
 
@@ -219,9 +230,24 @@ class VaststellingServiceTest extends TestCase {
 	}//end testOverpaymentAndTrigger()
 
 	/**
-	 * subsidie-settlement-case-costs: no linked case — finalize() still
-	 * succeeds (vaststelling is patched) and simply does not append kosten
-	 * anywhere, rather than throwing.
+	 * A settlement with a linked case records the amount on the vaststelling
+	 * and leaves the case unchanged (REQ-SSC-005).
+	 *
+	 * @return void
+	 */
+	public function testFinalizeLeavesTheLinkedCaseUnchanged(): void {
+		$this->seedChain(determinationId: 'vst-1', uitvoeringId: 'uitv-1', requestId: 'aanv-1', caseId: 'case-1');
+
+		$result = $this->service->finalize(determinationId: 'vst-1', grantedAmount: 400000.0, actualCost: 330000.0, totalAdvances: 330000.0);
+
+		$this->assertSame('determined', $result['determination']['status']);
+		$this->assertSame(330000.0, $result['determination']['determinedAmount']);
+		$this->assertSame(['id' => 'case-1', 'title' => 'Test case'], $this->objects->store['case']['case-1']);
+	}//end testFinalizeLeavesTheLinkedCaseUnchanged()
+
+	/**
+	 * A settlement with no linked case still completes and writes no case
+	 * (REQ-SSC-005).
 	 *
 	 * @return void
 	 */

@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
+use OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples;
 use OCA\Dossiq\Service\CaseDefinition\PackageCapabilities;
 use OCA\Dossiq\Service\CaseDefinition\PackageDirectory;
 use OCA\Dossiq\Service\CaseDefinition\PackageIds;
@@ -40,6 +41,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An in-memory register that speaks OpenRegister's deleteObject signature
@@ -90,18 +93,19 @@ final class PackageTestRegister extends InMemoryRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		if (in_array(($object['name'] ?? $object['title'] ?? ''), $this->refuse, true) === true) {
 			throw new RuntimeException('the store refused the write');
 		}
 
 		$object += ($this->fills[(string)$schema] ?? []);
-		$stored = parent::saveObject($object, $register, $schema, $uuid, $_rbac, $_multitenancy);
+		$stored = parent::saveObject($object, $options, $_rbac, $_multitenancy);
 		$this->savedIn[(string)$stored['id']] = (string)$register;
 
 		return $stored;
@@ -131,7 +135,10 @@ final class PackageTestRegister extends InMemoryRegister {
 	 *
 	 * @return boolean True when a row went.
 	 */
-	public function deleteObject(int|string $uuid = '', int|string $register = '', int|string $schema = ''): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+		$uuid = $deletion->uuid ?? '';
+		$register = $deletion->target->register ?? '';
+		$schema = $deletion->target->schema ?? '';
 		$this->deletedFrom[(string)$uuid] = (string)$register;
 		foreach (array_keys($this->rows) as $slug) {
 			if (($schema === '' || $schema === $slug) && isset($this->rows[$slug][(string)$uuid]) === true) {
@@ -327,16 +334,30 @@ final class PackageTestSchemaEntity {
  * @covers \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSchemaReferences
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSettingRules
+ * @covers \OCA\Dossiq\Service\CaseDefinition\AdoptedCaseTypeFill
+ * @covers \OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
+ * @uses \OCA\Dossiq\Service\CaseDefinition\ComponentRows
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowTarget
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageSeedRules
  * @uses \OCA\Dossiq\Service\CaseDefinition\WritesPackageRows
+ * @uses \OCA\Dossiq\Service\CaseDefinition\StampsPackageRows
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageIds
  * @uses \OCA\Dossiq\Service\Starter\ShippedConfigurationService
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRowAdopter
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
  * @uses \OCA\Dossiq\Service\Starter\ShippedSets
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageExampleDates
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageExamples
+ * @uses \OCA\Dossiq\Service\Starter\ShippedLedgerTargets
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
+ * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageInstallRun
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowMatchRun
  */
 class PackageInstallerTest extends TestCase {
 
@@ -408,15 +429,17 @@ class PackageInstallerTest extends TestCase {
 	}//end tearDown()
 
 	/**
-	 * The installer over the given package root, the shared register and a real ledger.
+	 * The collaborators an installer or example writer shares: the package
+	 * root, the app manager and config, a real ledger, the writer and the
+	 * schema references, all over the shared register.
 	 *
 	 * @param string             $root          The package root.
 	 * @param array<int, string> $unconfigured  Settings keys that resolve to nothing.
 	 * @param array<int, string> $installedApps Apps IAppManager reports installed.
 	 *
-	 * @return PackageInstaller The installer.
+	 * @return array<string, mixed> The collaborators by name.
 	 */
-	private function installer(string $root = self::FIXTURES, array $unconfigured = [], array $installedApps = []): PackageInstaller {
+	private function collaborators(string $root, array $unconfigured, array $installedApps): array {
 		$settings = $this->getMockBuilder(SettingsService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['getObjectService', 'getConfigValue'])
@@ -461,17 +484,60 @@ class PackageInstallerTest extends TestCase {
 			new NullLogger(),
 		);
 
+		return [
+			'packages' => $packages,
+			'apps' => $apps,
+			'appConfig' => $appConfig,
+			'ledger' => $ledger,
+			'writer' => new PackageWriter(new NullLogger(), $settings, new ExistingRowMatcher(new NullLogger())),
+			'references' => new PackageSchemaReferences($apps, $this->schemas, new NullLogger()),
+		];
+	}//end collaborators()
+
+	/**
+	 * The installer over the given package root, the shared register and a real ledger.
+	 *
+	 * @param string             $root          The package root.
+	 * @param array<int, string> $unconfigured  Settings keys that resolve to nothing.
+	 * @param array<int, string> $installedApps Apps IAppManager reports installed.
+	 *
+	 * @return PackageInstaller The installer.
+	 */
+	private function installer(string $root = self::FIXTURES, array $unconfigured = [], array $installedApps = []): PackageInstaller {
+		$c = $this->collaborators(root: $root, unconfigured: $unconfigured, installedApps: $installedApps);
+
 		return new PackageInstaller(
-			$packages,
+			$c['packages'],
 			new PackageValidator(new NullLogger(), new PackageIds()),
-			new PackageCapabilities($apps),
-			new PackageWriter(new NullLogger(), $settings, new ExistingRowMatcher(new NullLogger())),
-			$ledger,
-			$appConfig,
+			new PackageCapabilities($c['apps']),
+			$c['writer'],
+			$c['ledger'],
+			$c['appConfig'],
 			new NullLogger(),
-			new PackageSchemaReferences($apps, $this->schemas, new NullLogger()),
+			$c['references'],
 		);
 	}//end installer()
+
+	/**
+	 * The example writer over the given package root, the shared register and a real ledger.
+	 *
+	 * @param string $root The package root.
+	 *
+	 * @return InstalledPackageExamples The writer.
+	 */
+	private function examples(string $root = self::FIXTURES): InstalledPackageExamples {
+		$c = $this->collaborators(root: $root, unconfigured: [], installedApps: []);
+
+		return new InstalledPackageExamples(
+			$c['packages'],
+			new PackageValidator(new NullLogger(), new PackageIds()),
+			$c['writer'],
+			$c['ledger'],
+			$c['appConfig'],
+			new NullLogger(),
+			$c['references'],
+		);
+	}//end examples()
 
 	/**
 	 * A copy of the fixture package in a temporary root, changed by a callback.
@@ -575,11 +641,12 @@ class PackageInstallerTest extends TestCase {
 	/**
 	 * A case type a seeder already wrote under a random id is adopted by its
 	 * identifier: every row is recorded in the ledger under the id it has
-	 * here, and nothing new is written (decision 190).
+	 * here, no new row is written (decision 190), and the case type gains only
+	 * the fields it lacked (decision 273).
 	 *
 	 * @return void
 	 */
-	public function testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten(): void {
+	public function testAnExistingCaseTypeIsAdoptedByIdentifierAndGainsOnlyTheFieldsItLacked(): void {
 		$this->seedAsASeederWould();
 		$before = $this->register->rows;
 
@@ -588,9 +655,16 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
 		$this->assertSame(0, $outcome['written']);
 		$this->assertSame(6, $outcome['adopted']);
+		$this->assertSame(1, $outcome['filled']);
 		$ledger = $this->rowLedger();
 		unset($this->register->rows['shippedOrigin']);
-		$this->assertSame($before, $this->register->rows, 'no row was written, changed or removed');
+		$caseType = $this->register->rows['caseType']['seeded-ct'];
+		$this->assertSame('Fixture request', $caseType['title']);
+		$this->assertSame('fixture-request', $caseType['identifier']);
+		$this->assertSame('A neutral case type used to test the package installer.', $caseType['description']);
+		$this->assertFalse($caseType['isDraft']);
+		unset($before['caseType'], $this->register->rows['caseType']);
+		$this->assertSame($before, $this->register->rows, 'no other row was written, changed or removed');
 
 		$recorded = array_column($ledger, 'targetObject');
 		sort($recorded);
@@ -599,7 +673,7 @@ class PackageInstallerTest extends TestCase {
 			$this->assertSame('fixture-case-type', $row['set']);
 			$this->assertSame('1.0.0', $row['setVersion']);
 		}
-	}//end testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten()
+	}//end testAnExistingCaseTypeIsAdoptedByIdentifierAndGainsOnlyTheFieldsItLacked()
 
 	/**
 	 * A case type a seeder wrote without an identifier is adopted by its title:
@@ -617,8 +691,29 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame(0, $outcome['written']);
 		$this->assertSame(6, $outcome['adopted']);
 		unset($this->register->rows['shippedOrigin']);
-		$this->assertSame($before, $this->register->rows, 'no row was written, changed or removed');
+		$this->assertSame('fixture-request', $this->register->rows['caseType']['seeded-ct']['identifier'], 'the identifier it lacked is filled');
+		unset($before['caseType'], $this->register->rows['caseType']);
+		$this->assertSame($before, $this->register->rows, 'no other row was written, changed or removed');
 	}//end testACaseTypeWithoutAnIdentifierIsAdoptedByTitle()
+
+	/**
+	 * A field the stored case type has, an empty one included, is never overwritten.
+	 *
+	 * @return void
+	 */
+	public function testAnAdoptedCaseTypeKeepsEveryFieldItHasEvenAnEmptyOne(): void {
+		$this->seedAsASeederWould();
+		$this->register->rows['caseType']['seeded-ct']['description'] = '';
+		$this->register->rows['caseType']['seeded-ct']['isDraft'] = true;
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(0, $outcome['filled']);
+		$caseType = $this->register->rows['caseType']['seeded-ct'];
+		$this->assertSame('', $caseType['description']);
+		$this->assertTrue($caseType['isDraft']);
+	}//end testAnAdoptedCaseTypeKeepsEveryFieldItHasEvenAnEmptyOne()
 
 	/**
 	 * A case type with another title and no identifier is not adopted.
@@ -692,6 +787,7 @@ class PackageInstallerTest extends TestCase {
 
 		$this->assertSame(PackageInstaller::FAILED, $outcome['status']);
 		$this->assertSame(['seeded-ct'], array_column($this->register->all('caseType'), 'id'));
+		$this->assertArrayNotHasKey('description', $this->register->rows['caseType']['seeded-ct'], 'a failed install fills nothing');
 		$this->assertCount(2, $this->register->all('statusType'));
 		$this->assertSame([], $this->register->all('roleType'));
 		$this->assertSame([], $this->register->all('shippedOrigin'));
@@ -802,6 +898,34 @@ class PackageInstallerTest extends TestCase {
 	}//end testANewerVersionRefreshesRowsNobodyEdited()
 
 	/**
+	 * A row the package ships by its own id but the ledger does not know (written before the ledger existed) is
+	 * taken over by an install over local changes, and recorded from then on; a plain install keeps it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function testAnInstallOverLocalChangesAdoptsARowTheLedgerDoesNotKnow(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$status = '0f1c0000-0000-4000-8000-000000000011';
+		foreach ($this->register->rows['shippedOrigin'] as $id => $row) {
+			if ($row['targetObject'] === $status) {
+				unset($this->register->rows['shippedOrigin'][$id]);
+			}
+		}
+
+		$kept = $this->installer(root: $this->raisedVersion())->install(id: 'fixture-case-type');
+		$this->assertSame('Received', $this->register->row('statusType', $status)['name'], 'a plain install keeps a row it cannot place');
+		$this->assertContains($status, $kept['kept']);
+
+		$outcome = $this->installer(root: $this->raisedVersion())->installOverLocalChanges(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame('Registered', $this->register->row('statusType', $status)['name']);
+		$this->assertSame('1.1.0', $this->ledgerRowOf(targetObject: $status)['setVersion']);
+	}//end testAnInstallOverLocalChangesAdoptsARowTheLedgerDoesNotKnow()
+
+	/**
 	 * A row edited here survives a newer version and is named; its untouched siblings are refreshed.
 	 *
 	 * @return void
@@ -833,7 +957,7 @@ class PackageInstallerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testTheShippedWooPackageWritesItsFlowOnAnUpgradedInstance(): void {
 		$caseType = '3c0f5a00-0000-4000-a000-00000000a001';
@@ -1040,6 +1164,59 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame(0, $this->register->writes);
 		$this->assertSame(PackageInstaller::INSTALLED, $installer->install(id: 'fixture-case-type')['status']);
 	}//end testOnlyAutomaticPackagesInstallAutomatically()
+
+	/**
+	 * A reload installs what is installed here or automatic, and nothing else.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
+	 *
+	 * @return void
+	 */
+	public function testAReloadInstallsWhatIsInstalledOrAutomaticAndNothingElse(): void {
+		$root = $this->variant(
+			change: static function (string $dir): void {
+				self::editJson(path: $dir . '/package.json', change: static fn (array $m): array => ['install' => 'on-request'] + $m);
+			}
+		);
+
+		$reloaded = $this->installer(root: $root)->reloadInstalled();
+		$this->assertSame(expected: [], actual: $reloaded, message: 'an on-request package never installed is left alone');
+		$this->assertSame(expected: 0, actual: $this->register->writes);
+
+		$this->installer(root: $root)->install(id: 'fixture-case-type');
+		$writes = $this->register->writes;
+
+		$outcomes = $this->installer(root: $root)->reloadInstalled();
+
+		$this->assertCount(expectedCount: 1, haystack: $outcomes);
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $outcomes[0]['status']);
+		$this->assertSame(expected: $writes, actual: $this->register->writes, message: 'a reload at the shipped version writes nothing');
+	}//end testAReloadInstallsWhatIsInstalledOrAutomaticAndNothingElse()
+
+	/**
+	 * An installed on-request package takes a newer version on reload, and an edit here survives.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/repair-updates-installed-packages/specs/case-types/spec.md
+	 */
+	public function testAReloadUpdatesAnInstalledOnRequestPackageAndKeepsAnEdit(): void {
+		$onRequest = static function (string $dir): void {
+			self::editJson(path: $dir . '/package.json', change: static fn (array $m): array => ['install' => 'on-request'] + $m);
+		};
+		$this->installer(root: $this->variant(change: $onRequest))->install(id: 'fixture-case-type');
+		$this->register->rows['caseType'][self::CASE_TYPE]['title'] = 'Edited here';
+		$raised = $this->raisedVersion();
+		$onRequest($raised . '/fixture-case-type');
+
+		$outcomes = $this->installer(root: $raised)->reloadInstalled();
+
+		$this->assertCount(expectedCount: 1, haystack: $outcomes);
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcomes[0]['status'], message: $outcomes[0]['message']);
+		$this->assertSame(expected: 'Registered', actual: $this->register->row('statusType', '0f1c0000-0000-4000-8000-000000000011')['name']);
+		$this->assertSame(expected: 'Edited here', actual: $this->register->row('caseType', self::CASE_TYPE)['title']);
+		$this->assertSame(expected: [self::CASE_TYPE], actual: $outcomes[0]['kept']);
+	}//end testAReloadUpdatesAnInstalledOnRequestPackageAndKeepsAnEdit()
 
 	/**
 	 * Settings fill keys this instance never set and keep an administrator's value.
@@ -1640,7 +1817,7 @@ class PackageInstallerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/package-examples-encoding/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function testTheShippedBezwaarPackageInstallsWithItsExampleCase(): void {
 		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
@@ -1716,6 +1893,104 @@ class PackageInstallerTest extends TestCase {
 	}//end testARefreshKeepsWhatThisInstanceAddedAndNeverAnEdit()
 
 	/**
+	 * The fixture at its own version, with a changed case type description.
+	 *
+	 * @return string The package root.
+	 */
+	private function changedContentSameVersion(): string {
+		return $this->variant(
+			change: static function (string $dir): void {
+				self::editJson(
+					path: $dir . '/case-type.json',
+					change: static function (array $c): array {
+						$c['caseType']['description'] = 'The description the same version now ships.';
+						return $c;
+					}
+				);
+			}
+		);
+	}//end changedContentSameVersion()
+
+	/**
+	 * The same version with changed files is applied, and is current after that.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 */
+	public function testTheSameVersionWithChangedContentRefreshesUntouchedRows(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$root = $this->changedContentSameVersion();
+
+		$outcome = $this->installer(root: $root)->install(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(
+			expected: 'The description the same version now ships.',
+			actual: $this->register->row('caseType', self::CASE_TYPE)['description']
+		);
+		$this->assertSame(expected: 1, actual: $outcome['refreshed']);
+
+		$writes = $this->register->writes;
+		$again = $this->installer(root: $root)->install(id: 'fixture-case-type');
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $again['status'], message: $again['message']);
+		$this->assertSame(expected: $writes, actual: $this->register->writes);
+	}//end testTheSameVersionWithChangedContentRefreshesUntouchedRows()
+
+	/**
+	 * A package record from before the digest installs once more, writing no row, and is current after that.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 */
+	public function testARecordWithoutADigestInstallsOnceMore(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$this->stampLedger(
+			targetObject: 'fixture-case-type',
+			fingerprint: (new ShippedFingerprint())->hashOf(object: ['package' => 'fixture-case-type', 'version' => '1.0.0'])
+		);
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+		$again = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(expected: 0, actual: $outcome['written']);
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $again['status'], message: $again['message']);
+	}//end testARecordWithoutADigestInstallsOnceMore()
+
+	/**
+	 * `--over-local-changes` takes every key the package ships over an edit here, and keeps a key it does not ship.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-reinstall-applies-changed-content/specs/case-types/spec.md
+	 */
+	public function testOverLocalChangesTakesThePackagesKeysAndKeepsTheRest(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$shippedTitle = $this->register->row('caseType', self::CASE_TYPE)['title'];
+		$this->register->rows['caseType'][self::CASE_TYPE]['title'] = 'Edited here';
+		$this->register->rows['caseType'][self::CASE_TYPE]['handlingModel'] = 'cmmn';
+
+		$kept = $this->installer()->install(id: 'fixture-case-type');
+		$this->assertSame(
+			expected: 'Edited here',
+			actual: $this->register->row('caseType', self::CASE_TYPE)['title'],
+			message: 'without the option an edit survives'
+		);
+
+		$outcome = $this->installer()->installOverLocalChanges(id: 'fixture-case-type');
+
+		$caseType = $this->register->row('caseType', self::CASE_TYPE);
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $kept['status'], message: $kept['message']);
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(expected: $shippedTitle, actual: $caseType['title']);
+		$this->assertSame(expected: 'cmmn', actual: $caseType['handlingModel'], message: 'a key the package does not ship keeps its value');
+		$this->assertSame(expected: [], actual: $outcome['kept']);
+		$this->assertSame(expected: '1.0.0', actual: $this->ledgerRowOf(targetObject: self::CASE_TYPE)['setVersion']);
+	}//end testOverLocalChangesTakesThePackagesKeysAndKeepsTheRest()
+
+	/**
 	 * Overwrite the fingerprint the ledger holds for one row.
 	 *
 	 * @param string $targetObject The row id.
@@ -1733,4 +2008,119 @@ class PackageInstallerTest extends TestCase {
 
 		$this->fail(message: "No ledger row for {$targetObject}");
 	}//end stampLedger()
+
+	/**
+	 * Example data chosen after a package was installed: the package's example
+	 * rows are written then, dated from today and recorded under the package.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testTheExamplesOfAnInstalledPackageAreWrittenOnceExampleDataIsChosen(): void {
+		$root = $this->withAnExample();
+		$this->installer(root: $root)->install(id: 'fixture-case-type');
+		$this->assertSame(expected: [], actual: $this->register->all('case'));
+
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+		$outcomes = $this->examples(root: $root)->forInstalled();
+
+		$this->assertCount(expectedCount: 1, haystack: $outcomes);
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcomes[0]['status'], message: $outcomes[0]['message']);
+		$this->assertSame(expected: 'fixture-case-type', actual: $outcomes[0]['package']);
+		$this->assertSame(expected: 1, actual: $outcomes[0]['written']);
+		$case = $this->register->row('case', self::EXAMPLE_CASE);
+		$this->assertSame(expected: (new \DateTimeImmutable('today'))->modify('-3 days')->format('Y-m-d'), actual: $case['startDate']);
+		$this->assertSame(expected: 'fixture-case-type', actual: $this->ledgerRowOf(targetObject: self::EXAMPLE_CASE)['set']);
+		$this->assertCount(expectedCount: 7, haystack: $this->rowLedger());
+	}//end testTheExamplesOfAnInstalledPackageAreWrittenOnceExampleDataIsChosen()
+
+	/**
+	 * Writing the examples a second time adds no second example case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testWritingTheExamplesAgainAddsNothing(): void {
+		$root = $this->withAnExample();
+		$this->installer(root: $root)->install(id: 'fixture-case-type');
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+		$this->examples(root: $root)->forPackage(id: 'fixture-case-type');
+
+		$outcome = $this->examples(root: $root)->forPackage(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::INSTALLED, actual: $outcome['status'], message: $outcome['message']);
+		$this->assertSame(expected: 0, actual: $outcome['written']);
+		$this->assertCount(expectedCount: 1, haystack: $this->register->all('case'));
+		$this->assertCount(expectedCount: 7, haystack: $this->rowLedger());
+	}//end testWritingTheExamplesAgainAddsNothing()
+
+	/**
+	 * Without the opt-in an installed package's examples stay unwritten.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testWithoutTheOptInNoExampleRowIsWrittenLater(): void {
+		$root = $this->withAnExample();
+		$this->installer(root: $root)->install(id: 'fixture-case-type');
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = 'skipped';
+
+		$outcome = $this->examples(root: $root)->forPackage(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::CURRENT, actual: $outcome['status']);
+		$this->assertSame(expected: "Package 'fixture-case-type' has no example rows to write.", actual: $outcome['message']);
+		$this->assertSame(expected: [], actual: $this->register->all('case'));
+	}//end testWithoutTheOptInNoExampleRowIsWrittenLater()
+
+	/**
+	 * A package that is not installed here gets no example rows, and nothing
+	 * of it is written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testAPackageThatIsNotInstalledGetsNoExamples(): void {
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+
+		$this->assertSame(expected: [], actual: $this->examples(root: $this->withAnExample())->forInstalled());
+		$this->assertSame(expected: [], actual: $this->register->all('case'));
+		$this->assertSame(expected: [], actual: $this->register->all('caseType'));
+	}//end testAPackageThatIsNotInstalledGetsNoExamples()
+
+	/**
+	 * A package installed here as other content than it ships now is left to
+	 * its next install, which writes its examples with everything else.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testAPackageInstalledAsOtherContentIsLeftToItsNextInstall(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$this->appConfigValues[DemoDataService::DECIDED_KEY] = DemoDataService::DECIDED_INSTALLED;
+
+		$outcome = $this->examples(root: $this->withAnExample())->forPackage(id: 'fixture-case-type');
+
+		$this->assertSame(expected: PackageInstaller::REFUSED, actual: $outcome['status']);
+		$this->assertStringContainsString(needle: 'its next install writes its examples', haystack: $outcome['message']);
+		$this->assertSame(expected: [], actual: $this->register->all('case'));
+	}//end testAPackageInstalledAsOtherContentIsLeftToItsNextInstall()
+
+	/**
+	 * An id no package answers to is refused by name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-examples/specs/case-types/spec.md
+	 */
+	public function testExamplesOfAnUnknownPackageAreRefused(): void {
+		$outcome = $this->examples()->forPackage(id: 'no-such-package');
+
+		$this->assertSame(expected: PackageInstaller::REFUSED, actual: $outcome['status']);
+		$this->assertSame(expected: "No package named 'no-such-package' is shipped.", actual: $outcome['message']);
+	}//end testExamplesOfAnUnknownPackageAreRefused()
 }//end class

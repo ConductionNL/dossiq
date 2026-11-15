@@ -24,7 +24,6 @@ const manifest = JSON.parse(
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const CASE_ID = '11111111-1111-4111-8111-111111111111'
-const WOO_CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001'
 
 const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 const action = caseDetail.config.headerActions.find(
@@ -49,7 +48,7 @@ const THREE = [
  * @param {Array<Array<object>>} lists What each successive read of the outstanding list answers.
  * @return {Promise<{wrapper: object, axios: object}>} The mounted dialog and the axios double.
  */
-async function mountDialog(lists = [THREE]) {
+async function mountDialog(lists = [THREE], extra = {}) {
 	const axios = (await import('@nextcloud/axios')).default
 	let read = 0
 	axios.get.mockImplementation((url) => {
@@ -76,7 +75,7 @@ async function mountDialog(lists = [THREE]) {
 	})
 
 	const wrapper = mount(DocumentAssessDialog, {
-		props: { ...action.props, caseId: CASE_ID },
+		props: { ...action.props, caseId: CASE_ID, ...extra },
 		global: {
 			stubs: {
 				NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
@@ -369,13 +368,25 @@ describe('the document-assess header action', () => {
 	it('testTheActionIsScopedToItsCaseType', () => {
 		// REQ-WCS-001: not on any other case type, and not on an archived case.
 		expect(action.visibleWhen.all).toContainEqual({
-			field: 'caseType',
+			field: 'caseTypeIdentifier',
 			op: 'eq',
-			value: WOO_CASE_TYPE,
+			value: 'woo-verzoek',
 		})
 		expect(action.visibleWhen.all).toContainEqual({
 			field: '@self.archived',
 			op: 'empty',
 		})
+	})
+})
+
+describe('DocumentAssessDialog opened from a document row (DqZaakDocumenten "Beoordelen")', () => {
+	it('starts with that document chosen', async () => {
+		const { wrapper } = await mountDialog([THREE], { documentId: 'io-2' })
+		expect(wrapper.vm.selected).toEqual(['io-2'])
+	})
+
+	it('chooses nothing for a document that is not outstanding', async () => {
+		const { wrapper } = await mountDialog([THREE], { documentId: 'io-9' })
+		expect(wrapper.vm.selected).toEqual([])
 	})
 })

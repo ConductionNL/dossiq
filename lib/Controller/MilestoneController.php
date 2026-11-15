@@ -26,8 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\MilestoneService;
+use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\MilestoneServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -37,7 +38,7 @@ use OCP\IUserSession;
 /**
  * Controller for milestone progress tracking.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class MilestoneController extends Controller {
 	/**
@@ -45,16 +46,16 @@ class MilestoneController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param MilestoneService $milestoneService The milestone service
+	 * @param MilestoneServiceInterface $milestoneService The milestone service
 	 * @param IUserSession $userSession The user session
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly MilestoneService $milestoneService,
+		private readonly MilestoneServiceInterface $milestoneService,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -74,16 +75,12 @@ class MilestoneController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function caseProgress(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = (new CaseAccessRefusal(userSession: $this->userSession, guard: $this->caseAccessGuard))->requireReadAccess(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -103,16 +100,12 @@ class MilestoneController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function progress(string $caseId, string $caseTypeId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = (new CaseAccessRefusal(userSession: $this->userSession, guard: $this->caseAccessGuard))->requireReadAccess(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -133,7 +126,7 @@ class MilestoneController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function mark(string $caseId, string $milestoneId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -166,7 +159,7 @@ class MilestoneController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function reverse(string $caseId, string $milestoneId): JSONResponse {
 		$user = $this->userSession->getUser();

@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Status;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\StatusDeclarationsInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 
@@ -43,7 +44,7 @@ use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class StatusDeclarations {
+class StatusDeclarations implements StatusDeclarationsInterface {
 
 	/**
 	 * Constructor.
@@ -111,6 +112,19 @@ class StatusDeclarations {
 	public function isDerivedStatus(string $caseTypeId, string $statusTypeId): bool {
 		return $this->derived->isDerivedStatus(caseTypeId: $caseTypeId, statusTypeId: $statusTypeId);
 	}//end isDerivedStatus()
+
+	/**
+	 * The name of a status, as authored, in the reader's language.
+	 *
+	 * @param string $statusTypeId The status.
+	 *
+	 * @return string The name, or '' when the status cannot be read.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function nameOf(string $statusTypeId): string {
+		return $this->lookup->nameFor(statusTypeId: $statusTypeId);
+	}//end nameOf()
 
 	/**
 	 * Settle the dwell fields on a payload about to be saved.

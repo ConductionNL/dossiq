@@ -1,0 +1,152 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runFeatureOnDocument > asks and answers as before 1`] = `
+{
+  "asked": [
+    [
+      "/apps/hermiq/api/ai-features/summary/run-on-document",
+      {
+        "documentReference": "42",
+        "instruction": "Vat samen",
+      },
+    ],
+    [
+      "/apps/hermiq/api/ai-features/summary/run-on-document",
+      {
+        "documentReference": "42",
+        "instruction": "Vat samen",
+      },
+    ],
+    [
+      "/apps/hermiq/api/ai-features/summary/run-on-document",
+      {
+        "documentReference": "42",
+        "instruction": "Vat samen",
+      },
+    ],
+    [
+      "/apps/hermiq/api/ai-features/summary/run-on-document",
+      {
+        "documentReference": "42",
+        "instruction": "Vat samen",
+      },
+    ],
+    [
+      "/apps/hermiq/api/ai-features/summary/run-on-document",
+      {
+        "documentReference": "42",
+        "instruction": "Vat samen",
+      },
+    ],
+    [
+      "/apps/hermiq/api/ai-features/summary/run-on-document",
+      {
+        "documentReference": "42",
+        "instruction": "Vat samen",
+      },
+    ],
+    [
+      "/apps/hermiq/api/ai-features/summary/run-on-document",
+      {
+        "documentReference": "42",
+        "instruction": "Vat samen",
+      },
+    ],
+    [
+      "/apps/hermiq/api/ai-features/summary/run-on-document",
+      {
+        "documentReference": "7",
+        "instruction": undefined,
+      },
+    ],
+  ],
+  "outcomes": [
+    {
+      "feature": "summary",
+      "gate": "missing-reference",
+      "message": "No document was chosen.",
+      "reason": "No document was chosen.",
+      "thrown": "AiFeatureRefusal",
+    },
+    {
+      "feature": "summary",
+      "gate": "missing-reference",
+      "message": "No document was chosen.",
+      "reason": "No document was chosen.",
+      "thrown": "AiFeatureRefusal",
+    },
+    {
+      "feature": "summary",
+      "gate": "missing-reference",
+      "message": "No document was chosen.",
+      "reason": "No document was chosen.",
+      "thrown": "AiFeatureRefusal",
+    },
+    {
+      "feature": "summary",
+      "gate": "missing-reference",
+      "message": "No document was chosen.",
+      "reason": "No document was chosen.",
+      "thrown": "AiFeatureRefusal",
+    },
+    {
+      "feature": "summary",
+      "gate": "missing-reference",
+      "message": "No document was chosen.",
+      "reason": "No document was chosen.",
+      "thrown": "AiFeatureRefusal",
+    },
+    {
+      "answer": {
+        "notices": [],
+        "output": "samenvatting",
+      },
+    },
+    {
+      "feature": "summary",
+      "gate": "hermiq.input",
+      "message": "Bad",
+      "reason": "Bad",
+      "thrown": "AiFeatureRefusal",
+    },
+    {
+      "feature": "summary",
+      "gate": null,
+      "message": "",
+      "reason": "",
+      "thrown": "AiFeatureRefusal",
+    },
+    {
+      "feature": "summary",
+      "gate": null,
+      "message": "Unknown feature",
+      "reason": "Unknown feature",
+      "thrown": "AiFeatureRefusal",
+    },
+    {
+      "feature": "summary",
+      "gate": "hermiq.redaction",
+      "message": "Unredacted",
+      "reason": "Unredacted",
+      "thrown": "AiFeatureRefusal",
+    },
+    {
+      "feature": undefined,
+      "gate": undefined,
+      "message": "status 500",
+      "reason": undefined,
+      "thrown": "Error",
+    },
+    {
+      "feature": undefined,
+      "gate": undefined,
+      "message": "offline",
+      "reason": undefined,
+      "thrown": "Error",
+    },
+    {
+      "answer": "ok",
+    },
+  ],
+}
+`;

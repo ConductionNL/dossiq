@@ -8,7 +8,7 @@
  * me's cards, urgency order and two slots; the data subject requests' tabs,
  * notice, chips and columns.
  *
- * @spec openspec/changes/lists-are-views/specs/case-lists/spec.md
+ * @spec openspec/specs/case-lists/spec.md
  */
 
 import fs from 'fs'
@@ -27,8 +27,8 @@ const view = (slug) => cases.defaultSavedViews.find((entry) => entry.slug === sl
 describe('the team-queue view', () => {
 	const overrides = view('team-queue').overrides
 
-	it('locks the queue to open cases nobody picked up, which the reader cannot clear', () => {
-		expect(view('team-queue').filters).toEqual({})
+	it('locks the queue to open cases nobody picked up, which the reader cannot clear, and opens on the reader\'s team', () => {
+		expect(view('team-queue').filters).toEqual({ assignedGroup: '@myTeam' })
 		expect(overrides.lockedFilters).toEqual({ assignee: 'IS NULL', isFinalStatus: false, statusHiddenInLists: false, isDraft: false, isTemplate: false })
 	})
 
@@ -50,18 +50,19 @@ describe('the team-queue view', () => {
 		expect(full.relocations.Queue).toBe('WorkGroup')
 		const badge = simple.menu.find((item) => item.id === 'Queue')
 		expect(badge).toMatchObject({ label: 'Team queue', counterVariant: 'attention' })
-		expect(badge.count.filter).toEqual(view('team-queue').overrides.lockedFilters)
+		// The badge counts what the list shows: its team filter and its locked filters.
+		expect(badge.count.filter).toEqual({ ...view('team-queue').filters, ...view('team-queue').overrides.lockedFilters })
 	})
 })
 
 describe('the my-work view', () => {
 	const overrides = view('my-work').overrides
 
-	it('opens on the urgency order, in cards, with the table offered', () => {
+	it('opens on the urgency order, as cards, with the table, board and map beside them', () => {
 		expect(overrides.sortOption).toBe('urgency')
 		expect(cases.sortSelectOptions.map((option) => option.value)).toContain('urgency')
 		expect(overrides.viewMode).toBe('cards')
-		expect(overrides.viewModes).toEqual(['cards', 'table'])
+		expect(overrides.viewModes).toEqual(['table', 'cards', 'board', 'map'])
 	})
 
 	it('locks the reader to their own cases, as the page did', () => {
@@ -69,19 +70,24 @@ describe('the my-work view', () => {
 		expect(overrides.lockedFilters).toEqual({ assignee: '@me', statusHiddenInLists: false, isDraft: false })
 	})
 
-	it('draws the description, the case type and status chips and the overdue deadline', () => {
-		expect(overrides.cardLayout.description).toEqual({ field: 'description', maxLength: 140 })
-		expect(overrides.cardLayout.chips).toEqual([
-			{ field: 'caseType', formatter: 'caseTypeName' },
-			{ field: 'status', formatter: 'statusTypeName' },
-		])
+	// Board DqAanMijToegewezen: "Woo-verzoek · Stichting Kindzorg", the cover line
+	// in the purple ink, and a footer with the status pill in its status type's
+	// colour and "Termijn 9 okt"; no description and no chips.
+	it('draws type and requester, the cover line, and the status pill beside the overdue deadline', () => {
+		expect(overrides.cardLayout.meta).toEqual([{ field: 'caseType', formatter: 'caseTypeName' }, 'initiatorDisplayName'])
+		expect(overrides.cardLayout.note).toEqual({ field: 'coveredFor', formatter: 'coveredFor', tone: 'purple' })
+		expect(overrides.cardLayout.footerPill).toEqual({ field: 'status', resolve: { schema: 'statusType', colorField: 'colour' } })
 		expect(overrides.cardLayout.footerDate).toEqual({ field: 'deadline', label: 'Deadline', overdueVariant: 'error' })
+		expect(overrides.cardLayout.description).toBeUndefined()
+		expect(overrides.cardLayout.chips).toBeUndefined()
 	})
 
 	it('draws the deadline tier as each card\'s head pill', () => {
 		expect(overrides.cardLayout.headPill).toMatchObject({
 			field: 'deadlineTier',
 			labels: { overdue: 'Late', critical: 'Critical', warning: 'Soon', normal: 'Normal' },
+			// Board DqAanMijToegewezen: "Te laat" and "Kritiek" red, "Bijna" amber, "Normaal" grey.
+			colorMap: { overdue: 'error', critical: 'error', warning: 'warning', normal: 'default' },
 		})
 		expect(overrides.cardLayout).toMatchObject({ number: 'identifier', title: 'title' })
 	})
@@ -93,10 +99,11 @@ describe('the my-work view', () => {
 		expect(simple.removals).toContain('MyWork')
 	})
 
-	it('mounts the workload strip and the substituted work, both registered', () => {
-		expect(overrides.slots).toEqual({ 'below-header': ['WorkloadSummaryBar'], 'before-collection': ['SubstitutedWork'] })
-		expect(registry).toMatch(/\tWorkloadSummaryBar: \{\n\t\tkind: 'page',\n\t\tcomponent: WorkloadSummaryBar,/)
-		expect(registry).toMatch(/\tSubstitutedWork: \{\n\t\tkind: 'page',\n\t\tcomponent: SubstitutedWork,/)
+	it('mounts the workload strip, and no substituted-work card: the work queue lists covered work', () => {
+		expect(overrides.slots).toEqual({ 'below-header': ['WorkloadTeamHeading'], 'toolbar-start': ['WorkloadTeamChips'] })
+		expect(registry).toMatch(/\tWorkloadTeamHeading: \{\n\t\tkind: 'page',\n\t\tcomponent: WorkloadTeamHeading,/)
+		expect(registry).toMatch(/\tWorkloadTeamChips: \{\n\t\tkind: 'page',\n\t\tcomponent: WorkloadTeamChips,/)
+		expect(registry).not.toMatch(/\tSubstitutedWork: \{/)
 	})
 })
 
@@ -125,8 +132,8 @@ describe('the data-subject-requests view', () => {
 		expect(overrides.lockedFilters).toEqual({ dataSubjectRequestType: ['inzage', 'correctie', 'verwijdering'] })
 	})
 
-	it('opens ordered by deadline, soonest first', () => {
-		expect(entry.sort).toEqual([{ key: 'deadline', order: 'asc' }])
+	it('opens ordered by deadline, soonest first, then by receipt', () => {
+		expect(entry.sort).toEqual([{ key: 'deadline', order: 'asc' }, { key: 'receivedAt', order: 'asc' }])
 	})
 })
 
@@ -157,9 +164,9 @@ describe('no case-type-specific pages or menu entries', () => {
 		}
 	})
 
-	it('keeps the own-record entries out of the main menu', () => {
+	it('keeps committees out of the main menu and Objects in the Cases part of it', () => {
 		expect(manifest.menu.find((item) => item.id === 'BezwaarCommitteesMenu').section).toBe('settings')
-		expect(full.settingsSection).toContain('CaseObjectsMenu')
-		expect(simple.settingsSection).toContain('CaseObjectsMenu')
+		expect(full.settingsSection).not.toContain('CaseObjectsMenu')
+		expect(simple.settingsSection).not.toContain('CaseObjectsMenu')
 	})
 })

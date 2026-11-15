@@ -49,6 +49,7 @@ use Psr\Log\NullLogger;
  * cells on development.
  *
  * @uses \OCA\Dossiq\Service\Transitions\StatusChecklist
+ * @uses \OCA\Dossiq\Service\Support\StoredArray
  */
 class StatusChecklistGuardTest extends TestCase {
 	/**

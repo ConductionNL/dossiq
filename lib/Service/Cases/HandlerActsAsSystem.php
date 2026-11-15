@@ -31,7 +31,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Cases;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\HandlerActsAsSystemInterface;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -48,9 +49,9 @@ use OCP\IUser;
 /**
  * Runs one act on a case as the system, for its handler, at its step.
  *
- * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
-class HandlerActsAsSystem {
+class HandlerActsAsSystem implements HandlerActsAsSystemInterface {
 
 	use SearchesObjects;
 
@@ -82,9 +83,33 @@ class HandlerActsAsSystem {
 	 * @throws RefusedException When the caller is not the handler (403) or the case
 	 *                          is not at the act's step (422).
 	 *
-	 * @spec openspec/changes/the-handler-publishes-as-the-system/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function run(string $caseId, IUser $user, string $stepField, array $stepIn, callable $operation): mixed {
+		$this->assertHandler(caseId: $caseId, user: $user);
+		$this->assertAtStep(caseId: $caseId, step: ['field' => $stepField, 'in' => $stepIn]);
+
+		$objectService = $this->settings->getObjectService();
+		if ($objectService === null) {
+			return $operation();
+		}
+
+		return $this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
+	}//end run()
+
+	/**
+	 * Refuse a caller who is not the case's handler.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param IUser  $user   The caller.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the caller is not the handler (403).
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function assertHandler(string $caseId, IUser $user): void {
 		if ($this->guard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
 			throw new RefusedException(
 				rule: 'not-the-handler',
@@ -92,7 +117,23 @@ class HandlerActsAsSystem {
 				status: RefusedException::STATUS_FORBIDDEN,
 			);
 		}
+	}//end assertHandler()
 
+	/**
+	 * Refuse when the case is final or not at the act's step.
+	 *
+	 * @param string                                     $caseId The case UUID.
+	 * @param array{field: string, in: array<int, string>} $step   The case field that says the act's step is reached,
+	 *                                                            and the values of it the act is allowed at.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case is not at the act's step (422).
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function assertAtStep(string $caseId, array $step): void {
+		['field' => $stepField, 'in' => $stepIn] = $step;
 		$case = $this->store->loadCase(caseId: $caseId);
 		$atStep = ($case !== null
 			&& in_array(($case['isFinalStatus'] ?? false), [true, 1, '1', 'true'], true) === false
@@ -104,12 +145,5 @@ class HandlerActsAsSystem {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
-
-		$objectService = $this->settings->getObjectService();
-		if ($objectService === null) {
-			return $operation();
-		}
-
-		return $this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
-	}//end run()
+	}//end assertAtStep()
 }//end class

@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\DecisionDocument;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -77,7 +77,7 @@ class PublicationReadiness {
 	 * @return void
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
-	 * @spec openspec/changes/a-recorded-decision-is-listed-on-its-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-recorded-decision-is-listed-on-its-case-req-cm-81
 	 */
 	public function markCaseReady(object $objectService, string $register, string $caseId, string $decisionId = ''): void {
 		$this->decisionLink->link(objectService: $objectService, register: $register, caseId: $caseId, decisionId: $decisionId);
@@ -103,7 +103,7 @@ class PublicationReadiness {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'PublicationReadiness: the case could not show that its decision is ready to publish',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}
 	}//end markCaseReady()

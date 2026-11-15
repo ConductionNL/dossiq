@@ -40,10 +40,8 @@ import { pageWidgets } from './helpers/pageViews.js'
 const ROOT = path.resolve(__dirname, '../..')
 const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
 
-const CELL_WIDGETS_PATH = path.join(ROOT, 'src', 'services', 'cellWidgets.js')
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
-const cellWidgetsSource = fs.readFileSync(CELL_WIDGETS_PATH, 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const bulkActionsSource = fs.readFileSync(
 	path.join(ROOT, 'src', 'utils', 'caseBulkActions.js'),
@@ -182,6 +180,10 @@ const CASE_LENSES = [
 	// what this case is waiting on before it can move.
 	'Awaiting payment',
 	'Stuck',
+	// The cases whose term stands still (DqZaken "Opgeschort"): a term clock of
+	// the case is paused under Awb 4:5. Last, because it is the newest lens and
+	// the full structure shows only the first four.
+	'Suspended',
 ]
 
 /**
@@ -222,11 +224,23 @@ const CASES_ONLY = [
 	// payment of its own and nothing on the Tasks list could answer this.
 	'Awaiting payment',
 	'Stuck',
+	// A pause belongs to a case's term; a task has no term of its own to pause.
+	'Suspended',
 ]
 
 describe('Cases index lenses', () => {
 	it('declares the seventeen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
+	})
+
+	it('narrows Suspended on a paused term of the open case, through the term rows that point at it', () => {
+		const suspended = chip('Cases', 'Suspended')
+		expect(suspended.filter).toEqual({
+			'_related[deadlineInstance][case][status]': 'paused',
+			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
+		})
 	})
 
 	it('shows four chips and hands the rest to the overflow chip', () => {
@@ -604,10 +618,10 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(routeQuery(tile)).toEqual(asQuery(chip('Cases', 'Overdue').filter))
 	})
 
-	it('the Deadlines table carries its own, wider window', () => {
-		// Not the chip's filter: this table also lists what is due within
-		// three days, so landing on overdue-only would show fewer cases than
-		// the table just listed. What must hold is that the filter survives
+	it('the deadline signals table carries its own, wider window', () => {
+		// Not the chip's filter: this table also lists cases in the last
+		// quarter of their term, so landing on overdue-only would show fewer
+		// cases than the table just listed. What must hold is that the filter survives
 		// the trip at all (triage item 4) and reaches the page as a flat
 		// bracket key rather than a JSON-stringified object.
 		const table = dashboardWidgets().deadlines
@@ -616,7 +630,7 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(table.content.viewAllRoute.name).toBe('Cases')
 		expect(query).toEqual(asQuery(flattenFilter(table.content.source.filter)))
 		expect(query.isFinalStatus).toBe('false')
-		expect(Object.keys(query)).toContain('deadline[lte]')
+		expect(Object.keys(query)).toContain('termSignalFrom[lte]')
 	})
 })
 
@@ -683,8 +697,8 @@ describe('the Deadline column', () => {
 		}
 	})
 
-	it('no longer names an app cell widget for the deadline', () => {
-		expect(cellWidgetsSource).not.toMatch(/deadlineCountdown/)
+	it('names no app cell widget, so the library draws it', () => {
+		expect(fs.existsSync(path.join(ROOT, 'src', 'services', 'cellWidgets.js'))).toBe(false)
 	})
 
 	it('sorts on the stored deadline, not on the rendered text', () => {
@@ -707,13 +721,14 @@ describe('bulk actions on the Cases index', () => {
 	 */
 	const actions = () => page('Cases').config.bulkActions
 
-	it('offers reassign plus the four lifecycle gestures', () => {
+	it('offers reassign, the four lifecycle gestures and the anonymised export', () => {
 		expect(actions().map((action) => action.id)).toEqual([
 			'reassign',
 			'transition',
 			'suspend',
 			'resume',
 			'extend-term',
+			'export-anonymised',
 		])
 	})
 
@@ -803,7 +818,7 @@ describe('what this change does NOT move', () => {
 			// in map view, and `/map` redirects there.
 			'Settings',
 			'Documentation',
-			'Store',
+			'Marketplace',
 			'Map layers',
 			'Woo refusal grounds',
 			'Case types',
@@ -811,7 +826,7 @@ describe('what this change does NOT move', () => {
 			// attribute catalogue, beside the case types it files for. It
 			// spends no top-level slot either, because it carries
 			// `section: "settings"` like `Case types` and `Flows` do.
-			'Attributes',
+			'Attributes (catalogue)',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',
@@ -826,10 +841,8 @@ describe('what this change does NOT move', () => {
 			'Offline sync conflicts',
 			'Needs assessments',
 			'Multidisciplinary consultations',
-			'Re-integration pathways',
 			'Supplier portal accounts',
 			'Data breach register',
-			'Substitutions & reassignment',
 			'Integrations',
 			'Features & roadmap',
 			'Processing activities (AVG)',

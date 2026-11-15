@@ -13,11 +13,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StatusTypePaletteInterface;
+use OCA\Dossiq\Repair\Support\RepairSchema;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\StatusTypePalette;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -35,11 +36,10 @@ use Throwable;
  * chose stays. It runs once per version behind a persisted key, and a row that
  * cannot be written is named and left for the next run.
  *
- * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+ * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
  */
 class RecolourShippedStatusTypes implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
 
 	/**
 	 * The app-config key that records the step has run.
@@ -64,15 +64,15 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService OpenRegister access and the configured register.
+	 * @param SettingsServiceInterface   $settingsService OpenRegister access and the configured register.
 	 * @param IAppConfig        $appConfig       The version gate.
-	 * @param StatusTypePalette $palette         The board colour per status.
+	 * @param StatusTypePaletteInterface $palette         The board colour per status.
 	 * @param LoggerInterface   $logger          Where each row is named.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppConfig $appConfig,
-		private readonly StatusTypePalette $palette,
+		private readonly StatusTypePaletteInterface $palette,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -82,7 +82,7 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
 	 */
 	public function getName(): string {
 		return 'Give the statuses Dossiq ships the colour their boards draw';
@@ -95,25 +95,23 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::DONE_VERSION) {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('status_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'status_type_schema');
+		if ($target === null) {
 			$output->info('Dossiq status colours: OpenRegister or the status type schema is unavailable; nothing recoloured.');
 			return;
 		}
 
 		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $register, $schema, $output): void {
-				$this->recolour(objectService: $objectService, register: $register, schema: $schema, output: $output);
+			objectService: $target->objectService,
+			work: function () use ($target, $output): void {
+				$this->recolour(target: $target, output: $output);
 			}
 		);
 	}//end run()
@@ -121,63 +119,94 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	/**
 	 * Walk every status type and recolour the shipped ones that still hold a shipped colour.
 	 *
-	 * @param object  $objectService OpenRegister's object service.
-	 * @param string  $register      The register.
-	 * @param string  $schema        The status type schema.
-	 * @param IOutput $output        The upgrade output.
+	 * @param RepairSchema $target The schema it walks.
+	 * @param IOutput      $output The upgrade output.
 	 *
 	 * @return void
 	 */
-	private function recolour(object $objectService, string $register, string $schema, IOutput $output): void {
-		$changed = 0;
-		$failed = 0;
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				$self = ($row['@self'] ?? []);
-				if (is_array($self) === false || ($self['owner'] ?? null) !== self::SYSTEM_OWNER) {
-					continue;
-				}
-
-				$colour = $this->palette->recolour(row: $row);
-				$rowId = (string)($row['id'] ?? ($self['id'] ?? ''));
-				if ($colour === null || $rowId === '') {
-					continue;
-				}
-
-				try {
-					$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $rowId, changes: ['colour' => $colour]);
-				} catch (Throwable $e) {
-					$failed++;
-					$this->logger->warning(
-						'Dossiq status colours: status ' . $rowId . ' could not be recoloured and keeps its colour until the next run',
-						['app' => Application::APP_ID, 'error' => $e->getMessage()],
-					);
-					continue;
-				}
-
-				$changed++;
-				$this->logger->info(
-					sprintf('Dossiq status colours: status %s (%s) is now %s', $rowId, (string)($row['name'] ?? ''), $colour),
-					['app' => Application::APP_ID],
-				);
-			}//end foreach
-
-			$page++;
-		}//end while
-
-		if ($failed === 0) {
-			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+	private function recolour(RepairSchema $target, IOutput $output): void {
+		$tally = ['changed' => 0, 'failed' => 0, 'skipped' => 0];
+		foreach ($target->rows(pageSize: self::PAGE_SIZE) as $row) {
+			$tally[$this->recolourOne(target: $target, row: $row)]++;
 		}
 
-		$output->info('Dossiq status colours: ' . $changed . ' shipped status(es) took their board colour, ' . $failed . ' left for the next run.');
+		if ($tally['failed'] === 0) {
+			$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::DONE_VERSION);
+		}
+
+		$output->info('Dossiq status colours: ' . $tally['changed'] . ' shipped status(es) took their board colour, '
+			. $tally['failed'] . ' left for the next run.');
 	}//end recolour()
+
+	/**
+	 * Give one shipped status type its board colour.
+	 *
+	 * @param RepairSchema         $target The schema it walks.
+	 * @param array<string, mixed> $row    One stored row.
+	 *
+	 * @return string 'changed', 'failed' (logged, and left for the next run) or 'skipped'.
+	 */
+	private function recolourOne(RepairSchema $target, array $row): string {
+		$recolour = $this->boardColour(row: $row);
+		if ($recolour === null) {
+			return 'skipped';
+		}
+
+		[$rowId, $colour] = $recolour;
+		if ($this->patchColour(target: $target, recolour: $recolour) === false) {
+			return 'failed';
+		}
+
+		$this->logger->info(
+			sprintf('Dossiq status colours: status %s (%s) is now %s', $rowId, (string)($row['name'] ?? ''), $colour),
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return 'changed';
+	}//end recolourOne()
+
+	/**
+	 * The id and board colour of a system-owned row that should change colour.
+	 *
+	 * @param array<string, mixed> $row One stored row.
+	 *
+	 * @return array{0: string, 1: string}|null The row id and its colour, null when it is skipped.
+	 */
+	private function boardColour(array $row): array|null {
+		$self = ($row['@self'] ?? []);
+		if (is_array($self) === false || ($self['owner'] ?? null) !== self::SYSTEM_OWNER) {
+			return null;
+		}
+
+		$colour = $this->palette->recolour(row: $row);
+		$rowId = (string)($row['id'] ?? ($self['id'] ?? ''));
+		if ($colour === null || $rowId === '') {
+			return null;
+		}
+
+		return [$rowId, $colour];
+	}//end boardColour()
+
+	/**
+	 * Write the colour on one row, logging when it fails.
+	 *
+	 * @param RepairSchema                $target   The schema it walks.
+	 * @param array{0: string, 1: string} $recolour The row id and the board colour.
+	 *
+	 * @return bool False when the write failed.
+	 */
+	private function patchColour(RepairSchema $target, array $recolour): bool {
+		[$rowId, $colour] = $recolour;
+		try {
+			$target->patch(id: $rowId, changes: ['colour' => $colour]);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq status colours: status ' . $rowId . ' could not be recoloured and keeps its colour until the next run',
+				['app' => AppIdentity::APP_ID, 'error' => $e->getMessage()],
+			);
+			return false;
+		}
+
+		return true;
+	}//end patchColour()
 }//end class

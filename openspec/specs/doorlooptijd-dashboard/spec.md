@@ -49,7 +49,7 @@ The doorlooptijd dashboard SHALL display a breakdown of SLA compliance per case 
 
 @e2e exclude Compliance breakdown by case type requires completed cases with specific case types and processingDeadline; V1 data-dependent chart/table scenarios not testable without pre-seeded data.
 
-#### Scenario: Compliance by case type with donut chart
+#### Scenario: Compliance by case type as a list of percentages
 - **WHEN** the user views the doorlooptijd dashboard
 - **AND** case type "Vergunning" has 40 completed cases, 35 within SLA
 - **AND** case type "Bezwaar" has 30 completed cases, 20 within SLA
@@ -59,12 +59,12 @@ The doorlooptijd dashboard SHALL display a breakdown of SLA compliance per case 
   - Within-SLA count and percentage
   - Average actual processing days
   - Target processing days (from `processingDeadline`)
-- **AND** the system MUST display a donut chart showing the proportion of within-SLA vs overdue cases per case type
+- **AND** the system MUST display "Naleving per zaaktype" as board DqDoorlooptijd draws it: a list with one row per case type, its name and its within-SLA percentage ("Omgevingsvergunning 50 %"), not a donut chart
 
 #### Scenario: Case type with zero completed cases
 - **WHEN** a case type has zero completed cases in the selected date range
 - **THEN** the system MUST show that case type in the table with "—" for compliance metrics
-- **AND** the system MUST NOT include it in the donut chart
+- **AND** the system MUST NOT include it in the Naleving per zaaktype list
 
 ### Requirement: Processing time distribution chart [V1]
 
@@ -188,7 +188,7 @@ The doorlooptijd page SHALL mount and render its page shell on navigation
 (`DoorlooptijdDashboard.vue`, route `/doorlooptijd`), independently of whether
 case data is present. The dashboard SHALL be composed of focused sub-components
 under `src/views/doorlooptijd/components/` — a KPI strip (`DeadlineKpiRow`), the
-chart cluster (`ComplianceCharts`: SLA-by-case-type donut, processing-time
+chart cluster (`ComplianceCharts`: the SLA-by-case-type list, processing-time
 histogram, monthly compliance trend, weekly throughput), the at-risk deadline
 list (`DeadlineCaseTable`), and the per-case-type breakdown table
 (`CaseTypeBreakdown`) — each receiving already-aggregated data as props from the
@@ -273,8 +273,8 @@ Dwell SHALL be reported per phase and per assignee.
 
 - **GIVEN** the Process mining page
 - **WHEN** you read the dwell table
-- **THEN** the headline column SHALL be titled Working hours
-- **AND** a second column SHALL be titled Wall-clock hours
+- **THEN** the headline column SHALL be titled "Werkuren" (en "Working hours")
+- **AND** a second column SHALL be titled "Klokuren" (en "Wall-clock hours"), as board DqProcesanalyse draws them
 
 #### Scenario: Per assignee
 @e2e tests/e2e/dwell-time-clock.spec.ts
@@ -314,3 +314,17 @@ rather than computing a second set.
 - **WHEN** the process mining page and the case are read
 - **THEN** the per-status totals SHALL be identical
 - **AND** both SHALL be counted on the working calendar
+
+### Requirement: The processing-time averages can be grouped per week, month, quarter or year
+
+The metrics endpoint SHALL accept `granularity` of `week`, `month`, `quarter` or `year` (default `month`) and SHALL
+group the averages in `summary.monthlyAvgDays` by it over the period window, oldest group first and today's group last,
+labelled `YYYY-Www`, `YYYY-MM`, `YYYY-Qn` or `YYYY`, naming the grouping in `summary.granularity`. Any other value SHALL
+be refused with 400. The processing-time page SHALL offer Maand, Kwartaal and Jaar as the grouping, open on Maand, and
+keep the one-year window.
+
+#### Scenario: A year per quarter
+
+- **GIVEN** cases closed in February, July and September 2026, read on 16 October 2026
+- **WHEN** the metrics are read with `granularity=quarter`
+- **THEN** the groups are 2025-Q4 to 2026-Q4, with the averages in Q1 and Q3

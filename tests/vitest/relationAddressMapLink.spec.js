@@ -25,6 +25,7 @@ describe('the address card on a relation page', () => {
 		expect(card.content.link).toEqual({
 			label: 'Cases on the map',
 			route: { name: 'Cases', query: { _view: 'map', requester: '@objectId' } },
+			icon: 'MapMarkerOutline',
 		})
 	})
 })

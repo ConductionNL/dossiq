@@ -8,7 +8,7 @@
  * an administrator holds them all. A page, menu entry or page tab declaring a
  * role is hidden from everybody else.
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 
 import fs from 'fs'
@@ -84,7 +84,7 @@ describe('the pages the roles open', () => {
 		expect(tab.permission).toBe('privacy')
 	})
 
-	it.each(['Indicatiestellingen', 'MdoOverleggen', 'ReIntegratieTrajecten'])(
+	it.each(['Indicatiestellingen', 'MdoOverleggen'])(
 		'opens %s to the social-domain staff',
 		(id) => {
 			expect(page(id).permission).toBe('sociaal-domein')

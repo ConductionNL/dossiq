@@ -7,7 +7,7 @@
  * case is looked up once per page load; the answer lands in a reactive map,
  * so the line that asked re-renders with it.
  *
- * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
+ * @spec openspec/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
  */
 
 import axios from '@nextcloud/axios'
@@ -23,7 +23,7 @@ const started = new Set()
  *
  * @param {unknown} caseId The case's id.
  * @return {string} The address text.
- * @spec openspec/changes/zakenkaart-map-list/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
+ * @spec openspec/specs/zakenkaart-map-list/spec.md#requirement-a-map-list-row-reads-address-case-number-and-names-its-type-and-status
  */
 export function caseAddress(caseId) {
 	if (typeof caseId !== 'string' || caseId === '') {

@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-lindelaan-in-progress/specs/example-set-lindelaan-in-progress/spec.md#requirement-the-premature-notice-of-default-sits-on-kapvergunning-molenweg-4
+ * @spec openspec/specs/example-set-lindelaan-in-progress/spec.md#requirement-the-premature-notice-of-default-sits-on-kapvergunning-molenweg-4
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The premature notice: on Molenweg 4, inside a running term.
  *
- * @spec openspec/changes/example-set-lindelaan-in-progress/specs/example-set-lindelaan-in-progress/spec.md#requirement-the-premature-notice-of-default-sits-on-kapvergunning-molenweg-4
+ * @spec openspec/specs/example-set-lindelaan-in-progress/spec.md#requirement-the-premature-notice-of-default-sits-on-kapvergunning-molenweg-4
  */
 class ZuiddrechtPrematureNoticeOfDefaultTest extends TestCase {
 

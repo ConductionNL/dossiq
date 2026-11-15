@@ -1359,6 +1359,7 @@
         "SLA": "SLA",
         "SLA Compliance": "Conformitad SLA",
         "SLA Compliance %": "Conformitad SLA %",
+        "SLA Compliance %%": "Conformitad SLA %%",
         "SLA Target: {days}d": "Finamira SLA: {days}d",
         "SLA adherence and processing time analysis": "Observanza dal SLA ed analisa dal temp da tractament",
         "SLA breaches": "Violaziuns dal SLA",

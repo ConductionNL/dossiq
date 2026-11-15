@@ -85,7 +85,7 @@ describe('sibling leaves on the case page', () => {
 		expect(caseDetail.config.schema).toBe('case')
 	})
 
-	// @spec openspec/changes/case-linked-card/specs/case-linked-card/spec.md#requirement-the-case-page-lists-its-links-in-one-side-card
+	// @spec openspec/specs/case-linked-card/spec.md#requirement-the-case-page-lists-its-links-in-one-side-card
 	it('lists planninq-projects in the Linked side card, not as a grid widget', () => {
 		expect(
 			allWidgets().filter((w) => w.integrationId === 'planninq-projects'),

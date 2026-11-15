@@ -4,6 +4,7 @@
     {
       "slug": "complaints",
       "name": "Complaints",
+      "description": "Case type complaint handling",
       "caseTypeIdentifier": "klacht-behandeling"
     }
   ]

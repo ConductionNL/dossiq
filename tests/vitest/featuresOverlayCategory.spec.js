@@ -11,7 +11,7 @@
  * in the overlay, the shared generator (ConductionNL/.github
  * scripts/extract-features.py) writes it on every run.
  *
- * @spec openspec/changes/features-overlay-category/specs/features-overlay-category/spec.md#requirement-the-overlay-carries-each-features-category
+ * @spec openspec/specs/features-overlay-category/spec.md#requirement-the-overlay-carries-each-features-category
  */
 
 import fs from 'fs'

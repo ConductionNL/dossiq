@@ -37,13 +37,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\KpiSources;
 use OCA\Dossiq\Service\KpiAggregationService;
 use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Team\PrimaryTeamService;
+use OCA\Dossiq\Service\Team\ReaderTeamCases;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IL10N;
+use OCP\IUser;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -212,6 +217,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		$this->assertSame(0, $kpis['openCount']);
 		$this->assertNull($kpis['avgProcessingDays']);
 		$this->assertSame([], $kpis['statusBreakdown']);
+		$this->assertSame(expected: 'the oldest case in the queue', actual: $kpis['queueOldestNote']);
 	}
 
 	/**
@@ -228,6 +234,29 @@ final class KpiAggregationServiceTest extends TestCase {
 			'the breakdown groups by status, most frequent first.'
 		);
 	}
+
+	/**
+	 * The queue figures count the reader's teams only, as the team queue list
+	 * and its menu badge do; a reader in no team counts every case, as the list
+	 * drops its team filter then.
+	 *
+	 * @return void
+	 */
+	public function testQueueFiguresCountTheReadersTeamsOnly(): void {
+		$rows = [
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'woo', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'vergunningen', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'handhaving', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => 'pieter', 'assignedGroup' => 'woo', 'startDate' => $this->today],
+		];
+		$teams = [['groupId' => 'woo', 'name' => 'Woo'], ['groupId' => 'vergunningen', 'name' => 'Vergunningen']];
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows), teams: $teams)->computeKpis('pieter');
+		$this->assertSame(2, $kpis['queueCount'], 'only the unassigned cases of the reader\'s two teams.');
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows), teams: [])->computeKpis('pieter');
+		$this->assertSame(3, $kpis['queueCount'], 'a reader in no team counts every unassigned case, as the list.');
+	}//end testQueueFiguresCountTheReadersTeamsOnly()
 
 	/**
 	 * The queue figures count the open cases without a handler, and group every open case by type.
@@ -249,6 +278,11 @@ final class KpiAggregationServiceTest extends TestCase {
 		$this->assertSame(1, $kpis['queueNewToday']);
 		$this->assertSame(2, $kpis['queueDueSoon'], 'due today and due in four days fall in the coming week.');
 		$this->assertSame(6, $kpis['queueOldestDays'], 'the oldest case IN the queue, not the oldest open case.');
+		$this->assertSame(
+			expected: 'Woo-verzoek, deadline in 4 days',
+			actual: $kpis['queueOldestNote'],
+			message: 'DqTeamwachtrij: the oldest case\'s type and the days to its deadline.'
+		);
 		$this->assertSame(
 			[
 				['caseType' => 'woo', 'title' => 'Woo-verzoek', 'open' => 3, 'waiting' => 2],
@@ -332,6 +366,8 @@ final class KpiAggregationServiceTest extends TestCase {
 		$closed = [
 			['startDate' => '2026-09-01', 'endDate' => '2026-09-11', 'deadline' => '2026-09-30'],
 			['startDate' => 'not-a-date', 'endDate' => 'also-not-a-date'],
+			['startDate' => 'not-a-date', 'endDate' => '2026-09-05'],
+			['startDate' => '2026-09-01', 'endDate' => 'not-a-date'],
 			['endDate' => '2026-09-05'],
 		];
 
@@ -451,6 +487,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		bool $openRegisterInstalled = true,
 		bool $containerThrows = false,
 		array $engineTaskCounts = [23, 2],
+		?array $teams = null,
 	): KpiAggregationService {
 		$objectService = ($objectService ?? $this->objectService(closedCases: $closedCases));
 
@@ -501,9 +538,37 @@ final class KpiAggregationServiceTest extends TestCase {
 		// The app catalogue: the month names are keys, so an identity
 		// translator is the English reader's view.
 		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters)
+		);
+		$l10n->method('n')->willReturnCallback(
+			static function (string $one, string $many, int $count, array $parameters = []): string {
+				$text = $many;
+				if ($count === 1) {
+					$text = $one;
+				}
 
-		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(new DayCount()), $l10n, new NullLogger());
+				return vsprintf(str_replace('%n', (string)$count, $text), $parameters);
+			}
+		);
+
+		$teamCases = null;
+		if ($teams !== null) {
+			$teamService = $this->createMock(PrimaryTeamService::class);
+			$teamService->method('teamsOf')->willReturn($teams);
+			$users = $this->createMock(IUserManager::class);
+			$users->method('get')->willReturn($this->createMock(IUser::class));
+			$teamCases = new ReaderTeamCases(teams: $teamService, users: $users);
+		}
+
+		return new KpiAggregationService(
+			appConfig: $appConfig,
+			container: $container,
+			appManager: $appManager,
+			sources: new KpiSources(engineTasks: $engineTasks, queueFigures: new QueueFigures(dayCount: new DayCount(), teamCases: $teamCases)),
+			l10n: $l10n,
+			logger: new NullLogger(),
+		);
 	}
 
 	/**
@@ -733,5 +798,20 @@ final class KpiAggregationServiceTest extends TestCase {
 				return ['results' => $rows];
 			}
 		};
+	}
+	/**
+	 * The KPI contract answers every key in one order: the queue figures first.
+	 *
+	 * @return void
+	 */
+	public function testTheKpisAnswerEveryKeyInOrder(): void {
+		$keys = array_keys($this->service()->computeKpis('admin'));
+		$tail = [
+			'queueOldestNote', 'openCount', 'newToday', 'overdueCount', 'completedCount',
+			'myCompletedCount', 'myCompletedLastMonth', 'thisMonthName', 'lastMonthName',
+			'taskCount', 'tasksDueToday', 'statusBreakdown', 'typeBreakdown', 'avgProcessingDays', 'slaCompliance',
+		];
+		$this->assertSame($tail, array_slice($keys, -count($tail)));
+		$this->assertContains('queueOldestType', array_slice($keys, 0, -count($tail)));
 	}
 }

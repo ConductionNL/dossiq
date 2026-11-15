@@ -131,7 +131,7 @@ test.describe('configurable-queue-urgency', () => {
 
 	// @e2e openspec/specs/werkvoorraad-intelligent-queue/spec.md#scenario-urgency-is-the-default-sort
 	test('Urgency is the default, and it ranks by the score', async ({ page }) => {
-		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view to select its sort option: openspec/changes/lists-are-views/restore.md section 2')
+		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view to select its sort option: openspec/changes/archive/2026-10-30-lists-are-views/restore.md section 2')
 		await openMyWork(page)
 		await expectSort(page, 'Urgency')
 
@@ -159,7 +159,7 @@ test.describe('configurable-queue-urgency', () => {
 	test('every seeded card carries a pill, and the normal tier is no coloured chip', async ({
 		page,
 	}) => {
-		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view card layout: openspec/changes/lists-are-views/restore.md section 2')
+		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs the view card layout: openspec/changes/archive/2026-10-30-lists-are-views/restore.md section 2')
 		await openMyWork(page)
 
 		// The seeded type's own term decides the tier, so the pill text is read

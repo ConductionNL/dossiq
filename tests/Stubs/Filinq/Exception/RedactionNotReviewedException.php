@@ -18,7 +18,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://www.filinq.app
  *
- * @spec openspec/changes/redaction-and-what-leaves-the-building/specs/redaction-output-guarantee/spec.md
+ * @spec exclude test stub of filinq's class; the requirement lives in ConductionNL/filinq (redaction-output-guarantee)
  */
 
 declare(strict_types=1);

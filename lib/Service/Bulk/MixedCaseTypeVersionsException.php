@@ -31,7 +31,7 @@ use RuntimeException;
  * refusal a handler reads has to name both: "these are on version 2 and these
  * on version 3" is actionable, "mixed versions" is not (D-4).
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class MixedCaseTypeVersionsException extends RuntimeException {
 
@@ -44,7 +44,7 @@ class MixedCaseTypeVersionsException extends RuntimeException {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly string $caseTypeTitle,
@@ -59,7 +59,7 @@ class MixedCaseTypeVersionsException extends RuntimeException {
 	 *
 	 * @return string The title.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getCaseTypeTitle(): string {
 		return $this->caseTypeTitle;
@@ -70,7 +70,7 @@ class MixedCaseTypeVersionsException extends RuntimeException {
 	 *
 	 * @return array<int, int> The versions, ascending.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getVersions(): array {
 		return $this->versions;
@@ -86,7 +86,7 @@ class MixedCaseTypeVersionsException extends RuntimeException {
 	 *
 	 * @return array<array-key, int> Version to count.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getCounts(): array {
 		return $this->counts;

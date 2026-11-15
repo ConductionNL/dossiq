@@ -624,7 +624,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	test.setTimeout(120_000)
 
 	// Uncited on purpose: see the note above this describe.
-	test('the tour a user actually gets includes the Case types and Flows stops', async ({
+	test('the tour a user actually gets has the six stops of board DqRondleiding', async ({
 		page,
 	}) => {
 		// Asserted against the SERVED BUNDLE, not the manifest on disk: the tour
@@ -636,7 +636,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		const bundle = await mainBundleSource(page)
 		expect(bundle.length, 'could not fetch the app bundle').toBeGreaterThan(1000)
 
-		for (const id of ['see-case-types', 'see-flows']) {
+		for (const id of ['welcome', 'go-dashboard', 'go-cases', 'go-tasks', 'see-case-types', 'done']) {
 			expect(
 				bundle,
 				`walkthrough step "${id}" missing from the built bundle`,
@@ -645,12 +645,11 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	})
 
 	// Uncited on purpose: see the note above this describe.
-	test('the tour opens for a user who has not seen it, and offers all seven steps', async ({
+	test('the tour opens for a user who has not seen it, and offers all six steps', async ({
 		page,
 	}) => {
-		// The step COUNT is the user-visible consequence of adding the two
-		// stops: it cannot read 7 unless both are in the tour the shell
-		// composed.
+		// The step COUNT is the user-visible consequence of the board's six
+		// steps: it cannot read 6 unless the shell composed that tour.
 		//
 		// NOT `test.skip` on "the tour isn't showing": that reads "this user
 		// already finished it" off the tour's ABSENCE, which is the same
@@ -671,7 +670,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 			.getByRole('dialog')
 			.filter({ hasText: 'Welcome to Dossiq' })
 		if (await tour.isVisible({ timeout: 20000 }).catch(() => false)) {
-			await expect(tour).toContainText('/ 7')
+			await expect(tour).toContainText('/ 6')
 			return
 		}
 
@@ -715,59 +714,19 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	})
 
 	// Uncited on purpose: see the note above this describe.
-	test('neither new stop forces the user to create anything', async ({ page }) => {
-		// "Show where, do not force" is the whole point of both steps. A tour
-		// step that only advances on `object-created` would make looking at the
-		// case types a prerequisite for finishing the tour.
-		await page.goto('/index.php/apps/dossiq')
-		const bundle = await mainBundleSource(page)
-		expect(bundle.length, 'could not fetch the app bundle').toBeGreaterThan(1000)
-
-		for (const id of ['see-case-types', 'see-flows']) {
-			// The step object is emitted as one contiguous run in the bundle;
-			// take a window around its id and check what it advances on.
-			const at = bundle.indexOf(id)
-			expect(at).toBeGreaterThan(-1)
-			const window = bundle.slice(at, at + 1200)
-			expect(window, `${id} must offer a manual way past`).toContain(
-				'allowManualNext',
-			)
-			expect(window, `${id} must not require creating one`).not.toContain(
-				'object-created',
-			)
-		}
-	})
-
-	// Uncited on purpose: see the note above this describe.
-	test('both new stops can actually anchor to their nav item', async ({
+	test('every menu stop can actually anchor to its nav item', async ({
 		page,
 	}) => {
-		// The three tests above prove the steps are DECLARED and reach the
-		// built bundle. None of them proves a user ever sees one, and the
-		// difference is not academic:
-		//
-		//   CnWalkthrough.armStep()
-		//     const el = this.resolveTarget(this.step)
-		//     if (!el) { if (this.step.optional) { this.wt.skip(); return } }
-		//
-		// An OPTIONAL step whose target is absent is skipped outright — no
-		// console error, no stall, nothing on screen. And `optional: true` is
-		// exactly what keeps these two stops from forcing authorship, so the
-		// friendly authoring choice is the one that fails silently. The step
-		// counter is no help either: skip() advances past the step and the
-		// total stays 7, so "/ 7" reads identical either way.
-		//
-		// So assert the thing resolveTarget() actually queries. Both stops
-		// target nav items in the SETTINGS section, and CnAppNav emitted
-		// `data-cn-route` on its main/child/footer loops but not the settings
-		// one until nextcloud-vue#811 — which is precisely how both steps
-		// could ship fleet-wide and reach nobody.
+		// The tests above prove the steps are DECLARED and reach the built
+		// bundle; this one proves each menu stop has the anchor
+		// CnWalkthrough.resolveTarget() queries. Case types sits in the
+		// SETTINGS section, which CnAppNav only anchors since nextcloud-vue#811.
 		await page.goto('/index.php/apps/dossiq')
 		await expect(page.locator('.app-navigation, #app-navigation')).toBeVisible({
 			timeout: 20000,
 		})
 
-		for (const route of ['CaseTypes', 'Flows']) {
+		for (const route of ['Dashboard', 'Cases', 'Tasks', 'CaseTypes']) {
 			// The exact selector from CnWalkthrough.resolveTarget(), keyed on
 			// the ROUTE (not the menu id — the attribute is set from
 			// `item.route`).

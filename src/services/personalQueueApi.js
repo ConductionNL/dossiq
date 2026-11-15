@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 import axios from '@nextcloud/axios'
@@ -24,7 +24,7 @@ const BASE = '/apps/dossiq/api/personal-queue'
  * @param {string} groupBy One of source, priority, due.
  * @return {Promise<string>} The grouping now stored.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 export async function saveGrouping(groupBy) {
 	const { data } = await axios.post(generateUrl(`${BASE}/grouping`), { groupBy })
@@ -38,7 +38,7 @@ export async function saveGrouping(groupBy) {
  * @param {string} caseId The case.
  * @return {Promise<string>} The stage, or an empty string.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 export async function fetchPersonalStage(caseId) {
 	const { data } = await axios.get(
@@ -55,7 +55,7 @@ export async function fetchPersonalStage(caseId) {
  * @param {string} stage The stage, or an empty string to clear it.
  * @return {Promise<string>} The stage now stored.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 export async function savePersonalStage(caseId, stage) {
 	const { data } = await axios.post(
@@ -66,43 +66,3 @@ export async function savePersonalStage(caseId, stage) {
 	return String(data?.stage ?? '')
 }
 
-/**
- * When the reader wants their digest.
- *
- * @return {Promise<{enabled: boolean, hour: number}>} The settings.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function fetchDigestSettings() {
-	const { data } = await axios.get(generateUrl(`${BASE}/digest`))
-
-	return {
-		enabled: data?.enabled !== false,
-		hour: Number(data?.hour ?? 8),
-		source: String(data?.source ?? 'dossiq'),
-		scope: String(data?.scope ?? 'global'),
-	}
-}
-
-/**
- * Save when the reader wants their digest.
- *
- * @param {boolean} enabled Whether they want one.
- * @param {number} hour The hour they want it in.
- * @return {Promise<{enabled: boolean, hour: number}>} The settings now stored.
- *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
- */
-export async function saveDigestSettings(enabled, hour) {
-	const { data } = await axios.post(generateUrl(`${BASE}/digest`), {
-		enabled,
-		hour,
-	})
-
-	return {
-		enabled: data?.enabled !== false,
-		hour: Number(data?.hour ?? 8),
-		source: String(data?.source ?? 'dossiq'),
-		scope: String(data?.scope ?? 'global'),
-	}
-}

@@ -5,7 +5,7 @@
  * The case type page draws no Follow toggle (boards DqZaaktypeOverzicht,
  * DqZaaktype, DqZaaktypeVelden).
  *
- * @spec openspec/changes/case-type-page-no-follow/specs/case-type-page-no-follow/spec.md#requirement-the-case-type-page-has-no-follow-control
+ * @spec openspec/specs/case-type-page-no-follow/spec.md#requirement-the-case-type-page-has-no-follow-control
  */
 
 import fs from 'fs'

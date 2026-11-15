@@ -210,8 +210,11 @@ The system SHALL support creating and managing annual supervision plans.
   - Horeca: 40 inspections
   - Bouw: 60 inspections
   - Milieu: 50 inspections
+- **AND** by October 55 are completed and 8 are cancelled
 - **WHEN** the planner views the toezichtplan dashboard
 - **THEN** the system MUST show: planned vs. completed per category, capacity vs. demand, completion percentage
+- **AND** the totals MUST read planned 150, completed 55 (8 cancelled, 87 still to do) and completion 37%
+- **AND** capacity vs. demand MUST read 1,620 of 1,800 hours, a shortfall of 180 hours for the rest of the year
 - **AND** a progress bar per category MUST indicate completion: Horeca (15/40 = 38%), Bouw (22/60 = 37%), Milieu (18/50 = 36%)
 
 #### Scenario: Risk-based inspection scheduling
@@ -222,6 +225,7 @@ The system SHALL support creating and managing annual supervision plans.
 - **AND** medium-risk objects: annually
 - **AND** low-risk objects: every 2 years
 - **AND** the system SHOULD suggest an optimal inspection schedule based on available inspector capacity
+- **AND** with 1,620 hours available the suggestion reads: move 12 low-risk inspections to the first quarter of 2027, so every high-risk object stays on six months
 
 #### Scenario: Geographic clustering
 
@@ -229,14 +233,17 @@ The system SHALL support creating and managing annual supervision plans.
 - **WHEN** the planner views the inspection map
 - **THEN** inspections MUST be plottable on a map (using BAG coordinates)
 - **AND** the system SHOULD suggest geographic clusters for efficient routing
+- **AND** each suggested cluster MUST show its inspections, the days and inspectors it takes and the route length (three clusters: 8, 6 and 6 inspections)
+- **AND** an object without BAG coordinates MUST NOT be plotted and MUST head the list with a request to complete its address
 
 #### Scenario: Actual vs. planned tracking
 
-- **GIVEN** a toezichtplan with 40 planned horeca inspections for Q1
-- **AND** 25 have been completed, 5 have been cancelled
+- **GIVEN** a toezichtplan with 12 planned horeca inspections for Q4 2026
+- **AND** 4 have been completed, 1 has been cancelled
 - **WHEN** viewing the quarterly overview
-- **THEN** the system MUST show: planned (40), completed (25), cancelled (5), remaining (10)
+- **THEN** the system MUST show: planned (12), completed (4), cancelled (1), remaining (7)
 - **AND** a forecast MUST indicate whether the annual target is achievable at current pace
+- **AND** at 5.5 inspections a month the forecast MUST read that the plan ends at 66 of 150, and that 150 needs 48 a month until December
 
 ---
 

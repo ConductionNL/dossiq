@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Access\CaseRecordGrantsBackfill;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseRecordGrantsBackfillInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -50,7 +50,7 @@ class CaseReviewerAccessController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                 $request      The request.
-	 * @param CaseRecordGrantsBackfill $backfill     The walk over every declaring case.
+	 * @param CaseRecordGrantsBackfillInterface $backfill     The walk over every declaring case.
 	 * @param IUserSession             $userSession  The caller.
 	 * @param IGroupManager            $groupManager Whether the caller is an administrator.
 	 *
@@ -58,11 +58,11 @@ class CaseReviewerAccessController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseRecordGrantsBackfill $backfill,
+		private readonly CaseRecordGrantsBackfillInterface $backfill,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

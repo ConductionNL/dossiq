@@ -5,8 +5,8 @@
  *
  * Which of dossiq's role permissions the signed-in user holds, from their
  * Nextcloud groups: `privacy` for the privacy officers (data breaches) and
- * `sociaal-domein` for the social-domain staff (indications, case meetings,
- * re-integration trajectories). Admins and beheerders hold both, as they hold
+ * `sociaal-domein` for the social-domain staff (indications, case meetings).
+ * Admins and beheerders hold both, as they hold
  * the records in OpenRegister. The menu and the routes read these to hide what
  * the user cannot read; OpenRegister's schema authorization is what refuses.
  *
@@ -24,22 +24,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Kernel\Contracts\RolePermissionsInterface;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 
 /**
  * Maps group membership to the manifest's role permissions.
  *
- * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
-class RolePermissions {
+class RolePermissions implements RolePermissionsInterface {
 
 	/**
 	 * The privacy officers' group: reads and handles data breaches.
@@ -49,8 +50,8 @@ class RolePermissions {
 	public const PRIVACY_GROUP = 'dossiq-privacy';
 
 	/**
-	 * The social-domain staff's group: reads and writes indications, case
-	 * meetings and re-integration trajectories.
+	 * The social-domain staff's group: reads and writes indications and case
+	 * meetings, and handles the re-integration case type's cases.
 	 *
 	 * @var string
 	 */
@@ -90,7 +91,7 @@ class RolePermissions {
 	 *
 	 * @return array<int, string> The permissions, in a fixed order; empty when nobody is signed in.
 	 *
-	 * @spec openspec/changes/privacy-and-social-domain-groups/specs/admin-data-access/spec.md
+	 * @spec openspec/specs/admin-data-access/spec.md
 	 */
 	public function forCurrentUser(): array {
 		$user = $this->userSession->getUser();

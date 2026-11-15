@@ -22,13 +22,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Setup;
 
+use OCA\Dossiq\Kernel\Contracts\ActiveOrganisationProfileInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -37,23 +38,9 @@ use Throwable;
 /**
  * Reads and writes the active organisation's name and logo.
  *
- * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
-class ActiveOrganisationProfile {
-
-	/**
-	 * The wizard field that holds the organisation's name.
-	 *
-	 * @var string
-	 */
-	public const NAME_FIELD = 'organisation_name';
-
-	/**
-	 * The wizard field that holds the address of the organisation's logo.
-	 *
-	 * @var string
-	 */
-	public const LOGO_FIELD = 'organisation_logo';
+class ActiveOrganisationProfile implements ActiveOrganisationProfileInterface {
 
 	/**
 	 * Constructor.
@@ -74,7 +61,7 @@ class ActiveOrganisationProfile {
 	 *
 	 * @return array{available: bool, name: string, logo: string} `available` is false when there is no active organisation to read.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function read(): array {
 		$unavailable = ['available' => false, 'name' => '', 'logo' => ''];
@@ -105,7 +92,7 @@ class ActiveOrganisationProfile {
 	 *
 	 * @return bool True when settled.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function isSettled(): bool {
 		$profile = $this->read();
@@ -126,7 +113,7 @@ class ActiveOrganisationProfile {
 	 *
 	 * @return bool True when there was nothing to write or the write succeeded.
 	 *
-	 * @spec openspec/changes/setup-wizard-board-steps/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function write(array $fields): bool {
 		$name = trim((string)($fields[self::NAME_FIELD] ?? ''));
@@ -135,25 +122,12 @@ class ActiveOrganisationProfile {
 			return true;
 		}
 
-		if ($logo !== '' && $this->isWebAddress(url: $logo) === false) {
+		if ($this->isRefusedLogo(logo: $logo) === true) {
 			return false;
 		}
 
 		try {
-			$organisation = $this->active();
-			if ($organisation === null) {
-				return false;
-			}
-
-			if ($name !== '') {
-				$organisation->setName($name);
-			}
-
-			if ($logo !== '') {
-				$organisation->setImage($logo);
-			}
-
-			$this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper')->update($organisation);
+			$written = $this->writeOntoActive(name: $name, logo: $logo);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not save the organisation name or logo from the setup wizard',
@@ -162,8 +136,50 @@ class ActiveOrganisationProfile {
 			return false;
 		}
 
-		return true;
+		return $written;
 	}//end write()
+
+	/**
+	 * Whether a posted logo is refused: given, and not an http(s) URL.
+	 *
+	 * @param string $logo The trimmed logo address.
+	 *
+	 * @return bool True when the logo is refused.
+	 *
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 */
+	private function isRefusedLogo(string $logo): bool {
+		return ($logo !== '' && $this->isWebAddress(url: $logo) === false);
+	}//end isRefusedLogo()
+
+	/**
+	 * Write the non-blank name and logo onto the active organisation.
+	 *
+	 * @param string $name The trimmed name, or ''.
+	 * @param string $logo The trimmed logo address, or ''.
+	 *
+	 * @return bool False when there is no active organisation, else true.
+	 *
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 */
+	private function writeOntoActive(string $name, string $logo): bool {
+		$organisation = $this->active();
+		if ($organisation === null) {
+			return false;
+		}
+
+		if ($name !== '') {
+			$organisation->setName($name);
+		}
+
+		if ($logo !== '') {
+			$organisation->setImage($logo);
+		}
+
+		$this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper')->update($organisation);
+
+		return true;
+	}//end writeOntoActive()
 
 	/**
 	 * Whether a logo address is an http or https URL.

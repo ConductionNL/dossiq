@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The promise that you hear from us within so many days, kept or not, and by
@@ -222,11 +223,14 @@ final class FakeOutcomeObjectService {
 	 * @return array<string, mixed>|null The stored case.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		int|string|null $register = null,
-		int|string|null $schema = null,
+		ObjectPatch $patch,
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): ?array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		if (isset($this->cases[$objectId]) === false) {
 			return null;
 		}

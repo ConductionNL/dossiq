@@ -97,6 +97,48 @@ import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
+/**
+ * Whether the assessments of a case can be counted: a register, a schema and a case.
+ *
+ * @param {{register?: string, schema?: string}} source Where the assessments live.
+ * @param {string} caseId The case.
+ * @return {boolean} True when they can.
+ */
+function canCount(source, caseId) {
+	return Boolean(source.register) && Boolean(source.schema) && caseId !== ''
+}
+
+/**
+ * The assessment rows of one case.
+ *
+ * @param {{register: string, schema: string, caseField?: string}} source Where the assessments live.
+ * @param {string} caseId The case.
+ * @return {Promise<Array<object>>} The rows.
+ */
+async function readAssessedRows(source, caseId) {
+	const { data } = await axios.get(
+		generateUrl(`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`),
+		{ params: { [source.caseField || 'case']: caseId, _limit: 500 } },
+	)
+	return data?.results || []
+}
+
+/**
+ * How many rows carry each value of a field.
+ *
+ * @param {Array<object>} rows The rows.
+ * @param {string} field The field.
+ * @return {object} The count per value.
+ */
+function tallyBy(rows, field) {
+	const tally = {}
+	for (const row of rows) {
+		const value = String(row?.[field] ?? '')
+		tally[value] = (tally[value] ?? 0) + 1
+	}
+	return tally
+}
+
 export default {
 	name: 'CasePublishDialog',
 
@@ -222,21 +264,13 @@ export default {
 		 */
 		async loadCounts() {
 			const source = this.assessments || {}
-			if (!source.register || !source.schema || this.targetCaseId === '') {
+			if (!canCount(source, this.targetCaseId)) {
 				return
 			}
 			const field = source.classificationField || 'classification'
 			try {
-				const { data } = await axios.get(
-					generateUrl(`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`),
-					{ params: { [source.caseField || 'case']: this.targetCaseId, _limit: 500 } },
-				)
-				const tally = {}
-				for (const row of data?.results || []) {
-					const value = String(row?.[field] ?? '')
-					tally[value] = (tally[value] ?? 0) + 1
-				}
-				this.tally = tally
+				const rows = await readAssessedRows(source, this.targetCaseId)
+				this.tally = tallyBy(rows, field)
 			} catch {
 				this.countsError = t('dossiq', 'The number of documents per assessment could not be read.')
 			}

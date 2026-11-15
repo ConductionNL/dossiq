@@ -7,7 +7,6 @@
 		:registry="registry"
 		:pageTypes="pageTypes"
 		:formatters="formatters"
-		:cellWidgets="cellWidgets"
 		appId="dossiq"
 		:translate="translateForApp"
 		:notificationLabels="notificationLabels"
@@ -97,7 +96,7 @@ export default {
 		UserSettings,
 	},
 
-	/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+	/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 	provide() {
 		return {
 			// Provide/inject channel for index pages that auto-mount sidebar
@@ -141,18 +140,6 @@ export default {
 		 * pages (see src/services/formatters.js).
 		 */
 		formatters: {
-			type: Object,
-			default: () => ({}),
-		},
-
-		/**
-		 * Cell-widget registry — forwarded to CnAppRoot as `cnCellWidgets`.
-		 * Resolves `pages[].config.columns[].widget` ids to components on
-		 * index pages (see src/services/cellWidgets.js). A formatter shapes a
-		 * value; a cell widget is what a column needs when the cell carries a
-		 * STATE the reader has to see, such as an overdue deadline.
-		 */
-		cellWidgets: {
 			type: Object,
 			default: () => ({}),
 		},
@@ -204,7 +191,7 @@ export default {
 		 * the library's credentials, guided tour and integrations.
 		 *
 		 * @return {Array<string>} The section keys CnAppRoot draws.
-		 * @spec openspec/changes/views-in-my-menu-settings/specs/personal-settings-surface/spec.md#requirement-the-personal-settings-open-with-the-views-in-my-menu
+		 * @spec openspec/specs/personal-settings-surface/spec.md#requirement-the-personal-settings-open-with-the-views-in-my-menu
 		 */
 		userSettingsSections() {
 			return ['views', 'app', 'credentials', 'walkthrough', 'integrations']
@@ -258,7 +245,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 		permissions() {
 			// One source, shared with the router guard in `main.js`. It used
 			// to live here alone, and the router half of the same manifest
@@ -282,7 +269,7 @@ export default {
 		},
 	},
 
-	/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+	/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 	async created() {
 		// Pinia stores still need to come up so legacy custom components
 		// keep working through the manifest transition. CnAppRoot itself
@@ -337,7 +324,7 @@ export default {
 		 *
 		 * @param {string} key Translation key.
 		 * @return {string} Translated string (or the key on miss).
-		 * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
 		 */
 		translateForApp(key) {
 			return ncT('dossiq', key)

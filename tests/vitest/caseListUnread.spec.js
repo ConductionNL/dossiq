@@ -53,10 +53,6 @@ const manifest = JSON.parse(
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
-const cellWidgetsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
-	'utf8',
-)
 
 /**
  * One page out of the manifest, by id.
@@ -83,19 +79,6 @@ function action(list, id) {
 	return found
 }
 
-/**
- * The unread column of one index page.
- *
- * @param {string} id The page id.
- * @return {object} The column entry.
- */
-function unreadColumn(id) {
-	const found = page(id).config.columns.find(
-		(c) => typeof c === 'object' && c.key === '@self.unread',
-	)
-	expect(found, `${id} carries no unread column`).toBeTruthy()
-	return found
-}
 
 describe('the Unread lens on the Cases index', () => {
 	const chips = page('Cases').config.quickFilters
@@ -135,30 +118,19 @@ describe('the Unread lens on the Cases index', () => {
 
 })
 
-describe('the Unread column on both case lists', () => {
-	it('sits first on Cases', () => {
-		for (const id of ['Cases']) {
-			const first = page(id).config.columns[0]
-			expect(typeof first).toBe('object')
-			expect(first.key).toBe('@self.unread')
-		}
+describe('unread rows on the case lists', () => {
+	it('are marked by the library table on Cases, in the board look too', () => {
+		// CnDataTable reads `@self.unread`, draws the unread marker on the
+		// title cell and the row in bold. The board look marks them only on a
+		// page that asks, and the Cases page asks.
+		expect(page('Cases').config.showUnreadRows).toBe(true)
 	})
 
-	it('renders through a cell widget that is registered', () => {
-		for (const id of ['Cases']) {
-			expect(unreadColumn(id).widget).toBe('unreadIndicator')
-		}
-		expect(cellWidgetsSource).toMatch(
-			/\n\tunreadIndicator: UnreadIndicatorCell,\n/,
-		)
-		expect(cellWidgetsSource).toContain(
-			"import UnreadIndicatorCell from '../components/cells/UnreadIndicatorCell.vue'",
-		)
-	})
-
-	it('is not sortable, because there is no column to sort on', () => {
-		for (const id of ['Cases']) {
-			expect(unreadColumn(id).sortable).toBe(false)
+	it('carry no unread column of their own, which nothing could sort on', () => {
+		const layout = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.json'), 'utf8'))
+		const teamQueue = layout.pages.find((p) => p.id === 'Cases').configPatch.defaultSavedViews['team-queue'].overrides
+		for (const columns of [page('Cases').config.columns, teamQueue.columns]) {
+			expect(columns.find((c) => typeof c === 'object' && c.key === '@self.unread')).toBeUndefined()
 		}
 	})
 })

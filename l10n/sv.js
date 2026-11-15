@@ -1684,6 +1684,7 @@ OC.L10N.register(
         "SLA adherence and processing time analysis": "SLA-efterlevnad och analys av handläggningstid",
         "SLA Compliance": "SLA-efterlevnad",
         "SLA Compliance %": "SLA-efterlevnad %",
+        "SLA Compliance %%": "SLA-efterlevnad %%",
         "SLA override (days)": "SLA-åsidosättande (dagar)",
         "SLA Target: {days}d": "SLA-mål: {days}d",
         "Sloopmelding": "Rivningsanmälan",

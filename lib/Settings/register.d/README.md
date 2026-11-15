@@ -33,6 +33,9 @@ reasoning.
 - List (sequential-array) values from a fragment are **concatenated** onto the
   base list.
 - Scalar values from a fragment **overwrite** the base value.
+- Except a `version` (`1.29.0`): the **highest** of the base and the fragments
+  stays, whatever the file order. A schema's version is OpenRegister's import
+  gate, so a later fragment with a lower version must not lower it.
 
 ## Conventions
 

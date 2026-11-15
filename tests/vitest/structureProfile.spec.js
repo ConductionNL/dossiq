@@ -30,14 +30,12 @@ import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it, vi } from 'vitest'
-import { saveMenuStructure } from '../../src/services/menuStructureSetting.js'
 import {
 	applyPageOverlay,
 	buildProfiledManifest,
 	overlayItemName,
 	resolveStructureProfile,
 	STRUCTURE_FULL,
-	STRUCTURE_SETTING,
 	STRUCTURE_SIMPLE,
 } from '../../src/utils/structureProfile.js'
 
@@ -94,12 +92,12 @@ describe('the full profile', () => {
 		expect(views(built).filter((view) => view.slug !== 'team-queue')).toEqual(views(before).filter((view) => view.slug !== 'team-queue'))
 	})
 
-	it('keeps the Queue page it had as the team queue view: title, unread and priority columns, case type folders', () => {
+	it('keeps the Queue page it had as the team queue view: title and priority columns, case type folders', () => {
 		const views = build(fullFile).pages.find((page) => page.id === 'Cases').config.defaultSavedViews
 		const overrides = views.find((view) => view.slug === 'team-queue').overrides
 		expect(overrides.title).toBe('Queue')
 		expect(overrides.columns.map((column) => (typeof column === 'string' ? column : column.key))).toEqual(
-			['@self.unread', 'identifier', 'title', 'caseType', 'status', 'priorityOrder', 'deadline'],
+			['identifier', 'title', 'caseType', 'status', 'priorityOrder', 'deadline'],
 		)
 		expect(overrides.folderSidebar).toMatchObject({ schema: 'caseType', filterField: 'caseType' })
 		// The deep merge keeps what the patch does not name.
@@ -107,14 +105,14 @@ describe('the full profile', () => {
 		expect(overrides.sidePanel).toHaveLength(2)
 	})
 
-	it('counts 39 entries: 12 main, 5 footer, 19 settings, 3 integrations (Case objects is settings-only)', () => {
+	it('counts 39 entries: 13 main, 5 footer, 18 settings, 3 integrations (re-integration pathways is a Cases view, not a menu entry)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
 		expect(flat(menu)).toHaveLength(39)
-		expect(count('main')).toBe(12)
+		expect(count('main')).toBe(13)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(19)
+		expect(count('settings')).toBe(18)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -123,7 +121,7 @@ describe('the simple profile', () => {
 	const built = build(simpleFile)
 	const main = section(built.menu, 'main')
 
-	it('shows eight fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
+	it('shows nine fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
 		expect(main.map((entry) => entry.id)).toEqual([
 			'Dashboard',
 			'WorkGroup',
@@ -132,6 +130,7 @@ describe('the simple profile', () => {
 			'Cases',
 			'WorkflowBoard',
 			'Tasks',
+			'CaseObjectsMenu',
 			'RelationsCaption',
 			'Contacts',
 			'OrganisationsMenu',
@@ -141,7 +140,7 @@ describe('the simple profile', () => {
 			'Cases',
 			'Relations',
 		])
-		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(8)
+		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(9)
 	})
 
 	it('is flat: no entry holds another', () => {
@@ -322,7 +321,7 @@ describe('the simple profile', () => {
 		expect(entry('Queue').count).toEqual({
 			register: 'dossiq',
 			schema: 'case',
-			filter: teamQueue.overrides.lockedFilters,
+			filter: { ...teamQueue.filters, ...teamQueue.overrides.lockedFilters },
 		})
 		expect(entry('WorkGroup').count).toEqual({
 			register: 'dossiq',
@@ -363,14 +362,13 @@ describe('the simple profile', () => {
 		).toBe('Documentation')
 	})
 
-	it('moves the recycle bin, the object register and the mail intake log to settings', () => {
+	it('moves the recycle bin and the mail intake log to settings', () => {
 		const settings = section(built.menu, 'settings').map((entry) => entry.id)
 		expect(settings).toEqual(
 			expect.arrayContaining([
 				'CasesDeletedMenu',
-				'CaseObjectsMenu',
 				'MailIntakeLogMenu',
-				'WooReportsMenu',
+				'DocumentReviewReportsMenu',
 			]),
 		)
 		// Everything the full profile has in settings is still there.
@@ -386,7 +384,7 @@ describe('the simple profile', () => {
 		expect(ids(built.menu, 'integrations')).toEqual(ids(full, 'integrations'))
 		expect(ids(built.menu, 'footer')).toEqual(
 			ids(full, 'footer').filter(
-				(id) => id !== 'MailIntakeLogMenu' && id !== 'WooReportsMenu',
+				(id) => id !== 'MailIntakeLogMenu' && id !== 'DocumentReviewReportsMenu',
 			),
 		)
 	})
@@ -491,10 +489,12 @@ describe('the simple profile', () => {
 	// 81 -> 78: Queue, MyWork and PrivacyRequests became views of Cases.
 	// 78 -> 77: Subsidies became a view of Cases.
 	// 77 -> 75: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
-	it('builds the same 75 pages as the full profile, so every route stays', () => {
+	// 75 -> 74: SubstitutionAdmin retires; `/substitution-admin` goes to the admin settings.
+	// 75 -> 74: ReIntegratieTrajecten retires; re-integration pathways are cases of their own case type.
+	it('builds the same 74 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(75)
+		expect(built.pages).toHaveLength(74)
 	})
 })
 
@@ -673,70 +673,5 @@ describe('the structure setting', () => {
 		expect(mainSource).toContain(
 			'buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {',
 		)
-	})
-
-	it('is saved under its own key, through the settings write', async () => {
-		const calls = []
-		const fetchImpl = async (url, init) => {
-			calls.push({ url, init })
-			return {
-				ok: true,
-				status: 200,
-				json: async () => ({
-					success: true,
-					config: { [STRUCTURE_SETTING]: 'full' },
-				}),
-			}
-		}
-		const stored = await saveMenuStructure('full', {
-			url: '/apps/dossiq/api/settings',
-			requestToken: 'token',
-			fetchImpl,
-		})
-		expect(stored).toBe('full')
-		expect(calls).toHaveLength(1)
-		expect(calls[0].init.method).toBe('POST')
-		expect(calls[0].init.headers.requesttoken).toBe('token')
-		expect(JSON.parse(calls[0].init.body)).toEqual({ menu_structure: 'full' })
-	})
-
-	it('does not report a refused save as saved', async () => {
-		const refused = async () => ({
-			ok: false,
-			status: 403,
-			json: async () => ({}),
-		})
-		await expect(
-			saveMenuStructure('full', {
-				url: '/x',
-				requestToken: 't',
-				fetchImpl: refused,
-			}),
-		).rejects.toThrow('403')
-	})
-
-	it('does not report a save the server dropped as saved', async () => {
-		// The settings write answers success for a key it does not know.
-		const dropped = async () => ({
-			ok: true,
-			status: 200,
-			json: async () => ({ success: true, config: {} }),
-		})
-		await expect(
-			saveMenuStructure('full', {
-				url: '/x',
-				requestToken: 't',
-				fetchImpl: dropped,
-			}),
-		).rejects.toThrow('did not store')
-		// Simple is the default, so a dropped save of it would read back as
-		// simple by accident. The stored word itself has to come back.
-		await expect(
-			saveMenuStructure('simple', {
-				url: '/x',
-				requestToken: 't',
-				fetchImpl: dropped,
-			}),
-		).rejects.toThrow('did not store')
 	})
 })

@@ -40,6 +40,7 @@ use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -167,10 +168,10 @@ class MilestoneStallTimerListenersTest extends TestCase {
 		$timer->setMetadata(['source' => MilestoneStallTimer::METADATA_SOURCE, 'caseId' => 'case-1', 'milestoneIdentifier' => 'besluit']);
 
 		$listener = new MilestoneStallTimerFiredListener(acts: $this->acts, serviceAccount: $account, logger: $this->createMock(LoggerInterface::class));
-		$listener->handle(event: new FlowTimerFiredEvent(timer: $timer, kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:slaBreached:0', rungKey: 'slaBreached:0', recipients: [], priority: null, message: null));
+		$listener->handle(event: new FlowTimerFiredEvent(timer: $timer, firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:slaBreached:0', rungKey: 'slaBreached:0')));
 
 		// Another source's fire is not ours.
 		$timer->setMetadata(['source' => 'dossiq-dso', 'caseId' => 'case-1']);
-		$listener->handle(event: new FlowTimerFiredEvent(timer: $timer, kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:slaBreached:0', rungKey: 'slaBreached:0', recipients: [], priority: null, message: null));
+		$listener->handle(event: new FlowTimerFiredEvent(timer: $timer, firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:slaBreached:0', rungKey: 'slaBreached:0')));
 	}//end testTheBreachNamesTheArmedMilestone()
 }//end class

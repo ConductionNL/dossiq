@@ -58,7 +58,7 @@ const ASSESSED = [
  * @param {Array<object>|Error} answers.assessed The stored assessments, or the failure.
  * @return {Promise<{wrapper: object, axios: object}>} The mounted dialog and the axios double.
  */
-async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = null } = {}) {
+async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = null, kase = null, statusTypes = null } = {}) {
 	const axios = (await import('@nextcloud/axios')).default
 	axios.get.mockImplementation((url, config) => {
 		if (String(url).includes('/document-assessments/outstanding')) {
@@ -89,6 +89,12 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = nul
 				},
 			})
 		}
+		if (kase && String(url).includes(`/apps/openregister/api/objects/dossiq/case/${CASE_ID}`)) {
+			return Promise.resolve({ data: kase })
+		}
+		if (statusTypes && String(url).includes(`/apps/dossiq/api/case-types/${kase?.caseType}/blueprint`)) {
+			return Promise.resolve({ data: { statusTypes } })
+		}
 		return Promise.reject(new Error('unexpected GET ' + url))
 	})
 
@@ -99,8 +105,11 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED, letter = nul
 				NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnChoiceCards: true,
-				BeschikkingComposerDialog: true,
-				NcNoteCard: { template: '<div><slot /></div>' },
+				GenerateDocumentDialog: true,
+				NcNoteCard: {
+					props: ['type', 'heading', 'showAlert'],
+					template: '<div :data-type="type" :data-heading="heading" :data-alert="String(showAlert)"><slot /></div>',
+				},
 				NcButton: {
 					props: ['disabled'],
 					emits: ['click'],
@@ -145,6 +154,44 @@ describe('AssessmentDecisionDialog', () => {
 		expect(cards.attributes('disabled')).toBeUndefined()
 	})
 
+	it('says which step the case moves to, from the case type\'s statuses (board: "De zaak gaat naar stap 3, besluit.")', async () => {
+		const { wrapper } = await mountDialog({
+			kase: { id: CASE_ID, identifier: '2026-0082', caseType: 'ct-woo', status: 'st-2' },
+			statusTypes: [
+				{ id: 'st-3', name: 'Besluit', order: 3 },
+				{ id: 'st-1', name: 'Ontvangen', order: 1 },
+				{ id: 'st-2', name: 'In behandeling', order: 2 },
+				{ id: 'st-4', name: 'Afgehandeld', order: 4, isFinal: true },
+			],
+		})
+
+		expect(wrapper.vm.subtitle).toBe('The case moves to step 3, besluit. The decision is built from the %n assessed documents.')
+	})
+
+	it('keeps the subtitle as it was when the step cannot be read', async () => {
+		const { wrapper } = await mountDialog({
+			kase: { id: CASE_ID, identifier: '2026-0082', caseType: 'ct-woo', status: 'st-2' },
+		})
+
+		expect(wrapper.vm.subtitle).toBe('The decision is built from the %n assessed documents.')
+	})
+
+	it('points to decidiq for a decision by the board or the mayor, only where decidiq is installed', async () => {
+		globalThis.OC = { appswebroots: {} }
+		const without = (await mountDialog()).wrapper
+		expect(without.find('[data-testid="assessment-decision-aside"]').exists()).toBe(false)
+
+		globalThis.OC = { appswebroots: { decidesk: '/apps/decidesk' } }
+		const withApp = (await mountDialog()).wrapper
+		expect(withApp.find('[data-testid="assessment-decision-aside"]').text()).toBe(
+			'Does the board or the mayor decide? Then you make a proposal in decidiq, on the Decisions tab (Make proposal). The decision then arrives on this case by itself.',
+		)
+
+		globalThis.OC = { appswebroots: { decidiq: '/apps/decidiq' } }
+		expect((await mountDialog()).wrapper.find('[data-testid="assessment-decision-aside"]').exists()).toBe(true)
+		delete globalThis.OC
+	})
+
 	it('testOutstandingDocumentsBlockSubmit', async () => {
 		const { wrapper, axios } = await mountDialog({
 			outstanding: [{ id: 'io-3', title: 'Mail aannemer, 3 maart 2026' }],
@@ -162,6 +209,20 @@ describe('AssessmentDecisionDialog', () => {
 			.find('[data-testid="assessment-decision-save"]')
 			.trigger('click')
 		expect(axios.post).not.toHaveBeenCalled()
+	})
+
+	it('names the outstanding documents in a warning note card, readable on every theme', async () => {
+		const { wrapper } = await mountDialog({
+			outstanding: [{ id: 'io-3', title: 'Mail aannemer, 3 maart 2026' }],
+		})
+
+		const blocked = wrapper.find('[data-testid="assessment-decision-blocked"]')
+		expect(blocked.attributes('data-type')).toBe('warning')
+		expect(blocked.attributes('data-alert')).toBe('true')
+		expect(blocked.attributes('data-heading')).toBe(
+			'Assess these documents first. The decision covers every document on the case.',
+		)
+		expect(blocked.find('li').text()).toBe('Mail aannemer, 3 maart 2026')
 	})
 
 	it('offers nothing to save when the outstanding list cannot be read', async () => {
@@ -341,9 +402,9 @@ describe('the assessment-decide header action', () => {
 
 	it('is scoped to the case type that configures it', () => {
 		expect(action.visibleWhen.all).toContainEqual({
-			field: 'caseType',
+			field: 'caseTypeIdentifier',
 			op: 'eq',
-			value: '3c0f5a00-0000-4000-a000-00000000a001',
+			value: 'woo-verzoek',
 		})
 		expect(action.visibleWhen.all).toContainEqual({
 			field: '@self.archived',

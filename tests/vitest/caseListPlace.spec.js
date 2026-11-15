@@ -78,6 +78,11 @@ describe('a case opens as its own page', () => {
 		expect(page('CaseDetail').referencePreview).toBe(true)
 	})
 
+	it('steps to the next and previous case of the list it was opened from', () => {
+		// nextcloud-vue lists navigation only for a detail page that opts in.
+		expect(page('CaseDetail').listNavigation).toBe(true)
+	})
+
 	it('is still a detail page reached at /cases/:id', () => {
 		// The split route is a SIBLING of the list, `/cases/split/:id`, and
 		// vue-router ranks its static segment above the `:id` of this one. If

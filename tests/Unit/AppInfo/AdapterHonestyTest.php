@@ -29,8 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter;
-use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
+use OCA\Dossiq\Service\Beschikking\DecisionTemplateEngine;
+use OCA\Dossiq\Service\Registrar\ConfiguredAdapter;
+use OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
@@ -92,16 +93,16 @@ class NotAnAdapter {
 /**
  * The seam resolves what the admin named, and says so when it cannot.
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter
+ * @covers \OCA\Dossiq\Service\Registrar\ConfiguredAdapter
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar
+ * @covers \OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar
  *
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter
- * @uses \OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter
+ * @uses \OCA\Dossiq\Service\Registrar\ConfiguredAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice
  */
 class AdapterHonestyTest extends TestCase {
@@ -156,16 +157,18 @@ class AdapterHonestyTest extends TestCase {
 		$userSession = $this->createMock(IUserSession::class);
 
 		$settings = $this->createMock(SettingsService::class);
+		$engines = $this->createMock(DecisionTemplateEngine::class);
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use (&$container, $appConfig, $appManager, $dispatcher, $l10n, $logger, $settings, $userSession): object {
+			static function (string $id) use (&$container, $appConfig, $appManager, $dispatcher, $engines, $l10n, $logger, $settings, $userSession): object {
 				return match ($id) {
 					FilinqTemplateEngineAdapter::class => new FilinqTemplateEngineAdapter(
 						container: $container,
 						settings: $settings,
 						userSession: $userSession,
 						logger: $logger,
+						engines: $engines,
 					),
 					IAppConfig::class => $appConfig,
 					IAppManager::class => $appManager,

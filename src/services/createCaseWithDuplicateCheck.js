@@ -25,13 +25,13 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 
 import { candidateWithoutBlanks, duplicateAffordances, openDuplicateWarning, useObjectStore } from '@conduction/nextcloud-vue'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
-import { normaliseDeclaration } from '../utils/intakeRequirements.js'
 import { checkForDuplicates, fetchMatchedCases } from './duplicateCheckApi.js'
+import { initiatorChoice } from './initiatorSearch.js'
 import { fetchIntakeRequirements } from './intakeTriageApi.js'
 
 /** The case field carrying why a case was filed over a warning. */
@@ -52,7 +52,7 @@ export const FIELD_OVER = 'duplicateOverrideOf'
  * @param {boolean} state.mayOverride Whether this account may file anyway.
  * @return {Promise<{reason: string, over: Array<string>}|null>} The decision, or null.
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 export function askAboutDuplicates(state) {
 	return openDuplicateWarning({
@@ -61,6 +61,15 @@ export function askAboutDuplicates(state) {
 		policy: state.policy,
 		mayOverride: state.mayOverride,
 		recordUrl: '/apps/dossiq/cases/{uuid}',
+		rowMeta: [
+			t('dossiq', '{identifier} · {caseType.title} · {initiatorDisplayName} · received {receivedAt|date}'),
+			'{identifier} · {caseType.title}',
+			'{identifier}',
+		],
+		matchedText: t('dossiq', 'Found on {fields} ({percentage}%)'),
+		eyebrow: t('dossiq', 'New case · possible duplicate'),
+		reasonHint: t('dossiq', 'The case type asks for a reason. The reason is written on the new case.'),
+		footnote: t('dossiq', 'If the case type does not allow a second case, File it anyway is not offered: open the case it matches or ask a coordinator. Cancel takes you back to the form, with everything you filled in still there.'),
 		fieldLabels: {
 			requester: t('dossiq', 'Requester'),
 			title: t('dossiq', 'Subject'),
@@ -86,17 +95,40 @@ export function askAboutDuplicates(state) {
  * @param {string} caseTypeId The chosen case type.
  * @return {Promise<{policy: string, mayOverride: boolean}>} The declaration.
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 export async function duplicatePolicyFor(caseTypeId) {
-	const declaration = normaliseDeclaration(
-		await fetchIntakeRequirements(caseTypeId),
-	)
+	// fetchIntakeRequirements answers the normalised declaration already. A
+	// second normalisation reads `duplicatePolicy` (now the string 'block') as
+	// the raw `{ policy }` block and turned every block into warn.
+	const declaration = await fetchIntakeRequirements(caseTypeId)
 
 	return {
 		policy: declaration.duplicatePolicy,
 		mayOverride: declaration.mayOverrideDuplicates,
 	}
+}
+
+/**
+ * The form's payload with the picked party as the fields a case carries for
+ * its requester. The form's `requesterChoice` never reaches the case, and a
+ * contact with no party in OpenRegister leaves `requester` out: the field holds
+ * uuids, and the projection names the contact.
+ *
+ * @param {object} payload The form's payload.
+ * @return {Promise<object>} The case to save.
+ * @spec openspec/specs/initiator-selection/spec.md
+ */
+async function withRequester(payload) {
+	const { requesterChoice, ...fields } = payload
+	if (!requesterChoice) {
+		return fields
+	}
+	const candidate = { ...fields, ...(await initiatorChoice(requesterChoice.source, requesterChoice.row)) }
+	if (!candidate.requester) {
+		delete candidate.requester
+	}
+	return candidate
 }
 
 /**
@@ -107,7 +139,7 @@ export async function duplicatePolicyFor(caseTypeId) {
  * @return {Promise<object>} The saved case.
  * @throws {Error} When the handler cancelled, so the dialog stays open.
  *
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 export async function createCaseWithDuplicateCheck(payload, context) {
 	// 🔴 THE LIBRARY'S STORE, NOT DOSSIQ'S. `CnActionButtons` resolved
@@ -119,44 +151,61 @@ export async function createCaseWithDuplicateCheck(payload, context) {
 	// somewhere a reader would look.
 	const store = useObjectStore()
 	const type = context?.type || 'case'
-	const candidate = { ...payload }
+	const candidate = await withRequester(payload)
+	const verdict = await duplicateVerdict(candidate)
+	if (verdict.affordances.show === false) {
+		return store.saveObject(type, candidate)
+	}
 
+	return store.saveObject(type, withDecision(candidate, await decisionOn(verdict)))
+}
+
+/**
+ * What OpenRegister found like the candidate, what its case type says about it, and what the warning may offer.
+ *
+ * @param {object} candidate The case to file.
+ * @return {Promise<{matches: Array<object>, policy: {policy: string, mayOverride: boolean}, affordances: object}>} The verdict.
+ */
+async function duplicateVerdict(candidate) {
 	const [{ matches, checked }, policy] = await Promise.all([
 		checkForDuplicates(candidateWithoutBlanks(candidate)),
 		duplicatePolicyFor(candidate.caseType),
 	])
+	const affordances = duplicateAffordances({ matches, checked, policy: policy.policy, mayOverride: policy.mayOverride })
 
-	const affordances = duplicateAffordances({
-		matches,
-		checked,
-		policy: policy.policy,
-		mayOverride: policy.mayOverride,
-	})
+	return { matches, policy, affordances }
+}
 
-	if (affordances.show === false) {
-		return store.saveObject(type, candidate)
-	}
-
-	const cases = await fetchMatchedCases(matches.map((match) => match.uuid))
-	const decision = await askAboutDuplicates({
-		matches,
-		cases,
-		policy: policy.policy,
-		mayOverride: policy.mayOverride,
-	})
-
+/**
+ * The handler's decision about the matches, after reading the matched cases.
+ *
+ * @param {{matches: Array<object>, policy: {policy: string, mayOverride: boolean}}} verdict The verdict.
+ * @return {Promise<{reason: string, over: Array<string>}>} The decision.
+ * @throws {Error} When the handler cancelled, so the dialog stays open.
+ */
+async function decisionOn(verdict) {
+	const cases = await fetchMatchedCases(verdict.matches.map((match) => match.uuid))
+	const decision = await askAboutDuplicates({ matches: verdict.matches, cases, policy: verdict.policy.policy, mayOverride: verdict.policy.mayOverride })
 	if (decision === null) {
 		// The library turns a throw into the dialog's error line and keeps the
 		// form open with everything still typed, which is what Cancel means
 		// here: go back and look at the case that already exists.
 		throw new Error(t('dossiq', 'The case was not filed.'))
 	}
+	return decision
+}
 
+/**
+ * The candidate carrying why it was filed over a warning, and what it was filed over.
+ *
+ * @param {object} candidate The case to file.
+ * @param {{reason: string, over: Array<string>}} decision The handler's decision.
+ * @return {object} The case to save.
+ */
+function withDecision(candidate, decision) {
 	if (decision.reason !== '') {
 		candidate[FIELD_REASON] = decision.reason
 	}
-
 	candidate[FIELD_OVER] = decision.over
-
-	return store.saveObject(type, candidate)
+	return candidate
 }

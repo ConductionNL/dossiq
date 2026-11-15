@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
@@ -33,10 +33,11 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener
- * @covers \OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\CaseTypeListenerRegistrar
  * @uses   \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
  * @uses   \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses   \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  */
 class CaseDeadlineFollowsTermListenerTest extends TestCase {
 

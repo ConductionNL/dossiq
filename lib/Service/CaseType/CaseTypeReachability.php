@@ -85,17 +85,16 @@ final class CaseTypeReachability {
 
 		$broken = $this->brokenMoves(statuses: $statuses, moves: $moves);
 		$sound = $this->soundMoves(statuses: $statuses, moves: $moves);
-		$reached = $this->reachedFrom(initial: $initial, statuses: $statuses, moves: $sound);
+		$walk = new ReachableStatuses(
+			statuses: $statuses,
+			initial: $initial,
+			reached: $this->reachedFrom(initial: $initial, statuses: $statuses, moves: $sound)
+		);
 
 		return array_merge(
 			array_column($broken, 'finding'),
-			$this->orphanFindings(
-				statuses: $statuses,
-				initial: $initial,
-				reached: $reached,
-				blamed: array_column($broken, 'target')
-			),
-			$this->closureFindings(statuses: $statuses, initial: $initial, reached: $reached)
+			$this->orphanFindings(walk: $walk, blamed: array_column($broken, 'target')),
+			$this->closureFindings(walk: $walk)
 		);
 	}//end findings()
 
@@ -119,36 +118,66 @@ final class CaseTypeReachability {
 				continue;
 			}
 
-			$from = (string)($move['fromStatus'] ?? '');
-			$to = (string)($move['toStatus'] ?? '');
-			$name = $this->moveName(move: $move);
-
-			if ($from === '' || $from === self::DEAD_WILDCARD) {
-				$broken[] = [
-					'finding' => ('The move "' . $name . '" starts from no status, so nothing can ever offer it. Name the status it starts from.'),
-					'target' => $to,
-				];
-				continue;
-			}
-
-			if (isset($statuses[$from]) === false) {
-				$broken[] = [
-					'finding' => ('The move "' . $name . '" starts from a status this case type does not have. Nothing can ever offer it.'),
-					'target' => $to,
-				];
-				continue;
-			}
-
-			if ($to === '' || isset($statuses[$to]) === false) {
-				$broken[] = [
-					'finding' => ('The move "' . $name . '" leads to a status this case type does not have.'),
-					'target' => '',
-				];
+			$entry = $this->brokenMove(statuses: $statuses, move: $move);
+			if ($entry !== null) {
+				$broken[] = $entry;
 			}
 		}//end foreach
 
 		return $broken;
 	}//end brokenMoves()
+
+	/**
+	 * What is broken about one move, or null when both its ends exist.
+	 *
+	 * @param array<string, array{title: string, final: bool}> $statuses The declared statuses, by id.
+	 * @param array<string, mixed>                             $move     One transition.
+	 *
+	 * @return array{finding: string, target: string}|null The broken move, or null.
+	 */
+	private function brokenMove(array $statuses, array $move): ?array {
+		$from = (string)($move['fromStatus'] ?? '');
+		$to = (string)($move['toStatus'] ?? '');
+		$name = $this->moveName(move: $move);
+
+		$finding = $this->brokenStart(statuses: $statuses, from: $from, name: $name);
+		if ($finding !== null) {
+			return [
+				'finding' => $finding,
+				'target' => $to,
+			];
+		}
+
+		if ($to === '' || isset($statuses[$to]) === false) {
+			return [
+				'finding' => ('The move "' . $name . '" leads to a status this case type does not have.'),
+				'target' => '',
+			];
+		}
+
+		return null;
+	}//end brokenMove()
+
+	/**
+	 * The finding of a move that starts from no status or an unknown one, or null.
+	 *
+	 * @param array<string, array{title: string, final: bool}> $statuses The declared statuses, by id.
+	 * @param string                                           $from     The status the move starts from.
+	 * @param string                                           $name     The move's name.
+	 *
+	 * @return string|null The finding, or null when the start exists.
+	 */
+	private function brokenStart(array $statuses, string $from, string $name): ?string {
+		if ($from === '' || $from === self::DEAD_WILDCARD) {
+			return ('The move "' . $name . '" starts from no status, so nothing can ever offer it. Name the status it starts from.');
+		}
+
+		if (isset($statuses[$from]) === false) {
+			return ('The move "' . $name . '" starts from a status this case type does not have. Nothing can ever offer it.');
+		}
+
+		return null;
+	}//end brokenStart()
 
 	/**
 	 * The moves both ends of which are statuses this case type declares.
@@ -214,14 +243,13 @@ final class CaseTypeReachability {
 	/**
 	 * The statuses a case could never be in.
 	 *
-	 * @param array<string, array{title: string, final: bool}> $statuses The declared statuses, by id.
-	 * @param string                                           $initial  The status a new case starts in.
-	 * @param array<string, true>                              $reached  The reachable status ids.
-	 * @param array<int, string>                               $blamed   Targets of moves already reported.
+	 * @param ReachableStatuses  $walk   The declared statuses, the initial one and the reachable ones.
+	 * @param array<int, string> $blamed Targets of moves already reported.
 	 *
 	 * @return array<int, string> The findings, one per orphaned status.
 	 */
-	private function orphanFindings(array $statuses, string $initial, array $reached, array $blamed): array {
+	private function orphanFindings(ReachableStatuses $walk, array $blamed): array {
+		$reached = $walk->reached;
 		if ($reached === []) {
 			// The initial status is not one of this type's own. `validate()`
 			// already refuses that in its own words, and repeating it here
@@ -230,8 +258,8 @@ final class CaseTypeReachability {
 		}
 
 		$findings = [];
-		foreach ($statuses as $id => $status) {
-			if ($id === $initial || isset($reached[$id]) === true || in_array($id, $blamed, true) === true) {
+		foreach ($walk->statuses as $id => $status) {
+			if ($id === $walk->initial || isset($reached[$id]) === true || in_array($id, $blamed, true) === true) {
 				continue;
 			}
 
@@ -251,24 +279,22 @@ final class CaseTypeReachability {
 	 * failure that shows up last and hurts most: cases open, they run, and the
 	 * desk discovers months in that none of them can be closed.
 	 *
-	 * @param array<string, array{title: string, final: bool}> $statuses The declared statuses, by id.
-	 * @param string                                           $initial  The status a new case starts in.
-	 * @param array<string, true>                              $reached  The reachable status ids.
+	 * @param ReachableStatuses $walk The declared statuses, the initial one and the reachable ones.
 	 *
 	 * @return array<int, string> The finding, or an empty array.
 	 */
-	private function closureFindings(array $statuses, string $initial, array $reached): array {
-		if ($reached === []) {
+	private function closureFindings(ReachableStatuses $walk): array {
+		if ($walk->reached === []) {
 			return [];
 		}
 
-		foreach (array_keys($reached) as $id) {
-			if (($statuses[$id]['final'] ?? false) === true) {
+		foreach (array_keys($walk->reached) as $id) {
+			if (($walk->statuses[$id]['final'] ?? false) === true) {
 				return [];
 			}
 		}
 
-		$start = ($statuses[$initial]['title'] ?? $initial);
+		$start = ($walk->statuses[$walk->initial]['title'] ?? $walk->initial);
 
 		return [
 			('No sequence of moves leads from "' . $start . '" to a status that closes a case. A case of this type could never be finished.'),

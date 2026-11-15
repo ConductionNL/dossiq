@@ -37,7 +37,7 @@ describe('the Doorlooptijd case type filter', () => {
 	})
 
 	it('leaves the header action slot to the board\'s buttons', () => {
-		expect(page.slots['header-actions']).toBeUndefined()
+		expect(page.slots?.['header-actions']).toBeUndefined()
 		expect(fs.existsSync(path.join(ROOT, 'src/views/doorlooptijd/widgets/DtCaseTypeFilter.vue'))).toBe(false)
 	})
 })

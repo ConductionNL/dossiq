@@ -1,0 +1,20 @@
+{
+  "schema": {
+    "app": "dossiq",
+    "register": "dossiq",
+    "slug": "tenderQuestion"
+  },
+  "rows": [
+    {
+      "id": "7c2aea0b-f26f-56ed-8c8d-26be61b33730",
+      "tender": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "submittedBy": "Stichting Kindzorg Drechtsteden",
+      "submittedAt": "{{datetime:-30 14:20}}",
+      "question": "Mag een inschrijver op beide percelen inschrijven?",
+      "answer": "Ja. Elk perceel wordt afzonderlijk beoordeeld en gegund.",
+      "publishedAt": "{{datetime:-24 10:00}}",
+      "noi": "Nota van inlichtingen 1",
+      "state": "published"
+    }
+  ]
+}

@@ -15,7 +15,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/status-type-board-colours/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
+ * @spec openspec/specs/case-types/spec.md#requirement-a-shipped-status-takes-the-colour-its-boards-draw
  */
 
 declare(strict_types=1);
@@ -105,6 +105,11 @@ class StatusTypePaletteTest extends TestCase {
 
 		foreach ($rows as $entry) {
 			$name = $entry['row']['name'];
+			// A translatable name may ship language-keyed; the Dutch value is its source.
+			if (is_array($name) === true) {
+				$name = (string)($name['nl'] ?? '');
+			}
+
 			$this->assertArrayHasKey($name, StatusTypePalette::COLOURS, $entry['file'] . ': ' . $name . ' has no board colour');
 			$this->assertSame(StatusTypePalette::COLOURS[$name], ($entry['row']['colour'] ?? null), $entry['file'] . ': ' . $name);
 		}

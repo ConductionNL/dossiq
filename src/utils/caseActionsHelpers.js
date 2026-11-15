@@ -46,6 +46,20 @@ export function proposedCopyTitle(title) {
 	return `Copy of ${source}`
 }
 
+// The sentence per case-actions refusal code. Each entry calls translate()
+// on a literal key, so the string extraction reads every one.
+const CASE_ACTION_REFUSALS = new Map([
+	['case_not_found', (translate) => translate('This case could not be read.')],
+	['storage_unavailable', (translate) => translate('The case store is not available right now.')],
+	['flows_unavailable', (translate) => translate('The case store is not available right now.')],
+	['invalid_date', (translate) => translate('Pick a date for the follow-up.')],
+	['copy_failed', (translate) => translate('The copy could not be created.')],
+	['plan_failed', (translate) => translate('The follow-up could not be planned.')],
+	['invalid_recurrence', (translate) => translate('Pick how often the follow-up comes back.')],
+	['invalid_end', (translate) => translate('Give the series an end date or a number, not both.')],
+	['stop_failed', (translate) => translate('The series could not be stopped.')],
+])
+
 /**
  * Turn a refusal from the case-actions endpoints into a sentence.
  *
@@ -59,28 +73,8 @@ export function proposedCopyTitle(title) {
  * @spec openspec/specs/case-management/spec.md
  */
 export function caseActionRefusal(error, translate) {
-	const code = String(error?.code ?? '')
-	switch (code) {
-		case 'case_not_found':
-			return translate('This case could not be read.')
-		case 'storage_unavailable':
-		case 'flows_unavailable':
-			return translate('The case store is not available right now.')
-		case 'invalid_date':
-			return translate('Pick a date for the follow-up.')
-		case 'copy_failed':
-			return translate('The copy could not be created.')
-		case 'plan_failed':
-			return translate('The follow-up could not be planned.')
-		case 'invalid_recurrence':
-			return translate('Pick how often the follow-up comes back.')
-		case 'invalid_end':
-			return translate('Give the series an end date or a number, not both.')
-		case 'stop_failed':
-			return translate('The series could not be stopped.')
-		default:
-			return translate('This did not work. Try again.')
-	}
+	const sentence = CASE_ACTION_REFUSALS.get(String(error?.code ?? ''))
+	return sentence ? sentence(translate) : translate('This did not work. Try again.')
 }
 
 /**
@@ -109,7 +103,7 @@ export function earliestFollowUpDate(now = new Date()) {
  *
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {Array<{id: string, label: string}>} The options.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 export function recurrenceOptions(translate) {
 	return [
@@ -126,7 +120,7 @@ export function recurrenceOptions(translate) {
  *
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {Array<{id: string, label: string}>} The options.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 export function endOptions(translate) {
 	return [
@@ -134,23 +128,6 @@ export function endOptions(translate) {
 		{ id: 'until', label: translate('On a date') },
 		{ id: 'count', label: translate('After a number of cases') },
 	]
-}
-
-/**
- * A recurrence as the phrase a planned row reads it back as.
- *
- * @param {string} recurrence The recurrence token.
- * @param {(key: string) => string} translate The bound t(), taking one string.
- * @return {string} The phrase, empty for a follow-up that happens once.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
- */
-export function recurrenceLabel(recurrence, translate) {
-	const token = String(recurrence ?? 'none')
-	if (token === 'none') {
-		return ''
-	}
-	const match = recurrenceOptions(translate).find((row) => row.id === token)
-	return match ? match.label.toLowerCase() : ''
 }
 
 /**
@@ -164,97 +141,50 @@ export function recurrenceLabel(recurrence, translate) {
  * @param {object} plan The form state, `{caseType, date, title, recurrence, end, until, count}`.
  * @param {string} earliest The earliest allowed date, as `YYYY-MM-DD`.
  * @return {boolean} True when every field is present and the dates agree.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 export function isPlanComplete(plan, earliest) {
-	const caseType = String(plan?.caseType ?? '').trim()
-	const date = String(plan?.date ?? '').trim()
-	const title = String(plan?.title ?? '').trim()
-	if (caseType === '' || date === '' || title === '') {
-		return false
-	}
-	if (date < String(earliest ?? '')) {
+	const read = plan || {}
+	const date = String(read.date ?? '').trim()
+	if (hasPlanBasics(read) === false || date < String(earliest ?? '')) {
 		return false
 	}
 
-	const recurrence = String(plan?.recurrence ?? 'none')
+	const recurrence = String(read.recurrence ?? 'none')
 	if (recurrence === 'none') {
 		return true
 	}
 
-	const end = String(plan?.end ?? 'open')
+	return seriesEndIsComplete(read, date)
+}
+
+/**
+ * Whether a plan names its case type, its date and its title.
+ *
+ * @param {object} plan The plan.
+ * @return {boolean} True when none of the three is blank.
+ */
+function hasPlanBasics(plan) {
+	return [plan.caseType, plan.date, plan.title]
+		.every((value) => String(value ?? '').trim() !== '')
+}
+
+/**
+ * Whether a recurring plan's end is complete: an until date on or after the
+ * first date, a count of at least one, or an open end.
+ *
+ * @param {object} plan The plan.
+ * @param {string} date The plan's first date.
+ * @return {boolean} True when the end is complete.
+ */
+function seriesEndIsComplete(plan, date) {
+	const end = String(plan.end ?? 'open')
 	if (end === 'until') {
-		const until = String(plan?.until ?? '').trim()
+		const until = String(plan.until ?? '').trim()
 		return until !== '' && until >= date
 	}
 	if (end === 'count') {
-		return Number(plan?.count ?? 0) >= 1
+		return Number(plan.count ?? 0) >= 1
 	}
 	return true
-}
-
-/**
- * The rows the Related cases tab shows for the follow-ups still to come.
- *
- * The label carries the date, because "Controle" on its own says nothing
- * about when it will exist and that is the only thing a planned row adds
- * over an ordinary related case. A SERIES adds one more thing: how often it
- * comes back, and how many cases it has already opened. Both go in the label,
- * so a handler reads a series without opening anything.
- *
- * @param {Array} rows The `planned` endpoint's results.
- * @param {(key: string) => string} translate The bound t(), taking one string.
- * @return {Array<{key: string, label: string, date: string, recurrence: string, occurrences: Array}>} The rows.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
- */
-export function plannedRows(rows, translate) {
-	if (Array.isArray(rows) === false) {
-		return []
-	}
-	return rows
-		.filter((row) => row && String(row.id ?? '') !== '')
-		.map((row) => {
-			const title = String(row.title ?? '').trim()
-			const date = String(row.date ?? '').trim()
-			const recurrence = String(row.recurrence ?? 'none')
-			const occurrences = Array.isArray(row.occurrences) ? row.occurrences : []
-			return {
-				key: String(row.id),
-				date,
-				recurrence,
-				occurrences,
-				label: plannedLabel(title, date, recurrence, occurrences, translate),
-			}
-		})
-}
-
-/**
- * The one line a planned row reads as.
- *
- * @param {string} title The planned case's title.
- * @param {string} date The next occurrence, as `YYYY-MM-DD`.
- * @param {string} recurrence The recurrence token.
- * @param {Array} occurrences The cases the series has already opened.
- * @param {(key: string) => string} translate The bound t(), taking one string.
- * @return {string} The label.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
- */
-function plannedLabel(title, date, recurrence, occurrences, translate) {
-	const parts = [title]
-	const repeat = recurrenceLabel(recurrence, translate)
-	if (repeat !== '') {
-		parts.push(repeat)
-	}
-	if (date !== '') {
-		parts.push(translate('next on {date}').replace('{date}', date))
-	}
-	if (occurrences.length > 0) {
-		parts.push(
-			translate('{count} opened so far').replace(
-				'{count}',
-				String(occurrences.length),
-			),
-		)
-	}
-	return parts.filter((part) => part !== '').join(', ')
 }

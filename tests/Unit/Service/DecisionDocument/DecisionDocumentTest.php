@@ -33,6 +33,8 @@ use OCA\Dossiq\Service\DecisionDocument\DecisionDocumentLifecycle;
 use OCA\Dossiq\Service\DecisionDocument\DecisionDocumentValidator;
 use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\FrozenRecord\FrozenRecordGuard;
+use OCA\OpenRegister\Service\Rules\ConditionEvaluation;
+use OCA\OpenRegister\Service\Rules\NamedConditionEvaluator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
@@ -41,28 +43,28 @@ use RuntimeException;
  * A stand-in for OpenRegister's named-condition evaluator with a tiny dialect:
  * `{"filled": field}` holds when the field is filled; `{"$condition": name}`
  * resolves a named condition; anything else is unresolvable and throws, as
- * the real evaluator does.
+ * the real evaluator does. It takes OpenRegister's signature, so a call in
+ * the old (node, document, library) shape fails here as it does there.
  */
 class FixtureConditionEvaluator {
 
 	/**
 	 * Whether a condition holds.
 	 *
-	 * @param mixed $node The condition node.
-	 * @param array<string, mixed> $document The document.
-	 * @param array<string, mixed> $library The named conditions.
+	 * @param mixed               $node       The condition node.
+	 * @param ConditionEvaluation $evaluation The document, the named conditions and the depth.
 	 *
 	 * @return bool True when it holds.
 	 *
 	 * @throws RuntimeException When the node cannot be resolved.
 	 */
-	public function holds(mixed $node, array $document, array $library): bool {
+	public function holds(mixed $node, ConditionEvaluation $evaluation): bool {
 		if (is_array($node) === true && isset($node['filled']) === true) {
-			return empty($document[$node['filled']]) === false;
+			return empty($evaluation->document[$node['filled']]) === false;
 		}
 
-		if (is_array($node) === true && isset($node['$condition']) === true && isset($library[$node['$condition']]) === true) {
-			return $this->holds(node: $library[$node['$condition']], document: $document, library: $library);
+		if (is_array($node) === true && isset($node['$condition']) === true && isset($evaluation->library[$node['$condition']]) === true) {
+			return $this->holds(node: $evaluation->library[$node['$condition']], evaluation: $evaluation->deeper());
 		}
 
 		throw new RuntimeException('unresolvable condition');
@@ -78,6 +80,7 @@ class FixtureConditionEvaluator {
  * @uses   \OCA\Dossiq\Service\FrozenRecord\FreezeDefinition
  * @uses   \OCA\Dossiq\Service\FrozenRecord\FrozenRecordGuard
  * @uses   \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\FrozenRecord\CanonicalValue
  */
 class DecisionDocumentTest extends TestCase {
 
@@ -149,7 +152,7 @@ class DecisionDocumentTest extends TestCase {
 					return $authority;
 				}
 
-				if ($id === 'OCA\OpenRegister\Service\Rules\NamedConditionEvaluator' && $evaluator === true) {
+				if ($id === NamedConditionEvaluator::class && $evaluator === true) {
 					return new FixtureConditionEvaluator();
 				}
 
@@ -422,4 +425,54 @@ class DecisionDocumentTest extends TestCase {
 		);
 		$guard->assertUpdatable(definition: $freeze, stored: $signed, incoming: array_merge($signed, ['currentStatus' => 'sent', 'sentAt' => '2026-10-11']));
 	}//end testSignedDocumentIsFrozen()
+
+	/**
+	 * A block without a kind name is refused.
+	 *
+	 * @return void
+	 */
+	public function testDefinitionWithoutKindIsRefused(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('A decision document definition must name its kind.');
+		new DecisionDocumentDefinition(kind: '  ', block: ['remedyRequired' => false]);
+	}//end testDefinitionWithoutKindIsRefused()
+
+	/**
+	 * A freeze status that is not a decision document status is refused.
+	 *
+	 * @return void
+	 */
+	public function testUnknownFrozenStatusIsRefused(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Decision document notice freezes at a status that is not a decision document status.');
+		new DecisionDocumentDefinition(kind: 'notice', block: ['remedyRequired' => false, 'frozenStatuses' => ['signed', 'published']]);
+	}//end testUnknownFrozenStatusIsRefused()
+
+	/**
+	 * A block that freezes at no status at all is refused.
+	 *
+	 * @return void
+	 */
+	public function testEmptyFrozenStatusesAreRefused(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Decision document notice freezes at a status that is not a decision document status.');
+		new DecisionDocumentDefinition(kind: 'notice', block: ['remedyRequired' => false, 'frozenStatuses' => []]);
+	}//end testEmptyFrozenStatusesAreRefused()
+
+	/**
+	 * A sent document is archived with the moment it was archived.
+	 *
+	 * @return void
+	 */
+	public function testSentDocumentIsArchived(): void {
+		$archived = $this->lifecycle(container: $this->container())->transition(
+			definition: $this->definition(),
+			document: array_merge(self::VALID, ['currentStatus' => 'sent']),
+			to: 'archived',
+			actor: 'alice',
+			moment: new DateTimeImmutable('2026-10-12T09:30:00+00:00'),
+		);
+
+		self::assertSame(['currentStatus' => 'archived', 'archivedAt' => '2026-10-12T09:30:00+00:00'], $archived);
+	}//end testSentDocumentIsArchived()
 }//end class

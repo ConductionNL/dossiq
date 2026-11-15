@@ -52,7 +52,7 @@ export function CasesSavedView(slug: string): string {
 /**
  * Whether nextcloud-vue renders a view's page config `overrides` (card
  * layout, columns, slots, header, tabs; library batch 18). The tests that
- * read what a view restores (openspec/changes/lists-are-views/restore.md)
+ * read what a view restores (openspec/changes/archive/2026-10-30-lists-are-views/restore.md)
  * are fixme while this is false.
  */
 export const VIEW_OVERRIDES_APPLIED = true
@@ -66,10 +66,14 @@ export const VIEW_OVERRIDES_APPLIED = true
  */
 export const SubstitutionPersonalSettings = '/apps/dossiq/#user-settings'
 
-/** `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console (manifest page `SubstitutionAdmin`). */
-export const SubstitutionAdmin = '/substitution-admin'
+/**
+ * `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console,
+ * the Substitution tab of the admin settings (its own page `/substitution-admin`
+ * retired on 20 Oct 2026 and redirects here). Prefix with `/index.php` only.
+ */
+export const SubstitutionAdmin = '/settings/admin/dossiq?tab=substitution'
 
-/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets from `src/views/processMining/`. */
+/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets are library charts, stats and tables over `/api/reports/process-mining`. */
 export const ProcessMiningDashboard = '/process-mining'
 
 /**

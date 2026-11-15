@@ -6,7 +6,7 @@
  * the type tag in the case lists, and the case type form and card where an
  * author picks both.
  *
- * @spec openspec/changes/case-type-colour-icon/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+ * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
  */
 
 import fs from 'fs'
@@ -51,9 +51,10 @@ describe('case type colour and icon', () => {
 		expect(STATUS_COLOURS).toContain('teal-light')
 	})
 
-	it('resolves the type pill on a case to its case type colour and icon', () => {
+	it('resolves the type pill on a case to its case type colour, without the icon the board does not draw', () => {
 		const pill = page(simple, 'CaseDetail').config.typePill
-		expect(pill.resolve).toMatchObject({ register: 'dossiq', schema: 'caseType', ...RESOLVE })
+		expect(pill.resolve).toMatchObject({ register: 'dossiq', schema: 'caseType', colorField: RESOLVE.colorField })
+		expect(pill.resolve.iconField).toBeUndefined()
 	})
 
 	it('resolves every case type tag in the case lists', () => {
@@ -65,11 +66,30 @@ describe('case type colour and icon', () => {
 		}
 	})
 
-	it('resolves the type pill on every case board card', () => {
+	// Ruben, 23 Oct: case type pills read the case type's colour everywhere.
+	// DqTeamwachtrij draws the queue's type tags in it (Woo-verzoek red,
+	// Omgevingsvergunning teal, Melding openbare ruimte amber), and the map
+	// list's type pill (DqZakenKaart) is the same pill. No icon: the boards
+	// draw none on these.
+	it('resolves the team queue\'s type tags and the map list\'s type pill to the case type colour', () => {
+		const cases = page(manifest, 'Cases').config
+		const queue = cases.defaultSavedViews.find((view) => view.slug === 'team-queue')
+		const tag = queue.overrides.columns.find((column) => column.key === 'caseType')
+		expect(tag.widget).toBe('badge')
+		expect(tag.widgetProps.resolve).toEqual({ register: 'dossiq', schema: 'caseType', colorField: 'colour' })
+		expect(tag.widgetProps.variant).toBeUndefined()
+		const listTag = queue.overrides.listConfig.trailing.find((cell) => cell.key === 'caseType')
+		expect(listTag.widgetProps.resolve).toEqual({ register: 'dossiq', schema: 'caseType', colorField: 'colour' })
+		expect(listTag.widgetProps.variant).toBeUndefined()
+		const mapPills = page(simple, 'Cases').config.mapConfig.list.pills
+		expect(mapPills.find((pill) => pill.path === 'caseType').resolve).toEqual({ register: 'dossiq', schema: 'caseType', colorField: 'colour' })
+	})
+
+	it('resolves the type pill on every case board card to its colour, without the icon the boards do not draw', () => {
 		const boards = manifest.pages.map((entry) => entry.config && entry.config.board).filter((board) => board && board.card && board.card.pill === 'caseType')
 		expect(boards.length).toBeGreaterThan(0)
 		for (const board of boards) {
-			expect(board.card.resolve).toEqual(RESOLVE)
+			expect(board.card.resolve).toEqual({ colorField: RESOLVE.colorField })
 		}
 	})
 

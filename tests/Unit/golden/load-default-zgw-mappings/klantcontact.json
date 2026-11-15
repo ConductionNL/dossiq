@@ -1,0 +1,30 @@
+{
+    "zgwResource": "klantcontact",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "zaak": "{{ _baseUrl | replace({\"zaken/v1/klantcontacten\": \"zaken/v1/zaken\"}) }}/{{ case }}",
+        "datumtijd": "{{ contactDateTime }}",
+        "kanaal": "{{ channel }}",
+        "subject": "{{ subject }}",
+        "initiator": "{{ initiator }}"
+    },
+    "reverseMapping": {
+        "case": "{{ zaak | zgw_extract_uuid }}",
+        "contactDateTime": "{{ datumtijd }}",
+        "channel": "{{ kanaal }}",
+        "subject": "{{ onderwerp }}",
+        "initiator": "{{ initiator }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "zaak": {
+            "field": "case",
+            "extractUuid": true
+        }
+    }
+}

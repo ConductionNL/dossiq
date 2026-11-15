@@ -28,6 +28,14 @@ describe('where cases get stuck', () => {
 		expect(stuck.content.text).toBeUndefined()
 	})
 
+	it('lists the two phases where cases stick most, as board DqProcesanalyse draws them (r33: three)', () => {
+		expect(stuck.content.limit).toBe(2)
+	})
+
+	it('draws its rows compact, as board DqProcesanalyse does (nextcloud-vue 24o density)', () => {
+		expect(stuck.content.density).toBe('compact')
+	})
+
 	it('draws no widget Actions menu, as board DqProcesanalyse', () => {
 		expect(page.config.showWidgetActions).toBe(false)
 	})
@@ -40,6 +48,12 @@ describe('the Gemiddeld / Mediaan switch', () => {
 	it('sits on the description line as a segmented control, opening on the mean', () => {
 		expect(statistic).toMatchObject({ control: 'segmented', placement: 'description', default: 'mean' })
 		expect(statistic.options.map((option) => option.value)).toEqual(['mean', 'median'])
+	})
+
+	it('names the group Maat, as the board does', () => {
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+		expect(statistic.label).toBe('Measure')
+		expect(nl[statistic.label]).toBe('Maat')
 	})
 
 	it('makes the matrix read the statistic the switch names, through the library', () => {

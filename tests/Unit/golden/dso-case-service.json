@@ -1,0 +1,1823 @@
+{
+    "move, with date and notes": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "dsoNotes": "Besloten",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen",
+                        "besluitdatum": "2026-02-03"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, no date, no notes": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": null,
+                    "notes": null,
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, only notes": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "dsoNotes": "Besloten",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": null,
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, only a date": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen",
+                        "besluitdatum": "2026-02-03"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": null,
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, empty notes": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "dsoNotes": "",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen",
+                        "besluitdatum": "2026-02-03"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, earlier journal kept": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "dsoNotes": "Besloten",
+            "activity": "[{\"type\":\"created\",\"at\":\"x\",\"by\":\"y\"},{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"created\",\"at\":\"x\",\"by\":\"y\"},{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen",
+                        "besluitdatum": "2026-02-03"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, no status yet": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "dsoNotes": "Besloten",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen",
+                        "besluitdatum": "2026-02-03"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, no permit application": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "dsoNotes": "Besloten",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, permit application missing": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "dsoNotes": "Besloten",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, no permit application schema": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "dsoNotes": "Besloten",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, permit application save fails": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "dsoNotes": "Besloten",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen",
+                        "besluitdatum": "2026-02-03"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq DsoCaseService: could not sync vergunningaanvraag status: saveObject failed",
+                {
+                    "app": "dossiq",
+                    "permitApplicationRef": "va-1"
+                }
+            ]
+        ]
+    },
+    "move, case missing": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Zaak not found: case-1"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, case read fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "find failed"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, case reads as a scalar": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Zaak not found: case-1"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, patch fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "patchObject failed"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, patch answers a scalar": {
+        "answer": [],
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen",
+                        "besluitdatum": "2026-02-03"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, no register configured": {
+        "answer": {
+            "id": "case-1",
+            "dsoStatus": "verleend",
+            "besluitdatum": "2026-02-03",
+            "dsoNotes": "Besloten",
+            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "case-1",
+                    "register": "",
+                    "schema": ""
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "case-1",
+                    "data": {
+                        "dsoStatus": "verleend",
+                        "besluitdatum": "2026-02-03",
+                        "dsoNotes": "Besloten",
+                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                    },
+                    "register": "",
+                    "schema": ""
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "id": "va-1",
+                        "status": "verleend",
+                        "activiteit": "bouwen",
+                        "besluitdatum": "2026-02-03"
+                    },
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "DsoStatusChangeNotifier::dispatchStatusChanged",
+                {
+                    "requestRef": "va-1",
+                    "oldStatus": "in_behandeling",
+                    "newStatus": "verleend",
+                    "besluitdatum": "2026-02-03",
+                    "notes": "Besloten",
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "intake, given application, new case": {
+        "answer": {
+            "caseType": "ct-1",
+            "procedureType": "reguliere",
+            "startDate": "2026-01-05",
+            "title": "Aanvraag",
+            "deadlineDate": "2026-03-02",
+            "id": "saved-1"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::searchObjectsBySlug",
+                {
+                    "registerSlug": "dossiq",
+                    "schemaSlug": "case",
+                    "filters": {
+                        "permitApplicationRef": "va-1",
+                        "_limit": 1
+                    }
+                }
+            ],
+            [
+                "DsoIntakeCasePayload::payloadFor",
+                {
+                    "permitApplicationId": "va-1",
+                    "permitApplication": {
+                        "id": "va-1",
+                        "status": "ingediend",
+                        "activiteit": "bouwen"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "caseType": "ct-1",
+                        "procedureType": "reguliere",
+                        "startDate": "2026-01-05",
+                        "title": "Aanvraag",
+                        "deadlineDate": "2026-03-02"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq DsoCaseService: zaak created",
+                {
+                    "app": "dossiq",
+                    "vergunningaanvraagId": "va-1",
+                    "caseType": "ct-1",
+                    "procedureType": "reguliere",
+                    "deadlineDate": "2026-03-02"
+                }
+            ]
+        ]
+    },
+    "intake, read application, new case": {
+        "answer": {
+            "caseType": "ct-1",
+            "procedureType": "reguliere",
+            "startDate": "2026-01-05",
+            "title": "Aanvraag",
+            "deadlineDate": "2026-03-02",
+            "id": "saved-1"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::searchObjectsBySlug",
+                {
+                    "registerSlug": "dossiq",
+                    "schemaSlug": "case",
+                    "filters": {
+                        "permitApplicationRef": "va-1",
+                        "_limit": 1
+                    }
+                }
+            ],
+            [
+                "DsoIntakeCasePayload::payloadFor",
+                {
+                    "permitApplicationId": "va-1",
+                    "permitApplication": {
+                        "id": "va-1",
+                        "status": "ingediend",
+                        "activiteit": "bouwen"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "caseType": "ct-1",
+                        "procedureType": "reguliere",
+                        "startDate": "2026-01-05",
+                        "title": "Aanvraag",
+                        "deadlineDate": "2026-03-02"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq DsoCaseService: zaak created",
+                {
+                    "app": "dossiq",
+                    "vergunningaanvraagId": "va-1",
+                    "caseType": "ct-1",
+                    "procedureType": "reguliere",
+                    "deadlineDate": "2026-03-02"
+                }
+            ]
+        ]
+    },
+    "intake, application missing": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Vergunningaanvraag not found: va-1"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "intake, application read fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "find failed"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "dso_vergunningaanvraag_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "va-1",
+                    "register": "dso",
+                    "schema": "aanvraag"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "intake, case already exists": {
+        "answer": {
+            "id": "case-old",
+            "permitApplicationRef": "va-1"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::searchObjectsBySlug",
+                {
+                    "registerSlug": "dossiq",
+                    "schemaSlug": "case",
+                    "filters": {
+                        "permitApplicationRef": "va-1",
+                        "_limit": 1
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "intake, extensive procedure": {
+        "answer": {
+            "caseType": "ct-2",
+            "procedureType": "uitgebreide",
+            "startDate": "2026-03-02",
+            "deadlineDate": "2026-09-08",
+            "id": "saved-1"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::searchObjectsBySlug",
+                {
+                    "registerSlug": "dossiq",
+                    "schemaSlug": "case",
+                    "filters": {
+                        "permitApplicationRef": "va-1",
+                        "_limit": 1
+                    }
+                }
+            ],
+            [
+                "DsoIntakeCasePayload::payloadFor",
+                {
+                    "permitApplicationId": "va-1",
+                    "permitApplication": {
+                        "id": "va-1",
+                        "status": "ingediend",
+                        "activiteit": "bouwen"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "caseType": "ct-2",
+                        "procedureType": "uitgebreide",
+                        "startDate": "2026-03-02",
+                        "deadlineDate": "2026-09-08"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq DsoCaseService: zaak created",
+                {
+                    "app": "dossiq",
+                    "vergunningaanvraagId": "va-1",
+                    "caseType": "ct-2",
+                    "procedureType": "uitgebreide",
+                    "deadlineDate": "2026-09-08"
+                }
+            ]
+        ]
+    },
+    "intake, no case type answers": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "payloadFor failed"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::searchObjectsBySlug",
+                {
+                    "registerSlug": "dossiq",
+                    "schemaSlug": "case",
+                    "filters": {
+                        "permitApplicationRef": "va-1",
+                        "_limit": 1
+                    }
+                }
+            ],
+            [
+                "DsoIntakeCasePayload::payloadFor",
+                {
+                    "permitApplicationId": "va-1",
+                    "permitApplication": {
+                        "id": "va-1",
+                        "status": "ingediend",
+                        "activiteit": "bouwen"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "intake, save answers a scalar": {
+        "answer": [],
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::searchObjectsBySlug",
+                {
+                    "registerSlug": "dossiq",
+                    "schemaSlug": "case",
+                    "filters": {
+                        "permitApplicationRef": "va-1",
+                        "_limit": 1
+                    }
+                }
+            ],
+            [
+                "DsoIntakeCasePayload::payloadFor",
+                {
+                    "permitApplicationId": "va-1",
+                    "permitApplication": {
+                        "id": "va-1",
+                        "status": "ingediend",
+                        "activiteit": "bouwen"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "caseType": "ct-1",
+                        "procedureType": "reguliere",
+                        "startDate": "2026-01-05",
+                        "title": "Aanvraag",
+                        "deadlineDate": "2026-03-02"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq DsoCaseService: zaak created",
+                {
+                    "app": "dossiq",
+                    "vergunningaanvraagId": "va-1",
+                    "caseType": "ct-1",
+                    "procedureType": "reguliere",
+                    "deadlineDate": "2026-03-02"
+                }
+            ]
+        ]
+    },
+    "intake, save fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "saveObject failed"
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "register"
+                }
+            ],
+            [
+                "IAppConfig::getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "case_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::searchObjectsBySlug",
+                {
+                    "registerSlug": "dossiq",
+                    "schemaSlug": "case",
+                    "filters": {
+                        "permitApplicationRef": "va-1",
+                        "_limit": 1
+                    }
+                }
+            ],
+            [
+                "DsoIntakeCasePayload::payloadFor",
+                {
+                    "permitApplicationId": "va-1",
+                    "permitApplication": {
+                        "id": "va-1",
+                        "status": "ingediend",
+                        "activiteit": "bouwen"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "caseType": "ct-1",
+                        "procedureType": "reguliere",
+                        "startDate": "2026-01-05",
+                        "title": "Aanvraag",
+                        "deadlineDate": "2026-03-02"
+                    },
+                    "register": "dossiq",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "guard, the assignee": {
+        "answer": "allowed",
+        "calls": [],
+        "logs": []
+    },
+    "guard, the older assignee field": {
+        "answer": "allowed",
+        "calls": [],
+        "logs": []
+    },
+    "guard, the handler field": {
+        "answer": "allowed",
+        "calls": [],
+        "logs": []
+    },
+    "guard, the assignee field wins": {
+        "answer": {
+            "thrown": "Exception",
+            "message": "Not authorized"
+        },
+        "calls": [
+            [
+                "ContainerInterface::get",
+                {
+                    "id": "OCP\\IGroupManager"
+                }
+            ],
+            [
+                "IGroupManager::isAdmin",
+                {
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "guard, an admin": {
+        "answer": "allowed",
+        "calls": [
+            [
+                "ContainerInterface::get",
+                {
+                    "id": "OCP\\IGroupManager"
+                }
+            ],
+            [
+                "IGroupManager::isAdmin",
+                {
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "guard, not an admin": {
+        "answer": {
+            "thrown": "Exception",
+            "message": "Not authorized"
+        },
+        "calls": [
+            [
+                "ContainerInterface::get",
+                {
+                    "id": "OCP\\IGroupManager"
+                }
+            ],
+            [
+                "IGroupManager::isAdmin",
+                {
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "guard, no assignee, not an admin": {
+        "answer": {
+            "thrown": "Exception",
+            "message": "Not authorized"
+        },
+        "calls": [
+            [
+                "ContainerInterface::get",
+                {
+                    "id": "OCP\\IGroupManager"
+                }
+            ],
+            [
+                "IGroupManager::isAdmin",
+                {
+                    "userId": "anna"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "guard, groups unavailable": {
+        "answer": {
+            "thrown": "Exception",
+            "message": "Not authorized"
+        },
+        "calls": [
+            [
+                "ContainerInterface::get",
+                {
+                    "id": "OCP\\IGroupManager"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq DsoCaseService: could not resolve IGroupManager for auth check: get failed",
+                {
+                    "app": "dossiq"
+                }
+            ]
+        ]
+    },
+    "deadline, regular": {
+        "answer": "2026-03-02",
+        "calls": [],
+        "logs": []
+    },
+    "deadline, extensive": {
+        "answer": "2027-06-30",
+        "calls": [],
+        "logs": []
+    }
+}

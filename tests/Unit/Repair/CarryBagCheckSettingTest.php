@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
+ * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
  */
 
 declare(strict_types=1);

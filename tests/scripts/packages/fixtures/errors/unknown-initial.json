@@ -1,0 +1,13 @@
+{
+  "caseTypes": [
+    {
+      "id": "e7",
+      "initialStatusName": "Missing",
+      "statusTypes": [
+        {
+          "name": "A"
+        }
+      ]
+    }
+  ]
+}

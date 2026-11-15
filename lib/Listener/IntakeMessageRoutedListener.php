@@ -49,7 +49,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Intake\ChannelIntake;
+use OCA\Dossiq\Kernel\Contracts\ChannelIntakeInterface;
+use OCA\Dossiq\Listener\Support\EventGetters;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
@@ -78,12 +79,12 @@ class IntakeMessageRoutedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ChannelIntake            $intake         Decides whether a message opens a case.
+	 * @param ChannelIntakeInterface            $intake         Decides whether a message opens a case.
 	 * @param LoggerInterface          $logger         Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 */
 	public function __construct(
-		private readonly ChannelIntake $intake,
+		private readonly ChannelIntakeInterface $intake,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
@@ -128,23 +129,7 @@ class IntakeMessageRoutedListener implements IEventListener {
 
 		try {
 			$targetSchema = (string)$event->getTargetSchema();
-			if ($this->intake->isForACase(targetSchema: $targetSchema) === false) {
-				// Another app's rule. Answering it would take the message away
-				// from whoever it was addressed to.
-				return;
-			}
-
-			$caseId = $this->intake->caseFor(
-				message: $this->arrayFrom(event: $event, method: 'getMessage'),
-				targetPayload: $this->arrayFrom(event: $event, method: 'getTargetPayload'),
-				ruleName: $this->stringFrom(event: $event, method: 'getRuleName'),
-			);
-
-			if ($caseId === '' || method_exists($event, 'setCreatedRef') === false) {
-				return;
-			}
-
-			$event->setCreatedRef($caseId);
+			$this->answerCase(event: $event, targetSchema: $targetSchema);
 		} catch (Throwable $e) {
 			// The slot stays empty, so integriq holds the message. That is the
 			// same outcome as before this listener existed, and it is the right
@@ -158,46 +143,35 @@ class IntakeMessageRoutedListener implements IEventListener {
 	}//end answer()
 
 	/**
-	 * Read an array off the event, whatever it answers.
+	 * Create or find the case a routed message is for, and write it into the event.
 	 *
-	 * @param Event  $event  The event.
-	 * @param string $method The getter.
+	 * @param Event  $event        The integriq event.
+	 * @param string $targetSchema The schema the routing rule targets.
 	 *
-	 * @return array<string, mixed> The value, or an empty array.
+	 * @return void
+	 *
+	 * @throws Throwable When the intake cannot handle the message.
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
-	private function arrayFrom(Event $event, string $method): array {
-		if (method_exists($event, $method) === false) {
-			return [];
+	private function answerCase(Event $event, string $targetSchema): void {
+		if ($this->intake->isForACase(targetSchema: $targetSchema) === false) {
+			// Another app's rule. Answering it would take the message away
+			// from whoever it was addressed to.
+			return;
 		}
 
-		$value = $event->$method();
+		$getters = new EventGetters();
+		$caseId = $this->intake->caseFor(
+			message: $getters->arrayFrom(event: $event, method: 'getMessage'),
+			targetPayload: $getters->arrayFrom(event: $event, method: 'getTargetPayload'),
+			ruleName: $getters->stringFrom(event: $event, method: 'getRuleName'),
+		);
 
-		if (is_array($value) === true) {
-			return $value;
+		if ($caseId === '' || method_exists($event, 'setCreatedRef') === false) {
+			return;
 		}
 
-		return [];
-	}//end arrayFrom()
-
-	/**
-	 * Read a string off the event, whatever it answers.
-	 *
-	 * @param Event  $event  The event.
-	 * @param string $method The getter.
-	 *
-	 * @return string The value, or ''.
-	 */
-	private function stringFrom(Event $event, string $method): string {
-		if (method_exists($event, $method) === false) {
-			return '';
-		}
-
-		$value = $event->$method();
-
-		if (is_scalar($value) === true) {
-			return trim((string)$value);
-		}
-
-		return '';
-	}//end stringFrom()
+		$event->setCreatedRef($caseId);
+	}//end answerCase()
 }//end class

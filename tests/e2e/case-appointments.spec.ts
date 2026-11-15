@@ -88,6 +88,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	adoptableCaseTypes,
 	getRequestToken,
@@ -183,7 +184,7 @@ async function openWorkTab(page: Page, id: string) {
 
 	const strip = page.locator('.cn-tabs-widget')
 	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: 'Work', exact: true }).click()
+	await openCaseTab(page, /^(Tasks|Taken)\b/)
 
 	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
 	await expect(panel).toBeVisible({ timeout: 20_000 })

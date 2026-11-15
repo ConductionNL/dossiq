@@ -38,8 +38,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\Dossiq\Kernel\Contracts\ConfiguredRegistryServiceInterface;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -51,7 +55,7 @@ use Throwable;
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-class ConfiguredRegistryService {
+class ConfiguredRegistryService implements ConfiguredRegistryServiceInterface {
 
 	use SearchesObjects;
 
@@ -168,9 +172,8 @@ class ConfiguredRegistryService {
 		}
 
 		$saved = $context['objectService']->saveObject(
-			register: $context['register'],
-			schema: $context['schema'],
-			object: $data
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $context['register'], schema: $context['schema']))
 		);
 
 		return $this->toArray(value: $saved, fallback: $data);
@@ -207,9 +210,10 @@ class ConfiguredRegistryService {
 		}
 
 		$context['objectService']->deleteObject(
-			uuid: $id,
-			register: $context['register'],
-			schema: $context['schema']
+			new ObjectDeletion(
+				uuid: $id,
+				target: new ObjectFindTarget(register: $context['register'], schema: $context['schema'])
+			)
 		);
 	}//end delete()
 

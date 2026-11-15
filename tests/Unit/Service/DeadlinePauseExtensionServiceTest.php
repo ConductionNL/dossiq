@@ -52,6 +52,11 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\PauseRegistrationRun
+ * @uses \OCA\Dossiq\Service\TermTimerFields
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
+ * @uses \OCA\Dossiq\Service\TimerArmRun
+ * @uses \OCA\Dossiq\Service\ExtensionRun
  */
 class DeadlinePauseExtensionServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -370,6 +375,41 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$this->extService->requestSupervisorExtension($id, 'supervisor akkoord', '2026-09-30');
 		self::assertSame(30, $this->engine->calls['extendWithOverride'][0]['amount']);
 		self::assertSame('supervisor', $this->engine->calls['extendWithOverride'][0]['actor']);
+	}
+
+	/**
+	 * Each verlenging records one `verleng` event with the basis and actor of
+	 * its mode, its rationale, its day impact and its document link, and
+	 * stores the end as asked beside the end it got.
+	 *
+	 * @return void
+	 */
+	public function testEachExtensionRecordsItsEventAndTheEndAsAsked(): void {
+		$instance = $this->newInstance();
+		$id = (string)$instance['id'];
+
+		$first = $this->extService->requestExtension($id, 'Complex zaak', '2026-08-31', 'doc:brief-1');
+		$second = $this->extService->requestSupervisorExtension($id, 'supervisor akkoord', '2026-09-30');
+
+		$events = [];
+		foreach (($this->objects->store['termijnGebeurtenis'] ?? []) as $event) {
+			if (($event['type'] ?? '') !== 'verleng') {
+				continue;
+			}
+
+			$events[] = array_intersect_key($event, array_flip(['deadlineInstance', 'type', 'actor', 'basis', 'rationale', 'daysImpact', 'documentLink']));
+		}
+
+		self::assertSame(
+			[
+				['deadlineInstance' => $id, 'type' => 'verleng', 'actor' => 'system', 'basis' => 'AWB 4:14 lid 1', 'rationale' => 'Complex zaak', 'daysImpact' => 35, 'documentLink' => 'doc:brief-1'],
+				['deadlineInstance' => $id, 'type' => 'verleng', 'actor' => 'supervisor', 'basis' => 'AWB 4:14 lid 3 (supervisor)', 'rationale' => 'supervisor akkoord', 'daysImpact' => 30],
+			],
+			$events
+		);
+		self::assertSame(['2026-08-31', '2026-08-31', 'verlengd', 1], [$first['endDateCurrent'], $first['endDateBeforeRoll'], $first['status'], $first['countExtensions']]);
+		self::assertSame(['2026-09-30', '2026-09-30', 'verlengd', 2], [$second['endDateCurrent'], $second['endDateBeforeRoll'], $second['status'], $second['countExtensions']]);
+		self::assertSame([], $second['notificatiesVerstuurd']);
 	}
 
 	/**

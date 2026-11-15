@@ -30,6 +30,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\SatelliteOrphanScanner
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class SatelliteOrphanScannerTest extends TestCase {
 	/**

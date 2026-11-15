@@ -2,12 +2,12 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The Add location dialog as the board draws it (DqZaakLocatie): the wizard
+ * The Add location dialog as the board draws it (DqZaakLocatie): the 560 wide
  * width, the address field named once by its own label, the map beside a
- * 200px layer list, and BAG and cadastre cards with a 17px title over 14px
+ * 170px layer list, and BAG and cadastre cards with a 17px title over 14px
  * rows 8px apart. Read from the component.
  *
- * @spec openspec/changes/case-location-dialog-board-look/specs/case-dashboard-view/spec.md
+ * @spec openspec/specs/case-dashboard-view/spec.md
  */
 import fs from 'fs'
 import path from 'path'
@@ -34,16 +34,42 @@ function ruleFor(selector) {
 }
 
 describe('CaseLocationDialog in the board look', () => {
-	it('opens at the wizard width', () => {
-		expect(source).toMatch(/<CnDialog[^>]*\swidth="wizard"/)
+	it('opens 560 wide, as the board draws the main dialog', () => {
+		expect(source).toMatch(/<CnDialog[^>]*\swidth="confirm"/)
 	})
 
 	it('names the address field once, by the field\'s own label', () => {
 		expect(source).not.toContain('case-location-dialog__label')
 	})
 
-	it('puts the map beside a 200px layer list in an 8px rounded frame', () => {
-		expect(ruleFor('.case-location-dialog__map-row')).toContain('grid-template-columns: minmax(0, 1fr) 200px')
+	it('draws the layer toggles as plain 14px checkboxes, 8px from their label', () => {
+		const content = ruleFor('.case-location-dialog .case-location-dialog__layers :deep(.checkbox-radio-switch-checkbox .checkbox-content)')
+		expect(content).toContain('gap: 8px')
+		expect(content).toContain('padding: 0')
+		expect(content).toContain('padding-inline-start: 4px')
+		expect(ruleFor('.case-location-dialog__layers :deep(.checkbox-content__text)')).toContain('font-size: 14px')
+	})
+
+	it('draws the layer rows 34px apart with a regular-weight label (r34)', () => {
+		expect(ruleFor('.case-location-dialog__layers')).toContain('gap: 10px')
+		expect(ruleFor('.case-location-dialog__layers :deep(.checkbox-content__text)')).toContain('font-weight: 400')
+	})
+
+	it('sets the address label at 14px/600, 6px above the field', () => {
+		const label = ruleFor('.case-location-dialog :deep(.select__label)')
+		expect(label).toContain('font-size: 14px')
+		expect(label).toContain('font-weight: 600')
+		expect(label).toContain('margin-bottom: 6px')
+	})
+
+	it('sets the search hint 6px under the field, on the normal line', () => {
+		const hint = ruleFor('.case-location-dialog > .case-location-dialog__hint')
+		expect(hint).toContain('margin-top: -16px')
+		expect(hint).toContain('line-height: 1.2')
+	})
+
+	it('puts the map beside a 170px layer list in an 8px rounded frame', () => {
+		expect(ruleFor('.case-location-dialog__map-row')).toContain('grid-template-columns: minmax(0, 1fr) 170px')
 		expect(ruleFor('.case-location-dialog__layers')).toContain('border-radius: 8px')
 		expect(ruleFor('.case-location-dialog__layers legend')).toContain('font-weight: 600')
 	})

@@ -5,7 +5,7 @@
  * The case type page's side column follows the open tab (boards
  * DqZaaktypeOverzicht, DqZaaktype, DqZaaktypeVelden).
  *
- * @spec openspec/changes/case-type-side-cards-per-tab/specs/case-type-side-cards-per-tab/spec.md#requirement-the-case-type-side-column-follows-the-open-tab
+ * @spec openspec/specs/case-type-side-cards-per-tab/spec.md#requirement-the-case-type-side-column-follows-the-open-tab
  */
 
 import fs from 'fs'
@@ -30,7 +30,7 @@ function besides(id) {
 
 describe('case type side column per tab', () => {
 	it('gives every tab an id', () => {
-		expect(tabIds).toEqual(['overview', 'fields', 'statuses', 'phases', 'rights', 'privacy', 'translations', 'versions', 'portal', 'history'])
+		expect(tabIds).toEqual(['overview', 'fields', 'statuses', 'phases', 'messages', 'rules', 'rights', 'privacy', 'translations', 'versions', 'portal', 'properties', 'history'])
 	})
 
 	it('names only tabs that exist', () => {
@@ -39,9 +39,11 @@ describe('case type side column per tab', () => {
 
 	it('shows the board\'s cards beside Overview, Phases and tasks and Fields', () => {
 		const on = (tab) => side.filter((card) => (card.tabs || tabIds).includes(tab)).map((card) => card.id)
-		expect(on('overview')).toEqual(['side-case-type-versions', 'side-case-type-check'])
+		expect(on('overview')).toEqual(['side-case-type-versions', 'side-case-type-facts', 'side-case-type-check'])
 		expect(on('phases')).toEqual(['side-case-type-versions', 'side-case-type-facts', 'side-case-type-history'])
-		expect(on('fields')).toEqual(['side-case-type-parent'])
+		expect(on('fields')).toEqual(['side-case-type-choice-list', 'side-case-type-parent'])
+		// DqZaaktypeRegels: Versions and Details beside the rules, as beside Statuses.
+		expect(on('rules')).toEqual(['side-case-type-versions', 'side-case-type-facts'])
 	})
 
 	it('draws the check beside Overview, not in its body', () => {

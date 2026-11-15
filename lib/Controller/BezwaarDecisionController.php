@@ -44,8 +44,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Bezwaar\DecisionService;
-use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DecisionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -68,8 +68,8 @@ class BezwaarDecisionController extends Controller {
 	 *
 	 * @param string          $appName     The app name.
 	 * @param IRequest        $request     The request.
-	 * @param DecisionService $decisions   The Awb 7:11 decision on an objection.
-	 * @param CaseAccessGuard $accessGuard Per-case authorization, failing closed.
+	 * @param DecisionServiceInterface $decisions   The Awb 7:11 decision on an objection.
+	 * @param CaseAccessGuardInterface $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession    $userSession The session.
 	 *
 	 * @return void
@@ -79,8 +79,8 @@ class BezwaarDecisionController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DecisionService $decisions,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly DecisionServiceInterface $decisions,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);

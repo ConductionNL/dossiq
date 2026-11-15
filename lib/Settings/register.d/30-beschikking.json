@@ -14,7 +14,7 @@
       "beschikking": {
         "slug": "beschikking",
         "icon": "FileCertificateOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:GovernmentPermit",
         "title": "Beschikking",
         "description": "Formal decision (Awb besluit) with full lifecycle: ontwerp -> akkoord-mandaat -> ondertekend -> verzonden -> ontvangen-bevestiging -> gearchiveerd. Immutable once ondertekend. State transitions are guarded by mandaat-verificatie (akkoord) and TSP-handtekening (onderteken) and logged via stateMachineLog.",
@@ -122,6 +122,66 @@
             "title": "Levy Amount",
             "default": 0,
             "description": "Leges amount associated with the decision"
+          },
+          "paymentSchedule": {
+            "type": "object",
+            "title": "Payment schedule",
+            "description": "Instalments paid out under this decision, each raised once with the finance app on its due date.",
+            "properties": {
+              "payeeIban": {
+                "type": "string",
+                "title": "Payee IBAN",
+                "description": "The account the instalments are paid to."
+              },
+              "instalments": {
+                "type": "array",
+                "title": "Instalments",
+                "description": "Due date and amount per instalment.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string",
+                      "title": "Instalment",
+                      "description": "The name of the instalment, such as first advance."
+                    },
+                    "dueOn": {
+                      "type": "string",
+                      "format": "date",
+                      "title": "Due on",
+                      "description": "The day the instalment is raised."
+                    },
+                    "amountCents": {
+                      "type": "integer",
+                      "title": "Amount in cents",
+                      "description": "The amount in euro cents."
+                    },
+                    "condition": {
+                      "type": "string",
+                      "title": "Condition",
+                      "description": "What has to happen before the instalment is paid. Empty when nothing has to."
+                    },
+                    "conditionMet": {
+                      "type": "boolean",
+                      "title": "Condition met",
+                      "description": "Whether the condition is met.",
+                      "default": false
+                    },
+                    "payableId": {
+                      "type": "string",
+                      "title": "Payable",
+                      "description": "The payable the finance app raised for this instalment."
+                    },
+                    "raisedAt": {
+                      "type": "string",
+                      "format": "date",
+                      "title": "Raised on",
+                      "description": "The day the instalment was raised."
+                    }
+                  }
+                }
+              }
+            }
           },
           "rationale": {
             "type": "string",
@@ -351,6 +411,41 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "caseType",
+          "slug": "wmo-melding",
+          "version": "1.0.1"
+        },
+        "title": "Wmo-melding",
+        "identifier": "wmo-melding",
+        "colour": "purple",
+        "icon": "HandHeartOutline",
+        "category": "Sociaal domein",
+        "description": "Melding van een hulpvraag onder de Wet maatschappelijke ondersteuning 2015.",
+        "processingDeadline": "P42D",
+        "internalOrExternal": "extern",
+        "confidentiality": "zaakvertrouwelijk",
+        "isDraft": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "case",
+          "slug": "case-wmo-huishoudelijke-hulp"
+        },
+        "title": "Wmo-melding: huishoudelijke hulp",
+        "description": "Melding van een inwoner die hulp in het huishouden nodig heeft; toegekend bij beschikking Z/2026/04832/B01.",
+        "identifier": "2026-4832",
+        "caseType": "@ref:caseType:wmo-melding",
+        "startDate": "2026-02-19",
+        "confidentiality": "zaakvertrouwelijk",
+        "intakeChannel": "manual",
+        "priority": "normal",
+        "extensionCount": 0,
+        "isFinalStatus": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "mandateArrangement",
           "slug": "mr-2024-007-wmo"
         },
@@ -371,7 +466,7 @@
           "schema": "beschikking",
           "slug": "besch-2026-04832"
         },
-        "caseId": "zaak-2026-wmo-04832",
+        "caseId": "@ref:case:case-wmo-huishoudelijke-hulp",
         "caseType": "wmo-melding",
         "decisionType": "toekenning",
         "reference": "Z/2026/04832/B01",
@@ -419,68 +514,6 @@
           "archivedOn": "2026-05-15T06:30:00+02:00",
           "archiveId": "openregister-2026-99231",
           "destructionDate": "2041-04-02"
-        }
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "beschikking",
-          "slug": "besch-2026-00156"
-        },
-        "caseId": "zaak-2026-omg-00156",
-        "caseType": "omgevingsvergunning",
-        "decisionType": "toekenning",
-        "reference": "Z/2026/00156/B01",
-        "templateId": "tpl-omgevingsvergunning-reguliere-procedure-v3",
-        "draftVersion": 1,
-        "currentStatus": "signed",
-        "addressee": {
-          "type": "bedrijf",
-          "oin": "00000001234567890000",
-          "name": "Bouwbedrijf de Vries B.V.",
-          "messageBoxChannel": "eherkenning",
-          "messageBoxConfirmed": true
-        },
-        "decision": {
-          "kind": "toekenning",
-          "subject": "bouwactiviteiten Kerkstraat 12",
-          "size": "n.v.t.",
-          "effectiveDate": "2026-05-01"
-        },
-        "rationale": "De aanvrager heeft voldaan aan de eisen van de Omgevingswet.",
-        "signature": {
-          "tspProvider": "kpn-gekwalificeerde-handtekening",
-          "signatory": "afdelingsmanager-bouw-23",
-          "signingMoment": "2026-04-22T10:15:42+02:00",
-          "validationRapportId": "val-2026-99405"
-        }
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "beschikking",
-          "slug": "besch-2026-00489"
-        },
-        "caseId": "zaak-2026-sub-00489",
-        "caseType": "subsidieaanvraag",
-        "decisionType": "toekenning",
-        "reference": "Z/2026/00489/B01",
-        "templateId": "tpl-subsidie-v2",
-        "draftVersion": 1,
-        "currentStatus": "draft",
-        "addressee": {
-          "type": "burger",
-          "bsn": "987654321",
-          "name": "J. Pieterse",
-          "messageBoxChannel": "mijnoverheid",
-          "messageBoxConfirmed": false
-        },
-        "decision": {
-          "kind": "toekenning",
-          "subject": "subsidie culturele activiteiten",
-          "size": "2500",
-          "effectiveDate": "2026-06-01",
-          "endDate": "2026-12-31"
         }
       }
     ]

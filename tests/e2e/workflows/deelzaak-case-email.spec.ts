@@ -143,7 +143,7 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	test('a deelzaak (sub-case) persists and round-trips through the DeelzaakList API', async () => {
+	test('a deelzaak (sub-case) persists and round-trips through the deelzaken API', async () => {
 		// Seed a parent + a child linked via `parentCase` — exactly the shape
 		// DeelzaakCreateModal.vue persists through the OpenRegister object store.
 		const parent = await seedCase(api, token, {

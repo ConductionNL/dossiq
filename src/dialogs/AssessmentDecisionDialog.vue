@@ -73,17 +73,13 @@
 					</span>
 				</div>
 
-				<div
+				<NcNoteCard
 					v-if="outstanding.length > 0"
+					type="warning"
+					:showAlert="true"
+					:heading="t('dossiq', 'Assess these documents first. The decision covers every document on the case.')"
 					class="assessment-decision__blocked"
-					role="alert"
 					data-testid="assessment-decision-blocked">
-					<strong>{{
-						t(
-							'dossiq',
-							'Assess these documents first. The decision covers every document on the case.',
-						)
-					}}</strong>
 					<ul>
 						<li v-for="document in outstanding" :key="document.id">
 							{{
@@ -92,7 +88,7 @@
 							}}
 						</li>
 					</ul>
-				</div>
+				</NcNoteCard>
 
 				<template v-else-if="loadError === ''">
 					<div class="assessment-decision__row">
@@ -100,12 +96,15 @@
 							<label class="assessment-decision__label" for="assessment-decision-date">
 								{{ t('dossiq', 'Decision date') }}
 							</label>
-							<input
-								id="assessment-decision-date"
-								v-model="decisionDate"
-								class="assessment-decision__date"
-								type="date"
-								data-testid="assessment-decision-date">
+							<span class="assessment-decision__date-wrap">
+								<input
+									id="assessment-decision-date"
+									v-model="decisionDate"
+									class="assessment-decision__date"
+									type="date"
+									data-testid="assessment-decision-date">
+								<CalendarBlankOutline :size="18" class="assessment-decision__date-icon" aria-hidden="true" />
+							</span>
 							<span v-if="kase && kase.deadline" class="assessment-decision__hint">
 								{{ t('dossiq', 'At the latest {date}', { date: formatDate(kase.deadline) }) }}
 							</span>
@@ -139,7 +138,7 @@
 						data-testid="assessment-decision-letter">
 						<span class="assessment-decision__label">{{ t('dossiq', 'Letter of the decision') }}</span>
 						<div class="assessment-decision__letter">
-							<FileDocumentCheckOutline :size="20" class="assessment-decision__letter-icon" />
+							<span class="assessment-decision__letter-icon"><FileDocumentCheckOutline :size="18" /></span>
 							<div class="assessment-decision__letter-text">
 								<template v-if="letter">
 									<strong data-testid="assessment-decision-letter-title">{{ letter.title }}</strong>
@@ -169,6 +168,14 @@
 					</div>
 				</template>
 
+				<div
+					v-if="asideShown"
+					class="assessment-decision__aside"
+					data-testid="assessment-decision-aside">
+					<AccountGroupOutline :size="18" class="assessment-decision__aside-icon" />
+					<span>{{ t('dossiq', aside.text) }}</span>
+				</div>
+
 				<NcNoteCard v-if="note" type="info" :heading="noteHeading ? t('dossiq', noteHeading) : undefined">
 					{{ t('dossiq', note) }}
 				</NcNoteCard>
@@ -181,7 +188,7 @@
 					{{ error }}
 				</p>
 			</template>
-			<BeschikkingComposerDialog
+			<GenerateDocumentDialog
 				v-if="composing"
 				:open="true"
 				:caseId="targetCaseId"
@@ -223,10 +230,13 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import AccountGroupOutline from 'vue-material-design-icons/AccountGroupOutline.vue'
+import CalendarBlankOutline from 'vue-material-design-icons/CalendarBlankOutline.vue'
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
-import BeschikkingComposerDialog from './BeschikkingComposerDialog.vue'
+import GenerateDocumentDialog from './GenerateDocumentDialog.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
+import { nextStepOf } from '../utils/caseNextStep.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -242,11 +252,78 @@ function sentenceOf(failure, fallback) {
 	return String(data?.message || data?.error || fallback)
 }
 
+/**
+ * Read the documents of a case with their assessments.
+ *
+ * @param {{register: string, schema: string, caseField?: string}} source Where the assessments live.
+ * @param {string} caseId The case.
+ * @return {Promise<Array<object>>} The documents.
+ */
+async function readAssessedDocuments(source, caseId) {
+	const { data } = await axios.get(
+		generateUrl(
+			`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`,
+		),
+		{
+			params: {
+				[source.caseField || 'case']: caseId,
+				_limit: 500,
+			},
+		},
+	)
+	return data?.results || []
+}
+
+/**
+ * How many documents carry each assessment, and each refusal ground.
+ *
+ * @param {Array<object>} rows The documents.
+ * @param {string} field The field holding a document's assessment.
+ * @return {{tally: object, grounds: object}} The counts per value and per ground code.
+ */
+function assessmentCounts(rows, field) {
+	const tally = {}
+	const grounds = {}
+	for (const row of rows) {
+		const value = String(row?.[field] ?? '')
+		tally[value] = (tally[value] ?? 0) + 1
+		countGrounds(grounds, row?.weigeringsgronden)
+	}
+	return { tally, grounds }
+}
+
+/**
+ * Add one document's refusal grounds to the count per ground code.
+ *
+ * @param {object} grounds The count per ground code.
+ * @param {unknown} weigeringsgronden The document's grounds: codes or `{code}` rows.
+ */
+function countGrounds(grounds, weigeringsgronden) {
+	for (const ground of Array.isArray(weigeringsgronden) ? weigeringsgronden : []) {
+		const code = groundCode(ground)
+		if (code !== '') {
+			grounds[code] = (grounds[code] ?? 0) + 1
+		}
+	}
+}
+
+/**
+ * The code of one refusal ground: a bare code or a `{code}` row.
+ *
+ * @param {unknown} ground The ground.
+ * @return {string} Its code, or '' when it has none.
+ */
+function groundCode(ground) {
+	return String(ground?.code ?? ground ?? '')
+}
+
 export default {
 	name: 'AssessmentDecisionDialog',
 
 	components: {
-		BeschikkingComposerDialog,
+		AccountGroupOutline,
+		CalendarBlankOutline,
+		GenerateDocumentDialog,
 		CnChoiceCards,
 		FileDocumentCheckOutline,
 		CnDialog,
@@ -327,6 +404,24 @@ export default {
 			type: String,
 			default: '',
 		},
+
+		/**
+		 * A pointer beside the form, `{ text, whenApp? }`: an i18n key, shown
+		 * only while an app `whenApp` names (an id or a list of ids) is installed.
+		 */
+		aside: {
+			type: Object,
+			default: null,
+		},
+
+		/**
+		 * Where the case type's statuses are read, with `{caseType}` and
+		 * `{caseId}`. Set, the subtitle names the step the case moves to.
+		 */
+		stepsUrl: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['close'],
@@ -351,6 +446,7 @@ export default {
 			letterReadError: false,
 			drafting: false,
 			composing: false,
+			nextStep: null,
 		}
 	},
 
@@ -363,7 +459,27 @@ export default {
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
 		subtitle() {
 			const total = Object.values(this.tally).reduce((sum, count) => sum + count, 0)
-			return n('dossiq', 'The decision is built from the %n assessed document.', 'The decision is built from the %n assessed documents.', total)
+			const built = n('dossiq', 'The decision is built from the %n assessed document.', 'The decision is built from the %n assessed documents.', total)
+			if (this.nextStep === null) {
+				return built
+			}
+			const step = t('dossiq', 'The case moves to step {number}, {status}.', { number: this.nextStep.number, status: this.nextStep.name.toLowerCase() })
+			return step + ' ' + built
+		},
+
+		/**
+		 * Whether the aside is shown: configured, and its app installed when it names one.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
+		 */
+		asideShown() {
+			if (!this.aside || !this.aside.text) {
+				return false
+			}
+			const apps = [].concat(this.aside.whenApp ?? []).map(String).filter(Boolean)
+			const roots = globalThis.OC?.appswebroots ?? {}
+			return apps.length === 0 || apps.some((app) => Boolean(roots[app]))
 		},
 
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
@@ -476,6 +592,7 @@ export default {
 		this.load()
 		this.loadLetter()
 		this.kase = await fetchCaseSummary(this.targetCaseId)
+		this.loadNextStep()
 	},
 
 	methods: {
@@ -490,6 +607,26 @@ export default {
 		formatDate(value) {
 			const date = new Date(String(value).slice(0, 10) + 'T00:00:00')
 			return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString(getCanonicalLocale() || undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+		},
+
+		/**
+		 * Read the case type's statuses and keep the step after the case's own.
+		 * Unreadable, the subtitle stays as it was.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
+		 */
+		async loadNextStep() {
+			const caseType = String(this.kase?.caseType ?? '')
+			if (this.stepsUrl === '' || caseType === '') {
+				return
+			}
+			try {
+				const { data } = await axios.get(this.urlOf(this.stepsUrl.replace('{caseType}', encodeURIComponent(caseType))))
+				this.nextStep = nextStepOf(data?.statusTypes, String(this.kase?.status ?? ''))
+			} catch {
+				this.nextStep = null
+			}
 		},
 
 		/**
@@ -561,33 +698,11 @@ export default {
 				return
 			}
 
-			const field = source.classificationField || 'classification'
 			try {
-				const { data } = await axios.get(
-					generateUrl(
-						`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`,
-					),
-					{
-						params: {
-							[source.caseField || 'case']: this.targetCaseId,
-							_limit: 500,
-						},
-					},
-				)
-				const tally = {}
-				const grounds = {}
-				for (const row of data?.results || []) {
-					const value = String(row?.[field] ?? '')
-					tally[value] = (tally[value] ?? 0) + 1
-					for (const ground of Array.isArray(row?.weigeringsgronden) ? row.weigeringsgronden : []) {
-						const code = String(ground?.code ?? ground ?? '')
-						if (code !== '') {
-							grounds[code] = (grounds[code] ?? 0) + 1
-						}
-					}
-				}
-				this.tally = tally
-				this.groundTally = grounds
+				const rows = await readAssessedDocuments(source, this.targetCaseId)
+				const counts = assessmentCounts(rows, source.classificationField || 'classification')
+				this.tally = counts.tally
+				this.groundTally = counts.grounds
 			} catch {
 				this.countsError = t(
 					'dossiq',
@@ -710,24 +825,60 @@ export default {
 		min-width: 0;
 	}
 
+	// Labels and help lines sit on the font's normal line, as DqBesluit draws
+	// them; the body's 1.5 put each 2px lower and 4px taller.
 	&__label {
 		font-size: 14px;
 		font-weight: 600;
+		line-height: normal;
 	}
 
 	&__hint {
 		font-size: 13px;
+		line-height: normal;
 		color: var(--color-text-maxcontrast);
+	}
+
+	// The text area stands right under its label and over its help line:
+	// NcTextArea's 6px top margin and its wrapper's 2px ring room on either
+	// side come out, and the inline text area leaves no descender gap.
+	& :deep(.textarea) {
+		margin-block: -2px;
+	}
+
+	& :deep(.textarea__input) {
+		vertical-align: top;
+	}
+
+	// The date field carries the board's calendar icon at its end; the
+	// browser's own picker button stays where it is, only invisible, so a
+	// click there still opens the picker.
+	&__date-wrap {
+		position: relative;
+		display: block;
 	}
 
 	&__date {
 		box-sizing: border-box;
 		width: 100%;
 		height: 40px;
-		padding: 0 12px;
+		padding: 0 40px 0 12px;
 		border: 1px solid var(--color-border-dark);
 		border-radius: 8px;
 		font: inherit;
+		vertical-align: top;
+
+		&::-webkit-calendar-picker-indicator {
+			opacity: 0;
+		}
+	}
+
+	&__date-icon {
+		position: absolute;
+		top: 11px;
+		right: 12px;
+		color: var(--color-text-maxcontrast);
+		pointer-events: none;
 	}
 
 	&__term {
@@ -741,14 +892,22 @@ export default {
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		padding: 12px 14px;
+		padding: 10px 14px;
 		border: 1px solid var(--color-border);
-		border-radius: var(--border-radius-large);
+		border-radius: 8px;
 	}
 
+	// The letter's mark is a 32px tile on the success tint, as DqBesluit draws it.
 	&__letter-icon {
+		display: inline-flex;
 		flex: none;
-		color: var(--color-success-text);
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border-radius: 8px;
+		background: var(--nl-color-green-light, #e7f3ea);
+		color: var(--nl-color-green-text, var(--color-success-text));
 	}
 
 	&__letter-text {
@@ -757,6 +916,11 @@ export default {
 		flex-direction: column;
 		gap: 2px;
 		min-width: 0;
+		line-height: normal;
+
+		strong {
+			font-size: 15px;
+		}
 	}
 
 	&__chips {
@@ -766,22 +930,15 @@ export default {
 	}
 
 	&__chip {
-		padding: 3px 10px;
+		padding: 4px 10px;
 		border-radius: 12px;
 		background: var(--color-background-dark);
 		font-size: 13px;
 		font-weight: 600;
+		line-height: normal;
 	}
 
 	&__blocked {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-warning);
-		color: var(--color-warning-text, var(--color-main-text));
-
 		ul {
 			margin: 0;
 			padding-inline-start: 20px;
@@ -791,6 +948,25 @@ export default {
 
 	&__error {
 		color: var(--color-error-text);
+	}
+
+	// A muted side note as DqBesluit draws it: 10px 14px in, 13px on a 1.5
+	// line in the boards' soft ink, an 18px mark.
+	&__aside {
+		display: flex;
+		gap: 10px;
+		align-items: flex-start;
+		padding: 10px 14px;
+		border-radius: 10px;
+		background: var(--color-background-dark);
+		color: var(--cn-board-text-soft, var(--color-main-text));
+		font-size: 13px;
+		line-height: 1.5;
+	}
+
+	&__aside-icon {
+		flex: none;
+		color: var(--color-text-maxcontrast);
 	}
 }
 </style>

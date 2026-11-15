@@ -24,17 +24,21 @@ namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
 use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Unit tests for BezwaarCreationHook.
  *
  * @covers \OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook
+ * @uses \OCA\Dossiq\Service\Support\ReferencedUuid
  */
 class BezwaarCreationHookTest extends TestCase {
 
@@ -120,7 +124,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($id === 'decision-1') {
 					return new FakeStoredObject(['case' => 'primair-1']);
 				}
@@ -139,7 +147,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ((string)$schema === '10') {
 					$this->savedCase = $object;
 				}
@@ -191,7 +203,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return new FakeStoredObject(['case' => 'primair-1']);
 			}
 
@@ -200,7 +216,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->savedSchemas[] = (string)$schema;
 				return new FakeStoredObject($object);
 			}//end saveObject()
@@ -237,7 +257,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return new FakeStoredObject(['case' => '']);
 			}
 
@@ -252,7 +276,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ((string)$schema === '10') {
 					$this->caseWrites++;
 				}
@@ -283,7 +311,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException Always.
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				throw new DoesNotExistException('Object ' . $id . ' does not exist');
 			}
 
@@ -298,7 +330,11 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): FakeStoredObject {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				return new FakeStoredObject($object);
 			}//end saveObject()
 		};
@@ -308,4 +344,44 @@ class BezwaarCreationHookTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->service->onBezwaarCreated('bezwaar-1', 'decision-missing');
 	}//end testThrowsWhenDecisionNotFound()
+	/**
+	 * The objection carries no status the caller sends: the objection schema
+	 * declares neither a status nor a lifecycle. An id the caller sends opens a
+	 * new objection and leaves the one it names as it was.
+	 *
+	 * @return void
+	 */
+	public function testTheObjectionKeepsNoCallerStatusOrIdentity(): void {
+		$register = new LifecycleRegister();
+		$register->seed(schema: 'decision', uuid: 'decision-1', row: ['case' => 'primair-1']);
+		$register->seed(schema: 'case', uuid: 'bezwaar-1', row: ['title' => 'Bezwaar']);
+		$register->seed(schema: 'objection', uuid: 'victim-1', row: ['case' => 'other-case', 'grounds' => 'Ander bezwaar']);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				'decision_schema' => 'decision',
+				'objection_schema' => 'objection',
+				default => '',
+			}
+		);
+		$hook = new BezwaarCreationHook($settings, $this->userSession, $this->logger);
+
+		$created = $hook->onBezwaarCreated(
+			'bezwaar-1',
+			'decision-1',
+			['id' => 'victim-1', 'uuid' => 'victim-1', '@self' => ['id' => 'victim-1'], 'grounds' => 'Te laat', 'status' => 'Decision on objection']
+		);
+
+		$this->assertNotSame('victim-1', $created['id']);
+		$this->assertSame(['case' => 'other-case', 'grounds' => 'Ander bezwaar', 'id' => 'victim-1'], $register->row('objection', 'victim-1'));
+		$stored = $register->row('objection', (string)$created['id']);
+		$this->assertArrayNotHasKey('status', $stored);
+		$this->assertArrayNotHasKey('uuid', $stored);
+		$this->assertSame('Te laat', $stored['grounds']);
+		$this->assertSame('bezwaar-1', $stored['case']);
+	}//end testTheObjectionKeepsNoCallerStatusOrIdentity()
 }//end class

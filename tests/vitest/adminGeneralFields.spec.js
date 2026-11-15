@@ -6,6 +6,7 @@
  * and thematiq for the look, dossiq's own settings for its words.
  *
  * @spec openspec/specs/admin-settings/spec.md
+ * @spec openspec/changes/admin-message-and-portal-texts/specs/admin-settings/spec.md#requirement-an-administrator-shall-set-the-message-and-portal-texts-in-the-admin-settings
  */
 
 import fs from 'fs'
@@ -38,7 +39,7 @@ describe('the general admin sections', () => {
 
 	it.each(
 		fields
-			.filter((field) => !field.url && !field.readOnly)
+			.filter((field) => !field.url && !field.readOnly && !['note', 'heading'].includes(field.type))
 			.map((field) => [field.key]),
 	)(
 		'%s, saved through dossiq settings, is a setting the endpoint saves',
@@ -64,9 +65,48 @@ describe('the general admin sections', () => {
 		expect(logo.initialsFrom).toBe('organisationName')
 	})
 
-	it('only points at the CORS setting, which the portal owns', () => {
+	it('asks for the municipality city the contacts and organisations lists open on', () => {
+		const city = fields.find((field) => field.key === 'municipality_city')
+		expect(city).toBeTruthy()
+		expect(city.url).toBeUndefined()
+		expect(configKeys).toContain("'municipality_city',")
+	})
+
+	it('only points at the CORS setting, which the portal owns, as a line of text', () => {
 		const cors = fields.find((field) => field.key === 'allowedWebsites')
-		expect(cors.readOnly).toBe(true)
+		expect(cors.type).toBe('note')
+		expect(cors.text).toBe('Set in the portal app (portaliq) and in Nextcloud, not here.')
 		expect(configKeys).not.toContain("'allowedWebsites',")
+	})
+})
+
+/**
+ * DqInstellingenAlgemeen draws Huisstijl as one row of four (organisation,
+ * city, app name, theme) with the logo under it, unlabelled beside its
+ * "Ander logo" button.
+ */
+describe('Huisstijl as the board', () => {
+	it('orders the fields as the board and keeps the logo label for screen readers only', () => {
+		const style = houseStyleFields(t)
+		expect(style.map((field) => field.key)).toEqual(['organisationName', 'municipality_city', 'staff_app_name', 'theme', 'logo'])
+		expect(style.find((field) => field.key === 'logo').hideLabel).toBe(true)
+	})
+
+	it('lays the card out in four columns', () => {
+		const admin = fs.readFileSync(path.join(ROOT, 'src', 'views', 'settings', 'AdminRoot.vue'), 'utf8')
+		const card = admin.slice(admin.indexOf('id="section-house-style"'), admin.indexOf(':fields="houseStyleFields"'))
+		expect(card).toContain(':columns="4"')
+	})
+})
+
+/**
+ * DqInstellingenAlgemeen draws "Tekst boven Mijn zaken in het portaal" as one
+ * line, like the sender above it. The text is one sentence.
+ */
+describe('Teksten en toegang', () => {
+	it('asks the portal text on one line', () => {
+		const field = textsAndAccessFields(t).find((entry) => entry.key === 'portal_intro_text')
+		expect(field.type).toBeUndefined()
+		expect(field.rows).toBeUndefined()
 	})
 })
