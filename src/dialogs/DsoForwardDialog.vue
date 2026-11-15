@@ -68,7 +68,7 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { dsoErrorOf, forwardCase } from '../services/dsoCaseApi.js'
 
 export default {
@@ -81,7 +81,7 @@ export default {
 		NcTextField,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogTokenAware],
 
 	emits: ['close', 'done'],
 
@@ -96,15 +96,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/vth-cases-run-end-to-end */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/vth-cases-run-end-to-end */
 		canSend() {
 			return this.busy === false

@@ -100,8 +100,6 @@ export default {
 			type: Boolean,
 			default: false,
 		},
-
-		/** May arrive as the unresolved `@objectId` token; see resolvedCaseId. */
 	},
 
 	emits: ['close'],

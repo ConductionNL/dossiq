@@ -162,7 +162,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -177,7 +177,7 @@ export default {
 		NcTextArea,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogFromRoute],
 
 	emits: ['close'],
 
@@ -195,17 +195,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The case this dialog moves.
-		 *
-		 * @return {string} The id.
-		 *
-		 * @spec openspec/specs/zaaktype-versioning/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * The versions to choose from, as the picker reads them.
 		 *

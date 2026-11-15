@@ -160,7 +160,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import manifest from '../manifest.json'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { actForm } from '../utils/caseActInputs.js'
 import { buildActsMenu, endpointFor, iconFor } from '../utils/caseActsMenu.js'
@@ -368,7 +368,7 @@ export default {
 		NcLoadingIcon,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogFromRoute],
 
 	inject: {
 		/** The page's action dispatcher, to open an act's own dialog. */
@@ -430,11 +430,6 @@ export default {
 		 */
 		eyebrow() {
 			return caseEyebrow(this.menuMode ? t('dossiq', 'Next step') : this.label(this.chosen), this.kase)
-		},
-
-		/** @spec openspec/specs/case-management/spec.md */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
 
 		/**

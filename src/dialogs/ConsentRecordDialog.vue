@@ -111,10 +111,6 @@ export default {
 
 	mixins: [caseDialog],
 
-	props: {
-		/** The case the consent is recorded on; the route answers when empty. */
-	},
-
 	emits: ['close'],
 
 	data() {

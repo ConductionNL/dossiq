@@ -298,10 +298,6 @@ export default {
 
 	mixins: [caseDialog],
 
-	props: {
-		/** The Woo case. Absent when the manifest opened the dialog: the route answers. */
-	},
-
 	emits: ['close'],
 
 	data() {

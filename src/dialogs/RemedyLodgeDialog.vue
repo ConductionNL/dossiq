@@ -119,7 +119,7 @@ import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -178,7 +178,7 @@ export default {
 		NcTextArea,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogTokenAware],
 
 	props: {
 		/** What the dialog is called, in the words of the case type that configures it. */
@@ -222,16 +222,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-from-the-case-page-req-rml-003 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-from-the-case-page-req-rml-003 */
 		heading() {
 			return t('dossiq', this.title)

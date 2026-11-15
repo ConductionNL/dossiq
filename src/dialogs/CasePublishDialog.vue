@@ -93,7 +93,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
 import PublishIcon from 'vue-material-design-icons/Publish.vue'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -151,10 +151,9 @@ export default {
 		PublishIcon,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogTokenAware],
 
 	props: {
-		/** The case; arrives as the unresolved `@objectId` token, so the route answers. */
 		/** The dialog title, an i18n key. */
 		title: {
 			type: String,
@@ -212,15 +211,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * @return {string} The case this dialog acts on.
-		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md
-		 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			return given !== '' && !given.startsWith('@') ? given : String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * @return {string} The context line above the title.
 		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md

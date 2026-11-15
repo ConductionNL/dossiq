@@ -130,7 +130,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 import {
 	caseActionRefusal,
 	earliestFollowUpDate,
@@ -152,7 +152,7 @@ export default {
 		NcTextField,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogFromRoute],
 
 	emits: ['close'],
 
@@ -176,14 +176,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * @return {string} The case this dialog acts on.
-		 * @spec openspec/specs/workflow-definition-engine/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * @return {string} The chosen date as YYYY-MM-DD, or the empty string.
 		 * @spec openspec/specs/workflow-definition-engine/spec.md

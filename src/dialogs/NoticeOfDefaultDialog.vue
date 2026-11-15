@@ -91,7 +91,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { noticeRefusal, registerNotice } from '../services/noticeOfDefaultApi.js'
 
 /**
@@ -115,7 +115,7 @@ export default {
 		NcSelect,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogTokenAware],
 
 	emits: ['close'],
 
@@ -133,16 +133,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01 */
 		channels() {
 			return [

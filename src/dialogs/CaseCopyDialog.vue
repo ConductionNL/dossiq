@@ -90,7 +90,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 import { caseActionRefusal, proposedCopyTitle } from '../utils/caseActionsHelpers.js'
 
 export default {
@@ -98,7 +98,7 @@ export default {
 
 	components: { NcButton, NcCheckboxRadioSwitch, CnDialog, NcTextField },
 
-	mixins: [caseDialog],
+	mixins: [caseDialogFromRoute],
 
 	emits: ['close'],
 
@@ -112,14 +112,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * @return {string} The case this dialog acts on.
-		 * @spec openspec/specs/case-management/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * @return {boolean} Whether the copy may be sent.
 		 * @spec openspec/specs/case-management/spec.md

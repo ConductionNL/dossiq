@@ -149,7 +149,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import {
 	logContactMoment,
 	refusalOf,
@@ -171,7 +171,7 @@ export default {
 		PhoneLogOutline,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogTokenAware],
 
 	emits: ['close'],
 
@@ -191,16 +191,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02 */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02 */
 		channels() {
 			return [

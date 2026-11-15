@@ -121,8 +121,6 @@ export default {
 			type: String,
 			default: '',
 		},
-
-		/** May arrive as the unresolved `@objectId` token; the route answers then. */
 	},
 
 	emits: ['close'],

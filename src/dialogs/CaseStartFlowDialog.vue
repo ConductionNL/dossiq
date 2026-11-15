@@ -100,7 +100,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 import { caseActionRefusal } from '../utils/caseActionsHelpers.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -110,7 +110,7 @@ export default {
 
 	components: { NcButton, NcCheckboxRadioSwitch, CnDialog, NcLoadingIcon },
 
-	mixins: [caseDialog],
+	mixins: [caseDialogFromRoute],
 
 	emits: ['close'],
 
@@ -125,14 +125,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * @return {string} The case this dialog acts on.
-		 * @spec openspec/specs/workflow-definition-engine/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * @return {boolean} Whether a flow may be run.
 		 * @spec openspec/specs/workflow-definition-engine/spec.md

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+import { resolveCaseId } from '../utils/resolveCaseId.js'
+
 /**
  * The `caseId` prop every case dialog declares.
  *
@@ -18,6 +20,46 @@ export const caseDialog = {
 		caseId: {
 			type: String,
 			default: '',
+		},
+	},
+}
+
+/**
+ * A case dialog whose case is its `caseId` prop, or the route's when the prop
+ * is empty.
+ *
+ * @spec exclude shared declaration of the case dialogs, no behaviour of its own
+ */
+export const caseDialogFromRoute = {
+	mixins: [caseDialog],
+
+	computed: {
+		/**
+		 * @return {string} The case id, from the prop or the route.
+		 * @spec exclude shared declaration of the case dialogs
+		 */
+		targetCaseId() {
+			return this.caseId || String(this.$route?.params?.id ?? '')
+		},
+	},
+}
+
+/**
+ * A case dialog whose case is its `caseId` prop, or the route's when the prop
+ * is empty or still an unresolved `@` token.
+ *
+ * @spec exclude shared declaration of the case dialogs, no behaviour of its own
+ */
+export const caseDialogTokenAware = {
+	mixins: [caseDialog],
+
+	computed: {
+		/**
+		 * @return {string} The case id, from the prop or the route.
+		 * @spec exclude shared declaration of the case dialogs
+		 */
+		targetCaseId() {
+			return resolveCaseId(this.caseId, this.$route)
 		},
 	},
 }

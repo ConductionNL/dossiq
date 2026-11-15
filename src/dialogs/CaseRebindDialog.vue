@@ -137,7 +137,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import CaseRebindImpact from '../components/case/CaseRebindImpact.vue'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogFromRoute } from '../mixins/caseDialog.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -155,7 +155,7 @@ export default {
 		NcTextArea,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogFromRoute],
 
 	emits: ['close'],
 
@@ -179,17 +179,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The case this dialog rebinds.
-		 *
-		 * @return {string} The id.
-		 *
-		 * @spec openspec/specs/zaaktype-versioning/spec.md
-		 */
-		targetCaseId() {
-			return this.caseId || String(this.$route?.params?.id ?? '')
-		},
-
 		/**
 		 * The case types to choose from, as the picker reads them.
 		 *

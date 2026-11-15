@@ -119,7 +119,7 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
-import { caseDialog } from '../mixins/caseDialog.js'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { adviceForm, adviceRefusal, decide, recommend } from '../services/decisionAdviceApi.js'
 
 export default {
@@ -132,7 +132,7 @@ export default {
 		NcTextArea,
 	},
 
-	mixins: [caseDialog],
+	mixins: [caseDialogTokenAware],
 
 	emits: ['close'],
 
@@ -151,16 +151,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md */
 		canAsk() {
 			return this.busy === false
