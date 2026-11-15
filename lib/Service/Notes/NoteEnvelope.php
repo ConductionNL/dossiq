@@ -91,6 +91,25 @@ class NoteEnvelope {
 		string $informatieobjecttype,
 		string $bronorganisatie = '',
 	): array {
+		return $this->envelopeOf(
+			note: $note,
+			addressed: ['caseId' => $caseId, 'informatieobjecttype' => $informatieobjecttype, 'bronorganisatie' => $bronorganisatie]
+		);
+	}//end build()
+
+	/**
+	 * Shape one note as a ZGW document envelope.
+	 *
+	 * @param array<string, mixed> $note      The note as OpenRegister answers it.
+	 * @param array<string, mixed> $addressed `caseId` the case this note is on; `informatieobjecttype` the reserved note type; `bronorganisatie`
+	 *                                        the sending organisation's RSIN.
+	 *
+	 * @return array<string, mixed> The envelope.
+	 *
+	 * @throws InvalidArgumentException When the note has no text, or no type is reserved.
+	 */
+	private function envelopeOf(array $note, array $addressed): array {
+		[$caseId, $informatieobjecttype, $bronorganisatie] = [$addressed['caseId'], $addressed['informatieobjecttype'], $addressed['bronorganisatie']];
 		$body = trim((string)($note['message'] ?? ''));
 		self::assertSendable(body: $body, informatieobjecttype: $informatieobjecttype);
 		if (trim($caseId) === '') {
@@ -101,7 +120,7 @@ class NoteEnvelope {
 			note: $note,
 			fields: ['body' => $body, 'bronorganisatie' => $bronorganisatie, 'informatieobjecttype' => trim($informatieobjecttype), 'zaak' => $caseId]
 		);
-	}//end build()
+	}//end envelopeOf()
 
 	/**
 	 * The ZGW document envelope of a sendable note.

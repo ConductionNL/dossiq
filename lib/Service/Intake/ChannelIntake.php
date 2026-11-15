@@ -149,6 +149,20 @@ class ChannelIntake implements ChannelIntakeInterface {
 	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function caseFor(array $message, array $targetPayload, string $ruleName = ''): string {
+		return $this->openFor(message: $message, routing: ['targetPayload' => $targetPayload, 'ruleName' => $ruleName]);
+	}//end caseFor()
+
+	/**
+	 * The case the routed message opens, once per channel and external id.
+	 *
+	 * @param array<string, mixed>                                         $message The message, as integriq stored it.
+	 * @param array{targetPayload: array<string, mixed>, ruleName: string} $routing `targetPayload` the rule's field mapping, already applied;
+	 *                                                                              `ruleName` the rule that matched, for the log.
+	 *
+	 * @return string The case id, or '' when no case was opened.
+	 */
+	private function openFor(array $message, array $routing): string {
+		[$targetPayload, $ruleName] = [$routing['targetPayload'], $routing['ruleName']];
 		$channel = trim((string)($message['channelId'] ?? ''));
 		$externalId = trim((string)($message['externalId'] ?? ''));
 		$routed = new RoutedMessage(
@@ -160,7 +174,7 @@ class ChannelIntake implements ChannelIntakeInterface {
 		);
 
 		return $this->openOnce(routed: $routed);
-	}//end caseFor()
+	}//end openFor()
 
 	/**
 	 * Open the case of a message once: a message that cannot be recognised is refused, a second delivery answers the first case.

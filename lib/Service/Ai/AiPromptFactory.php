@@ -110,6 +110,19 @@ class AiPromptFactory {
 	 * @spec openspec/specs/ai-assistance/spec.md
 	 */
 	public function summary(string $caseId, string $type, ?string $documentId): string {
+		return $this->summaryPrompt(caseId: $caseId, subject: ['type' => $type, 'documentId' => $documentId]);
+	}//end summary()
+
+	/**
+	 * The summary prompt.
+	 *
+	 * @param string                                       $caseId  The case ID.
+	 * @param array{type: string, documentId: string|null} $subject `type` summary type; `documentId` optional document ID.
+	 *
+	 * @return string The summary prompt.
+	 */
+	private function summaryPrompt(string $caseId, array $subject): string {
+		[$type, $documentId] = [$subject['type'], $subject['documentId']];
 		$prompt = 'Generate a ' . $type . ' summary for case ' . $caseId . '.';
 		if ($type === 'document' && $documentId !== null) {
 			$prompt .= ' Summarize document ' . $documentId . '.';
@@ -118,7 +131,7 @@ class AiPromptFactory {
 		$prompt .= ' Return JSON with field: summary (string, 3-5 sentences in Dutch).';
 
 		return $prompt;
-	}//end summary()
+	}//end summaryPrompt()
 
 	/**
 	 * Build a routing suggestion prompt.

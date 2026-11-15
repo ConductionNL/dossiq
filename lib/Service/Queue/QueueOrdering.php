@@ -73,6 +73,20 @@ class QueueOrdering {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function score(QueueItem $item, DateTimeImmutable $now, ?UrgencyProfile $profile = null): array {
+		return $this->scored(item: $item, weighing: ['now' => $now, 'profile' => $profile]);
+	}//end score()
+
+	/**
+	 * The item's place in the ordering.
+	 *
+	 * @param QueueItem                                                   $item     The item.
+	 * @param array{now: DateTimeImmutable, profile: UrgencyProfile|null} $weighing `now` the moment to score against; `profile` the thresholds and
+	 *                                                                              weights; null reads the admin's.
+	 *
+	 * @return array<string, mixed> The scorer's verdict: deadline tier, days, score and breakdown.
+	 */
+	private function scored(QueueItem $item, array $weighing): array {
+		[$now, $profile] = [$weighing['now'], $weighing['profile']];
 		// No reference date: a queue item does not carry the case's last
 		// activity, so the personal queue has no idle part. Nor does it know
 		// the case type, so the admin thresholds apply.
@@ -83,7 +97,7 @@ class QueueOrdering {
 			now: $now,
 			profile: ($profile ?? $this->scorer->adminProfile())
 		);
-	}//end score()
+	}//end scored()
 
 	/**
 	 * Sort the items, most pressing first, and attach each one's score.

@@ -76,6 +76,20 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
+		return $this->checklistVerdict(guardConfig: $guardConfig, moving: ['case' => $case, 'userId' => $userId]);
+	}//end evaluate()
+
+	/**
+	 * Whether the status's required checklist items are done.
+	 *
+	 * @param array<string, mixed>                              $guardConfig Guard configuration (unused: the status carries it).
+	 * @param array{case: array<string, mixed>, userId: string} $moving      `case` the case being moved; `userId` current user UID; the identity
+	 *                                                                       the engine read is made as.
+	 *
+	 * @return GuardResult The verdict, naming the first item that is not done.
+	 */
+	private function checklistVerdict(array $guardConfig, array $moving): GuardResult {
+		[$case, $userId] = [$moving['case'], $moving['userId']];
 		$statusTypeId = (string)($case['status'] ?? '');
 		$required = $this->requiredItems(statusTypeId: $statusTypeId);
 		if ($required === []) {
@@ -85,7 +99,7 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 		$completed = $this->completedTitles(case: $case, actor: $userId);
 
 		return $this->resultFor(required: $required, progress: ['completed' => $completed, 'statusTypeId' => $statusTypeId]);
-	}//end evaluate()
+	}//end checklistVerdict()
 
 	/**
 	 * The checklist items of a status type that must be done.

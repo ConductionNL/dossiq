@@ -102,13 +102,27 @@ class DossierUploadHandler implements DossierUploadHandlerInterface {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function uploadOne(string $caseId, array $file, array $metadata): array {
+		return $this->uploadedOne(caseId: $caseId, upload: ['file' => $file, 'metadata' => $metadata]);
+	}//end uploadOne()
+
+	/**
+	 * Upload one file onto the case.
+	 *
+	 * @param string                                                            $caseId The case (zaak) UUID.
+	 * @param array{file: array<string, mixed>, metadata: array<string, mixed>} $upload `file` one normalised uploaded-file entry; `metadata` the
+	 *                                                                                  shared document metadata.
+	 *
+	 * @return array<string, mixed> The per-file result entry.
+	 */
+	private function uploadedOne(string $caseId, array $upload): array {
+		[$file, $metadata] = [$upload['file'], $upload['metadata']];
 		$name = (string)($file['name'] ?? '');
 		try {
 			return $this->uploadFile(caseId: $caseId, upload: ['file' => $file, 'metadata' => $metadata]);
 		} catch (\Throwable $e) {
 			return ['name' => $name, 'success' => false, 'error' => $e->getMessage()];
 		}//end try
-	}//end uploadOne()
+	}//end uploadedOne()
 
 	/**
 	 * Refuse an executable, then store the file's bytes as a document of the case.

@@ -126,6 +126,21 @@ class OptOutGate implements OptOutGateInterface {
 	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 */
 	public function ask(string $recipient, string $category, string $caseRef, string $channel = 'email'): array {
+		return $this->asked(recipient: $recipient, question: ['category' => $category, 'caseRef' => $caseRef, 'channel' => $channel]);
+	}//end ask()
+
+	/**
+	 * Ask integriq whether the notice may go, unless the check is switched off.
+	 *
+	 * @param string                                                    $recipient The address as it will be used.
+	 * @param array{category: string, caseRef: string, channel: string} $question  `category` what kind of message this is; `caseRef` the case it is
+	 *                                                                             about, so a case opt-out matches; `channel` the channel, `email`
+	 *                                                                             for case mail.
+	 *
+	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
+	 */
+	private function asked(string $recipient, array $question): array {
+		[$category, $caseRef, $channel] = [$question['category'], $question['caseRef'], $question['channel']];
 		if ($this->isSwitchedOn() === false) {
 			return $this->decision(send: true, code: self::CODE_CHECK_OFF, reason: '');
 		}
@@ -134,7 +149,7 @@ class OptOutGate implements OptOutGateInterface {
 			question: new OptOutQuestion(recipient: $recipient, category: $category, caseRef: $caseRef),
 			channel: $channel
 		);
-	}//end ask()
+	}//end asked()
 
 	/**
 	 * Put the question to integriq through its decision event, and read its answer.

@@ -162,6 +162,21 @@ class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInte
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-can-carry-an-access-exception-with-a-reason
 	 */
 	public function remove(IUser $user, array $record, string $reason = ''): bool {
+		return $this->removeFrom(user: $user, change: ['record' => $record, 'reason' => $reason]);
+	}//end remove()
+
+	/**
+	 * Remove the exception from the record.
+	 *
+	 * @param IUser                                               $user   Who removes it.
+	 * @param array{record: array<string, mixed>, reason: string} $change `record` the informatieobject, with `id`; `reason` why, may be empty.
+	 *
+	 * @return bool True when there was an exception to remove.
+	 *
+	 * @throws RuntimeException When the file cannot be freed, or the record cannot be saved.
+	 */
+	private function removeFrom(IUser $user, array $change): bool {
+		[$record, $reason] = [$change['record'], $change['reason']];
 		$old = $this->rule->exceptionOf(record: $record);
 		if ($old === null) {
 			return false;
@@ -170,7 +185,7 @@ class DocumentAccessExceptionWriter implements DocumentAccessExceptionWriterInte
 		$this->lifted(record: $record, removal: ['by' => $user->getUID(), 'old' => $old, 'reason' => trim($reason)]);
 
 		return true;
-	}//end remove()
+	}//end removeFrom()
 
 	/**
 	 * Lift the exception off the record and its file, with a history entry saying who did and why.

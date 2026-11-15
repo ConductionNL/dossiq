@@ -63,6 +63,20 @@ class TermLetters {
 	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
 	 */
 	public function render(string $type, array $instance, array $context): array {
+		return $this->rendered(type: $type, letter: ['instance' => $instance, 'context' => $context]);
+	}//end render()
+
+	/**
+	 * The subject and body of the term letter, in the context's language.
+	 *
+	 * @param string                                                               $type   Template type.
+	 * @param array{instance: array<string, mixed>, context: array<string, mixed>} $letter `instance` termijnInstance (may be empty); `context`
+	 *                                                                                     extra context.
+	 *
+	 * @return array{subject:string, body:string, locale:string}
+	 */
+	private function rendered(string $type, array $letter): array {
+		[$instance, $context] = [$letter['instance'], $letter['context']];
 		$locale = (string)($context['locale'] ?? 'nl');
 		// 🔴 THE TERM'S CASE LINK IS A UUID, NOT A KENMERK. A term instance points
 		// at its case by id, so reading it first put "Ontvangstbevestiging zaak
@@ -82,7 +96,7 @@ class TermLetters {
 		}
 
 		return ['subject' => $rendered['subject'], 'body' => $rendered['body'], 'locale' => $locale];
-	}//end render()
+	}//end rendered()
 
 	/**
 	 * The case reference a letter names: the caller's number, else the term's link, else a dash.

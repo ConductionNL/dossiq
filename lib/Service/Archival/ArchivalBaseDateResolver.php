@@ -101,6 +101,19 @@ class ArchivalBaseDateResolver {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function resolve(string $method, string $endDate, array $case, array $brondatum): ?string {
+		return $this->baseDateBy(method: $method, closing: ['endDate' => $endDate, 'case' => $case, 'brondatum' => $brondatum]);
+	}//end resolve()
+
+	/**
+	 * The base date the derivation method reads, or null for a method that derives none.
+	 *
+	 * @param string               $method  The afleidingswijze.
+	 * @param array<string, mixed> $closing `endDate` the case end date (Y-m-d); `case` the case payload; `brondatum` the brondatumArchiefprocedure.
+	 *
+	 * @return string|null The base date, or null when it cannot be resolved here.
+	 */
+	private function baseDateBy(string $method, array $closing): ?string {
+		[$endDate, $case, $brondatum] = [$closing['endDate'], $closing['case'], $closing['brondatum']];
 		return match ($method) {
 			// 🔑 `afgehandeld` IS THE VALUE ZGW SENDS. The English `handled`
 			// beside it is what the old ZrcController switch matched, and
@@ -118,7 +131,7 @@ class ArchivalBaseDateResolver {
 			),
 			default => null,
 		};
-	}//end resolve()
+	}//end baseDateBy()
 
 	/**
 	 * The parent case's end date, for afleidingswijze `hoofdzaak`.

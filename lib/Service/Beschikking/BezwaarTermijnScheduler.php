@@ -133,6 +133,24 @@ class BezwaarTermijnScheduler {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function createBezwaarTrigger(string $decisionId, string $bekendmaking, string $endDate, string $herinnering): void {
+		$this->createTrigger(
+			decisionId: $decisionId,
+			dates: ['bekendmaking' => $bekendmaking, 'endDate' => $endDate, 'herinnering' => $herinnering]
+		);
+	}//end createBezwaarTrigger()
+
+	/**
+	 * Store the bezwaar trigger for the decision, when a store is configured.
+	 *
+	 * @param string                                                            $decisionId The beschikking UUID.
+	 * @param array{bekendmaking: string, endDate: string, herinnering: string} $dates      `bekendmaking` the bekendmaking date; `endDate` the
+	 *                                                                                      bezwaartermijn end date; `herinnering` the reminder
+	 *                                                                                      date.
+	 *
+	 * @return void
+	 */
+	private function createTrigger(string $decisionId, array $dates): void {
+		[$bekendmaking, $endDate, $herinnering] = [$dates['bekendmaking'], $dates['endDate'], $dates['herinnering']];
 		$target = $this->triggerTarget();
 		if ($target === null) {
 			return;
@@ -143,7 +161,7 @@ class BezwaarTermijnScheduler {
 			dates: ['announcementDate' => $bekendmaking, 'objectionTermEndDate' => $endDate, 'reminderDate' => $herinnering]
 		);
 		$this->saveTrigger(target: $target, trigger: $trigger);
-	}//end createBezwaarTrigger()
+	}//end createTrigger()
 
 	/**
 	 * The object service, register and schema a BezwaarTrigger is written to, or null when any is missing.

@@ -118,6 +118,21 @@ class ZtcTypeReferences {
 		string $schemaKey,
 		string $lookupField,
 	): array {
+		return $this->withResolvedReferences(body: $body, lookup: ['field' => $field, 'schemaKey' => $schemaKey, 'lookupField' => $lookupField]);
+	}//end resolveTypeReferences()
+
+	/**
+	 * The body with its type references resolved.
+	 *
+	 * @param array                                                        $body   The request body
+	 * @param array{field: string, schemaKey: string, lookupField: string} $lookup `field` the field name containing the references; `schemaKey` the
+	 *                                                                             settings config key for the target schema; `lookupField` the
+	 *                                                                             OpenRegister field to search by.
+	 *
+	 * @return array The body with resolved references
+	 */
+	private function withResolvedReferences(array $body, array $lookup): array {
+		[$field, $schemaKey, $lookupField] = [$lookup['field'], $lookup['schemaKey'], $lookup['lookupField']];
 		$scope = $this->getLookupScope(list: $body[$field] ?? null, schemaKey: $schemaKey);
 		if ($scope === null) {
 			return $body;
@@ -126,7 +141,7 @@ class ZtcTypeReferences {
 		$body[$field] = $this->resolvedAll(refs: $body[$field], lookup: ['scope' => $scope, 'field' => $lookupField]);
 
 		return $body;
-	}//end resolveTypeReferences()
+	}//end withResolvedReferences()
 
 	/**
 	 * Every reference in the list resolved to the uuids it names, in order.

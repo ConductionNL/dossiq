@@ -318,6 +318,21 @@ class ZgwDocumentService implements ZgwDocumentServiceInterface {
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function mergeChunks(string $uuid, string $fileName, int $totalParts): int {
+		return $this->merged(uuid: $uuid, chunks: ['fileName' => $fileName, 'totalParts' => $totalParts]);
+	}//end mergeChunks()
+
+	/**
+	 * Merge the uploaded chunks into the document.
+	 *
+	 * @param string                                   $uuid   The document UUID
+	 * @param array{fileName: string, totalParts: int} $chunks `fileName` the target file name; `totalParts` the total number of parts.
+	 *
+	 * @return int The merged file size in bytes
+	 *
+	 * @throws InvalidArgumentException If not all chunks are present.
+	 */
+	private function merged(string $uuid, array $chunks): int {
+		[$fileName, $totalParts] = [$chunks['fileName'], $chunks['totalParts']];
 		$folder = $this->getDocumentFolder(uuid: $uuid);
 		$content = $this->readChunks(folder: $folder, document: ['uuid' => $uuid, 'totalParts' => $totalParts]);
 
@@ -328,7 +343,7 @@ class ZgwDocumentService implements ZgwDocumentServiceInterface {
 		$this->deleteChunks(folder: $folder, totalParts: $totalParts);
 
 		return strlen(string: $content);
-	}//end mergeChunks()
+	}//end merged()
 
 	/**
 	 * Concatenate every `_part_{n}` file in order.

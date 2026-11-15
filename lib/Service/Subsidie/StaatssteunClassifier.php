@@ -177,11 +177,24 @@ class StaatssteunClassifier {
 	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function buildTamMelding(string $beschikkingnummer, string $agvvArtikel, float $amount): array {
+		return $this->tamMelding(beschikkingnummer: $beschikkingnummer, grant: ['agvvArtikel' => $agvvArtikel, 'amount' => $amount]);
+	}//end buildTamMelding()
+
+	/**
+	 * The TAM notification for the grant.
+	 *
+	 * @param string                                    $beschikkingnummer The decision number.
+	 * @param array{agvvArtikel: string, amount: float} $grant             `agvvArtikel` the AGVV article; `amount` the granted amount.
+	 *
+	 * @return array<string, mixed> The melding payload for async transmission.
+	 */
+	private function tamMelding(string $beschikkingnummer, array $grant): array {
+		[$agvvArtikel, $amount] = [$grant['agvvArtikel'], $grant['amount']];
 		return [
 			'register' => 'TAM',
 			'beschikkingnummer' => $beschikkingnummer,
 			'rechtsgrond' => 'AGVV 651/2014 ' . $agvvArtikel,
 			'amount' => round($amount, 2),
 		];
-	}//end buildTamMelding()
+	}//end tamMelding()
 }//end class

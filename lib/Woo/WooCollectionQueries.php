@@ -165,6 +165,21 @@ class WooCollectionQueries implements WooCollectionQueriesInterface {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
 	 */
 	public function rerun(string $caseId, string $queryId, string $userId): array {
+		return $this->reran(caseId: $caseId, search: ['queryId' => $queryId, 'userId' => $userId]);
+	}//end rerun()
+
+	/**
+	 * Run the stored query again and mark the rows that are new.
+	 *
+	 * @param string                                 $caseId The case uuid.
+	 * @param array{queryId: string, userId: string} $search `queryId` the stored query's uuid; `userId` the caller.
+	 *
+	 * @return array{rows: array<int, array<string, mixed>>, refusal: string} Each row with `new`.
+	 *
+	 * @throws WooCorpusRefused 404 when the query is not one of this case.
+	 */
+	private function reran(string $caseId, array $search): array {
+		[$queryId, $userId] = [$search['queryId'], $search['userId']];
 		$query = $this->storedQuery(caseId: $caseId, queryId: $queryId);
 
 		$answer = $this->search(query: $query, userId: $userId);
@@ -173,7 +188,7 @@ class WooCollectionQueries implements WooCollectionQueriesInterface {
 		}
 
 		return $this->markNew(query: $query, found: ['queryId' => $queryId, 'rows' => $answer['rows'], 'caseId' => $caseId]);
-	}//end rerun()
+	}//end reran()
 
 	/**
 	 * The stored query of this case with the given uuid.

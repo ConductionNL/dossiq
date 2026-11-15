@@ -142,6 +142,20 @@ class CaseMailOptOut {
 	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
 	 */
 	public function dress(IMessage $message, string $body, ?array $unsubscribe, ?string $plain = null): void {
+		$this->dressed(message: $message, mail: ['body' => $body, 'unsubscribe' => $unsubscribe, 'plain' => $plain]);
+	}//end dress()
+
+	/**
+	 * The mail with its opt-out footer and header.
+	 *
+	 * @param IMessage             $message The message being built.
+	 * @param array<string, mixed> $mail    `body` the HTML body as written; `unsubscribe` integriq's link material, or null for an exempt mail;
+	 *                                      `plain` the plain body as written, when the mail has one; else the HTML without tags.
+	 *
+	 * @return void
+	 */
+	private function dressed(IMessage $message, array $mail): void {
+		[$body, $unsubscribe, $plain] = [$mail['body'], $mail['unsubscribe'], $mail['plain']];
 		$bodies = $this->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain);
 		$message->setHtmlBody($bodies['html']);
 		$message->setPlainBody($bodies['plain']);
@@ -150,7 +164,7 @@ class CaseMailOptOut {
 			// headers when the mailer exposes them; the body link stays.
 			$this->unsubscribeHeaders->apply(message: $message, unsubscribe: $unsubscribe);
 		}
-	}//end dress()
+	}//end dressed()
 
 	/**
 	 * The HTML body with integriq's unsubscribe line, when there is one.

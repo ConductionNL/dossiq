@@ -84,6 +84,20 @@ class QueueFigures {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function fold(array $openCases, DateTimeImmutable $today, array $typeTitles): array {
+		return $this->folded(openCases: $openCases, figures: ['today' => $today, 'typeTitles' => $typeTitles]);
+	}//end fold()
+
+	/**
+	 * The figures with one more item folded in.
+	 *
+	 * @param array<int, array>                                                  $openCases The open cases, as plain arrays.
+	 * @param array{today: DateTimeImmutable, typeTitles: array<string, string>} $figures   `today` today, at midnight; `typeTitles` case type
+	 *                                                                                      titles by id.
+	 *
+	 * @return array<string, mixed> The queue figures.
+	 */
+	private function folded(array $openCases, array $figures): array {
+		[$today, $typeTitles] = [$figures['today'], $figures['typeTitles']];
 		$run = new QueueFoldRun(today: $today, typeTitles: $typeTitles);
 		$run->weekEnd = $today->modify('+7 days')->format('Y-m-d');
 		foreach ($openCases as $case) {
@@ -91,7 +105,7 @@ class QueueFigures {
 		}
 
 		return $run->figures + ['queueByType' => self::typeRows(run: $run)];
-	}//end fold()
+	}//end folded()
 
 	/**
 	 * Fold one open case: count it under its type, and when it has no handler, as waiting.

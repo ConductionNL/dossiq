@@ -105,6 +105,19 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	 * @spec openspec/changes/delegated-authority-guard/specs/status-transition-engine/spec.md
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
+		return $this->authorityVerdict(guardConfig: $guardConfig, moving: ['case' => $case, 'userId' => $userId]);
+	}//end evaluate()
+
+	/**
+	 * Whether the actor holds the delegated authority the transition asks for.
+	 *
+	 * @param array<string, mixed>                              $guardConfig The guard configuration block.
+	 * @param array{case: array<string, mixed>, userId: string} $moving      `case` the case object; `userId` the current user UID.
+	 *
+	 * @return GuardResult
+	 */
+	private function authorityVerdict(array $guardConfig, array $moving): GuardResult {
+		[$case, $userId] = [$moving['case'], $moving['userId']];
 		$config = ($guardConfig + $this->defaults);
 
 		$act = $this->actOf(config: $config, case: $case);
@@ -113,7 +126,7 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 		}
 
 		return $this->askForActor(config: $config, request: ['case' => $case, 'userId' => $userId, 'act' => $act]);
-	}//end evaluate()
+	}//end authorityVerdict()
 
 	/**
 	 * Ask the register whether the actor may perform the act, once the amount reads.
