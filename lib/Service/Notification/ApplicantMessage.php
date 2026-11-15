@@ -120,7 +120,19 @@ class ApplicantMessage {
 			return $this->outcome(fields: ['sent' => false, 'reason' => 'moment-not-declared']);
 		}
 
-		$notice = $this->noticeFor(caseRow: $case, message: ['moment' => $moment, 'template' => $template, 'context' => $context]);
+		return $this->deliverNotice(
+			notice: $this->noticeFor(caseRow: $case, message: ['moment' => $moment, 'template' => $template, 'context' => $context])
+		);
+	}//end send()
+
+	/**
+	 * Place the notice on its term, send it and record it; a case without an address gets nothing.
+	 *
+	 * @param ApplicantNotice $notice The message for the case.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function deliverNotice(ApplicantNotice $notice): array {
 		if ($notice->recipient === '') {
 			return $this->noAddress(notice: $notice);
 		}
@@ -133,7 +145,7 @@ class ApplicantMessage {
 		$this->recordSent(notice: $notice);
 
 		return $this->sentOutcome(notice: $notice);
-	}//end send()
+	}//end deliverNotice()
 
 	/**
 	 * The notice for one moment of a case, addressed to the applicant on it.

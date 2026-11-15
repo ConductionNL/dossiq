@@ -245,17 +245,26 @@ class TussenrapportageService implements TussenrapportageServiceInterface {
 			throw new OCSBadRequestException('Een correctieverzoek is verplicht bij gedeeltelijke goedkeuring');
 		}
 
-		return $this->assessed(
-			reportId: $reportId,
-			patch: [
-				'status' => 'gedeeltelijk_approved',
-				'correctionRequest' => $correctionRequest,
-				'amendmentNumerator' => ($currentTeller + 1),
-				'assessor' => $this->assessorId(),
-				'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
-			]
-		);
+		return $this->assessed(reportId: $reportId, patch: $this->correctionPatch(correctionRequest: $correctionRequest, currentTeller: $currentTeller));
 	}//end partialApprove()
+
+	/**
+	 * The patch that approves a report in part and asks for a correction.
+	 *
+	 * @param string $correctionRequest What must be corrected.
+	 * @param int    $currentTeller     The current amendment numerator.
+	 *
+	 * @return array<string, mixed> The patch.
+	 */
+	private function correctionPatch(string $correctionRequest, int $currentTeller): array {
+		return [
+			'status' => 'gedeeltelijk_approved',
+			'correctionRequest' => $correctionRequest,
+			'amendmentNumerator' => ($currentTeller + 1),
+			'assessor' => $this->assessorId(),
+			'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
+		];
+	}//end correctionPatch()
 
 	/**
 	 * The signed-in assessor's uid, or a refusal.
