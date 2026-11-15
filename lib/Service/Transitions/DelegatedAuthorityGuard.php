@@ -112,6 +112,19 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 			return $this->refuse(reason: 'no-act');
 		}
 
+		return $this->askForActor(config: $config, request: ['case' => $case, 'userId' => $userId, 'act' => $act]);
+	}//end evaluate()
+
+	/**
+	 * Ask the register whether the actor may perform the act, once the amount reads.
+	 *
+	 * @param array<string, mixed> $config  The guard configuration, with its defaults.
+	 * @param array<string, mixed> $request The case, the acting user and the act key.
+	 *
+	 * @return GuardResult The verdict.
+	 */
+	private function askForActor(array $config, array $request): GuardResult {
+		['case' => $case, 'userId' => $userId, 'act' => $act] = $request;
 		$actor = $this->actorOf(config: $config, case: $case);
 		if ($actor === '') {
 			$actor = $userId;
@@ -123,7 +136,7 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 		}
 
 		return $this->ask(actor: $actor, asked: ['act' => $act, 'amount' => $this->amountOf(config: $config, case: $case)]);
-	}//end evaluate()
+	}//end askForActor()
 
 	/**
 	 * The act to check the mandate for: the configured one, else the one the
