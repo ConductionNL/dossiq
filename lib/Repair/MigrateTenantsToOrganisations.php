@@ -117,24 +117,22 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	private function report(IOutput $output, ?array $summary, array $anchors): void {
-		$unmigrated = (int)($summary['unmigrated'] ?? 0);
-		$this->reportMigrated(output: $output, summary: $summary, unmigrated: $unmigrated);
+		$this->reportMigrated(output: $output, summary: $summary);
 		$this->reportAnchors(output: $output, anchors: $anchors);
-		$this->warnUnmigrated(output: $output, summary: $summary, unmigrated: $unmigrated);
+		$this->warnUnmigrated(output: $output, summary: $summary);
 	}//end report()
 
 	/**
 	 * Report how many tenants the migration moved, skipped, repaired, refused and failed.
 	 *
-	 * @param IOutput                   $output     Repair output.
-	 * @param array<string, mixed>|null $summary    The migration's summary.
-	 * @param int                       $unmigrated The tenants left unmigrated.
+	 * @param IOutput                   $output  Repair output.
+	 * @param array<string, mixed>|null $summary The migration's summary.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
-	private function reportMigrated(IOutput $output, ?array $summary, int $unmigrated): void {
+	private function reportMigrated(IOutput $output, ?array $summary): void {
 		$output->info(
 			sprintf(
 				'Dossiq: tenants migrated %d, already present %d, repaired %d, refused %d, failed %d, of %d. unmigrated = %d.',
@@ -144,7 +142,7 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 				(int)($summary['refused'] ?? 0),
 				(int)($summary['failed'] ?? 0),
 				(int)($summary['total'] ?? 0),
-				$unmigrated
+				(int)($summary['unmigrated'] ?? 0)
 			)
 		);
 	}//end reportMigrated()
@@ -172,15 +170,15 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 	/**
 	 * Log and warn when stored tenants are left with no Organisation of the same uuid.
 	 *
-	 * @param IOutput                   $output     Repair output.
-	 * @param array<string, mixed>|null $summary    The migration's summary.
-	 * @param int                       $unmigrated The tenants left unmigrated.
+	 * @param IOutput                   $output  Repair output.
+	 * @param array<string, mixed>|null $summary The migration's summary.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
-	private function warnUnmigrated(IOutput $output, ?array $summary, int $unmigrated): void {
+	private function warnUnmigrated(IOutput $output, ?array $summary): void {
+		$unmigrated = (int)($summary['unmigrated'] ?? 0);
 		if ($unmigrated > 0) {
 			$this->logger->warning(
 				'Dossiq: stored tenants are left with no Organisation of the same uuid',

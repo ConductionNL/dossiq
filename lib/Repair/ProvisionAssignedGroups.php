@@ -261,7 +261,14 @@ class ProvisionAssignedGroups implements IRepairStep {
 			return;
 		}
 
-		$this->reportSeededGroup(groupId: $groupId, added: $added, output: $output);
+		$output->info(
+			'Dossiq: seeded group "' . $groupId . '" with ' . count($added) . ' administrator(s): '
+			. implode(', ', $added) . '. Replace them with the real members in Users & groups.'
+		);
+		$this->logger->info(
+			'Dossiq: seeded assigned group with administrators',
+			['group' => $groupId, 'users' => $added]
+		);
 	}//end seedWithAdministrators()
 
 	/**
@@ -344,26 +351,4 @@ class ProvisionAssignedGroups implements IRepairStep {
 		);
 		$this->logger->warning('Dossiq: assigned group created empty', ['group' => $groupId]);
 	}//end reportEmptyGroup()
-
-	/**
-	 * Report the administrators the group was seeded with.
-	 *
-	 * @param string $groupId The group id.
-	 * @param string[] $added The uids that were added.
-	 * @param IOutput $output Output sink.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/case-management/spec.md
-	 */
-	private function reportSeededGroup(string $groupId, array $added, IOutput $output): void {
-		$output->info(
-			'Dossiq: seeded group "' . $groupId . '" with ' . count($added) . ' administrator(s): '
-			. implode(', ', $added) . '. Replace them with the real members in Users & groups.'
-		);
-		$this->logger->info(
-			'Dossiq: seeded assigned group with administrators',
-			['group' => $groupId, 'users' => $added]
-		);
-	}//end reportSeededGroup()
 }//end class
