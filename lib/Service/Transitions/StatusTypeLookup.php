@@ -39,7 +39,6 @@ namespace OCA\Dossiq\Service\Transitions;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
-use OCA\Dossiq\Service\Support\SerialisedResult;
 use Throwable;
 
 /**
@@ -328,6 +327,14 @@ class StatusTypeLookup {
 			return [];
 		}
 
-		return SerialisedResult::arrayOf(value: $found);
+		if (is_object($found) === true && method_exists($found, 'jsonSerialize') === true) {
+			$found = $found->jsonSerialize();
+		}
+
+		if (is_array($found) === false) {
+			return [];
+		}
+
+		return $found;
 	}//end read()
 }//end class
