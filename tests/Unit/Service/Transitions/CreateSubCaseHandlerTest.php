@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Transitions\CreateSubCaseHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CreateSubCaseHandler
@@ -63,7 +64,9 @@ class CreateSubCaseHandlerTest extends TestCase {
 	 */
 	public function testFailsWhenCaseSchemaNotConfigured(): void {
 		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				return ['id' => 'unreachable'];
 			}
 		};
@@ -97,7 +100,9 @@ class CreateSubCaseHandlerTest extends TestCase {
 				$this->recorded = &$recorded;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->recorded = $object;
 				return ['id' => 'sub-uuid'];
 			}
@@ -134,7 +139,9 @@ class CreateSubCaseHandlerTest extends TestCase {
 	 */
 	public function testCatchesExceptionFromObjectService(): void {
 		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new RuntimeException('boom');
 			}
 		};

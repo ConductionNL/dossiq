@@ -20,6 +20,7 @@ namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Task\FormCompletionRequest;
 use OCA\OpenRegister\Service\Task\TaskAnswer;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -622,7 +623,10 @@ class EngineTaskGateway implements EngineTaskGatewayInterface {
             // that would report "no service" as "nothing to do".
             $completion = $this->container->get(self::COMPLETION_SERVICE);
 
-            $completion->complete(uuid: $id, answer: new TaskAnswer(outcome: $outcome), data: $data, actor: $actor);
+            $completion->complete(
+                request: new FormCompletionRequest(uuid: $id, answer: new TaskAnswer(outcome: $outcome), data: $data),
+                actor: $actor
+            );
 
             return true;
         } catch (Throwable $e) {

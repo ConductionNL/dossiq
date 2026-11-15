@@ -121,6 +121,21 @@ class CaseDeclarations {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function assertOpen(array $transition, array $case, string $caseId, string $userId): void {
+		$this->assertNothingWithheld(transition: $transition, case: $case);
+		$this->assertFourEyes(transition: $transition, taker: ['caseId' => $caseId, 'userId' => $userId]);
+	}//end assertOpen()
+
+	/**
+	 * Refuse a move that waits on an open dependency.
+	 *
+	 * @param array<string, mixed> $transition The transition.
+	 * @param array<string, mixed> $case       The case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When something the move waits on is open.
+	 */
+	private function assertNothingWithheld(array $transition, array $case): void {
 		$withheld = $this->moves->withheldReasons(transition: $transition, case: $case);
 		if ($withheld !== []) {
 			throw new RefusedException(
@@ -129,8 +144,20 @@ class CaseDeclarations {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
+	}//end assertNothingWithheld()
 
-		$refusal = $this->moves->fourEyesRefusal(transition: $transition, caseId: $caseId, userId: $userId);
+	/**
+	 * Refuse a move four eyes withholds from the user taking it.
+	 *
+	 * @param array<string, mixed>                  $transition The transition.
+	 * @param array{caseId: string, userId: string} $taker      The case uuid and the user taking the move.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When four eyes refuses the user.
+	 */
+	private function assertFourEyes(array $transition, array $taker): void {
+		$refusal = $this->moves->fourEyesRefusal(transition: $transition, caseId: $taker['caseId'], userId: $taker['userId']);
 		if ($refusal !== null) {
 			throw new RefusedException(
 				rule: 'transition-four-eyes',
@@ -138,7 +165,7 @@ class CaseDeclarations {
 				status: RefusedException::STATUS_FORBIDDEN,
 			);
 		}
-	}//end assertOpen()
+	}//end assertFourEyes()
 
 	/**
 	 * The case payload with the bookkeeping of the status it enters. Saved by the caller.

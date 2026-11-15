@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\Contracts\CasePlanProjectionServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -366,7 +367,7 @@ class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 			$caseType = $this->asSystemWithoutUser(
 				objectService: $objectService,
 				userSession: $this->userSession,
-				operation: fn (): mixed => $objectService->find($caseTypeId, register: $register, schema: $schema),
+				operation: fn (): mixed => $objectService->find($caseTypeId, new ObjectFindOptions(register: $register, schema: $schema)),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

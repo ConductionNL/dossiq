@@ -22,6 +22,7 @@ use OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException;
 use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * @covers \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
@@ -93,7 +94,10 @@ class BezwaarAuditWriteOrUndoTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(string $register, string $schema, string $uuid): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
+				$uuid = $deletion->uuid;
 				throw new RuntimeException('locked');
 			}
 		};

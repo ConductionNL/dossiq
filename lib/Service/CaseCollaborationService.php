@@ -29,6 +29,9 @@ namespace OCA\Dossiq\Service;
 
 use DateTime;
 use OCA\Dossiq\Kernel\Contracts\CaseCollaborationServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -201,7 +204,10 @@ class CaseCollaborationService implements CaseCollaborationServiceInterface {
 	 * @return array The updated activity object data, or an error array
 	 */
 	private function appendToShare(FederatedActivityStore $store, string $federatedShareId, array $entry): array {
-		$shareObj = $store->objectService->find($federatedShareId, register: (int)$store->register, schema: (int)$store->shareSchema);
+		$shareObj = $store->objectService->find(
+			$federatedShareId,
+			new ObjectFindOptions(register: (int)$store->register, schema: (int)$store->shareSchema)
+		);
 		if ($shareObj === null) {
 			return ['error' => 'Federated share not found'];
 		}
@@ -254,7 +260,10 @@ class CaseCollaborationService implements CaseCollaborationServiceInterface {
 	 * @return array The updated activity object data
 	 */
 	private function storeActivity(FederatedActivityStore $store, array $activity, array $entry): array {
-		$result = $store->objectService->saveObject(object: $activity, register: (int)$store->register, schema: (int)$store->activitySchema);
+		$result = $store->objectService->saveObject(
+			object: $activity,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (int)$store->register, schema: (int)$store->activitySchema))
+		);
 		$resultData = $this->asArray(value: $result);
 
 		$this->tenantAuditTrail->emit(

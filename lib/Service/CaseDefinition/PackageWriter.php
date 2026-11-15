@@ -34,6 +34,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ZipArchive;
@@ -530,9 +532,10 @@ class PackageWriter {
 		// An administrator's install; see holds() for why it passes the access check.
 		$stored = $target->objectService->saveObject(
 			$this->withoutMetadata(row: $row),
-			register: $target->register,
-			schema: $target->schema,
-			uuid: $rowUuid,
+			new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $target->register, schema: $target->schema),
+				uuid: $rowUuid
+			),
 			_rbac: false
 		);
 

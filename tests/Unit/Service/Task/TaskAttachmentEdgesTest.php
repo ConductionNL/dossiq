@@ -26,6 +26,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An object service fake that holds one case and records every write.
@@ -47,7 +50,9 @@ class AttachmentCaseStore {
 	/**
 	 * @return array<string, mixed> The case.
 	 */
-	public function find(string $id, mixed $register, mixed $schema): array {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		return $this->case;
 	}//end find()
 
@@ -55,7 +60,11 @@ class AttachmentCaseStore {
 	 * @param array<string, mixed> $data The changes.
 	 * @return array<string, mixed> The case.
 	 */
-	public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		$this->patches[] = [$objectId, $data, $register, $schema];
 		$this->case = array_merge($this->case, $data);
 
@@ -66,7 +75,10 @@ class AttachmentCaseStore {
 	 * @param array<string, mixed> $object The object.
 	 * @return array<string, mixed> The object.
 	 */
-	public function saveObject(array $object, mixed $register, mixed $schema, ?string $uuid = null): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		if ($this->failSave === true) {
 			throw new RuntimeException('disk full');
 		}

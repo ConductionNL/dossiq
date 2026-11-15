@@ -25,7 +25,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Custody;
 
 use DateTimeImmutable;
-use Throwable;
 
 /**
  * Reads a consent's withdrawal and dates, and places a moment against them.
@@ -140,11 +139,7 @@ class ConsentStanding {
 			return null;
 		}
 
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return false;
-		}
+		return ((new StoredInstant())->parse(value: $value) ?? false);
 	}//end dateOf()
 
 	/**

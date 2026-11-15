@@ -79,19 +79,26 @@ class DsoDoorsturenNotifier implements DsoDoorsturenNotifierInterface {
 		string $reason,
 		string $userId,
 	): void {
-		$event = new GenericEvent(
-			subject: $case,
-			arguments: [
-				'caseId' => $caseId,
-				'targetBevoegdGezag' => $targetBevoegdGezag,
-				'reason' => $reason,
-				'userId' => $userId,
-			]
+		$this->dispatchOn(
+			case: $case,
+			arguments: ['caseId' => $caseId, 'targetBevoegdGezag' => $targetBevoegdGezag, 'reason' => $reason, 'userId' => $userId]
 		);
+	}//end dispatchDoorgestuurd()
+
+	/**
+	 * Dispatch the doorgestuurd event with the case as its subject.
+	 *
+	 * @param array<string, mixed>  $case      The case.
+	 * @param array<string, string> $arguments The case id, the receiving bevoegd gezag, the reason and the user.
+	 *
+	 * @return void
+	 */
+	private function dispatchOn(array $case, array $arguments): void {
+		$event = new GenericEvent(subject: $case, arguments: $arguments);
 
 		$this->eventDispatcher->dispatch(
 			eventName: self::EVENT_NAME,
 			event: $event
 		);
-	}//end dispatchDoorgestuurd()
+	}//end dispatchOn()
 }//end class

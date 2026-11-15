@@ -207,13 +207,25 @@ class PlannedActionService implements PlannedActionServiceInterface {
 	 */
 	public function complete(array $action, string $completedBy = '', array $roleHolders = [], ?DateTimeImmutable $completedOn = null): ?array {
 		$moment = ($completedOn ?? new DateTimeImmutable('today'));
-		$this->markCompleted(action: $action, completedBy: $completedBy, moment: $moment);
+		$this->markCompleted(action: $action, completion: ['completedAt' => $moment->format('Y-m-d\TH:i:sP'), 'completedBy' => $completedBy]);
 
+		return $this->planNext(completed: $action, chain: ['completedOn' => $moment, 'roleHolders' => $roleHolders]);
+	}//end complete()
+
+	/**
+	 * Write the successor the completed action's type declares, or null when the chain ends.
+	 *
+	 * @param array<string, mixed> $completed The action just completed.
+	 * @param array<string, mixed> $chain     The completion date (`completedOn`) and who holds each role on this case (`roleHolders`).
+	 *
+	 * @return array<string, mixed>|null The action planned next, or null.
+	 */
+	private function planNext(array $completed, array $chain): ?array {
 		$next = $this->chain->next(
-			completed: $action,
-			types: $this->typesFor(caseTypeId: (string)($action['caseType'] ?? '')),
-			completedOn: $moment,
-			roleHolders: $roleHolders
+			completed: $completed,
+			types: $this->typesFor(caseTypeId: (string)($completed['caseType'] ?? '')),
+			completedOn: $chain['completedOn'],
+			roleHolders: $chain['roleHolders']
 		);
 
 		if ($next === null) {
@@ -221,28 +233,26 @@ class PlannedActionService implements PlannedActionServiceInterface {
 		}
 
 		return $this->write(object: $next, uuid: null);
-	}//end complete()
+	}//end planNext()
 
 	/**
 	 * Write an action as completed.
 	 *
-	 * @param array<string, mixed> $action      The action being completed.
-	 * @param string               $completedBy Who completed it.
-	 * @param DateTimeImmutable    $moment      The completion date.
+	 * @param array<string, mixed>  $action     The action being completed.
+	 * @param array<string, string> $completion When it was completed (`completedAt`) and by whom (`completedBy`).
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
 	 */
-	private function markCompleted(array $action, string $completedBy, DateTimeImmutable $moment): void {
+	private function markCompleted(array $action, array $completion): void {
 		$actionId = (string)($action['id'] ?? ($action['uuid'] ?? ''));
 		$uuid = null;
 		if ($actionId !== '') {
 			$uuid = $actionId;
 		}
 
-		$changes = ['state' => 'completed', 'completedAt' => $moment->format('Y-m-d\TH:i:sP'), 'completedBy' => $completedBy];
-		$this->write(object: array_merge($action, $changes), uuid: $uuid);
+		$this->write(object: array_merge($action, ['state' => 'completed'] + $completion), uuid: $uuid);
 	}//end markCompleted()
 
 	/**

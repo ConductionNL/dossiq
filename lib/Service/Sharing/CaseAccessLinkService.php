@@ -236,12 +236,25 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 			return null;
 		}
 
+		return $this->switched(service: $service, link: ['id' => $linkId, 'userId' => $userId, 'paused' => $paused]);
+	}//end setPaused()
+
+	/**
+	 * Switch the link off or on through OpenRegister; a failure is logged and answers null.
+	 *
+	 * @param object                                      $service OpenRegister's access link service.
+	 * @param array{id: int, userId: string, paused: bool} $link    The link row id, the principal asking, and whether to
+	 *                                                              switch it off.
+	 *
+	 * @return array<string, mixed>|null The updated link, or null when there was none to update.
+	 */
+	private function switched(object $service, array $link): ?array {
 		try {
-			$updated = $service->setDisabled($linkId, $userId, $paused);
+			$updated = $service->setDisabled($link['id'], $link['userId'], $link['paused']);
 		} catch (\Throwable $failure) {
 			$this->logger->error(
 				'CaseAccessLinkService: could not pause an access link',
-				['linkId' => $linkId, 'exception' => $failure->getMessage()]
+				['linkId' => $link['id'], 'exception' => $failure->getMessage()]
 			);
 			return null;
 		}
@@ -251,7 +264,7 @@ class CaseAccessLinkService implements CaseAccessLinkServiceInterface {
 		}
 
 		return $updated;
-	}//end setPaused()
+	}//end switched()
 
 	/**
 	 * Which of the four states a link row is in.

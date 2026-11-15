@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Queue\Source;
 use OCA\Dossiq\Service\People\CaseSeats;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsQueueCaseSchema;
 use OCP\IL10N;
 
 /**
@@ -49,6 +50,8 @@ use OCP\IL10N;
  * @spec openspec/specs/my-work/spec.md
  */
 class CoordinatorSeatSource extends RegisterBackedSource {
+	use ReadsQueueCaseSchema;
+
 	/**
 	 * Constructor.
 	 *
@@ -144,22 +147,6 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 
 		return $items;
 	}//end itemsFor()
-
-	/**
-	 * The configured case schema, `case` when unset.
-	 *
-	 * @return string The schema.
-	 *
-	 * @spec openspec/specs/my-work/spec.md
-	 */
-	private function caseSchema(): string {
-		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
-		if ($schema === '') {
-			$schema = 'case';
-		}
-
-		return $schema;
-	}//end caseSchema()
 
 	/**
 	 * The queue item for one open case, or null when the person does not coordinate it or already handles it.

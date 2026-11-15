@@ -33,6 +33,7 @@ use OCA\Dossiq\Kernel\Contracts\IntakeFormBindingInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeFormBindingsInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\Event\FormDestinationDependentsEvent;
+use OCA\OpenRegister\Service\Form\PublishedForm;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -129,9 +130,7 @@ class IntakeFormDependentsListener implements IEventListener {
 
 		$caseTypeId = $names[0];
 		return new $formClass(
-			id: $caseTypeId,
-			app: AppIdentity::APP_ID,
-			title: $this->titleOf(caseType: $caseType),
+			form: new PublishedForm(id: $caseTypeId, app: AppIdentity::APP_ID, title: $this->titleOf(caseType: $caseType)),
 			author: $this->ownerOf(caseType: $caseType),
 			mapping: $this->binding->mappingFor(caseType: $caseType),
 			unpublish: function () use ($caseTypeId): void {

@@ -41,12 +41,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
+use OCA\Dossiq\Service\Support\DescribesValues;
+
 /**
  * Reads and checks a package's `adminTab` declaration.
  *
  * @spec openspec/changes/vth-cases-run-end-to-end
  */
 class PackageAdminTab {
+
+	use DescribesValues;
 
 	/**
 	 * The manifest key that declares the tab.
@@ -143,21 +147,4 @@ class PackageAdminTab {
 			'lists' => array_values(array_unique($adminTab['lists'])),
 		];
 	}//end parse()
-
-	/**
-	 * A value as it reads in a message.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string The string, or the type of anything else.
-	 *
-	 * @spec openspec/changes/vth-cases-run-end-to-end
-	 */
-	private function describe(mixed $value): string {
-		if (is_string($value) === true) {
-			return $value;
-		}
-
-		return gettype($value);
-	}//end describe()
 }//end class

@@ -105,15 +105,10 @@ class TermEventEntry {
 			return;
 		}
 
-		$message = trim($rationale);
-		if ($message === '') {
-			$message = 'Termijngebeurtenis vastgelegd';
-		}
-
 		$this->write(
 			line: new TermEventLine(
 				caseId: $caseId,
-				message: $message,
+				message: self::eventSentence(rationale: $rationale),
 				instance: $instance,
 				event: $type,
 				basis: $basis,
@@ -121,6 +116,22 @@ class TermEventEntry {
 			)
 		);
 	}//end recordEvent()
+
+	/**
+	 * The sentence a handler reads for a term event: the rationale, or a plain default.
+	 *
+	 * @param string $rationale The sentence the caller supplied.
+	 *
+	 * @return string The sentence.
+	 */
+	private static function eventSentence(string $rationale): string {
+		$message = trim($rationale);
+		if ($message === '') {
+			return 'Termijngebeurtenis vastgelegd';
+		}
+
+		return $message;
+	}//end eventSentence()
 
 	/**
 	 * Record the start of a term that writes no TermijnGebeurtenis of its own.

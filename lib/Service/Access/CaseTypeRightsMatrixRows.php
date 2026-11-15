@@ -151,7 +151,7 @@ class CaseTypeRightsMatrixRows {
 			return [];
 		}
 
-		$base = $this->baseRow(right: $right, group: $group, values: $values, caseTypeId: $caseTypeId);
+		$base = $this->baseRow(right: $right, grant: ['group' => $group, 'values' => $values, 'caseTypeId' => $caseTypeId]);
 
 		return $this->rowsWithVerbs(base: $base, right: $right);
 	}//end rowsFor()
@@ -161,19 +161,18 @@ class CaseTypeRightsMatrixRows {
 	 *
 	 * The confidentiality levels are those up to the rights row's own.
 	 *
-	 * @param array<string, mixed> $right      The rights row.
-	 * @param string               $group      The group the role resolves to.
-	 * @param array<int, string>   $values     The department's values.
-	 * @param string               $caseTypeId The case type it belongs to.
+	 * @param array<string, mixed> $right The rights row.
+	 * @param array<string, mixed> $grant The `group` the role resolves to, the department's `values` and the
+	 *                                    `caseTypeId` it belongs to.
 	 *
 	 * @return array<string, mixed> The base row.
 	 */
-	private function baseRow(array $right, string $group, array $values, string $caseTypeId): array {
+	private function baseRow(array $right, array $grant): array {
 		$levels = $this->levelsUpTo(level: (string)($right['confidentiality'] ?? ''));
 		$base = [
-			'group' => $group,
-			'values' => $values,
-			'where' => ['caseType' => $caseTypeId, 'confidentiality' => ['$in' => $levels]],
+			'group' => $grant['group'],
+			'values' => $grant['values'],
+			'where' => ['caseType' => $grant['caseTypeId'], 'confidentiality' => ['$in' => $levels]],
 		];
 		if (is_string($right['until'] ?? null) === true && $right['until'] !== '') {
 			$base['until'] = $right['until'];

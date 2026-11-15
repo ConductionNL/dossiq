@@ -26,6 +26,8 @@ use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Notification\RequesterNoticeSender
@@ -101,7 +103,10 @@ final class RequesterNoticeSenderChannelsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function saveObject(array $object, int|string|null $register = null, int|string|null $schema = null, ?string $uuid = null): ?array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->calls[] = ['save', ['schema' => $schema, 'object' => $object]];
 				if ($this->test->portalAnswer instanceof RuntimeException) {
 					throw $this->test->portalAnswer;
@@ -119,7 +124,9 @@ final class RequesterNoticeSenderChannelsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->test->calls[] = ['find', ['id' => $id, 'schema' => $schema]];
 
 				return $this->test->storedCase;

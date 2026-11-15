@@ -21,6 +21,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Beschikking\BeschikkingRepository
@@ -68,7 +70,9 @@ class BeschikkingRepositoryTest extends TestCase {
 			public function __construct(private mixed $found, private ?\Throwable $failure) {
 			}
 
-			public function find(string $id, string $register = '', string $schema = ''): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->finds[] = [$id, $register, $schema];
 				if ($this->failure !== null) {
 					throw $this->failure;
@@ -76,7 +80,9 @@ class BeschikkingRepositoryTest extends TestCase {
 				return $this->found;
 			}
 
-			public function saveObject(array $object, string $register = '', string $schema = ''): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
 				$this->saves[] = [$object, $register, $schema];
 				return $object + ['id' => 'saved-1'];
 			}

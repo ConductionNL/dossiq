@@ -31,6 +31,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Zgw\ZtcRelatedTypeLookup
@@ -98,7 +99,9 @@ class ZtcRelatedTypeLookupTest extends TestCase {
 			public function __construct(private readonly ZtcRelatedTypeLookupTest $test) {
 			}
 
-			public function find(mixed $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(mixed $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (in_array((string)$schema, $this->test->failing, true) === true) {
 					throw new RuntimeException('find failed');
 				}

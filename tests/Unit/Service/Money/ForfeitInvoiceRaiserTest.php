@@ -32,6 +32,7 @@ use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * A forfeited penalty raises an invoice when its case type says so.
@@ -73,6 +74,7 @@ final class ForfeitInvoiceRaiserTest extends TestCase {
 				 * @return never
 				 */
 				public function find(mixed ...$arguments): never {
+					$arguments = LegacyObjectArgs::flatten(args: $arguments);
 					throw new RuntimeException('database is gone');
 				}
 			};

@@ -35,6 +35,8 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * The projection writes only a changed, readable state, and one failing case
@@ -174,22 +176,24 @@ class PaymentStateProjectionJobBranchesTest extends TestCase {
 			 * @return array<string, mixed> The stored row.
 			 */
 			public function patchObject(
-				string $objectId,
-				array $data,
-				string|int|null $register = null,
-				string|int|null $schema = null,
+				ObjectPatch $patch,
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($objectId === 'case-1') {
 					throw new \RuntimeException('database is gone');
 				}
 
 				return parent::patchObject(
-					objectId: $objectId,
-					data: $data,
-					register: $register,
-					schema: $schema,
+					new ObjectPatch(
+						objectId: $objectId,
+						data: $data,
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					),
 					_rbac: $_rbac,
 					_multitenancy: $_multitenancy
 				);

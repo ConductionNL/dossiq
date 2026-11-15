@@ -26,26 +26,17 @@
 <script>
 import { NcAppContent, NcLoadingIcon } from '@nextcloud/vue'
 import WorkflowTab from './tabs/WorkflowTab.vue'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 import { initializeStores } from '../../store/store.js'
 
 export default {
 	name: 'CaseTypeFlowView',
 	components: { NcAppContent, NcLoadingIcon, WorkflowTab },
 
+	mixins: [caseTypeWidget],
+
 	data() {
 		return { storesReady: false }
-	},
-
-	computed: {
-		/**
-		 * The case type this page is bound to.
-		 *
-		 * @return {string} The route's id.
-		 * @spec openspec/specs/case-types/spec.md
-		 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
-		},
 	},
 
 	/**

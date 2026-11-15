@@ -40,6 +40,7 @@ use OCA\Dossiq\Woo\WooRequestIntake;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 class AanvullingsverzoekServiceTest extends TestCase {
 
@@ -496,7 +497,11 @@ class AanvullingsverzoekServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				return array_merge(['id' => $objectId, 'portalTask' => 'task-1', 'state' => 'open'], $data);
 			}
 		};

@@ -26,6 +26,9 @@ namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Object service double that records calls and answers from a behaviour table.
@@ -53,7 +56,9 @@ class GoldenHearingObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, int|string $register, int|string $schema): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options?->register;
+		$schema = $options?->schema;
 		$this->note(call: ['find' => compact('id', 'register', 'schema')]);
 		$answer = ($this->behaviour['find'][$id] ?? 'missing');
 		if ($answer === 'missing') {
@@ -77,7 +82,10 @@ class GoldenHearingObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): mixed {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$this->note(call: ['saveObject' => compact('object', 'register', 'schema', 'uuid')]);
 		$mode = ($this->behaviour['save'] ?? 'ok');
 		if ($mode === 'throw') {
@@ -101,7 +109,11 @@ class GoldenHearingObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): mixed {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): mixed {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		$this->note(call: ['patchObject' => compact('objectId', 'data', 'register', 'schema')]);
 		$mode = ($this->behaviour['patch'] ?? 'ok');
 		if ($mode === 'throw') {

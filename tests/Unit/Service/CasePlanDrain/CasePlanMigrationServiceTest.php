@@ -36,6 +36,8 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use UnexpectedValueException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 
 /**
  * Tests for {@see CasePlanMigrationService}.
@@ -463,7 +465,9 @@ final class CasePlanMigrationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The case.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				unset($register, $schema);
 
 				return ($this->cases[$id] ?? null);
@@ -479,7 +483,11 @@ final class CasePlanMigrationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case after the write.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				unset($register, $schema);
 				$this->cases[$objectId] = array_merge($this->cases[$objectId], $data);
 

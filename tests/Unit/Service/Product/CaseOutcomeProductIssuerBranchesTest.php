@@ -29,6 +29,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Which outcomes issue or change a product, and how a failure is reported.
@@ -219,7 +220,9 @@ class CaseOutcomeProductIssuerBranchesTest extends TestCase {
 			 *
 			 * @return never
 			 */
-			public function find(string $id, int|string $register = '', int|string $schema = ''): never {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): never {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				throw new RuntimeException('register down');
 			}
 		};
@@ -250,7 +253,9 @@ class CaseOutcomeProductIssuerBranchesTest extends TestCase {
 			 *
 			 * @return never
 			 */
-			public function find(string $id, int|string $register = '', int|string $schema = ''): never {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): never {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				throw new RuntimeException('register down');
 			}
 		};

@@ -59,7 +59,7 @@ describe('overview cards per case type', () => {
 
 	it('keeps the domain cards on their own conditions', () => {
 		for (const id of overview.filter((candidate) => !GENERIC.includes(candidate) && candidate !== 'case-overview-sections')) {
-			expect(JSON.stringify(widget(id).visibleWhen), id).toContain('@context.caseType.category')
+			expect(JSON.stringify(widget(id).visibleWhen), id).toMatch(/@context\.caseType\.(category|tenderChain)/)
 		}
 		expect(JSON.stringify(widget('case-overview-sections').visibleWhen)).toContain('@context.caseType.overviewSections')
 		expect(overview.slice(0, 3)).toEqual(['case-objection-grounds', 'case-objection-advice-card', 'case-summary'])

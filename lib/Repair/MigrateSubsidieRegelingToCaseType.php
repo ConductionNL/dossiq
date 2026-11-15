@@ -41,6 +41,8 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -481,7 +483,10 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 * @return string The new id, or '' when it could not be read back.
 	 */
 	private function saveCaseType(array $payload, string $register, string $schema): string {
-		$created = $this->settingsService->getObjectService()->saveObject($payload, [], $register, $schema);
+		$created = $this->settingsService->getObjectService()->saveObject(
+			$payload,
+			new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 		if (is_object($created) === true && method_exists($created, 'jsonSerialize') === true) {
 			$created = $created->jsonSerialize();
 		}
@@ -548,7 +553,10 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 
 			$definition = $this->propertyDefinition(property: $property, type: $type, caseTypeId: $caseTypeId, value: $scheme[$property]);
 
-			$objectService->saveObject($definition, [], $register, $propertySchema);
+			$objectService->saveObject(
+				$definition,
+				new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $propertySchema))
+			);
 		}
 	}
 

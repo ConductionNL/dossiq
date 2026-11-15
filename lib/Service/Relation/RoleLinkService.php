@@ -124,28 +124,40 @@ class RoleLinkService implements RoleLinkServiceInterface {
 			throw new InvalidArgumentException('Name the case and what it is linked to.');
 		}
 
+		return $this->linkAs(request: new RoleLinkRequest(caseId: $caseId, targetId: $targetId, payload: $payload), role: $role);
+	}//end link()
+
+	/**
+	 * Link the named case with a role it declares: relate the cases and open the role's record.
+	 *
+	 * @param RoleLinkRequest $request The case, the target and the record's extra fields, trimmed.
+	 * @param string          $role    The role, as the case type declares it.
+	 *
+	 * @return array{linkedCase: string, record: array<string, mixed>|null} What was written.
+	 *
+	 * @throws InvalidArgumentException When the role is not declared or the target is unusable.
+	 * @throws RuntimeException When the register cannot be reached or a write is refused.
+	 */
+	private function linkAs(RoleLinkRequest $request, string $role): array {
 		$location = new RoleLinkRegister(
 			objectService: $this->reads()->objectService(),
 			register: $this->settingsService->getConfigValue(key: 'register'),
 		);
-		$roles    = $this->definitionsFor(location: $location, caseId: $caseId);
+		$roles    = $this->definitionsFor(location: $location, caseId: $request->caseId);
 		if (isset($roles[$role]) === false) {
 			throw new InvalidArgumentException("This case type declares no relation role '$role'.");
 		}
 
 		$scope = new RoleLinkScope(location: $location, definition: $roles[$role]);
-		$linkedCase = $this->resolveLinkedCase(scope: $scope, targetId: $targetId);
+		$linkedCase = $this->resolveLinkedCase(scope: $scope, targetId: $request->targetId);
 
-		$this->relateCases(caseId: $caseId, linkedCase: $linkedCase, definition: $scope->definition);
+		$this->relateCases(caseId: $request->caseId, linkedCase: $linkedCase, definition: $scope->definition);
 
 		return [
 			'linkedCase' => $linkedCase,
-			'record'     => $this->openRecord(
-				scope: $scope,
-				request: new RoleLinkRequest(caseId: $caseId, targetId: $targetId, payload: $payload),
-			),
+			'record'     => $this->openRecord(scope: $scope, request: $request),
 		];
-	}//end link()
+	}//end linkAs()
 
 	/**
 	 * Relate the case to the linked case, when there is one other than itself.

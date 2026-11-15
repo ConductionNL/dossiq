@@ -126,7 +126,7 @@ class TaskCompletionResumeListener implements IEventListener {
 		try {
 			$this->signals->answerByUuid(runUuid: $runUuid, signal: $this->completionSignal(task: $task, uid: $uid));
 		} catch (FlowSignalRefused $e) {
-			$this->recordRefusal(refusal: $e, runUuid: $runUuid, task: $task, uid: $uid);
+			$this->recordRefusal(refusal: $e, completion: ['runUuid' => $runUuid, 'task' => $task, 'uid' => $uid]);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not resume flow run ' . $runUuid . ' after its task was completed',
@@ -174,16 +174,16 @@ class TaskCompletionResumeListener implements IEventListener {
 	 * has nothing left to wake, and a run that is no longer suspended needed no
 	 * waking. Neither is the completer's fault, so neither is raised.
 	 *
-	 * @param FlowSignalRefused    $refusal The typed refusal.
-	 * @param string               $runUuid The run the task named.
-	 * @param array<string, mixed> $task    The completed task.
-	 * @param string|null          $uid     Who completed it.
+	 * @param FlowSignalRefused    $refusal    The typed refusal.
+	 * @param array<string, mixed> $completion The run the task named (`runUuid`), the completed task (`task`)
+	 *                                         and who completed it (`uid`).
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/task-management/spec.md
 	 */
-	private function recordRefusal(FlowSignalRefused $refusal, string $runUuid, array $task, ?string $uid): void {
+	private function recordRefusal(FlowSignalRefused $refusal, array $completion): void {
+		[$runUuid, $task, $uid] = [$completion['runUuid'], $completion['task'], $completion['uid']];
 		if ($refusal->getReason() === FlowSignalRefused::NOT_ASSIGNEE) {
 			$this->logger->warning(
 				'Dossiq: the engine refused to resume flow run ' . $runUuid

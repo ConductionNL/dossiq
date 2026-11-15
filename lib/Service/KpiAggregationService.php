@@ -48,6 +48,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
 use OCA\Dossiq\Service\Queue\QueueOldestNote;
+use OCA\Dossiq\Service\Support\NormalisesObjectRows;
 use OCA\Dossiq\Service\Zgw\SchemaFilter;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -61,6 +62,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
  */
 class KpiAggregationService implements KpiAggregationServiceInterface {
+	use NormalisesObjectRows;
+
 	/**
 	 * Upper bound on rows pulled for the metrics that must fold rows rather than
 	 * count them (the two breakdowns, and the processing-time average).
@@ -616,33 +619,6 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 
 		return $this->sources->days->signed(from: $start, to: $end);
 	}//end daysBetween()
-
-	/**
-	 * Normalise an OpenRegister object to a plain array.
-	 *
-	 * @param mixed $object The object entity or array.
-	 *
-	 * @return array The object's data.
-	 */
-	private function toArray(mixed $object): array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === false) {
-			return [];
-		}
-
-		if (method_exists($object, 'getObject') === true) {
-			return (array)$object->getObject();
-		}
-
-		if (method_exists($object, 'jsonSerialize') === true) {
-			return (array)$object->jsonSerialize();
-		}
-
-		return [];
-	}//end toArray()
 
 	/**
 	 * The register and schema ids these metrics read.

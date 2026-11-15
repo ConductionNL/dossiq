@@ -29,6 +29,7 @@ use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -144,7 +145,7 @@ class WooReportReadLog implements WooReportReadLogInterface {
 		['caseId' => $caseId, 'context' => $context] = $read;
 		$readerId = $context['reader'];
 		try {
-			$case = $objectService->find($caseId, register: $register, schema: $schema);
+			$case = $objectService->find($caseId, new ObjectFindOptions(register: $register, schema: $schema));
 			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
 				object: $case,
 				action: self::ACTION_THROUGHPUT,

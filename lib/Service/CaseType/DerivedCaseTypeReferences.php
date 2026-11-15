@@ -35,6 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseType;
 
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -153,8 +155,7 @@ class DerivedCaseTypeReferences {
 		try {
 			$saved = $store['objectService']->saveObject(
 				object: $caseType,
-				register: $store['register'],
-				schema: $store['schema'],
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store['register'], schema: $store['schema']))
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(

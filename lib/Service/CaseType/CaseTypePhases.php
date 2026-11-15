@@ -167,11 +167,11 @@ class CaseTypePhases implements CaseTypePhasesInterface {
 
 			$ofStatus[$id] = $key;
 			if (isset($phases[$key]) === true) {
-				$phases[$key] = $this->joinedPhase(phase: $phases[$key], id: $id, order: $placed['order']);
+				$phases[$key] = $this->joinedPhase(phase: $phases[$key], placed: $placed);
 				continue;
 			}
 
-			$phases[$key] = $this->newPhase(caseTypeId: $caseTypeId, statusType: $statusType, id: $id, placed: $placed);
+			$phases[$key] = $this->newPhase(caseTypeId: $caseTypeId, placed: $placed);
 		}//end foreach
 
 		return ['phases' => $phases, 'phaseOfStatus' => $ofStatus, 'phased' => $phased];
@@ -181,19 +181,18 @@ class CaseTypePhases implements CaseTypePhasesInterface {
 	 * A phase opened by its first status, without tasks yet.
 	 *
 	 * @param string               $caseTypeId The case type id.
-	 * @param array<string, mixed> $statusType The status type.
-	 * @param string               $id         The status type id.
 	 * @param array<string, mixed> $placed     Where the status falls, from {@see placementOf()}.
 	 *
 	 * @return array<string, mixed> The phase.
 	 */
-	private function newPhase(string $caseTypeId, array $statusType, string $id, array $placed): array {
+	private function newPhase(string $caseTypeId, array $placed): array {
+		$id = $placed['id'];
 		return [
 			'id'         => $id,
 			'caseTypeId' => $caseTypeId,
 			'name'       => $placed['name'],
 			'order'      => $placed['order'],
-			'isFinal'    => (($statusType['isFinal'] ?? false) === true && $placed['phase'] === ''),
+			'isFinal'    => $placed['isFinal'],
 			'statusIds'  => [$id],
 			'tasks'      => [],
 		];
@@ -205,8 +204,9 @@ class CaseTypePhases implements CaseTypePhasesInterface {
 	 * @param array<string, mixed> $statusType The status type.
 	 * @param string               $id         The status type id.
 	 *
-	 * @return array{phase: string, order: int, key: string, name: string} The named phase ('' when none),
-	 *         the status's order, and the phase key and name it falls under.
+	 * @return array{id: string, phase: string, order: int, key: string, name: string, isFinal: bool} The status type id,
+	 *         the named phase ('' when none), the status's order, the phase key and name it falls under, and whether
+	 *         it is a final status of its own phase.
 	 */
 	private function placementOf(array $statusType, string $id): array {
 		$phase = trim($this->text->forReader(value: ($statusType['phase'] ?? '')));
@@ -218,19 +218,27 @@ class CaseTypePhases implements CaseTypePhasesInterface {
 			$name = $phase;
 		}
 
-		return ['phase' => $phase, 'order' => $order, 'key' => $key, 'name' => $name];
+		return [
+			'id' => $id,
+			'phase' => $phase,
+			'order' => $order,
+			'key' => $key,
+			'name' => $name,
+			'isFinal' => (($statusType['isFinal'] ?? false) === true && $phase === ''),
+		];
 	}//end placementOf()
 
 	/**
 	 * A phase with one more status, named by that status when it comes first.
 	 *
-	 * @param array<string, mixed> $phase The phase.
-	 * @param string               $id    The status type id.
-	 * @param int                  $order The status's order.
+	 * @param array<string, mixed>          $phase  The phase.
+	 * @param array{id: string, order: int} $placed The status type id and the status's order, from {@see placementOf()}.
 	 *
 	 * @return array<string, mixed> The phase.
 	 */
-	private function joinedPhase(array $phase, string $id, int $order): array {
+	private function joinedPhase(array $phase, array $placed): array {
+		$id = $placed['id'];
+		$order = $placed['order'];
 		$phase['statusIds'][] = $id;
 		if ($order < $phase['order']) {
 			$phase['order'] = $order;

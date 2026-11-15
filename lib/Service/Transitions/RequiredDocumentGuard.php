@@ -62,6 +62,18 @@ class RequiredDocumentGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: false, failureMessage: 'Required-document guard missing documentType');
 		}
 
+		return $this->documentResult(case: $case, required: $required);
+	}//end evaluate()
+
+	/**
+	 * Pass when the case lists a document of the required type.
+	 *
+	 * @param array<string, mixed> $case     Case object
+	 * @param string               $required The required document type
+	 *
+	 * @return GuardResult
+	 */
+	private function documentResult(array $case, string $required): GuardResult {
 		$candidates = $this->candidatesOf(caseData: $case);
 		if ($this->holdsType(candidates: $candidates, required: $required) === true) {
 			return new GuardResult(passed: true, details: ['documentType' => $required]);
@@ -72,7 +84,7 @@ class RequiredDocumentGuard implements GuardEvaluatorInterface {
 			failureMessage: $this->l10n->t('Required document missing: %s', [$required]),
 			details: ['documentType' => $required],
 		);
-	}//end evaluate()
+	}//end documentResult()
 
 	/**
 	 * Every document the case lists under one of its document fields.

@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
 use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Throwable;
 
 /**
@@ -94,7 +95,7 @@ class CaseTypeStore implements CaseTypeStoreInterface {
 		}
 
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			return [];
 		}

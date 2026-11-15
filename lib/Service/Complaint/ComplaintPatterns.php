@@ -99,7 +99,7 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 		$dispositions = $this->dispositions(objectService: $objectService, register: $register);
 		$figures = $this->figures->compute(period: $period, complaints: $complaints, dispositions: $dispositions);
 
-		return $this->patterns(period: $period, figures: $figures, months: $months);
+		return $this->patterns(period: $period, figures: $figures);
 	}//end forQuarter()
 
 	/**
@@ -124,13 +124,13 @@ class ComplaintPatterns implements ComplaintPatternsInterface {
 	 *
 	 * @param QuarterPeriod $period The quarter.
 	 * @param array<string, mixed> $figures The computed figures.
-	 * @param array<int, string> $months The trailing months, oldest first.
 	 *
 	 * @return array<string, mixed> The answer.
 	 *
 	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
-	private function patterns(QuarterPeriod $period, array $figures, array $months): array {
+	private function patterns(QuarterPeriod $period, array $figures): array {
+		$months = $period->trailingMonths();
 		$targets = $this->targets();
 
 		return [

@@ -37,6 +37,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The show endpoint and the register branches the happy-path test leaves out.
@@ -196,7 +197,9 @@ class AccrualNoticeControllerShowTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function find(string $id, int|string $register, int|string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->find)($id, $register, $schema);
 			}
 		};

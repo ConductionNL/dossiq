@@ -119,6 +119,7 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import { caseDialogTokenAware } from '../mixins/caseDialog.js'
 import { adviceForm, adviceRefusal, decide, recommend } from '../services/decisionAdviceApi.js'
 
 export default {
@@ -131,16 +132,7 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/**
-		 * The case. Arrives as the unresolved `@objectId` token from an
-		 * `open-modal` action, so the route answers instead.
-		 */
-		caseId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseDialogTokenAware],
 
 	emits: ['close'],
 
@@ -159,16 +151,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md */
-		targetCaseId() {
-			const given = String(this.caseId || '')
-			if (given !== '' && given.startsWith('@') === false) {
-				return given
-			}
-
-			return String(this.$route?.params?.id ?? '')
-		},
-
 		/** @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md */
 		canAsk() {
 			return this.busy === false
@@ -290,10 +272,10 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@use '../styles/_dialogBanners.scss' as banner;
+
 .decision-advice {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
+	@include banner.dialog-column;
 
 	&__note,
 	&__recommendation {
@@ -310,11 +292,7 @@ export default {
 	}
 
 	&__saved {
-		margin: 0;
-		padding: 12px 14px;
-		border-radius: var(--border-radius-large);
-		background: var(--color-success);
-		color: var(--color-success-text, var(--color-primary-element-text));
+		@include banner.saved-banner;
 	}
 }
 </style>

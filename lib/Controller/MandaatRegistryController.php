@@ -43,7 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\RegistryObjectWrite;
+use OCA\Dossiq\Controller\Support\BuildsRegistryWrites;
 use OCA\Dossiq\Kernel\Contracts\MandaatRegistryServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -61,6 +61,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/mandaat-matrix/spec.md
  */
 class MandaatRegistryController extends Controller {
+	use BuildsRegistryWrites;
+
 	/**
 	 * Constructor.
 	 *
@@ -126,19 +128,4 @@ class MandaatRegistryController extends Controller {
 	public function mandatenUpdate(string $id): JSONResponse {
 		return $this->writes()->update(schemaConfigKey: MandaatRegistryServiceInterface::SCHEMA_MANDAAT, id: $id);
 	}//end mandatenUpdate()
-
-	/**
-	 * Writes registry objects from this request's body.
-	 *
-	 * @return RegistryObjectWrite
-	 *
-	 * @spec openspec/specs/mandaat-matrix/spec.md
-	 */
-	private function writes(): RegistryObjectWrite {
-		$writes = new RegistryObjectWrite();
-		$writes->registry = $this->registry;
-		$writes->request = $this->request;
-		$writes->logger = $this->logger;
-		return $writes;
-	}//end writes()
 }//end class

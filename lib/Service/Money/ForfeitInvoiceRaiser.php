@@ -129,8 +129,11 @@ class ForfeitInvoiceRaiser implements ForfeitInvoiceRaiserInterface {
 		$run = new ForfeitInvoiceRun();
 		$run->action = $action;
 		$run->caseId = (string)($action['case'] ?? '');
-		$run->openCase = $this->read(schemaKey: 'case_schema', id: $run->caseId, caseId: $run->caseId);
-		$run->caseType = $this->read(schemaKey: 'case_type_schema', id: (string)($run->openCase['caseType'] ?? ''), caseId: $run->caseId);
+		$run->openCase = $this->read(object: ['schemaKey' => 'case_schema', 'id' => $run->caseId], caseId: $run->caseId);
+		$run->caseType = $this->read(
+			object: ['schemaKey' => 'case_type_schema', 'id' => (string)($run->openCase['caseType'] ?? '')],
+			caseId: $run->caseId
+		);
 
 		return $run;
 	}//end forfeitRun()
@@ -207,18 +210,18 @@ class ForfeitInvoiceRaiser implements ForfeitInvoiceRaiserInterface {
 	/**
 	 * One object by the schema a setting names, or [] when it is not configured or not held.
 	 *
-	 * @param string $schemaKey The setting that names the schema.
-	 * @param string $id The object id.
-	 * @param string $caseId The case the read is for.
+	 * @param array{schemaKey: string, id: string} $object The setting that names the schema, and the object id.
+	 * @param string                               $caseId The case the read is for.
 	 *
 	 * @return array<string, mixed> The object.
 	 *
 	 * @throws ForfeitInvoiceNotRaisedException When the store cannot be read.
 	 */
-	private function read(string $schemaKey, string $id, string $caseId): array {
+	private function read(array $object, string $caseId): array {
+		$id = $object['id'];
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaKey);
+		$schema = (string)$this->settingsService->getConfigValue($object['schemaKey']);
 		if ($objectService === null || $id === '' || $schema === '') {
 			return [];
 		}

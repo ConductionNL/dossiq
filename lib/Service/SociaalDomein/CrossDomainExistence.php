@@ -130,7 +130,7 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 		// answer is that nothing exists: a lookup that found nothing is still a
 		// lookup that happened, and it is exactly the one a person asking what
 		// was looked up about them would otherwise never hear about.
-		$this->log(bsn: $bsn, ground: $ground, requester: $requester, returned: $this->describe(found: $found));
+		$this->log(bsn: $bsn, act: ['ground' => $ground, 'requester' => $requester, 'returned' => $this->describe(found: $found)]);
 
 		return $found;
 	}//end lookUp()
@@ -320,10 +320,8 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 	/**
 	 * Write the lookup to the audit log, with its ground.
 	 *
-	 * @param string $bsn       The person looked up.
-	 * @param string $ground    The ground it was made on.
-	 * @param string $requester Who asked.
-	 * @param string $returned  What came back.
+	 * @param string                $bsn The person looked up.
+	 * @param array<string, string> $act The `ground` it was made on, the `requester` who asked and what was `returned`.
 	 *
 	 * @return void
 	 *
@@ -331,7 +329,9 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 	 *
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
-	private function log(string $bsn, string $ground, string $requester, string $returned): void {
+	private function log(string $bsn, array $act): void {
+		$ground = $act['ground'];
+		$requester = $act['requester'];
 		$this->store->write(
 			schema: self::LOG_SCHEMA,
 			object: [
@@ -345,7 +345,7 @@ class CrossDomainExistence implements CrossDomainExistenceInterface {
 				'action' => self::ACTION,
 				'moment' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 				'authorisationGround' => $ground,
-				'returned' => $returned,
+				'returned' => $act['returned'],
 				'geraadpleegdeVelden' => self::ANSWER_FIELDS,
 				'result' => 'succes',
 			]
