@@ -187,13 +187,8 @@ class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 	 */
 	private function rowOf(NoticeListRun $run, array $notice): array {
 		$id = (string)($notice['id'] ?? ($notice['@self']['id'] ?? ''));
-		$term = $this->read(
-			objectService: $run->objectService,
-			register: $run->register,
-			schemaKey: 'termijn_instance_schema',
-			id: (string)($notice['deadlineInstance'] ?? '')
-		);
-		$case = $this->read(objectService: $run->objectService, register: $run->register, schemaKey: 'case_schema', id: (string)($term['case'] ?? ''));
+		$term = $this->read(run: $run, ref: ['schemaKey' => 'termijn_instance_schema', 'id' => (string)($notice['deadlineInstance'] ?? '')]);
+		$case = $this->read(run: $run, ref: ['schemaKey' => 'case_schema', 'id' => (string)($term['case'] ?? '')]);
 
 		return ['id' => $id]
 			+ $this->caseColumns(case: $case, term: $term)
@@ -365,14 +360,13 @@ class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 	/**
 	 * Read one object by the schema a setting names, once per call.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register id.
-	 * @param string $schemaKey     The setting that names the schema.
-	 * @param string $id            The object id.
+	 * @param NoticeListRun                        $run The listing: the OpenRegister object service and the register id.
+	 * @param array{schemaKey: string, id: string} $ref The setting that names the schema, and the object id.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function read(object $objectService, string $register, string $schemaKey, string $id): array {
+	private function read(NoticeListRun $run, array $ref): array {
+		['schemaKey' => $schemaKey, 'id' => $id] = $ref;
 		$schema = (string)$this->settingsService->getConfigValue($schemaKey);
 		if ($id === '' || $schema === '') {
 			return [];
@@ -381,7 +375,7 @@ class NoticeOfDefaultRows implements NoticeOfDefaultRowsInterface {
 		$key = $schemaKey.':'.$id;
 		if (array_key_exists($key, $this->found) === false) {
 			try {
-				$this->found[$key] = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
+				$this->found[$key] = $this->findObjectAsArray(objectService: $run->objectService, register: $run->register, schema: $schema, id: $id);
 			} catch (Throwable $e) {
 				$this->found[$key] = null;
 			}
