@@ -344,6 +344,25 @@ class MilestoneService implements MilestoneServiceInterface {
 	public function reverseMilestone(string $caseId, string $definitionId, string $userId, string $reason): bool {
 		$objectService = $this->requireObjectService();
 
+		return $this->reversed(
+			objectService: $objectService,
+			reversal: ['caseId' => $caseId, 'definitionId' => $definitionId, 'userId' => $userId, 'reason' => $reason]
+		);
+	}//end reverseMilestone()
+
+	/**
+	 * Delete the milestone's records on the case and log who reversed it and why.
+	 *
+	 * @param object                                                                 $objectService The object service.
+	 * @param array{caseId: string, definitionId: string, userId: string, reason: string} $reversal      The case, the milestone
+	 *                                                                                            definition, who reverses it
+	 *                                                                                            and why.
+	 *
+	 * @return bool True if reversed
+	 */
+	private function reversed(object $objectService, array $reversal): bool {
+		$caseId = $reversal['caseId'];
+		$definitionId = $reversal['definitionId'];
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('milestone_record_schema');
 
@@ -356,11 +375,11 @@ class MilestoneService implements MilestoneServiceInterface {
 
 		$this->deleteRecords(store: [$objectService, $register, $schema], records: $records);
 
-		$message = 'Milestone reversed: ' . $definitionId . ' on case ' . $caseId . ' by ' . $userId . ' reason: ' . $reason;
+		$message = 'Milestone reversed: ' . $definitionId . ' on case ' . $caseId . ' by ' . $reversal['userId'] . ' reason: ' . $reversal['reason'];
 		$this->logger->info($message, ['app' => AppIdentity::APP_ID]);
 
 		return true;
-	}//end reverseMilestone()
+	}//end reversed()
 
 	/**
 	 * Resolve the OpenRegister ObjectService.

@@ -110,16 +110,31 @@ class ZtcCrossReferenceEnricher implements ZtcCrossReferenceEnricherInterface {
 		}
 
 		$target = new ZtcEnrichmentTarget(objectService: $objectService, uuid: $uuid, baseUrl: $baseUrl);
+
+		return $this->enrichedAs(resource: $resource, subject: ['data' => $data, 'target' => $target]);
+	}//end enrich()
+
+	/**
+	 * A besluittype or zaaktype with its cross-references; any other resource as it is.
+	 *
+	 * @param string                                          $resource The ZGW resource name.
+	 * @param array{data: array, target: ZtcEnrichmentTarget} $subject  The outbound-mapped object, and its object service,
+	 *                                                                  uuid and base URL.
+	 *
+	 * @return array The enriched object.
+	 */
+	private function enrichedAs(string $resource, array $subject): array {
+		$data = $subject['data'];
 		if ($resource === 'besluittypen') {
-			return $this->enrichBesluittype(data: $data, target: $target);
+			return $this->enrichBesluittype(data: $data, target: $subject['target']);
 		}
 
 		if ($resource !== 'zaaktypen') {
 			return $data;
 		}
 
-		return $this->withListDefaults(data: $this->enrichCaseType(data: $data, target: $target));
-	}//end enrich()
+		return $this->withListDefaults(data: $this->enrichCaseType(data: $data, target: $subject['target']));
+	}//end enrichedAs()
 
 	/**
 	 * Default every zaaktype list field to [] instead of null.
