@@ -215,7 +215,12 @@ class ArmTermijnEngineTimers implements IRepairStep {
 			return;
 		}
 
-		$this->recordArmed(row: $row, timerId: $timerId, counts: $counts);
+		$this->termService->updateTermijnInstance($rowId, ['engineTimerId' => $timerId, 'timerBreachesAfterLastDay' => true]);
+		$counts['armed']++;
+
+		if ($this->carryPause(row: $row, timerId: $timerId) === true) {
+			$counts['suspended']++;
+		}
 	}//end migrateInstance()
 
 	/**
@@ -239,30 +244,27 @@ class ArmTermijnEngineTimers implements IRepairStep {
 	}//end isMigratable()
 
 	/**
-	 * Store the armed timer on the instance and carry a pause onto it.
+	 * Carry a paused instance's pause onto its armed timer.
 	 *
 	 * @param array<string, mixed> $row     The TermijnInstance row.
 	 * @param string               $timerId The armed timer's id.
-	 * @param array<string, int>   $counts  Running counts (by reference).
 	 *
-	 * @return void
+	 * @return bool True when a pause was carried over.
 	 */
-	private function recordArmed(array $row, string $timerId, array &$counts): void {
-		$this->termService->updateTermijnInstance((string)($row['id'] ?? ''), ['engineTimerId' => $timerId, 'timerBreachesAfterLastDay' => true]);
-		$counts['armed']++;
-
-		if ((string)($row['status'] ?? '') === 'paused') {
-			$row['engineTimerId'] = $timerId;
-			$suspended = $this->timerService->suspendBeslistermijn(
-				instance: $row,
-				reason: 'Opschorting overgenomen bij migratie naar engine timers',
-				until: $this->dateOrNull(value: (string)($row['pauseDeadline'] ?? ''))
-			);
-			if ($suspended === true) {
-				$counts['suspended']++;
-			}
+	private function carryPause(array $row, string $timerId): bool {
+		if ((string)($row['status'] ?? '') !== 'paused') {
+			return false;
 		}
-	}//end recordArmed()
+
+		$row['engineTimerId'] = $timerId;
+		$suspended = $this->timerService->suspendBeslistermijn(
+			instance: $row,
+			reason: 'Opschorting overgenomen bij migratie naar engine timers',
+			until: $this->dateOrNull(value: (string)($row['pauseDeadline'] ?? ''))
+		);
+
+		return $suspended === true;
+	}//end carryPause()
 
 	/**
 	 * All TermijnInstance rows, or null when the store is unreachable.
@@ -306,20 +308,6 @@ class ArmTermijnEngineTimers implements IRepairStep {
 			return [];
 		}
 
-		return $this->findDefinitie(objectService: $objectService, register: $register, schema: $schema, defId: $defId);
-	}//end definitieFor()
-
-	/**
-	 * Read one TermijnDefinitie row.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $schema        The TermijnDefinitie schema.
-	 * @param string $defId         The definition id.
-	 *
-	 * @return array<string, mixed> The TermijnDefinitie row, or empty.
-	 */
-	private function findDefinitie(object $objectService, string $register, string $schema, string $defId): array {
 		try {
 			$def = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $defId);
 			if ($def !== null) {
@@ -330,7 +318,7 @@ class ArmTermijnEngineTimers implements IRepairStep {
 		}
 
 		return [];
-	}//end findDefinitie()
+	}//end definitieFor()
 
 	/**
 	 * Parse a stored date string, or null.
