@@ -120,8 +120,10 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 		$visit = new CaseVisit(mapper: $mapper, case: $case, readerId: $readerId);
 		$this->write(
 			visit: $visit,
-			action: self::ACTION,
-			context: ['purpose' => $purpose, 'note' => $note, 'categories' => $categories],
+			entry: [
+				'action' => self::ACTION,
+				'context' => ['purpose' => $purpose, 'note' => $note, 'categories' => $categories],
+			],
 		);
 
 		$roleAdded = $this->bindFor(visit: $visit, purpose: $purpose);
@@ -160,8 +162,10 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 
 		$this->write(
 			visit: $visit,
-			action: self::ACTION,
-			context: ['purpose' => $rules['skipPurpose'], 'note' => '', 'categories' => $categories, 'automatic' => true],
+			entry: [
+				'action' => self::ACTION,
+				'context' => ['purpose' => $rules['skipPurpose'], 'note' => '', 'categories' => $categories, 'automatic' => true],
+			],
 		);
 
 		return ['required' => false, 'recorded' => true];
@@ -189,7 +193,7 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 			return false;
 		}
 
-		$this->recordBinding(visit: $visit, purpose: $purpose, role: $role);
+		$this->recordBinding(visit: $visit, binding: ['purpose' => $purpose, 'role' => $role]);
 
 		return true;
 	}//end bindFor()
@@ -227,20 +231,21 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 	/**
 	 * Write the binding to the trail; a refused write leaves the binding standing.
 	 *
-	 * @param CaseVisit $visit   The reader on the case, and the trail it is written to.
-	 * @param string    $purpose The recorded purpose.
-	 * @param string    $role    The role the reader was bound to.
+	 * @param CaseVisit                            $visit   The reader on the case, and the trail it is written to.
+	 * @param array{purpose: string, role: string} $binding The recorded purpose and the role the reader was bound to.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
 	 */
-	private function recordBinding(CaseVisit $visit, string $purpose, string $role): void {
+	private function recordBinding(CaseVisit $visit, array $binding): void {
 		try {
 			$this->write(
 				visit: $visit,
-				action: self::ACTION_ROLE,
-				context: ['purpose' => $purpose, 'role' => $role, 'participant' => 'user:'.$visit->readerId],
+				entry: [
+					'action' => self::ACTION_ROLE,
+					'context' => $binding + ['participant' => 'user:'.$visit->readerId],
+				],
 			);
 		} catch (RefusedException $e) {
 			// The binding stands; the trail misses only the line that says why.
@@ -287,15 +292,15 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 	/**
 	 * Write one audit entry on the case, with the reader and the time.
 	 *
-	 * @param CaseVisit            $visit   The reader on the case, and the trail it is written to.
-	 * @param string               $action  The audit action.
-	 * @param array<string, mixed> $context What the entry records.
+	 * @param CaseVisit                                            $visit The reader on the case, and the trail it is written to.
+	 * @param array{action: string, context: array<string, mixed>} $entry The audit action and what the entry records.
 	 *
 	 * @return void
 	 *
 	 * @throws RefusedException When the entry cannot be written.
 	 */
-	private function write(CaseVisit $visit, string $action, array $context): void {
+	private function write(CaseVisit $visit, array $entry): void {
+		['action' => $action, 'context' => $context] = $entry;
 		try {
 			$visit->mapper->recordObjectEvent(event: ObjectAuditEvents::of(
 				object: $visit->case,
@@ -359,18 +364,18 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 	/**
 	 * An object as the reader may read it.
 	 *
-	 * @param array{objectService: object, register: string} $target  Where the object is read.
-	 * @param string                                         $id      The object uuid.
-	 * @param string                                         $schema  The schema.
-	 * @param RefusedException                               $refusal What a miss is answered with.
+	 * @param array{objectService: object, register: string}                   $target Where the object is read.
+	 * @param array{id: string, schema: string, refusal: RefusedException} $lookup The object uuid, the schema and
+	 *                                                                             what a miss is answered with.
 	 *
 	 * @return object The entity.
 	 *
 	 * @throws RefusedException When the reader cannot read it.
 	 */
-	private function find(array $target, string $id, string $schema, RefusedException $refusal): object {
+	private function find(array $target, array $lookup): object {
+		$refusal = $lookup['refusal'];
 		try {
-			$found = $target['objectService']->find($id, register: $target['register'], schema: $schema);
+			$found = $target['objectService']->find($lookup['id'], register: $target['register'], schema: $lookup['schema']);
 		} catch (Throwable $e) {
 			throw $refusal;
 		}
@@ -403,9 +408,7 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 		// be read is not taken to ask nothing.
 		$caseType = $this->find(
 			target: $target,
-			id: $caseTypeId,
-			schema: $target['caseTypeSchema'],
-			refusal: $this->notRecorded(previous: null)
+			lookup: ['id' => $caseTypeId, 'schema' => $target['caseTypeSchema'], 'refusal' => $this->notRecorded(previous: null)]
 		);
 
 		$categories = ($this->dataOf(entity: $caseType)['specialDataCategories'] ?? []);
@@ -473,9 +476,11 @@ class CaseAccessPurposeService implements CaseAccessPurposeServiceInterface {
 	private function readableCase(array $target, string $caseId): object {
 		return $this->find(
 			target: $target,
-			id: $caseId,
-			schema: $target['caseSchema'],
-			refusal: new RefusedException(rule: 'case-not-readable', sentence: 'This case cannot be opened.', status: 404)
+			lookup: [
+				'id' => $caseId,
+				'schema' => $target['caseSchema'],
+				'refusal' => new RefusedException(rule: 'case-not-readable', sentence: 'This case cannot be opened.', status: 404),
+			]
 		);
 	}//end readableCase()
 
