@@ -261,8 +261,8 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	 */
 	private function openWorkShape(KpiRun $run): array {
 		return [
-			'statusBreakdown' => $this->breakdown(rows: $run->openCases, field: 'status', label: 'status'),
-			'typeBreakdown' => $this->breakdown(rows: $run->openCases, field: 'caseType', label: 'type'),
+			'statusBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'status'), label: 'status'),
+			'typeBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'caseType'), label: 'type'),
 			'avgProcessingDays' => $this->averageProcessingDays(closed: $run->closed),
 			'slaCompliance' => $this->slaCompliance(closed: $run->closed),
 		];
@@ -491,15 +491,14 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	}//end closedThisMonth()
 
 	/**
-	 * Group rows by one field, most frequent first.
+	 * How many rows carry each value of a field, most first; a row without it is not counted.
 	 *
-	 * @param array<int, array> $rows The rows to fold.
-	 * @param string $field The field to group on.
-	 * @param string $label The key the caller expects the value under.
+	 * @param array<int, array<string, mixed>> $rows  The rows.
+	 * @param string                           $field The field.
 	 *
-	 * @return array<int, array{count: integer}> The breakdown.
+	 * @return array<string, int> The count per value.
 	 */
-	private function breakdown(array $rows, string $field, string $label): array {
+	private static function countsBy(array $rows, string $field): array {
 		$counts = [];
 		foreach ($rows as $row) {
 			$value = (string)($row[$field] ?? '');
@@ -512,13 +511,25 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 
 		arsort($counts);
 
+		return $counts;
+	}//end countsBy()
+
+	/**
+	 * The counts as rows, each value under the label.
+	 *
+	 * @param array<string, int> $counts The count per value.
+	 * @param string             $label  The key the value is given.
+	 *
+	 * @return array<int, array<string, mixed>> The breakdown.
+	 */
+	private static function labelled(array $counts, string $label): array {
 		$out = [];
 		foreach ($counts as $value => $count) {
 			$out[] = [$label => (string)$value, 'count' => $count];
 		}
 
 		return $out;
-	}//end breakdown()
+	}//end labelled()
 
 	/**
 	 * Mean days from start to end across the closed cases.
