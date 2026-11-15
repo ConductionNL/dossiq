@@ -98,11 +98,23 @@ class SystemCaseStore {
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
 	 */
 	public function caseType(object $objectService, string $register, string $caseTypeId): ?array {
+		return $this->caseTypeRow(store: [$objectService, $register], caseTypeId: $caseTypeId);
+	}//end caseType()
+
+	/**
+	 * A case type by id, or null when it is absent; a failed read is logged.
+	 *
+	 * @param array{0: object, 1: string} $store      The OpenRegister ObjectService and the dossiq register.
+	 * @param string                      $caseTypeId The case type uuid.
+	 *
+	 * @return array<string, mixed>|null The case type.
+	 */
+	private function caseTypeRow(array $store, string $caseTypeId): ?array {
 		$caseType = null;
 		try {
 			$caseType = $this->reader->find(
-				objectService: $objectService,
-				register: $register,
+				objectService: $store[0],
+				register: $store[1],
 				schema: $this->settingsService->getConfigValue('case_type_schema'),
 				id: $caseTypeId,
 			);
@@ -111,7 +123,7 @@ class SystemCaseStore {
 		}
 
 		return $caseType;
-	}//end caseType()
+	}//end caseTypeRow()
 
 	/**
 	 * The version of a case type that new cases get: the row the id names,
@@ -180,11 +192,23 @@ class SystemCaseStore {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
 	 */
 	public function readCase(object $objectService, string $register, string $caseId): array {
+		return $this->caseRow(store: [$objectService, $register], caseId: $caseId);
+	}//end readCase()
+
+	/**
+	 * A case by id, or an empty array when it is absent; a failed read is logged.
+	 *
+	 * @param array{0: object, 1: string} $store  The OpenRegister ObjectService and the dossiq register.
+	 * @param string                      $caseId The case uuid.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function caseRow(array $store, string $caseId): array {
 		$case = [];
 		try {
 			$case = (array)$this->reader->find(
-				objectService: $objectService,
-				register: $register,
+				objectService: $store[0],
+				register: $store[1],
 				schema: $this->settingsService->getConfigValue('case_schema'),
 				id: $caseId,
 			);
@@ -193,7 +217,7 @@ class SystemCaseStore {
 		}
 
 		return $case;
-	}//end readCase()
+	}//end caseRow()
 
 	/**
 	 * Write a case, and read its uuid, number and deadline from what was written.
@@ -219,8 +243,19 @@ class SystemCaseStore {
 	public function write(object $objectService, string $register, array $case, ?array $caseType = null): ?array {
 		$store = [$objectService, $register];
 		$caseType ??= $this->caseTypeNamedBy(store: $store, case: $case);
-		$case = $this->withOpeningDefaults(case: $case, caseType: $caseType);
 
+		return $this->writeAndAnnounce(store: $store, case: $this->withOpeningDefaults(case: $case, caseType: $caseType));
+	}//end write()
+
+	/**
+	 * Save the case as the system and send the created event; null when the save failed.
+	 *
+	 * @param array{0: object, 1: string} $store The OpenRegister ObjectService and the dossiq register.
+	 * @param array<string, mixed>        $case  The case to write, with its opening defaults.
+	 *
+	 * @return array{id: string, answer: array<string, string>}|null The written case, or null when the write failed.
+	 */
+	private function writeAndAnnounce(array $store, array $case): ?array {
 		$written = $this->saveAsSystem(store: $store, case: $case);
 		$saved = $written['saved'];
 		$failed = $written['failed'];
@@ -229,10 +264,10 @@ class SystemCaseStore {
 			return null;
 		}
 
-		$this->announce(objectService: $objectService, saved: $saved);
+		$this->announce(objectService: $store[0], saved: $saved);
 
 		return (new WrittenCase())->read(saved: $saved);
-	}//end write()
+	}//end writeAndAnnounce()
 
 	/**
 	 * The case type the case names in `caseType`, or null when it names none or it cannot be read.
