@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
+use OCA\Dossiq\Service\Support\StoredObjectAddress;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -73,16 +74,14 @@ trait WritesPackageRows {
 	 * an administrator, from the admin settings or `occ`, and a CLI run has no
 	 * user, so a case it shipped earlier would read as missing.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
-	 * @param string $id The object id the package carries.
+	 * @param StoredObjectAddress $address The OpenRegister object service, the register and schema slugs,
+	 *                                     and the object id the package carries.
 	 *
 	 * @return boolean True when the object is already here.
 	 */
-	private function holds(object $objectService, string $register, string $schema, string $id): bool {
+	private function holds(StoredObjectAddress $address): bool {
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema, _rbac: false);
+			$found = $address->objectService->find($address->id, register: $address->register, schema: $address->schema, _rbac: false);
 		} catch (\Throwable $e) {
 			return false;
 		}
@@ -142,13 +141,13 @@ trait WritesPackageRows {
 	 * roll-back that itself fails must not turn one error into two, and the
 	 * response the administrator reads is already `error`.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register slug.
-	 * @param array<int, string> $ids The ids to remove.
+	 * @param array{0: object, 1: string} $store The OpenRegister object service and the register slug.
+	 * @param array<int, string>          $ids   The ids to remove.
 	 *
 	 * @return void
 	 */
-	private function rollBack(object $objectService, string $register, array $ids): void {
+	private function rollBack(array $store, array $ids): void {
+		[$objectService, $register] = $store;
 		foreach ($ids as $id) {
 			if ($id === '') {
 				continue;

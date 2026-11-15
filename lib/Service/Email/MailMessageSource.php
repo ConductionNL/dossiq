@@ -397,11 +397,23 @@ class MailMessageSource implements MailMessageSourceInterface {
 			return [];
 		}
 
+		return $this->intakeMessages(folder: ['accountId' => $accountId, 'mailbox' => $mailbox], page: ['sinceId' => $sinceId, 'limit' => $limit]);
+	}//end listMailboxMessagesSince()
+
+	/**
+	 * The messages of one page of an intake folder; a failed read is logged and answers none.
+	 *
+	 * @param array{accountId: int, mailbox: string} $folder The Mail account and the mailbox.
+	 * @param array{sinceId: int, limit: int}        $page   The last id already read, and the page size.
+	 *
+	 * @return array<int, array<string, mixed>> The messages.
+	 */
+	private function intakeMessages(array $folder, array $page): array {
 		try {
-			$qb = $this->intakeFolderQuery(folder: ['accountId' => $accountId, 'mailbox' => $mailbox], page: ['sinceId' => $sinceId, 'limit' => $limit]);
+			$qb = $this->intakeFolderQuery(folder: $folder, page: $page);
 
 			$result = $qb->executeQuery();
-			$messages = $this->messagesOf(result: $result, mailbox: $mailbox);
+			$messages = $this->messagesOf(result: $result, mailbox: $folder['mailbox']);
 
 			$result->closeCursor();
 		} catch (Throwable $e) {
@@ -410,7 +422,7 @@ class MailMessageSource implements MailMessageSourceInterface {
 		}//end try
 
 		return $messages;
-	}//end listMailboxMessagesSince()
+	}//end intakeMessages()
 
 	/**
 	 * The query for the messages after an id in one folder of one account, oldest first.

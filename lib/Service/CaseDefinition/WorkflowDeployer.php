@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\StoredObjectAddress;
 use Psr\Log\LoggerInterface;
 use ZipArchive;
 
@@ -153,7 +154,7 @@ class WorkflowDeployer {
 				// A workflow that cannot be read or written takes the whole
 				// deployment with it: half a set of templates is a case type
 				// whose process is missing steps nobody can see are missing.
-				$this->rollBack(objectService: $target->objectService, register: $target->register, ids: $ids['created']);
+				$this->rollBack(store: [$target->objectService, $target->register], ids: $ids['created']);
 
 				return ['status' => 'error', 'message' => $outcome['message']];
 			}
@@ -217,7 +218,9 @@ class WorkflowDeployer {
 		}
 
 		$packageId = $this->existingId(row: $template);
-		$conflict = ($packageId !== '' && $this->holds(objectService: $objectService, register: $register, schema: $schema, id: $packageId) === true);
+		$conflict = ($packageId !== '' && $this->holds(
+			address: new StoredObjectAddress(objectService: $objectService, register: $register, schema: $schema, id: $packageId)
+		) === true);
 
 		if ($conflict === true && $target->strategy === self::STRATEGY_SKIP) {
 			return ['kind' => 'skipped', 'id' => $packageId, 'message' => ''];

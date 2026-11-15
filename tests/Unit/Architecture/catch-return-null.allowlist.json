@@ -621,10 +621,10 @@
     },
     {
       "file": "lib/Service/Email/MailMessageSource.php",
-      "method": "listMailboxMessagesSince",
+      "method": "intakeMessages",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`listMailboxMessagesSince()` answers `return []` when the Nextcloud Mail tables are absent or the folder is gone; the catch logs at warning (\"Dossiq: listing the intake folder failed\") and intake reads nothing that run rather than failing the cron."
+      "reason": "`intakeMessages()` answers `return []` when the Nextcloud Mail tables are absent or the folder is gone; the catch logs at warning (\"Dossiq: listing the intake folder failed\") and intake reads nothing that run rather than failing the cron."
     },
     {
       "file": "lib/Service/Email/MailMessageSource.php",
@@ -803,10 +803,10 @@
     },
     {
       "file": "lib/Service/MandaatGebruikService.php",
-      "method": "getDecisionByMandaat",
+      "method": "mandateRows",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`getDecisionByMandaat()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+      "reason": "`mandateRows()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Milestone/MilestoneRepository.php",
@@ -1419,10 +1419,10 @@
     },
     {
       "file": "lib/Service/Transfer/TransferShareBroker.php",
-      "method": "mintTransferShare",
+      "method": "createShare",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`mintTransferShare()` answers `return null` when the read fails; the catch logs at error (\"CaseTransferService: OR createOutgoingShare failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`createShare()` answers `return null` when the read fails; the catch logs at error (\"CaseTransferService: OR createOutgoingShare failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Transfer/TransferShareBroker.php",

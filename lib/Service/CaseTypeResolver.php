@@ -384,9 +384,21 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 			$title = $this->titleOf(caseTypeId: $caseTypeId);
 		}
 
+		return $this->cycleNames(title: $title, ids: [$caseTypeId, $parentCaseTypeId]);
+	}//end cycleFor()
+
+	/**
+	 * The titles from the type round its parent chain back to itself.
+	 *
+	 * @param string                      $title The title the type is named by.
+	 * @param array{0: string, 1: string} $ids   The type being saved, and the parent it wants.
+	 *
+	 * @return array<int, string> The titles of the loop.
+	 */
+	private function cycleNames(string $title, array $ids): array {
 		$names = [$title];
-		foreach ($this->chainFor(caseTypeId: $parentCaseTypeId) as $ancestor) {
-			if ($this->store->rowId(row: $ancestor) === trim($caseTypeId)) {
+		foreach ($this->chainFor(caseTypeId: $ids[1]) as $ancestor) {
+			if ($this->store->rowId(row: $ancestor) === trim($ids[0])) {
 				// The loop closes on the type itself: name it by the title it
 				// is being saved with, not by the stored one.
 				$names[] = $title;
@@ -402,7 +414,7 @@ class CaseTypeResolver implements CaseTypeResolverInterface {
 		}
 
 		return $names;
-	}//end cycleFor()
+	}//end cycleNames()
 
 	/**
 	 * Rows of one schema for the whole chain, the nearest declaration winning.

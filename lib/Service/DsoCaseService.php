@@ -215,6 +215,23 @@ class DsoCaseService implements DsoCaseServiceInterface {
 		?string $notes,
 		string $userId,
 	): array {
+		return $this->transition(
+			caseId: $caseId,
+			request: ['newStatus' => $newStatus, 'besluitdatum' => $besluitdatum, 'notes' => $notes, 'userId' => $userId]
+		);
+	}//end transitionStatus()
+
+	/**
+	 * Write the requested DSO status onto the case, then sync and announce the change.
+	 *
+	 * @param string                     $caseId  The UUID of the zaak
+	 * @param array<string, string|null> $request The transition: newStatus, besluitdatum, notes, userId.
+	 *
+	 * @return array<string,mixed> The updated zaak object
+	 *
+	 * @throws \RuntimeException When the zaak cannot be found
+	 */
+	private function transition(string $caseId, array $request): array {
 		$objectService = $this->getObjectService();
 
 		$register = $this->config(key: 'register');
@@ -224,10 +241,10 @@ class DsoCaseService implements DsoCaseServiceInterface {
 		$change = [
 			'requestRef' => (string)($case['permitApplicationRef'] ?? ''),
 			'oldStatus' => (string)($case['dsoStatus'] ?? ''),
-			'newStatus' => $newStatus,
-			'besluitdatum' => $besluitdatum,
-			'notes' => $notes,
-			'userId' => $userId,
+			'newStatus' => $request['newStatus'],
+			'besluitdatum' => $request['besluitdatum'],
+			'notes' => $request['notes'],
+			'userId' => $request['userId'],
 		];
 
 		// Same as above: this method returns an array to its caller.
@@ -242,7 +259,7 @@ class DsoCaseService implements DsoCaseServiceInterface {
 		$this->announce(objectService: $objectService, change: $change);
 
 		return $updatedCase;
-	}//end transitionStatus()
+	}//end transition()
 
 	/**
 	 * Sync the linked vergunningaanvraag when there is one, then dispatch the change.

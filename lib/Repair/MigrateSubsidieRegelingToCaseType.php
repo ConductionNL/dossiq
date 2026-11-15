@@ -280,7 +280,7 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 			return false;
 		}
 
-		$this->createCaseTypeFor(scheme: $scheme, name: $name, output: $output);
+		$this->createCaseTypeFor(scheme: $scheme, output: $output);
 		return true;
 	}
 
@@ -331,13 +331,13 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	/**
 	 * Create the case type and its property definitions for one scheme.
 	 *
-	 * @param array<string, mixed> $scheme The source subsidieRegeling.
-	 * @param string               $name   Its schemeName.
+	 * @param array<string, mixed> $scheme The source subsidieRegeling, with its schemeName.
 	 * @param IOutput              $output Upgrade output.
 	 *
 	 * @return void
 	 */
-	private function createCaseTypeFor(array $scheme, string $name, IOutput $output): void {
+	private function createCaseTypeFor(array $scheme, IOutput $output): void {
+		$name = (string) ($scheme['schemeName'] ?? '');
 		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
 		$caseTypeSchema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_type_schema', '');
 

@@ -45,6 +45,7 @@ use OCA\Dossiq\Kernel\Contracts\ConflictResolutionServiceInterface;
 use OCA\Dossiq\Service\Access\ObjectUpdateRight;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\StoredObjectAddress;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
@@ -119,6 +120,17 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 			resolution: $resolution,
 			userId: $userId
 		);
+		return $this->resolveConflict(request: $request);
+	}//end resolve()
+
+	/**
+	 * Apply the resolution to the open conflict and mark it resolved, unless a step refuses.
+	 *
+	 * @param ConflictResolutionRequest $request The store, the conflict id, the resolution and the user.
+	 *
+	 * @return ConflictResolutionOutcome The outcome.
+	 */
+	private function resolveConflict(ConflictResolutionRequest $request): ConflictResolutionOutcome {
 		$data = $this->openConflict(request: $request);
 		if ($data instanceof ConflictResolutionOutcome) {
 			return $data;
@@ -127,7 +139,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		$refusal = $this->applyResolution(request: $request, data: $data);
 
 		return ($refusal ?? $this->markResolved(request: $request, data: $data));
-	}//end resolve()
+	}//end resolveConflict()
 
 	/**
 	 * Read the conflict record, refusing when it is missing or already resolved.
@@ -141,10 +153,12 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	private function openConflict(ConflictResolutionRequest $request): array|ConflictResolutionOutcome {
 		try {
 			$record = $this->read(
-				objectService: $request->objectService,
-				register: $request->register,
-				schema: self::CONFLICT_SCHEMA,
-				id: $request->id
+				address: new StoredObjectAddress(
+					objectService: $request->objectService,
+					register: $request->register,
+					schema: self::CONFLICT_SCHEMA,
+					id: $request->id
+				)
 			);
 		} catch (Throwable $e) {
 			return ConflictResolutionOutcome::refused(status: Http::STATUS_NOT_FOUND, message: 'Dit conflict bestaat niet.');
@@ -287,7 +301,9 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		}
 
 		try {
-			$target = $this->read(objectService: $objectService, register: $targetRegister, schema: $targetSchema, id: $targetId);
+			$target = $this->read(
+				address: new StoredObjectAddress(objectService: $objectService, register: $targetRegister, schema: $targetSchema, id: $targetId)
+			);
 		} catch (Throwable $e) {
 			return ConflictResolutionOutcome::refused(
 				status: Http::STATUS_NOT_FOUND,
@@ -435,7 +451,7 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 		}
 
 		try {
-			$this->read(objectService: $objectService, register: $register, schema: self::QUEUE_SCHEMA, id: $ref);
+			$this->read(address: new StoredObjectAddress(objectService: $objectService, register: $register, schema: self::QUEUE_SCHEMA, id: $ref));
 			$this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
@@ -454,17 +470,14 @@ class ConflictResolutionService implements ConflictResolutionServiceInterface {
 	/**
 	 * Read one object as the signed-in user.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $schema        The schema.
-	 * @param string $id            The object id.
+	 * @param StoredObjectAddress $address OpenRegister's object service, and the register, schema and id of the object.
 	 *
 	 * @return object The object as OpenRegister returned it.
 	 *
 	 * @throws RuntimeException When the object is absent or not readable by the user.
 	 */
-	private function read(object $objectService, string $register, string $schema, string $id): object {
-		$object = $objectService->find($id, register: $register, schema: $schema);
+	private function read(StoredObjectAddress $address): object {
+		$object = $address->objectService->find($address->id, register: $address->register, schema: $address->schema);
 		if (is_object($object) === false) {
 			throw new RuntimeException('object_not_readable');
 		}

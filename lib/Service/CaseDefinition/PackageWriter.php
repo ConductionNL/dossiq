@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\StoredObjectAddress;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ZipArchive;
@@ -99,7 +100,7 @@ class PackageWriter {
 		} catch (\Throwable $e) {
 			// The component is all or nothing: what this run wrote for it goes
 			// back out, so a failed import leaves no half case type behind.
-			$this->rollBack(objectService: $target->objectService, register: $target->register, ids: $run['created']);
+			$this->rollBack(store: [$target->objectService, $target->register], ids: $run['created']);
 
 			return [
 				'status' => 'error',
@@ -294,7 +295,7 @@ class PackageWriter {
 
 		// A seed row may sit in another app's register; each row goes back out of its own.
 		foreach ($written as $row) {
-			$this->rollBack(objectService: $objectService, register: (string)($row['register'] ?? $register), ids: [(string)$row['id']]);
+			$this->rollBack(store: [$objectService, (string)($row['register'] ?? $register)], ids: [(string)$row['id']]);
 		}
 	}//end undo()
 
@@ -558,7 +559,9 @@ class PackageWriter {
 			return false;
 		}
 
-		return $this->holds(objectService: $target->objectService, register: $target->register, schema: $target->schema, id: $packageId);
+		return $this->holds(
+			address: new StoredObjectAddress(objectService: $target->objectService, register: $target->register, schema: $target->schema, id: $packageId)
+		);
 	}//end holdsRow()
 
 	/**

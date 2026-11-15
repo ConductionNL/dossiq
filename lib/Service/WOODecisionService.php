@@ -140,6 +140,20 @@ class WOODecisionService {
 		// Guard: every required page of every in-scope document has been seen (REQ-WRT-005).
 		$this->pagesSeen?->assertAllSeen(caseId: $caseId);
 
+		return $this->assemble(caseId: $caseId, choice: ['decisionData' => $decisionData, 'letter' => $letter]);
+	}//end assembleDecision()
+
+	/**
+	 * Raise the decision in decidiq, write it, mark the case ready and answer the summary.
+	 *
+	 * @param string                                                  $caseId The case UUID
+	 * @param array{decisionData: array<string, mixed>, letter: string} $choice The caller's override data and chosen letter.
+	 *
+	 * @return array<string, mixed> Created decision with ID and assessment summary
+	 *
+	 * @throws \RuntimeException If OpenRegister unavailable or case not found
+	 */
+	private function assemble(string $caseId, array $choice): array {
 		$objectService = $this->requireObjectService();
 		[$register, $decisionSchema] = $this->requireDecisionSchema();
 
@@ -154,7 +168,7 @@ class WOODecisionService {
 			actorId: $userId,
 		);
 
-		$besluitData = $this->besluitData(caseId: $caseId, record: $record, userId: $userId, decisionData: $decisionData);
+		$besluitData = $this->besluitData(caseId: $caseId, record: $record, userId: $userId, decisionData: $choice['decisionData']);
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
@@ -163,8 +177,8 @@ class WOODecisionService {
 		$assembled = new AssembledDecision(caseId: $caseId, decisionRef: $decisionRef, decision: $decision);
 		$this->logAssembled(assembled: $assembled);
 
-		return $this->assembledResult(assembled: $assembled, record: $record, letter: $letter);
-	}//end assembleDecision()
+		return $this->assembledResult(assembled: $assembled, record: $record, letter: $choice['letter']);
+	}//end assemble()
 
 	/**
 	 * Log that a WOO besluit was assembled.

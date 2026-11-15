@@ -74,6 +74,18 @@ final class CaseOpeningDefaults {
 	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
 	 */
 	public function apply(array $case, array $caseType, ?DateTimeImmutable $now = null): array {
+		return $this->withStatusEntered(case: $this->withTypeDefaults(case: $case, caseType: $caseType), now: $now);
+	}//end apply()
+
+	/**
+	 * The case with the opening fields it lacks taken from its case type.
+	 *
+	 * @param array<string, mixed> $case     The case to write.
+	 * @param array<string, mixed> $caseType Its case type.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function withTypeDefaults(array $case, array $caseType): array {
 		$fromType = [
 			'status' => trim((string)($caseType['initialStatus'] ?? '')),
 			'assignee' => $this->handling->defaultHandler(caseType: $caseType),
@@ -87,6 +99,18 @@ final class CaseOpeningDefaults {
 			}
 		}
 
+		return $case;
+	}//end withTypeDefaults()
+
+	/**
+	 * The case stamped with the moment it entered its first status, when it has a status and no such moment.
+	 *
+	 * @param array<string, mixed>   $case The case to write.
+	 * @param DateTimeImmutable|null $now  The moment to stamp; now when null.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function withStatusEntered(array $case, ?DateTimeImmutable $now): array {
 		// The case enters its first status at the moment it is written, as a
 		// move into a status stamps it (StatusDwellService::applyStatusChange).
 		if ($this->isEmpty(value: ($case['status'] ?? null)) === false
@@ -96,7 +120,7 @@ final class CaseOpeningDefaults {
 		}
 
 		return $case;
-	}//end apply()
+	}//end withStatusEntered()
 
 	/**
 	 * Whether a field counts as not filled in.

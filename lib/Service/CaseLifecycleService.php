@@ -159,27 +159,36 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 
 		$this->requireSuspendable(case: $case);
 
-		$duration = $this->pauseDays(days: $days);
+		return $this->pause(
+			caseId: $caseId,
+			pause: ['reason' => $rationale, 'days' => $this->pauseDays(days: $days), 'pauseReason' => $key]
+		);
+	}//end suspend()
 
+	/**
+	 * Pause the case's term, journal the suspension and answer the case's state.
+	 *
+	 * @param string                                                $caseId Case UUID
+	 * @param array{reason: string, days: int, pauseReason: string} $pause  The rationale, the pause in days and the pause reason key.
+	 *
+	 * @return array<string, mixed> The case's state after the suspension
+	 */
+	private function pause(string $caseId, array $pause): array {
 		$this->onTermInstance(
 			caseId: $caseId,
 			gesture: 'suspend',
 			apply: fn (string $instanceId): array => $this->deadlines->pauseService->registerPauze(
 				termInstanceId: $instanceId,
-				durationDays: $duration,
-				rationale: $rationale,
-				pauseReason: $key,
+				durationDays: $pause['days'],
+				rationale: $pause['reason'],
+				pauseReason: $pause['pauseReason'],
 			),
 		);
 
-		$this->journal(
-			caseId: $caseId,
-			changes: [],
-			entry: ['type' => 'suspend', 'reason' => $rationale, 'days' => $duration, 'pauseReason' => $key],
-		);
+		$this->journal(caseId: $caseId, changes: [], entry: ['type' => 'suspend'] + $pause);
 
 		return $this->state(caseId: $caseId);
-	}//end suspend()
+	}//end pause()
 
 	/**
 	 * The rationale of a suspension: the handler's words, or the declared pause reason's.
@@ -319,13 +328,24 @@ class CaseLifecycleService implements CaseLifecycleServiceInterface {
 			period: (string)$caseType['extensionPeriod'],
 		);
 
-		$extension = new TermExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd);
+		return $this->applyExtension(extension: new TermExtension(caseId: $caseId, reason: $reason, newEnd: $newEnd), case: $case);
+	}//end extend()
+
+	/**
+	 * Ask for the extension, journal it on the case and answer the case's state with the notice.
+	 *
+	 * @param TermExtension        $extension The case, the reason and the new end date.
+	 * @param array<string, mixed> $case      The case as read before the extension.
+	 *
+	 * @return array<string, mixed> The case's state, with the extension notice.
+	 */
+	private function applyExtension(TermExtension $extension, array $case): array {
 		$extended = $this->requestExtension(extension: $extension);
 
 		$this->journalExtension(extension: $extension, case: $case);
 
-		return $this->state(caseId: $caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
-	}//end extend()
+		return $this->state(caseId: $extension->caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
+	}//end applyExtension()
 
 	/**
 	 * The case's type, refused when it does not allow another extension.
