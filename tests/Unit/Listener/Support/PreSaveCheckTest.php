@@ -92,4 +92,28 @@ class PreSaveCheckTest extends TestCase {
 		};
 		$this->assertNull($check->read($unreadable, 'milestone cycle check'));
 	}//end testAnUnreadablePayloadIsLoggedAndNull()
+
+	/**
+	 * With the previous object: a create gets null, an update the stored object, anything else nothing.
+	 *
+	 * @return void
+	 */
+	public function testThePreviousObjectIsPassedOnAnUpdate(): void {
+		$check = new PreSaveCheck($this->createMock(LoggerInterface::class));
+		$created = new ObjectEntity();
+		$before = new ObjectEntity();
+		$after = new ObjectEntity();
+		$seen = [];
+		$inspect = function (Event $event, ObjectEntity $entity, ?ObjectEntity $previous) use (&$seen): void {
+			$seen[] = [$event, $entity, $previous];
+		};
+
+		$creating = new ObjectCreatingEvent($created);
+		$updating = new ObjectUpdatingEvent($after, $before);
+		$check->inspectWithPrevious($creating, $inspect);
+		$check->inspectWithPrevious($updating, $inspect);
+		$check->inspectWithPrevious(new Event(), $inspect);
+
+		$this->assertSame([[$creating, $created, null], [$updating, $after, $before]], $seen);
+	}//end testThePreviousObjectIsPassedOnAnUpdate()
 }//end class
