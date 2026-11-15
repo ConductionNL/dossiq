@@ -109,21 +109,21 @@ class BeschikkingController extends Controller {
 
 		$merged = $this->composeFieldsOf(body: $body);
 
-		return $this->composeDecision(caseId: $caseId, templateId: $templateId, merged: $merged);
+		return $this->composeDecision(caseId: $caseId, compose: ['templateId' => $templateId, 'merged' => $merged]);
 	}//end create()
 
 	/**
 	 * Compose a beschikking for a case and answer it, or the refusal or failure.
 	 *
 	 * @param string $caseId The case.
-	 * @param string|null $templateId The template, or null.
-	 * @param array $merged The fields to set on the beschikking.
+	 * @param array{templateId: string|null, merged: array} $compose The template, or null, and the fields to set on
+	 *                                                              the beschikking.
 	 *
 	 * @return JSONResponse
 	 */
-	private function composeDecision(string $caseId, ?string $templateId, array $merged): JSONResponse {
+	private function composeDecision(string $caseId, array $compose): JSONResponse {
 		try {
-			$result = $this->decisionService->compose($caseId, $templateId, $merged);
+			$result = $this->decisionService->compose($caseId, $compose['templateId'], $compose['merged']);
 			return new JSONResponse($result, Http::STATUS_CREATED);
 		} catch (RefusedException $e) {
 			// No number could be reserved (decision 167): a 503 the client may
@@ -395,11 +395,10 @@ class BeschikkingController extends Controller {
 			return $refusal;
 		}
 
-		$body   = $this->request->getParams();
-		$reader = new JsonRequestBody();
+		$body = $this->request->getParams();
 
 		try {
-			return $this->issueSuccessorOf(id: $id, body: $body, reader: $reader);
+			return $this->issueSuccessorOf(id: $id, body: $body);
 		} catch (RefusedException $refusal) {
 			return $this->refused(op: 'successor', e: $refusal);
 		} catch (Throwable $failure) {
@@ -455,14 +454,14 @@ class BeschikkingController extends Controller {
 	 *
 	 * @param string $id The original beschikking id.
 	 * @param array $body The request parameters.
-	 * @param JsonRequestBody $reader The body reader.
 	 *
 	 * @return JSONResponse The created successor.
 	 *
 	 * @throws RefusedException When the successor is refused.
 	 * @throws Throwable When issuing fails.
 	 */
-	private function issueSuccessorOf(string $id, array $body, JsonRequestBody $reader): JSONResponse {
+	private function issueSuccessorOf(string $id, array $body): JSONResponse {
+		$reader = new JsonRequestBody();
 		$successor = $this->decisionService->issueSuccessor(
 			originalId: $id,
 			kind: (string)($body['decisionType'] ?? ''),
