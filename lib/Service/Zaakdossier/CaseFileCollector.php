@@ -82,28 +82,43 @@ class CaseFileCollector implements CaseFileCollectorInterface {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
 	 */
 	public function collect(string $caseId, string $fileName, string $content, array $provenance, string $mimeType = ''): string {
-		$stored = $this->storedRecord(caseId: $caseId, file: ['fileName' => $fileName, 'content' => $content]);
+		$collected = ['caseId' => $caseId, 'fileName' => $fileName, 'content' => $content, 'mimeType' => $mimeType];
+		$stored = $this->storedRecord(caseId: $caseId, file: $collected);
 		if ($stored === null) {
 			return '';
 		}
 
 		[$record, $file] = $stored;
-		if ($this->mailHeaders->isMail(fileName: $fileName, mimeType: $mimeType) === true) {
-			$provenance['mail'] = $this->mailOf(file: $file);
-			$provenance = array_replace(
-				$provenance,
-				$this->mailThreads->conversationOf(caseId: $caseId, fileName: $fileName, bytes: $content)
-			);
-		}
+		$provenance = $this->withMailProvenance(provenance: $provenance, collected: $collected + ['file' => $file]);
 
 		return $this->saveProvenance(record: array_replace($record, ['provenance' => $provenance]), caseId: $caseId);
 	}//end collect()
 
 	/**
+	 * The provenance, with the mail headers and the conversation when the collected file is a mail.
+	 *
+	 * @param array<string, mixed> $provenance Where it was found.
+	 * @param array<string, mixed> $collected  The `caseId`, `fileName`, `content` and `mimeType` collected, and the stored `file`.
+	 *
+	 * @return array<string, mixed> The provenance.
+	 */
+	private function withMailProvenance(array $provenance, array $collected): array {
+		if ($this->mailHeaders->isMail(fileName: $collected['fileName'], mimeType: $collected['mimeType']) === true) {
+			$provenance['mail'] = $this->mailOf(file: $collected['file']);
+			$provenance = array_replace(
+				$provenance,
+				$this->mailThreads->conversationOf(caseId: $collected['caseId'], fileName: $collected['fileName'], bytes: $collected['content'])
+			);
+		}
+
+		return $provenance;
+	}//end withMailProvenance()
+
+	/**
 	 * Store the bytes and find, or project, the record the file gets.
 	 *
-	 * @param string                                     $caseId The case uuid.
-	 * @param array{fileName: string, content: string} $file   The file name and the bytes.
+	 * @param string               $caseId The case uuid.
+	 * @param array<string, mixed> $file   The `fileName` and the bytes as `content`.
 	 *
 	 * @return array{0: array<string, mixed>, 1: File|null}|null The record and the stored file, null when either write failed.
 	 */
