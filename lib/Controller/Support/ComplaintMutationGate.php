@@ -71,13 +71,58 @@ final class ComplaintMutationGate {
 			return $this->accessGuard->notAuthenticated();
 		}
 
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
+		$complaint = $this->stored(id: $id);
+		if ($complaint instanceof JSONResponse) {
+			return $complaint;
 		}
 
 		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
 
 		return null;
 	}//end refusal()
+
+	/**
+	 * The complaint the caller may read, or the refusal.
+	 *
+	 * The session is checked first, then the complaint is read, then the
+	 * caller's right to read it is asserted; the guard throws its own
+	 * refusal for a caller who may not.
+	 *
+	 * @param string $id Complaint UUID.
+	 *
+	 * @return array<string, mixed>|JSONResponse The complaint, or the 401 or 404.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	public function readable(string $id): array|JSONResponse {
+		$userId = $this->accessGuard->currentUid();
+		if ($userId === '') {
+			return $this->accessGuard->notAuthenticated();
+		}
+
+		$complaint = $this->stored(id: $id);
+		if ($complaint instanceof JSONResponse) {
+			return $complaint;
+		}
+
+		$this->accessGuard->authorizeAccess(complaint: $complaint, userId: $userId);
+
+		return $complaint;
+	}//end readable()
+
+	/**
+	 * The stored complaint, or the 404.
+	 *
+	 * @param string $id Complaint UUID.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function stored(string $id): array|JSONResponse {
+		$complaint = $this->complaintService->getComplaint($id);
+		if ($complaint === null) {
+			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $complaint;
+	}//end stored()
 }//end class
