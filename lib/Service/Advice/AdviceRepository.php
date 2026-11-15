@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Advice;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -114,25 +115,8 @@ class AdviceRepository {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function findForCase(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
 		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['case' => $caseId, '_limit' => 200],
-			);
+			return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(schemaKey: 'advies_aanvraag_schema', filters: ['case' => $caseId, '_limit' => 200]);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to fetch advice for case: ' . $e->getMessage(),
@@ -150,25 +134,8 @@ class AdviceRepository {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function findOpen(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
 		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['status' => 'requested', '_limit' => 500],
-			);
+			return (new ConfiguredSchemaRows(settingsService: $this->settingsService))->search(schemaKey: 'advies_aanvraag_schema', filters: ['status' => 'requested', '_limit' => 500]);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to load open advice: ' . $e->getMessage(),
