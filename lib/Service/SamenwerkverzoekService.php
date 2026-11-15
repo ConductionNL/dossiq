@@ -165,11 +165,27 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 		$request = $this->requirePending(request: $request, samenwerkId: $samenwerkId);
 		$request = $this->withResponse(request: $request, response: ['accept' => $accept, 'advies' => $advies]);
 
+		return $this->saveResponse(
+			store: ['objectService' => $objectService, 'register' => $register, 'schema' => $requestSchema, 'samenwerkId' => $samenwerkId],
+			request: $request
+		);
+	}//end respondToSamenwerking()
+
+	/**
+	 * Store the answered samenwerkverzoek and log the response.
+	 *
+	 * @param array<string, mixed> $store   The OpenRegister ObjectService, the register, the samenwerkverzoek schema
+	 *                                      and the samenwerkverzoek's UUID (`samenwerkId`).
+	 * @param array<string, mixed> $request The samenwerkverzoek with its response.
+	 *
+	 * @return array<string,mixed> The updated samenwerkverzoek object
+	 */
+	private function saveResponse(array $store, array $request): array {
 		// See initiateSamenwerking() — saveObject() returns an entity, not an
 		// array.
-		$updated = $objectService->saveObject(
-			register: $register,
-			schema: $requestSchema,
+		$updated = $store['objectService']->saveObject(
+			register: $store['register'],
+			schema: $store['schema'],
 			object: $request
 		)->jsonSerialize();
 
@@ -177,13 +193,13 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 			'Dossiq SamenwerkverzoekService: samenwerking responded',
 			[
 				'app' => AppIdentity::APP_ID,
-				'samenwerkId' => $samenwerkId,
+				'samenwerkId' => $store['samenwerkId'],
 				'newStatus' => $request['status'],
 			]
 		);
 
 		return $updated;
-	}//end respondToSamenwerking()
+	}//end saveResponse()
 
 	/**
 	 * Read a string value from this app's config.
