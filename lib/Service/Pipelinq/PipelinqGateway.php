@@ -182,21 +182,22 @@ class PipelinqGateway implements PipelinqGatewayInterface {
 			return null;
 		}
 
-		return $this->usableService(service: $service, class: $class, methods: $methods);
+		return $this->usableService(service: $service, wanted: ['class' => $class, 'methods' => $methods]);
 	}//end service()
 
 	/**
 	 * The resolved service, or null when it is not an object or lacks a method the caller is about to use.
 	 *
 	 * @param mixed $service What the container answered.
-	 * @param string $class One of this class's constants.
-	 * @param array<int, string> $methods The methods the caller is about to use.
+	 * @param array{class: string, methods: array<int, string>} $wanted One of this class's constants, and the methods
+	 *                                                                 the caller is about to use.
 	 *
 	 * @return object|null The service, or null.
 	 *
 	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-one-seam-names-pipelinq-and-an-absent-pipelinq-is-a-different-answer-from-an-empty-one-req-plq-01
 	 */
-	private function usableService(mixed $service, string $class, array $methods): ?object {
+	private function usableService(mixed $service, array $wanted): ?object {
+		['class' => $class, 'methods' => $methods] = $wanted;
 		if (is_object($service) === false) {
 			$this->reportOnce(class: $class, reason: 'the container answered something that is not an object');
 
