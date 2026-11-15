@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
+use OCA\Dossiq\Controller\Support\FindsCaseChangers;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\DependentTermOfferInterface;
 use OCP\AppFramework\Controller;
@@ -54,6 +55,7 @@ use OCP\IUserSession;
  */
 class CaseTermFollowController extends Controller {
 	use AnswersSignedOutCallers;
+	use FindsCaseChangers;
 
 	/**
 	 * The status each refusal answers with.
@@ -164,16 +166,9 @@ class CaseTermFollowController extends Controller {
 	 * @return JSONResponse|null The refusal, or null when the caller may act.
 	 */
 	private function requireHandler(string $caseId): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notSignedIn();
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You do not handle this case.')],
-				Http::STATUS_FORBIDDEN
-			);
+		$user = $this->caseChanger(caseId: $caseId, refusal: $this->l10n->t('You do not handle this case.'));
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return null;

@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\AnswersCaseGestures;
 use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
+use OCA\Dossiq\Controller\Support\FindsCaseChangers;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseAssignmentServiceInterface;
@@ -65,6 +66,7 @@ use RuntimeException;
 class CaseAssignmentController extends Controller {
 	use AnswersCaseGestures;
 	use AnswersSignedOutCallers;
+	use FindsCaseChangers;
 
 	/**
 	 * The status each refusal answers with.
@@ -160,16 +162,9 @@ class CaseAssignmentController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function release(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notSignedIn();
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You can only release a case you handle yourself.')],
-				Http::STATUS_FORBIDDEN
-			);
+		$user = $this->caseChanger(caseId: $caseId, refusal: $this->l10n->t('You can only release a case you handle yourself.'));
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
