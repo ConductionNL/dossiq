@@ -96,7 +96,7 @@ class SettlementOverview {
 		foreach ($this->idsOf(rows: $this->rows(schema: self::APPLICATION_SCHEMA, value: $caseId)) as $applicationId) {
 			foreach ($this->idsOf(rows: $this->rows(schema: self::EXECUTION_SCHEMA, value: $applicationId)) as $executionId) {
 				foreach ($this->rows(schema: self::SETTLEMENT_SCHEMA, value: $executionId) as $settlement) {
-					$settlements[] = $this->rowOf(settlement: $settlement, applicationId: $applicationId, executionId: $executionId);
+					$settlements[] = $this->rowOf(settlement: $settlement, settles: ['applicationId' => $applicationId, 'executionId' => $executionId]);
 				}
 			}
 		}
@@ -112,17 +112,16 @@ class SettlementOverview {
 	/**
 	 * One settlement as the case page reads it.
 	 *
-	 * @param array<string, mixed> $settlement    The settlement.
-	 * @param string               $applicationId The application it settles.
-	 * @param string               $executionId   The execution it settles.
+	 * @param array<string, mixed>                              $settlement The settlement.
+	 * @param array{applicationId: string, executionId: string} $settles    The application and the execution it settles.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function rowOf(array $settlement, string $applicationId, string $executionId): array {
+	private function rowOf(array $settlement, array $settles): array {
 		return [
 			'id' => $this->idOf(row: $settlement),
-			'applicationId' => $applicationId,
-			'executionId' => $executionId,
+			'applicationId' => $settles['applicationId'],
+			'executionId' => $settles['executionId'],
 			'determinationDate' => substr((string)($settlement['determinationDate'] ?? ''), 0, 10),
 			'actualCostTotal' => $this->amountOf(value: $settlement['actualCostTotal'] ?? null),
 			'determinedAmount' => $this->amountOf(value: $settlement['determinedAmount'] ?? null),

@@ -153,7 +153,7 @@ class RecolourShippedStatusTypes implements IRepairStep {
 		}
 
 		[$rowId, $colour] = $recolour;
-		if ($this->patchColour(target: $target, rowId: $rowId, colour: $colour) === false) {
+		if ($this->patchColour(target: $target, recolour: $recolour) === false) {
 			return 'failed';
 		}
 
@@ -190,13 +190,13 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	/**
 	 * Write the colour on one row, logging when it fails.
 	 *
-	 * @param RepairSchema $target The schema it walks.
-	 * @param string       $rowId  The row id.
-	 * @param string       $colour The board colour.
+	 * @param RepairSchema                $target   The schema it walks.
+	 * @param array{0: string, 1: string} $recolour The row id and the board colour.
 	 *
 	 * @return bool False when the write failed.
 	 */
-	private function patchColour(RepairSchema $target, string $rowId, string $colour): bool {
+	private function patchColour(RepairSchema $target, array $recolour): bool {
+		[$rowId, $colour] = $recolour;
 		try {
 			$target->patch(id: $rowId, changes: ['colour' => $colour]);
 		} catch (Throwable $e) {

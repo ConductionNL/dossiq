@@ -231,7 +231,7 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 			return false;
 		}
 
-		return $this->sendStatus(eventClass: $eventClass, key: $key, status: $status, message: $message);
+		return $this->sendStatus(eventClass: $eventClass, report: ['key' => $key, 'status' => $status, 'message' => $message]);
 	}//end record()
 
 	/**
@@ -261,23 +261,21 @@ class IntegrationStatusService implements IntegrationStatusServiceInterface {
 	/**
 	 * Send one connection status event.
 	 *
-	 * @param string $eventClass The resolved status event class.
-	 * @param string $key        The connection key.
-	 * @param string $status     The connection status.
-	 * @param string $message    What the probe reported.
+	 * @param string                                           $eventClass The resolved status event class.
+	 * @param array{key: string, status: string, message: string} $report     The connection key, its status and what the probe reported.
 	 *
 	 * @return bool True when the report was sent.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
-	private function sendStatus(string $eventClass, string $key, string $status, string $message): bool {
+	private function sendStatus(string $eventClass, array $report): bool {
 		return $this->send(
-			key: $key,
+			key: $report['key'],
 			build: static fn (): object => new $eventClass(
 				app: AppIdentity::APP_ID,
-				key: $key,
-				status: $status,
-				message: $message,
+				key: $report['key'],
+				status: $report['status'],
+				message: $report['message'],
 			)
 		);
 	}//end sendStatus()
