@@ -36,6 +36,8 @@ use OCA\Dossiq\Service\OrganisationQuotaLimits;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TenantQuotaService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -243,9 +245,10 @@ class MoveTenantQuotaLimitsOntoOrganisation implements IRepairStep {
 		try {
 			$objectService->saveObject(
 				object: $new,
-				register: Application::REGISTER_SLUG,
-				schema: 'tenantQuota',
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: Application::REGISTER_SLUG, schema: 'tenantQuota'),
+					uuid: $uuid
+				)
 			);
 			return true;
 		} catch (Throwable $e) {

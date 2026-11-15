@@ -43,6 +43,17 @@ use PHPUnit\Framework\Constraint\IsEqual;
 final class LegacyObjectArgs {
 
 	/**
+	 * The release's default per position, for the positions that have one.
+	 */
+	private const DEFAULTS = [
+		'find' => [1 => [], 2 => false, 3 => null, 4 => null, 5 => true, 6 => true, 7 => true, 8 => true],
+		'findSilent' => [1 => [], 2 => false, 3 => null, 4 => null, 5 => true, 6 => true, 7 => true, 8 => true],
+		'saveObject' => [1 => [], 2 => null, 3 => null, 4 => null, 5 => true, 6 => true, 7 => false, 8 => true, 9 => null, 10 => null, 11 => false],
+		'deleteObject' => [1 => null, 2 => null, 3 => true, 4 => true, 5 => false, 6 => null, 7 => false],
+		'patchObject' => [2 => null, 3 => null, 4 => true, 5 => true, 6 => null],
+	];
+
+	/**
 	 * The release's parameter names, in order.
 	 */
 	private const RELEASE = [
@@ -82,11 +93,31 @@ final class LegacyObjectArgs {
 	 *
 	 * @param string            $method The object-service method.
 	 * @param array<int, mixed> $args   The arguments the double received.
+	 * @param bool              $trim   True to drop trailing defaults, as a caller that stopped early passed none.
 	 *
-	 * @return array<int, mixed> The arguments in the release's order, defaults filled in.
+	 * @return array<int, mixed> The arguments in the release's order.
 	 */
-	public static function positional(string $method, array $args): array {
-		$args = array_values($args);
+	public static function positional(string $method, array $args, bool $trim = false): array {
+		$list = self::release(method: $method, args: array_values($args));
+		if ($trim === true && isset(self::DEFAULTS[$method]) === true) {
+			// A caller that stopped early passed none of the trailing defaults.
+			while (count($list) > 1 && array_key_exists(count($list) - 1, self::DEFAULTS[$method]) === true && $list[count($list) - 1] === self::DEFAULTS[$method][count($list) - 1]) {
+				array_pop($list);
+			}
+		}
+
+		return $list;
+	}//end positional()
+
+	/**
+	 * The release's positional argument list, defaults filled in.
+	 *
+	 * @param string            $method The object-service method.
+	 * @param array<int, mixed> $args   The arguments in main's order.
+	 *
+	 * @return array<int, mixed> The arguments in the release's order.
+	 */
+	private static function release(string $method, array $args): array {
 		$first = ($args[0] ?? null);
 		$second = ($args[1] ?? null);
 		if ($method === 'find' || $method === 'findSilent') {
@@ -111,7 +142,7 @@ final class LegacyObjectArgs {
 		}
 
 		return $args;
-	}//end positional()
+	}//end release()
 
 	/**
 	 * A return callback answering from a map written against the release's positional arguments.
@@ -150,6 +181,18 @@ final class LegacyObjectArgs {
 			unset($expected[$names[0]]);
 		}
 
+		// The access flags are arguments of their own after the option object.
+		$flags = [];
+		foreach (['_rbac', '_multitenancy'] as $flag) {
+			$want = ($expected[$flag] ?? null);
+			unset($expected[$flag]);
+			$flags[] = ($want === null) ? new IsAnything() : (($want instanceof Constraint) ? $want : new IsEqual($want));
+		}
+
+		while ($flags !== [] && end($flags) instanceof IsAnything) {
+			array_pop($flags);
+		}
+
 		$check = static function (array $actual) use ($names, $expected): bool {
 			foreach ($expected as $name => $want) {
 				$got = $actual[array_search($name, $names, true)];
@@ -170,13 +213,16 @@ final class LegacyObjectArgs {
 		};
 
 		if (in_array($method, ['deleteObject', 'patchObject'], true) === true) {
-			return [new Callback(static fn (mixed $request): bool => $check(self::positional(method: $method, args: [$request])))];
+			return array_merge([new Callback(static fn (mixed $request): bool => $check(self::positional(method: $method, args: [$request])))], $flags);
 		}
 
-		return [
-			($first instanceof Constraint) ? $first : new IsEqual($first),
-			new Callback(static fn (mixed $options): bool => $check(self::positional(method: $method, args: [null, $options]))),
-		];
+		return array_merge(
+			[
+				($first instanceof Constraint) ? $first : new IsEqual($first),
+				new Callback(static fn (mixed $options): bool => $check(self::positional(method: $method, args: [null, $options]))),
+			],
+			$flags
+		);
 	}//end with()
 
 	/**
