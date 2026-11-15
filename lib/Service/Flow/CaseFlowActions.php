@@ -203,35 +203,60 @@ class CaseFlowActions implements CaseFlowActionsInterface {
 		string $until = '',
 		int $count = 0,
 	): array {
-		$due = $this->document->dueDate(date: $date);
-		$mode = $this->document->recurrenceOf(recurrence: $recurrence);
-		$end = $this->document->endOf(recurrence: $mode, until: $until, count: $count);
+		return $this->planFollowUp(
+			request: [
+				'caseId' => $caseId,
+				'caseTypeId' => $caseTypeId,
+				'date' => $date,
+				'title' => $title,
+				'uid' => $uid,
+				'recurrence' => $recurrence,
+				'until' => $until,
+				'count' => $count,
+			]
+		);
+	}//end plan()
+
+	/**
+	 * Write and publish the scheduled flow of a planned follow-up, as {@see self::plan()} describes.
+	 *
+	 * @param array<string, mixed> $request The `caseId`, `caseTypeId`, due `date`, `title`, acting `uid`, `recurrence`,
+	 *                                      `until` and `count` as {@see self::plan()} received them.
+	 *
+	 * @return array{id: string, title: string, date: string, caseType: string, recurrence: string, until: string, count: int} The planned follow-up.
+	 *
+	 * @throws RuntimeException `flows_unavailable`, `invalid_date`, `invalid_recurrence`, `invalid_end`, `plan_failed`.
+	 */
+	private function planFollowUp(array $request): array {
+		$due = $this->document->dueDate(date: $request['date']);
+		$mode = $this->document->recurrenceOf(recurrence: $request['recurrence']);
+		$end = $this->document->endOf(recurrence: $mode, until: $request['until'], count: $request['count']);
 
 		$service = $this->flowService();
 
 		$document = $this->document->build(
-			caseId: $caseId,
-			caseTypeId: $caseTypeId,
+			caseId: $request['caseId'],
+			caseTypeId: $request['caseTypeId'],
 			due: $due,
-			title: $title,
-			uid: $uid,
+			title: $request['title'],
+			uid: $request['uid'],
 			recurrence: $mode,
 			until: $end['until'],
 			count: $end['count']
 		);
 
-		$flow = $this->saveAndPublish(service: $service, planned: ['document' => $document, 'caseId' => $caseId]);
+		$flow = $this->saveAndPublish(service: $service, planned: ['document' => $document, 'caseId' => $request['caseId']]);
 
 		return [
 			'id' => (string)$flow->getUuid(),
-			'title' => $title,
+			'title' => $request['title'],
 			'date' => $due->format('Y-m-d'),
-			'caseType' => $caseTypeId,
+			'caseType' => $request['caseTypeId'],
 			'recurrence' => $mode,
 			'until' => $end['until'],
 			'count' => $end['count'],
 		];
-	}//end plan()
+	}//end planFollowUp()
 
 	/**
 	 * OpenRegister's flow service.
