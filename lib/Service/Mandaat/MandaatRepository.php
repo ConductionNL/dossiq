@@ -110,26 +110,50 @@ class MandaatRepository {
 		string $decisionId,
 		string $now,
 	): void {
+		$store = ['objectService' => $objectService, 'register' => $register, 'schema' => $mSchema];
+		foreach ($this->mandatenOf(store: $store, decisionId: $decisionId) as $m) {
+			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $mSchema, object: $this->activated(mandaat: $m, now: $now));
+		}
+	}//end activateMandatenForBesluit()
+
+	/**
+	 * The mandaten a MandateringsBesluit owns; none when they cannot be read.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store      The object service, the
+	 *                                                                                   register and the mandaat schema.
+	 * @param string                                                          $decisionId The owning MandateringsBesluit id.
+	 *
+	 * @return array<int, array<string, mixed>> The mandaten.
+	 */
+	private function mandatenOf(array $store, string $decisionId): array {
 		try {
-			$mandaten = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $mSchema,
+			return $this->searchObjectsAsArrays(
+				objectService: $store['objectService'],
+				register: $store['register'],
+				schema: $store['schema'],
 				filters: ['mandateDecision' => $decisionId]
 			);
 		} catch (\Throwable $e) {
-			$mandaten = [];
+			return [];
+		}
+	}//end mandatenOf()
+
+	/**
+	 * The mandaat made active, valid from today when it names no start.
+	 *
+	 * @param array<string, mixed> $mandaat The mandaat.
+	 * @param string               $now     The activation date (Y-m-d).
+	 *
+	 * @return array<string, mixed> The active mandaat.
+	 */
+	private function activated(array $mandaat, string $now): array {
+		$mandaat['status'] = 'active';
+		if (isset($mandaat['validFrom']) === false || $mandaat['validFrom'] === '') {
+			$mandaat['validFrom'] = $now;
 		}
 
-		foreach ($mandaten as $m) {
-			$m['status'] = 'active';
-			if (isset($m['validFrom']) === false || $m['validFrom'] === '') {
-				$m['validFrom'] = $now;
-			}
-
-			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $mSchema, object: $m);
-		}
-	}//end activateMandatenForBesluit()
+		return $mandaat;
+	}//end activated()
 
 	/**
 	 * Build a rolNaam to rolId index from OrganisatieRol objects.
