@@ -1,0 +1,65 @@
+{
+    "no identifier": {
+        "stopped": false,
+        "errors": [],
+        "log": []
+    },
+    "blank identifier": {
+        "stopped": false,
+        "errors": [],
+        "log": []
+    },
+    "no case type": {
+        "stopped": false,
+        "errors": [],
+        "log": []
+    },
+    "case type unreadable": {
+        "stopped": false,
+        "errors": [],
+        "log": [
+            "debug: Dossiq: milestone cycle check could not read the case type: register hiccup []"
+        ]
+    },
+    "waits for itself": {
+        "stopped": true,
+        "errors": {
+            "message": "A milestone cannot wait for itself: loop",
+            "codes": [
+                "milestoneDefinition.dependencyCycle"
+            ],
+            "cycle": [
+                "loop"
+            ]
+        },
+        "log": [
+            "info: Dossiq: refused a milestone definition whose dependencies return to itself {\"caseType\":\"type-1\",\"milestone\":\"loop\",\"cycle\":[\"loop\"]}"
+        ]
+    },
+    "waits for something else": {
+        "stopped": false,
+        "errors": [],
+        "log": []
+    },
+    "a loop through the stored definitions": {
+        "stopped": true,
+        "errors": {
+            "message": "A milestone cannot wait for itself: review -> intake",
+            "codes": [
+                "milestoneDefinition.dependencyCycle"
+            ],
+            "cycle": [
+                "review",
+                "intake"
+            ]
+        },
+        "log": [
+            "info: Dossiq: refused a milestone definition whose dependencies return to itself {\"caseType\":\"type-1\",\"milestone\":\"intake\",\"cycle\":[\"review\",\"intake\"]}"
+        ]
+    },
+    "an update that opens the loop again": {
+        "stopped": false,
+        "errors": [],
+        "log": []
+    }
+}

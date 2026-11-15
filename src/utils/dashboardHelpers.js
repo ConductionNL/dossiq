@@ -29,51 +29,64 @@ function todayString() {
  * @param {object[]} completedCases Cases completed this month
  * @param {object[]} myTasks Tasks assigned to current user (available/active)
  * @return {object} KPI values
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function computeKpis(openCases, completedCases, myTasks) {
 	const today = todayString()
 
-	const openCount = openCases.length
-	const newToday = openCases.filter(
-		(c) => c.startDate && c.startDate.slice(0, 10) === today,
-	).length
-
-	const overdueCount = openCases.filter((c) => isCaseOverdue(c, false)).length
-
-	const completedCount = completedCases.length
-	let avgDays = null
-	if (completedCount > 0) {
-		const totalDays = completedCases.reduce((sum, c) => {
-			if (c.startDate && c.endDate) {
-				const start = new Date(c.startDate)
-				const end = new Date(c.endDate)
-				start.setHours(0, 0, 0, 0)
-				end.setHours(0, 0, 0, 0)
-				return (
-					sum
-					+ Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)))
-				)
-			}
-			return sum
-		}, 0)
-		avgDays = Math.round(totalDays / completedCount)
-	}
-
-	const taskCount = myTasks.length
-	const tasksDueToday = myTasks.filter(
-		(t) => t.dueDate && t.dueDate.slice(0, 10) === today,
-	).length
-
 	return {
-		openCount,
-		newToday,
-		overdueCount,
-		completedCount,
-		avgDays,
-		taskCount,
-		tasksDueToday,
+		openCount: openCases.length,
+		newToday: countOnDay(openCases.map((c) => c.startDate), today),
+		overdueCount: openCases.filter((c) => isCaseOverdue(c, false)).length,
+		completedCount: completedCases.length,
+		avgDays: averageLeadDays(completedCases),
+		taskCount: myTasks.length,
+		tasksDueToday: countOnDay(myTasks.map((task) => task.dueDate), today),
 	}
+}
+
+/**
+ * How many of the dates fall on the given day.
+ *
+ * @param {Array<string|undefined>} dates The dates, missing ones included.
+ * @param {string} day The day, `YYYY-MM-DD`.
+ * @return {number} The count.
+ */
+function countOnDay(dates, day) {
+	return dates.filter((date) => date && date.slice(0, 10) === day).length
+}
+
+/**
+ * The average whole days from start to end of the completed cases, rounded;
+ * null without any.
+ *
+ * @param {object[]} completedCases Cases completed this month.
+ * @return {number|null} The average.
+ */
+function averageLeadDays(completedCases) {
+	if (completedCases.length === 0) {
+		return null
+	}
+	const totalDays = completedCases.reduce((sum, c) => sum + leadDays(c), 0)
+	return Math.round(totalDays / completedCases.length)
+}
+
+/**
+ * Whole days from a case's start to its end, never negative; 0 when either
+ * date is missing.
+ *
+ * @param {object} c A completed case.
+ * @return {number} The days.
+ */
+function leadDays(c) {
+	if (!c.startDate || !c.endDate) {
+		return 0
+	}
+	const start = new Date(c.startDate)
+	const end = new Date(c.endDate)
+	start.setHours(0, 0, 0, 0)
+	end.setHours(0, 0, 0, 0)
+	return Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)))
 }
 
 /**
@@ -86,39 +99,17 @@ export function computeKpis(openCases, completedCases, myTasks) {
  * @param {object[]} openCases Cases with non-final status
  * @param {object[]} statusTypes All status types
  * @return {Array<{ name: string, count: number, statusIds: string[] }>} Sorted by status type order
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function aggregateByStatus(openCases, statusTypes) {
-	const statusMap = new Map()
-	const idsMap = new Map()
-	const orderMap = new Map()
-
-	for (const st of statusTypes) {
-		if (!orderMap.has(st.name)) {
-			orderMap.set(st.name, st.order ?? 999)
-		}
-	}
+	const orderMap = firstOrderByName(statusTypes)
 
 	const statusIdToName = new Map()
 	for (const st of statusTypes) {
 		statusIdToName.set(st.id, st.name)
 	}
 
-	for (const c of openCases) {
-		// A case's `status` is a statusType id. Only ids that resolve to a known
-		// statusType get their real name; anything else (null, or a stale/junk
-		// value that no longer references a statusType) is bucketed under
-		// "Unknown" rather than leaking the raw value into the chart — this
-		// mirrors aggregateByType's resolution. Only resolved ids feed statusIds,
-		// so an "Unknown" bar click never deep-links on a junk/absent id.
-		const resolvedName = statusIdToName.get(c.status)
-		const name = resolvedName || t('dossiq', 'Unknown')
-		statusMap.set(name, (statusMap.get(name) || 0) + 1)
-		if (resolvedName) {
-			if (!idsMap.has(name)) idsMap.set(name, new Set())
-			idsMap.get(name).add(c.status)
-		}
-	}
+	const { statusMap, idsMap } = tallyStatuses(openCases, statusIdToName)
 
 	return Array.from(statusMap.entries())
 		.map(([name, count]) => ({
@@ -132,30 +123,60 @@ export function aggregateByStatus(openCases, statusTypes) {
 }
 
 /**
- * Extract overdue cases with display-ready data.
+ * The order of each status name: the first status type carrying the name
+ * sets it, 999 when it has none.
  *
- * @param {object[]} openCases Cases with non-final status
- * @param {object[]} caseTypes All case types (for name resolution)
- * @return {Array<{ id, identifier, title, caseTypeName, daysOverdue, handler }>}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @param {object[]} statusTypes All status types.
+ * @return {Map<string, number>} The order per name.
  */
-export function getOverdueCases(openCases, caseTypes) {
-	const typeMap = new Map()
-	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
+function firstOrderByName(statusTypes) {
+	const orderMap = new Map()
+	for (const st of statusTypes) {
+		if (!orderMap.has(st.name)) {
+			orderMap.set(st.name, st.order ?? 999)
+		}
 	}
+	return orderMap
+}
 
-	return openCases
-		.filter((c) => isCaseOverdue(c, false))
-		.map((c) => ({
-			id: c.id,
-			identifier: c.identifier || '—',
-			title: c.title || '—',
-			caseTypeName: typeMap.get(c.caseType) || t('dossiq', 'Unknown'),
-			daysOverdue: Math.abs(getDaysRemaining(c.deadline)),
-			handler: c.assignee || '—',
-		}))
-		.sort((a, b) => b.daysOverdue - a.daysOverdue)
+/**
+ * Count open cases per status name, and collect the status ids behind
+ * each resolved name.
+ *
+ * @param {object[]} openCases Cases with non-final status.
+ * @param {Map<string, string>} statusIdToName Status type id to name.
+ * @return {{statusMap: Map<string, number>, idsMap: Map<string, Set<string>>}} The tally.
+ */
+function tallyStatuses(openCases, statusIdToName) {
+	const statusMap = new Map()
+	const idsMap = new Map()
+	for (const c of openCases) {
+		// A case's `status` is a statusType id. Only ids that resolve to a known
+		// statusType get their real name; anything else (null, or a stale/junk
+		// value that no longer references a statusType) is bucketed under
+		// "Unknown" rather than leaking the raw value into the chart — this
+		// mirrors aggregateByType's resolution. Only resolved ids feed statusIds,
+		// so an "Unknown" bar click never deep-links on a junk/absent id.
+		const resolvedName = statusIdToName.get(c.status)
+		const name = resolvedName || t('dossiq', 'Unknown')
+		statusMap.set(name, (statusMap.get(name) || 0) + 1)
+		if (resolvedName) {
+			idsFor(idsMap, name).add(c.status)
+		}
+	}
+	return { statusMap, idsMap }
+}
+
+/**
+ * The set of status ids behind a status name, started when it is new.
+ *
+ * @param {Map<string, Set<string>>} idsMap The ids per name.
+ * @param {string} name The status name.
+ * @return {Set<string>} The ids.
+ */
+function idsFor(idsMap, name) {
+	if (!idsMap.has(name)) idsMap.set(name, new Set())
+	return idsMap.get(name)
 }
 
 /**
@@ -164,26 +185,49 @@ export function getOverdueCases(openCases, caseTypes) {
  * @param {object[]} cases All visible cases (with activity arrays)
  * @param {number} limit Max entries to return
  * @return {Array<{ date, type, description, user, caseIdentifier }>}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getRecentActivity(cases, limit = 10) {
 	const entries = []
 
 	for (const c of cases) {
-		if (!Array.isArray(c.activity)) continue
-		for (const entry of c.activity) {
-			entries.push({
-				date: entry.date,
-				type: entry.type,
-				description: entry.description,
-				user: entry.user || '—',
-				caseIdentifier: c.identifier || '—',
-			})
+		for (const entry of caseActivityEntries(c)) {
+			entries.push(entry)
 		}
 	}
 
 	entries.sort((a, b) => new Date(b.date) - new Date(a.date))
 	return entries.slice(0, limit)
+}
+
+/**
+ * One case's activity as feed entries, none when it carries no activity list.
+ *
+ * @param {object} c A case.
+ * @return {Array<object>} The entries, in the case's own order.
+ */
+function caseActivityEntries(c) {
+	if (!Array.isArray(c.activity)) {
+		return []
+	}
+	return c.activity.map((entry) => activityEntry(entry, c))
+}
+
+/**
+ * One activity entry as a feed row.
+ *
+ * @param {object} entry The activity entry.
+ * @param {object} c The case it belongs to.
+ * @return {object} `{ date, type, description, user, caseIdentifier }`.
+ */
+function activityEntry(entry, c) {
+	return {
+		date: entry.date,
+		type: entry.type,
+		description: entry.description,
+		user: entry.user || '—',
+		caseIdentifier: c.identifier || '—',
+	}
 }
 
 /**
@@ -193,69 +237,152 @@ export function getRecentActivity(cases, limit = 10) {
  * @param {object[]} tasks Tasks assigned to current user (available/active)
  * @param {number} limit Max items to return
  * @return {Array<{ type, id, title, reference, deadline, daysText, isOverdue, priority }>}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getMyWorkItems(cases, tasks, limit = 5) {
-	const items = []
+	const items = [
+		...cases.map(caseWorkItem),
+		...tasks.map(taskWorkItem),
+	]
 
-	for (const c of cases) {
-		const countdown = formatDeadlineCountdown(c, false)
-		items.push({
-			type: 'case',
-			id: c.id,
-			title: c.title || '—',
-			reference: c.identifier ? `#${c.identifier}` : '',
-			deadline: c.deadline || null,
-			daysText: countdown.text,
-			isOverdue: isCaseOverdue(c, false),
-			priority: c.priority || 'normal',
-		})
-	}
-
-	for (const task of tasks) {
-		const overdue =
-			!isTerminalStatus(task.status) && task.dueDate && isOverdue(task.dueDate)
-		const daysLeft = task.dueDate ? getDaysRemaining(task.dueDate) : null
-		let daysText = '—'
-		if (daysLeft !== null) {
-			if (daysLeft < 0) {
-				daysText =
-					Math.abs(daysLeft) === 1
-						? t('dossiq', '1 day overdue')
-						: t('dossiq', '{days} days overdue', {
-								days: Math.abs(daysLeft),
-							})
-			} else if (daysLeft === 0) {
-				daysText = t('dossiq', 'Due today')
-			} else {
-				daysText = t('dossiq', '{days} days', { days: daysLeft })
-			}
-		}
-
-		items.push({
-			type: 'task',
-			id: task.id,
-			title: task.title || '—',
-			reference: task.case ? `Case: ${task.case}` : '',
-			deadline: task.dueDate || null,
-			daysText,
-			isOverdue: overdue,
-			priority: task.priority || 'normal',
-		})
-	}
-
-	items.sort((a, b) => {
-		const pDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
-		if (pDiff !== 0) return pDiff
-
-		if (a.deadline && b.deadline)
-			return new Date(a.deadline) - new Date(b.deadline)
-		if (a.deadline) return -1
-		if (b.deadline) return 1
-		return 0
-	})
+	items.sort(byPriorityThenDeadline)
 
 	return items.slice(0, limit)
+}
+
+/**
+ * The fields every case work item carries.
+ *
+ * @param {object} c A case.
+ * @return {object} The work item.
+ */
+function caseWorkItem(c) {
+	const countdown = formatDeadlineCountdown(c, false)
+	return {
+		type: 'case',
+		id: c.id,
+		title: c.title || '—',
+		reference: c.identifier ? `#${c.identifier}` : '',
+		deadline: c.deadline || null,
+		daysText: countdown.text,
+		isOverdue: isCaseOverdue(c, false),
+		priority: c.priority || 'normal',
+	}
+}
+
+/**
+ * A task as a work item.
+ *
+ * @param {object} task A task.
+ * @return {object} The work item.
+ */
+function taskWorkItem(task) {
+	const overdue = taskIsOverdue(task)
+	const daysLeft = taskDaysLeft(task)
+
+	return {
+		type: 'task',
+		id: task.id,
+		title: task.title || '—',
+		reference: taskReference(task),
+		deadline: task.dueDate || null,
+		daysText: daysLeftText(daysLeft),
+		isOverdue: overdue,
+		priority: task.priority || 'normal',
+	}
+}
+
+/**
+ * How many days a task has left, null for a task without a due date.
+ *
+ * @param {object} task A task.
+ * @return {number|null} The days left, negative when overdue.
+ */
+function taskDaysLeft(task) {
+	return task.dueDate ? getDaysRemaining(task.dueDate) : null
+}
+
+/**
+ * The case a task is on, as the work item's reference.
+ *
+ * @param {object} task A task.
+ * @return {string} `Case: <case>`, or '' when the task names no case.
+ */
+function taskReference(task) {
+	return task.case ? `Case: ${task.case}` : ''
+}
+
+/**
+ * Whether an unfinished task is past its due date. Answers the due date's
+ * falsy value itself for a task without one, as the list always did.
+ *
+ * @param {object} task A task.
+ * @return {boolean|string|null|undefined} Truthy when overdue.
+ */
+function taskIsOverdue(task) {
+	return !isTerminalStatus(task.status) && task.dueDate && isOverdue(task.dueDate)
+}
+
+/**
+ * How many days a task has left, in words.
+ *
+ * @param {number|null} daysLeft The days left, negative when overdue, null without a due date.
+ * @return {string} The text.
+ */
+function daysLeftText(daysLeft) {
+	if (daysLeft === null) {
+		return '—'
+	}
+	if (daysLeft < 0) {
+		return overdueText(Math.abs(daysLeft))
+	}
+	if (daysLeft === 0) {
+		return t('dossiq', 'Due today')
+	}
+	return t('dossiq', '{days} days', { days: daysLeft })
+}
+
+/**
+ * How many days a task is overdue, in words.
+ *
+ * @param {number} days The days overdue, at least one.
+ * @return {string} The text.
+ */
+function overdueText(days) {
+	return days === 1
+		? t('dossiq', '1 day overdue')
+		: t('dossiq', '{days} days overdue', {
+				days,
+			})
+}
+
+/**
+ * Sort work items by priority first, then by deadline, undated last.
+ *
+ * @param {object} a A work item.
+ * @param {object} b Another work item.
+ * @return {number} The sort order.
+ */
+function byPriorityThenDeadline(a, b) {
+	const pDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
+	if (pDiff !== 0) return pDiff
+
+	return byDeadline(a, b)
+}
+
+/**
+ * Sort work items by deadline, earliest first, undated last.
+ *
+ * @param {object} a A work item.
+ * @param {object} b Another work item.
+ * @return {number} The sort order.
+ */
+function byDeadline(a, b) {
+	if (a.deadline && b.deadline)
+		return new Date(a.deadline) - new Date(b.deadline)
+	if (a.deadline) return -1
+	if (b.deadline) return 1
+	return 0
 }
 
 /**
@@ -283,248 +410,65 @@ function endOfWeek() {
  * @param {object[]} cases Cases assigned to current user (non-final)
  * @param {object[]} normalizedTasks Already-normalized CalDAV task work items
  * @return {{ overdue: object[], dueThisWeek: object[], upcoming: object[], noDeadline: object[], totalCount: number }}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getGroupedMyWorkItems(cases, normalizedTasks) {
-	const items = []
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
 	const weekEnd = endOfWeek()
 
-	// Build case work items.
-	for (const c of cases) {
-		const countdown = formatDeadlineCountdown(c, false)
-		items.push({
-			type: 'case',
-			id: c.id,
-			title: c.title || '—',
-			reference: c.identifier ? `#${c.identifier}` : '',
-			deadline: c.deadline || null,
-			daysText: countdown.text,
-			isOverdue: isCaseOverdue(c, false),
-			isCompleted: false,
-			priority: c.priority || 'normal',
-			status: c.status || null,
-			caseType: c.caseType || null,
-		})
-	}
+	// Case work items, then the already-normalized task items.
+	const items = [
+		...cases.map(groupedCaseWorkItem),
+		...normalizedTasks,
+	]
 
-	// Add already-normalized task items.
-	for (const task of normalizedTasks) {
-		items.push(task)
-	}
-
-	// Classify into groups.
-	const overdue = []
-	const dueThisWeek = []
-	const upcoming = []
-	const noDeadline = []
-
+	// Classify into groups, then sort within each group: priority first, then deadline.
+	const groups = { overdue: [], dueThisWeek: [], upcoming: [], noDeadline: [] }
 	for (const item of items) {
-		if (!item.deadline) {
-			noDeadline.push(item)
-		} else {
-			const deadline = new Date(item.deadline)
-			deadline.setHours(0, 0, 0, 0)
-
-			if (item.isOverdue) {
-				overdue.push(item)
-			} else if (deadline <= weekEnd) {
-				dueThisWeek.push(item)
-			} else {
-				upcoming.push(item)
-			}
-		}
+		groups[urgencyGroup(item, weekEnd)].push(item)
+	}
+	for (const group of Object.values(groups)) {
+		group.sort(byPriorityThenDeadline)
 	}
 
-	// Sort within each group: priority first, then deadline.
-	const sortFn = (a, b) => {
-		const pDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
-		if (pDiff !== 0) return pDiff
-		if (a.deadline && b.deadline)
-			return new Date(a.deadline) - new Date(b.deadline)
-		if (a.deadline) return -1
-		if (b.deadline) return 1
-		return 0
-	}
+	return { ...groups, totalCount: items.length }
+}
 
-	overdue.sort(sortFn)
-	dueThisWeek.sort(sortFn)
-	upcoming.sort(sortFn)
-	noDeadline.sort(sortFn)
-
+/**
+ * A case as a grouped work item: the plain case item with its completion,
+ * status and case type.
+ *
+ * @param {object} c A case.
+ * @return {object} The work item.
+ */
+function groupedCaseWorkItem(c) {
+	const { priority, ...item } = caseWorkItem(c)
 	return {
-		overdue,
-		dueThisWeek,
-		upcoming,
-		noDeadline,
-		totalCount: items.length,
+		...item,
+		isCompleted: false,
+		priority,
+		status: c.status || null,
+		caseType: c.caseType || null,
 	}
 }
 
 /**
- * Default warning threshold in days for deadline alerts.
+ * Which urgency group a work item belongs in.
  *
- * @type {number}
+ * @param {object} item A work item.
+ * @param {Date} weekEnd The end of this week.
+ * @return {string} `overdue`, `dueThisWeek`, `upcoming` or `noDeadline`.
  */
-export const DEADLINE_WARNING_DAYS = 3
-
-/**
- * Default threshold in days for stalled case detection.
- *
- * @type {number}
- */
-export const STALLED_THRESHOLD_DAYS = 7
-
-/**
- * Get deadline alerts: cases that are overdue or approaching their deadline
- * within the warning threshold.
- *
- * @param {object[]} openCases Cases with non-final status
- * @param {object[]} caseTypes All case types (for name resolution)
- * @param {number} warningDays Number of days before deadline to flag as at-risk
- * @return {{ overdue: object[], atRisk: object[] }}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
- */
-export function getDeadlineAlerts(
-	openCases,
-	caseTypes,
-	warningDays = DEADLINE_WARNING_DAYS,
-) {
-	const typeMap = new Map()
-	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
+function urgencyGroup(item, weekEnd) {
+	if (!item.deadline) {
+		return 'noDeadline'
 	}
+	const deadline = new Date(item.deadline)
+	deadline.setHours(0, 0, 0, 0)
 
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
-
-	const overdue = []
-	const atRisk = []
-
-	for (const c of openCases) {
-		if (!c.deadline) continue
-
-		const deadline = new Date(c.deadline)
-		deadline.setHours(0, 0, 0, 0)
-
-		const daysRemaining = getDaysRemaining(c.deadline)
-		const item = {
-			id: c.id,
-			title: c.title || '\u2014',
-			identifier: c.identifier || '\u2014',
-			caseTypeName: typeMap.get(c.caseType) || t('dossiq', 'Unknown'),
-			handler: c.assignee || '\u2014',
-		}
-
-		if (isCaseOverdue(c, false)) {
-			overdue.push({ ...item, daysOverdue: Math.abs(daysRemaining) })
-		} else if (daysRemaining >= 0 && daysRemaining <= warningDays) {
-			atRisk.push({ ...item, daysRemaining })
-		}
+	if (item.isOverdue) {
+		return 'overdue'
 	}
-
-	overdue.sort((a, b) => b.daysOverdue - a.daysOverdue)
-	atRisk.sort((a, b) => a.daysRemaining - b.daysRemaining)
-
-	return { overdue, atRisk }
-}
-
-/**
- * Get task due reminders: tasks that are overdue or approaching their due date
- * within the warning threshold.
- *
- * @param {object[]} tasks Tasks assigned to the current user
- * @param {number} warningDays Number of days before due date to flag as due-soon
- * @return {{ overdue: object[], dueSoon: object[] }}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
- */
-export function getTaskDueReminders(tasks, warningDays = DEADLINE_WARNING_DAYS) {
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
-
-	const overdue = []
-	const dueSoon = []
-
-	for (const task of tasks) {
-		if (!task.dueDate) continue
-		if (isTerminalStatus(task.status)) continue
-
-		const dueDate = new Date(task.dueDate)
-		dueDate.setHours(0, 0, 0, 0)
-
-		const diffMs = dueDate - today
-		const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-
-		const item = {
-			id: task.id,
-			title: task.title || '\u2014',
-			caseReference: task.case ? `Case: ${task.case}` : '\u2014',
-			priority: task.priority || 'normal',
-		}
-
-		if (daysRemaining < 0) {
-			overdue.push({ ...item, daysOverdue: Math.abs(daysRemaining) })
-		} else if (daysRemaining <= warningDays) {
-			dueSoon.push({ ...item, daysRemaining })
-		}
-	}
-
-	overdue.sort((a, b) => b.daysOverdue - a.daysOverdue)
-	dueSoon.sort((a, b) => a.daysRemaining - b.daysRemaining)
-
-	return { overdue, dueSoon }
-}
-
-/**
- * Get stalled cases: open cases that have had no activity (no dateModified update)
- * for longer than the stalled threshold.
- *
- * @param {object[]} openCases Cases with non-final status
- * @param {object[]} caseTypes All case types (for name resolution)
- * @param {number} stalledDays Number of days without activity to consider stalled
- * @return {Array<{ id, title, identifier, caseTypeName, daysSinceActivity, handler }>}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
- */
-export function getStalledCases(
-	openCases,
-	caseTypes,
-	stalledDays = STALLED_THRESHOLD_DAYS,
-) {
-	const typeMap = new Map()
-	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
-	}
-
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
-
-	const stalled = []
-
-	for (const c of openCases) {
-		const lastActivity = c.dateModified || c.dateCreated || null
-		if (!lastActivity) continue
-
-		const activityDate = new Date(lastActivity)
-		activityDate.setHours(0, 0, 0, 0)
-
-		const diffMs = today - activityDate
-		const daysSinceActivity = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-		if (daysSinceActivity >= stalledDays) {
-			stalled.push({
-				id: c.id,
-				title: c.title || '\u2014',
-				identifier: c.identifier || '\u2014',
-				caseTypeName: typeMap.get(c.caseType) || t('dossiq', 'Unknown'),
-				daysSinceActivity,
-				handler: c.assignee || '\u2014',
-			})
-		}
-	}
-
-	stalled.sort((a, b) => b.daysSinceActivity - a.daysSinceActivity)
-	return stalled
+	return deadline <= weekEnd ? 'dueThisWeek' : 'upcoming'
 }
 
 /**
@@ -532,20 +476,42 @@ export function getStalledCases(
  *
  * @param {string} dateString ISO date string
  * @return {string}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function formatRelativeTime(dateString) {
 	if (!dateString) return '—'
 	const date = new Date(dateString)
 	const now = new Date()
 	const diffMs = now - date
+	return withinADayWords(diffMs) ?? daysAgoWords(date, diffMs)
+}
+
+/**
+ * A moment less than a day ago, in minutes or hours.
+ *
+ * @param {number} diffMs How long ago, in milliseconds.
+ * @return {string|null} The words, or null when it is a day or more (or unreadable).
+ */
+function withinADayWords(diffMs) {
 	const diffMin = Math.floor(diffMs / 60000)
 	const diffHours = Math.floor(diffMs / 3600000)
-	const diffDays = Math.floor(diffMs / 86400000)
 
 	if (diffMin < 1) return t('dossiq', 'just now')
 	if (diffMin < 60) return t('dossiq', '{min} min ago', { min: diffMin })
 	if (diffHours < 24) return t('dossiq', '{hours} hours ago', { hours: diffHours })
+	return null
+}
+
+/**
+ * A moment a day or more ago: yesterday, some days ago, or its short date.
+ *
+ * @param {Date} date The moment.
+ * @param {number} diffMs How long ago, in milliseconds.
+ * @return {string} The words.
+ */
+function daysAgoWords(date, diffMs) {
+	const diffDays = Math.floor(diffMs / 86400000)
+
 	if (diffDays === 1) return t('dossiq', 'yesterday')
 	if (diffDays < 7) return t('dossiq', '{days} days ago', { days: diffDays })
 	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -566,16 +532,8 @@ export function formatRelativeTime(dateString) {
  * @spec openspec/specs/dashboard/spec.md
  */
 export function aggregateByType(openCases, caseTypes) {
-	const labelMap = new Map()
-	for (const ct of caseTypes) {
-		labelMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
-	}
-
-	const counts = new Map()
-	for (const c of openCases) {
-		const id = c.caseType || ''
-		counts.set(id, (counts.get(id) || 0) + 1)
-	}
+	const labelMap = caseTypeLabels(caseTypes)
+	const counts = countsByCaseType(openCases)
 
 	return Array.from(counts.entries())
 		.map(([type, count]) => ({
@@ -587,149 +545,30 @@ export function aggregateByType(openCases, caseTypes) {
 }
 
 /**
- * Default Woo (Wet open overheid) severity thresholds in days. A Woo response
- * is statutorily due within 4 weeks (28 days) with a single 2-week extension;
- * the panel surfaces urgency relative to the remaining days on the deadline.
+ * Each case type's label by id: its title, else its name, else Unknown.
  *
- * @type {number}
+ * @param {object[]} caseTypes All case types.
+ * @return {Map<string, string>} The labels.
  */
-export const WOO_CRITICAL_DAYS = 7
-
-/**
- * @type {number}
- */
-export const WOO_WARNING_DAYS = 14
-
-/**
- * Get open Woo cases with statutory-deadline countdown and traffic-light
- * severity. Woo cases are identified by a case-insensitive substring match on
- * the resolved case-type title containing "woo" (DD-03). Cases without a
- * deadline are excluded — there is nothing to count down against.
- *
- * Severity mapping:
- *   - overdue   : daysRemaining < 0 (red / --color-error)
- *   - critical  : 0 <= daysRemaining <= 7 (orange)
- *   - warning   : 7 < daysRemaining <= 14 (yellow)
- *   - ok        : daysRemaining > 14 (green / --color-success)
- *
- * @param {object[]} openCases Cases with non-final status
- * @param {object[]} caseTypes All case types (for Woo detection + name)
- * @return {Array<{ id, identifier, title, initiator, deadline, daysRemaining, isOverdue, severity }>}
- *   Sorted overdue first (most overdue), then by ascending daysRemaining.
- *
- * @spec openspec/specs/dashboard/spec.md
- */
-export function getWooCases(openCases, caseTypes) {
-	const typeTitleMap = new Map()
+function caseTypeLabels(caseTypes) {
+	const labelMap = new Map()
 	for (const ct of caseTypes) {
-		typeTitleMap.set(ct.id, ct.title || ct.name || '')
+		labelMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
 	}
-
-	const result = []
-
-	for (const c of openCases) {
-		if (!c.deadline) continue
-
-		const typeTitle = (typeTitleMap.get(c.caseType) || '').toLowerCase()
-		if (!typeTitle.includes('woo')) continue
-
-		const daysRemaining = getDaysRemaining(c.deadline)
-		const isOverdue = daysRemaining < 0
-
-		let severity
-		if (isOverdue) {
-			severity = 'overdue'
-		} else if (daysRemaining <= WOO_CRITICAL_DAYS) {
-			severity = 'critical'
-		} else if (daysRemaining <= WOO_WARNING_DAYS) {
-			severity = 'warning'
-		} else {
-			severity = 'ok'
-		}
-
-		result.push({
-			id: c.id,
-			identifier: c.identifier || '—',
-			title: c.title || '—',
-			initiator: c.initiator || c.assignee || '—',
-			deadline: c.deadline,
-			daysRemaining,
-			isOverdue,
-			severity,
-		})
-	}
-
-	// Overdue first (most overdue at top), then ascending daysRemaining.
-	result.sort((a, b) => {
-		if (a.isOverdue && b.isOverdue) return a.daysRemaining - b.daysRemaining
-		if (a.isOverdue) return -1
-		if (b.isOverdue) return 1
-		return a.daysRemaining - b.daysRemaining
-	})
-
-	return result
+	return labelMap
 }
 
 /**
- * Group completed cases into weekly throughput buckets (cases closed per ISO
- * week) for the trailing `weeks` window ending at the most recent completion.
- * Used by the Process Analytics throughput line chart (REQ-DASH-V1-005c).
+ * How many cases carry each case type id, '' for a case without one.
  *
- * @param {object[]} completedCases Cases with an `endDate`
- * @param {number} weeks Number of trailing weeks to include
- * @return {Array<{ weekLabel: string, count: number }>} Oldest week first
- *
- * @spec openspec/specs/dashboard/spec.md
+ * @param {object[]} openCases The cases.
+ * @return {Map<string, number>} The counts, in first-seen order.
  */
-export function computeWeeklyThroughput(completedCases, weeks = 12) {
-	// Build a Monday-anchored week key for an ISO-week approximation.
-	const weekStart = (d) => {
-		const date = new Date(d)
-		date.setHours(0, 0, 0, 0)
-		const day = date.getDay() // 0 = Sunday
-		const diff = day === 0 ? 6 : day - 1 // days since Monday
-		date.setDate(date.getDate() - diff)
-		return date
+function countsByCaseType(openCases) {
+	const counts = new Map()
+	for (const c of openCases) {
+		const id = c.caseType || ''
+		counts.set(id, (counts.get(id) || 0) + 1)
 	}
-
-	const isoWeekLabel = (monday) => {
-		// ISO-8601 week number: the Thursday of the current week decides the year,
-		// and week 1 is the week containing the first Thursday of that year.
-		const target = new Date(monday)
-		target.setHours(0, 0, 0, 0)
-		target.setDate(target.getDate() + 3) // shift to this week's Thursday
-		const isoYear = target.getFullYear()
-		const firstThursday = new Date(isoYear, 0, 4)
-		const weekNo =
-			1 + Math.round((target - weekStart(firstThursday)) / (7 * 86400000))
-		return `W${weekNo} ${isoYear}`
-	}
-
-	const completed = completedCases.filter((c) => c.endDate)
-	if (completed.length === 0) return []
-
-	// Determine the anchor (most recent completion) and build the trailing window.
-	const latest = completed.reduce((max, c) => {
-		const d = new Date(c.endDate)
-		return d > max ? d : max
-	}, new Date(0))
-
-	const anchorMonday = weekStart(latest)
-	const buckets = []
-	const keyToIndex = new Map()
-	for (let i = weeks - 1; i >= 0; i--) {
-		const monday = new Date(anchorMonday)
-		monday.setDate(monday.getDate() - i * 7)
-		const key = monday.toISOString().slice(0, 10)
-		keyToIndex.set(key, buckets.length)
-		buckets.push({ weekLabel: isoWeekLabel(monday), count: 0 })
-	}
-
-	for (const c of completed) {
-		const key = weekStart(c.endDate).toISOString().slice(0, 10)
-		const idx = keyToIndex.get(key)
-		if (idx !== undefined) buckets[idx].count += 1
-	}
-
-	return buckets
+	return counts
 }

@@ -138,37 +138,75 @@ class MigrateRegisterApplicationId implements IRepairStep {
 			return;
 		}
 
+		$result = $this->migrate(output: $output);
+		if ($result === null) {
+			return;
+		}
+
+		if (($result['ok'] ?? false) === false) {
+			$this->reportRefusal(output: $output, result: $result);
+			return;
+		}
+
+		$this->reportMoved(output: $output, result: $result);
+	}//end run()
+
+	/**
+	 * Ask OpenRegister's migrator to move the application id; null (warned and logged) when it throws.
+	 *
+	 * @param IOutput $output The migration output.
+	 *
+	 * @return array<string, mixed>|null The migrator's answer, or null.
+	 */
+	private function migrate(IOutput $output): ?array {
 		try {
 			$migrator = $this->container->get(self::MIGRATOR);
-			$result = $migrator->migrate(self::OLD_APP_ID, self::NEW_APP_ID);
+			return $migrator->migrate(self::OLD_APP_ID, self::NEW_APP_ID);
 		} catch (\Throwable $e) {
 			$output->warning('Could not migrate the register application id: ' . $e->getMessage());
 			$this->logger->error(
 				'Dossiq: register application migration failed',
 				['exception' => $e->getMessage()]
 			);
-			return;
+			return null;
 		}
+	}//end migrate()
 
-		if (($result['ok'] ?? false) === false) {
-			$reason = (string)($result['reason'] ?? 'unknown');
-			if ($reason === 'collisions') {
-				$slugs = implode(', ', (array)($result['collisions'] ?? []));
-				$output->warning(
-					'Refused: these schema slugs already exist under "' . self::NEW_APP_ID . '": ' . $slugs
-					. '. An import has already forked them; run occ openregister:schemas:dedup, then re-run the upgrade.'
-				);
-				$this->logger->warning(
-					'Dossiq: register application migration refused, forked schemas present',
-					['collisions' => $slugs]
-				);
-				return;
-			}
-
+	/**
+	 * Say why the migrator did not move anything: forked schemas by name, any other reason as given.
+	 *
+	 * @param IOutput              $output The migration output.
+	 * @param array<string, mixed> $result The migrator's answer.
+	 *
+	 * @return void
+	 */
+	private function reportRefusal(IOutput $output, array $result): void {
+		$reason = (string)($result['reason'] ?? 'unknown');
+		if ($reason !== 'collisions') {
 			$output->warning('Register application migration did not run: ' . $reason);
 			return;
 		}
 
+		$slugs = implode(', ', (array)($result['collisions'] ?? []));
+		$output->warning(
+			'Refused: these schema slugs already exist under "' . self::NEW_APP_ID . '": ' . $slugs
+			. '. An import has already forked them; run occ openregister:schemas:dedup, then re-run the upgrade.'
+		);
+		$this->logger->warning(
+			'Dossiq: register application migration refused, forked schemas present',
+			['collisions' => $slugs]
+		);
+	}//end reportRefusal()
+
+	/**
+	 * Say what the migrator moved, or that there was nothing left to move.
+	 *
+	 * @param IOutput              $output The migration output.
+	 * @param array<string, mixed> $result The migrator's answer.
+	 *
+	 * @return void
+	 */
+	private function reportMoved(IOutput $output, array $result): void {
 		$schemas = (int)($result['schemas'] ?? 0);
 		$registers = (int)($result['registers'] ?? 0);
 
@@ -181,7 +219,6 @@ class MigrateRegisterApplicationId implements IRepairStep {
 			'Moved ' . $schemas . ' schema(s) and ' . $registers . ' register(s) from "'
 			. self::OLD_APP_ID . '" to "' . self::NEW_APP_ID . '".'
 		);
-
-	}//end run()
+	}//end reportMoved()
 
 }//end class

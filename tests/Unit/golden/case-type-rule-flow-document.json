@@ -1,0 +1,2300 @@
+{
+    "every action kind": {
+        "flows": [
+            {
+                "name": "Vergunning: Advies bij hoge kosten",
+                "description": "Projected from rule \"task-on-save\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:task-on-save",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "or": [
+                                            {
+                                                ">": [
+                                                    {
+                                                        "var": "json.bouwkosten"
+                                                    },
+                                                    100000
+                                                ]
+                                            },
+                                            {
+                                                "some": [
+                                                    {
+                                                        "var": "json.properties"
+                                                    },
+                                                    {
+                                                        "and": [
+                                                            {
+                                                                "==": [
+                                                                    {
+                                                                        "var": "name"
+                                                                    },
+                                                                    "bouwkosten"
+                                                                ]
+                                                            },
+                                                            {
+                                                                ">": [
+                                                                    {
+                                                                        "var": "value"
+                                                                    },
+                                                                    100000
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.createTask",
+                        "config": {
+                            "title": "Advies vragen",
+                            "onceKey": "rule:ct-1:task-on-save",
+                            "workflowStepId": "step-7"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: Advies bij hoge kosten",
+                "description": "Projected from rule \"task-on-save\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:task-on-save",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "or": [
+                                            {
+                                                ">": [
+                                                    {
+                                                        "var": "json.bouwkosten"
+                                                    },
+                                                    100000
+                                                ]
+                                            },
+                                            {
+                                                "some": [
+                                                    {
+                                                        "var": "json.properties"
+                                                    },
+                                                    {
+                                                        "and": [
+                                                            {
+                                                                "==": [
+                                                                    {
+                                                                        "var": "name"
+                                                                    },
+                                                                    "bouwkosten"
+                                                                ]
+                                                            },
+                                                            {
+                                                                ">": [
+                                                                    {
+                                                                        "var": "value"
+                                                                    },
+                                                                    100000
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.createTask",
+                        "config": {
+                            "title": "Zonder type",
+                            "onceKey": "rule:ct-1:task-on-save"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-create",
+                "description": "Projected from rule \"on-create\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-create",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.created",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.sendMessage",
+                        "config": {
+                            "emailTemplate": "welkom",
+                            "onceKey": "rule:ct-1:on-create",
+                            "recipientRole": "initiator"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-create",
+                "description": "Projected from rule \"on-create\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-create",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.created",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.sendMessage",
+                        "config": {
+                            "emailTemplate": "zonder-rol",
+                            "onceKey": "rule:ct-1:on-create"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.sendMessage",
+                        "config": {
+                            "emailTemplate": "besluit",
+                            "onceKey": "rule:ct-1:on-status",
+                            "recipientRole": "initiator",
+                            "oncePer": "currentStatusEnteredAt"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    },
+                                    {
+                                        "and": [
+                                            {
+                                                "!=": [
+                                                    {
+                                                        "var": "json.priority"
+                                                    },
+                                                    "high"
+                                                ]
+                                            },
+                                            {
+                                                "!": [
+                                                    {
+                                                        "some": [
+                                                            {
+                                                                "var": "json.properties"
+                                                            },
+                                                            {
+                                                                "and": [
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "name"
+                                                                            },
+                                                                            "priority"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "value"
+                                                                            },
+                                                                            "high"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "openregister.object-write",
+                        "config": {
+                            "register": "cases",
+                            "schema": "case",
+                            "operation": "update",
+                            "match": [
+                                {
+                                    "property": "id",
+                                    "value": "{{ id }}"
+                                }
+                            ],
+                            "fields": {
+                                "priority": "high"
+                            }
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    },
+                                    {
+                                        "and": [
+                                            {
+                                                "!=": [
+                                                    {
+                                                        "var": "json.gebied"
+                                                    },
+                                                    "centrum"
+                                                ]
+                                            },
+                                            {
+                                                "!": [
+                                                    {
+                                                        "some": [
+                                                            {
+                                                                "var": "json.properties"
+                                                            },
+                                                            {
+                                                                "and": [
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "name"
+                                                                            },
+                                                                            "gebied"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "value"
+                                                                            },
+                                                                            "centrum"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.setCaseAnswer",
+                        "config": {
+                            "name": "gebied",
+                            "value": "centrum"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    },
+                                    {
+                                        "and": [
+                                            {
+                                                "!=": [
+                                                    {
+                                                        "var": "json.count"
+                                                    },
+                                                    0
+                                                ]
+                                            },
+                                            {
+                                                "!": [
+                                                    {
+                                                        "some": [
+                                                            {
+                                                                "var": "json.properties"
+                                                            },
+                                                            {
+                                                                "and": [
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "name"
+                                                                            },
+                                                                            "count"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "value"
+                                                                            },
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "openregister.object-write",
+                        "config": {
+                            "register": "cases",
+                            "schema": "case",
+                            "operation": "update",
+                            "match": [
+                                {
+                                    "property": "id",
+                                    "value": "{{ id }}"
+                                }
+                            ],
+                            "fields": {
+                                "count": 0
+                            }
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    },
+                                    {
+                                        "and": [
+                                            {
+                                                "!=": [
+                                                    {
+                                                        "var": "json.variant"
+                                                    },
+                                                    "snel"
+                                                ]
+                                            },
+                                            {
+                                                "!": [
+                                                    {
+                                                        "some": [
+                                                            {
+                                                                "var": "json.properties"
+                                                            },
+                                                            {
+                                                                "and": [
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "name"
+                                                                            },
+                                                                            "variant"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "value"
+                                                                            },
+                                                                            "snel"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "openregister.object-write",
+                        "config": {
+                            "register": "cases",
+                            "schema": "case",
+                            "operation": "update",
+                            "match": [
+                                {
+                                    "property": "id",
+                                    "value": "{{ id }}"
+                                }
+                            ],
+                            "fields": {
+                                "variant": "snel"
+                            }
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: status-without-status",
+                "description": "Projected from rule \"status-without-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:status-without-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            ""
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.createTask",
+                        "config": {
+                            "title": "Controle",
+                            "onceKey": "rule:ct-1:status-without-status"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: unknown-moment",
+                "description": "Projected from rule \"unknown-moment\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:unknown-moment",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "and": [
+                                            {
+                                                "!=": [
+                                                    {
+                                                        "var": "json.variant"
+                                                    },
+                                                    "lang"
+                                                ]
+                                            },
+                                            {
+                                                "!": [
+                                                    {
+                                                        "some": [
+                                                            {
+                                                                "var": "json.properties"
+                                                            },
+                                                            {
+                                                                "and": [
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "name"
+                                                                            },
+                                                                            "variant"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "value"
+                                                                            },
+                                                                            "lang"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "openregister.object-write",
+                        "config": {
+                            "register": "cases",
+                            "schema": "case",
+                            "operation": "update",
+                            "match": [
+                                {
+                                    "property": "id",
+                                    "value": "{{ id }}"
+                                }
+                            ],
+                            "fields": {
+                                "variant": "lang"
+                            }
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: no-moment",
+                "description": "Projected from rule \"no-moment\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:no-moment",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.createTask",
+                        "config": {
+                            "title": "Altijd",
+                            "onceKey": "rule:ct-1:no-moment"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "unprojected": [
+            "task-on-save: addTask",
+            "on-create: sendMessage",
+            "on-status: setField",
+            "on-status: setField",
+            "on-status: chooseVariant",
+            "on-status: unknownAction",
+            "on-status: ?",
+            "?: addTask"
+        ]
+    },
+    "a case type without a title": {
+        "flows": [
+            {
+                "name": "ct-1: Advies bij hoge kosten",
+                "description": "Projected from rule \"task-on-save\" of case type ct-1 when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:task-on-save",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "or": [
+                                            {
+                                                ">": [
+                                                    {
+                                                        "var": "json.bouwkosten"
+                                                    },
+                                                    100000
+                                                ]
+                                            },
+                                            {
+                                                "some": [
+                                                    {
+                                                        "var": "json.properties"
+                                                    },
+                                                    {
+                                                        "and": [
+                                                            {
+                                                                "==": [
+                                                                    {
+                                                                        "var": "name"
+                                                                    },
+                                                                    "bouwkosten"
+                                                                ]
+                                                            },
+                                                            {
+                                                                ">": [
+                                                                    {
+                                                                        "var": "value"
+                                                                    },
+                                                                    100000
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.createTask",
+                        "config": {
+                            "title": "Advies vragen",
+                            "onceKey": "rule:ct-1:task-on-save",
+                            "workflowStepId": "step-7"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "ct-1: Advies bij hoge kosten",
+                "description": "Projected from rule \"task-on-save\" of case type ct-1 when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:task-on-save",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "cases",
+                            "schema": "case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "or": [
+                                            {
+                                                ">": [
+                                                    {
+                                                        "var": "json.bouwkosten"
+                                                    },
+                                                    100000
+                                                ]
+                                            },
+                                            {
+                                                "some": [
+                                                    {
+                                                        "var": "json.properties"
+                                                    },
+                                                    {
+                                                        "and": [
+                                                            {
+                                                                "==": [
+                                                                    {
+                                                                        "var": "name"
+                                                                    },
+                                                                    "bouwkosten"
+                                                                ]
+                                                            },
+                                                            {
+                                                                ">": [
+                                                                    {
+                                                                        "var": "value"
+                                                                    },
+                                                                    100000
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.createTask",
+                        "config": {
+                            "title": "Zonder type",
+                            "onceKey": "rule:ct-1:task-on-save"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "unprojected": [
+            "task-on-save: addTask"
+        ]
+    },
+    "register and schema configured otherwise": {
+        "flows": [
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "other-register",
+                            "schema": "other-case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.sendMessage",
+                        "config": {
+                            "emailTemplate": "besluit",
+                            "onceKey": "rule:ct-1:on-status",
+                            "recipientRole": "initiator",
+                            "oncePer": "currentStatusEnteredAt"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "other-register",
+                            "schema": "other-case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    },
+                                    {
+                                        "and": [
+                                            {
+                                                "!=": [
+                                                    {
+                                                        "var": "json.priority"
+                                                    },
+                                                    "high"
+                                                ]
+                                            },
+                                            {
+                                                "!": [
+                                                    {
+                                                        "some": [
+                                                            {
+                                                                "var": "json.properties"
+                                                            },
+                                                            {
+                                                                "and": [
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "name"
+                                                                            },
+                                                                            "priority"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "value"
+                                                                            },
+                                                                            "high"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "openregister.object-write",
+                        "config": {
+                            "register": "other-register",
+                            "schema": "other-case",
+                            "operation": "update",
+                            "match": [
+                                {
+                                    "property": "id",
+                                    "value": "{{ id }}"
+                                }
+                            ],
+                            "fields": {
+                                "priority": "high"
+                            }
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "other-register",
+                            "schema": "other-case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    },
+                                    {
+                                        "and": [
+                                            {
+                                                "!=": [
+                                                    {
+                                                        "var": "json.gebied"
+                                                    },
+                                                    "centrum"
+                                                ]
+                                            },
+                                            {
+                                                "!": [
+                                                    {
+                                                        "some": [
+                                                            {
+                                                                "var": "json.properties"
+                                                            },
+                                                            {
+                                                                "and": [
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "name"
+                                                                            },
+                                                                            "gebied"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "value"
+                                                                            },
+                                                                            "centrum"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "dossiq.setCaseAnswer",
+                        "config": {
+                            "name": "gebied",
+                            "value": "centrum"
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "other-register",
+                            "schema": "other-case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    },
+                                    {
+                                        "and": [
+                                            {
+                                                "!=": [
+                                                    {
+                                                        "var": "json.count"
+                                                    },
+                                                    0
+                                                ]
+                                            },
+                                            {
+                                                "!": [
+                                                    {
+                                                        "some": [
+                                                            {
+                                                                "var": "json.properties"
+                                                            },
+                                                            {
+                                                                "and": [
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "name"
+                                                                            },
+                                                                            "count"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "value"
+                                                                            },
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "openregister.object-write",
+                        "config": {
+                            "register": "other-register",
+                            "schema": "other-case",
+                            "operation": "update",
+                            "match": [
+                                {
+                                    "property": "id",
+                                    "value": "{{ id }}"
+                                }
+                            ],
+                            "fields": {
+                                "count": 0
+                            }
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Vergunning: on-status",
+                "description": "Projected from rule \"on-status\" of case type Vergunning when the case type was published. Edit the rule on the case type, not this flow.",
+                "app": "dossiq",
+                "enabled": true,
+                "executionMode": "async",
+                "notes": "dossiq:case-type-rule:ct-1:on-status",
+                "nodes": [
+                    {
+                        "id": "trigger",
+                        "type": "openregister.trigger-object",
+                        "config": {
+                            "event": "object.updated",
+                            "register": "other-register",
+                            "schema": "other-case",
+                            "scope": {
+                                "property": "caseType",
+                                "value": "ct-1"
+                            }
+                        }
+                    },
+                    {
+                        "id": "conditions",
+                        "type": "openregister.filter",
+                        "config": {
+                            "condition": {
+                                "and": [
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.caseType"
+                                            },
+                                            "ct-1"
+                                        ]
+                                    },
+                                    {
+                                        "==": [
+                                            {
+                                                "var": "json.status"
+                                            },
+                                            "st-2"
+                                        ]
+                                    },
+                                    {
+                                        "and": [
+                                            {
+                                                "!=": [
+                                                    {
+                                                        "var": "json.variant"
+                                                    },
+                                                    "snel"
+                                                ]
+                                            },
+                                            {
+                                                "!": [
+                                                    {
+                                                        "some": [
+                                                            {
+                                                                "var": "json.properties"
+                                                            },
+                                                            {
+                                                                "and": [
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "name"
+                                                                            },
+                                                                            "variant"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "==": [
+                                                                            {
+                                                                                "var": "value"
+                                                                            },
+                                                                            "snel"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "action",
+                        "type": "openregister.object-write",
+                        "config": {
+                            "register": "other-register",
+                            "schema": "other-case",
+                            "operation": "update",
+                            "match": [
+                                {
+                                    "property": "id",
+                                    "value": "{{ id }}"
+                                }
+                            ],
+                            "fields": {
+                                "variant": "snel"
+                            }
+                        }
+                    },
+                    {
+                        "id": "end",
+                        "type": "openregister.end"
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "trigger-conditions",
+                        "from": [
+                            "trigger"
+                        ],
+                        "to": [
+                            "conditions"
+                        ]
+                    },
+                    {
+                        "id": "conditions-action",
+                        "from": [
+                            "conditions"
+                        ],
+                        "to": [
+                            "action"
+                        ]
+                    },
+                    {
+                        "id": "action-end",
+                        "from": [
+                            "action"
+                        ],
+                        "to": [
+                            "end"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "unprojected": [
+            "on-status: setField",
+            "on-status: setField",
+            "on-status: chooseVariant",
+            "on-status: unknownAction",
+            "on-status: ?"
+        ]
+    }
+}

@@ -50,6 +50,13 @@ class StarterStore {
 	use SearchesObjects;
 
 	/**
+	 * Whether rows are read and written past the caller's access check; see asSystem().
+	 *
+	 * @var boolean
+	 */
+	private bool $pastAccessCheck = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settings The register and schema resolver.
@@ -60,6 +67,37 @@ class StarterStore {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * This store, reading and writing rows past the caller's access check.
+	 *
+	 * Only for a package install, which an administrator starts from the admin
+	 * settings or `occ`: a CLI run has no user, and a schema with authorization
+	 * rules (a case) answers nothing to it.
+	 *
+	 * @return self The store as the system.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function asSystem(): self {
+		$system = clone $this;
+		$system->pastAccessCheck = true;
+
+		return $system;
+	}//end asSystem()
+
+	/**
+	 * The schema id the app config key names here, or the empty string.
+	 *
+	 * @param string $configKey The app config key naming the schema.
+	 *
+	 * @return string The schema id.
+	 *
+	 * @spec openspec/specs/case-type-seed-data/spec.md
+	 */
+	public function schemaIdOf(string $configKey): string {
+		return (string)$this->settings->getConfigValue(key: $configKey);
+	}//end schemaIdOf()
 
 	/**
 	 * Whether the store can be reached and the schema is configured.
@@ -127,6 +165,10 @@ class StarterStore {
 		}
 
 		try {
+			if ($this->pastAccessCheck === true) {
+				return $this->systemFind(context: $context, id: $id);
+			}
+
 			return $this->findObjectAsArray(
 				objectService: $context['service'],
 				register: $context['register'],
@@ -160,13 +202,7 @@ class StarterStore {
 		}
 
 		try {
-			return $this->saveObjectAsArray(
-				objectService: $context['service'],
-				register: $context['register'],
-				schema: $context['schema'],
-				object: $payload,
-				uuid: $id,
-			);
+			return $this->write(context: $context, payload: $payload, id: $id);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq starter: could not write a row',
@@ -175,6 +211,39 @@ class StarterStore {
 			return null;
 		}
 	}//end save()
+
+	/**
+	 * Write a row through the object service, past the access check when this store is.
+	 *
+	 * @param array{service: object, register: string, schema: string} $context The store context.
+	 * @param array<string, mixed>                                       $payload The row to write.
+	 * @param string|null                                                $id      The id to update, or null to create.
+	 *
+	 * @return array<string, mixed>|null The stored row.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function write(array $context, array $payload, ?string $id): ?array {
+		if ($this->pastAccessCheck === true) {
+			return $this->asArray(
+				object: $context['service']->saveObject(
+					object: $payload,
+					register: $context['register'],
+					schema: $context['schema'],
+					uuid: $id,
+					_rbac: false,
+				)
+			);
+		}
+
+		return $this->saveObjectAsArray(
+			objectService: $context['service'],
+			register: $context['register'],
+			schema: $context['schema'],
+			object: $payload,
+			uuid: $id,
+		);
+	}//end write()
 
 	/**
 	 * Remove a row.
@@ -247,4 +316,37 @@ class StarterStore {
 
 		return ['service' => $service, 'register' => $register, 'schema' => $schema];
 	}//end context()
+	/**
+	 * One row by id, past the caller's access check.
+	 *
+	 * @param array{service: object, register: string, schema: string} $context The store context.
+	 * @param string                                                     $id      The row's id.
+	 *
+	 * @return array<string, mixed>|null The row, or null when it is not there.
+	 */
+	private function systemFind(array $context, string $id): ?array {
+		try {
+			$object = $context['service']->find(
+				id: $id,
+				register: $context['register'],
+				schema: $context['schema'],
+				_rbac: false,
+			);
+		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
+			return null;
+		}
+
+		return $this->asArray(object: $object);
+	}//end systemFind()
+
+	/**
+	 * An object the store answered, as an array.
+	 *
+	 * @param mixed $object An array, or an entity that serialises to one.
+	 *
+	 * @return array<string, mixed>|null The array, or null.
+	 */
+	private function asArray(mixed $object): ?array {
+		return $this->objectToArrayOrNull(value: $object);
+	}//end asArray()
 }//end class

@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
  *
  * Simulates message sending and read status without external API calls.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class MockAdapter implements BerichtenboxAdapterInterface {
 	/**
@@ -60,7 +60,7 @@ class MockAdapter implements BerichtenboxAdapterInterface {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) the mock simulates a send and has no opt-out list to read.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function sendMessage(
 		string $bsn,

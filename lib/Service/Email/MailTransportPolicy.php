@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -111,7 +111,7 @@ class MailTransportPolicy {
 	 */
 	public function transportFor(string $kind): string {
 		$configured = json_decode(
-			$this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, ''),
+			$this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, ''),
 			true
 		);
 		if (is_array($configured) === true) {

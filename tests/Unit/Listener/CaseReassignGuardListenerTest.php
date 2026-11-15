@@ -44,6 +44,7 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
  */
 class CaseReassignGuardListenerTest extends TestCase {
 
@@ -98,6 +99,7 @@ class CaseReassignGuardListenerTest extends TestCase {
 			resolver: $resolver,
 			grants: $grants,
 			groupManager: $groups,
+			logger: $this->createMock(\Psr\Log\LoggerInterface::class),
 		);
 
 		$session = $this->createMock(IUserSession::class);

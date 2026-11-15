@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Service\Transitions;
 /**
  * Strategy interface for guard evaluation.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T04
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T04
  */
 interface GuardEvaluatorInterface {
 	/**

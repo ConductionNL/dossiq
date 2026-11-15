@@ -100,6 +100,7 @@ interface WooPublicationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Publication\WithheldListRecorder
  * @uses \OCA\Dossiq\Service\Assessment\DocumentSearchOutcome
  * @uses \OCA\Dossiq\Service\Assessment\NothingToDisclose
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooPublicationServiceTest extends TestCase {
 

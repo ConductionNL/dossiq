@@ -6,7 +6,8 @@
     "summary": "Functional admins change a process on a canvas, no developer needed.",
     "summary_nl": "Functioneel beheerders passen een proces aan op een canvas, zonder ontwikkelaar.",
     "status": "stable",
-    "docsUrl": "openspec/specs/visual-workflow-editor/spec.md"
+    "docsUrl": "openspec/specs/visual-workflow-editor/spec.md",
+    "category": "cases"
   },
   {
     "slug": "case-types",
@@ -15,7 +16,8 @@
     "summary": "You model any zaaktype with statuses, deadlines and documents, without code.",
     "summary_nl": "Je modelleert elk zaaktype met statussen, termijnen en documenten, zonder code.",
     "status": "stable",
-    "docsUrl": "openspec/specs/case-types/spec.md"
+    "docsUrl": "openspec/specs/case-types/spec.md",
+    "category": "cases"
   },
   {
     "slug": "case-configuration-i18n",
@@ -24,7 +26,8 @@
     "title_nl": "Meertalige zaaktypen",
     "summary": "You give every case type label a second language, and see what is missing.",
     "summary_nl": "Je geeft elk zaaktypelabel een tweede taal, en ziet wat nog ontbreekt.",
-    "docsUrl": "openspec/specs/case-configuration-i18n/spec.md"
+    "docsUrl": "openspec/specs/case-configuration-i18n/spec.md",
+    "category": "cases"
   },
   {
     "slug": "document-zaakdossier",
@@ -33,7 +36,8 @@
     "title_nl": "Documenten op de zaak",
     "summary": "You read every version, mark a document final, and export the whole dossier.",
     "summary_nl": "Je leest elke versie, markeert een document als definitief, en exporteert het hele dossier.",
-    "docsUrl": "openspec/specs/document-zaakdossier/spec.md"
+    "docsUrl": "openspec/specs/document-zaakdossier/spec.md",
+    "category": "cases"
   },
   {
     "slug": "workflow-definition-engine",
@@ -42,7 +46,8 @@
     "summary": "You automate transitions with checks, e-mails, tasks and webhooks.",
     "summary_nl": "Je automatiseert overgangen met controles, e-mails, taken en webhooks.",
     "status": "stable",
-    "docsUrl": "openspec/specs/workflow-definition-engine/spec.md"
+    "docsUrl": "openspec/specs/workflow-definition-engine/spec.md",
+    "category": "cases"
   },
   {
     "slug": "termijn-binding",
@@ -51,7 +56,8 @@
     "summary": "You track statutory deadlines daily, and pause, extend or escalate on time.",
     "summary_nl": "Je bewaakt wettelijke termijnen dagelijks, en pauzeert, verlengt of escaleert op tijd.",
     "status": "stable",
-    "docsUrl": "openspec/specs/termijn-binding/spec.md"
+    "docsUrl": "openspec/specs/termijn-binding/spec.md",
+    "category": "decisions"
   },
   {
     "slug": "dwangsom-calculation",
@@ -60,7 +66,8 @@
     "summary": "You calculate the dwangsom automatically when a decision runs late.",
     "summary_nl": "Je berekent de dwangsom automatisch zodra een besluit te laat is.",
     "status": "stable",
-    "docsUrl": "openspec/specs/dwangsom-calculation/spec.md"
+    "docsUrl": "openspec/specs/dwangsom-calculation/spec.md",
+    "category": "decisions"
   },
   {
     "slug": "bezwaar-beroep-workflow",
@@ -69,7 +76,8 @@
     "summary": "You handle objections with committee, hearings, decisions and dossier export.",
     "summary_nl": "Je behandelt bezwaren met commissie, hoorzittingen, besluiten en dossier-export.",
     "status": "stable",
-    "docsUrl": "openspec/specs/bezwaar-beroep-workflow/spec.md"
+    "docsUrl": "openspec/specs/bezwaar-beroep-workflow/spec.md",
+    "category": "decisions"
   },
   {
     "slug": "vth-module",
@@ -78,7 +86,8 @@
     "summary": "You run permits, supervision and enforcement with LHS classification and beschikkingen.",
     "summary_nl": "Je voert vergunningen, toezicht en handhaving met LHS-classificatie en beschikkingen.",
     "status": "stable",
-    "docsUrl": "openspec/specs/vth-module/spec.md"
+    "docsUrl": "openspec/specs/vth-module/spec.md",
+    "category": "decisions"
   },
   {
     "slug": "leges-heffingen",
@@ -87,7 +96,8 @@
     "summary": "You calculate fees from your verordening and bill them through Shillinq.",
     "summary_nl": "Je berekent leges uit je verordening en factureert ze via Shillinq.",
     "status": "stable",
-    "docsUrl": "openspec/specs/case-management/spec.md"
+    "docsUrl": "openspec/specs/case-management/spec.md",
+    "category": "decisions"
   },
   {
     "slug": "archief-edepot-handover",
@@ -98,7 +108,8 @@
     "status": "beta",
     "reason": "e-Depot submission runs on a mock/log adapter (LogEDepotSubmissionAdapter); nothing is transmitted to a real e-Depot yet",
     "providedBy": "openregister",
-    "docsUrl": "openspec/specs/archief-edepot-handover/spec.md"
+    "docsUrl": "openspec/specs/archief-edepot-handover/spec.md",
+    "category": "decisions"
   },
   {
     "slug": "zgw-api-mapping",
@@ -107,7 +118,8 @@
     "summary": "You connect to Zaken, Catalogi, Besluiten and Documenten APIs out of the box.",
     "summary_nl": "Je koppelt direct aan de Zaken-, Catalogi-, Besluiten- en Documenten-API's.",
     "status": "stable",
-    "docsUrl": "openspec/specs/zgw-api-mapping/spec.md"
+    "docsUrl": "openspec/specs/zgw-api-mapping/spec.md",
+    "category": "cases"
   },
   {
     "slug": "doorlooptijd-dashboard",
@@ -116,7 +128,8 @@
     "summary": "You see throughput times and bottlenecks, and export KPI reports.",
     "summary_nl": "Je ziet doorlooptijden en knelpunten, en exporteert KPI-rapporten.",
     "status": "stable",
-    "docsUrl": "openspec/specs/doorlooptijd-dashboard/spec.md"
+    "docsUrl": "openspec/specs/doorlooptijd-dashboard/spec.md",
+    "category": "decisions"
   },
   {
     "slug": "case-search-and-lists",
@@ -125,7 +138,8 @@
     "title_nl": "Zoeken en opgeslagen lijsten",
     "summary": "You search on the fields a case type declares, and keep the list you built.",
     "summary_nl": "Je zoekt op de velden die een zaaktype aangeeft, en bewaart de lijst die je maakte.",
-    "docsUrl": "openspec/specs/case-search-and-lists/spec.md"
+    "docsUrl": "openspec/specs/case-search-and-lists/spec.md",
+    "category": "cases"
   },
   {
     "slug": "case-access-control",
@@ -134,7 +148,8 @@
     "title_nl": "Toegangsrechten op de zaak",
     "summary": "You decide per case who reads it, who changes it, and which fields they see.",
     "summary_nl": "Je bepaalt per zaak wie leest, wie wijzigt, en welke velden zichtbaar zijn.",
-    "docsUrl": "openspec/specs/case-access-control/spec.md"
+    "docsUrl": "openspec/specs/case-access-control/spec.md",
+    "category": "cases"
   },
   {
     "slug": "multi-tenancy",
@@ -144,7 +159,8 @@
     "summary_nl": "Je host veel gemeenten apart, met quota, facturatie en onboarding per tenant.",
     "status": "beta",
     "reason": "tenant stack is app-local; not yet on the OpenRegister boundary",
-    "docsUrl": "openspec/specs/multi-tenancy/spec.md"
+    "docsUrl": "openspec/specs/multi-tenancy/spec.md",
+    "category": "cases"
   },
   {
     "slug": "kcc-werkplek-zaaksysteem-bridge",
@@ -153,7 +169,8 @@
     "summary": "Medewerkers log contactmomenten, route calls and read cases from het klantcontactcentrum.",
     "summary_nl": "Medewerkers leggen contactmomenten vast, routeren gesprekken en lezen zaken vanuit het klantcontactcentrum.",
     "status": "stable",
-    "docsUrl": "openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md"
+    "docsUrl": "openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md",
+    "category": "cases"
   },
   {
     "slug": "case-email-integration",
@@ -162,7 +179,8 @@
     "title_nl": "Zaakgericht mailen",
     "summary": "You file incoming mail on the right case, and open a case from a message.",
     "summary_nl": "Je koppelt binnenkomende mail aan de juiste zaak, en opent een zaak vanuit een bericht.",
-    "docsUrl": "openspec/specs/case-email-integration/spec.md"
+    "docsUrl": "openspec/specs/case-email-integration/spec.md",
+    "category": "cases"
   },
   {
     "slug": "zaakportaal-mijngemeente",
@@ -171,7 +189,8 @@
     "summary": "Citizens follow their case status and get Berichtenbox notifications.",
     "summary_nl": "Inwoners volgen hun zaakstatus en krijgen Berichtenbox-meldingen.",
     "status": "beta",
-    "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md"
+    "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md",
+    "category": "cases"
   },
   {
     "slug": "stuf-zkn-outbound",
@@ -180,7 +199,8 @@
     "summary": "You exchange zaak-messages with systems that still speak StUF.",
     "summary_nl": "Je wisselt zaakberichten uit met systemen die nog StUF spreken.",
     "status": "beta",
-    "docsUrl": "openspec/specs/stuf-zkn-outbound/spec.md"
+    "docsUrl": "openspec/specs/stuf-zkn-outbound/spec.md",
+    "category": "cases"
   },
   {
     "slug": "berichtenbox-integration",
@@ -189,7 +209,8 @@
     "title_nl": "Digitale post aan inwoners",
     "summary": "You send a letter to the Berichtenbox and see whether it arrived.",
     "summary_nl": "Je stuurt een brief naar de Berichtenbox en ziet of die is aangekomen.",
-    "docsUrl": "openspec/specs/berichtenbox-integration/spec.md"
+    "docsUrl": "openspec/specs/berichtenbox-integration/spec.md",
+    "category": "cases"
   },
   {
     "slug": "dso-omgevingsloket",
@@ -199,7 +220,8 @@
     "summary_nl": "Je ontvangt Omgevingswet-aanvragen en bewaakt hun termijnen.",
     "status": "beta",
     "reason": "Config-ready seam (integration.dso.baseUrl + dso_lv_auth_token, warn-and-empty when unset); pre-productie (service.pre.omgevingswet.overheid.nl) needs the DSO aansluittraject + PKIoverheid cert — a customer-side track dossiq supports but cannot self-start.",
-    "docsUrl": "openspec/specs/dso-omgevingsloket/spec.md"
+    "docsUrl": "openspec/specs/dso-omgevingsloket/spec.md",
+    "category": "cases"
   },
   {
     "slug": "case-map-overview",
@@ -208,7 +230,8 @@
     "summary": "You plot location-bound cases on a map with PDOK and WMS/WFS layers.",
     "summary_nl": "Je plot locatiegebonden zaken op een kaart met PDOK en WMS/WFS-lagen.",
     "status": "beta",
-    "docsUrl": "openspec/specs/case-map-overview/spec.md"
+    "docsUrl": "openspec/specs/case-map-overview/spec.md",
+    "category": "cases"
   },
   {
     "slug": "appointment-booking",
@@ -217,7 +240,8 @@
     "summary": "Citizens book an appointment through a public link.",
     "summary_nl": "Inwoners maken een afspraak via een openbare link.",
     "status": "beta",
-    "docsUrl": "openspec/specs/appointment-booking/spec.md"
+    "docsUrl": "openspec/specs/appointment-booking/spec.md",
+    "category": "cases"
   },
   {
     "slug": "ai-assistance",
@@ -227,7 +251,8 @@
     "summary_nl": "Je classificeert, vat samen en routeert documenten met je eigen AI-model.",
     "status": "beta",
     "providedBy": "openregister",
-    "docsUrl": "openspec/specs/ai-assistance/spec.md"
+    "docsUrl": "openspec/specs/ai-assistance/spec.md",
+    "category": "cases"
   },
   {
     "slug": "dossiq-sociaal-domein-wmo",
@@ -236,7 +261,8 @@
     "summary": "You handle social-domain cases on a shared data model.",
     "summary_nl": "Je behandelt sociaal-domeinzaken op een gedeeld datamodel.",
     "status": "soon",
-    "docsUrl": "openspec/specs/dossiq-sociaal-domein-wmo/spec.md"
+    "docsUrl": "openspec/specs/dossiq-sociaal-domein-wmo/spec.md",
+    "category": "roadmap"
   },
   {
     "slug": "digid-eherkenning",
@@ -246,7 +272,8 @@
     "summary_nl": "Inwoners en bedrijven loggen in met DigiD en eHerkenning.",
     "status": "beta",
     "reason": "Local login SIMULATOR only (maykinmedia pattern, no real SAML); capped at beta until validated against Logius preproductie with a PKIoverheid certificate. Default tier is log (no external call).",
-    "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md"
+    "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md",
+    "category": "cases"
   },
   {
     "slug": "brp-integration",
@@ -256,7 +283,8 @@
     "summary_nl": "Je zoekt een BSN op tot een persoon via de BRP Personen-API.",
     "status": "beta",
     "reason": "Live HaalCentraalBrpAdapter selected by config; contract-tested offline against the ghcr.io/brp-api/personen-mock koppelvlak. Stable pending the proefomgeving X-API-KEY end-to-end. Default tier is log (no external call).",
-    "docsUrl": "docs/admin/integrations.md"
+    "docsUrl": "docs/admin/integrations.md",
+    "category": "cases"
   },
   {
     "slug": "kvk-integration",
@@ -266,6 +294,7 @@
     "summary_nl": "Je zoekt een KvK-nummer op tot een bedrijf via de Handelsregister Zoeken-API.",
     "status": "beta",
     "reason": "Live KvkApiAdapter selected by config against api.kvk.nl/test (public test key); contract-tested against the pinned fictitious companies. Stable pending a production KvK contract. Default tier is log (no external call).",
-    "docsUrl": "docs/admin/integrations.md"
+    "docsUrl": "docs/admin/integrations.md",
+    "category": "cases"
   }
 ]

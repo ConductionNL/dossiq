@@ -40,6 +40,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\DemoCaseloadGateway;
 use OCA\Dossiq\Service\DemoCaseloadSeedDataService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\App\IAppManager;
@@ -52,6 +53,8 @@ use Psr\Log\NullLogger;
  * Demo caseload seeding.
  */
 final class DemoCaseloadSeedDataServiceTest extends TestCase {
+	use MatchesGoldenFiles;
+
 	/**
 	 * The shipped dataset, decoded once.
 	 *
@@ -146,6 +149,31 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 	}
 
 	/**
+	 * A case giving a last-activity offset carries that moment as lastActivityAt.
+	 *
+	 * @return void
+	 */
+	public function testLastActivityOffsetIsWritten(): void {
+		$now = new DateTimeImmutable('2026-09-02T10:00:00+02:00');
+		$cases = $this->savedOfSchema(saved: $this->runSeed(now: $now), schema: 'case-schema');
+
+		$seen = 0;
+		foreach (($this->seedFile['cases'] ?? []) as $seedCase) {
+			$written = $cases[$seedCase['title']];
+			if (isset($seedCase['lastActivityInDays']) === false) {
+				$this->assertArrayNotHasKey(key: 'lastActivityAt', array: $written);
+				continue;
+			}
+
+			$expected = $now->modify(sprintf('%+d days', (int)$seedCase['lastActivityInDays']))->format(DateTimeImmutable::ATOM);
+			$this->assertSame(expected: $expected, actual: $written['lastActivityAt']);
+			$seen++;
+		}
+
+		$this->assertGreaterThan(expected: 0, actual: $seen);
+	}
+
+	/**
 	 * Each task is attached to the case it was seeded under, by that case's id.
 	 *
 	 * @return void
@@ -169,6 +197,63 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 				'A task must reference the case that was just created, not an empty id.'
 			);
 		}
+	}
+
+	/**
+	 * Every case is written as the system, because the seed creates cases in
+	 * later lifecycle statuses, which OpenRegister allows on create only to
+	 * the system (openregister#5400).
+	 *
+	 * @return void
+	 */
+	public function testEveryCaseIsWrittenAsTheSystem(): void {
+		$service = $this->service(existingCaseTitles: [], saved: $saved);
+		$service->seed(now: new DateTimeImmutable('2026-09-02'));
+
+		$cases = array_filter($saved, static fn (array $save): bool => $save['schema'] === 'case-schema');
+		$this->assertNotSame(expected: [], actual: $cases);
+		$this->assertNotContains(needle: false, haystack: array_column($cases, 'system'));
+	}
+
+	/**
+	 * An OpenRegister that cannot write as the system refuses the seed before it writes anything.
+	 *
+	 * @return void
+	 */
+	public function testAnOpenRegisterWithoutTheSystemScopeRefusesTheSeed(): void {
+		$gateway = new DemoCaseloadGateway(
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			container: $this->createMock(originalClassName: ContainerInterface::class),
+			logger: new NullLogger(),
+			appManager: $this->createMock(originalClassName: IAppManager::class),
+		);
+		$ran = false;
+
+		try {
+			$gateway->asSystem(objectService: new \stdClass(), operation: static function () use (&$ran): void {
+				$ran = true;
+			});
+			$this->fail(message: 'The seed ran without the system scope.');
+		} catch (\RuntimeException $e) {
+			$this->assertStringContainsString(needle: 'write as the system', haystack: $e->getMessage());
+		}
+
+		$this->assertFalse(condition: $ran);
+	}
+
+	/**
+	 * Every save, every engine task and the summary of one whole seed, with the
+	 * first case already present, compared with the recorded run.
+	 *
+	 * @return void
+	 */
+	public function testAWholeSeedMatchesItsRecordedRun(): void {
+		$existingTitle = (string)$this->seedFile['cases'][0]['title'];
+
+		$service = $this->service(existingCaseTitles: [$existingTitle], saved: $saved);
+		$result = $service->seed(new DateTimeImmutable('2026-09-02'));
+
+		$this->assertMatchesGolden('demo-caseload-seed-run', ['result' => $result, 'saved' => $saved, 'tasks' => $this->engineTasks]);
 	}
 
 	/**
@@ -463,6 +548,13 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 			private int $sequence = 0;
 
 			/**
+			 * How many system-operation scopes are open.
+			 *
+			 * @var int
+			 */
+			private int $depth = 0;
+
+			/**
 			 * @param array $saved Receives every save, by reference.
 			 * @param array $caseTypes The installed case types.
 			 * @param array $statusTypes The installed status types.
@@ -520,10 +612,26 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 				mixed $register = null,
 				mixed $schema = null,
 			): object {
-				$this->saved[] = ['schema' => (string)$schema, 'data' => $object];
+				$this->saved[] = ['schema' => (string)$schema, 'data' => $object, 'system' => ($this->depth > 0)];
 				$this->sequence++;
 
 				return self::entity(($object + ['uuid' => 'uuid-' . $this->sequence]));
+			}
+
+			/**
+			 * Run an operation inside the system-operation scope, as OpenRegister does.
+			 *
+			 * @param callable $operation The operation.
+			 *
+			 * @return mixed Whatever the operation returns.
+			 */
+			public function runAsSystem(callable $operation): mixed {
+				$this->depth++;
+				try {
+					return $operation();
+				} finally {
+					$this->depth--;
+				}
 			}
 
 			/**

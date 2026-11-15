@@ -38,6 +38,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -465,7 +466,7 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
  */
 async function openTimelineTab(page: Page, id: string): Promise<void> {
 	await page.goto(`/apps/dossiq/cases/${id}`, PAGE_LOAD)
-	await page.getByRole('tab', { name: 'Timeline' }).click()
+	await openCaseTab(page, /^(Case history|Historie)\b/)
 	await expect(page.getByTestId('case-timeline')).toBeVisible(PAGE_LOAD)
 }
 
@@ -552,7 +553,7 @@ test.describe('REQ-TL-16 every term event records itself on the timeline', () =>
 		seededTerms.push(termId)
 
 		const paused = await request.post(
-			`${APP}/termijn/instances/${termId}/pauze`,
+			`${APP}/deadlines/instances/${termId}/pause`,
 			{
 				headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
 				data: {

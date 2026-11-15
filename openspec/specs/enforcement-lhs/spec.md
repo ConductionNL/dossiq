@@ -12,7 +12,7 @@ Provide VTH enforcement (handhaving) support in Dossiq based on the Landelijke H
 
 ### Requirement: LHS matrix configuration
 
-The system SHALL support configuring the Landelijke Handhavingsstrategie (LHS) 4x4 matrix (ernst x gedrag = interventie) in admin settings, with a default national configuration and per-municipality customization.
+The system SHALL support configuring the Landelijke Handhavingsstrategie (LHS) 4x4 matrix (ernst x gedrag = interventie) as a decision table in OpenRegister, with a default national configuration and per-municipality customization. dossiq's VTH settings SHALL show which table is in use and link to it, as board DqVthInstellingen draws it; they SHALL NOT offer an editable grid of their own.
 
 **Feature tier**: V1
 **ZGW mapping**: Custom extension (no ZGW equivalent for LHS matrix)
@@ -31,9 +31,9 @@ The system SHALL support configuring the Landelijke Handhavingsstrategie (LHS) 4
 #### Scenario: Customize LHS matrix
 
 - **WHEN** the beheerder navigates to Dossiq Admin > VTH Instellingen > Handhavingsstrategie
-- **THEN** the system SHALL display the 4x4 matrix as an editable grid
-- **THEN** each cell SHALL be editable with a dropdown of intervention types: Waarschuwing, Herstelactie, Last onder dwangsom, Last + PV, PV + Bestuursdwang, Bestuursdwang
-- **THEN** the beheerder SHALL be able to save the customized matrix
+- **THEN** the system SHALL show the matrix ("Landelijke Handhavingsstrategie, 16 vakken"), the decision table in use with its version ("Handhavingsmatrix Zuiddrecht, versie 2 in OpenRegister"), who changed it last and when, and "Eerdere versies"
+- **THEN** "Beslistabel openen in OpenRegister" SHALL open the decision table, where the beheerder sets each cell to an intervention type (Waarschuwing, Herstelactie, Last onder dwangsom, Last + PV, PV + Bestuursdwang, Bestuursdwang) and saves a new version
+- **THEN** dossiq SHALL NOT show an editable grid or a save button for the matrix
 
 ### Requirement: Enforcement action schema
 
@@ -95,6 +95,13 @@ The system SHALL provide a guided wizard UI for creating enforcement actions bas
 - **THEN** the system SHALL create: handhavingsactie record, vooraankondiging document link, zienswijze task with deadline
 - **THEN** the case workflow SHALL advance to the "Vooraankondiging" step
 
+#### Scenario: The wizard is configuration
+
+- **WHEN** a case of the category Toezicht en handhaving is open
+- **THEN** the More menu SHALL offer Start enforcement, a generic RecordStepsDialog whose steps, fields, prefill and follow-up task come from the action in the manifest
+- **THEN** the wizard SHALL start from the case's LHS recommendation when it has one
+- **THEN** finishing SHALL write the handhavingsactie and the task to assess the view, due at the end of the term
+
 ### Requirement: Enforcement panel on case dashboard
 
 The system SHALL display an enforcement panel on the case dashboard for Handhaving case types.
@@ -107,3 +114,65 @@ The system SHALL display an enforcement panel on the case dashboard for Handhavi
 - **THEN** the "Handhaving" panel SHALL show: LHS classification (ernst x gedrag), interventie type, current enforcement status
 - **THEN** for dwangsom: the panel SHALL show bedrag per overtreding, maximum, begunstigingstermijn countdown, total verbeurd amount
 - **THEN** the timeline SHALL show all enforcement actions in chronological order
+
+#### Scenario: The card moves an action through its lifecycle
+
+- **WHEN** a user views the Enforcement on the case card of a case of the category Toezicht en handhaving
+- **THEN** each action SHALL show its kind, amounts and state
+- **THEN** Record forfeiture, Execute and Withdraw the order SHALL run the handhavingsactie lifecycle's transitions, each only from the states that allow it
+
+### Requirement: The default LHS matrix ships as a case definition package
+
+The app SHALL ship the default matrix of the Landelijke Handhavingsstrategie and the 16 cells of its behaviour by consequence grid as the case definition package `lhs-matrix`, `install: auto`. The installer SHALL recognise an existing matrix by `active` being true, whatever its name, and SHALL NOT write a second active matrix. The installer SHALL recognise an existing grid cell by its `behaviourRow` and `consequenceColumn` together, and SHALL leave that cell as it is.
+
+#### Scenario: A clean install has one active matrix
+@e2e tests/e2e/packages/lhs-matrix.spec.ts
+
+- **GIVEN** a clean instance after install
+- **WHEN** an enforcement officer reads the matrices
+- **THEN** exactly one matrix SHALL be active
+- **AND** it SHALL hold cells
+
+#### Scenario: An instance with its own active matrix gets no second one
+@e2e tests/e2e/packages/lhs-matrix.spec.ts
+
+- **GIVEN** an instance whose administrator replaced the default matrix with an active matrix under another name
+- **WHEN** the upgrade installs the `lhs-matrix` package
+- **THEN** exactly one matrix SHALL be active
+- **AND** it SHALL be the administrator's
+
+#### Scenario: The grid has one cell for each row and column
+@e2e tests/e2e/packages/lhs-matrix.spec.ts
+
+- **GIVEN** an instance with the `lhs-matrix` package installed
+- **WHEN** an enforcement officer reads the grid
+- **THEN** each of the rows A to D and the columns 1 to 4 SHALL have exactly one cell
+- **AND** the lookup for a row and a column SHALL name an intervention
+
+### Requirement: The LHS intervention table ships as a case definition package
+
+The app SHALL ship the intervention table of the Landelijke Handhavingsstrategie as the case definition package `lhs-intervention`, `install: auto`. The package SHALL write the table into OpenRegister's `decision-tables` register under the key `dossiq.lhs-intervention`. The shipped table SHALL answer, for each of the 16 positions, the `interventionStep` and the `description` of the shipped grid cell at that position, so that a lookup that reads the table gives the recommendation the grid gave. The installer SHALL recognise an existing table by that key and SHALL leave it as it is. On an OpenRegister that does not hold the `decision-tables` register the installer SHALL refuse the package, name `openregister:decision-table`, and write nothing.
+
+#### Scenario: The intervention table is in OpenRegister under its key
+@e2e tests/e2e/packages/lhs-intervention.spec.ts
+
+- **GIVEN** an instance with the `lhs-intervention` package installed
+- **WHEN** an administrator looks up the decision table with key `dossiq.lhs-intervention` in OpenRegister
+- **THEN** exactly one table SHALL exist
+- **AND** it SHALL hold one rule for each of the rows A to D and the columns 1 to 4
+
+#### Scenario: The table answers what the grid cell says
+@e2e exclude no user interface reads the table until the lookup does; proven for all 16 positions by tests/Unit/Settings/LhsInterventionTableMatchesGridTest.php with OpenRegister's evaluator, and on a clean instance by the Newman collection tests/integration/packages/lhs-intervention.postman_collection.json
+
+- **GIVEN** the shipped `lhs-matrix` and `lhs-intervention` packages
+- **WHEN** the intervention table is evaluated for a behaviour row and a consequence column
+- **THEN** it SHALL answer the `interventionStep` of the grid cell for that row and column
+- **AND** it SHALL answer that cell's `description`
+
+#### Scenario: OpenRegister has no decision-tables register
+@e2e exclude no user interface; the refusal for a schema a register does not hold is proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForASchemaTheRegisterDoesNotHoldRefusesThePackage
+
+- **GIVEN** an OpenRegister that does not ship the `decision-tables` register
+- **WHEN** the installer installs the `lhs-intervention` package
+- **THEN** the outcome SHALL be refused, naming `openregister:decision-table`
+- **AND** no row SHALL be written

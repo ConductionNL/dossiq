@@ -21,18 +21,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Shillinq\Event\PayableCancelRequestedEvent;
 use OCA\Shillinq\Event\PayableRaisedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use RuntimeException;
+use ReflectionMethod;
+use ReflectionParameter;
 
 /**
  * Raises and withdraws payouts in the finance app.
@@ -42,9 +44,16 @@ use RuntimeException;
  * stays with dossiq, as before the handoff. A refusal is an error, because
  * finance looked at the payout and said no.
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 class PayoutRequester {
+	/**
+	 * The fields of a payout settled before finance kept it.
+	 *
+	 * @var array<int, string>
+	 */
+	private const HISTORY = ['historicalState', 'paidOn', 'bankReference'];
+
 
 	/**
 	 * Constructor.
@@ -59,36 +68,88 @@ class PayoutRequester {
 	/**
 	 * Raise a payout in the finance app.
 	 *
-	 * @param array<string, int|string> $payout The payout: amountCents, payeeName, iban, reference, and
-	 *        optionally description, category, correlationId, dueOn and callbackUrl.
+	 * @param array<string, mixed> $payout The payout: amountCents, payeeName, iban, reference, and
+	 *        optionally description, category, correlationId, dueOn, callbackUrl, linkedObjects, and for a
+	 *        payout settled before finance kept it historicalState, paidOn and bankReference.
 	 *
 	 * @return array{payableId: string, state: string}|null The payable, or null when no finance app answers.
 	 *
 	 * @throws RuntimeException When the finance app refuses the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function request(array $payout): ?array {
 		if (class_exists(PayableRaisedEvent::class) === false) {
 			return null;
 		}
 
-		$event = new PayableRaisedEvent(
-			sourceApp: Application::APP_ID,
-			amount: ((int)$payout['amountCents']) / 100,
-			payeeName: (string)$payout['payeeName'],
-			payeeIban: (string)$payout['iban'],
-			reference: (string)$payout['reference'],
-			description: (string)($payout['description'] ?? ''),
-			callbackUrl: (string)($payout['callbackUrl'] ?? ''),
-			category: (string)($payout['category'] ?? ''),
-			correlationId: (string)($payout['correlationId'] ?? ''),
-			dueOn: (string)($payout['dueOn'] ?? ''),
-		);
+		$arguments = $this->baseArguments(payout: $payout);
+		$arguments = $this->withDeclaredArguments(arguments: $arguments, payout: $payout);
+
+		$event = new PayableRaisedEvent(...$arguments);
 		$this->dispatcher->dispatchTyped($event);
 
 		return self::answer(handled: $event->isHandled(), result: $event->getResult(), error: $event->getError());
 	}//end request()
+
+	/**
+	 * The payout command's arguments every finance app version declares.
+	 *
+	 * @param array<string, mixed> $payout The payout.
+	 *
+	 * @return array<string, mixed> The named arguments.
+	 */
+	private function baseArguments(array $payout): array {
+		return [
+			'sourceApp' => AppIdentity::APP_ID,
+			'amount' => ((int)$payout['amountCents']) / 100,
+			'payeeName' => (string)$payout['payeeName'],
+			'payeeIban' => (string)$payout['iban'],
+			'reference' => (string)$payout['reference'],
+			'description' => (string)($payout['description'] ?? ''),
+			'callbackUrl' => (string)($payout['callbackUrl'] ?? ''),
+			'category' => (string)($payout['category'] ?? ''),
+			'correlationId' => (string)($payout['correlationId'] ?? ''),
+			'dueOn' => (string)($payout['dueOn'] ?? ''),
+		];
+	}//end baseArguments()
+
+	/**
+	 * Add the newer arguments the installed finance app declares.
+	 *
+	 * @param array<string, mixed> $arguments The named arguments so far.
+	 * @param array<string, mixed> $payout    The payout.
+	 *
+	 * @return array<string, mixed> The named arguments.
+	 */
+	private function withDeclaredArguments(array $arguments, array $payout): array {
+		// An older shillinq lacks the newer parameters, and an unknown named
+		// argument is a fatal error, so each one goes only where it is declared.
+		$accepted = $this->acceptedParameters();
+		if (in_array('linkedObjects', $accepted, true) === true) {
+			$arguments['linkedObjects'] = array_values((array)($payout['linkedObjects'] ?? []));
+		}
+
+		foreach (self::HISTORY as $key) {
+			if ((string)($payout[$key] ?? '') !== '' && in_array($key, $accepted, true) === true) {
+				$arguments[$key] = (string)$payout[$key];
+			}
+		}
+
+		return $arguments;
+	}//end withDeclaredArguments()
+
+	/**
+	 * The parameter names the installed finance app's payout command declares.
+	 *
+	 * @return array<int, string> The names.
+	 */
+	private function acceptedParameters(): array {
+		return array_map(
+			static fn (ReflectionParameter $parameter): string => $parameter->getName(),
+			(new ReflectionMethod(PayableRaisedEvent::class, '__construct'))->getParameters()
+		);
+	}//end acceptedParameters()
 
 	/**
 	 * Withdraw a payout the finance app has not acted on.
@@ -100,7 +161,7 @@ class PayoutRequester {
 	 *
 	 * @throws RuntimeException When the finance app refuses, for example because it already approved the payout.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function cancel(string $reference, string $reason): ?array {
 		if (class_exists(PayableCancelRequestedEvent::class) === false) {
@@ -108,7 +169,7 @@ class PayoutRequester {
 		}
 
 		$event = new PayableCancelRequestedEvent(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			reference: $reference,
 			reason: $reason,
 		);

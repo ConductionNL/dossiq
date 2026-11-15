@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 /**
@@ -35,17 +35,27 @@
  *
  * @param {object} party The party link, as the parties listing answers it.
  * @return {string} The identifier, '' when the link names neither.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function partyIdentifier(party) {
 	if (!party || typeof party !== 'object') {
 		return ''
 	}
-	const uuid = String(party.partyUuid || '').trim()
+	const uuid = trimmedText(party.partyUuid)
 	if (uuid !== '') {
 		return uuid
 	}
-	return String(party.contactUid || '').trim()
+	return trimmedText(party.contactUid)
+}
+
+/**
+ * A stored value as trimmed text, '' when it is empty or missing.
+ *
+ * @param {string|number|null|undefined} value The value.
+ * @return {string} The text.
+ */
+function trimmedText(value) {
+	return String(value || '').trim()
 }
 
 /**
@@ -58,7 +68,7 @@ export function partyIdentifier(party) {
  *
  * @param {object|null} listing The parties listing, or null when it failed.
  * @return {Array<object>} `{id, label, email}` per party, in listing order.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function partyOptions(listing) {
 	const rows = Array.isArray(listing?.results) ? listing.results : []
@@ -70,13 +80,24 @@ export function partyOptions(listing) {
 			continue
 		}
 		seen.push(id)
-		options.push({
-			id,
-			label: String(row.displayName || row.contactUid || id).trim() || id,
-			email: String(row.email || '').trim(),
-		})
+		options.push(partyOption(row, id))
 	}
 	return options
+}
+
+/**
+ * One picker option for a party row: its name, else its contact uid, else its id.
+ *
+ * @param {object} row The party link.
+ * @param {string} id The party's identifier.
+ * @return {object} `{id, label, email}`.
+ */
+function partyOption(row, id) {
+	return {
+		id,
+		label: String(row.displayName || row.contactUid || id).trim() || id,
+		email: trimmedText(row.email),
+	}
 }
 
 /**
@@ -90,25 +111,47 @@ export function partyOptions(listing) {
  * @param {Array<string>|string} stored The stored identifier or identifiers.
  * @param {Array<object>} options The picker options.
  * @return {Array<object>} The matching options, in the order stored.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function selectedOptions(stored, options) {
 	const wanted = Array.isArray(stored) ? stored : [stored]
 	const chosen = []
 	for (const entry of wanted) {
-		const id = String(entry || '').trim()
-		if (id === '' || chosen.some((option) => option.id === id)) {
+		const id = trimmedText(entry)
+		if (id === '' || hasOptionFor(chosen, id)) {
 			continue
 		}
-		chosen.push(
-			options.find((option) => option.id === id) || {
-				id,
-				label: id,
-				email: '',
-			},
-		)
+		chosen.push(storedOption(options, id))
 	}
 	return chosen
+}
+
+/**
+ * Whether a list of options already holds the one for an identifier.
+ *
+ * @param {Array<object>} options The options.
+ * @param {string} id The identifier.
+ * @return {boolean} True when one of them carries it.
+ */
+function hasOptionFor(options, id) {
+	return options.some((option) => option.id === id)
+}
+
+/**
+ * The option for a stored identifier, or one labelled with the identifier itself.
+ *
+ * @param {Array<object>} options The picker options.
+ * @param {string} id The stored identifier.
+ * @return {object} `{id, label, email}`.
+ */
+function storedOption(options, id) {
+	return (
+		options.find((option) => option.id === id) || {
+			id,
+			label: id,
+			email: '',
+		}
+	)
 }
 
 /**
@@ -120,22 +163,40 @@ export function selectedOptions(stored, options) {
  *
  * @param {Array<object>|object|string|null} value The picker's value.
  * @return {Array<string>} The identifiers, deduplicated, blanks dropped.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function identifiersOf(value) {
 	const entries = Array.isArray(value) ? value : [value]
 	const ids = []
 	for (const entry of entries) {
-		const id =
-			typeof entry === 'string' || typeof entry === 'number'
-				? String(entry)
-				: String((entry || {}).id || partyIdentifier(entry) || '')
-		const trimmed = id.trim()
+		const trimmed = entryIdentifier(entry).trim()
 		if (trimmed !== '' && !ids.includes(trimmed)) {
 			ids.push(trimmed)
 		}
 	}
 	return ids
+}
+
+/**
+ * The identifier one picker entry carries: a bare value, or an object's id.
+ *
+ * @param {object|string|number|null} entry One entry of the picker's value.
+ * @return {string} The identifier, untrimmed.
+ */
+function entryIdentifier(entry) {
+	return typeof entry === 'string' || typeof entry === 'number'
+		? String(entry)
+		: objectIdentifier(entry)
+}
+
+/**
+ * The identifier of an option object or party link: its id, else its party identifier.
+ *
+ * @param {object|null|undefined} entry The option object or link.
+ * @return {string} The identifier, untrimmed.
+ */
+function objectIdentifier(entry) {
+	return String((entry || {}).id || partyIdentifier(entry) || '')
 }
 
 /**
@@ -147,7 +208,7 @@ export function identifiersOf(value) {
  *
  * @param {string} direction The document's direction.
  * @return {object} `{sender, recipients}`, each a boolean.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export function allowedFor(direction) {
 	const value = String(direction || '').trim()
@@ -158,35 +219,4 @@ export function allowedFor(direction) {
 		return { sender: true, recipients: false }
 	}
 	return { sender: true, recipients: true }
-}
-
-/**
- * The documents of a listing that name one party, as sender or as addressee.
- *
- * The People tab's "documents from and to this party". An empty identifier
- * matches nothing here, unlike the server's filter: a widget asking for a
- * party's documents with no party has nothing to show, where a tab listing a
- * dossier with no filter shows the dossier.
- *
- * @param {Array<object>} documents The documents.
- * @param {string} identifier The party's identifier.
- * @return {object} `{sent, received}`, the documents in each direction.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
- */
-export function documentsOfParty(documents, identifier) {
-	const id = String(identifier || '').trim()
-	const rows = Array.isArray(documents) ? documents : []
-	if (id === '') {
-		return { sent: [], received: [] }
-	}
-	return {
-		// Sent BY this party: they are its sender, so the document came in.
-		sent: rows.filter((row) => String(row?.sender || '').trim() === id),
-		// Received BY this party: they are among its addressees.
-		received: rows.filter((row) =>
-			(Array.isArray(row?.recipients) ? row.recipients : [])
-				.map((entry) => String(entry || '').trim())
-				.includes(id),
-		),
-	}
 }

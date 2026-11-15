@@ -15,7 +15,7 @@
  * the manifest. The count is asserted too, so a walk that stops finding them
  * cannot pass by checking nothing.
  *
- * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import wooFragment from '../../lib/Settings/register.d/81-woo-verzoek.json'
@@ -85,14 +85,13 @@ function collect(node, match, found = []) {
 describe('the create forms leave the receipt to dossiq', () => {
 	const createForms = caseForms().filter((form) => form.page !== EDIT_PAGE)
 
-	it('finds the six create surfaces', () => {
+	it('finds the five create surfaces', () => {
 		expect(createForms.map((form) => form.where).sort()).toEqual([
 			'Cases.config',
 			'ContactDetail.headerActions.new-case-for-contact',
 			'Dashboard.headerActions.new-case',
 			'MyWorkHome.headerActions.new-case',
 			'OrganisationDetail.headerActions.new-case-for-contact',
-			'Queue.config',
 		])
 	})
 

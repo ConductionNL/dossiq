@@ -6,13 +6,15 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.0.1",
+          "version": "1.0.2",
           "slug": "bezwaar"
         },
         "id": "b3c1a000-0000-4000-a000-00000000be2a",
         "uuid": "b3c1a000-0000-4000-a000-00000000be2a",
         "identifier": "bezwaar",
         "title": "Bezwaar",
+        "colour": "purple",
+        "icon": "Gavel",
         "description": "Bezwaarprocedure conform Awb hoofdstuk 6 en 7",
         "category": "Bezwaar en beroep",
         "purpose": "Behandeling van bezwaarschriften tegen besluiten",
@@ -33,7 +35,16 @@
           "kind": "beroep",
           "termDays": 42,
           "body": "de rechtbank"
-        }
+        },
+        "sideCards": [
+          "case-tile-deadline",
+          "side-objection-appeal",
+          "case-banner-stack"
+        ],
+        "overviewCards": [
+          "case-objection-grounds",
+          "case-objection-advice-card"
+        ]
       },
       {
         "@self": {
@@ -43,12 +54,14 @@
         },
         "id": "b3c1a000-0000-4000-a000-0000000b2a01",
         "uuid": "b3c1a000-0000-4000-a000-0000000b2a01",
+        "phase": "Ontvangst",
         "name": "Ontvangen",
         "description": "Bezwaarschrift is ontvangen",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 1,
         "isFinal": false,
-        "role": "intake"
+        "role": "intake",
+        "colour": "blue"
       },
       {
         "@self": {
@@ -58,11 +71,13 @@
         },
         "id": "b3c1a000-0000-4000-a000-0000000b2a02",
         "uuid": "b3c1a000-0000-4000-a000-0000000b2a02",
+        "phase": "Ontvangst",
         "name": "Ontvankelijkheidstoets",
         "description": "Toetsing op ontvankelijkheid (termijn, belanghebbendheid, besluit-karakter)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 2,
-        "isFinal": false
+        "isFinal": false,
+        "colour": "purple"
       },
       {
         "@self": {
@@ -72,12 +87,14 @@
         },
         "id": "b3c1a000-0000-4000-a000-0000000b2a03",
         "uuid": "b3c1a000-0000-4000-a000-0000000b2a03",
+        "phase": "Beoordeling",
         "name": "In behandeling",
         "description": "Inhoudelijke behandeling gestart",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 3,
         "isFinal": false,
-        "role": "in-progress"
+        "role": "in-progress",
+        "colour": "purple"
       },
       {
         "@self": {
@@ -87,11 +104,13 @@
         },
         "id": "b3c1a000-0000-4000-a000-0000000b2a04",
         "uuid": "b3c1a000-0000-4000-a000-0000000b2a04",
+        "phase": "Beoordeling",
         "name": "Hoorzitting gepland",
         "description": "Hoorzitting is ingepland (Awb art. 7:2)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 4,
-        "isFinal": false
+        "isFinal": false,
+        "colour": "orange"
       },
       {
         "@self": {
@@ -101,11 +120,13 @@
         },
         "id": "b3c1a000-0000-4000-a000-0000000b2a05",
         "uuid": "b3c1a000-0000-4000-a000-0000000b2a05",
+        "phase": "Beoordeling",
         "name": "Hoorzitting afgerond",
         "description": "Hoorzitting heeft plaatsgevonden",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 5,
-        "isFinal": false
+        "isFinal": false,
+        "colour": "purple"
       },
       {
         "@self": {
@@ -115,11 +136,14 @@
         },
         "id": "b3c1a000-0000-4000-a000-0000000b2a06",
         "uuid": "b3c1a000-0000-4000-a000-0000000b2a06",
+        "phase": "Advies",
         "name": "Advies uitgebracht",
         "description": "Bezwaarschriftencommissie heeft advies uitgebracht (Awb art. 7:13)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 6,
-        "isFinal": false
+        "isFinal": false,
+        "role": "review",
+        "colour": "teal"
       },
       {
         "@self": {
@@ -129,11 +153,13 @@
         },
         "id": "b3c1a000-0000-4000-a000-0000000b2a07",
         "uuid": "b3c1a000-0000-4000-a000-0000000b2a07",
+        "phase": "Besluit",
         "name": "Beslissing op bezwaar",
         "description": "Besluit op bezwaar is genomen (Awb art. 7:11, 7:12)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 7,
-        "isFinal": false
+        "isFinal": false,
+        "colour": "teal"
       },
       {
         "@self": {
@@ -148,7 +174,8 @@
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 8,
         "isFinal": true,
-        "role": "closed"
+        "role": "closed",
+        "colour": "green"
       },
       {
         "@self": {
@@ -162,7 +189,8 @@
         "description": "Bezwaar is niet-ontvankelijk verklaard (Awb art. 6:6)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 90,
-        "isFinal": true
+        "isFinal": true,
+        "colour": "red"
       },
       {
         "@self": {
@@ -176,7 +204,8 @@
         "description": "Bezwaar is ingetrokken door indiener (Awb art. 6:21)",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 91,
-        "isFinal": true
+        "isFinal": true,
+        "colour": "grey"
       },
       {
         "@self": {

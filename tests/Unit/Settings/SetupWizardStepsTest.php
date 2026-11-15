@@ -33,8 +33,9 @@ use PHPUnit\Framework\TestCase;
  * answered `422 Nothing to seed`, so the step went.
  *
  * The `seed` action now installs the on-request `bezwaar-beroep` package, so
- * it has something to install again. Offering it in the wizard is a product
- * choice that has not been made; until it is, the step stays out.
+ * it has something to install again. The wizard offers on-request packages
+ * through the Case types step (`install-case-types`, one card per package),
+ * so the single-package `seed` step stays out.
  *
  * Two assertions, and the second is the one that matters. The first says every
  * `run-action` step names an action the controller handles. The second says a
@@ -197,6 +198,6 @@ class SetupWizardStepsTest extends TestCase {
 		}
 
 		$this->assertContains('demo-data', $ids, 'The demo-data offer is what actually shows a new reader the app working');
-		$this->assertNotContains('seed', $ids, 'Offering the on-request bezwaar-beroep package in the wizard has not been decided');
+		$this->assertNotContains('seed', $ids, 'On-request packages are offered per card by the case-types step, not by a seed step');
 	}
 }

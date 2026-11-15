@@ -23,12 +23,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BulkAction;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
-use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
-use OCP\IUser;
 use RuntimeException;
 use Throwable;
 
@@ -49,7 +48,7 @@ use Throwable;
  * TYPE version the case runs on, and it is the second that carries the
  * vocabulary a handler is about to overwrite.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) `BulkActionResult` is a value object
  * whose constructor is PRIVATE: `applied()`, `skipped()`, `refused()` and
@@ -66,7 +65,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public const ID = 'dossiq:set-case-attribute';
 
@@ -81,7 +80,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @var array<int, string>
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private const NOT_WRITABLE = [
 		'id',
@@ -95,15 +94,15 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register/schema configuration and the object service.
+	 * @param SettingsServiceInterface $settingsService Register/schema configuration and the object service.
 	 * @param IL10N           $l10n            Localisation, for the label an operator reads.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
@@ -113,7 +112,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -124,7 +123,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Set one field on the cases');
@@ -135,7 +134,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return string The description.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t('Writes one value into one field on every selected case, refusing a selection that spans two case type versions.');
@@ -146,7 +145,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return bool False.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return false;
@@ -157,7 +156,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return array<int, string> The homogeneity guard.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getGuards(): array {
 		return [BulkActionInterface::GUARD_HOMOGENEITY];
@@ -172,7 +171,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @throws InvalidArgumentException When the property is absent, reserved, or no value is given.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		$property = trim((string)($parameters['property'] ?? ''));
@@ -192,45 +191,67 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	/**
 	 * Write the value onto one case, or say whether it would change anything.
 	 *
-	 * @param ObjectEntity         $object     The case the job is walking.
-	 * @param array<string, mixed> $parameters The job parameters.
-	 * @param bool                 $commit     False to rehearse, true to write.
-	 * @param IUser|null           $actor      The user the job runs as.
+	 * @param BulkStep $step The member object, the parameters, whether to commit and who started the job.
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The object service reads
 	 * the acting user from the session; the job runs as that user.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
-	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult {
-		$caseId = $this->caseId(object: $object);
+	public function apply(BulkStep $step): BulkActionResult {
+		$caseId = $this->caseId(object: $step->object);
 		if ($caseId === '') {
 			return BulkActionResult::skipped(reason: 'no_case_id');
 		}
 
-		$case = $this->caseData(object: $object);
-		$property = trim((string)($parameters['property'] ?? ''));
-		$value = ($parameters['value'] ?? null);
+		return $this->applyTo(step: $step, caseId: $caseId);
+	}//end apply()
 
-		if (array_key_exists($property, $case) === true && $case[$property] === $value) {
+	/**
+	 * Write the value onto a case with an id, or say whether it would change anything.
+	 *
+	 * @param BulkStep $step   The member object, the parameters and whether to commit.
+	 * @param string   $caseId The case uuid.
+	 *
+	 * @return BulkActionResult What happened, or what would.
+	 */
+	private function applyTo(BulkStep $step, string $caseId): BulkActionResult {
+		$caseData = $this->caseData(object: $step->object);
+		$property = trim((string)($step->parameters['property'] ?? ''));
+		$value = ($step->parameters['value'] ?? null);
+
+		if (array_key_exists($property, $caseData) === true && $caseData[$property] === $value) {
 			return BulkActionResult::skipped(reason: 'already_set');
 		}
 
-		if ($commit === false) {
+		if ($step->commit === false) {
 			return BulkActionResult::applied();
 		}
 
+		$caseData[$property] = $value;
+
+		return $this->written(caseId: $caseId, caseData: $caseData);
+	}//end applyTo()
+
+	/**
+	 * Store the changed case and say how it went.
+	 *
+	 * @param string               $caseId   The case uuid.
+	 * @param array<string, mixed> $caseData The case, with the new value on it.
+	 *
+	 * @return BulkActionResult Applied, or failed with the reason.
+	 */
+	private function written(string $caseId, array $caseData): BulkActionResult {
 		try {
-			$case[$property] = $value;
-			$this->write(caseId: $caseId, case: $case);
+			$this->write(caseId: $caseId, case: $caseData);
 
 			return BulkActionResult::applied();
 		} catch (Throwable $e) {
 			return BulkActionResult::failed(message: $e->getMessage());
 		}//end try
-	}//end apply()
+	}//end written()
 
 	/**
 	 * Store the changed case.
@@ -242,7 +263,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @throws RuntimeException When OpenRegister or the case schema is not configured.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function write(string $caseId, array $case): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -253,6 +274,6 @@ class SetCaseAttributeAction implements BulkActionInterface {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
-		$objectService->updateObject($register, $schema, $caseId, $case);
+		$objectService->updateObject(objectId: $caseId, data: $case);
 	}//end write()
 }//end class

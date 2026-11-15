@@ -8,7 +8,7 @@
  * gearchiveerd), and human-readable byte sizes. Kept DOM-free so the exact
  * logic can be unit-tested without rendering a component.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T06
  */
 
 /**
@@ -51,7 +51,7 @@ export const STATUS_TRANSITIONS = {
  *
  * @param {string} level The confidentiality level.
  * @return {number} The ordinal index.
- * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T06
  */
 export function confidentialityOrdinal(level) {
 	const index = CONFIDENTIALITY_HIERARCHY.indexOf(level)
@@ -63,7 +63,7 @@ export function confidentialityOrdinal(level) {
  *
  * @param {string} level The document's confidentiality level.
  * @return {boolean} True when shareable.
- * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T06
  */
 export function canShare(level) {
 	return confidentialityOrdinal(level) < confidentialityOrdinal(PUBLISH_THRESHOLD)
@@ -75,7 +75,7 @@ export function canShare(level) {
  * @param {string} from The current status.
  * @param {string} to The requested status.
  * @return {boolean} True when allowed.
- * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T06
  */
 export function isTransitionAllowed(from, to) {
 	if (from === to) {
@@ -92,7 +92,7 @@ export function isTransitionAllowed(from, to) {
  * @param {string} defaultLevel The type default classification.
  * @param {string} requestedLevel The requested classification.
  * @return {boolean} True when allowed.
- * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T06
  */
 export function isClassificationAllowed(defaultLevel, requestedLevel) {
 	if (!requestedLevel) {
@@ -132,7 +132,7 @@ export function classificationOptions(t) {
  *
  * @param {Array} documents The documents to group.
  * @return {Array} A list of { informatieobjecttype, count, documents }.
- * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T06
  */
 export function groupByType(documents) {
 	const groups = {}
@@ -155,7 +155,7 @@ export function groupByType(documents) {
  *
  * @param {number} bytes The size in bytes.
  * @return {string} A human-readable size.
- * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T06
  */
 export function formatSize(bytes) {
 	const value = Number(bytes) || 0

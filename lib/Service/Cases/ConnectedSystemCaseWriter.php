@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Cases;
 
+use OCA\Dossiq\Kernel\Contracts\ConnectedSystemCaseWriterInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
@@ -45,16 +46,9 @@ use RuntimeException;
  *
  * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-connected-system-writes-as-the-service-account
  */
-class ConnectedSystemCaseWriter {
+class ConnectedSystemCaseWriter implements ConnectedSystemCaseWriterInterface {
 
 	use SearchesObjects;
-
-	/**
-	 * The operation is understood and is not carried out.
-	 *
-	 * @var string
-	 */
-	public const REFUSED = 'refused';
 
 	/**
 	 * The connection, or this instance, does not let the system write.
@@ -168,15 +162,51 @@ class ConnectedSystemCaseWriter {
 			return self::refusal(kind: self::REFUSED, reason: 'Het zaaktype is niet gekoppeld aan een zaaktype in dossiq.');
 		}
 
+		return $this->openUnlessKnown(operation: $operation, caseType: $caseType, system: $system);
+	}//end create()
+
+	/**
+	 * Open the case unless this system already opened it.
+	 *
+	 * @param array<string, mixed> $operation The operation, with an identifier and a title.
+	 * @param array<string, mixed> $caseType  The dossiq case type it maps to.
+	 * @param string               $system    The connection id.
+	 *
+	 * @return array The outcome (WriteOutcome).
+	 *
+	 * @throws RuntimeException When the register is not configured, or the case could not be read back.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-case-opened-by-a-connected-system-keeps-its-origin
+	 */
+	private function openUnlessKnown(array $operation, array $caseType, string $system): array {
+		$external = self::text(value: ($operation['identifier'] ?? ''));
+
 		[$objects, $register, $schema] = $this->store();
 		if ($this->findOwnCase(identifier: $external, system: $system) !== null) {
 			return self::refusal(kind: self::CONFLICT, reason: 'Deze zaak bestaat al.');
 		}
 
+		$newCase = $this->newCase(operation: $operation, caseType: $caseType, system: $system);
+		return $this->storeNewCase(objects: $objects, register: $register, schema: $schema, case: $newCase);
+	}//end openUnlessKnown()
+
+	/**
+	 * The case a connected system opens, without its empty fields.
+	 *
+	 * @param array<string, mixed> $operation The operation, with the system's own identifier and the case's omschrijving.
+	 * @param array<string, mixed> $caseType  The dossiq case type it maps to.
+	 * @param string               $system    The connection id.
+	 *
+	 * @return array<string, string> The case.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-case-opened-by-a-connected-system-keeps-its-origin
+	 */
+	private function newCase(array $operation, array $caseType, string $system): array {
 		$initiator = (array)($operation['initiator'] ?? []);
-		$case      = array_filter(
+
+		return array_filter(
 			[
-				'title' => $title,
+				'title' => self::text(value: ($operation['title'] ?? '')),
 				'description' => self::text(value: ($operation['description'] ?? '')),
 				'caseType' => $this->caseTypes->idOf(caseType: $caseType),
 				'status' => $this->caseTypes->initialStatusOf(caseType: $caseType),
@@ -187,11 +217,29 @@ class ConnectedSystemCaseWriter {
 				'initiatorSourceId' => self::text(value: ($initiator['sourceId'] ?? '')),
 				'initiatorDisplayName' => self::text(value: ($initiator['name'] ?? '')),
 				'originSystem' => $system,
-				'originIdentifier' => $external,
+				'originIdentifier' => self::text(value: ($operation['identifier'] ?? '')),
 			],
 			static fn (string $value): bool => $value !== ''
 		);
+	}//end newCase()
 
+	/**
+	 * Save the new case and answer the number it was given.
+	 *
+	 * @param object               $objects  The object service.
+	 * @param string               $register The register id.
+	 * @param string               $schema   The case schema id.
+	 * @param array<string, mixed> $case     The case, with the connection id and the system's own identifier as its origin.
+	 *
+	 * @return array The outcome (WriteOutcome).
+	 *
+	 * @throws RuntimeException When the case was written but could not be read back.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-case-opened-by-a-connected-system-keeps-its-origin
+	 */
+	private function storeNewCase(object $objects, string $register, string $schema, array $case): array {
+		$system   = (string)($case['originSystem'] ?? '');
+		$external = (string)($case['originIdentifier'] ?? '');
 		$saved = $this->saveObjectAsArray(objectService: $objects, register: $register, schema: $schema, object: $case);
 		if ($saved === null) {
 			throw new RuntimeException('The case was written but could not be read back.');
@@ -205,7 +253,7 @@ class ConnectedSystemCaseWriter {
 		}
 
 		return ['identifier' => $number];
-	}//end create()
+	}//end storeNewCase()
 
 	/**
 	 * Change the descriptive fields of a case.

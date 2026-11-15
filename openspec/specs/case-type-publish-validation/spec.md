@@ -20,12 +20,14 @@ prevents incomplete case types from reaching production.
 - THEN the server MUST return HTTP 422 with:
   `{ "errors": ["At least one status type must be defined before publishing"] }`
 - AND the case type MUST remain in draft state
+- AND the case type page MUST show the refusal in the reader's language, as the board `DqZaaktypeStatussen` draws it: "Publiceren geweigerd, versie 5 blijft concept. Minstens één status is nodig voor het publiceren."
 
 #### Scenario: Publish blocked — no final status type
 - GIVEN a draft case type with 2 linked status types, neither has `isFinal = true`
 - WHEN the API attempts to publish
 - THEN the server MUST return HTTP 422 with:
   `{ "errors": ["At least one status type must be marked as final"] }`
+- AND the case type page MUST show the refusal in the reader's language, starting "Publiceren geweigerd", each missing condition on its own line
 
 #### Scenario: Publish blocked — validFrom not set
 - GIVEN a draft case type with valid status types but `validFrom` is null/empty
@@ -191,3 +193,21 @@ an acceptance, so a guard that refused every case type could not pass.
   foreign `fromStatus`, the foreign `toStatus`, the orphaned status, the
   de-duplication, the lifecycle that cannot close, the case type with no
   moves, and a sound lifecycle that produces nothing
+
+### Requirement: Publishing MUST refuse a case type with an empty required field (REQ-CTPV-REQ-1)
+
+A case type MUST NOT be published while its title, purpose, trigger, subject,
+processing deadline, origin, confidentiality or responsible unit is empty. Each
+empty field MUST be its own finding, and a translatable field counts as filled
+when any language holds text. A draft MAY be saved with these fields empty.
+
+#### Scenario: a draft without a responsible unit
+- GIVEN a draft case type with every other required field filled
+- WHEN an administrator publishes it
+- THEN publication is refused with the finding "Give the case type a responsible unit."
+- AND nothing is written
+
+#### Scenario: a purpose in English only
+- GIVEN a draft whose purpose holds text in English and none in Dutch
+- WHEN an administrator publishes it
+- THEN the purpose produces no finding

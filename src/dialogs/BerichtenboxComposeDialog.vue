@@ -1,61 +1,53 @@
 <template>
-	<NcDialog
+	<CnDialog
 		v-if="isOpen"
-		:name="t('dossiq', 'Send Mijn Overheid Message')"
-		size="normal"
-		@close="$emit('close')">
+		:name="t('dossiq', 'Message to the Berichtenbox')"
+		:eyebrow="eyebrow"
+		:subtitle="t('dossiq', 'Digital post to the applicant, in MijnOverheid. Only when the applicant is a person.')"
+		width="form"
+		:noClose="sending"
+		v-bind="noticeProps"
+		@closing="$emit('close')">
 		<div class="compose-dialog">
-			<div class="form-group">
-				<NcTextField
-					:modelValue="form.bsn"
-					:label="t('dossiq', 'BSN (burgerservicenummer)')"
-					:error="!!errors.bsn"
-					@update:modelValue="(v) => (form.bsn = v)" />
-				<p v-if="errors.bsn" class="form-error">
-					{{ errors.bsn }}
-				</p>
+			<div class="compose-dialog__row">
+				<div
+class="compose-dialog__field"
+					@focusin="onBsnFocus"
+					@focusout="onBsnBlur">
+					<label class="compose-dialog__label" for="berichtenbox-compose-bsn">
+						{{ t('dossiq', 'BSN') }}
+						<span v-if="bsnFromCase" class="compose-dialog__optional" data-testid="compose-bsn-optional">{{ t('dossiq', '(optional)') }}</span>
+					</label>
+					<NcTextField
+						id="berichtenbox-compose-bsn"
+						:modelValue="shownBsn"
+						:placeholder="bsnEditing && caseBsn ? maskedCaseBsn : ''"
+						:label="t('dossiq', 'BSN')"
+						:labelOutside="true"
+						:error="!!errors.bsn"
+						@update:modelValue="(v) => (form.bsn = v)" />
+					<span v-if="errors.bsn" class="form-error">{{ errors.bsn }}</span>
+					<span v-else-if="recipientName" class="compose-dialog__hint">
+						{{ t('dossiq', '{name}, from the case. Not shown to anyone.', { name: recipientName }) }}
+					</span>
+				</div>
+				<div class="compose-dialog__field">
+					<label class="compose-dialog__label" for="berichtenbox-compose-type">
+						{{ t('dossiq', 'Kind of message') }}
+						<span class="compose-dialog__optional">{{ t('dossiq', '(optional)') }}</span>
+					</label>
+					<NcSelect
+						v-model="form.berichtTypeCode"
+						inputId="berichtenbox-compose-type"
+						:options="typeCodes"
+						:inputLabel="t('dossiq', 'Kind of message')"
+						:labelOutside="true"
+						label="label"
+						trackBy="code" />
+				</div>
 			</div>
 
-			<div class="form-group">
-				<NcTextField
-					:modelValue="form.subject"
-					:label="t('dossiq', 'Subject')"
-					:error="!!errors.subject"
-					@update:modelValue="(v) => (form.subject = v)" />
-				<p v-if="errors.subject" class="form-error">
-					{{ errors.subject }}
-				</p>
-			</div>
-
-			<div class="form-group">
-				<label for="berichtenbox-compose-body">{{
-					t('dossiq', 'Message (plain text only)')
-				}}</label>
-				<textarea
-					id="berichtenbox-compose-body"
-					v-model="form.body"
-					class="compose-dialog__body"
-					rows="8"
-					:placeholder="t('dossiq', 'Enter your message…')" />
-				<small class="compose-dialog__char-count">
-					{{ form.body.length }} {{ t('dossiq', 'characters') }}
-				</small>
-				<p v-if="errors.body" class="form-error">
-					{{ errors.body }}
-				</p>
-			</div>
-
-			<div class="form-group">
-				<label>{{ t('dossiq', 'Bericht type') }}</label>
-				<NcSelect
-					v-model="form.berichtTypeCode"
-					:options="typeCodes"
-					:aria-label-combobox="t('dossiq', 'Bericht type')"
-					label="label"
-					trackBy="code" />
-			</div>
-
-			<div class="form-group">
+			<div class="compose-dialog__check">
 				<NcCheckboxRadioSwitch
 					:modelValue="form.isBesluit"
 					type="checkbox"
@@ -67,39 +59,111 @@
 						)
 					}}
 				</NcCheckboxRadioSwitch>
+				<span class="compose-dialog__hint compose-dialog__check-note">
+					{{ t('dossiq', 'On for the kind Decision. A resident who unsubscribed from messages still receives a decision.') }}
+				</span>
 			</div>
 
-			<div class="compose-dialog__actions">
-				<NcButton variant="primary" :disabled="sending" @click="send">
-					{{ sending ? t('dossiq', 'Sending…') : t('dossiq', 'Send') }}
-				</NcButton>
-				<NcButton @click="$emit('close')">
-					{{ t('dossiq', 'Cancel') }}
-				</NcButton>
+			<MessageTemplateSelect
+				:caseId="resolvedCaseId"
+				:caseTypeId="caseTypeId"
+				:channels="templateChannels"
+				inputId="berichtenbox-compose-template"
+				@fill="onTemplateFill" />
+
+			<div class="compose-dialog__field">
+				<label class="compose-dialog__label" for="berichtenbox-compose-subject">{{ t('dossiq', 'Subject') }}</label>
+				<NcTextField
+					id="berichtenbox-compose-subject"
+					:modelValue="form.subject"
+					:label="t('dossiq', 'Subject')"
+					:labelOutside="true"
+					:error="!!errors.subject"
+					@update:modelValue="(v) => (form.subject = v)" />
+				<span v-if="errors.subject" class="form-error">{{ errors.subject }}</span>
 			</div>
 
-			<div v-if="sendError" role="alert">
-				<NcNoteCard type="error">
-					{{ sendError }}
-				</NcNoteCard>
+			<div class="compose-dialog__field">
+				<label class="compose-dialog__label" for="berichtenbox-compose-body">{{
+					t('dossiq', 'Message, plain text only')
+				}}</label>
+				<textarea
+					id="berichtenbox-compose-body"
+					v-model="form.body"
+					class="compose-dialog__body"
+					rows="8"
+					:maxlength="maxBody"
+					:placeholder="t('dossiq', 'Enter your message…')" />
+				<span class="compose-dialog__hint compose-dialog__char-count">
+					{{ t('dossiq', '{count} of {max} characters', { count: form.body.length, max: maxBody }) }}
+				</span>
+				<span v-if="errors.body" class="form-error">{{ errors.body }}</span>
 			</div>
+
+			<NcNoteCard type="info">
+				<template #icon>
+					<EmailFastOutline :size="20" />
+				</template>
+				{{ t('dossiq', 'The message goes through integriq to the Berichtenbox of MijnOverheid. Delivered and read come back on the case, under Contact and History.') }}
+			</NcNoteCard>
+
+			<DialogNotice :notice="sendNotice" />
 		</div>
-	</NcDialog>
+
+		<template #actions>
+			<NcButton :disabled="sending" @click="$emit('close')">
+				{{ t('dossiq', 'Cancel') }}
+			</NcButton>
+			<NcButton variant="primary" :disabled="sending" @click="send">
+				<template #icon>
+					<SendIcon :size="20" />
+				</template>
+				{{ sending ? t('dossiq', 'Sending…') : t('dossiq', 'Send the message') }}
+			</NcButton>
+		</template>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcCheckboxRadioSwitch,
-	NcDialog,
 	NcNoteCard,
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
+import SendIcon from 'vue-material-design-icons/Send.vue'
+import MessageTemplateSelect from '../components/case/MessageTemplateSelect.vue'
+import DialogNotice from '../components/dialog/DialogNotice.vue'
 import { sendMessage } from '../services/berichtenboxApi.js'
+import { caseEyebrow } from '../services/caseSummary.js'
+import { dialogNotice, dialogNoticeProps } from '../utils/dialogNotice.js'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
+
+/**
+ * Whether an answer refused the letter: a 200 is not a delivery.
+ *
+ * @param {object|undefined} answer The answer.
+ * @return {boolean} True for a refusal.
+ */
+function isRefusedAnswer(answer) {
+	return answer?.success === false || answer?.message?.refused === true
+}
+
+/**
+ * The refusal code an answer carries, at the top or on its message.
+ *
+ * @param {object|undefined} answer The answer.
+ * @return {string|undefined} The code.
+ */
+function refusalCode(answer) {
+	return answer?.code || answer?.message?.code
+}
 
 /**
  * Compose one letter to a citizen's digital post, from the case.
@@ -122,7 +186,11 @@ import { sendMessage } from '../services/berichtenboxApi.js'
 export default {
 	name: 'BerichtenboxComposeDialog',
 	components: {
-		NcDialog,
+		CnDialog,
+		DialogNotice,
+		EmailFastOutline,
+		MessageTemplateSelect,
+		SendIcon,
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcTextField,
@@ -136,7 +204,7 @@ export default {
 		 *
 		 * NOT `required`, and it may arrive as the unresolved `@objectId`
 		 * token: `open-modal` forwards an action's props verbatim with no
-		 * token resolution, exactly as it does for BeschikkingComposerDialog
+		 * token resolution, exactly as it does for GenerateDocumentDialog
 		 * and DocumentMetadataDialog. `resolvedCaseId` reads the route in that
 		 * case.
 		 */
@@ -156,28 +224,94 @@ export default {
 
 	emits: ['close', 'sent'],
 	data() {
+		const typeCodes = [
+			{ code: 'decision', label: t('dossiq', 'Decision (Besluit)') },
+			{ code: 'status', label: t('dossiq', 'Status update') },
+			{ code: 'informatie', label: t('dossiq', 'Information') },
+		]
 		return {
 			form: {
 				bsn: this.bsn,
 				subject: '',
 				body: '',
-				berichtTypeCode: null,
+				// A letter from a running case is most often a status update.
+				berichtTypeCode: typeCodes.find((type) => type.code === 'status'),
 				isBesluit: false,
 			},
 
-			typeCodes: [
-				{ code: 'decision', label: t('dossiq', 'Decision (Besluit)') },
-				{ code: 'status', label: t('dossiq', 'Status update') },
-				{ code: 'informatie', label: t('dossiq', 'Information') },
-			],
+			typeCodes,
 
+			kase: null,
+			// The requester's BSN as the case holds it, and whether the field is
+			// being typed in: the number is sent but never drawn in full.
+			caseBsn: '',
+			bsnEditing: false,
+			maxBody: 4000,
 			errors: {},
 			sending: false,
 			sendError: null,
+			sendCode: '',
 		}
 	},
 
 	computed: {
+		/**
+		 * The refusal as the banner above the buttons: a missing Berichtenbox
+		 * connection gets the board's title and what the administrator does,
+		 * any other refusal its own sentence (board DqBerichtVersturen).
+		 *
+		 * @return {object|null} The notice, or null.
+		 * @spec openspec/specs/burger-notifications/spec.md
+		 */
+		sendNotice() {
+			if (this.sendCode === 'provider-not-configured') {
+				return dialogNotice(
+					'error',
+					t('dossiq', 'Not sent: no Berichtenbox connection is set up'),
+					t('dossiq', 'An administrator sets up the connection under Settings, Connections (key berichtenbox_provider in integriq). Dossiq sends no post without a connection and does not pretend to: the Berichtenbox row under Connections then says Not set up, never Simulated. The message is recorded as not sent under Contact, with this reason.'),
+				)
+			}
+
+			return this.sendError ? dialogNotice('error', this.sendError) : null
+		},
+
+		/** @spec openspec/specs/burger-notifications/spec.md */
+		noticeProps() {
+			return dialogNoticeProps(this.sendNotice)
+		},
+
+		/**
+		 * Whether the BSN is the case's requester's, so the handler need not type one.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		bsnFromCase() {
+			return this.caseBsn !== '' && this.form.bsn === this.caseBsn
+		},
+
+		/**
+		 * The case's BSN with all but its last four digits hidden: "*****7609".
+		 *
+		 * @return {string}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		maskedCaseBsn() {
+			const bsn = this.caseBsn
+			return bsn.length > 4 ? '*'.repeat(bsn.length - 4) + bsn.slice(-4) : bsn
+		},
+
+		/**
+		 * What the BSN field shows: the case's number masked, or what the
+		 * handler types.
+		 *
+		 * @return {string}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		shownBsn() {
+			return this.bsnFromCase && !this.bsnEditing ? this.maskedCaseBsn : this.form.bsn
+		},
+
 		/**
 		 * The case this letter is about, resolved the same defensive way as
 		 * every other open-modal on the case page.
@@ -186,11 +320,7 @@ export default {
 		 * @spec openspec/specs/berichtenbox-integration/spec.md
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
-				return fromProp
-			}
-			return (this.$route && this.$route.params && this.$route.params.id) || ''
+			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**
@@ -198,6 +328,34 @@ export default {
 		 *
 		 * @return {boolean} True when either prop says so.
 		 */
+		eyebrow() {
+			return caseEyebrow(t('dossiq', 'Message'), this.kase)
+		},
+
+		/**
+		 * The case's case type, whose message templates are offered.
+		 *
+		 * @return {string} Its id, or ''.
+		 * @spec openspec/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
+		 */
+		caseTypeId() {
+			const ref = this.kase?.caseType
+			return String((ref && typeof ref === 'object' ? ref.id : ref) || '')
+		},
+
+		/**
+		 * The channels a Berichtenbox letter goes out on, for the template choice.
+		 *
+		 * @return {Array<string>}
+		 */
+		templateChannels() {
+			return ['mailbox', 'mailbox-then-email']
+		},
+
+		recipientName() {
+			return String(this.kase?.initiatorDisplayName || '')
+		},
+
 		isOpen() {
 			return this.show === true || this.open === true
 		},
@@ -223,6 +381,46 @@ export default {
 
 	methods: {
 		t,
+
+		/**
+		 * Put a chosen template, filled for this case, in the subject and the
+		 * message. Both stay editable.
+		 *
+		 * @param {{subject: string, body: string}} draft The filled template.
+		 * @return {void}
+		 * @spec openspec/specs/case-messages/spec.md#requirement-choosing-a-message-template-fills-the-message
+		 */
+		onTemplateFill({ subject, body }) {
+			this.form.subject = subject
+			this.form.body = body
+		},
+
+		/**
+		 * Focus on the BSN field: a masked number cannot be edited, so the field
+		 * empties for another number, the masked one as its placeholder.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		onBsnFocus() {
+			if (this.bsnFromCase) {
+				this.bsnEditing = true
+				this.form.bsn = ''
+			}
+		},
+
+		/**
+		 * Leaving the BSN field empty goes back to the case's number.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
+		 */
+		onBsnBlur() {
+			if (this.bsnEditing && this.form.bsn.trim() === '') {
+				this.form.bsn = this.caseBsn
+			}
+			this.bsnEditing = false
+		},
 
 		/**
 		 * Fill the BSN from the case's requester.
@@ -251,10 +449,14 @@ export default {
 						`/apps/openregister/api/objects/dossiq/case/${encodeURIComponent(this.resolvedCaseId)}`,
 					),
 				)
+				this.kase = data || null
 				if (String(data?.initiatorType || '') !== 'person') {
 					return
 				}
-				this.form.bsn = String(data?.initiatorSourceId || '')
+				this.caseBsn = String(data?.initiatorSourceId || '')
+				if (this.form.bsn === '') {
+					this.form.bsn = this.caseBsn
+				}
 			} catch {
 				this.form.bsn = ''
 			}
@@ -265,7 +467,7 @@ export default {
 		 *
 		 * @param {string|undefined} code integriq's refusal code.
 		 * @return {string|null} The sentence.
-		 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+		 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
 		 */
 		refusalText(code) {
 			if (code === 'opted-out') {
@@ -283,7 +485,7 @@ export default {
 			return null
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		validate() {
 			this.errors = {}
 			if (!this.form.bsn) {
@@ -301,86 +503,218 @@ export default {
 			return Object.keys(this.errors).length === 0
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		async send() {
 			if (!this.validate()) return
 			this.sending = true
 			this.sendError = null
+			this.sendCode = ''
 			try {
-				const answer = await sendMessage({
-					caseId: this.resolvedCaseId,
-					bsn: this.form.bsn,
-					subject: this.form.subject,
-					body: this.form.body,
-					berichtTypeCode: this.form.berichtTypeCode?.code || '',
-					// The category decides, not the channel: a besluit is always
-					// delivered, a case update respects the citizen's opt-out.
-					category: this.form.isBesluit ? 'besluit' : 'case-update',
-				})
-
-				// 🔴 A 200 IS NOT A DELIVERY. The endpoint answers 400 with the
-				// provider's sentence when integriq refused, which lands in the
-				// catch below, but it can also answer 200 for a message that was
-				// recorded without going out. Emitting `sent` on either would
-				// close this dialog over a letter nobody received, which is the
-				// whole failure this change is about, one layer up.
-				if (answer?.success === false || answer?.message?.refused === true) {
-					this.sendError =
-						this.refusalText(answer?.code || answer?.message?.code)
-						|| answer?.error
-						|| answer?.message?.error
-						|| t(
-							'dossiq',
-							'This letter was not sent, and no reason was given.',
-						)
-					return
-				}
-
-				this.$emit('sent')
+				await this.deliver()
 			} catch (e) {
 				// The provider's OWN words, whenever there are any. "Sending
 				// failed" tells a handler nothing they can act on; "no
 				// PKIoverheid certificate is configured" tells them who to ask.
-				this.sendError =
-					this.refusalText(e.response?.data?.code)
-					|| e.response?.data?.error
-					|| t('dossiq', 'Failed to send message')
+				this.keepSendFailure(e.response?.data)
 			} finally {
 				this.sending = false
 			}
+		},
+
+		/**
+		 * Send the message and emit `sent` only for a letter that went out.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 */
+		async deliver() {
+			const answer = await sendMessage(this.messageToSend())
+
+			// 🔴 A 200 IS NOT A DELIVERY. The endpoint answers 400 with the
+			// provider's sentence when integriq refused, which lands in send's
+			// catch, but it can also answer 200 for a message that was
+			// recorded without going out. Emitting `sent` on either would
+			// close this dialog over a letter nobody received, which is the
+			// whole failure this change is about, one layer up.
+			if (isRefusedAnswer(answer)) {
+				this.keepRefusal(answer)
+				return
+			}
+
+			this.$emit('sent')
+		},
+
+		/**
+		 * The message the form describes.
+		 *
+		 * @return {object} The message to send.
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 */
+		messageToSend() {
+			return {
+				caseId: this.resolvedCaseId,
+				bsn: this.form.bsn,
+				subject: this.form.subject,
+				body: this.form.body,
+				berichtTypeCode: this.form.berichtTypeCode?.code || '',
+				// The category decides, not the channel: a besluit is always
+				// delivered, a case update respects the citizen's opt-out.
+				category: this.form.isBesluit ? 'besluit' : 'case-update',
+			}
+		},
+
+		/**
+		 * Keep the code and sentence of an answer that refused the letter.
+		 *
+		 * @param {object} answer The answer.
+		 * @return {void}
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 */
+		keepRefusal(answer) {
+			const code = refusalCode(answer)
+			this.sendCode = String(code || '')
+			this.sendError =
+				this.refusalText(code)
+				|| answer?.error
+				|| answer?.message?.error
+				|| t(
+					'dossiq',
+					'This letter was not sent, and no reason was given.',
+				)
+		},
+
+		/**
+		 * Keep the code and sentence of a send that failed.
+		 *
+		 * @param {object|undefined} data What the failed request answered.
+		 * @return {void}
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 */
+		keepSendFailure(data) {
+			this.sendCode = String(data?.code || '')
+			this.sendError =
+				this.refusalText(data?.code)
+				|| data?.error
+				|| t('dossiq', 'Failed to send message')
 		},
 	},
 }
 </script>
 
 <style scoped>
+.compose-dialog {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.compose-dialog__row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+}
+
+.compose-dialog__field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.compose-dialog__label {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: normal;
+}
+
+.compose-dialog__optional {
+	font-weight: 400;
+	color: var(--color-text-maxcontrast);
+}
+
+.compose-dialog__hint {
+	font-size: 13px;
+	line-height: normal;
+	color: var(--color-text-maxcontrast);
+}
+
+/* The board's fields sit on the form's 18px gap alone: the server's 3px
+   input margin, NcTextField's own margin and the note card's 15px margin
+   come off, as DqBerichtVersturen draws them. */
+.compose-dialog :deep(.input-field) {
+	margin-block: -2px;
+}
+
+.compose-dialog > :deep(.notecard) {
+	margin: 0;
+}
+
+/* The theme pads every textarea 5px 12px with !important; the board draws
+   10px 12px, so 8 rows are 166px. */
+.compose-dialog textarea.compose-dialog__body {
+	margin: 0;
+	padding: 10px 12px !important;
+}
+
+/* A field takes the board's 40px in the flow: NcTextField and NcSelect hold
+   2px of focus-ring room above and below the box, which put every row 4px
+   lower than DqBerichtVersturen; NcSelect's own 6px/4px margins came on top. */
+.compose-dialog__field .v-select.select {
+	margin: -2px 0;
+}
+
+.compose-dialog__check {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+/* The board draws the decision box as a plain 15px line with its box, the
+   note 4px under it (DqBerichtVersturen): NcCheckboxRadioSwitch pads its row
+   to 34px and sets the label at 500 on the body's 22.5px leading, and the
+   server's input rule gives the hidden input the clickable height. */
+.compose-dialog__check :deep(.checkbox-content) {
+	padding-block: 0;
+	min-height: 0;
+}
+
+.compose-dialog__check :deep(.checkbox-content__icon) {
+	margin-block: 0;
+}
+
+.compose-dialog__check :deep(.checkbox-radio-switch),
+.compose-dialog__check :deep(.checkbox-content__wrapper),
+.compose-dialog__check :deep(.checkbox-radio-switch__text) {
+	font-weight: 400;
+	line-height: normal;
+}
+
+.compose-dialog__check :deep(.checkbox-radio-switch__input) {
+	min-height: 0;
+	height: 20px;
+	margin: 0;
+}
+
+.compose-dialog__check-note {
+	padding-inline-start: var(--cn-dialog-check-label-inset, 44px);
+	line-height: normal;
+}
+
 .compose-dialog__body {
+	box-sizing: border-box;
 	width: 100%;
-	padding: 8px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	font-family: inherit;
+	min-height: 0;
+	padding: 10px 12px;
+	border: 1px solid var(--color-border-dark);
+	border-radius: 8px;
+	font: inherit;
+	font-size: 15px;
+	line-height: 1.2;
 	resize: vertical;
 }
 
-.compose-dialog__char-count {
-	color: var(--color-text-maxcontrast);
-	float: right;
-}
-
-.compose-dialog__actions {
-	display: flex;
-	gap: 8px;
-	margin-top: 16px;
-}
-
-.form-group {
-	margin-bottom: 12px;
-}
-
 .form-error {
-	color: var(--color-error);
-	font-size: 12px;
-	margin-top: 4px;
+	font-size: 13px;
+	color: var(--color-error-text, var(--color-error));
 }
 </style>

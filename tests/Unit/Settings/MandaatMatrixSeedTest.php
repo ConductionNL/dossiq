@@ -107,6 +107,24 @@ class MandaatMatrixSeedTest extends TestCase {
 	}//end seedObjects()
 
 	/**
+	 * The English demo cases, keyed by slug: optional example data, loaded on request.
+	 *
+	 * @return array<string, array<string, mixed>> Object slug => object.
+	 */
+	private function exampleCases(): array {
+		$data = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/demo.d/46-english-cases.json'), true);
+
+		$found = [];
+		foreach ((array)($data['components']['objects'] ?? []) as $object) {
+			if (($object['@self']['schema'] ?? null) === 'case') {
+				$found[(string)$object['@self']['slug']] = (array)$object;
+			}
+		}
+
+		return $found;
+	}//end exampleCases()
+
+	/**
 	 * Both teams are seeded with a name and a department.
 	 *
 	 * @return void
@@ -135,7 +153,7 @@ class MandaatMatrixSeedTest extends TestCase {
 	 * @return void
 	 */
 	public function testTwoDemoCasesCarryATeam(): void {
-		$cases = $this->seedObjects('case');
+		$cases = $this->exampleCases();
 
 		$withTeam = [];
 		foreach ($cases as $slug => $case) {
@@ -173,7 +191,7 @@ class MandaatMatrixSeedTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheDemoCasesKeepTheirAssignee(): void {
-		foreach ($this->seedObjects('case') as $slug => $case) {
+		foreach ($this->exampleCases() as $slug => $case) {
 			if (isset($case['assignedGroup']) === false) {
 				continue;
 			}

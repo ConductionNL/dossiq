@@ -52,6 +52,7 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindGate
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindImpact
+ * @uses \OCA\Dossiq\Service\Cases\RebindMove
  * @uses \OCA\Dossiq\Service\Cases\RebindValueConverter
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
@@ -66,6 +67,14 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Transitions\StatusPublicLabels
+ * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
+ * @uses \OCA\Dossiq\Service\Cases\RebindAnswer
+ * @uses \OCA\Dossiq\Service\Cases\RebindChoice
+ * @uses \OCA\Dossiq\Service\Cases\RebindImpactRows
+ * @uses \OCA\Dossiq\Service\Cases\RebindImpactRun
+ * @uses \OCA\Dossiq\Service\Cases\RebindLanding
+ * @uses \OCA\Dossiq\Service\CaseType\WorkflowTemplateBinding
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseRebindServiceTest extends TestCase {
 
@@ -368,18 +377,19 @@ class CaseRebindServiceTest extends TestCase {
 			/**
 			 * Record a write and apply it to the store.
 			 *
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 * @param string               $id       The object id.
-			 * @param array<string, mixed> $object   The object.
+			 * @param string               $objectId      The object id.
+			 * @param array<string, mixed> $data          The object's complete new data.
+			 * @param bool                 $_rbac         Apply register RBAC.
+			 * @param bool                 $_multitenancy Apply organisation scoping.
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function updateObject(string $register, string $schema, string $id, array $object): array {
-				$this->writes[] = ['schema' => $schema, 'id' => $id, 'object' => $object];
-				$this->store[$id] = ['__schema' => $schema, 'data' => $object];
+			public function updateObject(string $objectId, array $data, bool $_rbac = true, bool $_multitenancy = true): array {
+				$schema = (string)($this->store[$objectId]['__schema'] ?? '');
+				$this->writes[] = ['schema' => $schema, 'id' => $objectId, 'object' => $data];
+				$this->store[$objectId] = ['__schema' => $schema, 'data' => $data];
 
-				return $object;
+				return $data;
 			}//end updateObject()
 		};
 	}//end objectService()

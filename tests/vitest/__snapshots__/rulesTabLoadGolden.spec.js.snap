@@ -1,0 +1,46 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the Rules tab load > keeps what each read answers, as before 1`] = `
+{
+  "answered": {
+    "askedRules": 1,
+    "error": "",
+    "loading": false,
+    "rules": [
+      {
+        "id": "r1",
+      },
+    ],
+  },
+  "failed": {
+    "askedRules": 1,
+    "error": "The rules could not be read. Ask an administrator.",
+    "loading": false,
+    "rules": [],
+  },
+  "forbidden": {
+    "askedRules": 1,
+    "error": "Only an administrator can read the rules of a case.",
+    "loading": false,
+    "rules": [],
+  },
+  "forbiddenAsText": {
+    "askedRules": 1,
+    "error": "Only an administrator can read the rules of a case.",
+    "loading": false,
+    "rules": [],
+  },
+  "summary": {
+    "askedRules": 0,
+    "error": "",
+    "loading": false,
+    "rules": [],
+  },
+  "unanswered": {
+    "askedRules": 1,
+    "error": "The rules could not be read. Ask an administrator.",
+    "loading": false,
+    "rules": [],
+  },
+}
+`;

@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 
 declare(strict_types=1);
@@ -38,17 +38,17 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
-use OCA\Dossiq\Service\SociaalDomein\CasePlanReview;
-use OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence;
-use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
+use OCA\Dossiq\Kernel\Contracts\CasePlanGoalsInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePlanInterventionsInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePlanReviewInterface;
+use OCA\Dossiq\Kernel\Contracts\CrossDomainExistenceInterface;
+use OCA\Dossiq\Kernel\Contracts\FamilyPlanAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SociaalDomeinStoreInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 class SociaalDomeinPlanController extends Controller {
 
@@ -68,27 +68,27 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @param string                $appName       The app name.
 	 * @param IRequest              $request       The request.
-	 * @param SociaalDomeinStore    $store         The one reader of these schemas.
-	 * @param CasePlanGoals         $goals         The plan's goals.
-	 * @param CasePlanInterventions $interventions The plan's interventions.
-	 * @param CasePlanReview        $review        The plan's reviews.
-	 * @param CrossDomainExistence  $existence     The cross-domain lookup.
-	 * @param IUserSession          $userSession   The session.
+	 * @param SociaalDomeinStoreInterface    $store         The one reader of these schemas.
+	 * @param CasePlanGoalsInterface         $goals         The plan's goals.
+	 * @param CasePlanInterventionsInterface $interventions The plan's interventions.
+	 * @param CasePlanReviewInterface        $review        The plan's reviews.
+	 * @param CrossDomainExistenceInterface  $existence     The cross-domain lookup.
+	 * @param FamilyPlanAccessInterface $planAccess    The case check every plan write runs first.
 	 * @param LoggerInterface       $logger        The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly SociaalDomeinStore $store,
-		private readonly CasePlanGoals $goals,
-		private readonly CasePlanInterventions $interventions,
-		private readonly CasePlanReview $review,
-		private readonly CrossDomainExistence $existence,
-		private readonly IUserSession $userSession,
+		private readonly SociaalDomeinStoreInterface $store,
+		private readonly CasePlanGoalsInterface $goals,
+		private readonly CasePlanInterventionsInterface $interventions,
+		private readonly CasePlanReviewInterface $review,
+		private readonly CrossDomainExistenceInterface $existence,
+		private readonly FamilyPlanAccessInterface $planAccess,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -101,24 +101,22 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The plan.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
 	public function plan(string $planId): JSONResponse {
 		try {
-			$plan = $this->store->read(schema: CasePlanReview::SCHEMA, id: $planId);
+			$status = $this->planAccess->planRead(planId: $planId);
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
+			}
+
+			$plan = $this->store->read(schema: CasePlanReviewInterface::SCHEMA, id: $planId);
 			if ($plan === null) {
 				return new JSONResponse(['error' => 'Family plan not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			return new JSONResponse(
-				[
-					'plan' => $plan,
-					'goals' => $this->goals->ofPlan(planId: $planId),
-					'interventions' => $this->interventions->ofPlan(planId: $planId),
-					'dueForReview' => $this->review->isDue(plan: $plan),
-				]
-			);
+			return new JSONResponse($this->planPayload(plan: $plan, planId: $planId));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'case-plan', e: $e);
 		} catch (Throwable $e) {
@@ -127,28 +125,127 @@ class SociaalDomeinPlanController extends Controller {
 	}//end plan()
 
 	/**
+	 * The family plan of a case: the gezinsplan whose `caseId` is this case,
+	 * the most recently prepared one when there are several, in the shape of
+	 * `plan()`. A case without a plan answers an empty plan, so the card says
+	 * the plan has no goals yet; an unreadable register stays a refusal.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return JSONResponse The plan, or an empty one.
+	 *
+	 * @spec openspec/changes/family-plan-by-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-finds-its-family-plan-by-the-plans-case
+	 */
+	#[NoAdminRequired]
+	public function planOfCase(string $caseId): JSONResponse {
+		try {
+			return $this->latestPlanOfCase(caseId: $caseId);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'case-plan-of-case', e: $e);
+		} catch (Throwable $e) {
+			return $this->broke(op: 'case-plan-of-case', e: $e);
+		}//end try
+	}//end planOfCase()
+
+	/**
+	 * The newest plan of a case the user may read, or an empty plan when it has none.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @throws RefusedException When the plan cannot be read.
+	 * @throws Throwable When reading fails.
+	 */
+	private function latestPlanOfCase(string $caseId): JSONResponse {
+		$status = $this->planAccess->caseRead(caseId: $caseId);
+		if ($status !== Http::STATUS_OK) {
+			return $this->denied(status: $status);
+		}
+
+		$plans = $this->plansOfCase(caseId: $caseId);
+		if ($plans === []) {
+			return new JSONResponse(['planId' => null, 'plan' => null, 'goals' => [], 'interventions' => [], 'dueForReview' => false]);
+		}
+
+		$plan   = $this->newestPlan(plans: $plans);
+		$planId = (string)($plan['id'] ?? ($plan['@self']['id'] ?? ''));
+
+		return new JSONResponse($this->planPayload(plan: $plan, planId: $planId));
+	}//end latestPlanOfCase()
+
+	/**
+	 * The plans stored for a case, [] for a blank case id.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array The plans.
+	 *
+	 * @throws Throwable When reading fails.
+	 */
+	private function plansOfCase(string $caseId): array {
+		$plans = [];
+		if (trim($caseId) !== '') {
+			$plans = $this->store->rows(schema: CasePlanReviewInterface::SCHEMA, filters: ['caseId' => $caseId]);
+		}
+
+		return $plans;
+	}//end plansOfCase()
+
+	/**
+	 * The plan with the latest preparedDate.
+	 *
+	 * @param array $plans The plans, at least one.
+	 *
+	 * @return array The newest plan.
+	 */
+	private function newestPlan(array $plans): array {
+		usort(
+			$plans,
+			static fn (array $one, array $two): int => strcmp((string)($two['preparedDate'] ?? ''), (string)($one['preparedDate'] ?? ''))
+		);
+
+		return $plans[0];
+	}//end newestPlan()
+
+	/**
+	 * A plan with its goals, interventions and review state.
+	 *
+	 * @param array<string, mixed> $plan   The gezinsplan.
+	 * @param string               $planId Its uuid.
+	 *
+	 * @return array<string, mixed> The payload `plan()` and `planOfCase()` answer.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-the-family-plan-answer-names-its-plan
+	 */
+	private function planPayload(array $plan, string $planId): array {
+		return [
+			'planId' => $planId,
+			'plan' => $plan,
+			'goals' => $this->goals->ofPlan(planId: $planId),
+			'interventions' => $this->interventions->ofPlan(planId: $planId),
+			'dueForReview' => $this->review->isDue(plan: $plan),
+		];
+	}//end planPayload()
+
+	/**
 	 * Save a goal on a plan.
 	 *
 	 * @param string $planId The gezinsplan uuid.
 	 *
 	 * @return JSONResponse The stored goal, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
 	public function saveGoal(string $planId): JSONResponse {
 		try {
-			return new JSONResponse(
-				$this->goals->save(
-					goal: [
-						'id' => trim((string)$this->request->getParam('id', '')),
-						'plan' => $planId,
-						'title' => (string)$this->request->getParam('title', ''),
-						'metWhen' => (string)$this->request->getParam('metWhen', ''),
-						'state' => (string)$this->request->getParam('state', 'open'),
-					]
-				)
-			);
+			$status = $this->goalWriteStatus(planId: $planId);
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
+			}
+
+			return new JSONResponse($this->goals->save(goal: $this->goalFromRequest(planId: $planId)));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'case-plan-goal', e: $e);
 		} catch (Throwable $e) {
@@ -157,17 +254,58 @@ class SociaalDomeinPlanController extends Controller {
 	}//end saveGoal()
 
 	/**
+	 * Whether the caller may write the goal the request names on the plan.
+	 *
+	 * @param string $planId The gezinsplan uuid.
+	 *
+	 * @return int Http::STATUS_OK, or the refusal status.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 */
+	private function goalWriteStatus(string $planId): int {
+		return $this->planAccess->planWrite(
+			planId: $planId,
+			recordSchema: CasePlanGoalsInterface::SCHEMA,
+			recordId: trim((string)$this->request->getParam('id', ''))
+		);
+	}//end goalWriteStatus()
+
+	/**
+	 * The goal the request describes.
+	 *
+	 * @param string $planId The gezinsplan uuid.
+	 *
+	 * @return array<string, string> The goal.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 */
+	private function goalFromRequest(string $planId): array {
+		return [
+			'id' => trim((string)$this->request->getParam('id', '')),
+			'plan' => $planId,
+			'title' => (string)$this->request->getParam('title', ''),
+			'metWhen' => (string)$this->request->getParam('metWhen', ''),
+			'state' => (string)$this->request->getParam('state', 'open'),
+		];
+	}//end goalFromRequest()
+
+	/**
 	 * Close a goal against what it said would count as met.
 	 *
 	 * @param string $goalId The goal uuid.
 	 *
 	 * @return JSONResponse The closed goal, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
 	public function closeGoal(string $goalId): JSONResponse {
 		try {
+			$status = $this->planAccess->goalWrite(goalId: $goalId);
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
+			}
+
 			return new JSONResponse(
 				$this->goals->close(
 					goalId: $goalId,
@@ -189,28 +327,17 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The stored intervention, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
 	public function saveIntervention(string $planId): JSONResponse {
 		try {
-			return new JSONResponse(
-				$this->interventions->save(
-					intervention: [
-						'id' => trim((string)$this->request->getParam('id', '')),
-						'plan' => $planId,
-						'goal' => (string)$this->request->getParam('goal', ''),
-						'title' => (string)$this->request->getParam('title', ''),
-						'description' => (string)$this->request->getParam('description', ''),
-						'provider' => (string)$this->request->getParam('provider', ''),
-						'providerName' => (string)$this->request->getParam('providerName', ''),
-						'startDate' => (string)$this->request->getParam('startDate', ''),
-						'targetDate' => (string)$this->request->getParam('targetDate', ''),
-						'state' => (string)$this->request->getParam('state', 'planned'),
-						'outcome' => (string)$this->request->getParam('outcome', ''),
-					]
-				)
-			);
+			$status = $this->interventionAccess(planId: $planId);
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
+			}
+
+			return new JSONResponse($this->interventions->save(intervention: $this->interventionOf(planId: $planId)));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'case-plan-intervention', e: $e);
 		} catch (Throwable $e) {
@@ -219,32 +346,74 @@ class SociaalDomeinPlanController extends Controller {
 	}//end saveIntervention()
 
 	/**
+	 * Whether the caller may write this intervention on the plan, for a goal of that plan.
+	 *
+	 * @param string $planId The plan.
+	 *
+	 * @return int 200 when allowed, else the refusal's status.
+	 */
+	private function interventionAccess(string $planId): int {
+		$status = $this->planAccess->planWrite(
+			planId: $planId,
+			recordSchema: CasePlanInterventionsInterface::SCHEMA,
+			recordId: trim((string)$this->request->getParam('id', ''))
+		);
+		if ($status === Http::STATUS_OK) {
+			$status = $this->planAccess->goalOnPlan(planId: $planId, goalId: trim((string)$this->request->getParam('goal', '')));
+		}
+
+		return $status;
+	}//end interventionAccess()
+
+	/**
+	 * The intervention the request describes, on the plan.
+	 *
+	 * @param string $planId The plan.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function interventionOf(string $planId): array {
+		return [
+			'id' => trim((string)$this->request->getParam('id', '')),
+			'plan' => $planId,
+			'goal' => trim((string)$this->request->getParam('goal', '')),
+			'title' => (string)$this->request->getParam('title', ''),
+			'description' => (string)$this->request->getParam('description', ''),
+			'provider' => (string)$this->request->getParam('provider', ''),
+			'providerName' => (string)$this->request->getParam('providerName', ''),
+			'startDate' => (string)$this->request->getParam('startDate', ''),
+			'targetDate' => (string)$this->request->getParam('targetDate', ''),
+			'state' => (string)$this->request->getParam('state', 'planned'),
+			'outcome' => (string)$this->request->getParam('outcome', ''),
+		];
+	}//end interventionOf()
+
+	/**
 	 * Record a review of a plan.
 	 *
 	 * @param string $planId The gezinsplan uuid.
 	 *
 	 * @return JSONResponse The plan with its review, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
 	 */
 	#[NoAdminRequired]
 	public function recordReview(string $planId): JSONResponse {
-		$user = $this->userSession->getUser();
-		$reviewedBy = '';
-		if ($user !== null) {
-			$reviewedBy = $user->getUID();
-		}
-
 		$changes = $this->request->getParam('changes', []);
 		if (is_array($changes) === false) {
 			$changes = [];
 		}
 
 		try {
+			$status = $this->planAccess->planWrite(planId: $planId);
+			if ($status !== Http::STATUS_OK) {
+				return $this->denied(status: $status);
+			}
+
 			return new JSONResponse(
 				$this->review->record(
 					planId: $planId,
-					reviewedBy: $reviewedBy,
+					reviewedBy: $this->planAccess->currentUid(),
 					changes: $changes,
 					nextReviewDate: (string)$this->request->getParam('nextReviewDate', ''),
 				)
@@ -265,12 +434,12 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The grounds.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	#[NoAdminRequired]
 	public function grounds(): JSONResponse {
 		$grounds = [];
-		foreach (CrossDomainExistence::GROUNDS as $id => $label) {
+		foreach (CrossDomainExistenceInterface::GROUNDS as $id => $label) {
 			$grounds[] = ['id' => $id, 'label' => $label];
 		}
 
@@ -282,12 +451,12 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The existence answer, or the refusal.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
 	 */
 	#[NoAdminRequired]
 	public function lookUp(): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
+		$uid = $this->planAccess->currentUid();
+		if ($uid === '') {
 			return new JSONResponse(
 				['message' => 'Sign in before looking a person up.', 'error' => 'not-signed-in'],
 				Http::STATUS_FORBIDDEN,
@@ -301,7 +470,7 @@ class SociaalDomeinPlanController extends Controller {
 						bsn: (string)$this->request->getParam('bsn', ''),
 						ownDomain: (string)$this->request->getParam('domain', ''),
 						ground: (string)$this->request->getParam('ground', ''),
-						requester: $user->getUID(),
+						requester: $uid,
 					),
 				]
 			);
@@ -319,7 +488,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The lookups.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	#[NoAdminRequired]
 	public function lookupsAbout(string $bsn): JSONResponse {
@@ -333,6 +502,25 @@ class SociaalDomeinPlanController extends Controller {
 	}//end lookupsAbout()
 
 	/**
+	 * The answer to a plan read or write the case check refused; nothing was read or written.
+	 *
+	 * @param int $status 401, 403 or 404 from FamilyPlanAccess.
+	 *
+	 * @return JSONResponse The refusal.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-write-on-a-family-plan-needs-the-right-to-change-its-case
+	 */
+	private function denied(int $status): JSONResponse {
+		$message = match ($status) {
+			Http::STATUS_UNAUTHORIZED => 'unauthenticated',
+			Http::STATUS_NOT_FOUND => 'not_found',
+			default => 'access_denied',
+		};
+
+		return new JSONResponse(['message' => $message], $status);
+	}//end denied()
+
+	/**
 	 * A failure that is not a refusal, logged and answered as one.
 	 *
 	 * @param string    $op The endpoint, for the log line.
@@ -340,7 +528,7 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The answer.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	private function broke(string $op, Throwable $e): JSONResponse {
 		$this->logger->error(

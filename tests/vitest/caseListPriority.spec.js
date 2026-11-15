@@ -103,7 +103,7 @@ describe('the declaration is the source, and the mirror follows it', () => {
 })
 
 describe('the lists are keyed so the server can sort them', () => {
-	it.each(['Cases', 'Queue'])(
+	it.each(['Cases'])(
 		'%s has a Priority column keyed on the declared order, not on the word',
 		(id) => {
 			const column = priorityColumn(id)
@@ -114,10 +114,17 @@ describe('the lists are keyed so the server can sort them', () => {
 		},
 	)
 
-	it.each(['Cases', 'Queue'])(
-		'%s renders the column through the badge widget',
+	it.each(['Cases'])(
+		'%s shows the word through the library badge, coloured by priority, with the hand-set hint',
 		(id) => {
-			expect(priorityColumn(id).widget).toBe('priorityBadge')
+			const column = priorityColumn(id)
+			expect(column.widget).toBe('badge')
+			expect(column.valueField).toBe('priority')
+			expect(column.colorMap).toEqual({ low: 'default', normal: 'info', high: 'warning', urgent: 'error' })
+			expect(column.widgetProps.titleWhen).toEqual({
+				field: 'priorityOverride',
+				text: 'Priority set by hand, not derived',
+			})
 		},
 	)
 
@@ -136,7 +143,7 @@ describe('the lists are keyed so the server can sort them', () => {
 })
 
 describe('neither list offers a priority to be typed', () => {
-	it.each(['Cases', 'Queue'])('%s excludes priority from its form', (id) => {
+	it.each(['Cases'])('%s excludes priority from its form', (id) => {
 		expect(page(id).excludeFields).toContain('priority')
 		expect(page(id).excludeFields).toContain('priorityOverride')
 	})

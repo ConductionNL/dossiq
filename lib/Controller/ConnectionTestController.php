@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Starter\ConnectionTestService;
-use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
+use OCA\Dossiq\Kernel\Contracts\ConnectionTestServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\StufRegisterAccessInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,15 +55,15 @@ class ConnectionTestController extends Controller {
 	 *
 	 * @param string                $appName The app name.
 	 * @param IRequest              $request The HTTP request.
-	 * @param ConnectionTestService $probe   The live probe.
-	 * @param StufRegisterAccess    $stufRegister The configured StUF endpoints.
+	 * @param ConnectionTestServiceInterface $probe   The live probe.
+	 * @param StufRegisterAccessInterface    $stufRegister The configured StUF endpoints.
 	 * @param LoggerInterface       $logger  Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ConnectionTestService $probe,
-		private readonly StufRegisterAccess $stufRegister,
+		private readonly ConnectionTestServiceInterface $probe,
+		private readonly StufRegisterAccessInterface $stufRegister,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -81,9 +81,32 @@ class ConnectionTestController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function testStufEndpoint(string $endpointId): JSONResponse {
+		$endpoint = $this->endpoint(endpointId: $endpointId);
+		if ($endpoint instanceof JSONResponse) {
+			return $endpoint;
+		}
+
+		$url = (string)($endpoint['endpointUrl'] ?? '');
+		if ($url === '') {
+			return $this->withoutUrl();
+		}
+
+		return new JSONResponse($this->probe->probe(endpoint: $url));
+	}//end testStufEndpoint()
+
+	/**
+	 * The configured endpoint, or the 500/404 answer when it cannot be read or does not exist.
+	 *
+	 * @param string $endpointId The endpoint's id.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
+	 */
+	private function endpoint(string $endpointId): array|JSONResponse {
 		try {
 			$endpoints = $this->stufRegister->findAll(
-				schema: StufRegisterAccess::SCHEMA_ENDPOINT,
+				schema: StufRegisterAccessInterface::SCHEMA_ENDPOINT,
 				filters: ['id' => $endpointId],
 				limit: 1
 			);
@@ -101,22 +124,29 @@ class ConnectionTestController extends Controller {
 			return new JSONResponse(['error' => 'Unknown endpoint'], Http::STATUS_NOT_FOUND);
 		}
 
-		$url = (string)($endpoint['endpointUrl'] ?? '');
-		if ($url === '') {
-			// Configured with no URL reads as failed, never as untested: the
-			// administrator did save this connection, and it cannot work.
-			return new JSONResponse(
-				[
-					'state' => ConnectionTestService::FAILED,
-					'endpoint' => '',
-					'status' => 0,
-					'reason' => 'The endpoint has no URL.',
-					'measuredAt' => gmdate('c'),
-					'responseTimeMs' => 0,
-				]
-			);
-		}
+		return $endpoint;
+	}//end endpoint()
 
-		return new JSONResponse($this->probe->probe(endpoint: $url));
-	}//end testStufEndpoint()
+	/**
+	 * The result for a saved endpoint that has no URL.
+	 *
+	 * Configured with no URL reads as failed, never as untested: the
+	 * administrator did save this connection, and it cannot work.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
+	 */
+	private function withoutUrl(): JSONResponse {
+		return new JSONResponse(
+			[
+				'state' => ConnectionTestServiceInterface::FAILED,
+				'endpoint' => '',
+				'status' => 0,
+				'reason' => 'The endpoint has no URL.',
+				'measuredAt' => gmdate('c'),
+				'responseTimeMs' => 0,
+			]
+		);
+	}//end withoutUrl()
 }//end class

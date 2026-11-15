@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
+
 /**
  * Schema slug to appconfig key mapping, plus the owned annotation block names.
  *
@@ -132,7 +134,8 @@ class SchemaSlugMap {
 		'automaticAction' => 'automatic_action_schema',
 		'lhsMatrix' => 'lhs_matrix_schema',
 		'lhsRecommendation' => 'lhs_recommendation_schema',
-		'location' => 'location_schema',
+		'decisionAdvice' => 'decision_advice_schema',
+		'case-location' => 'location_schema',
 		'objectionProceeding' => 'bezwaar_schema',
 		'bezwaaradviescommissie' => 'bezwaaradviescommissie_schema',
 		'bacAdviceRequest' => 'bac_advice_request_schema',
@@ -179,9 +182,9 @@ class SchemaSlugMap {
 		'deadlineDefinition' => 'termijn_definitie_schema',
 		'deadlineInstance' => 'termijn_instance_schema',
 		'termijnGebeurtenis' => 'termijn_gebeurtenis_schema',
-		'noticeOfDefault' => 'ingebrekestelling_schema',
-		'penaltyPaymentCalculation' => 'dwangsom_berekening_schema',
-		'dwangsomUitbetaling' => 'dwangsom_uitbetaling_schema',
+		'noticeOfDefault' => MoneyConfigKeys::NOTICE_OF_DEFAULT_SCHEMA,
+		'penaltyPaymentCalculation' => MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
+		'dwangsomUitbetaling' => MoneyConfigKeys::PAYOUT_SCHEMA,
 		// Mandaat-matrix authorization engine.
 		// KEY renamed with the schema slug; VALUE deliberately left as-is. The
 		// value is the app-config key under which this schema's numeric id is
@@ -239,6 +242,11 @@ class SchemaSlugMap {
 		'recallSample' => 'recall_sample_schema',
 		// What a Woo delivery sent out, frozen with its publication (woo-delivered-set-is-a-record).
 		'wooDeliveredSet' => 'woo_delivered_set_schema',
+		// The records a tender is worked with (tenders-run-on-the-tender-case-type).
+		'bid' => 'bid_schema',
+		'tenderQuestion' => 'tender_question_schema',
+		'evaluation' => 'evaluation_schema',
+		'scoringFormula' => 'scoring_formula_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

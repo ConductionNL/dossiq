@@ -8,7 +8,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -102,6 +102,12 @@ class PermitPlateChangeTest extends TestCase {
 			'permit' => [
 				'permit-1' => ['id' => 'permit-1', 'title' => 'Bewonersvergunning binnenstad', 'kind' => 'parkeren-bewoner', 'portalSubject' => 'subj-sanne', 'status' => 'active', 'kenteken' => 'GZ482K', 'case' => '5e7a1000-0000-4000-a000-00000000ac01'],
 				'permit-revoked' => ['id' => 'permit-revoked', 'title' => 'Oud', 'portalSubject' => 'subj-sanne', 'status' => 'revoked', 'case' => '5e7a1000-0000-4000-a000-00000000ac01'],
+				'permit-no-status' => [
+					'id' => 'permit-no-status',
+					'title' => 'Zonder status',
+					'portalSubject' => 'subj-sanne',
+					'case' => '5e7a1000-0000-4000-a000-00000000ac01',
+				],
 			],
 			'propertyDefinition' => [
 				'5e7a1000-0000-4000-a000-00000000ad01' => ['id' => '5e7a1000-0000-4000-a000-00000000ad01', 'caseType' => '5e7a1000-0000-4000-a000-00000000aa02', 'name' => 'permit'],
@@ -159,6 +165,7 @@ class PermitPlateChangeTest extends TestCase {
 			'someone else\'s permit' => ['subj-bob', 'permit-1', 'HX901B', PermitChangeRefused::NOT_FOUND],
 			'no such permit' => ['subj-sanne', 'permit-404', 'HX901B', PermitChangeRefused::NOT_FOUND],
 			'a revoked permit' => ['subj-sanne', 'permit-revoked', 'HX901B', PermitChangeRefused::NOT_ACTIVE],
+			'a permit without a status' => ['subj-sanne', 'permit-no-status', 'HX901B', PermitChangeRefused::NOT_ACTIVE],
 		];
 	}//end refusals()
 
