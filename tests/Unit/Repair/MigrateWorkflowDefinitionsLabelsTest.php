@@ -34,7 +34,7 @@ use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;

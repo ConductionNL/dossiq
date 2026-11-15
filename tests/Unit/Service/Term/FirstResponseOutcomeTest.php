@@ -25,7 +25,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkingDayCalculator;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 

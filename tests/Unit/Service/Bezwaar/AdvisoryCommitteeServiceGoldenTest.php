@@ -34,7 +34,7 @@ use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;

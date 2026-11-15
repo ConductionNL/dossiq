@@ -40,8 +40,8 @@
 
 namespace OCA\Dossiq\Service\Support;
 
-use OCA\OpenRegister\Service\Object\ObjectFindTarget;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\IUserSession;
 use RuntimeException;
 

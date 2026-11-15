@@ -26,7 +26,7 @@ use OCA\Dossiq\Service\Cases\CaseMergeRule;
 use OCA\Dossiq\Service\Cases\CaseMergeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;

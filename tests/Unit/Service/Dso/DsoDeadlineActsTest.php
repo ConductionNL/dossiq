@@ -33,7 +33,7 @@ use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\IUserSession;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;

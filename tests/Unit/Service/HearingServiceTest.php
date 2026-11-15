@@ -25,7 +25,7 @@ use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\HearingCalendarService;
 use OCA\Dossiq\Service\HearingService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 

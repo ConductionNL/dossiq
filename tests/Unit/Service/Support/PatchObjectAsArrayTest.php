@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

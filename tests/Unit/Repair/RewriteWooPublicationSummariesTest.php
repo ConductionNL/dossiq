@@ -22,7 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\RewriteWooPublicationSummaries;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;

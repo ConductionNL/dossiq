@@ -29,7 +29,7 @@ use OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep;
 use OCA\Dossiq\Repair\CaseFlowSeedIndex;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;

@@ -28,7 +28,7 @@ use OCA\Dossiq\Service\Money\CasePaymentState;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;

@@ -22,7 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Team;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Team\CaseTeamMigration;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;

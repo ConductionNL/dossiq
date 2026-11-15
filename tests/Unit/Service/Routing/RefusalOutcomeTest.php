@@ -40,7 +40,7 @@ use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Routing\RefusalOutcome;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;

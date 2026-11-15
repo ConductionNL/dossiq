@@ -25,7 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\RecolourShippedStatusTypes;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTypePalette;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;

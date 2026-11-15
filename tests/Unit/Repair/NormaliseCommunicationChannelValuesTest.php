@@ -24,7 +24,7 @@ use OCA\Dossiq\Repair\NormaliseCommunicationChannelValues;
 use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;

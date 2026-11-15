@@ -27,7 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Activity;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Activity\CaseActivityStamp;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;

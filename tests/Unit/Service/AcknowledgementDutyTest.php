@@ -51,7 +51,7 @@ use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooRequestForm;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;

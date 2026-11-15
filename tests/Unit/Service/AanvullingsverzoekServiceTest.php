@@ -37,7 +37,7 @@ use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Woo\WooRequestIntake;
-use OCA\OpenRegister\Service\Object\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
