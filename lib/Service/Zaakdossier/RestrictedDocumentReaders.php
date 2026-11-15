@@ -164,8 +164,8 @@ class RestrictedDocumentReaders implements RestrictedDocumentReadersInterface {
 			return true;
 		}
 
-		$history = $this->copyHistory(copy: $copy, original: $original, exception: $exception, madeBy: $madeBy);
-		$this->saveCopy(copy: $copy, exception: $exception, history: $history);
+		$history = $this->copyHistory(copy: $copy, inherited: ['original' => $original, 'exception' => $exception, 'madeBy' => $madeBy]);
+		$this->saveCopy(copy: $copy, restriction: ['exception' => $exception, 'history' => $history]);
 
 		return true;
 	}//end inherit()
@@ -174,24 +174,24 @@ class RestrictedDocumentReaders implements RestrictedDocumentReadersInterface {
 	 * The copy's exception history with the entry naming the original appended.
 	 *
 	 * @param array<string, mixed> $copy      The copy's record.
-	 * @param array<string, mixed> $original  The original's record.
-	 * @param array<string, mixed> $exception The original's exception.
-	 * @param string               $madeBy    Who made the copy.
+	 * @param array<string, mixed> $inherited The original's record (`original`), its exception (`exception`)
+	 *                                        and who made the copy (`madeBy`).
 	 *
 	 * @return array<int|string, mixed> The history.
 	 *
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-copy-of-a-document-carries-its-exception
 	 */
-	private function copyHistory(array $copy, array $original, array $exception, string $madeBy): array {
+	private function copyHistory(array $copy, array $inherited): array {
+		$exception = $inherited['exception'];
 		$before = (new AccessExceptionValue())->exceptionOf(record: $copy);
 		$history = (array)($copy[AccessExceptionValue::HISTORY] ?? []);
 		$history[] = [
 			'action' => $this->historyAction(before: $before),
-			'by' => $madeBy,
+			'by' => $inherited['madeBy'],
 			'at' => gmdate(DATE_ATOM),
 			'old' => $before,
 			'new' => $exception,
-			'reason' => 'Copied from ' . (string)($original['id'] ?? '') . ': ' . $exception['reason'],
+			'reason' => 'Copied from ' . (string)($inherited['original']['id'] ?? '') . ': ' . $exception['reason'],
 		];
 
 		return $history;
@@ -216,15 +216,15 @@ class RestrictedDocumentReaders implements RestrictedDocumentReadersInterface {
 	/**
 	 * Store the exception and its history on the copy's record.
 	 *
-	 * @param array<string, mixed>     $copy      The copy's record.
-	 * @param array<string, mixed>     $exception The original's exception.
-	 * @param array<int|string, mixed> $history   The history, with the copy entry.
+	 * @param array<string, mixed> $copy        The copy's record.
+	 * @param array<string, mixed> $restriction The original's exception (`exception`), and the history with
+	 *                                          the copy entry (`history`).
 	 *
 	 * @return void
 	 */
-	private function saveCopy(array $copy, array $exception, array $history): void {
-		$copy[AccessExceptionValue::PROPERTY] = $exception;
-		$copy[AccessExceptionValue::HISTORY] = array_values($history);
+	private function saveCopy(array $copy, array $restriction): void {
+		$copy[AccessExceptionValue::PROPERTY] = $restriction['exception'];
+		$copy[AccessExceptionValue::HISTORY] = array_values($restriction['history']);
 		$this->save(record: $copy);
 	}//end saveCopy()
 
