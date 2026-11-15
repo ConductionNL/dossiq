@@ -29,6 +29,7 @@ use OCA\Dossiq\Kernel\Contracts\EngineTaskGatewayInterface;
 use OCA\Dossiq\Kernel\Contracts\ReviewBatchesInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
+use OCA\Dossiq\Review\Support\ReviewSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IL10N;
 use OCP\IUserManager;
@@ -51,6 +52,7 @@ use Throwable;
  */
 class ReviewBatches implements ReviewBatchesInterface {
 
+	use ReviewSchemaRows;
 	use SearchesObjects;
 
 	/**
@@ -460,16 +462,6 @@ class ReviewBatches implements ReviewBatchesInterface {
 	}//end assertDocumentsFree()
 
 	/**
-	 * Whether the batch schema can be written.
-	 *
-	 * @return bool True when OpenRegister, the batch schema and the review schema are configured.
-	 */
-	private function isAvailable(): bool {
-		return $this->reviews->isAvailable() === true
-			&& $this->settingsService->getConfigValue(self::SCHEMA_KEY) !== '';
-	}//end isAvailable()
-
-	/**
 	 * The batches of a case the caller may read, as stored: what a listing shows.
 	 *
 	 * @param string $caseId The case UUID.
@@ -566,23 +558,4 @@ class ReviewBatches implements ReviewBatchesInterface {
 			throw $this->refusal(rule: 'review-batch-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE, previous: $e);
 		}
 	}//end writeBatch()
-
-	/**
-	 * A refusal, 422 unless said otherwise.
-	 *
-	 * @param string $rule The rule.
-	 * @param string $sentence The static sentence.
-	 * @param int $status The status.
-	 * @param Throwable|null $previous The cause.
-	 *
-	 * @return RefusedException The refusal.
-	 */
-	private function refusal(
-		string $rule,
-		string $sentence,
-		int $status = RefusedException::STATUS_UNPROCESSABLE,
-		?Throwable $previous = null,
-	): RefusedException {
-		return new RefusedException(rule: $rule, sentence: $sentence, status: $status, previous: $previous);
-	}//end refusal()
 }//end class
