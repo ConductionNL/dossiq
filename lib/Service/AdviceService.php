@@ -132,7 +132,7 @@ class AdviceService implements AdviceServiceInterface {
 
 		$this->guard->assertTransitionAuthorized(advice: $current, to: $to);
 
-		return $this->applyTransition(adviceId: $adviceId, to: $to, current: $current, payload: $payload);
+		return $this->applyTransition(adviceId: $adviceId, move: ['current' => $current, 'update' => $this->adviceUpdate(to: $to, payload: $payload)]);
 	}//end transitionStatus()
 
 	/**
@@ -145,9 +145,8 @@ class AdviceService implements AdviceServiceInterface {
 	 * `assertAdviceTransitionAuthorized()`.
 	 *
 	 * @param string $adviceId The advice UUID.
-	 * @param string $to Target status.
-	 * @param array<string, mixed> $current The current advice record (pre-update).
-	 * @param array<string, mixed> $payload Extra fields (adviesDocument, etc.).
+	 * @param array{current: array<string, mixed>, update: array<string, mixed>} $move The current advice record
+	 *        (pre-update), and the update with its target `status` (adviceUpdate()).
 	 *
 	 * @return array<string, mixed> Updated advice record.
 	 *
@@ -155,7 +154,30 @@ class AdviceService implements AdviceServiceInterface {
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	private function applyTransition(string $adviceId, string $to, array $current, array $payload = []): array {
+	private function applyTransition(string $adviceId, array $move): array {
+		['current' => $current, 'update' => $update] = $move;
+		$advice = $this->repository->save(update: $update, adviceId: $adviceId);
+
+		$this->notifier->fireTransitionNotification(
+			to: $update['status'],
+			current: $current,
+			adviceId: $adviceId,
+			callerId: $this->getUserId(),
+			summary: $this->summaryOf(update: $update),
+		);
+
+		return $advice;
+	}//end applyTransition()
+
+	/**
+	 * The update a transition writes: its status, and on receipt the moment, the document and the outcome.
+	 *
+	 * @param string               $to      Target status.
+	 * @param array<string, mixed> $payload Extra fields (adviesDocument, etc.).
+	 *
+	 * @return array<string, mixed> The update.
+	 */
+	private function adviceUpdate(string $to, array $payload): array {
 		$update = ['status' => $to];
 
 		if ($to === 'received') {
@@ -168,18 +190,8 @@ class AdviceService implements AdviceServiceInterface {
 			$update = array_merge($update, $this->outcomeOf(payload: $payload));
 		}
 
-		$advice = $this->repository->save(update: $update, adviceId: $adviceId);
-
-		$this->notifier->fireTransitionNotification(
-			to: $to,
-			current: $current,
-			adviceId: $adviceId,
-			callerId: $this->getUserId(),
-			summary: $this->summaryOf(update: $update),
-		);
-
-		return $advice;
-	}//end applyTransition()
+		return $update;
+	}//end adviceUpdate()
 
 	/**
 	 * The outcome a received advice carries: conclusion, text and the conditions ticked.
@@ -390,7 +402,7 @@ class AdviceService implements AdviceServiceInterface {
 				throw new RuntimeException('Advice request not accessible');
 			}
 
-			return $this->applyTransition(adviceId: $adviceId, to: 'expired', current: $current);
+			return $this->applyTransition(adviceId: $adviceId, move: ['current' => $current, 'update' => $this->adviceUpdate(to: 'expired', payload: [])]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to expire advice: ' . $e->getMessage(),
