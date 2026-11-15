@@ -112,7 +112,7 @@ class AppointmentService implements AppointmentServiceInterface {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointmentData = $this->appointmentRecord(caseId: $caseId, data: $data, backendResult: $backendResult);
+		$appointmentData = $this->appointmentRecord(data: $data, booking: ['caseId' => $caseId, 'backendResult' => $backendResult]);
 
 		$result = $objectService->saveObject(object: $appointmentData, register: (int)$register, schema: (int)$schema);
 
@@ -124,21 +124,20 @@ class AppointmentService implements AppointmentServiceInterface {
 	/**
 	 * The appointment record to store: the submitted data, linked to the case and the backend booking.
 	 *
-	 * @param string $caseId The case UUID.
-	 * @param array<string, mixed> $data Appointment data.
-	 * @param array<string, mixed> $backendResult What the booking backend answered.
+	 * @param array<string, mixed>                                       $data    Appointment data.
+	 * @param array{caseId: string, backendResult: array<string, mixed>} $booking The case UUID and what the booking backend answered.
 	 *
 	 * @return array<string, mixed> The record.
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	private function appointmentRecord(string $caseId, array $data, array $backendResult): array {
+	private function appointmentRecord(array $data, array $booking): array {
 		return array_merge(
 			$data,
 			[
-				'caseId' => $caseId,
+				'caseId' => $booking['caseId'],
 				'status' => 'scheduled',
-				'externalId' => $backendResult['externalId'] ?? null,
+				'externalId' => $booking['backendResult']['externalId'] ?? null,
 				'cancelToken' => bin2hex(random_bytes(16)),
 			]
 		);

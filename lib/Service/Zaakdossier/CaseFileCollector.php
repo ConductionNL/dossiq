@@ -82,7 +82,7 @@ class CaseFileCollector implements CaseFileCollectorInterface {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
 	 */
 	public function collect(string $caseId, string $fileName, string $content, array $provenance, string $mimeType = ''): string {
-		$stored = $this->storedRecord(caseId: $caseId, fileName: $fileName, content: $content);
+		$stored = $this->storedRecord(caseId: $caseId, file: ['fileName' => $fileName, 'content' => $content]);
 		if ($stored === null) {
 			return '';
 		}
@@ -96,20 +96,19 @@ class CaseFileCollector implements CaseFileCollectorInterface {
 			);
 		}
 
-		return $this->saveProvenance(record: $record, provenance: $provenance, caseId: $caseId);
+		return $this->saveProvenance(record: array_replace($record, ['provenance' => $provenance]), caseId: $caseId);
 	}//end collect()
 
 	/**
 	 * Store the bytes and find, or project, the record the file gets.
 	 *
-	 * @param string $caseId   The case uuid.
-	 * @param string $fileName The file name.
-	 * @param string $content  The bytes.
+	 * @param string                                     $caseId The case uuid.
+	 * @param array{fileName: string, content: string} $file   The file name and the bytes.
 	 *
 	 * @return array{0: array<string, mixed>, 1: File|null}|null The record and the stored file, null when either write failed.
 	 */
-	private function storedRecord(string $caseId, string $fileName, string $content): array|null {
-		$fileId = $this->store->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
+	private function storedRecord(string $caseId, array $file): array|null {
+		$fileId = $this->store->storeFileOnObject(objectId: $caseId, fileName: $file['fileName'], content: $file['content']);
 		if ($fileId <= 0) {
 			return null;
 		}
@@ -144,16 +143,14 @@ class CaseFileCollector implements CaseFileCollectorInterface {
 	}//end mailOf()
 
 	/**
-	 * Write the provenance on the record and join it to the case.
+	 * Save the record with its provenance and join it to the case.
 	 *
-	 * @param array<string, mixed> $record     The document record.
-	 * @param array<string, mixed> $provenance Where it was found.
-	 * @param string               $caseId     The case uuid.
+	 * @param array<string, mixed> $record The document record, with where it was found as `provenance`.
+	 * @param string               $caseId The case uuid.
 	 *
 	 * @return string The document record uuid.
 	 */
-	private function saveProvenance(array $record, array $provenance, string $caseId): string {
-		$record['provenance'] = $provenance;
+	private function saveProvenance(array $record, string $caseId): string {
 		$recordId = $this->store->saveRecord(record: $record);
 		$this->store->ensureJoin(caseId: $caseId, recordId: $recordId);
 
