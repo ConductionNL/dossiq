@@ -10001,7 +10001,7 @@
             "casetransfer": {
                 "slug": "casetransfer",
                 "icon": "SwapHorizontal",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Case transfer",
                 "description": "Hand-off of a case, to another organisation or to another team inside this one (initiate / accept / reject). One record shape answers where a case has been.",
@@ -10186,6 +10186,39 @@
                         },
                         "description": "Append-only custody-change audit trail",
                         "title": "Custody Audit Trail"
+                    },
+                    "senderActivity": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "act": {
+                                    "type": "string",
+                                    "enum": [
+                                        "document added",
+                                        "contact moment added",
+                                        "note added",
+                                        "task completed",
+                                        "status changed"
+                                    ],
+                                    "description": "What the receiver did on the case",
+                                    "title": "Act"
+                                },
+                                "actor": {
+                                    "type": "string",
+                                    "description": "Who did it: the user id, or empty for the system",
+                                    "title": "Actor"
+                                },
+                                "recordedAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the act was recorded",
+                                    "title": "Recorded at"
+                                }
+                            }
+                        },
+                        "description": "Each act recorded on the case after the transfer was accepted, so the sending organisation follows the case it handed over. Append-only; set on an accepted organisation transfer only.",
+                        "title": "Sender Activity"
                     }
                 }
             },
