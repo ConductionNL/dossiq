@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersCaseGestures;
 use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -58,7 +59,6 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Raise and clear the attention flag, and read what a case is saying.
@@ -66,6 +66,7 @@ use RuntimeException;
  * @spec openspec/specs/case-management/spec.md
  */
 class CaseAttentionController extends Controller {
+	use AnswersCaseGestures;
 	use AnswersSignedOutCallers;
 
 	/**
@@ -198,58 +199,21 @@ class CaseAttentionController extends Controller {
 	}//end caseMutator()
 
 	/**
-	 * Run a gesture and answer it, turning a refusal into its status.
+	 * The sentence a refusal reads as; an unknown code reads as the failure.
 	 *
-	 * @param string                           $caseId The case UUID.
-	 * @param callable(): array<string, mixed> $run    The gesture.
+	 * @param string $code The rule that refused.
 	 *
-	 * @return JSONResponse
+	 * @return string
 	 */
-	private function answer(string $caseId, callable $run): JSONResponse {
-		try {
-			return new JSONResponse($run());
-		} catch (RuntimeException $e) {
-			return $this->refusal(code: $e->getMessage(), caseId: $caseId);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseAttentionController: the gesture failed',
-				['exception' => $e->getMessage(), 'caseId' => $caseId]
-			);
-
-			return new JSONResponse(
-				['error' => $this->l10n->t('The attention flag could not be changed.')],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end answer()
-
-	/**
-	 * One refusal, as a sentence a handler reads and a code a surface acts on.
-	 *
-	 * @param string $code   The rule that refused.
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return JSONResponse
-	 */
-	private function refusal(string $code, string $caseId): JSONResponse {
-		$this->logger->info(
-			'CaseAttentionController: the gesture was refused',
-			['code' => $code, 'caseId' => $caseId]
-		);
-
-		$message = match ($code) {
+	protected function refusalSentence(string $code): string {
+		return match ($code) {
 			'case_not_found' => $this->l10n->t('This case could not be found.'),
 			'reason_required' => $this->l10n->t('Write down why, and the flag will change. Both raising and clearing keep the reason.'),
 			'already_raised' => $this->l10n->t('This case is already flagged as needing attention.'),
 			'not_raised' => $this->l10n->t('This case is not flagged as needing attention.'),
 			default => $this->l10n->t('The attention flag could not be changed.'),
 		};
-
-		return new JSONResponse(
-			['error' => $message, 'code' => $code],
-			(self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST)
-		);
-	}//end refusal()
+	}//end refusalSentence()
 
 	/**
 	 * The answer for a caller who may read this case but not change it.

@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AnswersCaseGestures;
 use OCA\Dossiq\Controller\Support\AnswersSignedOutCallers;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
@@ -62,6 +63,7 @@ use RuntimeException;
  * @spec openspec/specs/case-management/spec.md
  */
 class CaseAssignmentController extends Controller {
+	use AnswersCaseGestures;
 	use AnswersSignedOutCallers;
 
 	/**
@@ -236,50 +238,14 @@ class CaseAssignmentController extends Controller {
 	}//end claimRefusal()
 
 	/**
-	 * Run a gesture and answer it, turning a refusal into its status.
+	 * The sentence a refusal reads as; an unknown code reads as the failure.
 	 *
-	 * @param string                          $caseId The case UUID.
-	 * @param callable(): array<string, mixed> $run    The gesture.
+	 * @param string $code The rule that refused.
 	 *
-	 * @return JSONResponse
-	 *
-	 * @spec openspec/specs/case-management/spec.md
+	 * @return string
 	 */
-	private function answer(string $caseId, callable $run): JSONResponse {
-		try {
-			return new JSONResponse($run());
-		} catch (RuntimeException $e) {
-			return $this->refusal(code: $e->getMessage(), caseId: $caseId);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseAssignmentController: the gesture failed',
-				['exception' => $e->getMessage(), 'caseId' => $caseId]
-			);
-
-			return new JSONResponse(
-				['error' => $this->l10n->t('The assignment could not be changed.')],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end answer()
-
-	/**
-	 * One refusal, as a sentence a handler reads and a code a surface acts on.
-	 *
-	 * @param string $code   The rule that refused.
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @spec openspec/specs/case-management/spec.md
-	 */
-	private function refusal(string $code, string $caseId): JSONResponse {
-		$this->logger->info(
-			'CaseAssignmentController: the gesture was refused',
-			['code' => $code, 'caseId' => $caseId]
-		);
-
-		$message = match ($code) {
+	protected function refusalSentence(string $code): string {
+		return match ($code) {
 			'case_not_found' => $this->l10n->t('This case could not be found.'),
 			'already_assigned' => $this->l10n->t('Someone else is already handling this case.'),
 			'already_yours' => $this->l10n->t('You are already handling this case.'),
@@ -287,10 +253,5 @@ class CaseAssignmentController extends Controller {
 			'not_yours' => $this->l10n->t('You can only release a case you handle yourself.'),
 			default => $this->l10n->t('The assignment could not be changed.'),
 		};
-
-		return new JSONResponse(
-			['error' => $message, 'code' => $code],
-			(self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST)
-		);
-	}//end refusal()
+	}//end refusalSentence()
 }//end class
