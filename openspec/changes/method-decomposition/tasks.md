@@ -601,3 +601,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         (after 8j moved the payout statement out). Docblocks only; no code moved. phpmd, phpcs and
         `tests/Unit/Architecture` green on the six files. The other 98 complexity-type suppressions
         in `lib/` still report their rule when lifted, so they need a split, not a deletion.
+  - [x] 8o `CaseTypeRightsByRole` (1: ExcessiveClassComplexity 50 against 50). The Decide column
+        (which mandates hold for this case type, per role, and the highest ceiling worded) is
+        the new `CaseType/RoleMandateCeilings` (`byRole()`, with `forCaseType()` and `ceiling()`;
+        bodies moved unchanged). The service builds it in its constructor, so its constructor,
+        interface and container binding are unchanged. phpmd: zero findings on both files.
+        Characterisation, green on the single class first (own commit): 4 tests added to
+        `CaseTypeRightsByRoleTest` (14 in all) for the case-type scoping by id, slug and
+        identifier, the register query, the ceiling cell and an unreadable register across roles.
+        Unchanged and green after but for one `@uses` line.
+        Own test: `tests/Unit/Service/CaseType/RoleMandateCeilingsTest` (4); taking the lowest
+        ceiling instead of the highest turns 9 tests red (checked).
+        Whole unit suite: 19 failures before and after, all in classes this slice does not touch.

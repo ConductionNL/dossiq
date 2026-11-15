@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\CaseType\CaseTypeRightsByRole
  * @uses \OCA\Dossiq\Service\Access\OrganisationRoles
+ * @uses \OCA\Dossiq\Service\CaseType\RoleMandateCeilings
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Exception\RefusedException
