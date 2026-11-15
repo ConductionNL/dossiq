@@ -168,7 +168,7 @@ class WOODecisionService {
 			actorId: $userId,
 		);
 
-		$besluitData = $this->besluitData(caseId: $caseId, record: $record, userId: $userId, decisionData: $choice['decisionData']);
+		$besluitData = $this->besluitData(record: $record, decision: ['caseId' => $caseId, 'userId' => $userId, 'data' => $choice['decisionData']]);
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
@@ -177,7 +177,7 @@ class WOODecisionService {
 		$assembled = new AssembledDecision(caseId: $caseId, decisionRef: $decisionRef, decision: $decision);
 		$this->logAssembled(assembled: $assembled);
 
-		return $this->assembledResult(assembled: $assembled, record: $record, letter: $choice['letter']);
+		return $this->assembledResult(assembled: $assembled, composed: ['record' => $record, 'letter' => $choice['letter']]);
 	}//end assemble()
 
 	/**
@@ -237,19 +237,18 @@ class WOODecisionService {
 	/**
 	 * The besluit object to save, with the caller's override data merged over it.
 	 *
-	 * @param string               $caseId       The case UUID
-	 * @param array<string, mixed> $record       The composed decision record
-	 * @param string               $userId       The deciding user
-	 * @param array<string, mixed> $decisionData Optional override data
+	 * @param array<string, mixed> $record   The composed decision record
+	 * @param array<string, mixed> $decision The case UUID (`caseId`), the deciding user (`userId`) and the
+	 *                                       optional override data (`data`)
 	 *
 	 * @return array<string, mixed> The besluit data
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 */
-	private function besluitData(string $caseId, array $record, string $userId, array $decisionData): array {
+	private function besluitData(array $record, array $decision): array {
 		return array_merge(
 			[
-				'case' => $caseId,
+				'case' => $decision['caseId'],
 				'decisionType' => self::DECISION_TYPE_ID,
 				'decisionDate' => date('Y-m-d'),
 				'description' => self::publicationSummary(caseTitle: $record['caseTitle']),
@@ -257,9 +256,9 @@ class WOODecisionService {
 				'weigeringsgronden' => $record['weigeringsgronden'],
 				'groundsListVersion' => WooRefusalGrounds::LIST_VERSION,
 				'assessmentCount' => $record['assessmentCount'],
-				'decidedBy' => $userId,
+				'decidedBy' => $decision['userId'],
 			],
-			array_diff_key($decisionData, ['id' => true, 'uuid' => true, '@self' => true]),
+			array_diff_key($decision['data'], ['id' => true, 'uuid' => true, '@self' => true]),
 		);
 	}//end besluitData()
 
@@ -267,18 +266,19 @@ class WOODecisionService {
 	 * The assembled decision as answered to the caller, with the drafts it asked for.
 	 *
 	 * @param AssembledDecision    $assembled The case, the decidiq reference and the saved decision object
-	 * @param array<string, mixed> $record    The composed decision record
-	 * @param string               $letter    The letter the caller chose; empty drafts one
+	 * @param array<string, mixed> $composed  The composed decision record (`record`) and the letter the caller
+	 *                                        chose (`letter`); an empty letter drafts one
 	 *
 	 * @return array<string, mixed> Created decision with ID and assessment summary
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
 	 */
-	private function assembledResult(AssembledDecision $assembled, array $record, string $letter): array {
+	private function assembledResult(AssembledDecision $assembled, array $composed): array {
+		$record = $composed['record'];
 		$caseId = $assembled->caseId;
 		$draft = null;
-		if ($letter === '') {
+		if ($composed['letter'] === '') {
 			$draft = $this->drafts?->draft(caseId: $caseId, purpose: self::DRAFT_PURPOSE);
 		}
 
