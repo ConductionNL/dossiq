@@ -84,13 +84,7 @@ final class CaseTypeReachability {
 		}
 
 		$broken = $this->brokenMoves(statuses: $statuses, moves: $moves);
-		$sound = $this->soundMoves(statuses: $statuses, moves: $moves);
-		$reached = [];
-		if ($initial !== '' && isset($statuses[$initial]) === true) {
-			$reached = $this->reachedFrom(initial: $initial, moves: $sound);
-		}
-
-		$walk = new ReachableStatuses(statuses: $statuses, initial: $initial, reached: $reached);
+		$walk = $this->walk(statuses: $statuses, start: ['initial' => $initial, 'moves' => $moves]);
 
 		return array_merge(
 			array_column($broken, 'finding'),
@@ -98,6 +92,26 @@ final class CaseTypeReachability {
 			$this->closureFindings(walk: $walk)
 		);
 	}//end findings()
+
+	/**
+	 * The statuses a case can reach over the sound moves, from where a new case starts.
+	 *
+	 * @param array<string, array{title: string, final: bool}>                          $statuses The declared statuses, by id.
+	 * @param array{initial: string, moves: array<int, array{from: string, to: string}>} $start    The status a new case starts in,
+	 *                                                                                            and the declared moves.
+	 *
+	 * @return ReachableStatuses The walk.
+	 */
+	private function walk(array $statuses, array $start): ReachableStatuses {
+		$initial = $start['initial'];
+		$sound = $this->soundMoves(statuses: $statuses, moves: $start['moves']);
+		$reached = [];
+		if ($initial !== '' && isset($statuses[$initial]) === true) {
+			$reached = $this->reachedFrom(initial: $initial, moves: $sound);
+		}
+
+		return new ReachableStatuses(statuses: $statuses, initial: $initial, reached: $reached);
+	}//end walk()
 
 	/**
 	 * The moves that name a status this case type does not have.

@@ -188,7 +188,26 @@ class RecordImportStore {
 			return false;
 		}
 
-		$changes = [$caseField => $caseId];
+		return $this->stampSource(
+			source: ['objectService' => $objectService, 'import' => $import, 'id' => $sourceId],
+			stamp: ['field' => $caseField, 'caseId' => $caseId]
+		);
+	}//end stamp()
+
+	/**
+	 * Write the stamp on the source, with its moment when declared, and read it back.
+	 *
+	 * @param array{objectService: object, import: array<string, mixed>, id: string} $source The ObjectService, the declaration
+	 *                                                                                     and the source uuid.
+	 * @param array{field: string, caseId: string}                                   $stamp  The declared case field, and the
+	 *                                                                                     case it moved to.
+	 *
+	 * @return bool True when the source kept the stamp.
+	 */
+	private function stampSource(array $source, array $stamp): bool {
+		$import = $source['import'];
+		$sourceId = $source['id'];
+		$changes = [$stamp['field'] => $stamp['caseId']];
 		$atField = (string)($import['stamp']['at'] ?? '');
 		if ($atField !== '') {
 			$changes[$atField] = $this->time->getDateTime()->format(DATE_ATOM);
@@ -196,7 +215,7 @@ class RecordImportStore {
 
 		try {
 			$stored = $this->patchObjectAsArray(
-				objectService: $objectService,
+				objectService: $source['objectService'],
 				register: (string)($import['sourceRegister'] ?? ''),
 				schema: (string)($import['sourceSchema'] ?? ''),
 				id: $sourceId,
@@ -207,8 +226,8 @@ class RecordImportStore {
 			return false;
 		}
 
-		return (string)($stored[$caseField] ?? '') === $caseId;
-	}//end stamp()
+		return (string)($stored[$stamp['field']] ?? '') === $stamp['caseId'];
+	}//end stampSource()
 
 	/**
 	 * The cases an earlier run wrote, keyed by the source uuid they came from.

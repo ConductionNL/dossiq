@@ -67,22 +67,35 @@ final class PortalWithdrawalTarget implements PortalWithdrawalTargetInterface {
 			return null;
 		}
 
-		if (isset($statuses[$target]) === false) {
+		return $this->targetRefusal(withdrawal: $withdrawal, graph: ['statuses' => $statuses, 'moves' => $moves, 'target' => $target]);
+	}//end refusal()
+
+	/**
+	 * The refusal for a target status the type does not own, or that an open status cannot reach.
+	 *
+	 * @param array<string, mixed> $withdrawal The `portalWithdrawal` block being saved.
+	 * @param array<string, mixed> $graph      The type's statuses (`statuses`, id to title), the active template's
+	 *                                         transitions (`moves`) and the target status id (`target`).
+	 *
+	 * @return array{reason: string, parameters: array<int, string>}|null The refusal, or null.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function targetRefusal(array $withdrawal, array $graph): ?array {
+		$target = $graph['target'];
+		if (isset($graph['statuses'][$target]) === false) {
 			return [
 				'reason' => self::NOT_OWN,
 				'parameters' => [$target],
 			];
 		}
 
-		if ($moves === []) {
+		if ($graph['moves'] === []) {
 			return null;
 		}
 
-		return $this->unreachableRefusal(
-			open: $this->openStatuses(withdrawal: $withdrawal),
-			graph: ['statuses' => $statuses, 'moves' => $moves, 'target' => $target]
-		);
-	}//end refusal()
+		return $this->unreachableRefusal(open: $this->openStatuses(withdrawal: $withdrawal), graph: $graph);
+	}//end targetRefusal()
 
 	/**
 	 * The refusal for the first open status no move leads from to the target.

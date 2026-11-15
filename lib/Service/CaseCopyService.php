@@ -167,7 +167,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function requireSource(array $context, string $caseId): array {
-		$source = $this->fetch(context: $context, schema: $context['caseSchema'], id: $caseId);
+		$source = $this->fetch(context: $context, object: ['schema' => $context['caseSchema'], 'id' => $caseId]);
 
 		if ($source === null) {
 			throw new RuntimeException('case_not_found');
@@ -289,7 +289,7 @@ class CaseCopyService implements CaseCopyServiceInterface {
 			return '';
 		}
 
-		$type = $this->fetch(context: $context, schema: $schema, id: $caseType);
+		$type = $this->fetch(context: $context, object: ['schema' => $schema, 'id' => $caseType]);
 
 		return (string)($type['initialStatus'] ?? '');
 	}//end initialStatusOf()
@@ -506,12 +506,12 @@ class CaseCopyService implements CaseCopyServiceInterface {
 	 * Fetch one object, tolerating a fail-closed miss.
 	 *
 	 * @param array{objectService: object, register: string, caseSchema: string} $context The object service and register.
-	 * @param string $schema  The schema slug.
-	 * @param string $id      The object id.
+	 * @param array{schema: string, id: string}                                  $object  The schema slug and the object id.
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	private function fetch(array $context, string $schema, string $id): ?array {
+	private function fetch(array $context, array $object): ?array {
+		[$schema, $id] = [$object['schema'], $object['id']];
 		if ($id === '') {
 			return null;
 		}

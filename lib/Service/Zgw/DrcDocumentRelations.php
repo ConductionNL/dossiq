@@ -128,10 +128,25 @@ class DrcDocumentRelations {
 			return null;
 		}
 
+		return $this->uniquenessRefusal(relation: ['ioUrl' => $ioUrl, 'objectUrl' => $objectUrl, 'objectType' => $objectType], register: $register);
+	}//end checkOioUniqueness()
+
+	/**
+	 * The refusal of a relation stored already, or of one that could not be checked; null when it is new.
+	 *
+	 * @param array{ioUrl: string, objectUrl: string, objectType: string} $relation The informatieobject URL, the object
+	 *                                                                           URL and the object type (zaak or besluit).
+	 * @param string                                                     $register The register ID.
+	 *
+	 * @return array|null The refusal, or null when the relation is new
+	 */
+	private function uniquenessRefusal(array $relation, string $register): ?array {
+		$ioUrl = $relation['ioUrl'];
+		$objectUrl = $relation['objectUrl'];
 		try {
 			$duplicate = $this->relationExists(
 				pair: $this->pairOf(ioUrl: $ioUrl, objectUrl: $objectUrl),
-				place: ['register' => $register, 'objectType' => $objectType]
+				place: ['register' => $register, 'objectType' => $relation['objectType']]
 			);
 		} catch (\Throwable $e) {
 			return $this->results->notVerified(rule: 'drc-003', object: 'document ' . $ioUrl . ' on ' . $objectUrl, cause: $e->getMessage());
@@ -142,7 +157,7 @@ class DrcDocumentRelations {
 		}
 
 		return $this->duplicateRelationError();
-	}//end checkOioUniqueness()
+	}//end uniquenessRefusal()
 
 	/**
 	 * The refusal of an informatieobject + object + objectType combination that exists already.

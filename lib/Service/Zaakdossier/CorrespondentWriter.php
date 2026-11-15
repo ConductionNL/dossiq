@@ -262,6 +262,22 @@ class CorrespondentWriter {
 	 */
 	public function describeAll(string $caseId, array $documents, string $correspondent = ''): array {
 		$parties = $this->partiesOf(caseId: $caseId);
+
+		return $this->labels->label(documents: $this->described(documents: $documents, reader: ['correspondent' => $correspondent, 'parties' => $parties]));
+	}//end describeAll()
+
+	/**
+	 * The documents that mention the correspondent, each with its correspondents described.
+	 *
+	 * @param array<int, mixed>                                            $documents The documents.
+	 * @param array{correspondent: string, parties: array<int|string, mixed>} $reader    The correspondent to filter on ('' for
+	 *                                                                                all), and the case's parties.
+	 *
+	 * @return array<int, array<string, mixed>> The described documents.
+	 */
+	private function described(array $documents, array $reader): array {
+		$parties = $reader['parties'];
+		$correspondent = $reader['correspondent'];
 		$described = [];
 		foreach ($documents as $document) {
 			if (is_array($document) === false) {
@@ -278,8 +294,8 @@ class CorrespondentWriter {
 			);
 		}
 
-		return $this->labels->label(documents: $described);
-	}//end describeAll()
+		return $described;
+	}//end described()
 
 	/**
 	 * Record one dispatch per correspondent of a document.

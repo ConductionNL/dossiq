@@ -153,15 +153,7 @@ class ZipManifestBuilder {
 		$included = $this->filterByClearance(user: $user, documents: $documents);
 		$excluded = ($candidateCount - count($included));
 
-		$run = new DossierZipRun(zip: self::openArchive(targetPath: $targetPath), layout: $layout);
-
-		// Manifest.csv at the archive root.
-		$run->zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
-		foreach ($included as $doc) {
-			$this->addDocument(run: $run, doc: $doc);
-		}
-
-		$run->zip->close();
+		$this->writeArchive(run: new DossierZipRun(zip: self::openArchive(targetPath: $targetPath), layout: $layout), included: $included);
 
 		return [
 			'path' => $targetPath,
@@ -169,6 +161,24 @@ class ZipManifestBuilder {
 			'excluded' => $excluded,
 		];
 	}//end buildZip()
+
+	/**
+	 * Write the manifest and every included document into the archive, and close it.
+	 *
+	 * @param DossierZipRun                    $run      The archive being written.
+	 * @param array<int, array<string, mixed>> $included The documents the user is cleared for.
+	 *
+	 * @return void
+	 */
+	private function writeArchive(DossierZipRun $run, array $included): void {
+		// Manifest.csv at the archive root.
+		$run->zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
+		foreach ($included as $doc) {
+			$this->addDocument(run: $run, doc: $doc);
+		}
+
+		$run->zip->close();
+	}//end writeArchive()
 
 	/**
 	 * Create (or overwrite) the archive at a path.

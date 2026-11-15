@@ -140,14 +140,7 @@ class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 			throw new RuntimeException('already_raised');
 		}
 
-		$changes = $this->raisedChanges(
-			case: $case,
-			act: ['act' => 'raised', 'reason' => $reason, 'actor' => $userId, 'moment' => (new DateTimeImmutable())->format('c')]
-		);
-
-		$this->write(caseId: $caseId, changes: $changes);
-
-		return $this->describe(caseId: $caseId, case: array_merge($case, $changes));
+		return $this->flagged(case: $case, act: ['caseId' => $caseId, 'act' => 'raised', 'reason' => $reason, 'actor' => $userId]);
 	}//end raise()
 
 	/**
@@ -177,19 +170,33 @@ class CaseAttentionFlagService implements CaseAttentionFlagServiceInterface {
 			throw new RuntimeException('not_raised');
 		}
 
-		$changes = [
-			'needsAttention' => false,
-			'attentionFlag' => null,
-			'attentionFlagHistory' => $this->historyWith(
-				case: $case,
-				act: ['act' => 'cleared', 'reason' => $reason, 'actor' => $userId, 'moment' => (new DateTimeImmutable())->format('c')]
-			),
-		];
+		return $this->flagged(case: $case, act: ['caseId' => $caseId, 'act' => 'cleared', 'reason' => $reason, 'actor' => $userId]);
+	}//end clear()
+
+	/**
+	 * Write the raising or clearing act onto the case, with its moment, and describe the case after it.
+	 *
+	 * @param array<string, mixed>  $case The case as read.
+	 * @param array<string, string> $act  The `caseId`, the `act` (`raised` or `cleared`), the `reason` and the `actor`.
+	 *
+	 * @return array<string, mixed> The case's flag as it now stands.
+	 */
+	private function flagged(array $case, array $act): array {
+		$caseId = $act['caseId'];
+		$entry = ['act' => $act['act'], 'reason' => $act['reason'], 'actor' => $act['actor'], 'moment' => (new DateTimeImmutable())->format('c')];
+		$changes = match ($act['act']) {
+			'raised' => $this->raisedChanges(case: $case, act: $entry),
+			default => [
+				'needsAttention' => false,
+				'attentionFlag' => null,
+				'attentionFlagHistory' => $this->historyWith(case: $case, act: $entry),
+			],
+		};
 
 		$this->write(caseId: $caseId, changes: $changes);
 
 		return $this->describe(caseId: $caseId, case: array_merge($case, $changes));
-	}//end clear()
+	}//end flagged()
 
 	/**
 	 * The changes that raise the flag, with the raising act appended to the history.

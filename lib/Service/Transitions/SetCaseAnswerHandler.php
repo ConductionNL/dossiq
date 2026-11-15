@@ -71,16 +71,28 @@ class SetCaseAnswerHandler implements ActionHandlerInterface, SetCaseAnswerHandl
 			return new ActionResult(succeeded: false, error: 'set_case_answer_incomplete');
 		}
 
+		return $this->answered(objects: $objects, answer: ['caseId' => $caseId, 'name' => $name, 'value' => ($actionConfig['value'] ?? null)]);
+	}//end handle()
+
+	/**
+	 * Write the answer and report it, or the failure.
+	 *
+	 * @param object                                            $objects The OpenRegister object service.
+	 * @param array{caseId: string, name: string, value: mixed} $answer  The case id, the property definition's name and the value.
+	 *
+	 * @return ActionResult
+	 */
+	private function answered(object $objects, array $answer): ActionResult {
 		try {
-			$this->writeAnswer(objects: $objects, answer: ['caseId' => $caseId, 'name' => $name, 'value' => ($actionConfig['value'] ?? null)]);
+			$this->writeAnswer(objects: $objects, answer: $answer);
 		} catch (Throwable $e) {
-			$this->logger->error('SetCaseAnswerHandler: the answer was not written', ['case' => $caseId, 'exception' => $e->getMessage()]);
+			$this->logger->error('SetCaseAnswerHandler: the answer was not written', ['case' => $answer['caseId'], 'exception' => $e->getMessage()]);
 
 			return new ActionResult(succeeded: false, error: 'set_case_answer_failed');
 		}
 
-		return new ActionResult(succeeded: true, data: ['name' => $name]);
-	}//end handle()
+		return new ActionResult(succeeded: true, data: ['name' => $answer['name']]);
+	}//end answered()
 
 	/**
 	 * Read the stored case, set the answer on it and save it.

@@ -416,7 +416,8 @@ class DeelzaakService implements DeelzaakServiceInterface {
 				break;
 			}
 
-			$outcome = $this->unlinkPage(page: $page, target: $target, seen: $seen);
+			$outcome = $this->unlinkPage(page: $page, run: ['target' => $target, 'seen' => $seen]);
+			$seen = $outcome['seen'];
 
 			$unlinked += $outcome['unlinked'];
 			$failed += $outcome['failed'];
@@ -461,15 +462,18 @@ class DeelzaakService implements DeelzaakServiceInterface {
 	/**
 	 * Detach one page of sub-cases, skipping any already attempted.
 	 *
-	 * @param array<int, array<string, mixed>> $page   The page of rows.
-	 * @param SubCaseUnlinkTarget              $target The parent, for logging, and where its sub-cases are stored.
-	 * @param array<string, bool>              $seen   Ids already attempted, updated in place.
+	 * @param array<int, array<string, mixed>>                              $page The page of rows.
+	 * @param array{target: SubCaseUnlinkTarget, seen: array<string, bool>} $run  The parent, for logging, and where its
+	 *                                                                            sub-cases are stored; the ids already attempted.
 	 *
-	 * @return array{unlinked: int, failed: int, sawSomethingNew: bool} The page outcome.
+	 * @return array{unlinked: int, failed: int, sawSomethingNew: bool, seen: array<string, bool>} The page outcome, with
+	 *                                                                                              the ids attempted so far.
 	 *
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
-	private function unlinkPage(array $page, SubCaseUnlinkTarget $target, array &$seen): array {
+	private function unlinkPage(array $page, array $run): array {
+		$target = $run['target'];
+		$seen = $run['seen'];
 		$unlinked = 0;
 		$failed = 0;
 		$sawSomethingNew = false;
@@ -505,6 +509,7 @@ class DeelzaakService implements DeelzaakServiceInterface {
 			'unlinked' => $unlinked,
 			'failed' => $failed,
 			'sawSomethingNew' => $sawSomethingNew,
+			'seen' => $seen,
 		];
 	}//end unlinkPage()
 }//end class

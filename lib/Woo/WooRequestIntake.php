@@ -169,7 +169,7 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 		$target = new IntakeRegister(objectService: $objectService, register: $register);
 		$caseType = $this->caseType(target: $target);
 		$started = $this->startedRequest(request: $request, wooRequest: $wooRequest);
-		$saved = $this->writeCase(target: $target, caseType: $caseType, request: $started);
+		$saved = $this->writeCase(target: $target, filing: ['caseType' => $caseType, 'request' => $started]);
 		$caseId = $saved['id'];
 
 		if ($collection !== null) {
@@ -344,7 +344,7 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 
 			$target = new IntakeRegister(objectService: $objectService, register: $register);
 			$caseType = $this->caseType(target: $target);
-			$saved = $this->writeCase(target: $target, caseType: $caseType, request: $request);
+			$saved = $this->writeCase(target: $target, filing: ['caseType' => $caseType, 'request' => $request]);
 		} catch (WooRequestRefused $e) {
 			// An unavailable dependency is `unavailable`; every other refusal is `refused`.
 			$outcome = ([WooRequestRefused::UNAVAILABLE => 'unavailable'][$e->getReason()] ?? 'refused');
@@ -474,13 +474,13 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	/**
 	 * Write the case and answer its uuid.
 	 *
-	 * @param IntakeRegister       $target        The OpenRegister ObjectService and the dossiq register.
-	 * @param array<string, mixed> $caseType      The Woo request case type.
-	 * @param array<string, mixed> $request       `wooRequest` (the request as the case keeps it), `intake`
-	 *                                            (how it came in: `startDate`, `intakeChannel`, and when known
-	 *                                            `portalSubject` and `receivedAt`), and optionally `startFrom`
-	 *                                            (an earlier Woo case this request starts from) and `branch`
-	 *                                            (the branch number a company filed under).
+	 * @param IntakeRegister       $target The OpenRegister ObjectService and the dossiq register.
+	 * @param array<string, mixed> $filing The Woo request case type (`caseType`) and the request (`request`):
+	 *                                     `wooRequest` (the request as the case keeps it), `intake`
+	 *                                     (how it came in: `startDate`, `intakeChannel`, and when known
+	 *                                     `portalSubject` and `receivedAt`), and optionally `startFrom`
+	 *                                     (an earlier Woo case this request starts from) and `branch`
+	 *                                     (the branch number a company filed under).
 	 *
 	 * @return array{id: string, answer: array<string, string>} The case uuid, and the number and date it carries.
 	 *
@@ -488,7 +488,8 @@ class WooRequestIntake implements WooRequestIntakeInterface {
 	 *
 	 * @spec openspec/changes/a-portal-request-names-its-requester/specs/woo-request-intake/spec.md#requirement-a-case-filed-for-a-resident-names-who-asked-req-wri-006
 	 */
-	private function writeCase(IntakeRegister $target, array $caseType, array $request): array {
+	private function writeCase(IntakeRegister $target, array $filing): array {
+		[$caseType, $request] = [$filing['caseType'], $filing['request']];
 		$objectService = $target->objectService;
 		$register = $target->register;
 		$case = $this->caseFields(caseType: $caseType, request: $request);
