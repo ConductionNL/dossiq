@@ -37,22 +37,24 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CasePriorityServiceInterface;
+use OCA\Dossiq\Service\Support\ReferenceId;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Derives a case's priority from its impact and its urgency.
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
-class CasePriorityService {
+class CasePriorityService implements CasePriorityServiceInterface {
 	/**
 	 * How much it matters if this case goes wrong, lowest first.
 	 *
@@ -203,7 +205,7 @@ class CasePriorityService {
 	 *
 	 * @return string One of PRIORITY_VALUES.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function derive(string $impact, string $urgency, array $matrix = []): string {
 		$impact = $this->normaliseImpact(value: $impact);
@@ -235,7 +237,7 @@ class CasePriorityService {
 	 * @return array<string, array<string, string>> The matrix, keyed impact
 	 *                                              then urgency.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function matrixFor(string $caseTypeId): array {
 		if (trim($caseTypeId) === '') {
@@ -264,7 +266,7 @@ class CasePriorityService {
 	 *
 	 * @return array{impact: string, urgency: string} The declared defaults.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function defaultsFor(string $caseTypeId): array {
 		$defaults = ['impact' => self::DEFAULT_IMPACT, 'urgency' => self::DEFAULT_URGENCY];
@@ -303,7 +305,7 @@ class CasePriorityService {
 	 *
 	 * @return integer The order, 0 when the value is not one of them.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function orderOf(string $priority): int {
 		return (int)(self::PRIORITY_ORDER[$priority] ?? 0);
@@ -317,7 +319,7 @@ class CasePriorityService {
 	 *
 	 * @return string The higher of the two, by the declared order.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function raise(string $current, string $floor): string {
 		if (in_array($floor, self::PRIORITY_VALUES, true) === false) {
@@ -341,7 +343,7 @@ class CasePriorityService {
 	 * @return array<string, mixed> The declaration, or an empty array when the
 	 *                              file is unreadable.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function termRaiseRule(): array {
 		if ($this->raiseRule !== null) {
@@ -382,7 +384,7 @@ class CasePriorityService {
 	 *
 	 * @return string One of PRIORITY_VALUES, or the empty string for no floor.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function termRaiseFloor(int $daysToTerm): string {
 		$thresholds = (array)($this->termRaiseRule()['thresholds'] ?? []);
@@ -418,7 +420,7 @@ class CasePriorityService {
 	 *
 	 * @return array<string, mixed> The fields to write back onto the case.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function resolve(array $case): array {
 		$caseTypeId = $this->referenceId(value: ($case['caseType'] ?? null));
@@ -427,6 +429,28 @@ class CasePriorityService {
 		$impact = $this->normaliseImpact(value: (string)($case['impact'] ?? ''), fallback: $defaults['impact']);
 		$urgency = $this->normaliseUrgency(value: (string)($case['urgency'] ?? ''), fallback: $defaults['urgency']);
 
+		$impact = $this->assessedImpact(caseData: $case, caseTypeId: $caseTypeId, impact: $impact);
+
+		$derived = $this->derive(impact: $impact, urgency: $urgency, matrix: $this->matrixFor(caseTypeId: $caseTypeId));
+
+		$effective = $this->effectivePriority(caseData: $case, derived: $derived);
+
+		return ['impact' => $impact, 'urgency' => $urgency, 'priorityDerived' => $derived,
+			'priority' => $effective, 'priorityOrder' => $this->orderOf(priority: $effective)];
+	}//end resolve()
+
+	/**
+	 * The impact, replaced by the one the assessed risk level gives when the case type reads it from there.
+	 *
+	 * @param array<string, mixed> $caseData The case payload as it is being saved.
+	 * @param string $caseTypeId The case type.
+	 * @param string $impact The impact from the impact field.
+	 *
+	 * @return string The impact.
+	 *
+	 * @spec openspec/specs/case-priority/spec.md
+	 */
+	private function assessedImpact(array $caseData, string $caseTypeId, string $impact): string {
 		// REQ-MRK-02: a case type may read its impact from the assessed risk
 		// level instead of from the impact field. It feeds this axis and does
 		// NOT become a fifth priority word: the matrix below still decides,
@@ -434,32 +458,34 @@ class CasePriorityService {
 		// lives with the assessment rather than here, because what a risk
 		// level means is the assessment's business and what a priority is is
 		// this class's.
-		$assessed = (string)$this->risk?->impactFromRisk(case: $case, caseTypeId: $caseTypeId);
+		$assessed = (string)$this->risk?->impactFromRisk(case: $caseData, caseTypeId: $caseTypeId);
 		if (in_array($assessed, self::IMPACT_VALUES, true) === true) {
 			$impact = $assessed;
 		}
 
-		$derived = $this->derive(
-			impact: $impact,
-			urgency: $urgency,
-			matrix: $this->matrixFor(caseTypeId: $caseTypeId)
-		);
+		return $impact;
+	}//end assessedImpact()
 
-		$effective = $this->raise(current: $derived, floor: (string)($case['priorityFloor'] ?? ''));
+	/**
+	 * The priority the case carries: the derived one raised to its floor, unless a valid override names another.
+	 *
+	 * @param array<string, mixed> $caseData The case payload as it is being saved.
+	 * @param string $derived The priority the matrix derives.
+	 *
+	 * @return string The effective priority.
+	 *
+	 * @spec openspec/specs/case-priority/spec.md
+	 */
+	private function effectivePriority(array $caseData, string $derived): string {
+		$effective = $this->raise(current: $derived, floor: (string)($caseData['priorityFloor'] ?? ''));
 
-		$override = (string)($case['priorityOverride'] ?? '');
+		$override = (string)($caseData['priorityOverride'] ?? '');
 		if (in_array($override, self::PRIORITY_VALUES, true) === true) {
 			$effective = $override;
 		}
 
-		return [
-			'impact' => $impact,
-			'urgency' => $urgency,
-			'priorityDerived' => $derived,
-			'priority' => $effective,
-			'priorityOrder' => $this->orderOf(priority: $effective),
-		];
-	}//end resolve()
+		return $effective;
+	}//end effectivePriority()
 
 	/**
 	 * The impact and urgency behind a priority a writer already has.
@@ -470,7 +496,7 @@ class CasePriorityService {
 	 *                                                under the instance
 	 *                                                default matrix.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function pairFor(string $priority): array {
 		return (self::PRIORITY_SEED_PAIRS[trim($priority)]
@@ -559,14 +585,6 @@ class CasePriorityService {
 	 * @return string The id, or the empty string.
 	 */
 	private function referenceId(mixed $value): string {
-		if (is_array($value) === true) {
-			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
+		return ReferenceId::of(value: $value);
 	}//end referenceId()
 }//end class

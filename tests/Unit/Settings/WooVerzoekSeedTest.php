@@ -13,7 +13,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-the-woo-request-case-type-is-seeded-req-wri-001
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-case-type-is-seeded-req-wri-001
  */
 
 declare(strict_types=1);

@@ -1,124 +1,93 @@
 ---
 status: done
-retrofit: true
 ---
 
 # MCP Integration Specification
 
 ## Purpose
 
-@e2e exclude Backend MCP tool provider; invoked by AI orchestrator, not via browser UI.
+@e2e exclude Backend MCP tool surface; invoked by the AI orchestrator (Hermiq) over JSON-RPC and the chat facade, not via the browser UI.
 
-Provide the dossiq-side `IMcpToolProvider` implementation that the openregister AI orchestrator (per ADR-034 / ADR-035) discovers and invokes during an AI Chat Companion turn. The MVP exposes two read-only tools (`dossiq.listProcesses`, `dossiq.getProcessDetails`) with bounded result sets, per-object authorisation enforced inside `invokeTool`, and structured error envelopes — so that an LLM can ask "what cases am I working on?" and "what's the current step on case X?" without being able to mutate anything or read cases the caller isn't entitled to see.
-
-The full per-app MCP tool set (startProcess, advanceStep, listMyTasks, getTaskDetails — tracked in procest#416) is intentionally out of scope here.
+dossiq writes no MCP tool code of its own. Per ADR-063 OpenRegister is the single MCP registry: dossiq declares a curated, read-only `x-openregister-mcp` dialect on 12 of its schemas, and OpenRegister derives 20 `dossiq.{schema}.{verb}` tools from it. Authorisation is OpenRegister RBAC in the caller's own session. The hand-written provider (`dossiq.listProcesses`, `dossiq.getProcessDetails`) was removed by the `dossiq-mcp-adoption` change; its tools map onto `dossiq.case.search`, `dossiq.case.get` and `dossiq.statusRecord.search`.
 
 ## Requirements
 
-### REQ-001: Implement IMcpToolProvider with stable app id and hardcoded tool catalogue
+### Requirement: REQ-MCP-101 — Curated x-openregister-mcp dialect on exactly 12 schemas
 
-The system SHALL implement `OCA\OpenRegister\Mcp\IMcpToolProvider` with `getAppId()` returning the dossiq app id and `getTools()` returning a hardcoded catalogue of exactly two read-only tools — `dossiq.listProcesses` and `dossiq.getProcessDetails` — with their `id`, `name`, `description`, and `inputSchema` (JSON Schema shape) so the orchestrator can advertise them to the LLM verbatim.
+Dossiq MUST declare `x-openregister-mcp` with `enabled: true` on exactly these 12 schemas and on no others: `case`, `caseType`, `statusType`, `statusRecord`, `decision`, `result`, `resultType`, `document`, `caseDocument`, `objectionProceeding`, `deadlineInstance`, `complaint`. (Amended 10 Oct 2026 at build: the draft named `task`, `bezwaar` and `termijnInstance`; `bezwaar` and `termijnInstance` were renamed to `objectionProceeding` and `deadlineInstance` by #849, and the case task moved onto OpenRegister's engine `Task`, which is not a register object and so cannot carry the dialect.) Every other schema owned by Dossiq MUST remain at the dialect default (absent / OFF). The block MUST live inside the schema's `configuration` object, which is where `SchemaDerivedToolProvider::mcpAnnotation()` reads it.
 
-#### Scenario: getAppId stability
+#### Scenario: Only the curated schemas are enabled
 
-- WHEN the orchestrator queries the provider's app id
-- THEN `getAppId()` SHALL return the dossiq application id (`OCA\Dossiq\AppInfo\Application::APP_ID`)
+- **WHEN** the Dossiq registers are imported into OpenRegister
+- **THEN** exactly 12 Dossiq schemas SHALL carry `configuration["x-openregister-mcp"]["enabled"] === true`
+- **AND** no other Dossiq schema SHALL carry an `x-openregister-mcp` block
 
-#### Scenario: getTools returns 2 descriptors
+#### Scenario: Personal-data and control-plane schemas stay off
 
-- WHEN the orchestrator queries `getTools()`
-- THEN the result SHALL be exactly the two-tool MVP catalogue with stable `id` strings prefixed `dossiq.`
+- **WHEN** any schema carrying persoonsgegevens (`brpPerson`, `contactmoment`, `customerContact`, the sociaal-domein set, the zaakportaal set), any tenant/SaaS control-plane schema, any mandate/authorisation schema, or any audit-log schema is inspected
+- **THEN** it SHALL carry no `x-openregister-mcp` block and SHALL emit no MCP tool
 
-#### Notes
+### Requirement: REQ-MCP-102 — The derived Dossiq tool surface is read-only
 
-- The catalogue lives in a `private const TOOL_DESCRIPTORS` so unit tests can assert it as a fixture.
+Every verb Dossiq declares MUST be `search` or `get`, with `scope: "read"` and `readOnlyHint: true`. Dossiq MUST NOT declare `create`, `update`, or `delete` on any schema. Rationale (design.md §D6): every lawful Dossiq write passes through a service that enforces a state-machine guard, a mandate check, a statutory clock, or an Archiefwet retention rule, and a derived write verb writes straight through `ObjectService`, bypassing all of them.
 
-### REQ-002: listProcesses tool with bounded limit and optional status filter
+#### Scenario: No write verb is emitted
 
-The system SHALL implement `dossiq.listProcesses(limit?, status?)` returning up to `LIMIT_MAX=50` (default `20`) running process instances the caller is entitled to read, optionally filtered to a single status type id, formatted as MCP source descriptors.
+- **WHEN** the derived tool list is enumerated for `appId = dossiq`
+- **THEN** no tool id SHALL end in `.create`, `.update`, or `.delete`
 
-#### Scenario: Limit parsing
+#### Scenario: Case transitions are not agent-writable
 
-- WHEN `limit` is supplied
-- THEN the helper SHALL clamp it to `[1, LIMIT_MAX]`, defaulting to `20` when absent or out-of-range
+- **WHEN** an agent attempts to advance or close a case
+- **THEN** no MCP tool SHALL exist that writes `case.status` directly
+- **AND** the agent SHALL be unable to bypass `StatusTransitionService` guard evaluation, `statusRecord` emission, automatic actions, or termijn recalculation
 
-#### Scenario: Status filter
+#### Scenario: Cases and dossiers cannot be destroyed by an agent
 
-- WHEN `status` is supplied
-- THEN the case list SHALL be restricted to cases whose current `statusType` matches that id
+- **WHEN** an agent attempts to delete a case, decision, or document
+- **THEN** no `delete` tool SHALL exist for any Dossiq schema, because destruction (vernietiging) of a zaakdossier is an authorised act governed by the selectielijst (`resultType.archivalPeriod` / `archivalAction`) under the Archiefwet
 
-#### Scenario: Result cap
+### Requirement: REQ-MCP-103 — Every declared search filter is a real schema property
 
-- WHEN the filtered list exceeds `ITEMS_CAP=20`
-- THEN the result SHALL be truncated to `ITEMS_CAP` items before returning to the orchestrator (independent of the per-tool `limit` argument)
+Each `search.filters` entry MUST name a property that exists on that schema, because `McpAnnotationValidator::validateFilters()` rejects the schema at import otherwise. The declared filters SHALL be exactly: `case` → `status`, `caseType`, `assignee`, `priority`, `identifier`, `isFinalStatus`; `caseType` → `identifier`, `catalogus`, `isDraft`; `statusType` → `caseType`, `isFinal`; `statusRecord` → `case`, `statusType`; `decision` → `case`, `decisionType`, `decisionDate`; `resultType` → `caseType`, `archivalAction`; `document` → `documentType`, `status`, `confidentiality`; `caseDocument` → `case`, `document`; `objectionProceeding` → `case`, `status`, `objection`; `deadlineInstance` → `case`, `status`, `deadlineDefinition`. `result` and `complaint` declare `get` only and therefore no filters.
 
-### REQ-003: getProcessDetails tool returning case + history
+#### Scenario: Import accepts every declared filter
 
-The system SHALL implement `dossiq.getProcessDetails(caseId)` returning a single case with its current step plus the case's history, packaged as MCP source descriptors that the LLM can quote in its response.
+- **WHEN** the registers are imported
+- **THEN** `McpAnnotationValidator` SHALL return zero errors for every Dossiq schema
+- **AND** no `mcp-unknown-filter` / `mcp-filters-not-search` error SHALL be raised
 
-#### Scenario: caseId argument parsing
+#### Scenario: No identifying property is a filter
 
-- WHEN `caseId` is missing or non-UUID-shaped
-- THEN the tool SHALL return a structured error envelope (REQ-005) without invoking the case store
+- **WHEN** the `case` search filter list is inspected
+- **THEN** it SHALL NOT contain `initiatorSourceId`, `initiatorDisplayName`, `initiatorType`, or `requester`
+- **AND** an agent SHALL therefore be unable to look up or enumerate cases by BSN or by citizen name
 
-#### Scenario: Not found
+### Requirement: REQ-MCP-104 — Personal-data posture of the enabled set (AVG)
 
-- WHEN no case matches the resolved id
-- THEN the tool SHALL return a structured error envelope with code indicating not-found
+Because the dialect offers no server-side field projection, an enabled schema returns everything it stores; Dossiq MUST therefore constrain exposure by schema and verb. `complaint` MUST declare `get` only — never `search` — because `complaint.complainant` is an embedded citizen record (naam + contactgegevens) and a search would let an agent sweep complainants. `case` MAY declare `search` and `get` despite `initiatorSourceId` potentially carrying a BSN, on the condition of REQ-MCP-103's filter restriction, OpenRegister RBAC in the caller's own session, and the immutable audit trail; this residual risk is recorded, not hidden.
 
-#### Scenario: History inclusion
+#### Scenario: Complaint cannot be swept
 
-- WHEN the case is resolved and the caller is entitled
-- THEN the tool SHALL load the case history (capped at `ITEMS_CAP`) and include both case + history in the source-descriptor payload
+- **WHEN** an agent calls the Dossiq tool surface looking for complaints
+- **THEN** only `dossiq.complaint.get` SHALL exist, requiring an id the agent already holds from case context
+- **AND** no `dossiq.complaint.search` tool SHALL exist
 
-### REQ-004: Per-object authorisation (assignee / role / admin) inside invokeTool
+#### Scenario: BSN is never a lookup key
 
-The system SHALL enforce per-object authorisation inside `invokeTool` AFTER argument validation but BEFORE business logic, via `canReadCase($case)`. A caller MAY read a case only when one of these holds: the caller is an admin (procest-admin group OR NC admin group), the caller is the case's assignee (primary handler), or a role record exists linking the caller's user id to the case uuid.
+- **WHEN** an agent supplies a BSN as a search filter on any Dossiq tool
+- **THEN** the call SHALL be rejected as an undeclared filter by `SchemaDerivedToolProvider::search()`
 
-#### Scenario: Admin always allowed
+### Requirement: REQ-MCP-105 — OpenRegister RBAC is the single authorisation gate
 
-- WHEN the current user is in `procest-admin` or is an NC admin
-- THEN `canReadCase` SHALL return `true` without further checks
+The Dossiq MCP surface MUST delegate all authorisation to OpenRegister RBAC, invoked in the caller's ambient Nextcloud session with no impersonation and no system account — identical to the REST path the Dossiq UI already uses (`/apps/openregister/api/objects` via `useObjectStore`, ADR-022). Dossiq MUST NOT re-implement a per-object ACL in the MCP path. The "cases I work on" question SHALL be served by `dossiq.case.search` with the declared `assignee` filter.
 
-#### Scenario: Assignee read
+#### Scenario: MCP reads match UI reads
 
-- WHEN the current user is the case's assignee
-- THEN `canReadCase` SHALL return `true`
+- **WHEN** a non-privileged user invokes `dossiq.case.search`
+- **THEN** the result set SHALL be exactly the set of cases that user can already read through the Dossiq UI
 
-#### Scenario: Role-mediated read
+#### Scenario: My cases
 
-- WHEN the current user has a role record linking them to the case uuid
-- THEN `canReadCase` SHALL return `true`
-
-#### Scenario: Fail-closed contract
-
-- WHEN none of the three checks pass
-- THEN `canReadCase` SHALL return `false`
-- AND the authorisation helper SHALL NOT be wrapped in `catch(\Throwable)` — exceptions during the resolve MUST propagate (OWASP A01:2021 / ADR-005)
-
-#### Notes
-
-- `isAdmin($userId)` delegates to `IGroupManager`, mirroring the pattern in `StatusTransitionService`.
-
-### REQ-005: Standard error envelopes and result-cap
-
-The system SHALL return all errors as a standard envelope `errorEnvelope(code, message)` rather than throwing — so the orchestrator can pass the error to the LLM as a structured tool result without ad-hoc exception handling.
-
-#### Scenario: Validation error envelope
-
-- WHEN argument validation fails (missing `caseId`, malformed UUID, etc.)
-- THEN the helper SHALL return `errorEnvelope(<code>, <message>)`
-
-#### Scenario: Authorisation error envelope
-
-- WHEN `canReadCase` returns `false`
-- THEN the helper SHALL return an authorisation-error envelope without leaking case data
-
-#### Scenario: ITEMS_CAP for all source-descriptor lists
-
-- WHEN any list of source descriptors is being built (cases, history, etc.)
-- THEN the result SHALL be capped at `ITEMS_CAP = 20` before envelope construction
-
-#### Notes
-
-- The standardised error shape means the orchestrator can match on it without per-tool special-casing.
+- **WHEN** an agent is asked which cases the current user is handling
+- **THEN** it SHALL call `dossiq.case.search` with `filters: { assignee: <current user id>, isFinalStatus: false }`

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Obligations;
 
+use OCA\Dossiq\Service\Consultation\ConsultationRecords;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
 use OCA\Dossiq\Service\Consultation\ConsultationRepository;
@@ -43,13 +44,16 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\ConsultationService::consultationBlocks
  * @covers \OCA\Dossiq\Service\Obligations\ObligationDeclaration
+ * @covers \OCA\Dossiq\Service\Consultation\ConsultationRecords
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\ConsultationService
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
  *
  * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaRows
  */
 class ObligationReleaseTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -78,15 +82,17 @@ class ObligationReleaseTest extends TestCase {
 			settingsService: $settings,
 			logger: $logger,
 			adviceDelegation: $this->createMock(originalClassName: AdviceDelegationService::class),
-			repository: $repository,
-			dependencyGraph: new ConsultationDependencyGraph(repository: $repository),
-			dates: $this->caseDates(),
-			obligations: new ObligationService(
-				settingsService: $settings,
-				declaration: new ObligationDeclaration(),
-				dates: $this->caseDates(),
-				logger: $logger,
+			records: new ConsultationRecords(
+				repository: $repository,
+				dependencyGraph: new ConsultationDependencyGraph(repository: $repository),
+				obligations: new ObligationService(
+					settingsService: $settings,
+					declaration: new ObligationDeclaration(),
+					dates: $this->caseDates(),
+					logger: $logger,
+				),
 			),
+			dates: $this->caseDates(),
 		);
 	}//end setUp()
 

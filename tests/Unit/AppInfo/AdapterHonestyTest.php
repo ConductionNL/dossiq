@@ -29,8 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter;
-use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
+use OCA\Dossiq\Service\Beschikking\DecisionTemplateEngine;
+use OCA\Dossiq\Service\Registrar\ConfiguredAdapter;
+use OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
@@ -38,6 +39,7 @@ use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter;
 use OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter;
 use OCA\Dossiq\Service\IntegrationStatusService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -80,17 +82,6 @@ class RealBerichtenboxAdapter implements BerichtenboxAdapterInterface {
 	): array {
 		return ['messageId' => 'real-1', 'status' => 'sent'];
 	}//end sendMessage()
-
-	/**
-	 * Pretend to poll.
-	 *
-	 * @param string $messageId The external message id.
-	 *
-	 * @return array<string, mixed> The read status.
-	 */
-	public function getReadStatus(string $messageId): array {
-		return ['read' => false, 'readAt' => null];
-	}//end getReadStatus()
 }//end class
 
 /**
@@ -102,14 +93,17 @@ class NotAnAdapter {
 /**
  * The seam resolves what the admin named, and says so when it cannot.
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter
+ * @covers \OCA\Dossiq\Service\Registrar\ConfiguredAdapter
  *
- * @covers \OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar
+ * @covers \OCA\Dossiq\Service\Registrar\SubstitutableAdapterRegistrar
  *
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter
+ * @uses \OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter
+ * @uses \OCA\Dossiq\Service\Registrar\ConfiguredAdapter
+ * @uses \OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice
  */
 class AdapterHonestyTest extends TestCase {
 
@@ -162,10 +156,20 @@ class AdapterHonestyTest extends TestCase {
 		$dispatcher = $this->createMock(IEventDispatcher::class);
 		$userSession = $this->createMock(IUserSession::class);
 
+		$settings = $this->createMock(SettingsService::class);
+		$engines = $this->createMock(DecisionTemplateEngine::class);
+
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use ($appConfig, $appManager, $dispatcher, $l10n, $logger, $userSession): object {
+			static function (string $id) use (&$container, $appConfig, $appManager, $dispatcher, $engines, $l10n, $logger, $settings, $userSession): object {
 				return match ($id) {
+					FilinqTemplateEngineAdapter::class => new FilinqTemplateEngineAdapter(
+						container: $container,
+						settings: $settings,
+						userSession: $userSession,
+						logger: $logger,
+						engines: $engines,
+					),
 					IAppConfig::class => $appConfig,
 					IAppManager::class => $appManager,
 					IL10N::class => $l10n,
@@ -254,23 +258,66 @@ class AdapterHonestyTest extends TestCase {
 	}//end testTheRegistrarBindsBothSeams()
 
 	/**
-	 * The template warning asks for the thing the reader is actually missing.
-	 *
-	 * One message covering both states would tell each reader half of what
-	 * they have to do: an instance without filinq needs to install it, an
-	 * instance with filinq needs to name its adapter.
+	 * Filinq absent: the mock, and the warning says to install filinq.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md#scenario-filinq-absent-and-the-warning-says-to-install-it
 	 */
-	public function testTheTemplateWarningNamesWhatIsActuallyMissing(): void {
+	public function testWithoutFilinqTheMockRunsAndTheWarningSaysInstallIt(): void {
 		$factory = $this->registeredFactories()[TemplateEngineAdapterInterface::class];
 
-		$factory($this->container(named: '', filinq: false));
-		$this->assertStringContainsString('not installed', $this->logged[0][1]);
+		$adapter = $factory($this->container(named: '', filinq: false));
 
-		$factory($this->container(named: '', filinq: true));
-		$this->assertStringContainsString('no template adapter is configured', $this->logged[0][1]);
-	}//end testTheTemplateWarningNamesWhatIsActuallyMissing()
+		$this->assertInstanceOf(MockTemplateEngineAdapter::class, $adapter);
+		$this->assertCount(1, $this->logged);
+		$this->assertSame('warning', $this->logged[0][0]);
+		$this->assertStringContainsString('not installed', $this->logged[0][1]);
+		$this->assertStringContainsString('Install filinq', $this->logged[0][1]);
+	}//end testWithoutFilinqTheMockRunsAndTheWarningSaysInstallIt()
+
+	/**
+	 * Filinq present and the key empty: filinq's adapter, and no warning.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md#scenario-filinq-present-but-no-adapter-named-and-the-warning-says-which
+	 */
+	public function testWithFilinqAndAnEmptyKeyFilinqRenders(): void {
+		$factory = $this->registeredFactories()[TemplateEngineAdapterInterface::class];
+
+		$adapter = $factory($this->container(named: '', filinq: true));
+
+		$this->assertInstanceOf(FilinqTemplateEngineAdapter::class, $adapter);
+		$this->assertSame([], $this->logged, 'filinq bound by default warns about nothing');
+		$this->assertSame(
+			FilinqTemplateEngineAdapter::class,
+			SubstitutableAdapterRegistrar::defaultTemplateAdapter(container: $this->container(named: '', filinq: true))
+		);
+		$this->assertSame(
+			MockTemplateEngineAdapter::class,
+			SubstitutableAdapterRegistrar::defaultTemplateAdapter(container: $this->container(named: '', filinq: false))
+		);
+	}//end testWithFilinqAndAnEmptyKeyFilinqRenders()
+
+	/**
+	 * An administrator who names the mock gets the mock, and the log says it was chosen.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md#scenario-an-administrator-chose-the-mock
+	 */
+	public function testANamedMockRunsAndTheLogSaysItWasChosen(): void {
+		$factory = $this->registeredFactories()[TemplateEngineAdapterInterface::class];
+
+		$adapter = $factory($this->container(named: MockTemplateEngineAdapter::class, filinq: true));
+
+		$this->assertInstanceOf(MockTemplateEngineAdapter::class, $adapter);
+		$this->assertCount(1, $this->logged);
+		$this->assertSame('warning', $this->logged[0][0]);
+		$this->assertStringContainsString('names the mock', $this->logged[0][1]);
+		$this->assertStringContainsString('Clear beschikking_template_adapter', $this->logged[0][1]);
+	}//end testANamedMockRunsAndTheLogSaysItWasChosen()
 
 	/**
 	 * The substitution point that did not exist.
@@ -389,32 +436,24 @@ class AdapterHonestyTest extends TestCase {
 	}//end testAnUnconfiguredAdapterSeamReadsAsSimulated()
 
 	/**
-	 * The instruction on the templates row names a class that can actually serve it.
+	 * The templates row reads Simulated for the mock only, and says what to do.
 	 *
-	 * The row used to say "set it to a real adapter class" while dossiq shipped
-	 * none, so the only way to follow the instruction was to write one. There
-	 * is one now, and the row names it. This asserts the name is not a dead
-	 * end: the class exists and implements the seam, which is exactly what
-	 * ConfiguredAdapter will check before binding it. A rename that moved the
-	 * class without moving this sentence would leave an admin pasting a value
-	 * that resolves to the mock, which is how the seam went quiet the first
-	 * time.
+	 * An empty key is no longer a simulated value: with filinq enabled it binds
+	 * filinq's adapter. The row's sentence names the two ways out, installing
+	 * filinq or clearing a key that names the mock, and the class it would
+	 * otherwise have told an admin to paste is no longer needed.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	public function testTheTemplatesRowNamesAnAdapterThatCanServeTheSeam(): void {
-		$message = (string)($this->declaredConnection(key: 'templates')['adapter']['simulatedMessage'] ?? '');
+	public function testTheTemplatesRowReadsSimulatedForTheMockOnly(): void {
+		$adapter = $this->declaredConnection(key: 'templates')['adapter'];
 
-		$this->assertStringContainsString(
-			needle: FilinqTemplateEngineAdapter::class,
-			haystack: $message,
-			message: 'the row must name the adapter an admin is supposed to paste'
-		);
-		$this->assertTrue(
-			condition: is_a(FilinqTemplateEngineAdapter::class, TemplateEngineAdapterInterface::class, true),
-			message: 'the named class must implement the seam, or ConfiguredAdapter will refuse it'
-		);
-	}//end testTheTemplatesRowNamesAnAdapterThatCanServeTheSeam()
+		$this->assertSame([MockTemplateEngineAdapter::class], $adapter['simulatedValues']);
+		$this->assertStringContainsString('Install Filinq', (string)$adapter['simulatedMessage']);
+		$this->assertStringContainsString(SubstitutableAdapterRegistrar::TEMPLATE_CONFIG_KEY, (string)$adapter['simulatedMessage']);
+	}//end testTheTemplatesRowReadsSimulatedForTheMockOnly()
 
 	/**
 	 * One entry of lib/Settings/connections.json, by key.

@@ -26,7 +26,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ namespace OCA\Dossiq\Service\Ai;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
  */
 class AiPiiRedactor {
 	/**
@@ -69,7 +69,7 @@ class AiPiiRedactor {
 	 * @return array<int, array{start: int, end: int, category: string, text: string}>
 	 *                                                                                 Spans sorted by `start`, ascending.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
 	 */
 	public function detectSpans(string $text): array {
 		$spans = [];
@@ -106,7 +106,7 @@ class AiPiiRedactor {
 	 *
 	 * @return string The prompt with PII replaced.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
 	 */
 	public function strip(string $prompt): string {
 		foreach (self::PII_PATTERNS as $type => $pattern) {

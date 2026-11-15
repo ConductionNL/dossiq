@@ -1,0 +1,319 @@
+<?php
+
+/**
+ * Dossiq Woo delivered set guard
+ *
+ * A frozen delivered set and the assessments it names refuse change
+ * (woo-delivered-set-is-a-record REQ-WDS-002). Listens to OpenRegister's
+ * ObjectUpdatingEvent and ObjectDeletingEvent. The one change a frozen set
+ * accepts is its first `withdrawnAt` stamp, which the publication withdraw
+ * writes. When the frozen sets of a case cannot be read, a write to an
+ * assessment of that case is refused: an unreadable record is no proof that
+ * nothing was delivered.
+ *
+ * @category Listener
+ * @package  OCA\Dossiq\Listener
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Listener;
+
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooDeliveredSetWriterInterface;
+use OCA\OpenRegister\Event\ObjectDeletingEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
+use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventListener;
+use OCP\IL10N;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Refuses writes to a frozen set and to the assessments it names.
+ *
+ * @template-implements IEventListener<Event>
+ *
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+ */
+class WooDeliveredSetGuard implements IEventListener {
+
+	/**
+	 * The assessment schema's slug, used when the config key is not set yet.
+	 */
+	private const ASSESSMENT_SLUG = 'wooDocumentAssessment';
+
+	/**
+	 * The delivered set schema: its config key and its slug.
+	 */
+	private const SET_SCHEMA = [WooDeliveredSetWriterInterface::CONFIG_KEY, WooDeliveredSetWriterInterface::SCHEMA_SLUG];
+
+	/**
+	 * The assessment schema: its config key and its slug.
+	 */
+	private const ASSESSMENT_SCHEMA = ['woo_assessment_schema', self::ASSESSMENT_SLUG];
+
+	/**
+	 * The data keys of a set; anything else (`@self`, `id`) is metadata.
+	 */
+	private const SET_KEYS = ['case', 'decision', 'status', 'deliveredAt', 'deliveredBy', 'supersedes', 'publication', 'items', 'setHash'];
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsServiceInterface       $settings The configured schemas.
+	 * @param WooDeliveredSetWriterInterface $sets     Reads the frozen sets of a case.
+	 * @param IL10N                 $l10n     The refusal sentence.
+	 * @param LoggerInterface       $logger   Logger.
+	 */
+	public function __construct(
+		private readonly SettingsServiceInterface $settings,
+		private readonly WooDeliveredSetWriterInterface $sets,
+		private readonly IL10N $l10n,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * Refuse the write when a frozen set covers the object.
+	 *
+	 * @param Event $event The dispatched event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	public function handle(Event $event): void {
+		if ($event instanceof ObjectUpdatingEvent === false && $event instanceof ObjectDeletingEvent === false) {
+			return;
+		}
+
+		[$old, $new] = $this->objectsOf(event: $event);
+		$deliveredAt = $this->deliveredAt(old: $old, new: $new);
+		if ($deliveredAt === null) {
+			return;
+		}
+
+		$event->setErrors(['error' => 'woo-delivered-set-frozen', 'message' => $this->refusalSentence(deliveredAt: $deliveredAt)]);
+		$event->stopPropagation();
+		$this->logger->info('Dossiq: refused a write to a delivered Woo set or its assessments (REQ-WDS-002)');
+	}//end handle()
+
+	/**
+	 * When the delivered set this write touches was delivered, or null when the write may go ahead.
+	 *
+	 * An empty string means the delivery could not be checked.
+	 *
+	 * @param array<string, mixed>|null $old The stored object.
+	 * @param array<string, mixed>|null $new The object as the write leaves it.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function deliveredAt(?array $old, ?array $new): ?string {
+		$current = ($old ?? $new);
+		if ($current === null) {
+			return null;
+		}
+
+		if ($this->isSchema(object: $current, schema: self::SET_SCHEMA) === true) {
+			return $this->frozenSetRefusal(old: ($old ?? []), new: $new);
+		}
+
+		return $this->assessmentDeliveredAt(object: $current);
+	}//end deliveredAt()
+
+	/**
+	 * When the delivered set an assessment belongs to was delivered, or null for anything that is not an assessment.
+	 *
+	 * @param array<string, mixed> $object The object written.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function assessmentDeliveredAt(array $object): ?string {
+		if ($this->isSchema(object: $object, schema: self::ASSESSMENT_SCHEMA) === false) {
+			return null;
+		}
+
+		return $this->deliveredAssessmentRefusal(assessment: $object);
+	}//end assessmentDeliveredAt()
+
+	/**
+	 * The sentence a refused write reads: delivered on a day, or the delivery could not be checked.
+	 *
+	 * @param string $deliveredAt When the set was delivered; empty when that could not be checked.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function refusalSentence(string $deliveredAt): string {
+		if ($deliveredAt === '') {
+			return $this->l10n->t('Whether this was delivered for publication could not be checked, so it cannot be changed now. Try again later.');
+		}
+
+		return $this->l10n->t(
+			'This was delivered for publication on %1$s, so it cannot be changed. Publish again to deliver a new set.',
+			[substr($deliveredAt, 0, 10)]
+		);
+	}//end refusalSentence()
+
+	/**
+	 * The stored object and, for an update, the new one.
+	 *
+	 * @param ObjectUpdatingEvent|ObjectDeletingEvent $event The event.
+	 *
+	 * @return array{0: array<string, mixed>|null, 1: array<string, mixed>|null}
+	 */
+	private function objectsOf(ObjectUpdatingEvent|ObjectDeletingEvent $event): array {
+		try {
+			if ($event instanceof ObjectDeletingEvent) {
+				return [$event->getObject()->jsonSerialize(), null];
+			}
+
+			return [$event->getOldObject()?->jsonSerialize(), $event->getNewObject()->jsonSerialize()];
+		} catch (Throwable $e) {
+			return [null, null];
+		}
+	}//end objectsOf()
+
+	/**
+	 * When a frozen set refuses this write: its delivery date, or null when the write may pass.
+	 *
+	 * @param array<string, mixed>      $old The stored set.
+	 * @param array<string, mixed>|null $new The new set, or null for a delete.
+	 *
+	 * @return string|null
+	 */
+	private function frozenSetRefusal(array $old, ?array $new): ?string {
+		if ((string)($old['status'] ?? '') !== WooDeliveredSetWriterInterface::STATUS_FROZEN) {
+			return null;
+		}
+
+		if ($new !== null && $this->isOnlyTheWithdrawStamp(old: $old, new: $new) === true) {
+			return null;
+		}
+
+		// OpenRegister's freeze marker lives in `@self`, beside the data. Setting
+		// or lifting it on a frozen set changes no data, so it is not a change
+		// this guard refuses (REQ-WDS-002 with OpenRegister REQ-OAS-007).
+		if ($new !== null && $this->changesNoData(old: $old, new: $new) === true) {
+			return null;
+		}
+
+		return (string)($old['deliveredAt'] ?? 'an earlier date');
+	}//end frozenSetRefusal()
+
+	/**
+	 * Whether an update leaves every data key as it was: a metadata-only write, such as OpenRegister's freeze marker.
+	 *
+	 * @param array<string, mixed> $old The stored set.
+	 * @param array<string, mixed> $new The new set.
+	 *
+	 * @return bool
+	 */
+	private function changesNoData(array $old, array $new): bool {
+		foreach (array_merge(self::SET_KEYS, ['withdrawnAt']) as $key) {
+			if (json_encode($old[$key] ?? null) !== json_encode($new[$key] ?? null)) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end changesNoData()
+
+	/**
+	 * Whether the update adds the first `withdrawnAt` and changes nothing else.
+	 *
+	 * @param array<string, mixed> $old The stored set.
+	 * @param array<string, mixed> $new The set as it would be written.
+	 *
+	 * @return bool
+	 */
+	private function isOnlyTheWithdrawStamp(array $old, array $new): bool {
+		if (empty($old['withdrawnAt']) === false || empty($new['withdrawnAt']) === true) {
+			return false;
+		}
+
+		foreach (self::SET_KEYS as $key) {
+			if (json_encode($old[$key] ?? null) !== json_encode($new[$key] ?? null)) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end isOnlyTheWithdrawStamp()
+
+	/**
+	 * When an assessment is named by a frozen set: that set's delivery date, '' when unreadable, or null.
+	 *
+	 * @param array<string, mixed> $assessment The stored assessment.
+	 *
+	 * @return string|null
+	 */
+	private function deliveredAssessmentRefusal(array $assessment): ?string {
+		$caseId = (string)($assessment['caseRef'] ?? '');
+		$id = (string)($assessment['id'] ?? ($assessment['uuid'] ?? (($assessment['@self'] ?? [])['id'] ?? '')));
+		if ($caseId === '' || $id === '') {
+			return null;
+		}
+
+		try {
+			$sets = $this->sets->frozenSets(caseId: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: the delivered Woo sets of a case could not be read', ['case' => $caseId, 'error' => $e->getMessage()]);
+			return '';
+		}
+
+		foreach ($sets as $set) {
+			if (in_array($id, array_column((array)($set['items'] ?? []), 'assessment'), true) === true) {
+				return (string)($set['deliveredAt'] ?? 'an earlier date');
+			}
+		}
+
+		return null;
+	}//end deliveredAssessmentRefusal()
+
+	/**
+	 * Whether an object's `@self.schema` is the slug or the configured schema.
+	 *
+	 * @param array<string, mixed>        $object The serialised object.
+	 * @param array{0: string, 1: string} $schema The schema's config key and its slug.
+	 *
+	 * @return bool
+	 */
+	private function isSchema(array $object, array $schema): bool {
+		[$configKey, $slug] = $schema;
+		$self = ($object['@self'] ?? []);
+		$candidate = '';
+		if (is_array($self) === true && is_scalar(($self['schema'] ?? null)) === true) {
+			$candidate = (string)$self['schema'];
+		}
+
+		if ($candidate === '') {
+			return false;
+		}
+
+		foreach ([$slug, (string)$this->settings->getConfigValue($configKey)] as $name) {
+			if ($name !== '' && ($candidate === $name || str_ends_with($candidate, '/' . $name) === true)) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isSchema()
+}//end class

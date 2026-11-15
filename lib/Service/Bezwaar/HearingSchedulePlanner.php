@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Service\Hearing\HearingPlan;
 use RuntimeException;
 use Throwable;
 
@@ -54,6 +55,22 @@ class HearingSchedulePlanner {
 	 * Awb art. 7:4 lid 2 inspection-of-file floor in days.
 	 */
 	public const INSPECTION_FLOOR_DAYS = 7;
+
+	/**
+	 * Grace window after `scheduledDate` during which the attendance
+	 * array remains append-only. Past this window, mutations require a
+	 * documented correctionReason.
+	 */
+	private const ATTENDANCE_GRACE_HOURS = 1;
+
+	/**
+	 * Fields a scheduled session starts with unless the payload sets them.
+	 */
+	private const SCHEDULE_DEFAULTS = [
+		'location' => null,
+		'videoCallUrl' => null,
+		'members' => [],
+	];
 
 	/**
 	 * Parse an ISO-8601 date-time string into an immutable date.
@@ -188,4 +205,112 @@ class HearingSchedulePlanner {
 
 		return $stamped;
 	}//end stampInvitees()
+
+	/**
+	 * The record a scheduled session is saved as. The computed fields win
+	 * over the payload; the defaults only fill what the payload leaves out.
+	 *
+	 * @param HearingPlan $plan          The scheduling request.
+	 * @param string      $scheduledDate ISO-8601 date-time of the hearing.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When the date is invalid or the inspection-of-file floor is violated.
+	 *
+	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 */
+	public function scheduledRecord(HearingPlan $plan, string $scheduledDate): array {
+		$scheduled = $this->parseDateTime(value: $scheduledDate);
+		$deadline = $this->computeInspectionDeadline(scheduled: $scheduled);
+		$now = new DateTimeImmutable();
+
+		$this->guardInspectionFloor(scheduled: $scheduled, today: $now);
+
+		$available = $this->resolveAvailableFrom(payload: $plan->payload, deadline: $deadline, now: $now);
+
+		return array_merge(
+			self::SCHEDULE_DEFAULTS,
+			$plan->payload,
+			[
+				'case' => $plan->caseId,
+				'scheduledDate' => $scheduled->format(DateTimeInterface::ATOM),
+				'chairperson' => $plan->chairpersonId,
+				'invitees' => $this->stampInvitees(invitees: $plan->invitees, when: $now),
+				'inspectionAvailableFrom' => $available->format('Y-m-d'),
+				'inspectionDeadline' => $deadline->format('Y-m-d'),
+				'status' => 'planned',
+				'hearingWaived' => false,
+				'recordingConsent' => $plan->payload['recordingConsent'] ?? 'not_requested',
+			]
+		);
+	}//end scheduledRecord()
+
+	/**
+	 * The fields of a waiver record after its case.
+	 *
+	 * @param string               $reason  The trimmed waiver reason.
+	 * @param array<string, mixed> $payload The optional extras.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 */
+	public function waiverFields(string $reason, array $payload): array {
+		$now = new DateTimeImmutable();
+
+		return [
+			'scheduledDate' => $now->format(DateTimeInterface::ATOM),
+			'chairperson' => $payload['chairperson'] ?? ($payload['chairpersonId'] ?? 'system'),
+			'invitees' => $payload['invitees'] ?? [],
+			'inspectionAvailableFrom' => $now->format('Y-m-d'),
+			'inspectionDeadline' => $now->format('Y-m-d'),
+			'status' => 'afgezien',
+			'hearingWaived' => true,
+			'waiverReason' => $reason,
+		];
+	}//end waiverFields()
+
+	/**
+	 * When attendance on a stored session stops being freely appendable:
+	 * the grace window after the scheduled date, or after now when the
+	 * session has none, and whether that moment has passed.
+	 *
+	 * @param array<string, mixed> $current The stored session.
+	 *
+	 * @return array{frozenAt: string, isFrozen: bool}
+	 *
+	 * @throws RuntimeException When the stored date cannot be parsed.
+	 *
+	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 */
+	public function attendanceFreeze(array $current): array {
+		$now = new DateTimeImmutable();
+		$scheduledRaw = (string)($current['scheduledDate'] ?? '');
+		$scheduled = $now;
+		if ($scheduledRaw !== '') {
+			$scheduled = $this->parseDateTime(value: $scheduledRaw);
+		}
+
+		$freezeAt = $scheduled->modify('+' . self::ATTENDANCE_GRACE_HOURS . ' hour');
+
+		return [
+			'frozenAt' => $freezeAt->format(DateTimeInterface::ATOM),
+			'isFrozen' => $now > $freezeAt,
+		];
+	}//end attendanceFreeze()
+
+	/**
+	 * The date-time a seeded default hearing is scheduled at: fourteen days
+	 * out, at ten in the morning.
+	 *
+	 * @return string ISO-8601 date-time.
+	 *
+	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 */
+	public function seedDate(): string {
+		return (new DateTimeImmutable())
+			->modify('+14 days')
+			->setTime(10, 0, 0)
+			->format(DateTimeInterface::ATOM);
+	}//end seedDate()
 }//end class

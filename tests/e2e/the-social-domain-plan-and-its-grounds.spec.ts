@@ -337,6 +337,7 @@ test.describe('The family plan, and the ground a cross-domain lookup runs on', (
 
 		const about = await api.get(
 			`/index.php/apps/dossiq/api/cross-domain/lookups/${BSN}`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(about.ok(), await about.text()).toBeTruthy()
 

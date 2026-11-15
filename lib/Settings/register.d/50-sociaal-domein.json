@@ -4,7 +4,8 @@
             "wmoZaak": {
                 "slug": "wmoZaak",
                 "icon": "HumanWheelchair",
-                "version": "1.2.0",
+                "version": "1.3.0",
+                "searchable": false,
                 "title": "Social support act case",
                 "description": "Sociaal-domein zaaktype wmo-melding (Wmo 2015, art. 2.3.2-2.3.6). Maatschappelijke ondersteuning voor volwassenen. Volledig OpenRegister-backed; status-lifecycle als configuratie, geen custom state machine.",
                 "type": "object",
@@ -145,6 +146,18 @@
                         "type": "string",
                         "description": "A reference to the needs assessment this belongs to"
                     },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Wmo-melding this report moved onto. Written once by the record import, which leaves the report itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the report moved onto its case."
+                    },
                     "gdprClassification": {
                         "title": "GDPR classification",
                         "type": "object",
@@ -209,7 +222,8 @@
             "indicatiestelling": {
                 "slug": "indicatiestelling",
                 "icon": "ClipboardPulseOutline",
-                "version": "1.2.0",
+                "version": "1.2.1",
+                "searchable": false,
                 "title": "Needs assessment",
                 "description": "WMO-assessment record met geadviseerde ondersteuningsvorm, omvang en duur. OpenRegister-backed.",
                 "type": "object",
@@ -304,7 +318,8 @@
             "jeugdwetZaak": {
                 "slug": "jeugdwetZaak",
                 "icon": "HumanMaleChild",
-                "version": "1.2.0",
+                "version": "1.3.0",
+                "searchable": false,
                 "title": "Youth act case",
                 "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
                 "type": "object",
@@ -437,6 +452,18 @@
                         "items": {"type": "string"},
                         "description": "The history of earlier family plans, which is the extension chain"
                     },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Melding Jeugdwet this report moved onto. Written once by the record import, which leaves the report itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the report moved onto its case."
+                    },
                     "gdprClassification": {
                         "title": "GDPR classification",
                         "type": "object",
@@ -501,7 +528,8 @@
             "gezinsplan": {
                 "slug": "gezinsplan",
                 "icon": "FileTreeOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
+                "searchable": false,
                 "title": "Family plan",
                 "description": "Jeugdwet gezinsplan met doelen, trajecten, evaluaties en expliciete toestemming per gezinslid (16+ jeugdige tekent zelfstandig). OpenRegister-backed.",
                 "type": "object",
@@ -522,6 +550,13 @@
                         "type": "string",
                         "format": "date",
                         "description": "The date the plan was drawn up"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": ["draft", "determined", "evaluated"],
+                        "x-enum-labels": {"draft": "Being drawn up", "determined": "Adopted", "evaluated": "Evaluated"},
+                        "description": "Where the plan stands: being drawn up with the household, adopted, or evaluated. Optional; a plan without one has not been given a status yet."
                     },
                     "gezinsleden": {
                         "authorization": {
@@ -620,16 +655,22 @@
             "casePlanGoal": {
                 "slug": "casePlanGoal",
                 "icon": "TargetVariant",
-                "version": "1.1.0",
-                "title": "Goal in the family plan",
-                "description": "Een doel van het gezinsplan, dat benoemt wat als behaald telt. \"De thuissituatie verbeteren\" kan niemand afsluiten; het waarneembare ding benoemen geeft een evaluatie iets om over te beslissen en laat het gezin zelf meekijken of het gehaald is (REQ-CPN-01, D-3). OpenRegister-backed.",
+                "version": "1.2.0",
+                "searchable": false,
+                "title": "Goal",
+                "description": "Een doel van een zaak of van het gezinsplan, dat benoemt wat als behaald telt. \"De thuissituatie verbeteren\" kan niemand afsluiten; het waarneembare ding benoemen geeft een evaluatie iets om over te beslissen en laat het gezin zelf meekijken of het gehaald is (REQ-CPN-01, D-3). OpenRegister-backed.",
                 "type": "object",
-                "required": ["plan", "title", "metWhen"],
+                "required": ["title", "metWhen"],
                 "properties": {
                     "plan": {
                         "title": "Family plan",
                         "type": "string",
-                        "description": "A reference to the family plan"
+                        "description": "A reference to the family plan, for a goal of a family plan"
+                    },
+                    "case": {
+                        "title": "Case",
+                        "type": "string",
+                        "description": "A reference to the case, for a goal that belongs to a case directly. A goal names a case or a plan (CasePlanGoals refuses one with neither)."
                     },
                     "title": {
                         "title": "Goal",
@@ -670,7 +711,8 @@
             "intervention": {
                 "slug": "intervention",
                 "icon": "HandHeartOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "Intervention",
                 "description": "Een interventie in het gezinsplan: wat het is, welk doel het dient, wie het uitvoert, wanneer het begint en wanneer het klaar moet zijn. De interventie is de eenheid en niet het doel (D-1): een doel zonder interventie is een wens, een interventie zonder doel is bezigheid, en meerdere interventies kunnen \u00e9\u00e9n doel dienen. OpenRegister-backed.",
                 "type": "object",
@@ -741,7 +783,8 @@
             "mdoOverleg": {
                 "slug": "mdoOverleg",
                 "icon": "AccountGroupOutline",
-                "version": "1.2.0",
+                "version": "1.2.1",
+                "searchable": false,
                 "title": "Multidisciplinary consultation",
                 "description": "Multidisciplinair overleg met expliciete toestemmingsregistratie per externe deelnemer; verslag wordt geanonimiseerd bij ontbrekende toestemming. OpenRegister-backed.",
                 "type": "object",
@@ -829,7 +872,8 @@
             "participatiewetZaak": {
                 "slug": "participatiewetZaak",
                 "icon": "BriefcaseAccountOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
+                "searchable": false,
                 "title": "Participation act case",
                 "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
                 "type": "object",
@@ -991,6 +1035,18 @@
                         "type": "boolean",
                         "description": "Set when assets exceed the exemption, which proposes a refusal"
                     },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Bijstandsaanvraag this application moved onto. Written once by the record import, which leaves the application itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the application moved onto its case."
+                    },
                     "gdprClassification": {
                         "title": "GDPR classification",
                         "type": "object",
@@ -1055,7 +1111,9 @@
             "reIntegratieTraject": {
                 "slug": "reIntegratieTraject",
                 "icon": "StairsUp",
-                "version": "1.1.0",
+                "version": "1.2.1",
+                "searchable": false,
+                "x-openregister-demo-data": "A trajectory is a case of the re-integratietraject case type, and that case type package ships the example. ReIntegrationCaseTypeTest refuses placeholder trajectories in the mock register.",
                 "title": "Return to work trajectory",
                 "description": "Participatiewet re-integratietraject met instrumenten (loonkostensubsidie, scholing, jobcoaching), tegenprestatie en vrijstellingen. OpenRegister-backed.",
                 "type": "object",
@@ -1164,6 +1222,18 @@
                                 "format": "date"
                             }
                         }
+                    },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Re-integratietraject this trajectory moved onto. Written once by the record import, which leaves the trajectory itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the trajectory moved onto its case."
                     }
                 }
             },
@@ -1259,7 +1329,8 @@
             "gdprClassification": {
                 "slug": "gdprClassification",
                 "icon": "ShieldLockOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "GDPR classification",
                 "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
                 "type": "object",
@@ -1321,7 +1392,8 @@
             "sociaalDomeinAuditLog": {
                 "slug": "sociaalDomeinAuditLog",
                 "icon": "FileEyeOutline",
-                "version": "1.2.0",
+                "version": "1.2.1",
+                "searchable": false,
                 "title": "Social domain audit log",
                 "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd. V1.1 additief: een raadpleging kan over een BURGER gaan in plaats van over een zaak, dus subjectId is toegevoegd en caseId is niet langer verplicht. Elke bestaande rij blijft geldig en elke bestaande schrijver blijft werken.",
                 "type": "object",
@@ -1397,7 +1469,8 @@
             "avgIncident": {
                 "slug": "avgIncident",
                 "icon": "AlertOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "GDPR incident",
                 "description": "Datalek-incident registratie met AP-meldbeoordeling (AVG art. 33, 72-uurs meldplicht). OpenRegister-backed.",
                 "type": "object",

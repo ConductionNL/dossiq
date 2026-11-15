@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -40,14 +40,20 @@ namespace OCA\Dossiq\Service\Timeline;
 
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCP\IUserSession;
-use Throwable;
 
 /**
  * Writes one `statuswijziging` entry per recorded status move.
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 class StatusMoveEntry {
+
+	/**
+	 * The name a status is shown under.
+	 *
+	 * @var StatusDisplayName
+	 */
+	private readonly StatusDisplayName $statusNames;
 
 	/**
 	 * Constructor.
@@ -61,6 +67,7 @@ class StatusMoveEntry {
 		private readonly StatusTypeLookup $statuses,
 		private readonly IUserSession $userSession,
 	) {
+		$this->statusNames = new StatusDisplayName(statuses: $statuses);
 	}//end __construct()
 
 	/**
@@ -82,7 +89,7 @@ class StatusMoveEntry {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function record(
 		string $caseId,
@@ -126,7 +133,7 @@ class StatusMoveEntry {
 	 *
 	 * @return string `internal` or `public`.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function visibility(string $publicLabel): string {
 		if ($publicLabel === '') {
@@ -179,21 +186,7 @@ class StatusMoveEntry {
 	 * @return string The name, the id, or '' when nothing was asked for.
 	 */
 	private function statusName(string $statusTypeId): string {
-		if ($statusTypeId === '') {
-			return '';
-		}
-
-		try {
-			$name = trim($this->statuses->nameFor(statusTypeId: $statusTypeId));
-		} catch (Throwable $e) {
-			$name = '';
-		}
-
-		if ($name === '') {
-			return $statusTypeId;
-		}
-
-		return $name;
+		return $this->statusNames->of(statusTypeId: $statusTypeId);
 	}//end statusName()
 
 	/**

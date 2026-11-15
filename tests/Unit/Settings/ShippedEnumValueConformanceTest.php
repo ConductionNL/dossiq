@@ -375,7 +375,6 @@ final class ShippedEnumValueConformanceTest extends TestCase {
 		$paths = array_merge(
 			(array)glob($this->settingsDir() . '/*.json'),
 			(array)glob($this->settingsDir() . '/templates/*.json'),
-			(array)glob($this->settingsDir() . '/vth-templates/*.json'),
 			(array)glob($this->settingsDir() . '/seed/*.json'),
 			(array)glob($this->settingsDir() . '/register.d/*.json')
 		);

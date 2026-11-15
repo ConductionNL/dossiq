@@ -71,3 +71,63 @@ export function openCaseOfDocument(...args) {
 		generateUrl(`/apps/dossiq/cases/${encodeURIComponent(caseId)}`),
 	)
 }
+
+/**
+ * The address that opens the document a dispatch row names.
+ *
+ * A document backed by a Nextcloud file opens at `/f/{fileId}`, which Files
+ * resolves to the file in its folder for a reader who may see it and refuses
+ * for one who may not. A document that only points elsewhere opens its
+ * `link`, and only an http(s) one, because the field is free text and a
+ * `javascript:` value must not become a navigation. A row whose document was
+ * not inlined (extend answered the bare uuid) names no file, so it answers
+ * the empty string rather than guessing.
+ *
+ * @param {object} row One `dispatch` row.
+ * @return {string} The address, or the empty string.
+ * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/party-pages/spec.md#requirement-the-contact-page-lists-the-contacts-documents-and-communication-req-crs-04
+ */
+export function documentUrlOfDispatch(row) {
+	const doc = row && row.document
+	if (doc === null || typeof doc !== 'object') {
+		return ''
+	}
+	const fileId = Number(doc.fileId)
+	if (Number.isInteger(fileId) && fileId > 0) {
+		return generateUrl(`/f/${fileId}`)
+	}
+	const link = typeof doc.link === 'string' ? doc.link.trim() : ''
+	if (/^https?:\/\//i.test(link)) {
+		return link
+	}
+	return ''
+}
+
+/**
+ * Row-action handler for the contact and organisation documents panels: open
+ * the document the row names, where `openCaseOfDocument` opens its case.
+ *
+ * A function for the same reason that one is: the row is a dispatch, and what
+ * it names lives in a field of the row rather than in the row's own id.
+ *
+ * @param {...object} args The dispatch arguments, read as `openCaseOfDocument`
+ *   reads them.
+ * @return {void}
+ * @spec openspec/changes/capability-rows-say-the-whole-capability/specs/party-pages/spec.md#requirement-the-contact-page-lists-the-contacts-documents-and-communication-req-crs-04
+ */
+export function openDocumentOfDispatch(...args) {
+	let row = null
+	for (const arg of args) {
+		if (arg === null || typeof arg !== 'object') {
+			continue
+		}
+		row = arg.item && typeof arg.item === 'object' ? arg.item : arg
+	}
+
+	const url = documentUrlOfDispatch(row)
+	if (url === '') {
+		return
+	}
+
+	window.location.assign(url)
+}

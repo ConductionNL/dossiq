@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Tests\Unit\Settings\ShippedPackageCaseTypes;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -65,9 +66,12 @@ class CaseFlowDeclarationTest extends TestCase {
 			'The case schema must declare its flow inside `configuration` — '
 			. 'that is the only place SchemaFlowImportListener looks.'
 		);
-		$this->assertCount(1, $flows, 'Exactly one case flow ships; a second would import as a separate flow.');
+		// One flow walks a case; the others are the case's macros, started by
+		// hand (`openregister.trigger-manual`) through a declared action.
+		$walking = array_values(array_filter($flows, static fn (array $flow): bool => ($flow['trigger'] ?? '') !== 'manual'));
+		$this->assertCount(1, $walking, 'Exactly one case flow walks a case; a second would import as a separate flow.');
 
-		$this->flow = $flows[0];
+		$this->flow = $walking[0];
 	}//end setUp()
 
 	/**
@@ -1185,7 +1189,7 @@ class CaseFlowDeclarationTest extends TestCase {
 		}
 
 		// The nested shape.
-		foreach (['case_flow_seed_data.json', 'vth_seed_data.json'] as $file) {
+		foreach (['case_flow_seed_data.json'] as $file) {
 			$seed = json_decode(
 				(string)file_get_contents(__DIR__ . '/../../../lib/Settings/' . $file),
 				true
@@ -1196,6 +1200,14 @@ class CaseFlowDeclarationTest extends TestCase {
 				if ($statuses !== []) {
 					$out[$file . ':' . (string)($caseType['slug'] ?? '?')] = $statuses;
 				}
+			}
+		}
+
+		// The case definition packages, read in the same nested shape.
+		foreach (ShippedPackageCaseTypes::nested() as $caseType) {
+			$statuses = ($caseType['statusTypes'] ?? []);
+			if ($statuses !== []) {
+				$out['package:' . (string)($caseType['slug'] ?? '?')] = $statuses;
 			}
 		}
 

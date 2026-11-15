@@ -13,7 +13,7 @@
  * jsdom, because the evaluator imports `@nextcloud/auth`, which reads
  * `window` on load.
  *
- * @spec openspec/changes/simple-structure-profile/specs/case-management/spec.md#REQ-CM-73
+ * @spec openspec/specs/case-management/spec.md#REQ-CM-73
  */
 
 import { evaluateVisibleWhen } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
@@ -28,7 +28,7 @@ const manifest = JSON.parse(
 const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
 
 describe('the archive gate on the case page', () => {
-	it('shows the seven write actions on a case that is not archived, by the library evaluator', async () => {
+	it('shows the nine write actions on a case that is not archived, by the library evaluator', async () => {
 		// The test above reads the declaration. This one asks the library's own
 		// evaluator, because the declaration was `eq null` for weeks and read
 		// correct while it hid all seven on every working case.
@@ -71,7 +71,7 @@ describe('the archive gate on the case page', () => {
 		const gated = caseDetail().config.headerActions.filter(
 			(action) => action.visibleWhen?.field === '@self.archived',
 		)
-		expect(gated).toHaveLength(7)
+		expect(gated).toHaveLength(9)
 		for (const action of gated) {
 			expect(
 				await evaluateVisibleWhen(action.visibleWhen, { object: working }),

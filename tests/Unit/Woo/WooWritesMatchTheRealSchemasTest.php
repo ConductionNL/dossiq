@@ -21,7 +21,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-decision-schema-declares-the-woo-fields-its-writers-send-req-wpi-006
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-decision-schema-declares-the-woo-fields-its-writers-send-req-wpi-006
  */
 
 declare(strict_types=1);
@@ -30,16 +30,17 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Tests\Support\UuidAnsweringRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use OCP\App\IAppManager;
 use OCP\Files\IRootFolder;
@@ -55,13 +56,30 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
  * @covers \OCA\Dossiq\Service\WooPublicationService
+ * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses   \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
- * @uses   \OCA\Dossiq\Woo\WooCaseLedger
+ * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
+ * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Woo\WooRequestForm
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
+ * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
+ * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
+ * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer
+ * @uses \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
+ * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 
@@ -143,7 +161,9 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 			$checked++;
 		}
 
-		self::assertGreaterThanOrEqual(24, $checked, 'the type, its statuses, results, properties and decision type');
+		// 23 since one-term-engine dropped `verdagingReden`: the reason for an
+		// extension is the term's `verleng` rationale, not a case property.
+		self::assertGreaterThanOrEqual(23, $checked, 'the type, its statuses, results, properties and decision type');
 	}//end testEveryWooSeedRowFitsItsSchema()
 
 	/**
@@ -157,7 +177,9 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 		$this->store->seed(schema: 'case', uuid: self::CASE, row: ['title' => 'Parkeren', 'caseType' => WooRequestIntake::CASE_TYPE_ID]);
 		$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-1', row: ['caseRef' => self::CASE, 'documentRef' => 'io-1', 'classification' => 'openbaar']);
 
-		$service = new WOODecisionService($this->settings, $assessments, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class));
+		$delegation = $this->createMock(ContractDecisionDelegationService::class);
+		$delegation->method('raiseDecision')->willReturn('decidiq-decision-1');
+		$service = new WOODecisionService($this->settings, $assessments, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class), decisionDelegation: $delegation);
 		$result = $service->assembleDecision(caseId: self::CASE);
 
 		$decision = $this->store->row(schema: 'decision', uuid: $result['decisionId']);
@@ -175,8 +197,14 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnAssessmentRowFitsItsSchema(): void {
+		foreach ($this->real->objects as $index => $object) {
+			if (($object['@self']['schema'] ?? '') === 'wooRefusalGround') {
+				$this->store->seed(schema: 'wooRefusalGround', uuid: 'ground-' . $index, row: $object);
+			}
+		}
+
 		$service = new WOODocumentAssessmentService($this->settings, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class));
-		$service->bulkUpsert(caseId: self::CASE, assessments: [['documentRef' => 'io-1', 'classification' => 'deels_openbaar', 'weigeringsgronden' => ['5.1.5']]]);
+		$service->bulkUpsert(caseId: self::CASE, assessments: [['documentRef' => 'io-1', 'classification' => 'deels_openbaar', 'weigeringsgronden' => ['5.1.2.e']]]);
 
 		$rows = $this->store->all(schema: 'wooDocumentAssessment');
 		self::assertCount(1, $rows);
@@ -235,7 +263,7 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 			$apps,
 			$this->createMock(LoggerInterface::class),
 			null,
-			new WooCaseLedger(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
 			new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class)),
 		);
 

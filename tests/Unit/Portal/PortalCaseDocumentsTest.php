@@ -22,7 +22,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/portal-case-documents/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -36,12 +36,17 @@ use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Portal\PortalCaseDocuments
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses   \OCA\Dossiq\Portal\PortalPages
  * @uses   \OCA\Dossiq\Portal\CitizenManifest
+ * @uses   \OCA\Dossiq\Portal\PortalConversation
+ * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
+ * @uses \OCA\Dossiq\Portal\PortalCaseReads
  */
 class PortalCaseDocumentsTest extends TestCase {
 	private const CASE_ID = '11111111-1111-4111-8111-111111111111';
@@ -66,6 +71,13 @@ class PortalCaseDocumentsTest extends TestCase {
 	 * @var bool
 	 */
 	private bool $asSystem = false;
+
+	/**
+	 * The `[_rbac, _multitenancy]` of every find.
+	 *
+	 * @var array<int, array{0: bool, 1: bool}>
+	 */
+	private array $findScopes = [];
 
 	/**
 	 * A case with a decision letter, an outgoing letter, a draft, an internal
@@ -121,7 +133,12 @@ class PortalCaseDocumentsTest extends TestCase {
 			$this->assertSame('dossiq', $register);
 			return $this->rows[$schema] ?? [];
 		});
-		$objects->method('find')->willReturnCallback(function ($id) {
+		$objects->method('find')->willReturnCallback(function ($id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true) {
+			$_extend = $options?->extend ?? [];
+			$files = $options?->files ?? false;
+			$register = $options?->register;
+			$schema = $options?->schema;
+			$this->findScopes[] = [$_rbac, $_multitenancy];
 			if (isset($this->documents[$id]) === false) {
 				return null;
 			}
@@ -159,6 +176,21 @@ class PortalCaseDocumentsTest extends TestCase {
 		$this->assertSame('2026-09-02', $byId['doc-decision']['date']);
 		$this->assertSame('document', $byId['doc-letter']['kind']);
 		$this->assertSame('2026-08-20', $byId['doc-letter']['date']);
+	}
+
+	/**
+	 * Each document is read unscoped, so a person signed in as themselves and
+	 * reading the case under a mandate sees the same documents as its party.
+	 *
+	 * @return void
+	 */
+	public function testEachDocumentIsReadUnscoped(): void {
+		$this->service()->forCase(self::CASE_ID);
+
+		$this->assertNotSame([], $this->findScopes);
+		foreach ($this->findScopes as $scope) {
+			$this->assertSame([false, false], $scope);
+		}
 	}
 
 	/**

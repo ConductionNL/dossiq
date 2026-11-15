@@ -35,17 +35,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Dossiq\Service\Money\CasePaymentReader;
-use OCA\Dossiq\Service\Money\CasePaymentState;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\Contracts\CasePaymentReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\CasePaymentStateInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -55,11 +55,13 @@ use Throwable;
 /**
  * Hourly sweep refreshing the payment state the case list filters on.
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
+ *
+ * @spec openspec/specs/financial-integration/spec.md
  */
 class PaymentStateProjectionJob extends TimedJob {
 
-	use SearchesObjects;
 
 	/**
 	 * How many open cases one sweep looks at.
@@ -77,35 +79,51 @@ class PaymentStateProjectionJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The time factory.
-	 * @param CasePaymentReader $payments Reads the state from shillinq.
-	 * @param SettingsService $settingsService Bridge to OpenRegister plus config.
+	 * @param CasePaymentReaderInterface $payments Reads the state from shillinq.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus config.
 	 * @param IAppManager $appManager Establishes that the apps are present.
 	 * @param LoggerInterface $logger The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly CasePaymentReader $payments,
-		private readonly SettingsService $settingsService,
+		private readonly CasePaymentReaderInterface $payments,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: 3600);
 	}//end __construct()
 
 	/**
-	 * Refresh the payment state of every open case.
+	 * Run once as the background service account.
 	 *
-	 * @param mixed $argument The job argument, unused.
+	 * @param mixed $argument The job argument.
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @spec openspec/specs/financial-integration/spec.md
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
 	protected function run($argument): void {
-		if ($this->appManager->isInstalled(CasePaymentReader::MONEY_APP) === false) {
+		// Without a usable account this runs nothing: that is already logged as an
+		// error and told to the admins. Nothing was read, sent or
+		// written; the next run tries again.
+		$this->serviceAccount->runAsWhenAvailable(operation: fn () => $this->work());
+	}//end run()
+
+	/**
+	 * Refresh the payment state of every open case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 */
+	private function work(): void {
+		if ($this->appManager->isInstalled(CasePaymentReaderInterface::MONEY_APP) === false) {
 			// No money app, so no money facts to project. Deliberately NOT a
 			// sweep that writes `notRequired` everywhere: an instance that
 			// disables shillinq for a week has not waived a single fee, and a
@@ -113,97 +131,101 @@ class PaymentStateProjectionJob extends TimedJob {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$sweep = OpenCaseSweep::ofSettings(settingsService: $this->settingsService);
+		if ($sweep === null) {
 			return;
 		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($register === '' || $schema === '') {
-			return;
-		}
-
-		$cases = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'isFinalStatus' => 0,
-				'isDraft' => 0,
-				'_limit' => self::SWEEP_LIMIT,
-			],
-		);
 
 		$written = 0;
-		foreach ($cases as $case) {
-			$refreshed = $this->refreshCase(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				case: $case,
-			);
-			$written += (int)$refreshed;
+		foreach ($sweep->openCases(limit: self::SWEEP_LIMIT) as $row) {
+			$written += (int)$this->refreshCase(sweep: $sweep, row: $row);
 		}
 
+		$this->reportRefresh(written: $written);
+	}//end work()
+
+	/**
+	 * Log how many cases were rewritten, when any were.
+	 *
+	 * @param int $written How many cases were rewritten.
+	 *
+	 * @return void
+	 */
+	private function reportRefresh(int $written): void {
 		if ($written > 0) {
 			$this->logger->info(
 				'PaymentStateProjectionJob: refreshed the payment state of the open cases',
 				['written' => $written],
 			);
 		}
-	}//end run()
+	}//end reportRefresh()
 
 	/**
 	 * Refresh the payment state of one case, and say whether anything was written.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $register      The register the cases live in.
-	 * @param string               $schema        The case schema.
-	 * @param array<string, mixed> $case          The case as the sweep read it.
+	 * @param OpenCaseSweep        $sweep Where the cases live.
+	 * @param array<string, mixed> $row   The case as the sweep read it.
 	 *
 	 * @return bool True when the case was rewritten.
 	 */
-	private function refreshCase(object $objectService, string $register, string $schema, array $case): bool {
-		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
+	private function refreshCase(OpenCaseSweep $sweep, array $row): bool {
+		$caseId = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 		if ($caseId === '') {
 			return false;
 		}
 
 		$projection = $this->payments->stateOf(caseId: $caseId);
-
-		// A read that failed writes NOTHING. Stamping `stale` over a case would
-		// replace the last state anybody knew with the news that the sweep had a
-		// bad hour, and the list would empty out every time shillinq restarted.
-		// The gate reads live, so nothing depends on this row being fresh.
-		if ($projection['paymentState'] === CasePaymentState::STALE) {
-			return false;
-		}
-
-		if ((string)($case['paymentState'] ?? '') === $projection['paymentState']) {
-			// Unchanged. Writing the timestamp alone would be a version of every
-			// open case every hour, for a fact that did not move.
+		if ($this->worthWriting(row: $row, projection: $projection) === false) {
 			return false;
 		}
 
 		try {
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseId,
-				changes: $projection,
-			);
+			// `paymentState` and `paymentStateCheckedAt` are readOnly: clients may not
+			// write them, and OpenRegister lets only a system operation stamp them.
+			$sweep->patchAsSystem(caseId: $caseId, changes: $projection);
 		} catch (Throwable $e) {
-			// One case that cannot be written must not end the sweep.
-			$this->logger->warning(
-				'PaymentStateProjectionJob: one case could not be refreshed',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
-
-			return false;
-		}//end try
+			return $this->refreshFailed(caseId: $caseId, exception: $e);
+		}
 
 		return true;
 	}//end refreshCase()
+
+	/**
+	 * Whether the projection is worth a write: a fresh read that moved.
+	 *
+	 * @param array<string, mixed> $row        The case as the sweep read it.
+	 * @param array<string, mixed> $projection The state shillinq reports.
+	 *
+	 * @return bool
+	 */
+	private function worthWriting(array $row, array $projection): bool {
+		// A read that failed writes NOTHING. Stamping `stale` over a case would
+		// replace the last state anybody knew with the news that the sweep had a
+		// bad hour, and the list would empty out every time shillinq restarted.
+		// The gate reads live, so nothing depends on this row being fresh.
+		if ($projection['paymentState'] === CasePaymentStateInterface::STALE) {
+			return false;
+		}
+
+		// Unchanged: writing the timestamp alone would be a version of every
+		// open case every hour, for a fact that did not move.
+		return (string)($row['paymentState'] ?? '') !== $projection['paymentState'];
+	}//end worthWriting()
+
+	/**
+	 * One case that cannot be written must not end the sweep: log it and go on.
+	 *
+	 * @param string    $caseId    The case.
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return bool False: nothing was written.
+	 */
+	private function refreshFailed(string $caseId, Throwable $exception): bool {
+		$this->logger->warning(
+			'PaymentStateProjectionJob: one case could not be refreshed',
+			['caseId' => $caseId, 'exception' => $exception->getMessage()],
+		);
+
+		return false;
+	}//end refreshFailed()
 }//end class

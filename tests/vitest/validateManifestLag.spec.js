@@ -45,7 +45,7 @@
  * at or ahead of the installed one, and that is asserted below rather than
  * remembered.
  */
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -148,9 +148,12 @@ describe('the vendored schema never falls behind the installed one', () => {
 
 		// The trap in one assertion: `_note` is all over this schema, and not
 		// here. A classifier that searched for the name would forgive it.
+		// An action's fields live in $defs/actionFields; $defs/action closes
+		// them with unevaluatedProperties.
+		expect(vendored.$defs.actionFields.properties).not.toHaveProperty('_note')
+		expect(installed.$defs.actionFields.properties).not.toHaveProperty('_note')
 		expect(vendored.$defs.action.properties).not.toHaveProperty('_note')
-		expect(installed.$defs.action.properties).not.toHaveProperty('_note')
-		expect(vendored.$defs.action.additionalProperties).toBe(false)
+		expect(vendored.$defs.action.unevaluatedProperties).toBe(false)
 	})
 })
 
@@ -160,7 +163,12 @@ describe('check:manifest tells a lag from a defect', () => {
 	// 62-page manifest is several seconds of real work per run. The default
 	// was already being cleared by a margin that shrank with the manifest.
 	it('the shipped manifest passes, forgiving only what the library lags', () => {
-		const out = execFileSync('node', [VALIDATOR], { encoding: 'utf8' })
+		// Both streams: the lag lines go to stderr, the verdict to stdout.
+		// Reading stdout alone could never see a lag line, so the branch
+		// that expects one could not pass, and it never ran until a lag came.
+		const run = spawnSync('node', [VALIDATOR], { encoding: 'utf8' })
+		expect(run.status).toBe(0)
+		const out = String(run.stdout) + String(run.stderr)
 
 		expect(out).toContain('PASS')
 
@@ -175,13 +183,91 @@ describe('check:manifest tells a lag from a defect', () => {
 			'all',
 		)
 
-		if (declaresAll) {
+		// The tour's `startOn` (schema 2.94.0) is derived the same way.
+		const declaresStartOn = Object.hasOwn(
+			installed.properties.walkthrough.properties.tours.items.properties || {},
+			'startOn',
+		)
+
+		// The board card pill's `resolve` (schema 2.135.0) is derived the same way.
+		const declaresCardResolve = Object.hasOwn(
+			installed.$defs.boardView?.properties?.card?.properties || {},
+			'resolve',
+		)
+
+		// The `redaction` page type (schema 2.137.0) is derived the same way.
+		const declaresRedaction = (installed.$defs.page?.properties?.type?.enum || []).includes('redaction')
+
+		// The generated quarter and year page filters (schema 2.138.0): a
+		// value and an anyOf branch, not a property, so the newer schema is
+		// asked about the path itself.
+		const declaresGeneratedFilters = (installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.type?.enum || []).includes('quarter')
+
+		// A page filter option's rolling window `months` (schema 2.147.0) is
+		// derived the same way.
+		const declaresOptionMonths = Object.hasOwn(
+			installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.options?.items?.properties || {},
+			'months',
+		)
+
+		// A page filter without a control (schema 2.151.0) is derived the same way.
+		const declaresControlNone = (installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.control?.enum || []).includes('none')
+
+		// A dotted path into @self (`@self.can.update`, schema 2.172.0) is
+		// asked of the token pattern itself, the way the guard reads it.
+		const declaresDottedSelf = new RegExp(installed.$defs.sentinelDeclarativeToken?.pattern || '^$').test('@self.can.update')
+
+		// A crumb naming the record's parent (schema 2.174.0) is derived the same way.
+		const declaresParentCrumb = Object.hasOwn(installed.$defs.breadcrumbCrumb?.properties || {}, 'parent')
+
+		// The summary step's rows and button labels (schema 2.175.0) are derived the same way.
+		const declaresSummaryRows = JSON.stringify(installed).includes('summary, board look: the readiness rows')
+
+		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone && declaresDottedSelf && declaresParentCrumb && declaresSummaryRows) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
 
 		expect(out).toContain('pending a library release')
-		expect(out).toContain('visibleWhen uses "all"')
+		if (!declaresAll) {
+			expect(out).toContain('visibleWhen uses "all"')
+		}
+		if (!declaresStartOn) {
+			expect(out).toContain('uses "startOn"')
+		}
+		if (!declaresCardResolve) {
+			expect(out).toContain('/config/board/card uses "resolve"')
+		}
+		if (!declaresGeneratedFilters) {
+			expect(out).toMatch(/\/config\/pageFilters\/0\/type uses "enum", which schema [\d.]+ accepts/)
+		}
+		if (!declaresControlNone) {
+			expect(out).toMatch(/\/config\/pageFilters\/\d+\/control uses "enum", which schema [\d.]+ accepts/)
+		}
+		if (!declaresDottedSelf) {
+			expect(out).toMatch(/\/config\/widgets\/\d+ uses "if", which schema [\d.]+ accepts/)
+		}
+		if (!declaresParentCrumb) {
+			expect(out).toMatch(/\/config\/breadcrumb\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
+		}
+		if (!declaresOptionMonths) {
+			expect(out).toMatch(/\/config\/pageFilters\/\d+\/options\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
+		}
+		if (!declaresSummaryRows) {
+			expect(out).toMatch(/\/setup\/steps\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
+		}
+	}, 30000)
+
+	it('a value the newer schema refuses too is a defect, not a lag', () => {
+		const manifest = JSON.parse(
+			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+		)
+		const page = manifest.pages.find((candidate) => Array.isArray(candidate?.config?.pageFilters))
+		page.config.pageFilters[0].type = 'fortnight'
+
+		const result = validate(manifest)
+
+		expect(result.code).toBe(1)
 	}, 30000)
 
 	it('a defect on a shape the newer schema also refuses still fails', () => {
@@ -201,6 +287,70 @@ describe('check:manifest tells a lag from a defect', () => {
 
 		expect(result.code).toBe(1)
 		expect(result.out).toContain('FAIL')
+	}, 30000)
+
+	// @spec openspec/specs/getting-started-tour/spec.md
+	it('a tour key only the newer schema declares is a lag, and an unknown one is not', () => {
+		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
+		const installed = JSON.parse(fs.readFileSync(INSTALLED, 'utf8'))
+		const tourKeys = (schema) =>
+			schema.properties.walkthrough.properties.tours.items.properties
+		expect(Object.hasOwn(tourKeys(vendored), 'startOn')).toBe(true)
+
+		const manifest = JSON.parse(
+			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+		)
+		manifest.walkthrough.tours[0].startOn = ['Dashboard']
+		const named = validate(manifest)
+		expect(named.code).toBe(0)
+		if (!Object.hasOwn(tourKeys(installed), 'startOn')) {
+			expect(named.out).toContain('pending a library release')
+		}
+
+		manifest.walkthrough.tours[0].thisTourKeyExistsNowhere = true
+		const bogus = validate(manifest)
+		expect(bogus.code).toBe(1)
+		expect(bogus.out).toContain('FAIL')
+	}, 30000)
+
+	it('a page type only the newer schema lists is a lag, and an unknown one is not', () => {
+		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
+		expect(vendored.$defs.page.properties.type.enum).toContain('redaction')
+
+		const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
+		const named = validate(manifest)
+		expect(named.code).toBe(0)
+
+		manifest.pages.find((page) => page.id === 'CaseRedaction').type = 'thisPageTypeExistsNowhere'
+		const bogus = validate(manifest)
+		expect(bogus.code).toBe(1)
+		expect(bogus.out).toContain('FAIL')
+	}, 30000)
+
+	// @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	it('a pill resolve key, a board card resolve or a view icon only the newer schema declares is a lag, and an unknown one is not', () => {
+		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
+		expect(Object.hasOwn(vendored.$defs.headerPill.properties.resolve.properties, 'colorField')).toBe(true)
+
+		const manifest = JSON.parse(
+			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+		)
+		const page = manifest.pages.find((candidate) => candidate.type === 'detail')
+		page.config.typePill = { field: 'caseType', resolve: { register: 'dossiq', schema: 'caseType', colorField: 'colour', iconField: 'icon' } }
+		expect(validate(manifest).code).toBe(0)
+
+		const cases = manifest.pages.find((candidate) => Array.isArray(candidate?.config?.defaultSavedViews))
+		cases.config.defaultSavedViews[0].icon = 'FileDocumentOutline'
+		expect(validate(manifest).code).toBe(0)
+
+		const board = manifest.pages.find((candidate) => candidate?.config?.board?.card)
+		board.config.board.card.resolve = { colorField: 'colour', iconField: 'icon' }
+		expect(validate(manifest).code).toBe(0)
+
+		page.config.typePill.resolve.thisKeyExistsNowhere = true
+		const bogus = validate(manifest)
+		expect(bogus.code).toBe(1)
+		expect(bogus.out).toContain('FAIL')
 	}, 30000)
 
 	it('a key NEITHER schema knows fails, rather than being forgiven as a lag', () => {

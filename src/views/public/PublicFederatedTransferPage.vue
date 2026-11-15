@@ -72,6 +72,42 @@ import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import { publicFederatedTransferEndpoint } from '../../utils/federatedShareHelpers.js'
 
+/**
+ * What the page shows for the endpoint's answer to a response.
+ *
+ * @param {object|null} data The answer body.
+ * @param {string} action 'accept' or 'reject'.
+ * @return {{success: boolean, message: string}} The outcome.
+ */
+function transferResult(data, action) {
+	if (data?.success) {
+		return { success: true, message: respondedMessage(action) }
+	}
+	return {
+		success: false,
+		message: data?.error || t('dossiq', 'Could not process this transfer.'),
+	}
+}
+
+/**
+ * @param {string} action 'accept' or 'reject'.
+ * @return {string} The sentence for a response that went through.
+ */
+function respondedMessage(action) {
+	return action === 'accept'
+		? t('dossiq', 'You have accepted this case transfer.')
+		: t('dossiq', 'You have rejected this case transfer.')
+}
+
+/**
+ * @param {object} e The failure of the call.
+ * @return {string} The server's reason, or the invalid-link sentence.
+ */
+function invalidLinkMessage(e) {
+	return e.response?.data?.error
+		|| t('dossiq', 'This transfer link is invalid, expired or already resolved.')
+}
+
 export default {
 	name: 'PublicFederatedTransferPage',
 	components: { NcButton, NcNoteCard },
@@ -97,51 +133,28 @@ export default {
 		async respond(action) {
 			this.submitting = true
 			try {
-				const url = generateUrl(
-					publicFederatedTransferEndpoint(
-						this.shareToken,
-						this.transferId,
-					),
-				)
-				const response = await axios.put(url, {
+				const response = await axios.put(this.transferUrl(), {
 					action,
 					reason: this.reason,
 				})
-				if (response.data?.success) {
-					this.result = {
-						success: true,
-						message:
-							action === 'accept'
-								? t(
-										'dossiq',
-										'You have accepted this case transfer.',
-									)
-								: t(
-										'dossiq',
-										'You have rejected this case transfer.',
-									),
-					}
-				} else {
-					this.result = {
-						success: false,
-						message:
-							response.data?.error
-							|| t('dossiq', 'Could not process this transfer.'),
-					}
-				}
+				this.result = transferResult(response.data, action)
 			} catch (e) {
-				this.result = {
-					success: false,
-					message:
-						e.response?.data?.error
-						|| t(
-							'dossiq',
-							'This transfer link is invalid, expired or already resolved.',
-						),
-				}
+				this.result = { success: false, message: invalidLinkMessage(e) }
 			} finally {
 				this.submitting = false
 			}
+		},
+
+		/**
+		 * The scoped-token endpoint of this transfer.
+		 *
+		 * @return {string} The url.
+		 * @spec openspec/specs/federated-case-collaboration/spec.md#a-remote-org-accepts-a-transfer-addressed-to-it-via-its-scoped-token
+		 */
+		transferUrl() {
+			return generateUrl(
+				publicFederatedTransferEndpoint(this.shareToken, this.transferId),
+			)
 		},
 	},
 }

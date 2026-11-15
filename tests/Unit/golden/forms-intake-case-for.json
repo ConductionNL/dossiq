@@ -1,0 +1,2010 @@
+{
+    "empty form hash": {
+        "answer": null,
+        "calls": [],
+        "logs": []
+    },
+    "blank form hash": {
+        "answer": null,
+        "calls": [],
+        "logs": []
+    },
+    "unbound form": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-lunch"
+                    },
+                    "limit": 2
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: no case type is bound to form {form}, so nothing was created",
+                {
+                    "form": "form-lunch"
+                }
+            ]
+        ]
+    },
+    "store ignores the filter": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "form hash trimmed": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "ref trimmed on the row": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "no store at lookup": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: no case type is bound to form {form}, so nothing was created",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "no store after the lookup": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "FormsIntakeService: a case type is bound to this form but the register is not configured, so the submission opened no case",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "no case type schema": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: no case type is bound to form {form}, so nothing was created",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "no register": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: no case type is bound to form {form}, so nothing was created",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "register blank after the lookup": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "FormsIntakeService: a case type is bound to this form but the register is not configured, so the submission opened no case",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "register unset after the lookup": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "FormsIntakeService: a case type is bound to this form but the register is not configured, so the submission opened no case",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "case schema unset": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "FormsIntakeService: a case type is bound to this form but the register is not configured, so the submission opened no case",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "type without a mapping": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "caseType": "type-3",
+                    "intakeChannel": "forms",
+                    "title": "Lekkage",
+                    "description": "Onderwerp: Lekkage\nToelichting: Kelder"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "no case schema": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "FormsIntakeService: a case type is bound to this form but the register is not configured, so the submission opened no case",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "lookup throws": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "FormsIntakeService: could not look up the case type bound to a form",
+                {
+                    "form": "form-abc",
+                    "error": "store down"
+                }
+            ],
+            [
+                "info",
+                "FormsIntakeService: no case type is bound to form {form}, so nothing was created",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "results wrapper": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "results not a list": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "store answers no array": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: no case type is bound to form {form}, so nothing was created",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "json row": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "scalar row": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "plain save, id": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Lekkage"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "plain save, uuid wins over id": {
+        "answer": "u-1",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "u-1"
+                }
+            ]
+        ]
+    },
+    "plain save, blank uuid": {
+        "answer": "i-2",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "i-2"
+                }
+            ]
+        ]
+    },
+    "plain save, @self uuid": {
+        "answer": "s-u",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "s-u"
+                }
+            ]
+        ]
+    },
+    "plain save, @self id": {
+        "answer": "s-i",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "s-i"
+                }
+            ]
+        ]
+    },
+    "plain save, @self not an array": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "FormsIntakeService: the case was written but answered no id, so the submission cannot be linked to it",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "plain save, no id": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "FormsIntakeService: the case was written but answered no id, so the submission cannot be linked to it",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "plain save, json row": {
+        "answer": "type-1",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "type-1"
+                }
+            ]
+        ]
+    },
+    "plain save throws": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "FormsIntakeService: could not open a case for a form submission",
+                {
+                    "form": "form-abc",
+                    "error": "save failed",
+                    "findings": []
+                }
+            ]
+        ]
+    },
+    "submitter without submit": {
+        "answer": "case-saved",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "saveObject",
+                {
+                    "priority": "normal",
+                    "caseType": "type-1",
+                    "intakeChannel": "forms",
+                    "title": "Antwoord"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-saved"
+                }
+            ]
+        ]
+    },
+    "submit answers id": {
+        "answer": "case-sub",
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "submit",
+                {
+                    "register": "dossiq",
+                    "schema": "case"
+                },
+                {
+                    "fields": [
+                        {
+                            "field": "Vraag",
+                            "property": "title",
+                            "type": "text"
+                        }
+                    ],
+                    "fixed": {
+                        "priority": "normal",
+                        "caseType": "type-1",
+                        "intakeChannel": "forms"
+                    }
+                },
+                {
+                    "Vraag": "Antwoord"
+                },
+                "form-abc"
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "FormsIntakeService: form {form} opened case {case}",
+                {
+                    "form": "form-abc",
+                    "case": "case-sub"
+                }
+            ]
+        ]
+    },
+    "submit answers nothing": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "submit",
+                {
+                    "register": "dossiq",
+                    "schema": "case"
+                },
+                {
+                    "fields": [
+                        {
+                            "field": "Vraag",
+                            "property": "title",
+                            "type": "text"
+                        }
+                    ],
+                    "fixed": {
+                        "priority": "normal",
+                        "caseType": "type-1",
+                        "intakeChannel": "forms"
+                    }
+                },
+                {
+                    "Vraag": "Antwoord"
+                },
+                "form-abc"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "FormsIntakeService: the case was written but answered no id, so the submission cannot be linked to it",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    },
+    "submit throws": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "submit",
+                {
+                    "register": "dossiq",
+                    "schema": "case"
+                },
+                {
+                    "fields": [
+                        {
+                            "field": "Vraag",
+                            "property": "title",
+                            "type": "text"
+                        }
+                    ],
+                    "fixed": {
+                        "priority": "normal",
+                        "caseType": "type-1",
+                        "intakeChannel": "forms"
+                    }
+                },
+                {
+                    "Vraag": "Antwoord"
+                },
+                "form-abc"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "FormsIntakeService: could not open a case for a form submission",
+                {
+                    "form": "form-abc",
+                    "error": "submit down",
+                    "findings": []
+                }
+            ]
+        ]
+    },
+    "submit refuses with findings": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "submit",
+                {
+                    "register": "dossiq",
+                    "schema": "case"
+                },
+                {
+                    "fields": [
+                        {
+                            "field": "Vraag",
+                            "property": "title",
+                            "type": "text"
+                        }
+                    ],
+                    "fixed": {
+                        "priority": "normal",
+                        "caseType": "type-1",
+                        "intakeChannel": "forms"
+                    }
+                },
+                {
+                    "Vraag": "Antwoord"
+                },
+                "form-abc"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "FormsIntakeService: could not open a case for a form submission",
+                {
+                    "form": "form-abc",
+                    "error": "refused",
+                    "findings": [
+                        {
+                            "property": "title",
+                            "code": "required"
+                        }
+                    ]
+                }
+            ]
+        ]
+    },
+    "submit refuses, findings not a list": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "getOpenRegisterClass",
+                "OCA\\OpenRegister\\Service\\Form\\FormSubmitService"
+            ],
+            [
+                "submit",
+                {
+                    "register": "dossiq",
+                    "schema": "case"
+                },
+                {
+                    "fields": [
+                        {
+                            "field": "Vraag",
+                            "property": "title",
+                            "type": "text"
+                        }
+                    ],
+                    "fixed": {
+                        "priority": "normal",
+                        "caseType": "type-1",
+                        "intakeChannel": "forms"
+                    }
+                },
+                {
+                    "Vraag": "Antwoord"
+                },
+                "form-abc"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "FormsIntakeService: could not open a case for a form submission",
+                {
+                    "form": "form-abc",
+                    "error": "refused",
+                    "findings": []
+                }
+            ]
+        ]
+    },
+    "no case schema, no answers": {
+        "answer": null,
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_type_schema"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "caseType",
+                        "intakeFormRef": "form-abc"
+                    },
+                    "limit": 2
+                }
+            ],
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "FormsIntakeService: a case type is bound to this form but the register is not configured, so the submission opened no case",
+                {
+                    "form": "form-abc"
+                }
+            ]
+        ]
+    }
+}

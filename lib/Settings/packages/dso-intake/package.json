@@ -1,0 +1,9 @@
+{
+  "id": "dso-intake",
+  "title": "DSO intake",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": ["settings"],
+  "install": "auto",
+  "description": "Points DSO intake at integriq's dso_verzoek schema, so a mapped DSO verzoek becomes a case. Writes no rows. Refused, naming integriq, on an instance where integriq or its dso_verzoek schema is missing; an administrator's own value, an empty one included, is kept."
+}

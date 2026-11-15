@@ -17,6 +17,8 @@
 // @spec openspec/specs/case-types/spec.md
 // @spec openspec/specs/property-definition-management/spec.md
 
+import { getUserLocale, resolveTranslatable } from './i18nResolver.js'
+
 /**
  * The blueprint key, section id and label keys of each list, in reading order.
  *
@@ -27,6 +29,7 @@
  * would never reach l10n/en.json, never reach a translator, and render in
  * English to a Dutch reader with every check green.
  */
+
 const SECTIONS = [
 	{ key: 'statusTypes', id: 'statuses' },
 	{ key: 'resultTypes', id: 'results' },
@@ -53,13 +56,15 @@ const DEFAULT_LABELS = {
 }
 
 /**
- * The row's display name.
+ * The row's display name. A language-tagged name (`{ nl, en }`) reads in the
+ * user's language, as every other register text does.
  *
  * @param {object} row A blueprint row.
  * @return {string} Its name, its title, or '' when it has neither.
  */
 function nameOf(row) {
-	return String(row?.name ?? row?.title ?? '')
+	const value = row?.name ?? row?.title ?? ''
+	return resolveTranslatable(value, getUserLocale()).text
 }
 
 /**
@@ -156,4 +161,28 @@ export function parentTitleOf(blueprint) {
 	if (parents.length === 0) return ''
 
 	return String(parents[0]?.title ?? '')
+}
+
+/**
+ * What a case type offers, in numbers: its statuses and how many end a case,
+ * its results, and its attributes with how many it inherits and from whom.
+ *
+ * @param {object|null} blueprint The /blueprint answer.
+ * @return {{statuses: number, finalStatuses: number, results: number, attributes: number, inheritedAttributes: number, parent: string}}
+ *
+ * @spec openspec/specs/case-types/spec.md#requirement-the-blueprint-reads-as-a-summary-card
+ */
+export function blueprintSummary(blueprint) {
+	const list = (key) => (Array.isArray(blueprint?.[key]) ? blueprint[key] : [])
+	const statuses = list('statusTypes')
+	const counted = blueprint?.counts?.propertyDefinitions || {}
+	const total = Number(counted.total)
+	return {
+		statuses: statuses.length,
+		finalStatuses: statuses.filter((row) => row?.isFinal === true).length,
+		results: list('resultTypes').length,
+		attributes: Number.isFinite(total) && total > 0 ? total : list('propertyDefinitions').length,
+		inheritedAttributes: Number(counted.inherited) || 0,
+		parent: parentTitleOf(blueprint),
+	}
 }

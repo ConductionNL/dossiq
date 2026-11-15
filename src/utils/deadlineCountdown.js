@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// The deadline column's countdown, as a pure function.
-//
-// A case list that prints a raw ISO date makes every reader do the same
-// subtraction in their head, once per row, and get it wrong on the rows that
-// matter — the ones already past. The countdown does the subtraction and says
-// which side of the line the case is on.
+// Days until a deadline and whether it has passed, as pure functions.
 //
 // The arithmetic is DATE-ONLY on purpose. A deadline is a day, not an
 // instant: comparing timestamps would call a case due today "0 days left" at
@@ -14,8 +9,6 @@
 // working day it is still due on. Both sides are floored to their calendar
 // day in LOCAL time (the same clock the reader's own "today" runs on) before
 // the difference is taken.
-
-import { translate as t } from '@nextcloud/l10n'
 
 /**
  * The local calendar day of a value, as a timestamp at midnight — or null
@@ -63,7 +56,7 @@ function localMidnight(value) {
  * @return {number|null} Positive when the deadline is ahead, negative when it
  *   has passed, 0 on the day itself; null when there is no readable deadline.
  *
- * @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
+ * @spec openspec/specs/signalering-widgets/spec.md
  */
 export function daysUntilDeadline(deadline, now = new Date()) {
 	const due = localMidnight(deadline)
@@ -78,45 +71,21 @@ export function daysUntilDeadline(deadline, now = new Date()) {
 }
 
 /**
- * The deadline column's cell content: how many days are left, or how many
- * days the case is past due.
+ * Whether a deadline has passed: from the day AFTER it, never on it.
  *
- * A case with no deadline returns null — the cell then renders EMPTY, not
- * "0 days left". Zero is a claim about a deadline; a case that has none has
- * made no such claim, and printing zero would sort it visually beside the
- * cases due today.
+ * THE ONE RULE FOR EVERY SURFACE (REQ-OTE-07). A term is not late on its last
+ * day (REQ-TERM-DAY-001), and five components used to decide that each in
+ * their own way: two compared instants and called a case late from midnight
+ * UTC of its last day. They all ask here now.
  *
- * @param {string|number|Date|null|undefined} deadline The case deadline.
- * @param {Date} [now] The moment to count from (defaults to the current one).
- * @return {{days: number, overdue: boolean, text: string}|null} The cell
- *   content, or null when there is no readable deadline.
+ * @param {string|number|Date|null|undefined} deadline The deadline.
+ * @param {Date} [now] The moment to judge against (defaults to the current one).
+ * @return {boolean} True only when the deadline's day is before today; false
+ *   when there is no readable deadline.
  *
- * @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
-export function deadlineCountdown(deadline, now = new Date()) {
+export function isOverdue(deadline, now = new Date()) {
 	const days = daysUntilDeadline(deadline, now)
-	if (days === null) {
-		return null
-	}
-
-	if (days < 0) {
-		const overdueBy = Math.abs(days)
-		return {
-			days: overdueBy,
-			overdue: true,
-			text:
-				overdueBy === 1
-					? t('dossiq', '1 day overdue')
-					: t('dossiq', '{days} days overdue', { days: overdueBy }),
-		}
-	}
-
-	return {
-		days,
-		overdue: false,
-		text:
-			days === 1
-				? t('dossiq', '1 day left')
-				: t('dossiq', '{days} days left', { days }),
-	}
+	return days !== null && days < 0
 }

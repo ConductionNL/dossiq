@@ -36,10 +36,12 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\External\Brk\BrkApiAdapter
  * @covers \OCA\Dossiq\Service\External\Brk\LogBrkAdapter
+ * @covers \OCA\Dossiq\Service\External\Brk\BrkLookupResult
  *
- * @uses \OCA\Dossiq\Service\External\Brk\BrkLookupResult
  * @uses \OCA\Dossiq\Service\External\Brk\BrkResponseMapper
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
+ * @uses \OCA\Dossiq\Service\External\HalResponseBody
  */
 class BrkAdapterTest extends TestCase {
 	/**
@@ -125,7 +127,7 @@ class BrkAdapterTest extends TestCase {
 
 		$this->assertTrue($adapter->isDormant());
 
-		$searchResult = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'A', perceelnummer: '1234');
+		$searchResult = $adapter->lookupByKadastraleAanduiding(municipalityCode: 'VBSTD', section: 'A', perceelnummer: '1234');
 		$this->assertSame('LOOKUP_DEFERRED', $searchResult->lookupStatus);
 		$this->assertTrue($searchResult->dormant);
 		$this->assertSame([], $searchResult->parcel);
@@ -177,7 +179,7 @@ class BrkAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'a', perceelnummer: '1234');
+		$result = $adapter->lookupByKadastraleAanduiding(municipalityCode: 'VBSTD', section: 'a', perceelnummer: '1234');
 
 		$this->assertStringEndsWith('/kadastraalonroerendezaken', $captured['url']);
 		$this->assertSame('VBSTD', $captured['options']['query']['kadastraleGemeenteCode']);
@@ -208,10 +210,10 @@ class BrkAdapterTest extends TestCase {
 		);
 
 		$adapter->lookupByKadastraleAanduiding(
-			kadastraleMunicipalityCode: 'VBSTD',
+			municipalityCode: 'VBSTD',
 			section: 'A',
 			perceelnummer: '1234',
-			appartementsrechtSequenceNumber: 'a2',
+			sequenceNumber: 'a2',
 		);
 
 		$this->assertSame('A2', $captured['options']['query']['appartementsrechtVolgnummer']);
@@ -235,20 +237,20 @@ class BrkAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: '', section: 'A', perceelnummer: '1234');
+		$result = $adapter->lookupByKadastraleAanduiding(municipalityCode: '', section: 'A', perceelnummer: '1234');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'ABC', perceelnummer: '1234');
+		$result = $adapter->lookupByKadastraleAanduiding(municipalityCode: 'VBSTD', section: 'ABC', perceelnummer: '1234');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'A', perceelnummer: 'not-a-number');
+		$result = $adapter->lookupByKadastraleAanduiding(municipalityCode: 'VBSTD', section: 'A', perceelnummer: 'not-a-number');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 
 		$result = $adapter->lookupByKadastraleAanduiding(
-			kadastraleMunicipalityCode: 'VBSTD',
+			municipalityCode: 'VBSTD',
 			section: 'A',
 			perceelnummer: '1234',
-			appartementsrechtSequenceNumber: 'invalid',
+			sequenceNumber: 'invalid',
 		);
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 	}//end testInvalidKadastraleAanduidingInputIsRejectedWithoutNetworkCall()
@@ -267,7 +269,7 @@ class BrkAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'ZZZZZ', section: 'Z', perceelnummer: '99999');
+		$result = $adapter->lookupByKadastraleAanduiding(municipalityCode: 'ZZZZZ', section: 'Z', perceelnummer: '99999');
 		$this->assertSame('NOT_FOUND', $result->lookupStatus);
 	}//end testSearchEmptyResultIsNotFound()
 
@@ -369,7 +371,7 @@ class BrkAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$searchResult = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'A', perceelnummer: '1234');
+		$searchResult = $adapter->lookupByKadastraleAanduiding(municipalityCode: 'VBSTD', section: 'A', perceelnummer: '1234');
 		$this->assertSame('LOOKUP_ERROR', $searchResult->lookupStatus);
 		$this->assertSame('transport-error', $searchResult->extras['reason']);
 
@@ -389,4 +391,51 @@ class BrkAdapterTest extends TestCase {
 			BrkApiAdapter::DEFAULT_BASE_URL
 		);
 	}//end testDefaultBaseUrlIsApiKeyTestEnvironment()
+
+	/**
+	 * A 2xx answer whose body holds no object is NOT_FOUND, and the request
+	 * carries the timeout and the HAL headers, with the API key when one is set.
+	 *
+	 * @return void
+	 */
+	public function testObjectLookupEmptyBodyIsNotFound(): void {
+		foreach (['', '[]', 'null', json_encode(['kadastraalOnroerendeZaak' => []])] as $body) {
+			$captured = [];
+			$adapter = new BrkApiAdapter(
+				clientService: $this->clientCapturing(200, $body, $captured),
+				mode: $this->mode(['integration.brk.mode' => 'test', 'integration.brk.apiKey' => 'secret']),
+				mapper: new BrkResponseMapper(),
+				logger: $this->createMock(LoggerInterface::class),
+			);
+
+			$result = $adapter->lookupObject(id: '10280123450000');
+			$this->assertSame('NOT_FOUND', $result->lookupStatus, 'body: '.$body);
+			$this->assertSame([], $result->extras);
+			$this->assertStringEndsWith('/kadastraalonroerendezaken/10280123450000', $captured['url']);
+			$this->assertSame(
+				['timeout' => 10, 'headers' => ['Accept' => 'application/hal+json', 'X-Api-Key' => 'secret']],
+				$captured['options']
+			);
+		}
+	}//end testObjectLookupEmptyBodyIsNotFound()
+
+	/**
+	 * A body that is the object itself, not wrapped, still maps to FOUND with the tier.
+	 *
+	 * @return void
+	 */
+	public function testObjectLookupBareBodyIsFound(): void {
+		$captured = [];
+		$adapter = new BrkApiAdapter(
+			clientService: $this->clientCapturing(200, (string)json_encode(['identificatie' => 'x-1']), $captured),
+			mode: $this->mode(['integration.brk.mode' => 'test']),
+			mapper: new BrkResponseMapper(),
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		$result = $adapter->lookupObject(id: '10280123450000');
+		$this->assertSame('FOUND', $result->lookupStatus);
+		$this->assertSame(['tier' => 'test'], $result->extras);
+		$this->assertSame(['timeout' => 10, 'headers' => ['Accept' => 'application/hal+json']], $captured['options']);
+	}//end testObjectLookupBareBodyIsFound()
 }//end class

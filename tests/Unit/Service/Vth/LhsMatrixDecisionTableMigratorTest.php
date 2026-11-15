@@ -15,14 +15,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Vth;
 
+use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator
+ * @uses   \OCA\Dossiq\Service\Dmn\StoredDecisionTables
  */
 class LhsMatrixDecisionTableMigratorTest extends TestCase {
 
@@ -95,12 +99,12 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
 				// SCHEMA-AWARE on purpose. The migrator reads matrices from one
 				// schema and existing decision tables from another; a fake that
 				// returned the same rows for both would hand the overwrite
 				// guard a list of matrices and it would never fire.
-				if ($schema === 'decisionTable') {
+				if ($register === 'decision-tables' && $schema === 'decision-table') {
 					return $this->tables;
 				}
 
@@ -114,8 +118,10 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
-				$this->written[] = $object;
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$this->written[] = $object + ['@target' => $register . '/' . $schema];
 
 				return $object;
 			}
@@ -131,7 +137,7 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 			}
 		);
 
-		return new LhsMatrixDecisionTableMigrator($settings, $this->createMock(LoggerInterface::class));
+		return new LhsMatrixDecisionTableMigrator($settings, $this->createMock(LoggerInterface::class), new StoredDecisionTables($settings, $this->createMock(ContainerInterface::class)));
 
 	}//end migrator()
 
@@ -211,31 +217,24 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 	}//end testTheTableDeclaresUnique()
 
 	/**
-	 * The projection arrives ENABLED.
-	 *
-	 * INVERTED, not deleted. This test used to assert `enabled === false`, and
-	 * it was correct when written: phase 1 projected the table while the matrix
-	 * was still the lookup, and a table that also answered would have been a
-	 * second source of truth for an enforcement decision.
-	 *
-	 * Phase 2 removed that condition. `LhsRecommendationService` now evaluates
-	 * the table and reads the matrix only where no projection exists, so a
-	 * disabled table is not the cautious choice: it silently means the matrix
-	 * answers instead, and the migration becomes a no-op that reports success.
-	 *
-	 * The test is kept rather than dropped because the flag still matters. It
-	 * just matters the other way round now.
+	 * The projection lands in OpenRegister's decision-tables register under
+	 * its stored key, owned by dossiq, with no `enabled` flag: OpenRegister has
+	 * no switch, so a stored table answers, which is what phase 2 wanted from
+	 * the flag (a disabled projection silently let the matrix answer instead).
 	 *
 	 * @return void
 	 */
-	public function testTheProjectionArrivesEnabled(): void {
+	public function testTheProjectionLandsInOpenRegistersRegister(): void {
 		$this->matrices = [$this->matrix()];
 
 		$this->migrator()->migrate($this->user(), false);
 
-		$this->assertTrue($this->written[0]['enabled']);
+		$this->assertSame('decision-tables/decision-table', $this->written[0]['@target']);
+		$this->assertSame('dossiq.lhs-matrix-3', $this->written[0]['key']);
+		$this->assertSame('dossiq', $this->written[0]['owner']);
+		$this->assertArrayNotHasKey('enabled', $this->written[0], 'OpenRegister has no switch: a stored table answers');
 
-	}//end testTheProjectionArrivesEnabled()
+	}//end testTheProjectionLandsInOpenRegistersRegister()
 
 	/**
 	 * The projected table, as the fake register would hold it after a run.
@@ -248,6 +247,7 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 		$this->matrices = [$this->matrix()];
 		$this->migrator()->migrate($this->user(), false);
 		$table = $this->written[0];
+		unset($table['@target']);
 		$this->written = [];
 
 		$table['id'] = 'table-1';
@@ -336,6 +336,64 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 		$this->assertStringContainsString('not on its axis', $summary['rows'][0]['detail']);
 
 	}//end testACellOffItsAxisRefusesTheMatrix()
+
+	/**
+	 * The whole projected table, field by field, and the defaults for a matrix without name or version.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeProjectedTable(): void {
+		$matrix = $this->matrix();
+		$matrix['cells'][1]['note'] = 'Second time';
+		$this->matrices = [$matrix];
+
+		$this->migrator()->migrate($this->user(), false);
+		$table = $this->written[0];
+
+		$this->assertSame(
+			['name', 'key', 'owner', 'description', 'hitPolicy', 'inputs', 'outputs', 'rules', '@target'],
+			array_keys($table)
+		);
+		$this->assertSame('LHS 2024', $table['name']);
+		$this->assertSame('dossiq', $table['owner']);
+		$this->assertStringStartsWith('Projected from the LHS matrix "LHS 2024" (version 3). ', $table['description']);
+		$this->assertStringEndsWith('a re-run of the projection refuses to overwrite changed rules rather than discarding them.', $table['description']);
+		$this->assertSame(
+			[
+				'id' => 'gering:calculerend:burger',
+				'annotation' => 'Second time',
+				'inputEntries' => ['gering', 'calculerend', 'burger'],
+				'outputEntries' => ['fine'],
+			],
+			$table['rules'][1]
+		);
+		$this->assertSame('', $table['rules'][0]['annotation']);
+
+		unset($matrix['name'], $matrix['version']);
+		$this->matrices = [$matrix];
+		$this->written = [];
+		$this->migrator()->migrate($this->user(), false);
+		$this->assertSame('LHS', $this->written[0]['name']);
+		$this->assertStringStartsWith('Projected from the LHS matrix "" (version 1). ', $this->written[0]['description']);
+	}//end testTheWholeProjectedTable()
+
+	/**
+	 * A matrix without cells, or with an empty axis, is refused and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyMatrixIsRefused(): void {
+		$noCells = $this->matrix();
+		$noCells['cells'] = [];
+		$noAxis = $this->matrix();
+		$noAxis['behaviourAxis'] = '[]';
+		$this->matrices = [$noCells, $noAxis];
+
+		$summary = $this->migrator()->migrate($this->user(), false);
+
+		$this->assertSame([], $this->written);
+		$this->assertSame(2, $summary['skipped']);
+	}//end testAnEmptyMatrixIsRefused()
 
 	/**
 	 * A dry run writes nothing and still reports the rule count.

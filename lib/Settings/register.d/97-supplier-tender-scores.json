@@ -1,0 +1,36 @@
+{
+  "_note": "screens-round12-domain-case-cards, board DqAanbesteding: a bid carries the scores the assessors gave it, so the tender's Bids tab can show the assessment as the board draws it (price score, quality score, total, rank). The weighting itself belongs to the tender, not to a bid, and is not stored here. Version moves so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "supplierTender": {
+        "version": "1.2.0",
+        "properties": {
+          "priceScore": {
+            "type": "number",
+            "title": "Price score",
+            "description": "The score the bid got on price."
+          },
+          "qualityScore": {
+            "type": "number",
+            "title": "Quality score",
+            "description": "The score the bid got on quality."
+          },
+          "totalScore": {
+            "type": "number",
+            "title": "Total score",
+            "description": "Price and quality together, as the tender weighs them."
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank",
+            "description": "The bid's place among the valid bids, 1 being the best."
+          }
+        }
+      }
+    }
+  }
+}

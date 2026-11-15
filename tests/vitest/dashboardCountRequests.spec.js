@@ -3,7 +3,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The addresses the simple dashboard asks for its counts.
+ * The addresses the simple landing page asks for its counts (its My work
+ * view since landing-views; the simple dashboard asked them before).
  *
  * `simpleListAndDashboard.spec.js` compares FILTERS. That was not enough: the
  * First today card declared `deadline: { lt: ... }`, the filter read correct,
@@ -17,7 +18,7 @@
  * that are repeated here; if the library changes those lines this copy goes
  * stale, and the note says so rather than pretending otherwise.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-025
+ * @spec openspec/changes/archive/2026-10-10-simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-025
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -31,6 +32,7 @@ import fs from 'fs'
 import path from 'path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildProfiledManifest } from '../../src/utils/structureProfile.js'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 function readJson(...parts) {
@@ -46,8 +48,8 @@ const dashboard = buildProfiledManifest(
 	readJson('src', 'manifest.json'),
 	fragments,
 	readJson('src', 'menu-layout.simple.json'),
-).pages.find((page) => page.id === 'Dashboard')
-const widget = (id) => dashboard.config.widgets.find((item) => item.id === id)
+).pages.find((page) => page.id === 'MyWorkHome')
+const widget = (id) => pageWidgets(dashboard).find((item) => item.id === id)
 
 const DAY = /^\d{4}-\d{2}-\d{2}/
 
@@ -97,7 +99,7 @@ describe('what the simple dashboard asks OpenRegister', () => {
 	it('holds no nested operator anywhere the library would write it as JSON', () => {
 		// Every `visibleWhen.source.filter` on the page goes through
 		// buildQueryString, so none may hold an object value.
-		for (const item of dashboard.config.widgets) {
+		for (const item of pageWidgets(dashboard)) {
 			const filter =
 				item.visibleWhen?.source?.filter
 				?? item.content?.visibleWhen?.source?.filter
@@ -121,19 +123,14 @@ describe('what the simple dashboard asks OpenRegister', () => {
 			/ 86400000
 		expect(span).toBe(7)
 
-		const closed = flattened(
-			widget('simple-closed-month').content.source.filter,
-			(field) => `filter[${field}]`,
-		)
-		expect(closed.get('filter[endDate][gte]')).toMatch(DAY)
-		expect(closed.get('filter[isFinalStatus]')).toBe('true')
+		// "Closed this month" reads the KPI endpoint (the reader's own
+		// closed cases, this month and last), not a count the browser asks.
+		const closed = widget('simple-closed-month').content
+		expect(closed.endpointSource.url).toBe('/apps/dossiq/api/dashboard/kpis')
+		expect(closed.valueField).toBe('myCompletedCount')
+		expect(closed.caption).toContain('{myCompletedLastMonth}')
 
-		for (const id of [
-			'simple-my-open',
-			'simple-due-soon',
-			'simple-waiting',
-			'simple-closed-month',
-		]) {
+		for (const id of ['simple-my-open', 'simple-due-soon', 'simple-waiting']) {
 			const params = flattened(
 				widget(id).content.source.filter,
 				(f) => `filter[${f}]`,
@@ -206,17 +203,19 @@ describe('whether the First today card shows', () => {
 		expect(none.met).toBe(false)
 	})
 
-	it('carries a text, because the dashboard gives up the cell of a banner without one', () => {
-		// CnDashboardPage.isCollapsedWidget: `isBannerDef(def) && text === ''`
-		// collapses the cell BEFORE the condition is looked at, and `text` is
-		// `content.text`, never `content.title`. A met condition is not enough.
+	it('is a library banner that names the first row of the declared condition', () => {
+		// The card names ONE case: the first row of the ordered query is its
+		// subject (CnDashboardPage hands the row to the banner with the
+		// verdict). The filter is the one the feed (appinfo/attention.json) is
+		// asserted against; the count is still met on the total.
 		const card = widget('simple-first-today')
 		expect(card.type).toBe('banner')
-		expect(card.content.text).toBeTruthy()
-		expect(card.content.text).toBe(card.content.title)
-		// The count the card names is the value the condition read.
-		expect(card.content.reason).toContain('{value}')
-		// And the page reads the condition from where it is declared.
-		expect(card.visibleWhen ?? card.content.visibleWhen).toBeTruthy()
+		expect(card.content.title).toBe('{subject.title}')
+		expect(card.content.reason).toContain('{subject.identifier}')
+		expect(card.content.visibleWhen.source.order).toEqual({ deadline: 'asc' })
+		expect(card.content.visibleWhen.source.extend).toEqual(['caseType'])
+		expect(card.content.visibleWhen.source.filter['deadline[lt]']).toBe(
+			'@today+1d',
+		)
 	})
 })

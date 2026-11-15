@@ -142,6 +142,34 @@ class AiAuditExportControllerTest extends TestCase {
 	}//end testExportAllowedGroupReturnsCsv()
 
 	/**
+	 * Every cell is written as the export always wrote it: booleans as 1/0,
+	 * arrays as JSON, a missing field as an empty cell.
+	 *
+	 * @return void
+	 */
+	public function testEveryCellIsWrittenInItsExportForm(): void {
+		$this->groupManager->method('isInGroup')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([
+			['caseId', null, null],
+			['type', null, null],
+			['format', 'csv', 'csv'],
+		]);
+		$this->auditService->method('listAuditEntries')->willReturn([
+			'entries' => [
+				['id' => 'e1', 'confidence' => 0.5, 'userAction' => true, 'actualValue' => ['a' => 'b, c']],
+				['id' => 'e2', 'userAction' => false, 'prompt' => 'say "hi"'],
+			],
+		]);
+
+		$csv = $this->makeController('auditor-1')->export()->render();
+
+		$lines = explode("\n", trim($csv));
+		$this->assertCount(3, $lines);
+		$this->assertSame('e1,,,,,,,,,0.5,1,"{""a"":""b, c""}",,,,', $lines[1]);
+		$this->assertSame('e2,,,,,,,"say ""hi""",,,0,,,,,', $lines[2]);
+	}//end testEveryCellIsWrittenInItsExportForm()
+
+	/**
 	 * An NC admin outside the allowed groups is still permitted (defensive
 	 * fallback, mirrors the parafering export).
 	 *

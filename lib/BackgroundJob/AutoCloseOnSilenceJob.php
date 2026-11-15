@@ -12,6 +12,13 @@
  * held, and then each case's own type is asked for its period. A case type
  * that declares none is the overwhelming majority and costs one read.
  *
+ * OFF UNTIL A CASE TYPE OPTS IN. A case type closes its silent cases only
+ * when `autoCloseOnSilence` is true; a period alone is not enough, so an
+ * upgrade closes nothing on an existing instance. The sweep runs as the
+ * background service account, because cron has no user and OpenRegister
+ * refuses a write from nobody, and that account may abort a case only when
+ * its case type opted in ({@see \OCA\Dossiq\Service\Lifecycle\LifecycleActorGate}).
+ *
  * @category BackgroundJob
  * @package  OCA\Dossiq\BackgroundJob
  *
@@ -32,9 +39,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\Lifecycle\SilenceCloseService;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SilenceCloseServiceInterface;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -46,11 +53,10 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+ * @spec openspec/specs/case-status-machinery/spec.md
  */
 class AutoCloseOnSilenceJob extends TimedJob {
 
-	use SearchesObjects;
 
 	/**
 	 * How many cases one sweep looks at.
@@ -67,17 +73,19 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The time factory.
-	 * @param SilenceCloseService $silence Decides and performs.
-	 * @param SettingsService $settingsService Bridge to OpenRegister plus config.
+	 * @param SilenceCloseServiceInterface $silence Decides and performs.
+	 * @param SettingsServiceInterface $settingsService Bridge to OpenRegister plus config.
 	 * @param IAppManager $appManager Establishes that OpenRegister is present.
 	 * @param LoggerInterface $logger The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the sweep acts as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly SilenceCloseService $silence,
-		private readonly SettingsService $settingsService,
+		private readonly SilenceCloseServiceInterface $silence,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: 86400);
@@ -92,52 +100,119 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	protected function run($argument): void {
+		// Without a usable account this runs nothing: that is already logged as an
+		// error and told to the admins. Nothing was read, warned or
+		// closed; the next run tries again.
+		$this->serviceAccount->runAsWhenAvailable(operation: fn () => $this->sweep());
+	}//end run()
+
+	/**
+	 * Warn and close, as the background service account.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-status-machinery/spec.md
+	 */
+	private function sweep(): void {
 		$cases = $this->openCases();
 		if ($cases === []) {
 			return;
 		}
 
 		$today = new DateTimeImmutable('today');
-		$warned = 0;
-		$closed = 0;
-
+		$tally = ['warn' => 0, 'close' => 0];
 		foreach ($cases as $case) {
-			$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-			if ($caseId === '') {
-				continue;
+			$done = $this->evaluate(row: $case, today: $today);
+			if (isset($tally[$done]) === true) {
+				$tally[$done]++;
 			}
-
-			try {
-				$decision = $this->silence->decide(case: $case, today: $today);
-				if ($decision['action'] === 'warn') {
-					$this->silence->warn(caseId: $caseId, case: $case, closesOn: $decision['closesOn']);
-					$warned++;
-				}
-
-				if ($decision['action'] === 'close') {
-					$this->silence->close(caseId: $caseId, decision: $decision);
-					$closed++;
-				}
-			} catch (Throwable $e) {
-				// One case that cannot be evaluated must not end the sweep:
-				// the next four hundred are unrelated to it.
-				$this->logger->warning(
-					'AutoCloseOnSilenceJob: one case could not be evaluated',
-					['caseId' => $caseId, 'exception' => $e->getMessage()],
-				);
-			}//end try
 		}
 
-		if (($warned + $closed) > 0) {
+		$this->reportSweep(tally: $tally);
+	}//end sweep()
+
+	/**
+	 * Decide one case and act on it; one case that cannot be evaluated never ends the sweep.
+	 *
+	 * @param array<string, mixed> $row   The case as the sweep read it.
+	 * @param DateTimeImmutable    $today The day of the sweep.
+	 *
+	 * @return string `warn` or `close` when that was done, else ''.
+	 *
+	 * @spec openspec/specs/case-status-machinery/spec.md
+	 */
+	private function evaluate(array $row, DateTimeImmutable $today): string {
+		$caseId = $this->caseIdOf(row: $row);
+		if ($caseId === '') {
+			return '';
+		}
+
+		try {
+			return $this->act(row: $row, decision: $this->silence->decide(case: $row, today: $today));
+		} catch (Throwable $e) {
+			// One case that cannot be evaluated must not end the sweep:
+			// the next four hundred are unrelated to it.
+			$this->logger->warning(
+				'AutoCloseOnSilenceJob: one case could not be evaluated',
+				['caseId' => $caseId, 'exception' => $e->getMessage()],
+			);
+			return '';
+		}//end try
+	}//end evaluate()
+
+	/**
+	 * Warn or close as the decision says.
+	 *
+	 * @param array<string, mixed> $row      The case.
+	 * @param array<string, mixed> $decision The silence decision.
+	 *
+	 * @return string `warn` or `close` when that was done, else ''.
+	 *
+	 * @spec openspec/specs/case-status-machinery/spec.md
+	 */
+	private function act(array $row, array $decision): string {
+		if ($decision['action'] === 'warn') {
+			$this->silence->warn(caseId: $this->caseIdOf(row: $row), case: $row, closesOn: $decision['closesOn']);
+			return 'warn';
+		}
+
+		if ($decision['action'] === 'close') {
+			$this->silence->close(caseId: $this->caseIdOf(row: $row), decision: $decision);
+			return 'close';
+		}
+
+		return '';
+	}//end act()
+
+	/**
+	 * The case's id, from the row or its `@self`.
+	 *
+	 * @param array<string, mixed> $row The case.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private function caseIdOf(array $row): string {
+		return (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+	}//end caseIdOf()
+
+	/**
+	 * Log what the sweep did, when it did anything.
+	 *
+	 * @param array{warn: int, close: int} $tally How many were warned and closed.
+	 *
+	 * @return void
+	 */
+	private function reportSweep(array $tally): void {
+		if (($tally['warn'] + $tally['close']) > 0) {
 			$this->logger->info(
 				'AutoCloseOnSilenceJob: swept the declared silence periods',
-				['warned' => $warned, 'closed' => $closed],
+				['warned' => $tally['warn'], 'closed' => $tally['close']],
 			);
 		}
-	}//end run()
+	}//end reportSweep()
 
 	/**
 	 * The open, non-draft cases this sweep considers.
@@ -151,26 +226,11 @@ class AutoCloseOnSilenceJob extends TimedJob {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$sweep = OpenCaseSweep::ofSettings(settingsService: $this->settingsService);
+		if ($sweep === null) {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'isFinalStatus' => 0,
-				'isDraft' => 0,
-				'_limit' => self::SWEEP_LIMIT,
-			],
-		);
+		return $sweep->openCases(limit: self::SWEEP_LIMIT);
 	}//end openCases()
 }//end class

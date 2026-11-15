@@ -52,7 +52,6 @@ const CREATE_FIELDS = [
 	'urgency',
 	'confidentiality',
 	'intakeChannel',
-	'startDate',
 	'plannedEndDate',
 ]
 
@@ -264,6 +263,8 @@ test.describe('New case dialog', () => {
 		// the old dialog unreadable.
 		for (const key of [
 			...HIDDEN_FIELDS,
+			// dossiq sets the start date when the case is created (REQ-TERM-042).
+			'startDate',
 			'archiveNomination',
 			'workflowTemplate',
 			'result',

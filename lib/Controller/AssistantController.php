@@ -30,10 +30,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use Exception;
-use OCA\Dossiq\Service\Assistant\CaseAssistantService;
-use OCA\Dossiq\Service\Ai\CaseTypeAiFeatures;
-use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
-use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
+use OCA\Dossiq\Kernel\Contracts\CaseAssistantServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeAiFeaturesInterface;
+use OCA\Dossiq\Kernel\Contracts\HermiqAiFeatureClientInterface;
+use OCA\Dossiq\Kernel\Contracts\HermiqAssistantClientInterface;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -50,30 +50,37 @@ use Psr\Log\LoggerInterface;
  */
 class AssistantController extends Controller {
 	/**
+	 * The usage scope dossiq's case prompts carry in hermiq's library.
+	 *
+	 * @var string
+	 */
+	public const CASE_PROMPT_SCOPE = 'dossiq-case';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The application name.
 	 * @param IRequest $request The request object.
-	 * @param CaseAssistantService $caseAssistantService Turn orchestration.
-	 * @param HermiqAssistantClient $hermiqClient Availability check for the UI gate.
+	 * @param CaseAssistantServiceInterface $caseAssistantService Turn orchestration.
+	 * @param HermiqAssistantClientInterface $hermiqClient Availability check for the UI gate.
 	 * @param IUserSession $userSession Resolves the requesting user.
 	 * @param IL10N $l10n Localization service for translations.
 	 * @param LoggerInterface $logger Structured logger.
-	 * @param CaseTypeAiFeatures|null $aiFeatures Reads what a case type declared.
-	 * @param HermiqAiFeatureClient|null $aiFeatureClient Reads where each declared feature runs.
+	 * @param CaseTypeAiFeaturesInterface|null $aiFeatures Reads what a case type declared.
+	 * @param HermiqAiFeatureClientInterface|null $aiFeatureClient Reads where each declared feature runs.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseAssistantService $caseAssistantService,
-		private readonly HermiqAssistantClient $hermiqClient,
+		private readonly CaseAssistantServiceInterface $caseAssistantService,
+		private readonly HermiqAssistantClientInterface $hermiqClient,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		// Nullable and last, so every existing construction of this controller
 		// keeps working; the container supplies both.
-		private readonly ?CaseTypeAiFeatures $aiFeatures = null,
-		private readonly ?HermiqAiFeatureClient $aiFeatureClient = null,
+		private readonly ?CaseTypeAiFeaturesInterface $aiFeatures = null,
+		private readonly ?HermiqAiFeatureClientInterface $aiFeatureClient = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -95,10 +102,7 @@ class AssistantController extends Controller {
 	public function availability(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('Authentication required')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->unauthenticated();
 		}
 
 		return new JSONResponse(['available' => $this->hermiqClient->isAvailable()]);
@@ -135,10 +139,7 @@ class AssistantController extends Controller {
 	public function aiFeatures(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('Authentication required')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->unauthenticated();
 		}
 
 		if ($this->aiFeatures === null || $this->aiFeatureClient === null) {
@@ -146,7 +147,7 @@ class AssistantController extends Controller {
 		}
 
 		$caseType = (array)$this->request->getParam('caseType', []);
-		$surface = (string)$this->request->getParam('surface', CaseTypeAiFeatures::SURFACE_CASE);
+		$surface = (string)$this->request->getParam('surface', CaseTypeAiFeaturesInterface::SURFACE_CASE);
 
 		$declared = $this->aiFeatures->onSurface(caseType: $caseType, surface: $surface);
 		if ($declared === []) {
@@ -155,35 +156,93 @@ class AssistantController extends Controller {
 			return new JSONResponse(['features' => []]);
 		}
 
-		$residency = $this->aiFeatureClient->featureResidency();
+		return new JSONResponse(['features' => $this->featureRows(declared: $declared, surface: $surface)]);
+	}//end aiFeatures()
+
+	/**
+	 * Each declared feature with where hermiq runs it.
+	 *
+	 * @param array<int, string> $declared The features the case type declares here.
+	 * @param string             $surface  The surface.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-the-provider-and-the-place-are-read-from-hermiq-never-set-in-dossiq-req-aic-02
+	 */
+	private function featureRows(array $declared, string $surface): array {
+		$residency = $this->aiFeatureClient?->featureResidency() ?? [];
 
 		$features = [];
 		foreach ($declared as $slug) {
-			$row = ($residency[$slug] ?? null);
-			if (is_array($row) === false) {
-				// Declared here, unknown to hermiq. Unavailable, and said so
-				// rather than shown with an empty provider that reads as local.
-				$features[] = [
-					'slug' => $slug,
-					'surface' => $surface,
-					'available' => false,
-					'provider' => null,
-					'residency' => null,
-				];
+			$features[] = ['slug' => $slug, 'surface' => $surface] + $this->residencyOf(row: ($residency[$slug] ?? null));
+		}
+
+		return $features;
+	}//end featureRows()
+
+	/**
+	 * Whether hermiq offers the feature, and its provider and residency.
+	 *
+	 * Declared here, unknown to hermiq: unavailable, and said so rather than
+	 * shown with an empty provider that reads as local.
+	 *
+	 * @param mixed $row Hermiq's residency row for the feature.
+	 *
+	 * @return array{available: bool, provider: mixed, residency: mixed}
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-the-provider-and-the-place-are-read-from-hermiq-never-set-in-dossiq-req-aic-02
+	 */
+	private function residencyOf(mixed $row): array {
+		if (is_array($row) === false) {
+			return ['available' => false, 'provider' => null, 'residency' => null];
+		}
+
+		return ['available' => true, 'provider' => ($row['provider'] ?? null), 'residency' => ($row['residency'] ?? null)];
+	}//end residencyOf()
+
+	/**
+	 * The prompts the assistant offers on a case, as hermiq holds them.
+	 *
+	 * 🔴 DOSSIQ HOLDS NO PROMPT TEXT FOR THE CASE SURFACE (REQ-AIC-06). The
+	 * prompts are hermiq's administered objects, read in the administrator's
+	 * order; dossiq only ships an initial library into hermiq on upgrade
+	 * (ShipAssistantPrompts). An absent hermiq answers an empty list.
+	 *
+	 * @return JSONResponse `{prompts: [{id, label, prompt}]}`.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @no-admin-idor-exempt There is no object to scope to: the prompt library
+	 * is one global list per record type, the same for every caller, and no
+	 * case, document or party is read.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-prompts-offered-on-a-case-come-from-hermiq
+	 */
+	public function prompts(): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return $this->unauthenticated();
+		}
+
+		if ($this->aiFeatureClient === null) {
+			return new JSONResponse(['prompts' => []]);
+		}
+
+		$prompts = [];
+		foreach ($this->aiFeatureClient->prompts(scope: self::CASE_PROMPT_SCOPE) as $row) {
+			$text = trim((string)($row['prompt'] ?? ''));
+			if ($text === '') {
 				continue;
 			}
 
-			$features[] = [
-				'slug' => $slug,
-				'surface' => $surface,
-				'available' => true,
-				'provider' => ($row['provider'] ?? null),
-				'residency' => ($row['residency'] ?? null),
+			$prompts[] = [
+				'id' => (string)($row['id'] ?? ''),
+				'label' => (string)($row['label'] ?? $text),
+				'prompt' => $text,
 			];
-		}//end foreach
+		}
 
-		return new JSONResponse(['features' => $features]);
-	}//end aiFeatures()
+		return new JSONResponse(['prompts' => $prompts]);
+	}//end prompts()
 
 	/**
 	 * Run one conversational turn against a case.
@@ -198,10 +257,7 @@ class AssistantController extends Controller {
 	public function converse(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('Authentication required')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->unauthenticated();
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');
@@ -225,14 +281,37 @@ class AssistantController extends Controller {
 		} catch (HermiqAssistantException $e) {
 			return $this->mapFailure(statusCode: $e->getStatusCode(), message: $e->getMessage(), errorCode: $e->getErrorCode());
 		} catch (Exception $e) {
-			$statusCode = (int)$e->getCode();
-			if ($statusCode < 400 || $statusCode >= 600) {
-				$statusCode = 500;
-			}
-
-			return $this->mapFailure(statusCode: $statusCode, message: $e->getMessage(), errorCode: null);
+			return $this->mapFailure(statusCode: $this->errorStatusOf(exception: $e), message: $e->getMessage(), errorCode: null);
 		}//end try
 	}//end converse()
+
+	/**
+	 * The exception's code when it is an HTTP error status, else 500.
+	 *
+	 * @param Exception $exception The failure.
+	 *
+	 * @return int
+	 */
+	private function errorStatusOf(Exception $exception): int {
+		$statusCode = (int)$exception->getCode();
+		if ($statusCode < 400 || $statusCode >= 600) {
+			return 500;
+		}
+
+		return $statusCode;
+	}//end errorStatusOf()
+
+	/**
+	 * The 401 for a caller without a session.
+	 *
+	 * @return JSONResponse
+	 */
+	private function unauthenticated(): JSONResponse {
+		return new JSONResponse(
+			['error' => $this->l10n->t('Authentication required')],
+			Http::STATUS_UNAUTHORIZED
+		);
+	}//end unauthenticated()
 
 	/**
 	 * Map a coded failure to a translated `JSONResponse`, logging at the
@@ -246,6 +325,25 @@ class AssistantController extends Controller {
 	 * @return JSONResponse
 	 */
 	private function mapFailure(int $statusCode, string $message, ?string $errorCode): JSONResponse {
+		$this->logFailure(statusCode: $statusCode, message: $message);
+
+		$data = ['error' => $this->errorTypeOf(statusCode: $statusCode), 'message' => $message];
+		if ($errorCode !== null) {
+			$data['errorCode'] = $errorCode;
+		}
+
+		return new JSONResponse($data, $statusCode);
+	}//end mapFailure()
+
+	/**
+	 * Log a failure at the level its status deserves: a client 4xx as a warning, a 5xx as an error.
+	 *
+	 * @param int    $statusCode The HTTP status.
+	 * @param string $message    The detail message.
+	 *
+	 * @return void
+	 */
+	private function logFailure(int $statusCode, string $message): void {
 		$level = 'error';
 		if ($statusCode < 500) {
 			// Client 4xx is expected user/caller error, not a server fault.
@@ -257,8 +355,17 @@ class AssistantController extends Controller {
 			'[AssistantController] Message not processed: ' . $message,
 			['statusCode' => $statusCode]
 		);
+	}//end logFailure()
 
-		$errorType = match ($statusCode) {
+	/**
+	 * The translated error a status answers with.
+	 *
+	 * @param int $statusCode The HTTP status.
+	 *
+	 * @return string The error.
+	 */
+	private function errorTypeOf(int $statusCode): string {
+		return match ($statusCode) {
 			400 => $this->l10n->t('Invalid request'),
 			401 => $this->l10n->t('Authentication required'),
 			403 => $this->l10n->t('Access denied'),
@@ -266,12 +373,5 @@ class AssistantController extends Controller {
 			422 => $this->l10n->t('Message blocked by the organisation\'s guardrail policy'),
 			default => $this->l10n->t('The case assistant is currently unavailable'),
 		};
-
-		$data = ['error' => $errorType, 'message' => $message];
-		if ($errorCode !== null) {
-			$data['errorCode'] = $errorCode;
-		}
-
-		return new JSONResponse($data, $statusCode);
-	}//end mapFailure()
+	}//end errorTypeOf()
 }//end class

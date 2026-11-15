@@ -34,6 +34,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\Subsidie\TerugvorderingService
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-20
  */

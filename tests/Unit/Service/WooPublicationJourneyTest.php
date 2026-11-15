@@ -14,7 +14,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
  */
 
 declare(strict_types=1);
@@ -22,11 +22,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use OCP\IURLGenerator;
@@ -38,8 +38,13 @@ use Psr\Log\LoggerInterface;
  * Runs publish and withdraw against an in-memory dossiq register and a recording OpenCatalogi client.
  *
  * @covers \OCA\Dossiq\Service\WooPublicationService
- * @covers \OCA\Dossiq\Woo\WooCaseLedger
+ * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooPublicationJourneyTest extends TestCase {
 
@@ -125,7 +130,7 @@ class WooPublicationJourneyTest extends TestCase {
 			$apps,
 			$this->createMock(LoggerInterface::class),
 			$this->return,
-			new WooCaseLedger(settingsService: $settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			new CasePublicationState(settingsService: $settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
 		);
 	}//end setUp()
 
@@ -188,7 +193,7 @@ class WooPublicationJourneyTest extends TestCase {
 	/**
 	 * After publishing the case reads published with an absolute link, and the dossier is told.
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
 	 *
 	 * @return void
 	 */
@@ -226,7 +231,7 @@ class WooPublicationJourneyTest extends TestCase {
 	/**
 	 * No Woo decision, and more than one, are named refusals, and nothing is sent.
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 *
 	 * @return void
 	 */

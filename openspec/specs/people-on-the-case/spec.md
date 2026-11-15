@@ -91,3 +91,120 @@ The Files tab's New menu SHALL offer "Request a file from a party". The dialog S
 #### Scenario: REQ-POC-005c A person who is not on the case is refused
 - **WHEN** a request names a person with no link to the case
 - **THEN** the response MUST be 404 and no share MUST be created
+
+### Requirement: A case carries a handler and a coordinator (REQ-HAND-05)
+
+A case SHALL carry two named seats: the handler doing the work, which
+remains `assignee`, and a coordinator answerable for it, bound as a role
+on the case rather than a second assignee field. Both SHALL be assignable,
+both SHALL be searchable, and both SHALL be shown on the case's people
+panel, as board DqZaakBetrokkenen draws them: the handler in the Zetels card
+(Behandelaar), the coordinator under Partijen with the role, so there is one
+place to look for everyone on the case. The Zetels card SHALL NOT repeat the
+coordinator.
+
+#### Scenario: behandelaar and casemanager are two people
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a case
+- **WHEN** a teamleider names a handler and a coordinator
+- **THEN** the case SHALL carry both
+- **AND** the people panel SHALL show the handler under Zetels and the coordinator under Partijen, each with their role
+
+#### Scenario: a coordinator finds their cases
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a person who is coordinator on four cases and handler on none
+- **WHEN** they search their cases
+- **THEN** those four SHALL be found
+
+#### Scenario: a handover keeps the seats it can
+
+- **GIVEN** a case with a handler and a coordinator
+- **WHEN** it is handed to another team
+- **THEN** any seat whose holder is not in the receiving team SHALL be emptied and recorded
+- **AND** the emptying SHALL be visible on the case
+
+### Requirement: A case type may require a coordinator before signing (REQ-HAND-06)
+
+A case type SHALL be able to declare that a coordinator is required before
+a besluit is signed. Where it is declared and the seat is empty, the
+signing act SHALL be refused with a 4xx carrying `{message, error}` naming
+the rule. A case type that does not declare it SHALL never ask for a
+coordinator.
+
+#### Scenario: the Awb answer is signed by the second seat
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a case type requiring a coordinator before signing, and an empty seat
+- **WHEN** a handler signs the besluit
+- **THEN** it SHALL be refused
+- **AND** the refusal SHALL name the coordinator requirement
+
+#### Scenario: with the seat filled it signs
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** the same case type with a coordinator named
+- **WHEN** the besluit is signed
+- **THEN** it SHALL be accepted
+
+#### Scenario: a melding asks for nobody
+
+- **GIVEN** a case type with no coordinator requirement
+- **WHEN** a handler closes a case of that type
+- **THEN** no coordinator SHALL be asked for
+
+### Requirement: Everything a leaver holds moves in one act (REQ-HAND-07)
+
+dossiq SHALL offer one act that moves everything a person holds to another
+person or team: cases where they are the handler, cases where they are the
+coordinator, their open tasks, and their drafts. The act SHALL be previewed
+before it runs, naming what will move and how much. It SHALL record who
+ran it, when, what moved and where from. It SHALL listen for an
+offboarding signal from humaniq when one exists, and until then SHALL be
+started by an administrator naming the person.
+
+#### Scenario: uitdiensttreding is one act
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a person holding nine cases, three coordinator seats, four tasks and two drafts
+- **WHEN** an administrator hands their work to a colleague
+- **THEN** all eighteen SHALL move
+- **AND** the act SHALL be recorded with who ran it
+
+#### Scenario: it is previewed before it runs
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** an administrator starting a leaver handover
+- **WHEN** they open it
+- **THEN** it SHALL name what will move and how much
+- **AND** nothing SHALL move until they confirm
+
+#### Scenario: a draft does not become unreadable
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a draft case private to a person who has left
+- **WHEN** their work is handed over
+- **THEN** the draft SHALL be readable by the receiving person
+
+#### Scenario: what moved is traceable afterwards
+
+- **GIVEN** a completed leaver handover
+- **WHEN** a case that moved is opened
+- **THEN** it SHALL record that it moved, from whom, and by whose act
+
+### Requirement: The case schema's role vocabulary survives a rewrite of the schema
+
+When the case schema is updated by anything (a register import, an upgrade, an admin), the system SHALL write the instance's role types back into its `linkRoles` when they are missing, so a person linked in a role type is shown under the role type's name.
+
+#### Scenario: A window refresh re-imports the register
+- GIVEN the case schema's link roles hold the role type "Gemachtigde" (3c0f5a00-0000-4000-a000-0000000c0002)
+- WHEN the register is imported again and the case schema's link roles are reset to the generic party roles
+- THEN the role types are written back
+- AND J. van Wijk's row in Rollen reads "Gemachtigde", not the uuid
+
+#### Scenario: The import saves its own copy of the case schema after the sync ran
+- GIVEN a register import updates the case schema, and that update has already written the role types back
+- WHEN the import then saves its own copy of the case schema, holding only the generic party roles
+- THEN the role types are written back again, read against the stored schema rather than the copy cached earlier in the request
+- AND J. van Wijk's row in Rollen still reads "Gemachtigde", not the uuid
