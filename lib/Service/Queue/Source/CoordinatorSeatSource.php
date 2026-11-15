@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Queue\Source;
 use OCA\Dossiq\Service\People\CaseSeats;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ReadsQueueCaseSchema;
 use OCP\IL10N;
 
 /**
@@ -49,6 +50,8 @@ use OCP\IL10N;
  * @spec openspec/specs/my-work/spec.md
  */
 class CoordinatorSeatSource extends RegisterBackedSource {
+	use ReadsQueueCaseSchema;
+
 	/**
 	 * Constructor.
 	 *
@@ -132,37 +135,66 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 			return [];
 		}
 
-		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
-		if ($schema === '') {
-			$schema = 'case';
-		}
+		$schema = $this->caseSchema();
 
 		$items = [];
 		foreach ($this->rows(schema: $schema, filters: ['isFinalStatus' => 0]) as $row) {
-			$id = $this->idOf(row: $row);
-			if ($id === '' || in_array($id, $coordinated, true) === false) {
-				continue;
+			$item = $this->itemFor(row: $row, coordinated: $coordinated, userId: $userId);
+			if ($item !== null) {
+				$items[] = $item;
 			}
-
-			// The cases the reader is already HANDLING are their own group.
-			// Listing them twice is two rows for one piece of work, and the
-			// reader would close one and wonder about the other.
-			if (trim((string)($row['assignee'] ?? '')) === $userId) {
-				continue;
-			}
-
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'case',
-				subjectId: $id,
-				title: (string)($row['title'] ?? $id),
-				priority: (string)($row['priority'] ?? ''),
-				dueAt: $this->dateOf(row: $row, key: 'deadline'),
-				coveredFor: null,
-				route: ['name' => 'CaseDetail', 'params' => ['id' => $id]]
-			);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * The queue item for one open case, or null when the person does not coordinate it or already handles it.
+	 *
+	 * @param array<string, mixed> $row         The case row.
+	 * @param array<int, string>   $coordinated The cases the person coordinates.
+	 * @param string               $userId      The person.
+	 *
+	 * @return QueueItem|null The item.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function itemFor(array $row, array $coordinated, string $userId): ?QueueItem {
+		$id = $this->idOf(row: $row);
+		if ($id === '' || in_array($id, $coordinated, true) === false) {
+			return null;
+		}
+
+		// The cases the reader is already HANDLING are their own group.
+		// Listing them twice is two rows for one piece of work, and the
+		// reader would close one and wonder about the other.
+		if ($this->handledBy(row: $row, userId: $userId) === true) {
+			return null;
+		}
+
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'case',
+			subjectId: $id,
+			title: (string)($row['title'] ?? $id),
+			priority: (string)($row['priority'] ?? ''),
+			dueAt: $this->dateOf(row: $row, key: 'deadline'),
+			coveredFor: null,
+			route: ['name' => 'CaseDetail', 'params' => ['id' => $id]]
+		);
+	}//end itemFor()
+
+	/**
+	 * Whether the case's assignee is the person.
+	 *
+	 * @param array<string, mixed> $row    The case row.
+	 * @param string               $userId The person.
+	 *
+	 * @return bool True when they handle it.
+	 *
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	private function handledBy(array $row, string $userId): bool {
+		return trim((string)($row['assignee'] ?? '')) === $userId;
+	}//end handledBy()
 }//end class

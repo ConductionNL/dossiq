@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\OpenRegister\Db\Verwerkingsactiviteit;
 use OCA\OpenRegister\Db\VerwerkingsactiviteitMapper;
 use OCP\Migration\IOutput;
@@ -78,14 +78,14 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService OpenRegister availability check.
+	 * @param SettingsServiceInterface $settingsService OpenRegister availability check.
 	 * @param ContainerInterface $container DI container (lazy OR mapper resolution).
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
 	) {
@@ -294,37 +294,36 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 		// the one the deployed entity actually declares wins.
 		foreach (self::DESCRIPTIVE_FIELDS as $field => [$isOfType, $candidates]) {
 			if (isset($definition[$field]) === true && $isOfType($definition[$field]) === true) {
-				$this->setFirstDeclared(entity: $entity, candidates: $candidates, value: $definition[$field]);
+				$property = self::firstDeclared(entity: $entity, candidates: $candidates);
+				$entity->{'set' . ucfirst($property)}($definition[$field]);
 			}
 		}
 	}//end hydrate()
 
 	/**
-	 * Set the first property the deployed entity actually declares.
+	 * The first property the deployed entity actually declares, the one a value is set on.
 	 *
 	 * `method_exists()` cannot answer this (the setters are magic __call), so
 	 * the DECLARED PROPERTY decides. A value none of the candidates fit is
 	 * loud: seeding a catalogue row that silently loses its purpose or
 	 * retention period would ship an incomplete verwerkingsregister.
 	 *
-	 * @param object $entity OR Verwerkingsactiviteit entity.
+	 * @param object             $entity     OR Verwerkingsactiviteit entity.
 	 * @param array<int, string> $candidates Property names, newest first.
-	 * @param string|array<int|string, mixed> $value The value to set.
 	 *
-	 * @return void
+	 * @return string The property.
 	 *
 	 * @throws RuntimeException When no candidate property is declared.
 	 */
-	private function setFirstDeclared(object $entity, array $candidates, string|array $value): void {
+	private static function firstDeclared(object $entity, array $candidates): string {
 		foreach ($candidates as $property) {
 			if (property_exists($entity, $property) === true) {
-				$entity->{'set' . ucfirst($property)}($value);
-				return;
+				return $property;
 			}
 		}
 
 		throw new RuntimeException(
 			'The deployed Verwerkingsactiviteit entity declares none of: ' . implode(', ', $candidates)
 		);
-	}//end setFirstDeclared()
+	}//end firstDeclared()
 }//end class

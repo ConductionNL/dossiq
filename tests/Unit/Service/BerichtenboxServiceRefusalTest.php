@@ -43,6 +43,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Tests that a refused letter is recorded as not sent, with the reason.
@@ -133,6 +134,7 @@ class BerichtenboxServiceRefusalTest extends TestCase {
 		// TypeError, which is exactly what the first draft of this file did.
 		$service->method('saveObject')->willReturnCallback(
 			function (array $object, ...$rest): object {
+				$rest = array_slice(LegacyObjectArgs::positional(method: 'saveObject', args: [$object, ...$rest]), 1);
 				$this->saved = $object;
 
 				// The real return type is ObjectEntityInterface, so the double

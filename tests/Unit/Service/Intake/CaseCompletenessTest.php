@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  * Ticks the declared items against documents and fields.
  *
  * @covers \OCA\Dossiq\Service\Intake\CaseCompleteness
+ * @uses \OCA\Dossiq\Service\Support\FilledValue
  */
 class CaseCompletenessTest extends TestCase {
 

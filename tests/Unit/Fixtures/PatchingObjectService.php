@@ -14,6 +14,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Fixtures;
 
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The current OpenRegister shape: a merging `patchObject()` beside the replacing save.
@@ -31,20 +34,24 @@ class PatchingObjectService extends ReplacingObjectService {
 	 * @return object The stored object.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		ObjectPatch $patch,
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): object {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		if (isset($this->stored[$objectId]) === false) {
 			throw new DoesNotExistException('not found: ' . $objectId);
 		}
 
 		return $this->saveObject(
 			object: array_merge($this->stored[$objectId], $data),
-			register: $register,
-			schema: $schema,
-			uuid: $objectId
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema),
+				uuid: $objectId
+			)
 		);
 	}
 }//end class

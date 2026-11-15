@@ -37,6 +37,7 @@ use RuntimeException;
  * Unit tests for TenantMigrationService.
  *
  * @covers \OCA\Dossiq\Service\TenantMigrationService
+ * @uses \OCA\Dossiq\Service\OrganisationLookup
  */
 class TenantMigrationServiceTest extends TestCase {
 	/**

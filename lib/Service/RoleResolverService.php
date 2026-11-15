@@ -33,13 +33,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
 use OCA\Dossiq\Service\Routing\AreaRouting;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoleResolutionCache;
 use OCA\Dossiq\Service\Routing\RoutingStrategyMissingException;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
+use OCA\Dossiq\Service\Support\ObjectArray;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -49,7 +51,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T02
  */
-class RoleResolverService {
+class RoleResolverService implements RoleResolverServiceInterface {
 	use RefusesWhenIndeterminate;
 
 	/**
@@ -112,6 +114,17 @@ class RoleResolverService {
 			];
 		}
 
+		return $this->orSetRule(entry: $entry);
+	}//end normaliseRule()
+
+	/**
+	 * The or-set rule a legacy `allowedRoles` array declares, or null.
+	 *
+	 * @param array<string, mixed> $entry The step or transition payload
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function orSetRule(array $entry): ?array {
 		$allowedRoles = $entry['allowedRoles'] ?? null;
 		if (is_array($allowedRoles) === true && $allowedRoles !== []) {
 			return [
@@ -126,7 +139,7 @@ class RoleResolverService {
 		}
 
 		return null;
-	}//end normaliseRule()
+	}//end orSetRule()
 
 	/**
 	 * Resolve a routing rule against a case.
@@ -240,7 +253,7 @@ class RoleResolverService {
 		if ($resolved === []) {
 			$this->logger->info(
 				'Dossiq: routing rule resolved to empty set',
-				['event' => 'RoleRoutingEmpty', 'rule' => $run->rule, 'caseId' => $run->caseId, 'app' => Application::APP_ID],
+				['event' => 'RoleRoutingEmpty', 'rule' => $run->rule, 'caseId' => $run->caseId, 'app' => AppIdentity::APP_ID],
 			);
 		}
 
@@ -290,7 +303,7 @@ class RoleResolverService {
 					'event' => 'RoleRoutingAreaFallback',
 					'caseId' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
 					'reason' => (string)$resolved['reason'],
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 				],
 			);
 		}
@@ -440,29 +453,7 @@ class RoleResolverService {
 	 * @return array<string, mixed>
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-
-			return (array)$value;
-		}
-
-		return [];
+		return ObjectArray::of(value: $value);
 	}//end toArray()
 
 	/**

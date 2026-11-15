@@ -29,10 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Starter\CaseTemplateService;
-use OCA\Dossiq\Service\Starter\ContentTemplateService;
+use OCA\Dossiq\Controller\Support\AnswersRegisterUnavailable;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTemplateServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ContentTemplateServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -54,26 +55,27 @@ use Throwable;
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
 class TemplateStartController extends Controller {
+	use AnswersRegisterUnavailable;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest               $request  The HTTP request.
-	 * @param CaseTemplateService    $cases    The case templates.
-	 * @param ContentTemplateService $content  The template library.
-	 * @param CaseAccessGuard        $guard    Who may write to a case.
+	 * @param CaseTemplateServiceInterface    $cases    The case templates.
+	 * @param ContentTemplateServiceInterface $content  The template library.
+	 * @param CaseAccessGuardInterface        $guard    Who may write to a case.
 	 * @param IUserSession           $session  Who is asking.
 	 * @param LoggerInterface        $logger   Logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTemplateService $cases,
-		private readonly ContentTemplateService $content,
-		private readonly CaseAccessGuard $guard,
+		private readonly CaseTemplateServiceInterface $cases,
+		private readonly ContentTemplateServiceInterface $content,
+		private readonly CaseAccessGuardInterface $guard,
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -100,10 +102,7 @@ class TemplateStartController extends Controller {
 		}
 
 		if ($templates === null) {
-			return new JSONResponse(
-				['error' => 'The register is not available'],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
+			return $this->registerUnavailable();
 		}
 
 		return new JSONResponse(['items' => $templates, 'total' => count($templates)]);
@@ -224,6 +223,17 @@ class TemplateStartController extends Controller {
 			return new JSONResponse(['error' => 'Not allowed'], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->offeredResponse(kind: $kind);
+	}//end contentTemplates()
+
+	/**
+	 * The content templates of a kind offered for the requested case type and search term.
+	 *
+	 * @param string $kind The template kind.
+	 *
+	 * @return JSONResponse
+	 */
+	private function offeredResponse(string $kind): JSONResponse {
 		$caseTypeId = (string)$this->request->getParam('caseType', '');
 		$search = (string)$this->request->getParam('search', '');
 
@@ -236,12 +246,9 @@ class TemplateStartController extends Controller {
 		}
 
 		if ($templates === null) {
-			return new JSONResponse(
-				['error' => 'The register is not available'],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
+			return new JSONResponse(['error' => 'The register is not available'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
 		return new JSONResponse(['items' => $templates, 'total' => count($templates)]);
-	}//end contentTemplates()
+	}//end offeredResponse()
 }//end class

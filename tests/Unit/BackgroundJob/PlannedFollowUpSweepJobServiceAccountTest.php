@@ -51,6 +51,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\Service\Flow\RetirementSweep
  */
 class PlannedFollowUpSweepJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

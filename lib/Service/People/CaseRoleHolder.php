@@ -90,20 +90,34 @@ class CaseRoleHolder {
 			return true;
 		}
 
-		$roleTypes = $this->roleTypeIds(genericRoles: $genericRoles, caseTypeId: '');
+		return $this->boundToAny(case: $case, holder: ['uid' => $uid, 'genericRoles' => $genericRoles]);
+	}//end holdsAny()
+
+	/**
+	 * Whether a role binding on the case binds the person to a role type with one of the generic roles.
+	 *
+	 * @param array<string, mixed>                                $case   The stored case.
+	 * @param array{uid: string, genericRoles: array<int, string>} $holder The person's Nextcloud user id and the generic roles that count.
+	 *
+	 * @return bool True when such a binding exists.
+	 *
+	 * @throws RuntimeException When the role bindings cannot be read.
+	 */
+	private function boundToAny(array $case, array $holder): bool {
+		$roleTypes = $this->roleTypeIds(genericRoles: $holder['genericRoles'], caseTypeId: '');
 		if ($roleTypes === []) {
 			return false;
 		}
 
 		foreach ($this->rows(schemaKey: 'role_schema', filters: ['case' => $this->idOf(row: $case), '_limit' => CaseSeats::PAGE_SIZE]) as $row) {
 			$isRole = in_array(trim((string)($row['roleType'] ?? '')), $roleTypes, true);
-			if ($isRole === true && $this->uidOf(participant: (string)($row['participant'] ?? '')) === $uid) {
+			if ($isRole === true && $this->uidOf(participant: (string)($row['participant'] ?? '')) === $holder['uid']) {
 				return true;
 			}
 		}
 
 		return false;
-	}//end holdsAny()
+	}//end boundToAny()
 
 	/**
 	 * Bind a person to a generic role on a case, unless they hold it already.
@@ -123,42 +137,143 @@ class CaseRoleHolder {
 	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
 	 */
 	public function bind(array $case, string $uid, string $genericRole, string $displayName): bool {
-		$caseId = $this->idOf(row: $case);
-		if ($caseId === '' || trim($uid) === '' || $this->holdsAny(case: $case, uid: $uid, genericRoles: [$genericRole]) === true) {
+		$binding = new RoleBinding(
+			caseRow: $case,
+			caseId: $this->idOf(row: $case),
+			uid: $uid,
+			genericRole: $genericRole,
+			displayName: $displayName
+		);
+
+		return $this->bindPerson(binding: $binding);
+	}//end bind()
+
+	/**
+	 * Bind the person to the role type the binding resolves to, unless no binding is to be added.
+	 *
+	 * @param RoleBinding $binding The case, the person, the generic role and the name.
+	 *
+	 * @return bool True when a binding was added.
+	 *
+	 * @throws RuntimeException When the role types or bindings cannot be read.
+	 */
+	private function bindPerson(RoleBinding $binding): bool {
+		$roleType = $this->bindableRoleType(binding: $binding);
+		if ($roleType === null) {
 			return false;
 		}
 
-		$roleTypes = $this->roleTypeIds(genericRoles: [$genericRole], caseTypeId: trim((string)($case['caseType'] ?? '')));
+		try {
+			return $this->saveBinding(binding: $binding, roleType: $roleType) !== null;
+		} catch (Throwable $e) {
+			$this->logNotBound(binding: $binding, error: $e);
+			return false;
+		}
+	}//end bindPerson()
+
+	/**
+	 * The role type to bind the person to, or null when no binding is to be added.
+	 *
+	 * @param RoleBinding $binding The case, the person, the generic role and the name.
+	 *
+	 * @return string|null The role type uuid, or null.
+	 *
+	 * @throws RuntimeException When the role types or bindings cannot be read.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function bindableRoleType(RoleBinding $binding): ?string {
+		if ($this->cannotBind(binding: $binding) === true) {
+			return null;
+		}
+
+		return $this->roleTypeToBind(binding: $binding);
+	}//end bindableRoleType()
+
+	/**
+	 * Store the binding of a person to a role type on a case.
+	 *
+	 * @param RoleBinding $binding The case, the person, the generic role and the name.
+	 * @param string      $roleType The role type uuid.
+	 *
+	 * @return array<string, mixed>|null The stored binding, or null.
+	 *
+	 * @throws RuntimeException When OpenRegister is absent.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function saveBinding(RoleBinding $binding, string $roleType): ?array {
+		return $this->saveObjectAsArray(
+			objectService: $this->objectService(),
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $this->settingsService->getConfigValue('role_schema'),
+			object: [
+				'name' => $this->nameOf(uid: trim($binding->uid), displayName: $binding->displayName),
+				'roleType' => $roleType,
+				'case' => $binding->caseId,
+				'participant' => CaseSeats::USER_PREFIX . trim($binding->uid),
+			],
+		);
+	}//end saveBinding()
+
+	/**
+	 * Log that the person could not be bound to the case.
+	 *
+	 * @param RoleBinding $binding The case and the generic role.
+	 * @param Throwable   $error   Why the binding failed.
+	 *
+	 * @return void
+	 */
+	private function logNotBound(RoleBinding $binding, Throwable $error): void {
+		$this->logger->warning(
+			'Dossiq: the reader could not be bound to the case',
+			['caseId' => $binding->caseId, 'genericRole' => $binding->genericRole, 'exception' => $error->getMessage()],
+		);
+	}//end logNotBound()
+
+	/**
+	 * Whether the case or the person is missing, or the person holds the role already.
+	 *
+	 * @param RoleBinding $binding The case, the person, the generic role and the name.
+	 *
+	 * @return bool True when no binding is to be added.
+	 *
+	 * @throws RuntimeException When the bindings cannot be read.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function cannotBind(RoleBinding $binding): bool {
+		return $binding->caseId === ''
+			|| trim($binding->uid) === ''
+			|| $this->holdsAny(case: $binding->caseRow, uid: $binding->uid, genericRoles: [$binding->genericRole]) === true;
+	}//end cannotBind()
+
+	/**
+	 * The role type to bind a generic role through, or null (logged) when no role type carries it.
+	 *
+	 * @param RoleBinding $binding The case, the person, the generic role and the name.
+	 *
+	 * @return string|null The first matching role type id, or null.
+	 *
+	 * @throws RuntimeException When the role types cannot be read.
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-handling-the-case-makes-you-its-handler
+	 */
+	private function roleTypeToBind(RoleBinding $binding): ?string {
+		$caseRow = $binding->caseRow;
+		$caseId = $binding->caseId;
+		$genericRole = $binding->genericRole;
+		$roleTypes = $this->roleTypeIds(genericRoles: [$genericRole], caseTypeId: trim((string)($caseRow['caseType'] ?? '')));
 		if ($roleTypes === []) {
 			$this->logger->warning(
 				'Dossiq: no role type carries the generic role, so the reader is not bound to the case',
 				['caseId' => $caseId, 'genericRole' => $genericRole],
 			);
-			return false;
+			return null;
 		}
 
-		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $this->objectService(),
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue('role_schema'),
-				object: [
-					'name' => $this->nameOf(uid: trim($uid), displayName: $displayName),
-					'roleType' => $roleTypes[0],
-					'case' => $caseId,
-					'participant' => CaseSeats::USER_PREFIX . trim($uid),
-				],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the reader could not be bound to the case',
-				['caseId' => $caseId, 'genericRole' => $genericRole, 'exception' => $e->getMessage()],
-			);
-			return false;
-		}
-
-		return $saved !== null;
-	}//end bind()
+		return $roleTypes[0];
+	}//end roleTypeToBind()
 
 	/**
 	 * What to call a person: the given name, else their Nextcloud display name, else the uid.

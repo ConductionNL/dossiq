@@ -33,7 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+
 
 /**
  * Builds `filinq.generate-document` steps from retired document steps.
@@ -111,22 +112,44 @@ class RetiredDocumentSteps {
 	}//end create()
 
 	/**
-	 * The filed document step for a text and a name, under the configuration's type and output.
+	 * The filed document step for a text and a name, under the configuration's type and output:
+	 * a step that renders the text as a file and asks dossiq to file it on the case.
 	 *
-	 * @param array<string, mixed>  $config   The retired configuration.
-	 * @param array<string, string> $document The `text` and the file `name`.
+	 * @param array<string, mixed>  $config   The retired configuration: the document type the dossier
+	 *                                        files it under, and where the result goes on the item.
+	 * @param array<string, string> $document The dossiq template `text` and the document's `name`,
+	 *                                        possibly with an extension.
 	 *
 	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
 	 *
 	 * @throws UnmappableStep When the step has no text or no document type.
 	 */
 	private function filedFrom(array $config, array $document): array {
-		return $this->filed(
-			text: $document['text'],
-			name: $document['name'],
-			documentType: trim((string)($config['documentType'] ?? '')),
-			output: $this->output(config: $config)
-		);
+		$documentType = trim((string)($config['documentType'] ?? ''));
+		$output = $this->output(config: $config);
+		if ($documentType === '') {
+			throw new UnmappableStep(message: 'the step names no document type, which the case dossier needs to file the document');
+		}
+
+		$title = (string)preg_replace('/\.[A-Za-z0-9]{1,5}$/', '', $document['name']);
+
+		return [
+			'type' => self::GENERATE_DOCUMENT,
+			'config' => [
+				'template' => $this->text(text: $document['text']),
+				'templateName' => $this->syntax->forDocument(template: $title, what: 'document name'),
+				'filename' => $this->syntax->forDocument(template: $title, what: 'document name'),
+				'format' => self::FILED_FORMAT,
+				'storeFile' => true,
+				'requestingApp' => AppIdentity::APP_ID,
+				'output' => $output,
+				'metadata' => [
+					self::METADATA_TYPE => $documentType,
+					'direction' => 'outgoing',
+					'addressees' => 'case',
+				],
+			],
+		];
 	}//end filedFrom()
 
 	/**
@@ -173,49 +196,11 @@ class RetiredDocumentSteps {
 				'template' => $this->text(text: $write['text']),
 				'storeFile' => false,
 				'targetField' => $write['targetField'],
-				'requestingApp' => Application::APP_ID,
+				'requestingApp' => AppIdentity::APP_ID,
 				'output' => $this->output(config: $config),
 			],
 		];
 	}//end fieldWrite()
-
-	/**
-	 * A step that renders the text as a file and asks dossiq to file it on the case.
-	 *
-	 * @param string $text         The dossiq template text.
-	 * @param string $name         The document's name, possibly with an extension.
-	 * @param string $documentType The document type the dossier files it under.
-	 * @param string $output       Where the result goes on the item.
-	 *
-	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
-	 *
-	 * @throws UnmappableStep When there is no document type.
-	 */
-	private function filed(string $text, string $name, string $documentType, string $output): array {
-		if ($documentType === '') {
-			throw new UnmappableStep(message: 'the step names no document type, which the case dossier needs to file the document');
-		}
-
-		$title = (string)preg_replace('/\.[A-Za-z0-9]{1,5}$/', '', $name);
-
-		return [
-			'type' => self::GENERATE_DOCUMENT,
-			'config' => [
-				'template' => $this->text(text: $text),
-				'templateName' => $this->syntax->forDocument(template: $title, what: 'document name'),
-				'filename' => $this->syntax->forDocument(template: $title, what: 'document name'),
-				'format' => self::FILED_FORMAT,
-				'storeFile' => true,
-				'requestingApp' => Application::APP_ID,
-				'output' => $output,
-				'metadata' => [
-					self::METADATA_TYPE => $documentType,
-					'direction' => 'outgoing',
-					'addressees' => 'case',
-				],
-			],
-		];
-	}//end filed()
 
 	/**
 	 * The template text, rewritten and required.

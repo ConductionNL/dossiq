@@ -693,6 +693,13 @@ if (class_exists('\\OCA\\Filinq\\Exception\\RedactionNotReviewedException') === 
 	include_once __DIR__ . '/Stubs/Filinq/Exception/RedactionNotReviewedException.php';
 }
 
+// Filinq's anonymise options (redaction-four-eyes-setting): the redaction
+// client passes the acting user, the output format and whether the run is a
+// Woo case through them.
+if (class_exists('\\OCA\\Filinq\\Service\\AnonymizeOptions') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Service/AnonymizeOptions.php';
+}
+
 foreach (['DetectionRunIdentity', 'RedactionReviewGate', 'RedactionReviewMarkRepository', 'RedactionOutputGuard'] as $stubRedaction) {
 	if (class_exists('\\OCA\\Filinq\\Service\\Redaction\\' . $stubRedaction) === false) {
 		include_once __DIR__ . '/Stubs/Filinq/Service/Redaction/' . $stubRedaction . '.php';

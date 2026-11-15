@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Money;
 
+use OCA\Dossiq\Kernel\Contracts\CasePaymentReaderInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Container\ContainerInterface;
@@ -51,13 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/financial-integration/spec.md
  */
-class CasePaymentReader {
-	/**
-	 * The app that holds the money.
-	 *
-	 * @var string
-	 */
-	public const MONEY_APP = 'shillinq';
+class CasePaymentReader implements CasePaymentReaderInterface {
 
 	/**
 	 * The register and schema shillinq's leaf identifies a dossiq case by.
@@ -128,6 +123,21 @@ class CasePaymentReader {
 			return $this->states->projection(state: CasePaymentState::STALE, checkedAt: $now);
 		}
 
+		return $this->readState(leaf: $leaf, read: ['caseId' => $caseId, 'now' => $now]);
+	}//end stateOf()
+
+	/**
+	 * The case's payment state as the leaf lists it, stale when it cannot be read.
+	 *
+	 * @param object $leaf   The leaf provider.
+	 * @param array{caseId: string, now: string} $read The case uuid and when it is read.
+	 *
+	 * @return array{paymentState: string, paymentStateCheckedAt: string} The projection.
+	 *
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 */
+	private function readState(object $leaf, array $read): array {
+		['caseId' => $caseId, 'now' => $now] = $read;
 		try {
 			$answer = $leaf->list(self::CASE_REGISTER, self::CASE_SCHEMA, $caseId);
 		} catch (Throwable $e) {
@@ -139,6 +149,20 @@ class CasePaymentReader {
 			return $this->states->projection(state: CasePaymentState::STALE, checkedAt: $now);
 		}
 
+		return $this->stateOfAnswer(answer: $answer, now: $now);
+	}//end readState()
+
+	/**
+	 * The payment state of the leaf's answer, stale when it holds no items.
+	 *
+	 * @param mixed  $answer What the leaf listed.
+	 * @param string $now    When it is read.
+	 *
+	 * @return array{paymentState: string, paymentStateCheckedAt: string} The projection.
+	 *
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 */
+	private function stateOfAnswer($answer, string $now): array {
 		$items = ($answer['items'] ?? null);
 		if (is_array($items) === false) {
 			// An envelope without items is a shape this app does not know how
@@ -151,7 +175,7 @@ class CasePaymentReader {
 			state: $this->states->fromRequests(requests: $items),
 			checkedAt: $now,
 		);
-	}//end stateOf()
+	}//end stateOfAnswer()
 
 	/**
 	 * shillinq's payment leaf, or null when it cannot be had. ForfeitInvoiceRaiser

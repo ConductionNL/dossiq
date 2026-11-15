@@ -30,8 +30,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\TenantAuditTrailService;
-use OCA\Dossiq\Service\TenantBillingService;
+use OCA\Dossiq\Kernel\Contracts\TenantAuditTrailServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TenantBillingServiceInterface;
+use OCA\Dossiq\Listener\Support\NamesTheActor;
 use OCA\OpenRegister\Event\OrganisationUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -47,6 +48,8 @@ use Throwable;
  * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
  */
 class OrganisationStatusChangeListener implements IEventListener {
+	use NamesTheActor;
+
 	/**
 	 * The statuses that end a tenant's access. After either, nobody invoices
 	 * the month that just ran, so the unsettled billing count is taken.
@@ -56,14 +59,14 @@ class OrganisationStatusChangeListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TenantAuditTrailService $auditTrail  Writes the audit row on the tenant anchor.
-	 * @param TenantBillingService    $billing     Reads this month's billing events.
+	 * @param TenantAuditTrailServiceInterface $auditTrail  Writes the audit row on the tenant anchor.
+	 * @param TenantBillingServiceInterface    $billing     Reads this month's billing events.
 	 * @param IUserSession            $userSession The acting user, when there is one.
 	 * @param LoggerInterface         $logger      Logger.
 	 */
 	public function __construct(
-		private readonly TenantAuditTrailService $auditTrail,
-		private readonly TenantBillingService $billing,
+		private readonly TenantAuditTrailServiceInterface $auditTrail,
+		private readonly TenantBillingServiceInterface $billing,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -150,18 +153,4 @@ class OrganisationStatusChangeListener implements IEventListener {
 
 		return ' (unsettled billing events: '.$unsettled.')';
 	}//end unsettledBillingNote()
-
-	/**
-	 * The acting user, or `system` for a background change.
-	 *
-	 * @return string The actor.
-	 */
-	private function actor(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end actor()
 }//end class

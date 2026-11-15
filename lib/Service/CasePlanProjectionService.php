@@ -40,7 +40,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CasePlanProjectionServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,15 +52,14 @@ use UnexpectedValueException;
  * Converts a published `caseModel` into an OpenRegister case-plan definition
  * and creates the plan for one case.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The complexity IS the
- * refusals. Every branch here is one shape the projection declines to guess
- * at, each with its own message naming the construct, because design.md
- * section 2 calls the conversion tables closed. OpenRegister's own
- * `CasePlanDefinition` carries the same suppression for the same reason.
+ * The conversion itself, every refusal of a shape it declines to guess at,
+ * lives in the pure {@see CaseModelConverter} and {@see SentryConverter},
+ * which this class builds; it keeps the reads, the plan creation and the
+ * three public conversion entry points, which delegate.
  *
  * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
  */
-class CasePlanProjectionService {
+class CasePlanProjectionService implements CasePlanProjectionServiceInterface {
 
 	use SearchesObjects;
 
@@ -77,51 +78,25 @@ class CasePlanProjectionService {
 	public const CASE_PLAN_SERVICE = 'OCA\\OpenRegister\\Service\\Case\\CasePlanService';
 
 	/**
-	 * The closed if-part operator table (design.md section 2).
-	 *
-	 * Closed on purpose. An operator outside it is refused by name rather
-	 * than approximated, because an approximated sentry fires at the wrong
-	 * moment and nothing reports it.
+	 * The closed if-part operator table (design.md section 2); kept here for callers, owned by {@see SentryConverter}.
 	 *
 	 * @var array<string, string>
 	 */
-	public const OPERATORS = [
-		'eq' => '==',
-		'neq' => '!=',
-		'gt' => '>',
-		'gte' => '>=',
-		'lt' => '<',
-		'lte' => '<=',
-		'in' => 'in',
-		'notIn' => 'notIn',
-		'truthy' => '!!',
-		'falsy' => '!',
-	];
+	public const OPERATORS = SentryConverter::OPERATORS;
 
 	/**
-	 * dossiq `onPart.standardEvent` to the OpenRegister flow event catalog.
+	 * dossiq `onPart.standardEvent` to the OpenRegister flow event catalog; owned by {@see SentryConverter}.
 	 *
 	 * @var array<string, string>
 	 */
-	public const STANDARD_EVENTS = [
-		'complete' => 'case.item.completed',
-		'terminate' => 'case.item.terminated',
-		'disable' => 'case.item.disabled',
-	];
+	public const STANDARD_EVENTS = SentryConverter::STANDARD_EVENTS;
 
 	/**
-	 * The catalog event an ordinary write to the case object dispatches.
-	 *
-	 * A dossiq `onPart.caseFileItem` watched a named slot inside the blob.
-	 * OpenRegister has no case file: the slots become declared properties on
-	 * the case object, and a write to them is an object write. Both
-	 * `caseFileEvent` values map here, because OpenRegister does not separate
-	 * a first write from a later one; the fidelity note is in the class docs
-	 * of the change's design.md section 2.
+	 * The catalog event an ordinary write to the case object dispatches; owned by {@see SentryConverter}.
 	 *
 	 * @var string
 	 */
-	public const OBJECT_WRITE_EVENT = 'object.updated';
+	public const OBJECT_WRITE_EVENT = SentryConverter::OBJECT_WRITE_EVENT;
 
 	/**
 	 * The app id dossiq acts as when it calls the case layer from its own
@@ -138,6 +113,27 @@ class CasePlanProjectionService {
 	public const SYSTEM_APP = 'dossiq';
 
 	/**
+	 * Converts one sentry, its on-part and its if-part.
+	 *
+	 * @var SentryConverter
+	 */
+	private readonly SentryConverter $sentries;
+
+	/**
+	 * Converts a whole caseModel into a case-plan definition.
+	 *
+	 * @var CaseModelConverter
+	 */
+	private readonly CaseModelConverter $converter;
+
+	/**
+	 * Reads the rows a caseType or caseModel lookup answers.
+	 *
+	 * @var CaseModelSearchHits
+	 */
+	private readonly CaseModelSearchHits $hits;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService   $settingsService Bridge to OpenRegister and config.
@@ -150,6 +146,9 @@ class CasePlanProjectionService {
 		private readonly LoggerInterface $logger,
 		private readonly ?IUserSession $userSession = null,
 	) {
+		$this->sentries = new SentryConverter();
+		$this->converter = new CaseModelConverter(sentries: $this->sentries);
+		$this->hits = new CaseModelSearchHits();
 	}//end __construct()
 
 	/**
@@ -168,84 +167,8 @@ class CasePlanProjectionService {
 	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
 	 */
 	public function convertModel(array $caseModel): array {
-		$planItems = ($caseModel['planItems'] ?? []);
-		if (is_array($planItems) === false) {
-			throw new UnexpectedValueException('caseModel.planItems must be a list of plan items.');
-		}
-
-		$byId = $this->indexPlanItems(planItems: $planItems);
-		$order = array_map(static fn ($id): string => (string)$id, array_keys($byId));
-
-		$this->assertParentsResolve(byId: $byId);
-		$items = $this->convertRootItems(byId: $byId, order: $order);
-
-		return ['settings' => $this->convertSettings(caseModel: $caseModel), 'items' => $items];
+		return $this->converter->convertModel(caseModel: $caseModel);
 	}//end convertModel()
-
-	/**
-	 * Convert every plan item without a parent, each with its subtree, in declared order.
-	 *
-	 * @param array<string, array<string, mixed>> $byId  The plan items by id.
-	 * @param array<int, string>                  $order The ids in declared order.
-	 *
-	 * @return array<int, array<string, mixed>> The top-level nodes.
-	 */
-	private function convertRootItems(array $byId, array $order): array {
-		$items = [];
-		foreach ($order as $id) {
-			if (trim((string)($byId[$id]['parentId'] ?? '')) === '') {
-				$items[] = $this->convertItem(item: $byId[$id], byId: $byId, order: $order, seen: []);
-			}
-		}
-
-		return $items;
-	}//end convertRootItems()
-
-	/**
-	 * Index the plan items by their trimmed id, in declared order.
-	 *
-	 * @param array<int|string, mixed> $planItems The declared plan items.
-	 *
-	 * @return array<string, array<string, mixed>> The items by id.
-	 *
-	 * @throws UnexpectedValueException Naming the entry without an object, without an id, or with a repeated id.
-	 */
-	private function indexPlanItems(array $planItems): array {
-		$byId = [];
-		foreach ($planItems as $index => $item) {
-			$id = $this->planItemId(item: $item, index: (int)$index);
-			if (isset($byId[$id]) === true) {
-				throw new UnexpectedValueException(sprintf("caseModel repeats plan-item id '%s'; ids are unique within a model.", $id));
-			}
-
-			$byId[$id] = $item;
-		}
-
-		return $byId;
-	}//end indexPlanItems()
-
-	/**
-	 * The trimmed id of one declared plan item.
-	 *
-	 * @param mixed $item  The declared entry.
-	 * @param int   $index Its position, for the refusal message.
-	 *
-	 * @return string The id.
-	 *
-	 * @throws UnexpectedValueException When the entry is not an object or has no id.
-	 */
-	private function planItemId(mixed $item, int $index): string {
-		if (is_array($item) === false) {
-			throw new UnexpectedValueException(sprintf('caseModel.planItems[%d] must be an object.', $index));
-		}
-
-		$id = trim((string)($item['id'] ?? ''));
-		if ($id === '') {
-			throw new UnexpectedValueException(sprintf('caseModel.planItems[%d] has no id.', $index));
-		}
-
-		return $id;
-	}//end planItemId()
 
 	/**
 	 * Convert one dossiq sentry into an OpenRegister sentry.
@@ -260,44 +183,8 @@ class CasePlanProjectionService {
 	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
 	 */
 	public function convertSentry(array $sentry, string $where): array {
-		$converted = [];
-		$id = trim((string)($sentry['id'] ?? ''));
-		if ($id !== '') {
-			$converted['id'] = $id;
-		}
-
-		$parts = $this->convertSentryParts(sentry: $sentry, where: $where);
-		if ($parts === []) {
-			throw new UnexpectedValueException(sprintf('%s has neither an onPart nor an ifPart; there is nothing to convert.', $where));
-		}
-
-		return array_merge($converted, $parts);
+		return $this->sentries->convertSentry(sentry: $sentry, where: $where);
 	}//end convertSentry()
-
-	/**
-	 * The converted on- and if-part of a sentry, each only when declared as a non-empty object.
-	 *
-	 * @param array<string, mixed> $sentry The dossiq sentry.
-	 * @param string               $where  Which criteria list, for the refusal message.
-	 *
-	 * @return array<string, mixed> `{on?, if?}`.
-	 *
-	 * @throws UnexpectedValueException Naming the part it refuses.
-	 */
-	private function convertSentryParts(array $sentry, string $where): array {
-		$parts = [];
-		$onPart = ($sentry['onPart'] ?? null);
-		if (is_array($onPart) === true && $onPart !== []) {
-			$parts['on'] = $this->convertOnPart(onPart: $onPart, where: $where);
-		}
-
-		$ifPart = ($sentry['ifPart'] ?? null);
-		if (is_array($ifPart) === true && $ifPart !== []) {
-			$parts['if'] = $this->convertIfPart(ifPart: $ifPart, where: $where);
-		}
-
-		return $parts;
-	}//end convertSentryParts()
 
 	/**
 	 * Convert a dossiq `{field, operator, value}` if-part into JSONLogic.
@@ -317,33 +204,7 @@ class CasePlanProjectionService {
 	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
 	 */
 	public function convertIfPart(array $ifPart, string $where): array {
-		$field = trim((string)($ifPart['field'] ?? ''));
-		if ($field === '') {
-			throw new UnexpectedValueException(sprintf('%s has an ifPart with no field.', $where));
-		}
-
-		$operator = (string)($ifPart['operator'] ?? 'eq');
-		if (array_key_exists($operator, self::OPERATORS) === false) {
-			throw new UnexpectedValueException(
-				sprintf(
-					"%s uses operator '%s', which is outside the conversion table (%s).",
-					$where,
-					$operator,
-					implode(', ', array_keys(self::OPERATORS))
-				)
-			);
-		}
-
-		$value = ($ifPart['value'] ?? null);
-		$variable = ['var' => $field];
-
-		return match ($operator) {
-			'truthy' => ['!!' => $variable],
-			'falsy' => ['!' => $variable],
-			'in' => ['in' => [$variable, $value]],
-			'notIn' => ['!' => ['in' => [$variable, $value]]],
-			default => [self::OPERATORS[$operator] => [$variable, $value]],
-		};
+		return $this->sentries->convertIfPart(ifPart: $ifPart, where: $where);
 	}//end convertIfPart()
 
 	/**
@@ -410,7 +271,7 @@ class CasePlanProjectionService {
 			return ['projected' => false, 'reason' => $e->getMessage()];
 		}
 
-		return $this->createPlan(plans: $plans, caseId: $caseId, definition: $definition);
+		return $this->createPlan(plans: $plans, plan: ['caseId' => $caseId, 'definition' => $definition]);
 	}//end projectAtCaseStart()
 
 	/**
@@ -441,24 +302,16 @@ class CasePlanProjectionService {
 	/**
 	 * Hand the converted definition to OpenRegister's case layer.
 	 *
-	 * @param object                                                                       $plans      The resolved CasePlanService.
-	 * @param string                                                                       $caseId     The case object uuid.
-	 * @param array{settings: array<string, mixed>, items: array<int, array<string, mixed>>} $definition The converted definition.
+	 * @param object                                               $plans The resolved CasePlanService.
+	 * @param array{caseId: string, definition: array<string, mixed>} $plan  The case object uuid, and the converted definition
+	 *                                                                      (`settings` and `items`).
 	 *
 	 * @return array{projected: boolean, reason: string} What it did, and why.
 	 */
-	private function createPlan(object $plans, string $caseId, array $definition): array {
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
-		$registerId = null;
-		if ($register !== '') {
-			$registerId = (int)$register;
-		}
-
-		$schemaId = null;
-		if ($schema !== '') {
-			$schemaId = (int)$schema;
-		}
+	private function createPlan(object $plans, array $plan): array {
+		['caseId' => $caseId, 'definition' => $definition] = $plan;
+		$registerId = $this->configuredId(key: 'register');
+		$schemaId = $this->configuredId(key: 'case_schema');
 
 		// An OpenRegister from before the system verbs would refuse a plan
 		// with no identity anyway; say which, instead of logging a refusal
@@ -469,18 +322,9 @@ class CasePlanProjectionService {
 		}
 
 		try {
-			$plans->createPlanAsSystem(
-				objectUuid: $caseId,
-				registerId: $registerId,
-				schemaId: $schemaId,
-				definition: $definition,
-				app: self::SYSTEM_APP,
-			);
+			$plans->createPlanAsSystem(objectUuid: $caseId, registerId: $registerId, schemaId: $schemaId, definition: $definition, app: self::SYSTEM_APP);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'CasePlanProjectionService: OpenRegister refused the projected plan',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
-			);
+			$this->logger->error('CasePlanProjectionService: OpenRegister refused the projected plan', ['caseId' => $caseId, 'exception' => $e->getMessage()]);
 			return ['projected' => false, 'reason' => $e->getMessage()];
 		}
 
@@ -488,253 +332,21 @@ class CasePlanProjectionService {
 	}//end createPlan()
 
 	/**
-	 * Convert one plan item and, for a stage, its children.
+	 * A configured register or schema id, or null when it is not configured.
 	 *
-	 * @param array<string, mixed>                      $item  The dossiq plan item.
-	 * @param array<string, array<string, mixed>>       $byId  Every plan item, keyed by id.
-	 * @param array<int, string>                        $order The declared order of ids.
-	 * @param array<string, boolean>                    $seen  Ancestor ids, to catch a parent cycle.
+	 * @param string $key The config key.
 	 *
-	 * @return array<string, mixed> The OpenRegister node.
-	 *
-	 * @throws UnexpectedValueException Naming the item it refuses.
+	 * @return int|null The id.
 	 */
-	private function convertItem(array $item, array $byId, array $order, array $seen): array {
-		$id = trim((string)($item['id'] ?? ''));
-		if (isset($seen[$id]) === true) {
-			throw new UnexpectedValueException(sprintf("caseModel plan item '%s' is its own ancestor.", $id));
+	private function configuredId(string $key): ?int {
+		$value = $this->settingsService->getConfigValue(key: $key);
+		$id = null;
+		if ($value !== '') {
+			$id = (int)$value;
 		}
 
-		$seen[$id] = true;
-		$node = $this->nodeFor(item: $item, id: $id);
-		if ($node['type'] !== 'stage') {
-			return $node;
-		}
-
-		$node['children'] = $this->childrenOf(id: $id, byId: $byId, order: $order, seen: $seen);
-
-		return $node;
-	}//end convertItem()
-
-	/**
-	 * Build the OpenRegister node for one plan item, children aside.
-	 *
-	 * @param array<string, mixed> $item The dossiq plan item.
-	 * @param string               $id   Its id.
-	 *
-	 * @return array<string, mixed> The node.
-	 *
-	 * @throws UnexpectedValueException Naming the item it refuses.
-	 */
-	private function nodeFor(array $item, string $id): array {
-		$type = $this->convertibleType(item: $item, id: $id);
-		$discretionary = (($item['discretionary'] ?? false) === true);
-
-		$node = [
-			'key' => $id,
-			'type' => $type,
-			'name' => (string)($item['name'] ?? $id),
-			// The mandatory/discretionary split IS OpenRegister's `required`:
-			// a stage waits for every non-discretionary direct child, and
-			// OpenRegister's CasePlanTree waits for every required one.
-			'required' => ($discretionary === false),
-			'discretionary' => $discretionary,
-			'entryCriteria' => $this->convertCriteria(criteria: ($item['entryCriteria'] ?? []), where: sprintf("plan item '%s' entry", $id)),
-			'exitCriteria' => $this->convertCriteria(criteria: ($item['exitCriteria'] ?? []), where: sprintf("plan item '%s' exit", $id)),
-		];
-
-		return array_merge($node, $this->optionalNodeFields(item: $item));
-	}//end nodeFor()
-
-	/**
-	 * The type of a plan item, refused when the case layer cannot hold it.
-	 *
-	 * @param array<string, mixed> $item The dossiq plan item.
-	 * @param string               $id   Its id.
-	 *
-	 * @return string The type: stage, humanTask or milestone.
-	 *
-	 * @throws UnexpectedValueException For an unknown type or a discretionary milestone.
-	 */
-	private function convertibleType(array $item, string $id): string {
-		$type = (string)($item['type'] ?? '');
-		if (in_array($type, ['stage', 'humanTask', 'milestone'], true) === false) {
-			throw new UnexpectedValueException(
-				sprintf("caseModel plan item '%s' has type '%s'; expected stage, humanTask or milestone.", $id, $type)
-			);
-		}
-
-		if ($type === 'milestone' && ($item['discretionary'] ?? false) === true) {
-			throw new UnexpectedValueException(
-				sprintf("caseModel plan item '%s' is a discretionary milestone, which the case layer refuses: a milestone is never enabled.", $id)
-			);
-		}
-
-		return $type;
-	}//end convertibleType()
-
-	/**
-	 * The description and authorization of a node, each only when the plan item sets it.
-	 *
-	 * @param array<string, mixed> $item The dossiq plan item.
-	 *
-	 * @return array<string, mixed> `{description?, authorization?}`.
-	 */
-	private function optionalNodeFields(array $item): array {
-		$fields = [];
-		$description = trim((string)($item['description'] ?? ''));
-		if ($description !== '') {
-			$fields['description'] = $description;
-		}
-
-		$authorization = ($item['authorization'] ?? []);
-		if (is_array($authorization) === true && $authorization !== []) {
-			$fields['authorization'] = array_values(array_map(static fn ($rule): string => (string)$rule, $authorization));
-		}
-
-		return $fields;
-	}//end optionalNodeFields()
-
-	/**
-	 * Convert the direct children of a stage, in declared order.
-	 *
-	 * @param string                              $id    The stage's id.
-	 * @param array<string, array<string, mixed>> $byId  Every plan item, keyed by id.
-	 * @param array<int, string>                  $order The declared order of ids.
-	 * @param array<string, boolean>              $seen  Ancestor ids, to catch a parent cycle.
-	 *
-	 * @return array<int, array<string, mixed>> The child nodes.
-	 *
-	 * @throws UnexpectedValueException Naming the child it refuses.
-	 */
-	private function childrenOf(string $id, array $byId, array $order, array $seen): array {
-		$children = [];
-		foreach ($order as $childId) {
-			if (trim((string)($byId[$childId]['parentId'] ?? '')) === $id) {
-				$children[] = $this->convertItem(item: $byId[$childId], byId: $byId, order: $order, seen: $seen);
-			}
-		}
-
-		return $children;
-	}//end childrenOf()
-
-	/**
-	 * Convert a criteria list, dropping nothing and refusing what it cannot map.
-	 *
-	 * @param mixed  $criteria The dossiq criteria list.
-	 * @param string $where    Which list, for the refusal message.
-	 *
-	 * @return array<int, array<string, mixed>> The converted sentries.
-	 *
-	 * @throws UnexpectedValueException Naming the sentry it refuses.
-	 */
-	private function convertCriteria(mixed $criteria, string $where): array {
-		if (is_array($criteria) === false || $criteria === []) {
-			return [];
-		}
-
-		$converted = [];
-		foreach ($criteria as $index => $sentry) {
-			if (is_array($sentry) === false) {
-				throw new UnexpectedValueException(sprintf('%s sentry #%d is not an object.', $where, (int)$index + 1));
-			}
-
-			$converted[] = $this->convertSentry(sentry: $sentry, where: sprintf('%s sentry #%d', $where, (int)$index + 1));
-		}
-
-		return $converted;
-	}//end convertCriteria()
-
-	/**
-	 * Convert a dossiq on-part into an OpenRegister on-part.
-	 *
-	 * @param array<string, mixed> $onPart The dossiq on-part.
-	 * @param string               $where  Which sentry, for the refusal message.
-	 *
-	 * @return array<string, mixed> The OpenRegister on-part.
-	 *
-	 * @throws UnexpectedValueException Naming the event it refuses.
-	 */
-	private function convertOnPart(array $onPart, string $where): array {
-		$planItem = trim((string)($onPart['planItem'] ?? ''));
-		if ($planItem !== '') {
-			$standardEvent = (string)($onPart['standardEvent'] ?? '');
-			if (array_key_exists($standardEvent, self::STANDARD_EVENTS) === false) {
-				throw new UnexpectedValueException(
-					sprintf(
-						"%s names standardEvent '%s', which is outside the conversion table (%s).",
-						$where,
-						$standardEvent,
-						implode(', ', array_keys(self::STANDARD_EVENTS))
-					)
-				);
-			}
-
-			return ['event' => self::STANDARD_EVENTS[$standardEvent], 'item' => $planItem];
-		}
-
-		$caseFileItem = trim((string)($onPart['caseFileItem'] ?? ''));
-		if ($caseFileItem !== '') {
-			$caseFileEvent = (string)($onPart['caseFileEvent'] ?? 'set');
-			if (in_array($caseFileEvent, ['set', 'changed'], true) === false) {
-				throw new UnexpectedValueException(
-					sprintf("%s names caseFileEvent '%s', which is outside the conversion table (set, changed).", $where, $caseFileEvent)
-				);
-			}
-
-			return ['event' => self::OBJECT_WRITE_EVENT];
-		}
-
-		throw new UnexpectedValueException(sprintf('%s has an onPart naming neither a planItem nor a caseFileItem.', $where));
-	}//end convertOnPart()
-
-	/**
-	 * Build the definition's `settings` block.
-	 *
-	 * @param array<string, mixed> $caseModel The caseModel object.
-	 *
-	 * @return array<string, mixed> The settings.
-	 */
-	private function convertSettings(array $caseModel): array {
-		$settings = [];
-		$title = trim((string)($caseModel['title'] ?? ''));
-		if ($title !== '') {
-			$settings['name'] = $title;
-		}
-
-		return $settings;
-	}//end convertSettings()
-
-	/**
-	 * Refuse a `parentId` that names an item the model does not declare.
-	 *
-	 * A dangling parent would otherwise drop the child out of the tree
-	 * silently: it is neither a root (it has a parentId) nor anybody's child.
-	 *
-	 * @param array<string, array<string, mixed>> $byId Every plan item, keyed by id.
-	 *
-	 * @return void
-	 *
-	 * @throws UnexpectedValueException Naming the dangling parent.
-	 */
-	private function assertParentsResolve(array $byId): void {
-		foreach ($byId as $id => $item) {
-			$parentId = trim((string)($item['parentId'] ?? ''));
-			if ($parentId === '') {
-				continue;
-			}
-
-			if (isset($byId[$parentId]) === false) {
-				throw new UnexpectedValueException(sprintf("caseModel plan item '%s' names parent '%s', which the model does not declare.", $id, $parentId));
-			}
-
-			if ((string)($byId[$parentId]['type'] ?? '') !== 'stage') {
-				throw new UnexpectedValueException(
-					sprintf("caseModel plan item '%s' names parent '%s', which is not a stage; only a stage nests.", $id, $parentId)
-				);
-			}
-		}
-	}//end assertParentsResolve()
+		return $id;
+	}//end configuredId()
 
 	/**
 	 * Read one caseType object.
@@ -755,7 +367,7 @@ class CasePlanProjectionService {
 			$caseType = $this->asSystemWithoutUser(
 				objectService: $objectService,
 				userSession: $this->userSession,
-				operation: fn (): mixed => $objectService->find($caseTypeId, register: $register, schema: $schema),
+				operation: fn (): mixed => $objectService->find($caseTypeId, new ObjectFindOptions(register: $register, schema: $schema)),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -765,7 +377,7 @@ class CasePlanProjectionService {
 			return null;
 		}
 
-		return $this->firstAsArray(value: [$caseType]);
+		return $this->hits->firstAsArray(value: [$caseType]);
 	}//end findCaseType()
 
 	/**
@@ -778,36 +390,69 @@ class CasePlanProjectionService {
 	 * @return array<string, mixed>|null The model, or null when none is published.
 	 */
 	private function findPublishedModel(string $caseTypeId): ?array {
-		if ($caseTypeId === '') {
-			return null;
-		}
-
-		$scope = $this->modelSearchScope();
+		$scope = $this->modelSearchScopeFor(caseTypeId: $caseTypeId);
 		if ($scope === []) {
 			return null;
 		}
 
 		try {
-			$found = $scope['objectService']->searchObjects(
-				[
-					'@self' => [
-						'register' => (int)$scope['register'],
-						'schema' => (int)$scope['schema'],
-					],
-					'caseType' => $caseTypeId,
-					'lifecycleStatus' => 'published',
-				],
-			);
+			$found = $scope['objectService']->searchObjects($this->publishedModelQuery(scope: $scope, caseTypeId: $caseTypeId));
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'CasePlanProjectionService: caseModel lookup failed',
-				['caseType' => $caseTypeId, 'exception' => $e->getMessage()]
-			);
+			$this->logModelLookupFailed(caseTypeId: $caseTypeId, error: $e);
 			return null;
 		}
 
-		return $this->publishedModelOf(found: $found);
+		return $this->hits->publishedModelOf(found: $found);
 	}//end findPublishedModel()
+
+	/**
+	 * Where a caseType's published caseModel is searched; empty for no caseType or a missing store.
+	 *
+	 * @param string $caseTypeId The caseType uuid.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|array{}
+	 */
+	private function modelSearchScopeFor(string $caseTypeId): array {
+		if ($caseTypeId === '') {
+			return [];
+		}
+
+		return $this->modelSearchScope();
+	}//end modelSearchScopeFor()
+
+	/**
+	 * The search for a caseType's published caseModels.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $scope Where to search.
+	 * @param string $caseTypeId The caseType uuid.
+	 *
+	 * @return array<string, mixed> The query.
+	 */
+	private function publishedModelQuery(array $scope, string $caseTypeId): array {
+		return [
+			'@self' => [
+				'register' => (int)$scope['register'],
+				'schema' => (int)$scope['schema'],
+			],
+			'caseType' => $caseTypeId,
+			'lifecycleStatus' => 'published',
+		];
+	}//end publishedModelQuery()
+
+	/**
+	 * Log a caseModel lookup that failed.
+	 *
+	 * @param string $caseTypeId The caseType uuid.
+	 * @param Throwable $error Why it failed.
+	 *
+	 * @return void
+	 */
+	private function logModelLookupFailed(string $caseTypeId, Throwable $error): void {
+		$this->logger->error(
+			'CasePlanProjectionService: caseModel lookup failed',
+			['caseType' => $caseTypeId, 'exception' => $error->getMessage()]
+		);
+	}//end logModelLookupFailed()
 
 	/**
 	 * Where published caseModels are searched: the store, the register and the model schema; empty when any is missing.
@@ -824,91 +469,5 @@ class CasePlanProjectionService {
 
 		return ['objectService' => $objectService, 'register' => $register, 'schema' => $modelSchema];
 	}//end modelSearchScope()
-
-	/**
-	 * The first model a search answered, its planItems decoded, or null when it answered none.
-	 *
-	 * @param mixed $found Whatever `searchObjects()` answered.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function publishedModelOf(mixed $found): ?array {
-		$model = $this->firstAsArray(value: $found);
-		if ($model === null) {
-			return null;
-		}
-
-		return $this->decodePlanItems(model: $model);
-	}//end publishedModelOf()
-
-	/**
-	 * Decode `planItems` when OpenRegister hands it back as JSON text.
-	 *
-	 * The property is declared `type: array`, but OpenRegister's magic-mapper
-	 * read path answers some rows with the text they were written as; the
-	 * retiring loader decoded it in the same place.
-	 *
-	 * @param array<string, mixed> $model The caseModel as read.
-	 *
-	 * @return array<string, mixed> The caseModel with a list-shaped `planItems`.
-	 */
-	private function decodePlanItems(array $model): array {
-		$planItems = ($model['planItems'] ?? null);
-		if (is_string($planItems) === false || $planItems === '') {
-			return $model;
-		}
-
-		$decoded = json_decode($planItems, true);
-		$model['planItems'] = [];
-		if (is_array($decoded) === true) {
-			$model['planItems'] = $decoded;
-		}
-
-		return $model;
-	}//end decodePlanItems()
-
-	/**
-	 * The first result of a search, as a plain array.
-	 *
-	 * @param mixed $value Whatever `searchObjects()` answered.
-	 *
-	 * @return array<string, mixed>|null The first row, or null when there is none.
-	 */
-	private function firstAsArray(mixed $value): ?array {
-		if (is_array($value) === false) {
-			return null;
-		}
-
-		foreach ($value as $item) {
-			$row = $this->rowOf(item: $item);
-			if ($row !== []) {
-				return $row;
-			}
-		}
-
-		return null;
-	}//end firstAsArray()
-
-	/**
-	 * One search hit as a plain array: the array itself, or what a serialisable object answers.
-	 *
-	 * @param mixed $item One hit.
-	 *
-	 * @return array<string, mixed> The row, empty when the hit carries none.
-	 */
-	private function rowOf(mixed $item): array {
-		if (is_array($item) === true) {
-			return $item;
-		}
-
-		if (is_object($item) === true && method_exists($item, 'jsonSerialize') === true) {
-			$serialized = $item->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
-	}//end rowOf()
 
 }//end class

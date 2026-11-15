@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use DateTime;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -52,7 +52,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 * Constructor for the ShareMaintenanceJob.
 	 *
 	 * @param ITimeFactory $time The time factory
-	 * @param SettingsService $settingsService The settings service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param IAppManager $appManager The app manager
 	 * @param ContainerInterface $container The DI container
 	 * @param LoggerInterface $logger The logger
@@ -61,7 +61,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private IAppManager $appManager,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,

@@ -31,11 +31,16 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use ZipArchive;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Characterisation tests for WorkflowDeployer::deploy().
  *
  * @covers \OCA\Dossiq\Service\CaseDefinition\WorkflowDeployer
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowTarget
+ * @uses \OCA\Dossiq\Service\CaseDefinition\WorkflowEntry
  */
 class WorkflowDeployerTest extends TestCase {
 
@@ -75,7 +80,9 @@ class WorkflowDeployerTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, string $register='', string $schema='', bool $_rbac=true): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->calls[] = 'find '.$id.' '.$register.'/'.$schema;
 				return in_array($id, $this->held, true) === true ? ['id' => $id] : null;
 			}
@@ -85,7 +92,10 @@ class WorkflowDeployerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register='', string $schema='', ?string $uuid=null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register ?? '';
+				$schema = $options->target->schema ?? '';
+				$uuid = $options->uuid;
 				$this->calls[] = 'save '.($object['title'] ?? '').' '.$register.'/'.$schema.' '.($uuid ?? 'new');
 				if (($object['title'] ?? '') === 'refused') {
 					throw new \RuntimeException('schema says no');
@@ -99,7 +109,9 @@ class WorkflowDeployerTest extends TestCase {
 			 *
 			 * @return bool Always.
 			 */
-			public function deleteObject(string $id, string $register=''): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+				$id = $deletion->uuid;
+				$register = $deletion->target->register ?? '';
 				$this->calls[] = 'delete '.$id.' '.$register;
 				return true;
 			}

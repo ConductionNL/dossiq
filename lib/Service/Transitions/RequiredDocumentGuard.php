@@ -62,23 +62,21 @@ class RequiredDocumentGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: false, failureMessage: 'Required-document guard missing documentType');
 		}
 
-		$candidates = [];
-		foreach (['documents', 'files', 'caseDocuments', 'attachments'] as $field) {
-			$value = $case[$field] ?? null;
-			if (is_array($value) === true) {
-				$candidates = array_merge($candidates, $value);
-			}
-		}
+		return $this->documentResult(case: $case, required: $required);
+	}//end evaluate()
 
-		foreach ($candidates as $doc) {
-			if (is_array($doc) === false) {
-				continue;
-			}
-
-			$type = (string)($doc['documentType'] ?? ($doc['type'] ?? ''));
-			if ($type === $required) {
-				return new GuardResult(passed: true, details: ['documentType' => $required]);
-			}
+	/**
+	 * Pass when the case lists a document of the required type.
+	 *
+	 * @param array<string, mixed> $case     Case object
+	 * @param string               $required The required document type
+	 *
+	 * @return GuardResult
+	 */
+	private function documentResult(array $case, string $required): GuardResult {
+		$candidates = $this->candidatesOf(caseData: $case);
+		if ($this->holdsType(candidates: $candidates, required: $required) === true) {
+			return new GuardResult(passed: true, details: ['documentType' => $required]);
 		}
 
 		return new GuardResult(
@@ -86,5 +84,47 @@ class RequiredDocumentGuard implements GuardEvaluatorInterface {
 			failureMessage: $this->l10n->t('Required document missing: %s', [$required]),
 			details: ['documentType' => $required],
 		);
-	}//end evaluate()
+	}//end documentResult()
+
+	/**
+	 * Every document the case lists under one of its document fields.
+	 *
+	 * @param array<string, mixed> $caseData Case object
+	 *
+	 * @return array<int|string, mixed> The candidate documents.
+	 */
+	private function candidatesOf(array $caseData): array {
+		$candidates = [];
+		foreach (['documents', 'files', 'caseDocuments', 'attachments'] as $field) {
+			$value = $caseData[$field] ?? null;
+			if (is_array($value) === true) {
+				$candidates = array_merge($candidates, $value);
+			}
+		}
+
+		return $candidates;
+	}//end candidatesOf()
+
+	/**
+	 * Whether one of the candidates is of the required document type.
+	 *
+	 * @param array<int|string, mixed> $candidates The candidate documents.
+	 * @param string $required The required document type.
+	 *
+	 * @return bool True when a candidate has the type.
+	 */
+	private function holdsType(array $candidates, string $required): bool {
+		foreach ($candidates as $doc) {
+			if (is_array($doc) === false) {
+				continue;
+			}
+
+			$type = (string)($doc['documentType'] ?? ($doc['type'] ?? ''));
+			if ($type === $required) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end holdsType()
 }//end class

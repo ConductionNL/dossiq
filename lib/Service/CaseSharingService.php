@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
 use OCA\Dossiq\Service\CaseShare\ShareStore;
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
@@ -56,7 +57,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
-class CaseSharingService {
+class CaseSharingService implements CaseSharingServiceInterface {
 	/**
 	 * Hard-coded allow-list of case-summary fields that may ever cross a
 	 * federation boundary. A field NOT in this list is rejected outright by
@@ -159,16 +160,30 @@ class CaseSharingService {
 			'extra' => $extra,
 		];
 
-		$link = $this->mintCaseLink(share: $share, capabilities: $capabilities);
+		return $this->mintTokenShare(share: $share, grant: ['capabilities' => $capabilities, 'documents' => $sharedDocuments]);
+	}//end createTokenShare()
+
+	/**
+	 * Mint the link and the document links of a token share, then record it.
+	 *
+	 * @param array<string, mixed>                                                  $share The share being created.
+	 * @param array{capabilities: array<int, string>, documents: array<int, string>} $grant What the holder may do,
+	 *                                                                                     and the file ids to share
+	 *                                                                                     beside the case.
+	 *
+	 * @return array<string, mixed> The recorded share, or `{error}`.
+	 */
+	private function mintTokenShare(array $share, array $grant): array {
+		$link = $this->mintCaseLink(share: $share, capabilities: $grant['capabilities']);
 		if (isset($link['error']) === true) {
 			return $link;
 		}
 
 		$share['link'] = $link;
-		$share['documents'] = $this->documentLinks(share: $share, fileIds: $sharedDocuments);
+		$share['documents'] = $this->documentLinks(share: $share, fileIds: $grant['documents']);
 
 		return $this->recordTokenShare(share: $share);
-	}//end createTokenShare()
+	}//end mintTokenShare()
 
 	/**
 	 * Mint the access link over the case itself.
@@ -338,14 +353,48 @@ class CaseSharingService {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function createPartnerShare(
-		string $caseId,
-		string $partnerId,
-		string $permissionLevel,
-		string $createdBy,
-		string $message='',
-		array $fieldExclusions=[],
-	): array {
+	public function createPartnerShare(string $caseId, string $partnerId, string $permissionLevel, string $createdBy,
+		string $message='', array $fieldExclusions=[]): array {
+		$request = ['caseId' => $caseId, 'partnerId' => $partnerId, 'permissionLevel' => $permissionLevel, 'createdBy' => $createdBy,
+			'message' => $message, 'excluded' => $fieldExclusions];
+
+		return $this->sharePartnerWithKnownFields(store: $this->configuredStoreOrError(), request: $request);
+	}//end createPartnerShare()
+
+	/**
+	 * Share with the partner when the store is configured and every excluded field is one the allow-list names.
+	 *
+	 * @param ShareStore|array<string, string> $store   The configured share register, or the error answer.
+	 * @param array<string, mixed>             $request The share request, `excluded` as the caller gave it.
+	 *
+	 * @return array<string, mixed> The share, or `{error}`.
+	 */
+	private function sharePartnerWithKnownFields(ShareStore|array $store, array $request): array {
+		if (is_array($store) === true) {
+			return $store;
+		}
+
+		// A field the allow-list does not name is refused, never dropped: a
+		// handler who meant to hide it must not find it shared after all.
+		$excluded = array_values(array_unique(array_map('strval', $request['excluded'])));
+		$unknown  = array_values(array_diff($excluded, self::FEDERATION_ALLOWED_FIELDS));
+		if ($unknown !== []) {
+			return ['error' => 'Unknown case field: '.implode(', ', $unknown)];
+		}
+
+		$request['excluded'] = $excluded;
+
+		return $this->sharePartner(store: $store, request: $request);
+	}//end sharePartnerWithKnownFields()
+
+	/**
+	 * The configured share register, or the error that says why there is none.
+	 *
+	 * @return ShareStore|array<string, string> The store, or an error array.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function configuredStoreOrError(): ShareStore|array {
 		$objectService = $this->gateway->objectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];
@@ -356,25 +405,8 @@ class CaseSharingService {
 			return ['error' => 'Service unavailable'];
 		}
 
-		// A field the allow-list does not name is refused, never dropped: a
-		// handler who meant to hide it must not find it shared after all.
-		$excluded = array_values(array_unique(array_map('strval', $fieldExclusions)));
-		$unknown  = array_values(array_diff($excluded, self::FEDERATION_ALLOWED_FIELDS));
-		if ($unknown !== []) {
-			return ['error' => 'Unknown case field: '.implode(', ', $unknown)];
-		}
-
-		$request = [
-			'caseId' => $caseId,
-			'partnerId' => $partnerId,
-			'permissionLevel' => $permissionLevel,
-			'createdBy' => $createdBy,
-			'message' => $message,
-			'excluded' => $excluded,
-		];
-
-		return $this->sharePartner(store: $store, request: $request);
-	}//end createPartnerShare()
+		return $store;
+	}//end configuredStoreOrError()
 
 	/**
 	 * Ask the consent gate, then write the partner share with the scope it named.
@@ -595,6 +627,7 @@ class CaseSharingService {
 	 * @return array The created federated share data, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 * @spec openspec/changes/social-domain-consent-and-safeguards/tasks.md
 	 */
 	public function createFederatedShare(
 		string $caseId,
@@ -604,6 +637,13 @@ class CaseSharingService {
 		string $permissionLevel,
 		string $createdBy,
 	): array {
+		// A case type that requires consent for sharing lets the case reach
+		// another organisation only when a valid consent names that receiver.
+		$verdict = $this->consent->assessSharing(caseId: $caseId, party: $remoteCloudId);
+		if ($verdict['allowed'] === false) {
+			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];
+		}
+
 		return $this->federatedShares->createFederatedShare(
 			caseId: $caseId,
 			remoteCloudId: $remoteCloudId,

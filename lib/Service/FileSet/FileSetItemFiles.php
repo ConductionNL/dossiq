@@ -30,14 +30,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\FileSet;
 
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Kernel\Contracts\FileSetItemFilesInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 
 /**
  * Reads the original and the delivered file of one item of a frozen file set.
  *
  * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  */
-class FileSetItemFiles {
+class FileSetItemFiles implements FileSetItemFilesInterface {
 
 	/**
 	 * The two sides of an item, in reading order.
@@ -62,10 +63,10 @@ class FileSetItemFiles {
 	/**
 	 * Constructor.
 	 *
-	 * @param WooCaseDocuments $documents Reads a case document with its file bytes (Woo-named, generic in behaviour; refactor programme).
+	 * @param WooCaseDocumentsInterface $documents Reads a case document with its file bytes (Woo-named, generic in behaviour; refactor programme).
 	 */
 	public function __construct(
-		private readonly WooCaseDocuments $documents,
+		private readonly WooCaseDocumentsInterface $documents,
 	) {
 	}//end __construct()
 

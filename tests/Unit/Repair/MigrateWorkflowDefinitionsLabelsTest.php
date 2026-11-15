@@ -37,6 +37,8 @@ use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * What the backfill writes, and what it heals.
@@ -228,7 +230,10 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The payload, with an id.
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->writes->append(['save', $schema, $object]);
 				return array_merge($object, ['id' => ($uuid ?? 'new-template')]);
 			}//end saveObject()
@@ -243,7 +248,11 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The fields.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->writes->append(['patch', $schema, $data]);
 				return $data;
 			}//end patchObject()

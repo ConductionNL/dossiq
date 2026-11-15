@@ -96,7 +96,7 @@ class BulkDocumentActions {
 	public function updateAll(IUser $user, array $ids, array $metadata): array {
 		$results = [];
 		foreach ($ids as $id) {
-			$results[] = $this->updateOne(user: $user, id: (string)$id, metadata: $metadata);
+			$results[] = $this->updateOne(user: $user, update: ['id' => (string)$id, 'metadata' => $metadata]);
 		}
 
 		return $results;
@@ -106,14 +106,14 @@ class BulkDocumentActions {
 	 * Update one informatieobject's metadata inside a bulk run.
 	 *
 	 * @param IUser                $user     The requesting user.
-	 * @param string               $id       The informatieobject UUID.
-	 * @param array<string, mixed> $metadata The metadata to apply.
+	 * @param array{id: string, metadata: array<string, mixed>} $update The informatieobject UUID and the metadata to apply.
 	 *
 	 * @return array<string, mixed> The per-id result entry.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
-	private function updateOne(IUser $user, string $id, array $metadata): array {
+	private function updateOne(IUser $user, array $update): array {
+		['id' => $id, 'metadata' => $metadata] = $update;
 		if ($this->reader->guardReadable(user: $user, infoObjectId: $id) !== null) {
 			return ['id' => $id, 'success' => false, 'error' => 'Insufficient clearance'];
 		}

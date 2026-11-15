@@ -37,6 +37,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient
  * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqServiceCall
  */
 class HermiqAiFeatureCallGoldenTest extends TestCase {
 

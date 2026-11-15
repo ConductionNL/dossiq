@@ -43,6 +43,8 @@ use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * An in-memory case store that can be told to refuse one case type.
@@ -84,10 +86,13 @@ class FanOutCaseStore {
 	 */
 	public function saveObject(
 		array $object,
-		string $register = '',
-		string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
+		bool $_rbac = true,
+		bool $_multitenancy = true
 	): array {
+		$register = $options->target->register ?? '';
+		$schema = $options->target->schema ?? '';
+		$uuid = $options->uuid;
 		if ((string)($object['caseType'] ?? '') === $this->retiredCaseType && $this->retiredCaseType !== '') {
 			throw new RuntimeException('The case type has been retired.');
 		}
@@ -109,7 +114,11 @@ class FanOutCaseStore {
 	 *
 	 * @return array<string, mixed> The case as stored.
 	 */
-	public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+	public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		$this->cases[$objectId] = array_merge($this->cases[$objectId] ?? [], $data);
 
 		return $this->cases[$objectId];
@@ -124,6 +133,7 @@ class FanOutCaseStore {
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Routing\RoutingNote
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Intake\FanOutRun
  */
 class IntakeFanOutTest extends TestCase {
 

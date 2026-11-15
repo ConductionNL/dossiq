@@ -34,8 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\MenuCaseTypesServiceInterface;
+use OCA\Dossiq\Service\CaseType\CaseTypeMenuEntry;
 use OCA\Dossiq\Service\CaseType\SupersededCaseTypes;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\TranslatedText;
@@ -47,8 +48,9 @@ use OCP\IUserManager;
  * Reads and writes the per-user list of case types in the menu.
  *
  * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
+ *
  */
-class MenuCaseTypesService {
+class MenuCaseTypesService implements MenuCaseTypesServiceInterface {
 
 	use SearchesObjects;
 
@@ -85,6 +87,13 @@ class MenuCaseTypesService {
 	private array $supersededBy = [];
 
 	/**
+	 * Turns a stored case type row into its menu entry.
+	 *
+	 * @var CaseTypeMenuEntry
+	 */
+	private readonly CaseTypeMenuEntry $entries;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (register, schema, ObjectService).
@@ -98,46 +107,12 @@ class MenuCaseTypesService {
 		private readonly IConfig $config,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserManager $userManager,
-		private readonly TranslatedText $text,
+		TranslatedText $text,
 	) {
+		$this->entries = new CaseTypeMenuEntry(text: $text);
 	}//end __construct()
 
-	/**
-	 * A case type as the menu and its picker see it: id and title, and its
-	 * icon when it names one.
-	 *
-	 * @param array{id: string, title: string, icon: string} $row The case type.
-	 *
-	 * @return array{id: string, title: string, icon?: string} The row.
-	 *
-	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
-	 */
-	private static function publicRow(array $row): array {
-		$public = ['id' => $row['id'], 'title' => $row['title']];
-		if ($row['icon'] !== '') {
-			$public['icon'] = $row['icon'];
-		}
 
-		return $public;
-	}//end publicRow()
-
-	/**
-	 * The icon a case type row names (`caseType.icon`), or '' when it names none.
-	 *
-	 * @param array<string, mixed> $row The case type row.
-	 *
-	 * @return string The icon name.
-	 *
-	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
-	 */
-	private function iconOf(array $row): string {
-		$icon = ($row['icon'] ?? '');
-		if (is_string($icon) === false) {
-			return '';
-		}
-
-		return trim($icon);
-	}//end iconOf()
 
 	/**
 	 * The case types offered to this user for their menu, sorted by title.
@@ -157,12 +132,46 @@ class MenuCaseTypesService {
 	public function offeredCaseTypes(string $userId): array {
 		$rows = $this->currentCaseTypes();
 
+		$userGroups = $this->groupsOf(userId: $userId);
+
+		$handled = $this->handledBy(rows: $rows, userGroups: $userGroups);
+
+		if (count($handled) === 0) {
+			$handled = $rows;
+		}
+
+		return array_map(
+			fn (array $row): array => $this->entries->publicRow(row: $row),
+			$handled
+		);
+	}//end offeredCaseTypes()
+
+	/**
+	 * The Nextcloud groups a user is in, as a set.
+	 *
+	 * @param string $userId The user.
+	 *
+	 * @return array<string, int> The group ids as keys; empty for an unknown user.
+	 */
+	private function groupsOf(string $userId): array {
 		$userGroups = [];
 		$user = $this->userManager->get($userId);
 		if ($user !== null) {
 			$userGroups = array_flip($this->groupManager->getUserGroupIds($user));
 		}
 
+		return $userGroups;
+	}//end groupsOf()
+
+	/**
+	 * The case types one of whose handling teams is a group the user is in.
+	 *
+	 * @param array<int, array<string, mixed>> $rows       The current case types.
+	 * @param array<string, int>               $userGroups The user's groups, as a set.
+	 *
+	 * @return array<int, array<string, mixed>> The handled case types.
+	 */
+	private function handledBy(array $rows, array $userGroups): array {
 		$handled = [];
 		foreach ($rows as $row) {
 			foreach ($row['teams'] as $team) {
@@ -173,15 +182,8 @@ class MenuCaseTypesService {
 			}
 		}
 
-		if (count($handled) === 0) {
-			$handled = $rows;
-		}
-
-		return array_map(
-			static fn (array $row): array => self::publicRow(row: $row),
-			$handled
-		);
-	}//end offeredCaseTypes()
+		return $handled;
+	}//end handledBy()
 
 	/**
 	 * The current case types the current user may see, sorted by title.
@@ -196,7 +198,7 @@ class MenuCaseTypesService {
 	 */
 	public function visibleCaseTypes(): array {
 		return array_map(
-			static fn (array $row): array => self::publicRow(row: $row),
+			fn (array $row): array => $this->entries->publicRow(row: $row),
 			$this->currentCaseTypes()
 		);
 	}//end visibleCaseTypes()
@@ -249,12 +251,12 @@ class MenuCaseTypesService {
 				continue;
 			}
 
-			$uuid = $this->resolveUuid(object: $row);
+			$uuid = $this->entries->uuidOf(object: $row);
 			if ($uuid === null || isset($caseTypes[$uuid]) === true) {
 				continue;
 			}
 
-			$caseTypes[$uuid] = $this->menuEntry(row: $row, uuid: $uuid);
+			$caseTypes[$uuid] = $this->entries->entry(row: $row, uuid: $uuid);
 		}
 
 		return $this->byTitle(caseTypes: array_values($caseTypes));
@@ -281,33 +283,6 @@ class MenuCaseTypesService {
 		);
 	}//end caseTypeRows()
 
-	/**
-	 * One case type as the menu lists it.
-	 *
-	 * The title is declared translatable, so a row carries it as a language
-	 * map. A (string) cast of that map is "Array", which is what every case
-	 * type in the picker, the chosen list and the menu was called (finding
-	 * B2, 10 Oct).
-	 *
-	 * @param array<string, mixed> $row  The case type row.
-	 * @param string               $uuid Its uuid.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function menuEntry(array $row, string $uuid): array {
-		$title = $this->text->forReader(value: ($row['title'] ?? ''));
-		if ($title === '') {
-			$title = $uuid;
-		}
-
-		return [
-			'id' => $uuid,
-			'title' => $title,
-			'identifier' => (string)($row['identifier'] ?? ''),
-			'icon' => $this->iconOf(row: $row),
-			'teams' => (new CaseTypeHandling())->teams(caseType: $row),
-		];
-	}//end menuEntry()
 
 	/**
 	 * The case types in title order, case-insensitively.
@@ -340,7 +315,7 @@ class MenuCaseTypesService {
 	public function chosen(string $userId, array $visible): array {
 		$stored = $this->config->getUserValue(
 			userId: $userId,
-			appName: Application::APP_ID,
+			appName: AppIdentity::APP_ID,
 			key: self::USER_KEY,
 			default: ''
 		);
@@ -404,43 +379,11 @@ class MenuCaseTypesService {
 	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	private function rememberSuperseded(array $row): void {
-		$old = $this->resolveUuid(object: $row);
+		$old = $this->entries->uuidOf(object: $row);
 		if ($old !== null && is_string($row['supersededBy']) === true) {
 			$this->supersededBy[$old] = $row['supersededBy'];
 		}
 	}//end rememberSuperseded()
 
-	/**
-	 * Resolve an OpenRegister object's UUID from its array shape.
-	 *
-	 * @param array<string, mixed> $object The object as an associative array.
-	 *
-	 * @return string|null The UUID, or null when none is resolvable.
-	 *
-	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
-	 */
-	private function resolveUuid(array $object): ?string {
-		$self = ($object['@self'] ?? null);
 
-		$candidates = [
-			($object['uuid'] ?? null),
-			($object['id'] ?? null),
-		];
-
-		if (is_array($self) === true) {
-			$candidates[] = ($self['id'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if (is_string($candidate) === true && $candidate !== '') {
-				return $candidate;
-			}
-
-			if (is_int($candidate) === true) {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
-	}//end resolveUuid()
 }//end class

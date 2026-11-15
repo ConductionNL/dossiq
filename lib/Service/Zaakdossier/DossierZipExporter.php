@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zaakdossier;
 
+use OCA\Dossiq\Kernel\Contracts\DossierZipExporterInterface;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZipManifestBuilder;
 use OCP\IUser;
@@ -45,7 +46,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
-class DossierZipExporter {
+class DossierZipExporter implements DossierZipExporterInterface {
 	/**
 	 * Constructor.
 	 *
@@ -117,30 +118,51 @@ class DossierZipExporter {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function buildZipData(IUser $user, array $documents, bool $flatLayout): string {
-		$layout = ZipManifestBuilder::LAYOUT_PER_TYPE;
-		if ($flatLayout === true) {
-			$layout = ZipManifestBuilder::LAYOUT_FLAT;
-		}
-
 		$tmpPath = (string)tempnam(sys_get_temp_dir(), 'dossiq-dossier-');
 		try {
 			$this->zipBuilder->buildZip(
 				targetPath: $tmpPath,
 				user: $user,
 				documents: $documents,
-				layout: $layout,
+				layout: $this->layoutOf(flatLayout: $flatLayout),
 			);
 
 			return (string)file_get_contents($tmpPath);
 		} finally {
-			// A temp file we cannot remove is a real (if minor) problem — say
-			// so rather than hiding the failure behind an `@`.
-			if (is_file($tmpPath) === true && unlink($tmpPath) === false) {
-				$this->logger->warning(
-					'Dossiq dossier: temporary ZIP could not be removed',
-					['path' => $tmpPath]
-				);
-			}
-		}//end try
+			$this->removeTemporary(tmpPath: $tmpPath);
+		}
 	}//end buildZipData()
+
+	/**
+	 * The manifest layout: flat when asked, otherwise one folder per document type.
+	 *
+	 * @param bool $flatLayout Whether the ZIP is flat.
+	 *
+	 * @return string The layout.
+	 */
+	private function layoutOf(bool $flatLayout): string {
+		if ($flatLayout === true) {
+			return ZipManifestBuilder::LAYOUT_FLAT;
+		}
+
+		return ZipManifestBuilder::LAYOUT_PER_TYPE;
+	}//end layoutOf()
+
+	/**
+	 * Remove the temporary ZIP, and say so when it cannot be removed.
+	 *
+	 * @param string $tmpPath The temporary file.
+	 *
+	 * @return void
+	 */
+	private function removeTemporary(string $tmpPath): void {
+		// A temp file we cannot remove is a real (if minor) problem — say
+		// so rather than hiding the failure behind an `@`.
+		if (is_file($tmpPath) === true && unlink($tmpPath) === false) {
+			$this->logger->warning(
+				'Dossiq dossier: temporary ZIP could not be removed',
+				['path' => $tmpPath]
+			);
+		}
+	}//end removeTemporary()
 }//end class

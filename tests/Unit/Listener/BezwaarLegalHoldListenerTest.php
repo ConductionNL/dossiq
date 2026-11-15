@@ -33,6 +33,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\BezwaarLegalHoldListener
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Listener\Support\EventObjectPayload
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class BezwaarLegalHoldListenerTest extends TestCase {
 

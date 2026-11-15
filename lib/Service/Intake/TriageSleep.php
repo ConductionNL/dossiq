@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TriageSleepInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -56,7 +57,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
  *
  * @spec openspec/specs/kcc-routing/spec.md
  */
-class TriageSleep {
+class TriageSleep implements TriageSleepInterface {
 
 	/**
 	 * The entry field holding the date it wakes.
@@ -92,13 +93,6 @@ class TriageSleep {
 	 * The rule a sleep on an item nothing can find names.
 	 */
 	public const RULE_NO_ITEM = 'triage-item-not-found';
-
-	/**
-	 * The outcomes an item still waiting for a person can carry.
-	 *
-	 * @var array<int, string>
-	 */
-	public const SLEEPABLE_OUTCOMES = [IntakeLog::OUTCOME_QUARANTINED, IntakeLog::OUTCOME_INBOX];
 
 	/**
 	 * Constructor.
@@ -142,6 +136,20 @@ class TriageSleep {
 			'sleptAt' => $this->time->getDateTime()->format(DATE_ATOM),
 		];
 
+		return $this->recorded(entryId: $entryId, record: $record);
+	}//end sleep()
+
+	/**
+	 * Write the sleep onto the item, refusing when it could not be recorded.
+	 *
+	 * @param string                                                                           $entryId The intake log entry.
+	 * @param array{sleepUntil: string, sleepReason: string, sleptBy: string, sleptAt: string} $record  The sleep.
+	 *
+	 * @return array{sleepUntil: string, sleepReason: string, sleptBy: string, sleptAt: string} The sleep as written.
+	 *
+	 * @throws RefusedException When the item could not be amended.
+	 */
+	private function recorded(string $entryId, array $record): array {
 		if ($this->log->amend(entryId: $entryId, changes: $record) === false) {
 			throw RefusedException::indeterminate(
 				rule: self::RULE_NO_ITEM,
@@ -150,7 +158,7 @@ class TriageSleep {
 		}
 
 		return $record;
-	}//end sleep()
+	}//end recorded()
 
 	/**
 	 * The trimmed reason; a sleep without one is refused.

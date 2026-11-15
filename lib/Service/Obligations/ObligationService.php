@@ -39,6 +39,9 @@ namespace OCA\Dossiq\Service\Obligations;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -68,6 +71,16 @@ class ObligationService {
 	 * @var string
 	 */
 	public const KIND_ADVICE = 'advice';
+
+	/**
+	 * Per terminal state, the moment field it stamps and the field its reason is written to.
+	 *
+	 * @var array<string, array{0: string, 1: string}>
+	 */
+	private const CLOSING_FIELDS = [
+		ObligationDeclaration::STATE_MET => ['metAt', 'settlementNote'],
+		ObligationDeclaration::STATE_WITHDRAWN => ['withdrawnAt', 'withdrawalReason'],
+	];
 
 	/**
 	 * Constructor.
@@ -120,13 +133,7 @@ class ObligationService {
 	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function meet(string $obligationId, string $note = ''): bool {
-		return $this->close(
-			obligationId: $obligationId,
-			state: ObligationDeclaration::STATE_MET,
-			field: 'metAt',
-			reason: $note,
-			reasonField: 'settlementNote',
-		);
+		return $this->close(obligationId: $obligationId, state: ObligationDeclaration::STATE_MET, reason: $note);
 	}//end meet()
 
 	/**
@@ -145,13 +152,7 @@ class ObligationService {
 	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function withdraw(string $obligationId, string $reason): bool {
-		return $this->close(
-			obligationId: $obligationId,
-			state: ObligationDeclaration::STATE_WITHDRAWN,
-			field: 'withdrawnAt',
-			reason: $reason,
-			reasonField: 'withdrawalReason',
-		);
+		return $this->close(obligationId: $obligationId, state: ObligationDeclaration::STATE_WITHDRAWN, reason: $reason);
 	}//end withdraw()
 
 	/**
@@ -242,9 +243,27 @@ class ObligationService {
 			return '';
 		}
 
+		$rows = $this->rowsForSource(source: $source);
+		if (is_array($rows) === false) {
+			return '';
+		}
+
+		return $this->firstRowId(rows: $rows);
+	}//end idForSource()
+
+	/**
+	 * The obligation rows a source placed, or null when the store is missing or the read failed.
+	 *
+	 * @param string $source The placing object's id.
+	 *
+	 * @return array<int, array<string, mixed>>|null The rows, or null.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md
+	 */
+	private function rowsForSource(string $source): ?array {
 		[$objectService, $register, $schema] = $this->store();
 		if ($objectService === null) {
-			return '';
+			return null;
 		}
 
 		$rows = null;
@@ -262,10 +281,19 @@ class ObligationService {
 			);
 		}
 
-		if (is_array($rows) === false) {
-			return '';
-		}
+		return $rows;
+	}//end rowsForSource()
 
+	/**
+	 * The id of the first row that carries one.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The obligation rows.
+	 *
+	 * @return string The id, or the empty string when no row has one.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md
+	 */
+	private function firstRowId(array $rows): string {
 		foreach ($rows as $row) {
 			$id = (string)(($row['id'] ?? ($row['@self']['id'] ?? '')));
 			if ($id !== '') {
@@ -274,7 +302,7 @@ class ObligationService {
 		}
 
 		return '';
-	}//end idForSource()
+	}//end firstRowId()
 
 	/**
 	 * The obligations that withhold a move into one status.
@@ -305,47 +333,24 @@ class ObligationService {
 	/**
 	 * Settle an obligation into a terminal state.
 	 *
+	 * The moment field it stamps and the field the reason goes to are read
+	 * from {@see self::CLOSING_FIELDS} by the state.
+	 *
 	 * @param string $obligationId The obligation.
-	 * @param string $state        The terminal state.
-	 * @param string $field        The moment field to stamp.
+	 * @param string $state        The terminal state, a key of CLOSING_FIELDS.
 	 * @param string $reason       The reason or note.
-	 * @param string $reasonField  Which field the reason is written to.
 	 *
 	 * @return bool True when the write landed.
 	 *
 	 * @spec openspec/specs/consultation-management/spec.md
 	 */
-	private function close(
-		string $obligationId,
-		string $state,
-		string $field,
-		string $reason,
-		string $reasonField,
-	): bool {
+	private function close(string $obligationId, string $state, string $reason): bool {
+		[$field, $reasonField] = self::CLOSING_FIELDS[$state];
 		if (trim($obligationId) === '') {
 			return false;
 		}
 
-		[$objectService, $register, $schema] = $this->store();
-		if ($objectService === null) {
-			return false;
-		}
-
-		$row = null;
-		try {
-			$row = $objectService->find($obligationId, register: $register, schema: $schema);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq obligations: the obligation to settle could not be read',
-				['obligation' => $obligationId, 'error' => $e->getMessage()],
-			);
-		}
-
-		if ($row === null) {
-			return false;
-		}
-
-		$payload = $this->toArray(value: $row);
+		$payload = $this->obligationPayload(obligationId: $obligationId);
 		if ($payload === []) {
 			return false;
 		}
@@ -358,6 +363,38 @@ class ObligationService {
 
 		return $this->save(payload: $payload, context: $state) !== '';
 	}//end close()
+
+	/**
+	 * The stored obligation as an array, or an empty array when it cannot be read.
+	 *
+	 * @param string $obligationId The obligation.
+	 *
+	 * @return array<string, mixed> The obligation row, or an empty array.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md
+	 */
+	private function obligationPayload(string $obligationId): array {
+		[$objectService, $register, $schema] = $this->store();
+		if ($objectService === null) {
+			return [];
+		}
+
+		$row = null;
+		try {
+			$row = $objectService->find($obligationId, new ObjectFindOptions(register: $register, schema: $schema));
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq obligations: the obligation to settle could not be read',
+				['obligation' => $obligationId, 'error' => $e->getMessage()],
+			);
+		}
+
+		if ($row === null) {
+			return [];
+		}
+
+		return $this->toArray(value: $row);
+	}//end obligationPayload()
 
 	/**
 	 * Write one obligation row.
@@ -377,7 +414,10 @@ class ObligationService {
 
 		$saved = null;
 		try {
-			$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
+			$saved = $objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq obligations: the obligation could not be written',
@@ -422,17 +462,6 @@ class ObligationService {
 	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $value) ?? []);
 	}//end toArray()
 }//end class

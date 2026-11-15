@@ -61,6 +61,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\SetStatusHandlerInterface;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -70,7 +71,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class SetStatusHandler implements ActionHandlerInterface {
+class SetStatusHandler implements ActionHandlerInterface, SetStatusHandlerInterface {
 	/**
 	 * Constructor.
 	 *

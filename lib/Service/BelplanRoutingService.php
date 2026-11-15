@@ -30,7 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\BelplanRoutingServiceInterface;
+use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -41,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
-class BelplanRoutingService {
+class BelplanRoutingService implements BelplanRoutingServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -106,14 +108,32 @@ class BelplanRoutingService {
 		$vaardigheid = $this->resolveVaardigheid(belplan: $belplan, menuSelection: $menuSelection);
 		$specialists = $this->getSpecialistBeschikbaarheid(vaardigheid: $vaardigheid);
 
-		$available = array_values(
-			array_filter(
-				$specialists,
-				static function (array $specialist): bool {
-					return (($specialist['status'] ?? '') === 'beschikbaar');
-				}
-			)
-		);
+		$available = self::availableByQueue(specialists: $specialists);
+
+		$overflow = $this->overflowConfig(belplan: $belplan);
+
+		if (empty($available) === true || (int)($available[0]['currentQueueLength'] ?? 0) > $overflow['wachtrij']) {
+			// All busy or queue too long → overflow to generalist with escalatie.
+			$waitTime = $this->estimateWait(specialists: $specialists);
+			return self::overflowRoute(vaardigheid: $vaardigheid, overflow: ['waitTime' => $waitTime, 'fallbackRol' => $overflow['fallbackRol']]);
+		}
+
+		return self::chosenRoute(chosen: $available[0], vaardigheid: $vaardigheid);
+	}//end routeCall()
+
+	/**
+	 * The available specialists, shortest queue first.
+	 *
+	 * @param array<int, array<string, mixed>> $specialists The availability records.
+	 *
+	 * @return array<int, array<string, mixed>> The available ones, by queue length.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 */
+	private static function availableByQueue(array $specialists): array {
+		$available = array_values(array_filter($specialists, static function (array $specialist): bool {
+			return (($specialist['status'] ?? '') === 'beschikbaar');
+		}));
 
 		usort(
 			$available,
@@ -122,21 +142,40 @@ class BelplanRoutingService {
 			}
 		);
 
-		$overflow = $this->overflowConfig(belplan: $belplan);
+		return $available;
+	}//end availableByQueue()
 
-		if (empty($available) === true || (int)($available[0]['currentQueueLength'] ?? 0) > $overflow['wachtrij']) {
-			// All busy or queue too long → overflow to generalist with escalatie.
-			return [
-				'destinationSpecialistId' => null,
-				'vaardigheid' => $vaardigheid,
-				'escalatieFlag' => true,
-				'estimatedWaitTime' => $this->estimateWait(specialists: $specialists),
-				'fallbackRol' => $overflow['fallbackRol'],
-			];
-		}
+	/**
+	 * The route of a call that overflows to a generalist, with escalatie.
+	 *
+	 * @param string                                        $vaardigheid The resolved vaardigheid.
+	 * @param array{waitTime: int, fallbackRol: string|null} $overflow    The estimated wait and the overflow's fallback role.
+	 *
+	 * @return array{destinationSpecialistId: ?string, vaardigheid: string, escalatieFlag: bool, estimatedWaitTime: int, fallbackRol: ?string}
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 */
+	private static function overflowRoute(string $vaardigheid, array $overflow): array {
+		return [
+			'destinationSpecialistId' => null,
+			'vaardigheid' => $vaardigheid,
+			'escalatieFlag' => true,
+			'estimatedWaitTime' => $overflow['waitTime'],
+			'fallbackRol' => $overflow['fallbackRol'],
+		];
+	}//end overflowRoute()
 
-		$chosen = $available[0];
-
+	/**
+	 * The route of a call to the chosen specialist.
+	 *
+	 * @param array<string, mixed> $chosen      The specialist with the shortest queue.
+	 * @param string               $vaardigheid The resolved vaardigheid.
+	 *
+	 * @return array{destinationSpecialistId: ?string, vaardigheid: string, escalatieFlag: bool, estimatedWaitTime: int, fallbackRol: ?string}
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 */
+	private static function chosenRoute(array $chosen, string $vaardigheid): array {
 		return [
 			'destinationSpecialistId' => (string)($chosen['employeeId'] ?? ''),
 			'vaardigheid' => $vaardigheid,
@@ -144,7 +183,7 @@ class BelplanRoutingService {
 			'estimatedWaitTime' => ((int)($chosen['currentQueueLength'] ?? 0) * (int)($chosen['averageHandlingDuration'] ?? 0)),
 			'fallbackRol' => null,
 		];
-	}//end routeCall()
+	}//end chosenRoute()
 
 	/**
 	 * Fetch specialist availability records for a vaardigheid.
@@ -172,11 +211,25 @@ class BelplanRoutingService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to fetch specialist beschikbaarheid: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return [];
 		}
 
+		return $this->withExpertise(results: $results, vaardigheid: $vaardigheid);
+	}//end getSpecialistBeschikbaarheid()
+
+	/**
+	 * The availability records, kept only when they list the vaardigheid (all of them for an empty one).
+	 *
+	 * @param mixed  $results     The search results.
+	 * @param string $vaardigheid The vaardigheid / expertise code, empty for all.
+	 *
+	 * @return array<int, array<string, mixed>> The availability records.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 */
+	private function withExpertise(mixed $results, string $vaardigheid): array {
 		$records = [];
 		foreach ((array)$results as $result) {
 			$record = $this->toArray(result: $result);
@@ -191,7 +244,7 @@ class BelplanRoutingService {
 		}
 
 		return $records;
-	}//end getSpecialistBeschikbaarheid()
+	}//end withExpertise()
 
 	/**
 	 * Map a keuzemenu selection onto a vaardigheid via belplan routing steps.
@@ -276,34 +329,60 @@ class BelplanRoutingService {
 	 * @return array<int, array<string, mixed>> The belplan records.
 	 */
 	private function loadBelplannen(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$source = $this->belplanSource();
+		if ($source === null) {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('belplan_schema');
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
+		[$objectService, $register, $schema] = $source;
 		try {
 			$results = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 200]);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to load belplannen: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
+				['app' => AppIdentity::APP_ID],
 			);
 			return [];
 		}
 
+		return $this->belplanRecords(results: $results);
+	}//end loadBelplannen()
+
+	/**
+	 * The object service, register and belplan schema, when all are configured.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null Null when one is missing.
+	 */
+	private function belplanSource(): array|null {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('belplan_schema');
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end belplanSource()
+
+	/**
+	 * Every belplan search result as a plain array.
+	 *
+	 * @param mixed $results The search results.
+	 *
+	 * @return array<int, array<string, mixed>> The belplan records.
+	 */
+	private function belplanRecords(mixed $results): array {
 		$records = [];
 		foreach ((array)$results as $result) {
 			$records[] = $this->toArray(result: $result);
 		}
 
 		return $records;
-	}//end loadBelplannen()
+	}//end belplanRecords()
 
 	/**
 	 * Normalise an ObjectService result into a plain array.
@@ -313,18 +392,6 @@ class BelplanRoutingService {
 	 * @return array<string, mixed> The normalised record.
 	 */
 	private function toArray($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
+		return CastArray::of(value: $result);
 	}//end toArray()
 }//end class

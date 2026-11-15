@@ -31,6 +31,10 @@ namespace OCA\Dossiq\Service\Kcc;
 
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 
@@ -117,7 +121,10 @@ class ContactMomentService {
 
 		[$objectService, $register, $schema] = $this->resolve();
 
-		$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
+		$saved = $objectService->saveObject(
+			object: $payload,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
 
 		$this->logger->info(
 			'Dossiq KCC: contact moment created',
@@ -159,7 +166,10 @@ class ContactMomentService {
 
 		$update = $this->payload->merged(existing: $existing, data: $data);
 
-		$saved = $objectService->saveObject(object: $update, register: $register, schema: $schema, uuid: (string)$id);
+		$saved = $objectService->saveObject(
+			object: $update,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+		);
 
 		return $this->toArray(value: $saved);
 	}//end update()
@@ -304,7 +314,7 @@ class ContactMomentService {
 	 */
 	private function findOwned(object $objectService, string $register, string $schema, string $id, string $agentId, bool $isPrivileged): array {
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable $e) {
 			throw new OCSBadRequestException('Contact moment not found');
 		}
@@ -330,19 +340,6 @@ class ContactMomentService {
 	 * @return array<string, mixed> The normalised array.
 	 */
 	private function toArray(mixed $value): array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-
-			return [];
-		}
-
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

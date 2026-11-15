@@ -43,8 +43,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\CaseSeatsInterface;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -54,7 +59,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md
  */
-class CaseSeats {
+class CaseSeats implements CaseSeatsInterface {
 
 	use SearchesObjects;
 
@@ -94,6 +99,13 @@ class CaseSeats {
 	public const PAGE_SIZE = 200;
 
 	/**
+	 * The register and the configured schemas, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
@@ -102,9 +114,10 @@ class CaseSeats {
 	 * @spec openspec/specs/people-on-the-case/spec.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -178,6 +191,29 @@ class CaseSeats {
 
 		$existing = $this->coordinatorBinding(caseId: $caseId);
 
+		$record = $this->coordinatorRecord(
+			caseId: $caseId,
+			participant: $participant,
+			displayName: $displayName,
+			roleType: ($existing['roleType'] ?? $roleTypes[0])
+		);
+
+		return $this->writeCoordinator(record: $record, uuid: trim((string)($existing['id'] ?? '')));
+	}//end nameCoordinator()
+
+	/**
+	 * The coordinator role record to write.
+	 *
+	 * @param string $caseId      The case uuid.
+	 * @param string $participant The person, as a uid or a `user:<uid>` reference.
+	 * @param string $displayName What to call them on the People tab.
+	 * @param mixed  $roleType    The role type: the existing row's, or the first declared.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 */
+	private function coordinatorRecord(string $caseId, string $participant, string $displayName, mixed $roleType): array {
 		// The uid is the FALLBACK label, never the stored identity: the seat is
 		// addressed by `participant`, and a caller that passed no display name
 		// gets a row a person can still read rather than an empty one.
@@ -186,21 +222,35 @@ class CaseSeats {
 			$label = $this->uidOf(participant: $participant);
 		}
 
-		$record = [
+		return [
 			'name' => $label,
-			'roleType' => ($existing['roleType'] ?? $roleTypes[0]),
+			'roleType' => $roleType,
 			'case' => $caseId,
 			'participant' => $this->referenceOf(participant: $participant),
 		];
+	}//end coordinatorRecord()
 
-		$uuid = trim((string)($existing['id'] ?? ''));
+	/**
+	 * Write the coordinator record: a new row, or a patch of the existing one.
+	 *
+	 * @param array<string, mixed> $record The record.
+	 * @param string               $uuid   The existing row's uuid, '' when there is none.
+	 *
+	 * @return string The role record's uuid.
+	 *
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 */
+	private function writeCoordinator(array $record, string $uuid): string {
 		[$objectService, $register] = $this->context();
 		$schema = $this->schema(key: 'role_schema');
 
 		if ($uuid === '') {
 			return $this->idOf(
 				row: $this->asArray(
-					saved: $objectService->saveObject(object: $record, register: $register, schema: $schema)
+					saved: $objectService->saveObject(
+						object: $record,
+						options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+					)
 				)
 			);
 		}
@@ -211,15 +261,9 @@ class CaseSeats {
 		// and `delegateUntil`. A save would have silently ended a running
 		// delegation every time somebody renamed the coordinator.
 		return $this->idOf(
-			row: (array)$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $uuid,
-				changes: $record,
-			)
+			row: (array)$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $uuid, changes: $record)
 		);
-	}//end nameCoordinator()
+	}//end writeCoordinator()
 
 	/**
 	 * Empty the coordinator seat, and say who held it.
@@ -241,9 +285,10 @@ class CaseSeats {
 		try {
 			[$objectService, $register] = $this->context();
 			$objectService->deleteObject(
-				register: $register,
-				schema: $this->schema(key: 'role_schema'),
-				uuid: $uuid,
+				new ObjectDeletion(
+					uuid: $uuid,
+					target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'role_schema'))
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -280,11 +325,23 @@ class CaseSeats {
 			return [];
 		}
 
-		$cases = [];
 		$rows = $this->rows(
 			schemaKey: 'role_schema',
 			filters: ['participant' => $this->referenceOf(participant: $uid), '_limit' => self::PAGE_SIZE],
 		);
+		return $this->caseIdsIn(rows: $rows, roleTypes: $roleTypes);
+	}//end casesCoordinatedBy()
+
+	/**
+	 * The distinct case ids of the role rows that carry a coordinator role type.
+	 *
+	 * @param array<int, array<string, mixed>> $rows      The participant's role rows.
+	 * @param array<int, string>               $roleTypes The coordinator role types.
+	 *
+	 * @return array<int, string>
+	 */
+	private function caseIdsIn(array $rows, array $roleTypes): array {
+		$cases = [];
 		foreach ($rows as $row) {
 			if (in_array(trim((string)($row['roleType'] ?? '')), $roleTypes, true) === false) {
 				continue;
@@ -297,7 +354,7 @@ class CaseSeats {
 		}
 
 		return $cases;
-	}//end casesCoordinatedBy()
+	}//end caseIdsIn()
 
 	/**
 	 * The role types this instance declares as the coordinator seat.
@@ -358,17 +415,7 @@ class CaseSeats {
 	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
 	 */
 	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end context()
 
 	/**
@@ -381,12 +428,7 @@ class CaseSeats {
 	 * @throws RuntimeException When the key is unset.
 	 */
 	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
+		return $this->dossierRegister->schema(key: $key);
 	}//end schema()
 
 	/**

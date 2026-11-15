@@ -29,6 +29,8 @@ use RuntimeException;
  * The writes of one registered pause.
  *
  * @covers \OCA\Dossiq\Service\DeadlinePauseService
+ * @uses \OCA\Dossiq\Service\PauseRegistrationRun
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class DeadlinePauseRegistrationFlowTest extends TestCase {
 

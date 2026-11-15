@@ -127,18 +127,41 @@ class InformatieobjectAccessGuard {
 			return (count(self::HIERARCHY) - 1);
 		}
 
-		$defaultLevel = $this->settingsService->getConfigValue('dossier_default_clearance', self::FALLBACK_CLEARANCE);
-		if (in_array($defaultLevel, self::HIERARCHY, true) === false) {
-			$defaultLevel = self::FALLBACK_CLEARANCE;
-		}
-
-		$clearance = $this->ordinalOf(level: $defaultLevel);
+		$clearance = $this->defaultClearanceOrdinal();
 
 		$groupMap = $this->parseGroupMap(raw: $this->settingsService->getConfigValue('dossier_clearance_group_map', ''));
 		if (empty($groupMap) === true) {
 			return $clearance;
 		}
 
+		return $this->highestGroupClearance(user: $user, levels: ['groupMap' => $groupMap, 'clearance' => $clearance]);
+	}//end getUserClearanceOrdinal()
+
+	/**
+	 * The ordinal of the configured default clearance, `intern` when it is not a known level.
+	 *
+	 * @return int Clearance ordinal.
+	 */
+	private function defaultClearanceOrdinal(): int {
+		$defaultLevel = $this->settingsService->getConfigValue('dossier_default_clearance', self::FALLBACK_CLEARANCE);
+		if (in_array($defaultLevel, self::HIERARCHY, true) === false) {
+			$defaultLevel = self::FALLBACK_CLEARANCE;
+		}
+
+		return $this->ordinalOf(level: $defaultLevel);
+	}//end defaultClearanceOrdinal()
+
+	/**
+	 * The highest clearance among the user's mapped groups and the one given.
+	 *
+	 * @param IUser                 $user      The user whose clearance is resolved.
+	 * @param array{groupMap: array<string, string>, clearance: int} $levels Group id to clearance level, and the
+	 *                                                                      clearance so far.
+	 *
+	 * @return int Clearance ordinal.
+	 */
+	private function highestGroupClearance(IUser $user, array $levels): int {
+		['groupMap' => $groupMap, 'clearance' => $clearance] = $levels;
 		$userGroups = $this->groupManager->getUserGroupIds($user);
 		foreach ($userGroups as $groupId) {
 			if (isset($groupMap[$groupId]) === false) {
@@ -152,7 +175,7 @@ class InformatieobjectAccessGuard {
 		}
 
 		return $clearance;
-	}//end getUserClearanceOrdinal()
+	}//end highestGroupClearance()
 
 	/**
 	 * Determine whether a user may read an informatieobject.

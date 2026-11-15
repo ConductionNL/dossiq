@@ -61,12 +61,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeCaseTypesInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooReceivedAnswersInterface;
+use OCA\Dossiq\Kernel\Contracts\WooRequestIntakeInterface;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
-use OCA\Dossiq\Woo\WooReceivedAnswers;
-use OCA\Dossiq\Woo\WooRequestIntake;
 use Throwable;
 
 /**
@@ -94,6 +94,30 @@ class PortalContributionProvider {
 	// Public because {@see CitizenManifest} declares the collections and
 	// actions of this register and must name the same one.
 	public const REGISTER = 'dossiq';
+
+	/**
+	 * The action a supplier answers a message in their inbox with.
+	 *
+	 * @var string
+	 *
+	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
+	 */
+	public const SUPPLIER_REPLY_ACTION = 'replyToSupplierMessage';
+
+	/**
+	 * What a supplier may attach: what a resident may ({@see PortalConversation::ATTACHMENTS_FIELD}).
+	 *
+	 * @var array<string, mixed>
+	 *
+	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
+	 */
+	private const SUPPLIER_ATTACHMENTS_FIELD = [
+		'label' => 'Bijlagen',
+		'type' => 'file',
+		'multiple' => true,
+		'accept' => ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.odt'],
+		'maxSizeMb' => 20,
+	];
 
 	/**
 	 * What the citizen inbox projects, and where it keeps what portaliq's
@@ -454,25 +478,25 @@ class PortalContributionProvider {
 	 * {@see self::caseMessages()} needs the messages reader, optional for the
 	 * same reason.
 	 *
-	 * @param CaseTimeline|null              $timeline   The one reader of the public feed, or null.
+	 * @param CaseTimelineInterface|null              $timeline   The one reader of the public feed, or null.
 	 * @param PortalCaseDocuments|null       $documents  The documents a resident may see on a case, or null.
 	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
 	 * @param PortalCaseMessages|null        $messages   The resident's messages on a case, or null.
-	 * @param WooRequestIntake|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
-	 * @param IntakeCaseTypes|null           $caseTypes  The case type each case-opening action opens, or
+	 * @param WooRequestIntakeInterface|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
+	 * @param IntakeCaseTypesInterface|null           $caseTypes  The case type each case-opening action opens, or
 	 *                                                   null, which leaves those actions out.
-	 * @param SettingsService|null           $settings   Reads the text shown above Mijn zaken.
+	 * @param SettingsServiceInterface|null           $settings   Reads the text shown above Mijn zaken.
 	 */
 	public function __construct(
-		private readonly ?CaseTimeline $timeline = null,
+		private readonly ?CaseTimelineInterface $timeline = null,
 		private readonly ?PortalCaseDocuments $documents = null,
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 		private readonly ?PortalCaseSteps $steps = null,
 		private readonly ?PortalCaseMessages $messages = null,
-		private readonly ?WooRequestIntake $wooRequests = null,
-		private readonly ?IntakeCaseTypes $caseTypes = null,
-		private readonly ?SettingsService $settings = null,
+		private readonly ?WooRequestIntakeInterface $wooRequests = null,
+		private readonly ?IntakeCaseTypesInterface $caseTypes = null,
+		private readonly ?SettingsServiceInterface $settings = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()
@@ -496,7 +520,7 @@ class PortalContributionProvider {
 	public function receiveWooRequest(array $answers, string $receivedAt = ''): array {
 		if ($this->wooRequests === null) {
 			return array_merge(
-				WooReceivedAnswers::EMPTY_ANSWER,
+				WooReceivedAnswersInterface::EMPTY_ANSWER,
 				['outcome' => 'unavailable', 'message' => 'The Woo request intake is not available.']
 			);
 		}
@@ -721,7 +745,7 @@ class PortalContributionProvider {
 		$contribution = [
 			'label' => self::SUPPLIER_GROUP,
 			'collections' => $this->supplierCollections(),
-			'actions' => [],
+			'actions' => [$this->supplierReplyAction()],
 			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
 		];
 		// A COMPANY THAT SIGNS IN WITH eHERKENNING GETS `supplier` from
@@ -730,7 +754,11 @@ class PortalContributionProvider {
 		// `portalSubject`, so a company reads only what it filed itself
 		// (portal-case-list-declarations D1).
 		$contribution['collections'][] = (new CitizenManifest())->caseCollection();
-		$contribution['pages'] = $this->pages->forCollections(collections: $contribution['collections'], actions: [], group: self::SUPPLIER_GROUP);
+		$contribution['pages'] = $this->pages->forCollections(
+			collections: $contribution['collections'],
+			actions: $contribution['actions'],
+			group: self::SUPPLIER_GROUP
+		);
 
 		return $contribution;
 
@@ -786,9 +814,46 @@ class PortalContributionProvider {
 				'readAt' => 'readByRecipientAt',
 				'attachments' => 'attachmentRefs',
 			],
+			// A supplier answers a message as a resident does in the berichtenbox.
+			'reply' => [
+				'action' => self::SUPPLIER_REPLY_ACTION,
+				'subjectFrom' => 'subject',
+			],
 		];
 
 	}//end supplierInbox()
+
+	/**
+	 * The supplier's reply: a `supplierMessage` from the supplier to the buyer.
+	 *
+	 * Scoped by `supplierRef`, so portaliq stamps the signed-in supplier and
+	 * no supplier writes as another. The `direction` is the server's, so a
+	 * reply never arrives dressed as the buyer's message. `caseRef` is not
+	 * whitelisted: no supplier collection can guard the case it names.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/supplier-portal-reads-its-collections/specs/supplier-portal/spec.md
+	 */
+	private function supplierReplyAction(): array {
+		return [
+			'id' => self::SUPPLIER_REPLY_ACTION,
+			'type' => 'create',
+			'label' => 'Antwoorden',
+			'register' => self::REGISTER,
+			'schema' => 'supplierMessage',
+			'scopeField' => 'supplierRef',
+			'fields' => ['subject', 'body', 'attachmentRefs'],
+			'defaults' => ['direction' => 'inbound'],
+			'requiredFields' => ['body'],
+			'fieldConfigs' => [
+				'subject' => ['label' => 'Onderwerp'],
+				'body' => ['label' => 'Uw bericht', 'size' => 'large'],
+				'attachmentRefs' => self::SUPPLIER_ATTACHMENTS_FIELD,
+			],
+		];
+
+	}//end supplierReplyAction()
 
 	/**
 	 * Manifest for the `citizen` audience (the 'Mijn gemeente' portal).

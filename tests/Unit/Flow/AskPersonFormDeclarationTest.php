@@ -53,6 +53,7 @@ use OCA\Dossiq\Flow\DossiqAskPersonNode;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\OpenRegister\Service\Task\TaskForm;
+use OCA\OpenRegister\Service\Task\TaskFormFields;
 use OCA\OpenRegister\Service\Task\TaskFormReader;
 use OCP\IL10N;
 use OCP\IUser;
@@ -187,8 +188,7 @@ class AskPersonFormDeclarationTest extends TestCase {
 		);
 		$declaration = new TaskForm(
 			kind: TaskForm::KIND_FIELDS,
-			schema: 'case',
-			fields: [['field' => 'verslag', 'required' => true]]
+			native: new TaskFormFields(schema: 'case', fields: [['field' => 'verslag', 'required' => true]])
 		);
 
 		$reader = $this->reader();
@@ -226,7 +226,7 @@ class AskPersonFormDeclarationTest extends TestCase {
 			$reader = $this->reader();
 			$reader->expects($this->once())
 				->method('fromConfig')
-				->willReturn(new TaskForm(kind: TaskForm::KIND_FIELDS, schema: 'case'));
+				->willReturn(new TaskForm(kind: TaskForm::KIND_FIELDS, native: new TaskFormFields(schema: 'case')));
 			$reader->expects($this->once())->method('validate');
 
 			$this->node($reader)->validateConfig($this->step([$key => $value]));
@@ -288,7 +288,7 @@ class AskPersonFormDeclarationTest extends TestCase {
 	public function testTheValidatorsRefusalTravelsToo(): void {
 		$reader = $this->reader();
 		$reader->method('fromConfig')->willReturn(
-			new TaskForm(kind: TaskForm::KIND_FIELDS, schema: 'case', fields: [['field' => 'identifier', 'required' => true]])
+			new TaskForm(kind: TaskForm::KIND_FIELDS, native: new TaskFormFields(schema: 'case', fields: [['field' => 'identifier', 'required' => true]]))
 		);
 		$reader->method('validate')->willThrowException(
 			new UnexpectedValueException('Field "identifier" of schema "case" cannot be asked for: the schema marks it read-only, so a submitted value would be refused.')

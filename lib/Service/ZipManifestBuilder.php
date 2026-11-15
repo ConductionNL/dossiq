@@ -153,15 +153,7 @@ class ZipManifestBuilder {
 		$included = $this->filterByClearance(user: $user, documents: $documents);
 		$excluded = ($candidateCount - count($included));
 
-		$run = new DossierZipRun(zip: self::openArchive(targetPath: $targetPath), layout: $layout);
-
-		// Manifest.csv at the archive root.
-		$run->zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
-		foreach ($included as $doc) {
-			$this->addDocument(run: $run, doc: $doc);
-		}
-
-		$run->zip->close();
+		$this->writeArchive(run: new DossierZipRun(zip: self::openArchive(targetPath: $targetPath), layout: $layout), included: $included);
 
 		return [
 			'path' => $targetPath,
@@ -169,6 +161,24 @@ class ZipManifestBuilder {
 			'excluded' => $excluded,
 		];
 	}//end buildZip()
+
+	/**
+	 * Write the manifest and every included document into the archive, and close it.
+	 *
+	 * @param DossierZipRun                    $run      The archive being written.
+	 * @param array<int, array<string, mixed>> $included The documents the user is cleared for.
+	 *
+	 * @return void
+	 */
+	private function writeArchive(DossierZipRun $run, array $included): void {
+		// Manifest.csv at the archive root.
+		$run->zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
+		foreach ($included as $doc) {
+			$this->addDocument(run: $run, doc: $doc);
+		}
+
+		$run->zip->close();
+	}//end writeArchive()
 
 	/**
 	 * Create (or overwrite) the archive at a path.
@@ -203,12 +213,7 @@ class ZipManifestBuilder {
 			return;
 		}
 
-		$entryName = $this->buildEntryName(
-			doc: $doc,
-			fileName: $fileName,
-			layout: $run->layout,
-			usedNames: $run->usedNames,
-		);
+		$entryName = $this->buildEntryName(run: $run, doc: $doc);
 
 		try {
 			// Read one file at a time; content is released before the next iteration.
@@ -225,28 +230,29 @@ class ZipManifestBuilder {
 	/**
 	 * Compute the unique in-archive entry name for a document.
 	 *
-	 * @param array<string, mixed> $doc The document record.
-	 * @param string $fileName The base filename.
-	 * @param string $layout self::LAYOUT_PER_TYPE or self::LAYOUT_FLAT.
-	 * @param array<string, int> $usedNames Reference of already-used names for de-duplication.
+	 * Records the name in the run's already-used names for de-duplication.
+	 *
+	 * @param DossierZipRun        $run The archive being written, with its layout (self::LAYOUT_PER_TYPE or self::LAYOUT_FLAT).
+	 * @param array<string, mixed> $doc The document record, with its base `fileName`.
 	 *
 	 * @return string The unique entry name.
 	 */
-	private function buildEntryName(array $doc, string $fileName, string $layout, array &$usedNames): string {
+	private function buildEntryName(DossierZipRun $run, array $doc): string {
+		$fileName = (string)($doc['fileName'] ?? '');
 		$prefix = '';
-		if ($layout === self::LAYOUT_PER_TYPE) {
+		if ($run->layout === self::LAYOUT_PER_TYPE) {
 			$type = (string)($doc['informatieobjecttype'] ?? 'unknown');
 			$prefix = $this->sanitizeFolderName(name: $type) . '/';
 		}
 
 		$entry = $prefix . $this->sanitizeFileName(name: $fileName);
 
-		if (isset($usedNames[$entry]) === false) {
-			$usedNames[$entry] = 0;
+		if (isset($run->usedNames[$entry]) === false) {
+			$run->usedNames[$entry] = 0;
 			return $entry;
 		}
 
-		$usedNames[$entry]++;
+		$run->usedNames[$entry]++;
 
 		$base = $fileName;
 		$extension = '';
@@ -256,7 +262,7 @@ class ZipManifestBuilder {
 			$extension = substr($fileName, $dot);
 		}
 
-		return $prefix . $this->sanitizeFileName(name: $base) . '_' . $usedNames[$entry] . $extension;
+		return $prefix . $this->sanitizeFileName(name: $base) . '_' . $run->usedNames[$entry] . $extension;
 	}//end buildEntryName()
 
 	/**

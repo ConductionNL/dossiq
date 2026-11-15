@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\Access\CaseDecisionAccess;
+use OCA\Dossiq\Kernel\Contracts\CaseDecisionAccessInterface;
 use OCA\OpenRegister\Event\DecisionChangeRequestedEvent;
 use OCA\OpenRegister\Event\DecisionVisibilityRequestedEvent;
 use OCP\EventDispatcher\Event;
@@ -48,11 +48,11 @@ class CaseDecisionAccessListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseDecisionAccess $access The case-side answer.
+	 * @param CaseDecisionAccessInterface $access The case-side answer.
 	 * @param LoggerInterface    $logger Logger.
 	 */
 	public function __construct(
-		private readonly CaseDecisionAccess $access,
+		private readonly CaseDecisionAccessInterface $access,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -102,7 +102,7 @@ class CaseDecisionAccessListener implements IEventListener {
 		}
 
 		if ($verdict === false) {
-			$event->refuse(CaseDecisionAccess::REFUSAL);
+			$event->refuse(CaseDecisionAccessInterface::REFUSAL);
 		}
 	}//end answerChange()
 

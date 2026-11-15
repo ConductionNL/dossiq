@@ -1,0 +1,45 @@
+{
+  "schema": {
+    "app": "dossiq",
+    "register": "dossiq",
+    "slug": "evaluation"
+  },
+  "rows": [
+    {
+      "id": "5f1185ea-4445-58eb-b8fb-1c2642c02648",
+      "bid": "aea7d27a-c59b-50a3-b1f8-626c15985a0e",
+      "tender": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "evaluator": "Beoordelingscommissie jeugdzorg",
+      "criterionScores": {
+        "kwaliteit": 62.0,
+        "prijs": 38.2
+      },
+      "weightedTotal": 100.2,
+      "state": "submitted"
+    },
+    {
+      "id": "0fe8fcb5-aa82-5c11-aa29-7086a7948775",
+      "bid": "e9452ced-73bc-5494-837c-bf4d837fe5db",
+      "tender": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "evaluator": "Beoordelingscommissie jeugdzorg",
+      "criterionScores": {
+        "kwaliteit": 48.5,
+        "prijs": 40.0
+      },
+      "weightedTotal": 88.5,
+      "state": "submitted"
+    },
+    {
+      "id": "ef2ae890-a920-5aeb-b9c7-4adec6b74888",
+      "bid": "df479848-4fa6-5f86-a864-a87497d2d33c",
+      "tender": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+      "evaluator": "Beoordelingscommissie jeugdzorg",
+      "criterionScores": {
+        "kwaliteit": 55.0,
+        "prijs": 40.0
+      },
+      "weightedTotal": 95.0,
+      "state": "submitted"
+    }
+  ]
+}

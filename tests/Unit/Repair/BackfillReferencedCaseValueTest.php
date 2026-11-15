@@ -27,6 +27,8 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Repair\BackfillReferencedCaseValue
  * @covers \OCA\Dossiq\Repair\BackfillCaseStatusRole
+ * @uses \OCA\Dossiq\Repair\CaseValueBackfill
+ * @uses \OCA\Dossiq\Repair\PendingCaseValue
  */
 class BackfillReferencedCaseValueTest extends TestCase {
 

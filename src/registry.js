@@ -95,10 +95,15 @@ import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
 import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
+import ConsentRecordDialog from './dialogs/ConsentRecordDialog.vue'
+import ContactMomentDetailDialog from './dialogs/ContactMomentDetailDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+import DecisionTableAdviceDialog from './dialogs/DecisionTableAdviceDialog.vue'
 import DocumentAccessExceptionDialog from './dialogs/DocumentAccessExceptionDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
 import DocumentCompareDialog from './dialogs/DocumentCompareDialog.vue'
+import DsoCollaborationDialog from './dialogs/DsoCollaborationDialog.vue'
+import DsoForwardDialog from './dialogs/DsoForwardDialog.vue'
 import FieldCatalogueDialog from './dialogs/FieldCatalogueDialog.vue'
 import FileContactMomentDialog from './dialogs/FileContactMomentDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
@@ -108,13 +113,18 @@ import GenerateDocumentDialog from './dialogs/GenerateDocumentDialog.vue'
 import LinkProgrammeDialog from './dialogs/LinkProgrammeDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import NoticeOfDefaultDialog from './dialogs/NoticeOfDefaultDialog.vue'
+import PartnerAskDialog from './dialogs/PartnerAskDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 import RecordStepsDialog from './dialogs/RecordStepsDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/specs/task-management/spec.md
 import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
 import RemindDialog from './dialogs/RemindDialog.vue'
+import RowRecordActionDialog from './dialogs/RowRecordActionDialog.vue'
 import SearchPlanDialog from './dialogs/SearchPlanDialog.vue'
+import TaskAssignDialog from './dialogs/TaskAssignDialog.vue'
+// @spec openspec/changes/handler-asks-the-applicant-for-missing-information/specs/termijn-pause-extension/spec.md#requirement-the-handler-asks-for-missing-information-from-the-case-page-req-avr-05
+import AanvullingVragenModal from './modals/AanvullingVragenModal.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 import DeelzaakCreateModal from './modals/DeelzaakCreateModal.vue'
 // The Documents tab's upload dialog and bulk-action dialog
@@ -154,6 +164,7 @@ import WorkloadTeamHeading from './views/WorkloadTeamHeading.vue'
 import { leafTab } from './integrations/leafTabs.js'
 import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 import {
+	exportAnonymisedSelection,
 	extendTermSelection,
 	reassignSelection,
 	resumeSelection,
@@ -165,7 +176,7 @@ import { declareCaseMajor, startCaseConversation } from './utils/caseConversatio
 import { toggleCaseFollow } from './utils/caseFollow.js'
 import { caseStatusTargets, moveCaseStatus } from './utils/caseStatusBoardMoves.js'
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
-import { openCaseOfDocument } from './utils/contactDocuments.js'
+import { openCaseOfDocument, openDocumentOfDispatch } from './utils/contactDocuments.js'
 import { openIntegriqConnections } from './utils/integriqConnections.js'
 import { prepareNoticePayout } from './utils/noticePayout.js'
 import { readFileAsMessage } from './utils/savedMail.js'
@@ -408,12 +419,36 @@ const registry = {
 		_note: "CaseDetail `case-sub-cases` list's create action. Creates the sub-case through /api/deelzaken (validate, then derive), so it inherits what case.parentCase declares; the list's own create form would save the case directly and inherit nothing. parentCase arrives as the resolved `@objectId`; the modal reads the parent and its case type itself and says why when the parent cannot take a sub-case.",
 	},
 
+	// @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
+	DecisionTableAdviceDialog: {
+		kind: 'modal',
+		component: DecisionTableAdviceDialog,
+		propsSchema: {},
+		_note: "CaseDetail `advice-from-decision-table` header action, board DqHandhaving (REQ-LHS-CASE-01). Reads the inputs and outcomes of the decision table the case type names from /api/decision-advice/case/{caseId}/form, asks /api/decision-advice/recommend (the server stores the advice on the case) and records acceptance or a deviation with a reason through /api/decision-advice/override, which refuses a deviation without one. Named for what it does, not for a procedure: the case type's configuration decides which table it asks.",
+	},
+
 	// @spec openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling/spec.md#requirement-a-handler-registers-a-notice-of-default-on-the-case-req-ing-case-01
 	NoticeOfDefaultDialog: {
 		kind: 'modal',
 		component: NoticeOfDefaultDialog,
 		propsSchema: {},
 		_note: "CaseDetail `notice-of-default-register` header action, boards DqZaak and DqTermijnen. Posts to /api/notices-of-default with the case id, so the server picks the case's statutory decision term, checks the caller may change the case, and refuses a notice while the term runs (409, nothing stored). A form over the noticeOfDefault schema would store a premature notice and start no accrual.",
+	},
+
+	// @spec openspec/changes/vth-cases-run-end-to-end
+	DsoForwardDialog: {
+		kind: 'modal',
+		component: DsoForwardDialog,
+		propsSchema: {},
+		_note: "CaseDetail `dso-forward` header action, on a case whose source is the DSO. Posts to /api/dso/cases/{caseId}/doorsturen, where the server checks the caller may change the case, sends the forward and records it on the case history; a declared form over a schema could not send anything to the DSO.",
+	},
+
+	// @spec openspec/changes/vth-cases-run-end-to-end
+	DsoCollaborationDialog: {
+		kind: 'modal',
+		component: DsoCollaborationDialog,
+		propsSchema: {},
+		_note: "CaseDetail `dso-collaborate` header action, on a case whose source is the DSO. Posts to /api/dso/cases/{caseId}/samenwerking, where the server checks the caller may change the case and starts the collaboration request with the other competent authority.",
 	},
 
 	LogContactDialog: {
@@ -596,6 +631,20 @@ const registry = {
 		propsSchema: {},
 		_note: 'CaseDetail Communication tab, the contact moments from pipelinq: files one moment on another case too. Opened from the record list row actions with `caseId` and the moment as `row`; pipelinq records who filed it and when, and its refusal is shown in the dialog. Asks the page to refresh on success, so the list reads again.',
 	},
+	// @spec openspec/changes/capability-rows-say-the-whole-capability/specs/party-pages/spec.md#requirement-the-contact-page-lists-the-contacts-documents-and-communication-req-crs-04
+	ContactMomentDetailDialog: {
+		kind: 'modal',
+		component: ContactMomentDetailDialog,
+		propsSchema: {},
+		_note: 'The contact and organisation pages\' Contact moments panels: opens the moment a row names, read-only. Opened by the open-moment row action with the moment as `row`. No contact-moment page exists, and a modal over the list keeps the agent on the contact. A field the reader may not see arrives empty from OpenRegister and is left out rather than shown blank.',
+	},
+	// @spec openspec/changes/capability-rows-say-the-whole-capability/tasks.md
+	TaskAssignDialog: {
+		kind: 'modal',
+		component: TaskAssignDialog,
+		propsSchema: {},
+		_note: 'TaskDetail `task-assign` header action (REQ-TASK-003): assign the task to a colleague (engine `assign`) or to a team (engine `offer`, the group as candidate pool). The engine decides who may and offers a pool only to a task nobody holds; its refusal is shown as-is. Shown while the task is open (available, enabled, active). Reads the task from the route, because open-modal forwards `@objectId` verbatim.',
+	},
 	LinkProgrammeDialog: {
 		kind: 'modal',
 		component: LinkProgrammeDialog,
@@ -608,6 +657,15 @@ const registry = {
 		component: CasePlanFollowUpDialog,
 		propsSchema: {},
 		_note: 'CaseDetail Actions menu and the Related cases tab: a case type, a date and a title, posted to /plan, which writes ONE scheduled flow creating the case on that date. The earliest date is tomorrow, because a schedule fires on a cron minute and a follow-up planned for today would fire in a few hours or not at all depending on the clock. Single-shot is kept by PlannedFollowUpSweepJob, not by the cron: five cron fields cannot say "once" or "three times". A Repeat picker turns it into a series (planned-case-series): the recurrence becomes the cron fields, the end becomes the sweep\'s stop rule, and the Related tab grows a series row with a Stop series action. The form lives here and not in the manifest: an `open-modal` header action carries a target and props only, and the five fields (case type, date, title, Repeat, Ends) are bound to each other, since the end fields appear only once a repeat is chosen and no `visibleWhen` on a header action can say that. What the manifest does decide is that the gesture is a modal rather than a `handler`, because a handler action resolves `action.handler` against `effectiveManifest.actions`, a JSON map that cannot hold a function, so the entry would warn to the console and do nothing when clicked. The manifest entry itself carries no `_note`: the v2 schema sets `additionalProperties: false` on a header action, so the rationale belongs in this file.',
+	},
+
+	// --- Record a consent on the case (social-domain-consent-and-safeguards 2.1). ---
+	// @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	ConsentRecordDialog: {
+		kind: 'modal',
+		component: ConsentRecordDialog,
+		propsSchema: {},
+		_note: 'The Add of the CaseDetail consents widget: who gave the consent, to sharing with which party, for which purpose, from and until when, saved as one `toestemming` object. That is the record CaseTransferConsentGate reads before a share, so a consent recorded here lets a share with the named party through and its revoke (the widget row action, a patch of `withdrawn`) stops the next one. It reads the case from the route when no case id is passed.',
 	},
 
 	// --- Remind a colleague about this case (case-reminder-as-task, row 8.4). ---
@@ -645,6 +703,15 @@ const registry = {
 		_note: "Writes one portaalBericht from the handler to the applicant's portal inbox. Opened by the CaseDetail `message-applicant` header action (visible only on a case with a portalSubject) and by Reply on a resident's message in the timeline tab, which closes that message's follow-up on `sent`. recipientRef is the case's portalSubject, never a user id: the inbox is scoped on it. caseId may arrive as the unresolved `@objectId` token and the route answers instead, as for BerichtenboxComposeDialog.",
 	},
 
+	// --- Ask a partner, the CaseDetail `ask-partner` header action (capability-rows-said-and-planned T04). ---
+	// @spec openspec/specs/partner-tasks-in-the-portal/spec.md (portaliq, REQ-PTP-002)
+	PartnerAskDialog: {
+		kind: 'modal',
+		component: PartnerAskDialog,
+		propsSchema: {},
+		_note: "Asks a partner (an advisory body, a supplier) for something from the case through portaliq's POST /api/partner-tasks/ask, which refuses a handler without write on the case, finds or pre-provisions the partner's portal account from the KvK number and e-mail address, and puts the task in the partner's portal inbox with the due date and upload rules frozen on it. Opened by the CaseDetail `ask-partner` header action. A refusal keeps the dialog open with the reason; a 404 says portaliq is not installed. caseId may arrive as the unresolved `@objectId` token and the route answers instead.",
+	},
+
 	// --- A record written through steps, a CaseDetail header action. ---
 	// @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
 	RecordStepsDialog: {
@@ -675,6 +742,20 @@ const registry = {
 		component: DocumentMetadataDialog,
 		propsSchema: {},
 		_note: "Upload metadata dialog. Opened by the Documents tab's object-list `dropZone`/upload-button action as `type: open-modal`, which hands over `props.files` (the dropped or picked File[]) the same way a header action's `open-modal` props arrive -- verbatim, no `@`-token resolution. `caseId` is passed for the same reason GenerateDocumentDialog's is, and falls back to the route when it still holds the literal token. Self-sufficient: fetches the informatieobjecttype catalog and performs the upload itself, since there is no parent DossierTab any more to do either.",
+	},
+	// @spec openspec/changes/handler-asks-the-applicant-for-missing-information/specs/termijn-pause-extension/spec.md#requirement-the-handler-asks-for-missing-information-from-the-case-page-req-avr-05
+	AanvullingVragenModal: {
+		kind: 'modal',
+		component: AanvullingVragenModal,
+		propsSchema: {},
+		_note: "Ask the applicant for missing information (board DqAanvullingVragen, REQ-AVR-05). Opened by the CaseDetail header action `request-information` as `type: open-modal`, offered while the case is open, not suspended and has no open aanvullingsverzoek. It posts to `POST /api/cases/{caseId}/information-request`, which sends the letter, suspends the statutory term and writes the record as one act; a refusal is shown as the server's own sentence and the form reports no success of its own. It reads the case type's pause reasons from the lifecycle answer and its `maxSuspensionDays` to bound the term; the server enforces both again.",
+	},
+	// @spec openspec/changes/case-goals/specs/case-goals/spec.md
+	RowRecordActionDialog: {
+		kind: 'modal',
+		component: RowRecordActionDialog,
+		propsSchema: {},
+		_note: "The library's CnActionDialog acting on one record-list row. A `rowActions` open-modal entry hands the clicked row over as `row` while its declared props resolve only the page's tokens; this passes the row on as CnActionDialog's `object`, so a request URL names both the page record (`@objectId`) and the row (`@object.id`). First used by the case-goals list's Close entry (POST /api/cases/{caseId}/goals/{goalId}/close, which checks the case update right first). The configuration (fields, reason, confirm, done text) is the manifest's.",
 	},
 	// @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	FileRequestDialog: {
@@ -1018,6 +1099,13 @@ const registry = {
 		handler: toggleCaseFollow,
 		_note: "The Queue's and Cases' follow row action, which replaced the star (one-follow-control). ONE entry rather than a follow and an unfollow, because `@self.watching` rides every row so the click knows which way to go. The gesture is PUT to follow and DELETE to stop on one path, and no declarative write takes two methods.",
 	},
+	// The anonymised export of the selected cases (social-domain-consent-and-safeguards 4.1).
+	// @spec openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	exportAnonymisedSelection: {
+		kind: 'handler',
+		handler: exportAnonymisedSelection,
+		_note: 'The Cases page\'s Export anonymised bulk action. The library export menu (CSV and Excel) streams OpenRegister\'s export leaf and has no anonymised variant, so this posts the selected ids to POST /api/cases/anonymised-export, which removes or generalises each case type\'s identifyingFields and writes the processing-log row, and saves the answer as CSV. A refusal is shown and nothing falls back to the plain export.',
+	},
 	// @spec openspec/specs/case-management/spec.md
 	reassignSelection: {
 		kind: 'handler',
@@ -1061,6 +1149,12 @@ const registry = {
 		kind: 'handler',
 		handler: openCaseOfDocument,
 		_note: "The contact and organisation Documents panels' open-case row action. A function because the row is a `dispatch` and the destination is its CASE: `rowRoute` pushes the row's own id, which would navigate to a case page for a uuid no case has, and that looks exactly like a deleted case rather than like a bug.",
+	},
+	// @spec openspec/changes/capability-rows-say-the-whole-capability/specs/party-pages/spec.md#requirement-the-contact-page-lists-the-contacts-documents-and-communication-req-crs-04
+	openDocumentOfDispatch: {
+		kind: 'handler',
+		handler: openDocumentOfDispatch,
+		_note: "The contact and organisation Documents panels' open-document row action, beside open-case. A function because the row is a `dispatch` and the document is a field of it: a Nextcloud file opens at /f/{fileId}, an external document at its http(s) link, and a row naming neither does nothing rather than open the wrong thing.",
 	},
 	// @spec openspec/specs/case-management/spec.md
 	startCaseConversation: {

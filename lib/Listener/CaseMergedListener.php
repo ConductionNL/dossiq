@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\CaseMergeService;
+use OCA\Dossiq\Kernel\Contracts\CaseMergeServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -55,11 +55,11 @@ class CaseMergedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseMergeService $mergeService The dossiq consequences of a merge.
+	 * @param CaseMergeServiceInterface $mergeService The dossiq consequences of a merge.
 	 * @param LoggerInterface  $logger       Logger.
 	 */
 	public function __construct(
-		private readonly CaseMergeService $mergeService,
+		private readonly CaseMergeServiceInterface $mergeService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -90,20 +90,20 @@ class CaseMergedListener implements IEventListener {
 		$isReversal = ($event->isReversal() === true);
 
 		foreach ($mergedIds as $mergedId) {
-			$this->apply(mergedId: (string)$mergedId, survivorId: $survivorId, isReversal: $isReversal);
+			$this->apply(merge: ['mergedId' => (string)$mergedId, 'survivorId' => $survivorId], isReversal: $isReversal);
 		}
 	}//end handle()
 
 	/**
 	 * Apply one direction of the merge to one case.
 	 *
-	 * @param string $mergedId   The case that was merged away.
-	 * @param string $survivorId The surviving case.
-	 * @param bool   $isReversal True when the platform reversed the merge.
+	 * @param array{mergedId: string, survivorId: string} $merge      The case that was merged away and the surviving case.
+	 * @param bool                                        $isReversal True when the platform reversed the merge.
 	 *
 	 * @return void
 	 */
-	private function apply(string $mergedId, string $survivorId, bool $isReversal): void {
+	private function apply(array $merge, bool $isReversal): void {
+		['mergedId' => $mergedId, 'survivorId' => $survivorId] = $merge;
 		try {
 			if ($isReversal === true) {
 				$this->mergeService->applyReversal(mergedId: $mergedId, survivorId: $survivorId);

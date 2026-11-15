@@ -32,9 +32,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\ComplaintAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -55,16 +57,16 @@ class ComplaintCategoryController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param SettingsService $settingsService Settings service
-	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
+	 * @param SettingsServiceInterface $settingsService Settings service
+	 * @param ComplaintAccessGuardInterface $accessGuard Shared complaint authorization guard
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly SettingsService $settingsService,
-		private readonly ComplaintAccessGuard $accessGuard,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly ComplaintAccessGuardInterface $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -115,16 +117,9 @@ class ComplaintCategoryController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function createCategory(): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
-		}
-
-		$this->accessGuard->requireCoordinator(userId: $userId);
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		$objectService = $this->requireCategoryWriter();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
 		}
 
 		try {
@@ -132,7 +127,10 @@ class ComplaintCategoryController extends Controller {
 			$data = array_diff_key($data, ['id' => true, 'uuid' => true, '@self' => true]);
 			$register = $this->settingsService->getConfigValue('register');
 			$schema = $this->settingsService->getConfigValue('complaint_category_schema');
-			$category = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+			$category = $objectService->saveObject(
+				object: $data,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 
 			if (is_array($category) === true) {
 				return new JSONResponse($category, Http::STATUS_CREATED);
@@ -156,6 +154,39 @@ class ComplaintCategoryController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function updateCategory(string $id): JSONResponse {
+		$objectService = $this->requireCategoryWriter();
+		if ($objectService instanceof JSONResponse) {
+			return $objectService;
+		}
+
+		try {
+			$data = $this->accessGuard->parseBody();
+			$register = $this->settingsService->getConfigValue('register');
+			$schema = $this->settingsService->getConfigValue('complaint_category_schema');
+			$result = $objectService->saveObject(
+				object: $data,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+			);
+
+			if (is_array($result) === true) {
+				return new JSONResponse($result);
+			}
+
+			return new JSONResponse(array_merge($data, ['id' => $id]));
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end updateCategory()
+
+	/**
+	 * The object service for a coordinator writing categories, or the refusal.
+	 *
+	 * Not signed in is a 401, a non-coordinator is refused by the guard, and
+	 * without OpenRegister nothing can be written.
+	 *
+	 * @return object|JSONResponse The object service, or the refusal.
+	 */
+	private function requireCategoryWriter(): object {
 		$userId = $this->accessGuard->currentUid();
 		if ($userId === '') {
 			return $this->accessGuard->notAuthenticated();
@@ -168,19 +199,6 @@ class ComplaintCategoryController extends Controller {
 			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
-		try {
-			$data = $this->accessGuard->parseBody();
-			$register = $this->settingsService->getConfigValue('register');
-			$schema = $this->settingsService->getConfigValue('complaint_category_schema');
-			$result = $objectService->saveObject(object: $data, register: $register, schema: $schema, uuid: (string)$id);
-
-			if (is_array($result) === true) {
-				return new JSONResponse($result);
-			}
-
-			return new JSONResponse(array_merge($data, ['id' => $id]));
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-	}//end updateCategory()
+		return $objectService;
+	}//end requireCategoryWriter()
 }//end class

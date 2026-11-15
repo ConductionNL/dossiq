@@ -22,6 +22,8 @@ use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Open Woo requests on the backfilled basis flow move onto the shipped one.
@@ -120,7 +122,11 @@ class RebindCasesOffTheBasisFlowTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, ?array $extend = null, bool $files = false, ?string $register = null, ?string $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$extend = $options?->extend;
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ($this->test->rows[(string)$schema][$id] ?? null);
 			}
 
@@ -133,7 +139,11 @@ class RebindCasesOffTheBasisFlowTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved row.
 			 */
-			public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->rows[(string)$schema][(string)$uuid] = ['id' => (string)$uuid] + $object;
 				$this->test->saves[] = [(string)$schema, (string)$uuid];
 

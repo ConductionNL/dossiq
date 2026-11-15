@@ -51,6 +51,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\PartnerMigrationServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\Organisation;
 use OCP\App\IAppManager;
@@ -63,7 +64,7 @@ use Throwable;
  *
  * @spec openspec/specs/partner-organisations/spec.md
  */
-class PartnerMigrationService {
+class PartnerMigrationService implements PartnerMigrationServiceInterface {
 
 	use SearchesObjects;
 
@@ -134,26 +135,63 @@ class PartnerMigrationService {
 
 		$objectService = $this->settingsService->getObjectService();
 		$mapper = $this->getOrganisationMapper();
-		if ($objectService === null || $mapper === null) {
-			$this->logger->warning('Dossiq: partner migration skipped — OpenRegister organisation services unavailable');
+		if ($this->servicesMissing(objectService: $objectService, mapper: $mapper) === true) {
 			return $summary;
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: self::REGISTER_SLUG,
-				schema: self::PARTNER_SCHEMA_SLUG,
-				filters: ['_limit' => 5000],
-			);
+			$rows = $this->partnerRows(objectService: $objectService);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: partner migration found no partnerOrganization rows (schema absent or empty)',
-				['exception' => $e->getMessage()],
-			);
+			$this->logger->warning('Dossiq: partner migration found no partnerOrganization rows (schema absent or empty)', ['exception' => $e->getMessage()]);
 			return $summary;
 		}
 
+		return $this->migrateRows(mapper: $mapper, rows: $rows);
+	}//end migrate()
+
+	/**
+	 * Whether the object service or the organisation mapper is missing, logged when so.
+	 *
+	 * @param object|null $objectService OpenRegister's object service.
+	 * @param object|null $mapper        OpenRegister's organisation mapper.
+	 *
+	 * @return bool True when the migration cannot run.
+	 */
+	private function servicesMissing(?object $objectService, ?object $mapper): bool {
+		if ($objectService === null || $mapper === null) {
+			$this->logger->warning('Dossiq: partner migration skipped — OpenRegister organisation services unavailable');
+			return true;
+		}
+
+		return false;
+	}//end servicesMissing()
+
+	/**
+	 * Read every partnerOrganization row.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return array<int, mixed> The rows.
+	 */
+	private function partnerRows(object $objectService): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: self::REGISTER_SLUG,
+			schema: self::PARTNER_SCHEMA_SLUG,
+			filters: ['_limit' => 5000],
+		);
+	}//end partnerRows()
+
+	/**
+	 * Migrate each partner row and tally the outcomes.
+	 *
+	 * @param object               $mapper  OpenRegister's organisation mapper.
+	 * @param array<int, mixed>    $rows    The partnerOrganization rows.
+	 *
+	 * @return array<string, mixed> The outcome tally.
+	 */
+	private function migrateRows(object $mapper, array $rows): array {
+		$summary = self::EMPTY_SUMMARY;
 		$summary['total'] = count($rows);
 		foreach ($rows as $row) {
 			$summary = self::tally(summary: $summary, result: $this->migrateOne(mapper: $mapper, row: $this->toRow(value: $row)));
@@ -162,7 +200,7 @@ class PartnerMigrationService {
 		$this->logComplete(summary: $summary);
 
 		return $summary;
-	}//end migrate()
+	}//end migrateRows()
 
 	/**
 	 * Log the counts of a finished run.
@@ -222,6 +260,33 @@ class PartnerMigrationService {
 	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	private function migrateOne(object $mapper, array $row): ?array {
+		$partnerUuid = $this->partnerUuidOf(row: $row);
+		if ($partnerUuid === '') {
+			return null;
+		}
+
+		$slug = trim((string)($row['slug'] ?? ''));
+
+		try {
+			return $this->migratePartner(mapper: $mapper, partner: new PartnerRow(row: $row, partnerUuid: $partnerUuid, slug: $slug));
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: partner migration failed for one row', ['partner' => $partnerUuid, 'slug' => $slug, 'exception' => $e->getMessage()],
+			);
+			return null;
+		}//end try
+	}//end migrateOne()
+
+	/**
+	 * The partner's uuid, warning when the row has none.
+	 *
+	 * @param array<string, mixed> $row The partner object.
+	 *
+	 * @return string The uuid, or '' when the row carries no id.
+	 *
+	 * @spec openspec/specs/partner-organisations/spec.md
+	 */
+	private function partnerUuidOf(array $row): string {
 		$partnerUuid = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
 		if ($partnerUuid === '') {
 			// 🔴 The uuid is the idempotency key, NOT the slug.
@@ -238,41 +303,40 @@ class PartnerMigrationService {
 			// second would be skipped as "already migrated", silently merging
 			// two organisations into one.
 			$this->logger->warning('Dossiq: partner migration skipped a row with no id');
-			return null;
 		}
 
-		$slug = trim((string)($row['slug'] ?? ''));
+		return $partnerUuid;
+	}//end partnerUuidOf()
 
-		try {
-			$existing = OrganisationLookup::byUuid(mapper: $mapper, uuid: $partnerUuid);
-			if ($existing !== null) {
-				return [
-					'created' => false,
-					'partnerUuid' => $partnerUuid,
-					'organisationUuid' => (string)$existing->getUuid(),
-				];
-			}
+	/**
+	 * Find the partner's Organisation, or create it.
+	 *
+	 * @param object     $mapper  OR OrganisationMapper.
+	 * @param PartnerRow $partner The partner object, its uuid and its slug.
+	 *
+	 * @return array{created:bool, partnerUuid:string, organisationUuid:string} Result.
+	 *
+	 * @throws Throwable When the lookup or the insert fails.
+	 *
+	 * @spec openspec/specs/partner-organisations/spec.md
+	 */
+	private function migratePartner(object $mapper, PartnerRow $partner): array {
+		$partnerUuid = $partner->partnerUuid;
+		$slug = $partner->slug;
+		$existing = OrganisationLookup::byUuid(mapper: $mapper, uuid: $partnerUuid);
+		if ($existing !== null) {
+			return ['created' => false, 'partnerUuid' => $partnerUuid, 'organisationUuid' => (string)$existing->getUuid()];
+		}
 
-			$saved = $mapper->insert($this->buildOrganisation(row: $row, slug: $slug, partnerUuid: $partnerUuid));
+		$saved = $mapper->insert($this->buildOrganisation(partner: $partner));
 
-			$this->logger->info(
-				'Dossiq: migrated partner to OR Organisation',
-				['partner' => $partnerUuid, 'organisation' => (string)$saved->getUuid(), 'slug' => $slug],
-			);
+		$this->logger->info(
+			'Dossiq: migrated partner to OR Organisation',
+			['partner' => $partnerUuid, 'organisation' => (string)$saved->getUuid(), 'slug' => $slug],
+		);
 
-			return [
-				'created' => true,
-				'partnerUuid' => $partnerUuid,
-				'organisationUuid' => (string)$saved->getUuid(),
-			];
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: partner migration failed for one row',
-				['partner' => $partnerUuid, 'slug' => $slug, 'exception' => $e->getMessage()],
-			);
-			return null;
-		}//end try
-	}//end migrateOne()
+		return ['created' => true, 'partnerUuid' => $partnerUuid, 'organisationUuid' => (string)$saved->getUuid()];
+	}//end migratePartner()
 
 	/**
 	 * Build an Organisation from a partner row.
@@ -282,15 +346,15 @@ class PartnerMigrationService {
 	 * qualityStatus — are the reason dossiq kept its own copy, and are why this
 	 * migration could not have been written before Organisation grew them.
 	 *
-	 * @param array<string, mixed> $row         The partner object.
-	 * @param string               $slug        The partner slug.
-	 * @param string               $partnerUuid The partner uuid, preserved.
+	 * @param PartnerRow $partner The partner object, its slug and its uuid, preserved.
 	 *
 	 * @return Organisation The unsaved Organisation.
 	 *
 	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
-	private function buildOrganisation(array $row, string $slug, string $partnerUuid): Organisation {
+	private function buildOrganisation(PartnerRow $partner): Organisation {
+		$row = $partner->row;
+		$partnerUuid = $partner->partnerUuid;
 		$organisation = new Organisation();
 
 		// Preserved so anything already pointing at the partner by id keeps
@@ -300,6 +364,34 @@ class PartnerMigrationService {
 			$organisation->setUuid($partnerUuid);
 		}
 
+		[$resolvedSlug, $name] = $this->slugAndName(partner: $partner);
+
+		$organisation->setSlug($resolvedSlug);
+		$organisation->setName($name);
+		$organisation->setType(self::PARTNER_TYPE);
+
+		// An external party, by definition: a ketenpartner is somebody else's
+		// organisation that this instance shares cases WITH.
+		$organisation->setIsLocalTenant(false);
+
+		$this->applyActivity(organisation: $organisation, row: $row);
+
+		$this->copyOptionalFields(row: $row, organisation: $organisation);
+
+		return $organisation;
+	}//end buildOrganisation()
+
+	/**
+	 * The slug and the name the Organisation gets.
+	 *
+	 * @param PartnerRow $partner The partner object, its uuid and its slug.
+	 *
+	 * @return array{0: string, 1: string} The resolved slug and the name.
+	 */
+	private function slugAndName(PartnerRow $partner): array {
+		$row = $partner->row;
+		$slug = $partner->slug;
+		$partnerUuid = $partner->partnerUuid;
 		// A partner may carry no slug. Organisation wants one, so it is derived
 		// from the uuid rather than the name: derived-from-name collides for
 		// two partners sharing a name, and a collision here is a merge.
@@ -313,14 +405,18 @@ class PartnerMigrationService {
 			$name = $resolvedSlug;
 		}
 
-		$organisation->setSlug($resolvedSlug);
-		$organisation->setName($name);
-		$organisation->setType(self::PARTNER_TYPE);
+		return [$resolvedSlug, $name];
+	}//end slugAndName()
 
-		// An external party, by definition: a ketenpartner is somebody else's
-		// organisation that this instance shares cases WITH.
-		$organisation->setIsLocalTenant(false);
-
+	/**
+	 * Set the Organisation active or suspended from the partner's isActive.
+	 *
+	 * @param Organisation         $organisation The Organisation being built.
+	 * @param array<string, mixed> $row          The partner object.
+	 *
+	 * @return void
+	 */
+	private function applyActivity(Organisation $organisation, array $row): void {
 		$active = (bool)($row['isActive'] ?? true);
 		$organisation->setActive($active);
 		$status = 'suspended';
@@ -329,11 +425,7 @@ class PartnerMigrationService {
 		}
 
 		$organisation->setStatus($status);
-
-		$this->copyOptionalFields(row: $row, organisation: $organisation);
-
-		return $organisation;
-	}//end buildOrganisation()
+	}//end applyActivity()
 
 	/**
 	 * Copy the fields a partner may or may not carry.
@@ -401,7 +493,6 @@ class PartnerMigrationService {
 
 		return [];
 	}//end toRow()
-
 
 	/**
 	 * Resolve OR's OrganisationMapper from the DI container.

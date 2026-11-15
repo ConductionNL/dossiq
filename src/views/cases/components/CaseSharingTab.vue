@@ -59,6 +59,8 @@
 			@createFederatedShare="createFederatedShareDialogOpen = true"
 			@revokeFederated="revokeFederatedShare"
 			@openActivity="openActivity" />
+		<!-- Access for a named user or group on this instance (REQ-CRS-43). -->
+		<CaseAccessGrants :objectId="objectId" />
 
 		<CreateAccessLinkDialog
 			:open="createAccessLinkDialogOpen"
@@ -129,7 +131,9 @@ import CreateAccessLinkDialog from '../../../dialogs/CreateAccessLinkDialog.vue'
 import CreateFederatedShareDialog from '../../../dialogs/CreateFederatedShareDialog.vue'
 import CreateShareDialog from '../../../dialogs/CreateShareDialog.vue'
 import FederatedActivityPanel from '../../../dialogs/FederatedActivityPanel.vue'
+import CaseAccessGrants from './CaseAccessGrants.vue'
 import ShareTab from './ShareTab.vue'
+import { caseTab } from '../../../mixins/caseTab.js'
 import { useObjectStore } from '../../../store/modules/object.js'
 import {
 	createFederatedShareEndpoint,
@@ -147,18 +151,13 @@ export default {
 		NcNoteCard,
 		CreateAccessLinkDialog,
 		CreateShareDialog,
+		CaseAccessGrants,
 		CaseTransferDialog,
 		CreateFederatedShareDialog,
 		FederatedActivityPanel,
 	},
 
-	props: {
-		/** Case UUID; forwarded by CnObjectSidebar's sharedTabProps. */
-		objectId: {
-			type: String,
-			default: '',
-		},
-	},
+	mixins: [caseTab],
 
 	data() {
 		return {

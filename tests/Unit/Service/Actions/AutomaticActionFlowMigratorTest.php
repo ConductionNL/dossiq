@@ -697,4 +697,100 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 			$summary['rows']
 		);
 	}
+
+	/**
+	 * A config handed over already decoded is used as-is, not re-decoded.
+	 *
+	 * @return void
+	 */
+	public function testAnAlreadyDecodedConfigIsTranslatedLikeItsJson(): void {
+		$flowService = $this->flowServiceFake();
+		$migrator = $this->migrator(
+			[
+				[
+					'tenantId' => 'tenant-a',
+					'slug' => 'send-decision-email',
+					'title' => 'Send decision email',
+					'type' => 'sendEmail',
+					'config' => ['recipientRef' => 'indiener', 'subjectTemplate' => 'Uw besluit', 'bodyTemplate' => 'Zie {{case.title}}'],
+				],
+			],
+			$flowService,
+			['openregister.send-email'],
+		);
+
+		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
+
+		$this->assertSame(1, $summary['created']);
+		$this->assertSame(
+			['recipients' => ['{{ indiener }}'], 'externalRecipients' => 'object', 'subject' => 'Uw besluit', 'body' => 'Zie {{ title }}'],
+			$flowService->saves[0]['document']['nodes'][1]['config']
+		);
+	}
+
+	/**
+	 * A tenantId or slug that is present but empty is as unidentifiable as a missing one.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyTenantIdOrSlugIsUnidentifiable(): void {
+		$flowService = $this->flowServiceFake();
+		$migrator = $this->migrator(
+			[
+				['tenantId' => '', 'slug' => 's', 'title' => 'T', 'type' => 'sendEmail'],
+				['tenantId' => 't', 'slug' => '', 'title' => 'T', 'type' => 'sendEmail'],
+			],
+			$flowService,
+			['openregister.send-email'],
+		);
+
+		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
+
+		$this->assertSame(2, $summary['failed']);
+		$this->assertSame(['(unidentifiable)', '(unidentifiable)'], array_column($summary['rows'], 'marker'));
+		$this->assertSame([], $flowService->saves);
+	}
+
+	/**
+	 * A listing that does not come back as an array reads as no actions at all.
+	 *
+	 * @return void
+	 */
+	public function testANonArrayListingMigratesNothing(): void {
+		$objectService = new class {
+			public function runAs(IUser $user, callable $operation) {
+				return $operation();
+			}
+
+			public function findAll(array $config): ?array {
+				return null;
+			}
+		};
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$flowService = $this->flowServiceFake();
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($flowService);
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			static fn (string $app, string $key, string $default = ''): string => ($key === 'register') ? '17' : '115'
+		);
+		$syntax = new RetiredTemplateSyntax();
+		$migrator = new AutomaticActionFlowMigrator(
+			$settings,
+			$container,
+			$appConfig,
+			$this->createMock(LoggerInterface::class),
+			new RetiredNodeMap(),
+			new RetiredNodeTranslator($settings, $container, $this->createMock(IL10N::class), $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)),
+		);
+
+		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
+
+		$this->assertSame(
+			['total' => 0, 'created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0, 'rows' => []],
+			$summary
+		);
+		$this->assertSame([], $flowService->saves);
+	}
 }

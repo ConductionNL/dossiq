@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\People;
 
+use OCA\Dossiq\Kernel\Contracts\PersonReachabilityInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\TrustedRevealRead;
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/changes/contact-reachability/specs/party-pages/spec.md#requirement-a-contact-says-how-the-person-can-be-reached
  */
-class PersonReachability {
+class PersonReachability implements PersonReachabilityInterface {
 
 	use SearchesObjects;
 
@@ -95,7 +96,7 @@ class PersonReachability {
 	 * @return array<string, mixed>|null
 	 */
 	private function person(string $personId): ?array {
-		$rows = $this->rows(schema: 'brpPerson', filters: ['_ids' => [$personId], '_limit' => 1], trusted: true);
+		$rows = $this->rows(schema: 'brpPerson', read: ['filters' => ['_ids' => [$personId], '_limit' => 1], 'trusted' => true]);
 		if (is_array($rows[0] ?? null) === false) {
 			return null;
 		}
@@ -111,7 +112,10 @@ class PersonReachability {
 	 * @return array<string, mixed>
 	 */
 	private function newestMoment(string $personId): array {
-		$rows = $this->rows(schema: 'contactmoment', filters: ['contact' => $personId, '_order' => ['startTime' => 'desc'], '_limit' => 1], trusted: false);
+		$rows = $this->rows(
+			schema: 'contactmoment',
+			read: ['filters' => ['contact' => $personId, '_order' => ['startTime' => 'desc'], '_limit' => 1], 'trusted' => false]
+		);
 		if (is_array($rows[0] ?? null) === false) {
 			return [];
 		}
@@ -175,26 +179,26 @@ class PersonReachability {
 	/**
 	 * Rows of one schema under the user's rights; trusted reads see the BSN.
 	 *
-	 * @param string               $schema  The schema slug.
-	 * @param array<string, mixed> $filters The filters.
-	 * @param bool                 $trusted Whether the read needs explicit-reveal values.
+	 * @param string                                           $schema The schema slug.
+	 * @param array{filters: array<string, mixed>, trusted: bool} $read   The filters, and whether the read needs explicit-reveal values.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @throws Throwable When the register cannot be read.
 	 */
-	private function rows(string $schema, array $filters, bool $trusted): array {
+	private function rows(string $schema, array $read): array {
+		$filters = $read['filters'];
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '') {
 			return [];
 		}
 
-		$read = fn (): array => $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
-		if ($trusted === true) {
-			return (array)$this->trusted->run($read);
+		$search = fn (): array => $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
+		if ($read['trusted'] === true) {
+			return (array)$this->trusted->run($search);
 		}
 
-		return $read();
+		return $search();
 	}//end rows()
 }//end class

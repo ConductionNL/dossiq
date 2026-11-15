@@ -71,6 +71,7 @@ interface ConcludedObjectServiceStub {
  * @uses \OCA\Dossiq\Service\DecisionDocument\ConcludedDecisionRecord
  * @uses \OCA\Dossiq\Service\Flow\WaitingRunResumer
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class DecisionConcludedListenerTest extends TestCase {
 	use MakesBezwaarAuditTrail;

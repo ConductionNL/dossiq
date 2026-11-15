@@ -41,9 +41,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseAssignmentService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAssignmentServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -79,21 +79,21 @@ class CaseAssignmentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request         The HTTP request.
-	 * @param CaseAssignmentService $assignment      Claim and release.
-	 * @param CaseAccessGuard       $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAssignmentServiceInterface $assignment      Claim and release.
+	 * @param CaseAccessGuardInterface       $caseAccessGuard Per-case authorization (fails closed).
 	 * @param IUserSession          $userSession     The current session.
 	 * @param IL10N                 $l10n            The translations.
 	 * @param LoggerInterface       $logger          The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseAssignmentService $assignment,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAssignmentServiceInterface $assignment,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -109,10 +109,7 @@ class CaseAssignmentController extends Controller {
 	public function state(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		return $this->answer(
@@ -134,10 +131,7 @@ class CaseAssignmentController extends Controller {
 	public function claim(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		$refusal = $this->requireClaimableCase(caseId: $caseId, user: $user);
@@ -164,10 +158,7 @@ class CaseAssignmentController extends Controller {
 	public function release(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
@@ -218,6 +209,18 @@ class CaseAssignmentController extends Controller {
 			);
 		}
 
+		return $this->claimRefusal(state: $state, caseId: $caseId);
+	}//end requireClaimableCase()
+
+	/**
+	 * The refusal for a case that is not free to take, or null when it is.
+	 *
+	 * @param array<string, mixed> $state  The assignment state.
+	 * @param string               $caseId The case UUID.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function claimRefusal(array $state, string $caseId): JSONResponse|null {
 		if ($state['claimable'] === true) {
 			return null;
 		}
@@ -228,7 +231,7 @@ class CaseAssignmentController extends Controller {
 		}
 
 		return $this->refusal(code: $code, caseId: $caseId);
-	}//end requireClaimableCase()
+	}//end claimRefusal()
 
 	/**
 	 * Run a gesture and answer it, turning a refusal into its status.
@@ -288,4 +291,16 @@ class CaseAssignmentController extends Controller {
 			(self::REFUSAL_STATUS[$code] ?? Http::STATUS_BAD_REQUEST)
 		);
 	}//end refusal()
+
+	/**
+	 * The 401 for a caller without a session.
+	 *
+	 * @return JSONResponse
+	 */
+	private function notSignedIn(): JSONResponse {
+		return new JSONResponse(
+			['error' => $this->l10n->t('You are not signed in.')],
+			Http::STATUS_UNAUTHORIZED
+		);
+	}//end notSignedIn()
 }//end class

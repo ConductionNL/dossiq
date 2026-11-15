@@ -262,7 +262,7 @@ Do not reintroduce `phpstan-baseline.neon`.
 ### Test coverage
 
 <!-- coverage:start -->
-Measured test coverage: 70.0% of statements (PHP 70.7% of 99,620 statements, JavaScript 63.6% of 11,969 statements), at commit `4aab4b01a` on 2026-11-11. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
+Measured test coverage: 88.4% of statements (PHP 88.8% of 99,158 statements, JavaScript 85.3% of 12,310 statements), at commit `fd9bc4b8b9` on 2026-11-13. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
 <!-- coverage:end -->
 
 ## Tech Stack

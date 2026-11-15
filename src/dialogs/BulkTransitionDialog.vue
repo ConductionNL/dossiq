@@ -218,6 +218,47 @@ import {
 } from '../utils/bulkTransitionHelpers.js'
 import { buildSelection, caseJobLabels, caseScopeLabels, SCOPE_PAGE } from '../utils/selectionScope.js'
 
+/**
+ * The refusals that get a sentence of their own, by reason: both are
+ * recoverable by changing the selection.
+ *
+ * @type {Map<string, function(object): string>}
+ */
+const REFUSAL_SENTENCES = new Map([
+	['case-type-versions', versionsRefusalSentence],
+	['ceiling', ceilingRefusalSentence],
+])
+
+/**
+ * @param {object} details The refusal details: `versions` and `caseType`.
+ * @return {string} The sentence for a selection over several case type versions.
+ */
+function versionsRefusalSentence(details) {
+	return t(
+		'dossiq',
+		'These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.',
+		{
+			versions: (details.versions || []).join(' and '),
+			caseType: details.caseType || '',
+		},
+	)
+}
+
+/**
+ * @param {object} details The refusal details: `ceiling` and `count`.
+ * @return {string} The sentence for a selection over the ceiling.
+ */
+function ceilingRefusalSentence(details) {
+	return t(
+		'dossiq',
+		'This act takes at most {ceiling} cases at a time, and you selected {count}.',
+		{
+			ceiling: details.ceiling || 0,
+			count: details.count || 0,
+		},
+	)
+}
+
 export default {
 	name: 'BulkTransitionDialog',
 
@@ -423,6 +464,16 @@ export default {
 				return false
 			}
 
+			return this.modeFieldsFilled
+		},
+
+		/**
+		 * Whether the mode's own fields are filled: a transition for a
+		 * transition, a new deadline for an extension.
+		 *
+		 * @return {boolean} True when the mode asks for nothing more.
+		 */
+		modeFieldsFilled() {
 			if (this.isTransition === true && this.selectedTransition === null) {
 				return false
 			}
@@ -574,27 +625,10 @@ export default {
 		 */
 		refusalSentence(err) {
 			const { reason, message, details } = readRefusal(err)
+			const sentence = REFUSAL_SENTENCES.get(reason)
 
-			if (reason === 'case-type-versions') {
-				return t(
-					'dossiq',
-					'These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.',
-					{
-						versions: (details.versions || []).join(' and '),
-						caseType: details.caseType || '',
-					},
-				)
-			}
-
-			if (reason === 'ceiling') {
-				return t(
-					'dossiq',
-					'This act takes at most {ceiling} cases at a time, and you selected {count}.',
-					{
-						ceiling: details.ceiling || 0,
-						count: details.count || 0,
-					},
-				)
+			if (sentence) {
+				return sentence(details)
 			}
 
 			return (

@@ -43,6 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeSlugResolverInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -55,7 +56,7 @@ use Throwable;
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
-class CaseTypeSlugResolver {
+class CaseTypeSlugResolver implements CaseTypeSlugResolverInterface {
 
 	use SearchesObjects;
 

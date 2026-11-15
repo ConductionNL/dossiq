@@ -14,11 +14,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\FileRequestServiceInterface;
+use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\Constants;
 use OCP\Files\Folder;
 use OCP\IUser;
-use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
 use OCP\IUserSession;
 use OCP\Share\IManager as IShareManager;
 use OCP\Share\IShare;
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
-class FileRequestService {
+class FileRequestService implements FileRequestServiceInterface {
 
 	/**
 	 * How long a request stands when the caller names no expiry.
@@ -86,14 +87,43 @@ class FileRequestService {
 			throw new RuntimeException('This person is not on this case', 404);
 		}
 
+		$request = $this->addressedRequest(person: $person, caseId: $caseId);
+		$request->expires = new DateTime('+' . $this->daysOf(days: $days) . ' days');
+		$request->note = $note;
+
+		return $this->sent(request: $request, person: $person);
+	}//end request()
+
+	/**
+	 * An upload request to the person's address, from the caller, into the case's folder.
+	 *
+	 * @param array<string, mixed> $person The party, as the case's people list holds them.
+	 * @param string               $caseId The case uuid.
+	 *
+	 * @return UploadRequest The request, without its expiry and note.
+	 *
+	 * @throws RuntimeException 403 when an indicator on the person refuses the send, 422 when they
+	 *         have no address or the case has no folder.
+	 */
+	private function addressedRequest(array $person, string $caseId): UploadRequest {
 		$request = new UploadRequest();
 		$request->email = $this->addressOf(person: $person);
 		$this->refuseWhenIndicated(person: $person);
 		$request->folder = $this->caseFolder(caseId: $caseId);
 		$request->user = $this->caller();
-		$request->expires = new DateTime('+' . $this->daysOf(days: $days) . ' days');
-		$request->note = $note;
 
+		return $request;
+	}//end addressedRequest()
+
+	/**
+	 * Create the upload share and answer who it went to, its token and when it expires.
+	 *
+	 * @param UploadRequest        $request The complete request.
+	 * @param array<string, mixed> $person  The party.
+	 *
+	 * @return array<string, mixed> The recipient, the token and when it expires.
+	 */
+	private function sent(UploadRequest $request, array $person): array {
 		$created = $this->createdShare(share: $this->uploadShare(request: $request));
 
 		return [
@@ -102,7 +132,7 @@ class FileRequestService {
 			'token' => (string)$created->getToken(),
 			'expiresAt' => $request->expires->format('Y-m-d'),
 		];
-	}//end request()
+	}//end sent()
 
 	/**
 	 * The person's address, or a refusal when there is none.

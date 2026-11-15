@@ -39,6 +39,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\CaseTermBinding
  */
 class CaseTermsServicePlannedDefinitionTest extends TestCase {
 	use BindsTermFixtures;

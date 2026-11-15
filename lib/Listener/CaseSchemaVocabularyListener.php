@@ -22,13 +22,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\People\CaseRoleVocabulary;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseRoleVocabularyInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Listener\Support\ResyncsRoleVocabulary;
 use OCA\OpenRegister\Event\SchemaUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Re-syncs the case role vocabulary when the case schema is updated.
@@ -44,6 +44,8 @@ use Throwable;
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-the-case-schemas-role-vocabulary-survives-a-rewrite-of-the-schema
  */
 class CaseSchemaVocabularyListener implements IEventListener {
+	use ResyncsRoleVocabulary;
+
 	/**
 	 * The case schema's slug, matched besides the configured id.
 	 */
@@ -52,13 +54,13 @@ class CaseSchemaVocabularyListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService The configured case schema.
-	 * @param CaseRoleVocabulary $vocabulary      Writes the roles onto the case schema.
+	 * @param SettingsServiceInterface    $settingsService The configured case schema.
+	 * @param CaseRoleVocabularyInterface $vocabulary      Writes the roles onto the case schema.
 	 * @param LoggerInterface    $logger          Says why a sync failed.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly CaseRoleVocabulary $vocabulary,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly CaseRoleVocabularyInterface $vocabulary,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -85,12 +87,6 @@ class CaseSchemaVocabularyListener implements IEventListener {
 			return;
 		}
 
-		try {
-			$this->vocabulary->sync();
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq people: the case role vocabulary was not re-synced after the case schema changed: ' . $e->getMessage()
-			);
-		}
+		$this->resyncVocabularyAfter(change: 'the case schema changed');
 	}//end handle()
 }//end class

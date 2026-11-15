@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\OptOutGateInterface;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -49,7 +50,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
  */
-class OptOutGate {
+class OptOutGate implements OptOutGateInterface {
 
 	/**
 	 * The integriq event, relative to integriq's namespace.
@@ -70,16 +71,6 @@ class OptOutGate {
 	 * The code for "the check is switched off".
 	 */
 	public const CODE_CHECK_OFF = 'check-disabled';
-
-	/**
-	 * A status update or mail about one case. Respects opt-outs.
-	 */
-	public const CATEGORY_CASE_UPDATE = 'case-update';
-
-	/**
-	 * A decision. Always sent, never carries a link.
-	 */
-	public const CATEGORY_BESLUIT = 'besluit';
 
 	/**
 	 * A notice the law requires. Always sent, never carries a link.
@@ -139,52 +130,66 @@ class OptOutGate {
 			return $this->decision(send: true, code: self::CODE_CHECK_OFF, reason: '');
 		}
 
+		return $this->askIntegriq(
+			question: new OptOutQuestion(recipient: $recipient, category: $category, caseRef: $caseRef),
+			channel: $channel
+		);
+	}//end ask()
+
+	/**
+	 * Put the question to integriq through its decision event, and read its answer.
+	 *
+	 * @param OptOutQuestion $question The recipient, category and case asked about.
+	 * @param string         $channel  The channel the notice would go out on.
+	 *
+	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
+	 */
+	private function askIntegriq(OptOutQuestion $question, string $channel): array {
 		$eventClass = FleetAppId::resolveClass(canonical: 'integriq', relative: $this->eventRelative);
 		if ($eventClass === null) {
-			return $this->unavailable(category: $category, caseRef: $caseRef, why: 'integriq or its decision event is not installed');
+			return $this->unavailable(question: $question, why: 'integriq or its decision event is not installed');
 		}
 
 		try {
 			$event = new $eventClass(
 				'dossiq',
 				$channel,
-				$category,
-				[['address' => $recipient, 'caseRef' => $caseRef]],
+				$question->category,
+				[['address' => $question->recipient, 'caseRef' => $question->caseRef]],
 				bin2hex(random_bytes(8)),
 			);
 			if (($event instanceof Event) === false) {
-				return $this->unavailable(category: $category, caseRef: $caseRef, why: 'the decision event is not an event');
+				return $this->unavailable(question: $question, why: 'the decision event is not an event');
 			}
 
 			$this->dispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
-			return $this->unavailable(category: $category, caseRef: $caseRef, why: 'the question failed: ' . $e->getMessage());
+			return $this->unavailable(question: $question, why: 'the question failed: ' . $e->getMessage());
 		}
 
-		return $this->read(event: $event, recipient: $recipient, category: $category, caseRef: $caseRef);
-	}//end ask()
+		return $this->read(event: $event, question: $question);
+	}//end askIntegriq()
 
 	/**
 	 * Read integriq's answer for one recipient out of the event.
 	 *
-	 * @param Event  $event     The answered event.
-	 * @param string $recipient The address as given.
-	 * @param string $category  The category.
-	 * @param string $caseRef   The case.
+	 * @param Event          $event    The answered event.
+	 * @param OptOutQuestion $question The address as given, the category and the case.
 	 *
 	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
 	 */
-	private function read(Event $event, string $recipient, string $category, string $caseRef): array {
+	private function read(Event $event, OptOutQuestion $question): array {
+		$category = $question->category;
 		$answer = null;
 		if (method_exists($event, 'isHandled') === true
 			&& $event->isHandled() === true
 			&& method_exists($event, 'getDecision') === true
 		) {
-			$answer = $event->getDecision($recipient);
+			$answer = $event->getDecision($question->recipient);
 		}
 
 		if (is_array($answer) === false || array_key_exists('send', $answer) === false) {
-			return $this->unavailable(category: $category, caseRef: $caseRef, why: 'integriq did not answer for this recipient');
+			return $this->unavailable(question: $question, why: 'integriq did not answer for this recipient');
 		}
 
 		$unsubscribe = null;
@@ -203,14 +208,13 @@ class OptOutGate {
 	/**
 	 * The fail-closed answer: exempt goes out without a link, the rest is refused.
 	 *
-	 * @param string $category The category.
-	 * @param string $caseRef  The case, for the log.
-	 * @param string $why      What went wrong, for the log.
+	 * @param OptOutQuestion $question The category, and the case for the log.
+	 * @param string         $why      What went wrong, for the log.
 	 *
 	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
 	 */
-	private function unavailable(string $category, string $caseRef, string $why): array {
-		$exempt  = self::isExempt(category: $category);
+	private function unavailable(OptOutQuestion $question, string $why): array {
+		$exempt  = self::isExempt(category: $question->category);
 		$outcome = 'not sent';
 		if ($exempt === true) {
 			$outcome = 'sent, the category is exempt';
@@ -219,9 +223,9 @@ class OptOutGate {
 		$this->logger->warning(
 			'Dossiq: integriq could not say whether this person may be messaged; ' . $outcome,
 			[
-				'app' => Application::APP_ID,
-				'caseRef' => $caseRef,
-				'category' => $category,
+				'app' => AppIdentity::APP_ID,
+				'caseRef' => $question->caseRef,
+				'category' => $question->category,
 				'why' => $why,
 			]
 		);
@@ -240,7 +244,7 @@ class OptOutGate {
 	 */
 	private function isSwitchedOn(): bool {
 		try {
-			$value = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, 'true');
+			$value = $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, 'true');
 		} catch (Throwable $e) {
 			return true;
 		}

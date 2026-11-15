@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\IL10N;
 use Throwable;
 
@@ -86,6 +87,18 @@ class CapacityGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true);
 		}
 
+		return $this->verdictAt(targetId: $targetId, case: $case);
+	}//end evaluate()
+
+	/**
+	 * Passed when the target status has no capacity, else whether a place is left for the case.
+	 *
+	 * @param string               $targetId The target status type.
+	 * @param array<string, mixed> $case     The case being moved.
+	 *
+	 * @return GuardResult The verdict.
+	 */
+	private function verdictAt(string $targetId, array $case): GuardResult {
 		$capacity = $this->capacityOf(statusTypeId: $targetId);
 		if ($capacity <= 0) {
 			// Absent or zero is no limit, which is every status shipped today.
@@ -99,7 +112,7 @@ class CapacityGuard implements GuardEvaluatorInterface {
 			capacity: new StatusCapacity(statusTypeId: $targetId, limit: $capacity),
 			caseId: $this->idOf(case: $case)
 		);
-	}//end evaluate()
+	}//end verdictAt()
 
 	/**
 	 * The verdict for a capped status: a final status is never capped, any
@@ -370,17 +383,6 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 * @return array<string, mixed> The row.
 	 */
 	private function arrayOf(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$serialised = $row->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $row);
 	}//end arrayOf()
 }//end class

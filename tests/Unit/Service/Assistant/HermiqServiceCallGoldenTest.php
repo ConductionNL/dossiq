@@ -42,6 +42,8 @@ use Stringable;
  * @covers \OCA\Dossiq\Service\Assistant\HermiqAssistantClient
  * @covers \OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient
  * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqPost
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqServiceCall
  */
 class HermiqServiceCallGoldenTest extends TestCase {
 

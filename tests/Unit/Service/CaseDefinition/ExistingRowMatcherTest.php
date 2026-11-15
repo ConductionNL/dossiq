@@ -30,6 +30,8 @@ use Psr\Log\AbstractLogger;
  * Unit tests for ExistingRowMatcher.
  *
  * @covers \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageSeedRules
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowMatchRun
  */
 class ExistingRowMatcherTest extends TestCase {
 

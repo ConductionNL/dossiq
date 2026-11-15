@@ -40,10 +40,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\BagObjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\IntegrationModeInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\PreSaveCheck;
-use OCA\Dossiq\Service\External\IntegrationMode;
-use OCA\Dossiq\Service\Registry\BagObjectReader;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -62,6 +63,8 @@ use Throwable;
  * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  */
 class LocationBagValidationListener implements IEventListener {
+
+	use SavedObjectPayload;
 
 	/**
 	 * The refusal code a location dialog shows its own title and text for:
@@ -104,16 +107,16 @@ class LocationBagValidationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema slug bridge.
-	 * @param IntegrationMode $integrationMode Reads `integration.bag.check`.
-	 * @param BagObjectReader $bagReader Asks integriq whether the BAG holds an object.
+	 * @param SettingsServiceInterface $settingsService Schema slug bridge.
+	 * @param IntegrationModeInterface $integrationMode Reads `integration.bag.check`.
+	 * @param BagObjectReaderInterface $bagReader Asks integriq whether the BAG holds an object.
 	 * @param IL10N $l10n Translation service.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly IntegrationMode $integrationMode,
-		private readonly BagObjectReader $bagReader,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly IntegrationModeInterface $integrationMode,
+		private readonly BagObjectReaderInterface $bagReader,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -219,17 +222,7 @@ class LocationBagValidationListener implements IEventListener {
 	 * @return bool
 	 */
 	private function isLocationSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('location_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return $this->inSchema(object: $object, configured: $this->settingsService->getConfigValue('location_schema'));
 	}//end isLocationSchema()
 
 	/**
@@ -254,6 +247,17 @@ class LocationBagValidationListener implements IEventListener {
 			return self::NOT_CHECKED;
 		}
 
+		return $this->bagOutcome(id: $id);
+	}//end validate()
+
+	/**
+	 * The outcome of asking the BAG for a nummeraanduiding.
+	 *
+	 * @param string $id The nummeraanduiding id.
+	 *
+	 * @return string
+	 */
+	private function bagOutcome(string $id): string {
 		$answer = $this->bagReader->read('nummeraanduiding', $id);
 		if ($answer['available'] === false || $answer['simulated'] === true) {
 			$this->logger->warning(
@@ -268,7 +272,7 @@ class LocationBagValidationListener implements IEventListener {
 		}
 
 		return self::CHECKED;
-	}//end validate()
+	}//end bagOutcome()
 
 	/**
 	 * The refusal code for a check that got no clear answer.
@@ -284,8 +288,8 @@ class LocationBagValidationListener implements IEventListener {
 	 */
 	private static function uncheckedCode(string $reason): string {
 		return match ($reason) {
-			BagObjectReader::REASON_NO_INTEGRIQ => 'nummeraanduidingId.integriq-missing',
-			BagObjectReader::REASON_NO_READER => 'nummeraanduidingId.integriq-outdated',
+			BagObjectReaderInterface::REASON_NO_INTEGRIQ => 'nummeraanduidingId.integriq-missing',
+			BagObjectReaderInterface::REASON_NO_READER => 'nummeraanduidingId.integriq-outdated',
 			default => 'nummeraanduidingId.unchecked',
 		};
 	}//end uncheckedCode()

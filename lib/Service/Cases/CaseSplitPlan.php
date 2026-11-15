@@ -81,64 +81,146 @@ class CaseSplitPlan {
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function forSelection(string $sourceId, string $newId, array $chosen): array {
-		$moves = [];
-		$references = [];
-		$refused = [];
+		$cases = new SplitCases(sourceId: $sourceId, newId: $newId);
+		return self::selectionPlan(parts: $this->partition(plans: $this->itemPlans(cases: $cases, chosen: $chosen)), cases: $cases);
+	}//end forSelection()
 
-		foreach (CaseSplitPolicy::PARTS as $part) {
-			foreach (($chosen[$part] ?? []) as $item) {
-				if (is_array($item) === false) {
-					continue;
-				}
-
-				$id = trim((string)($item['id'] ?? ''));
-				if ($id === '') {
-					continue;
-				}
-
-				// 🔴 A ROW THAT IS NOT ON THIS CASE IS NOT THIS SPLIT'S TO
-				// MOVE. The selection arrives from a client, and a plan that
-				// repointed any id handed to it would let a handler move a
-				// document off somebody else's case by editing one field in
-				// the request — a write to a record they may never have been
-				// allowed to read. A row whose own `case` names a different
-				// case is refused by name rather than skipped in silence: a
-				// selection that half happened with no word about the rest is
-				// the state nobody can reconstruct afterwards.
-				$owner = trim((string)($item['case'] ?? ''));
-				if ($owner !== '' && $owner !== $sourceId) {
-					$refused[] = ['part' => $part, 'id' => $id, 'case' => $owner];
-					continue;
-				}
-
-				$moves[] = [
-					'part' => $part,
-					'id' => $id,
-					// The item itself is repointed: after the split the new
-					// case HOLDS it, rather than both cases claiming it.
-					'changes' => ['case' => $newId],
-				];
-
-				$references[] = [
-					'part' => $part,
-					'id' => $id,
-					'label' => trim((string)($item['title'] ?? ($item['name'] ?? $id))),
-					'movedTo' => $newId,
-				];
-			}
-		}
+	/**
+	 * The split plan: the moves, the references, the refusals and the relation to write.
+	 *
+	 * @param array{0: list<mixed>, 1: list<mixed>, 2: list<mixed>} $parts The moves, the references and the refusals.
+	 * @param SplitCases                                            $cases The case being split and the case being split off.
+	 *
+	 * @return array<string, mixed> The plan.
+	 */
+	private static function selectionPlan(array $parts, SplitCases $cases): array {
+		[$moves, $references, $refused] = $parts;
 
 		return [
 			'moves' => $moves,
 			'references' => $references,
 			'refused' => $refused,
 			'relation' => [
-				'from' => $sourceId,
-				'to' => $newId,
+				'from' => $cases->sourceId,
+				'to' => $cases->newId,
 				'nature' => self::RELATION,
 			],
 		];
-	}//end forSelection()
+	}//end selectionPlan()
+
+	/**
+	 * The plan of every chosen item, part by part.
+	 *
+	 * @param SplitCases                                      $cases  The case being split and the case being split off.
+	 * @param array<string, array<int, array<string, mixed>>> $chosen The items the handler picked, by part.
+	 *
+	 * @return array<int, array<string, mixed>> The item plans.
+	 */
+	private function itemPlans(SplitCases $cases, array $chosen): array {
+		$plans = [];
+		foreach (CaseSplitPolicy::PARTS as $part) {
+			foreach (($chosen[$part] ?? []) as $item) {
+				$plans[] = $this->itemPlan(chosen: ['part' => $part, 'item' => $item], cases: $cases);
+			}
+		}
+
+		return $plans;
+	}//end itemPlans()
+
+	/**
+	 * Split the item plans into moves, references and refusals.
+	 *
+	 * @param array<int, array<string, mixed>> $plans The item plans.
+	 *
+	 * @return array{0: list<mixed>, 1: list<mixed>, 2: list<mixed>} The moves, the references and the refusals.
+	 */
+	private function partition(array $plans): array {
+		$moves = [];
+		$references = [];
+		$refused = [];
+		foreach ($plans as $plan) {
+			if ($plan['refused'] !== null) {
+				$refused[] = $plan['refused'];
+			}
+
+			if ($plan['move'] !== null) {
+				$moves[] = $plan['move'];
+				$references[] = $plan['reference'];
+			}
+		}
+
+		return [$moves, $references, $refused];
+	}//end partition()
+
+	/**
+	 * What one chosen item becomes: a move with its reference, a refusal, or nothing.
+	 *
+	 * @param array{part: string, item: mixed} $chosen The part the item was chosen from, and the chosen item.
+	 * @param SplitCases                       $cases  The case being split and the case being split off.
+	 *
+	 * @return array{
+	 *     refused: array<string, string>|null,
+	 *     move: array<string, mixed>|null,
+	 *     reference: array<string, string>|null
+	 * } The item's plan; all null for an item that is skipped.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function itemPlan(array $chosen, SplitCases $cases): array {
+		$part = $chosen['part'];
+		$item = $chosen['item'];
+		if (is_array($item) === false) {
+			return ['refused' => null, 'move' => null, 'reference' => null];
+		}
+
+		$id = trim((string)($item['id'] ?? ''));
+		if ($id === '') {
+			return ['refused' => null, 'move' => null, 'reference' => null];
+		}
+
+		// 🔴 A ROW THAT IS NOT ON THIS CASE IS NOT THIS SPLIT'S TO
+		// MOVE. The selection arrives from a client, and a plan that
+		// repointed any id handed to it would let a handler move a
+		// document off somebody else's case by editing one field in
+		// the request — a write to a record they may never have been
+		// allowed to read. A row whose own `case` names a different
+		// case is refused by name rather than skipped in silence: a
+		// selection that half happened with no word about the rest is
+		// the state nobody can reconstruct afterwards.
+		$owner = trim((string)($item['case'] ?? ''));
+		if ($owner !== '' && $owner !== $cases->sourceId) {
+			return ['refused' => ['part' => $part, 'id' => $id, 'case' => $owner], 'move' => null, 'reference' => null];
+		}
+
+		return $this->movePlan(chosen: $chosen, newId: $cases->newId);
+	}//end itemPlan()
+
+	/**
+	 * The plan that moves an item of this case to the new one.
+	 *
+	 * @param array{part: string, item: array<string, mixed>} $chosen The part the item was chosen from, and the chosen item
+	 *                                                                with its id.
+	 * @param string                                          $newId  The case being split off.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function movePlan(array $chosen, string $newId): array {
+		$part = $chosen['part'];
+		$item = $chosen['item'];
+		$id = trim((string)($item['id'] ?? ''));
+		return [
+			'refused' => null,
+			// The item itself is repointed: after the split the new
+			// case HOLDS it, rather than both cases claiming it.
+			'move' => ['part' => $part, 'id' => $id, 'changes' => ['case' => $newId]],
+			'reference' => [
+				'part' => $part,
+				'id' => $id,
+				'label' => trim((string)($item['title'] ?? ($item['name'] ?? $id))),
+				'movedTo' => $newId,
+			],
+		];
+	}//end movePlan()
 
 	/**
 	 * The note recorded on the original case, naming what left it.

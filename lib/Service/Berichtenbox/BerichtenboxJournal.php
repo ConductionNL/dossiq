@@ -113,6 +113,20 @@ class BerichtenboxJournal {
 	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function recordSend(string $caseId, string $subject, array $result, array $messageData): void {
+		$this->recordSendOnCase(caseId: $caseId, sent: ['subject' => $subject, 'result' => $result, 'messageData' => $messageData]);
+	}//end recordSend()
+
+	/**
+	 * Write the send on the case timeline.
+	 *
+	 * @param string               $caseId The case.
+	 * @param array<string, mixed> $sent   The message `subject`, integriq's `result` and the stored `messageData`.
+	 *
+	 * @return void
+	 */
+	private function recordSendOnCase(string $caseId, array $sent): void {
+		$subject = $sent['subject'];
+		$result = $sent['result'];
 		[$sentence, $visibility] = $this->timelineEntry(subject: $subject, result: $result);
 
 		$this->timeline->record(
@@ -122,11 +136,11 @@ class BerichtenboxJournal {
 			fields: [
 				'subject' => $subject,
 				'messageId' => (string)($result['messageId'] ?? ''),
-				'status' => (string)($messageData['status']),
+				'status' => (string)($sent['messageData']['status']),
 			],
 			visibility: $visibility,
 		);
-	}//end recordSend()
+	}//end recordSendOnCase()
 
 	/**
 	 * Write the status change on the case timeline, when the message names a case.
@@ -146,18 +160,34 @@ class BerichtenboxJournal {
 		string $status,
 		string $lastError,
 	): void {
-		$caseId = (string)($data['caseId'] ?? '');
-		if ($caseId === '') {
+		if ((string)($data['caseId'] ?? '') === '') {
 			return;
 		}
 
+		$this->recordStatusOnCase(
+			data: $data,
+			outcome: ['messageId' => $externalMessageId, 'status' => $status, 'lastError' => $lastError]
+		);
+	}//end recordStatus()
+
+	/**
+	 * Write the status change on the timeline of the case the message names.
+	 *
+	 * @param array<string, mixed>  $data    The stored message, with its `caseId`.
+	 * @param array<string, string> $outcome The `messageId` integriq tracks it by, the `status` it moved to and
+	 *                                       the provider's `lastError`, when it failed.
+	 *
+	 * @return void
+	 */
+	private function recordStatusOnCase(array $data, array $outcome): void {
+		$status = $outcome['status'];
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: (string)$data['caseId'],
 			kind: TimelineKinds::PORTAL_MESSAGE,
-			message: $this->statusSentence(subject: (string)($data['subject'] ?? ''), status: $status, lastError: $lastError),
+			message: $this->statusSentence(subject: (string)($data['subject'] ?? ''), outcome: ['status' => $status, 'lastError' => $outcome['lastError']]),
 			fields: [
 				'subject' => (string)($data['subject'] ?? ''),
-				'messageId' => $externalMessageId,
+				'messageId' => $outcome['messageId'],
 				'status' => $status,
 			],
 			// INTERNAL: a delivery receipt is about our sending, not about what
@@ -165,7 +195,7 @@ class BerichtenboxJournal {
 			// message itself.
 			visibility: CaseTimeline::INTERNAL,
 		);
-	}//end recordStatus()
+	}//end recordStatusOnCase()
 
 	/**
 	 * The sentence and the visibility the timeline entry gets.
@@ -196,13 +226,13 @@ class BerichtenboxJournal {
 	 * handler with nothing to act on, which is how a citizen goes unnotified
 	 * while the case says something happened.
 	 *
-	 * @param string $subject   The letter's subject.
-	 * @param string $status    The status it moved to.
-	 * @param string $lastError The provider's reason, when it failed.
+	 * @param string                                    $subject The letter's subject.
+	 * @param array{status: string, lastError: string} $outcome The status it moved to, and the provider's reason when it failed.
 	 *
 	 * @return string The sentence.
 	 */
-	private function statusSentence(string $subject, string $status, string $lastError): string {
+	private function statusSentence(string $subject, array $outcome): string {
+		['status' => $status, 'lastError' => $lastError] = $outcome;
 		if ($status === 'failed') {
 			$reason = $lastError;
 			if ($reason === '') {

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Mcp;
 
+use OCA\Dossiq\Kernel\Contracts\BeschikkingToolsInterface;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
@@ -40,7 +41,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
  */
-class BeschikkingTools {
+class BeschikkingTools implements BeschikkingToolsInterface {
 
 	use ToolEnvelopes;
 
@@ -90,6 +91,20 @@ class BeschikkingTools {
 			return $this->error(code: 'forbidden', message: 'You may not change this case.');
 		}
 
+		return $this->composed(
+			draft: ['caseId' => $caseId, 'templateId' => $templateId, 'fields' => $this->fieldsOf(decisionType: $decisionType, rationale: $rationale)]
+		);
+	}//end draftBeschikking()
+
+	/**
+	 * The decision fields the caller filled in.
+	 *
+	 * @param string $decisionType The decision type, or ''.
+	 * @param string $rationale    The rationale, or ''.
+	 *
+	 * @return array<string, string>
+	 */
+	private function fieldsOf(string $decisionType, string $rationale): array {
 		$fields = [];
 		if (trim($decisionType) !== '') {
 			$fields['decisionType'] = $decisionType;
@@ -99,6 +114,19 @@ class BeschikkingTools {
 			$fields['rationale'] = $rationale;
 		}
 
+		return $fields;
+	}//end fieldsOf()
+
+	/**
+	 * Compose the draft decision, a refusal answered as the tool's error.
+	 *
+	 * @param array{caseId: string, templateId: string, fields: array<string, string>} $draft The case uuid, the template uuid
+	 *                                                                                   ('' for the case type's own) and the decision fields.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function composed(array $draft): array {
+		['caseId' => $caseId, 'templateId' => $templateId, 'fields' => $fields] = $draft;
 		$template = null;
 		if (trim($templateId) !== '') {
 			$template = $templateId;
@@ -109,5 +137,5 @@ class BeschikkingTools {
 		} catch (RuntimeException $e) {
 			return $this->refusal(e: $e);
 		}
-	}//end draftBeschikking()
+	}//end composed()
 }//end class

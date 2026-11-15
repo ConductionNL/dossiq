@@ -30,9 +30,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Publication\PublicationDateRule;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\PublicationServiceInterface;
+use OCA\Dossiq\Service\Publication\PublicationDateRule;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -44,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
-class PublicationService {
+class PublicationService implements PublicationServiceInterface {
 	/**
 	 * Supported publication channels.
 	 */
@@ -118,7 +122,7 @@ class PublicationService {
 		}
 
 		$entry = $this->entryFor(caseId: $caseId, channel: $channel);
-		$case = $this->loadCase(objectService: $objectService, caseId: $caseId, register: $entry['register'], schema: $entry['schema']);
+		$case = $this->loadCase(objectService: $objectService, entry: $entry);
 		$entry += $this->stampOf(payload: $payload);
 
 		// Hand the outbound leg to integriq (ADR-041 seam): dossiq composes
@@ -130,7 +134,10 @@ class PublicationService {
 		$case['publications'] = $this->publicationsWith(case: $case, entry: $entry);
 		$case['publishedAt'] = $entry['publishedAt'];
 
-		$objectService->saveObject(object: $case, register: $entry['register'], schema: $entry['schema']);
+		$objectService->saveObject(
+			object: $case,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $entry['register'], schema: $entry['schema']))
+		);
 
 		return [
 			'caseId' => $caseId,
@@ -194,14 +201,9 @@ class PublicationService {
 	 * @return array<int, array<string, mixed>> The updated publications list.
 	 */
 	private function publicationsWith(array $case, array $entry): array {
-		$publications = $this->upsertPublication(
-			publications: $this->extractPublications(case: $case),
-			channel: $entry['channel'],
-			publishedAt: $entry['publishedAt'],
-			notes: $entry['notes']
-		);
+		$publications = $this->upsertPublication(publications: $this->extractPublications(case: $case), entry: $entry);
 
-		return $this->attachDelivery(publications: $publications, channel: $entry['channel'], delivery: $entry['delivery']);
+		return $this->attachDelivery(publications: $publications, entry: $entry);
 	}//end publicationsWith()
 
 	/**
@@ -223,7 +225,7 @@ class PublicationService {
 	 */
 	private function requestDelivery(array $case, array $entry): array {
 		$requestedAt = date(format: 'c');
-		$where = ['app' => Application::APP_ID, 'caseId' => $entry['caseId'], 'channel' => $entry['channel']];
+		$where = ['app' => AppIdentity::APP_ID, 'caseId' => $entry['caseId'], 'channel' => $entry['channel']];
 		if (class_exists('\\' . self::DELIVERY_EVENT) === false) {
 			$this->logger->warning('Publication delivery refused: integriq is not installed', $where);
 			return ['status' => 'refused', 'reason' => 'integriq_not_installed', 'requestedAt' => $requestedAt];
@@ -255,7 +257,7 @@ class PublicationService {
 		$eventClass = '\\' . self::DELIVERY_EVENT;
 
 		return new $eventClass(
-			sourceApp: Application::APP_ID,
+			sourceApp: AppIdentity::APP_ID,
 			subjectRegister: (string)$entry['register'],
 			subjectSchema: (string)$entry['schema'],
 			subjectId: $entry['caseId'],
@@ -308,15 +310,14 @@ class PublicationService {
 	 * Attach a delivery record to the publication entry for a channel.
 	 *
 	 * @param array<int, array<string, mixed>> $publications The publications list.
-	 * @param string $channel The channel whose entry carries the delivery.
-	 * @param array<string, mixed> $delivery The delivery record.
+	 * @param array<string, mixed> $entry The entry: the channel whose publication carries the delivery, and the delivery record.
 	 *
 	 * @return array<int, array<string, mixed>> The updated publications list.
 	 */
-	private function attachDelivery(array $publications, string $channel, array $delivery): array {
+	private function attachDelivery(array $publications, array $entry): array {
 		foreach ($publications as $i => $pub) {
-			if ((string)($pub['channel'] ?? '') === $channel) {
-				$publications[$i]['delivery'] = $delivery;
+			if ((string)($pub['channel'] ?? '') === $entry['channel']) {
+				$publications[$i]['delivery'] = $entry['delivery'];
 				break;
 			}
 		}
@@ -328,21 +329,20 @@ class PublicationService {
 	 * Load a case from OpenRegister and normalise it to its array form.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $caseId The case id.
-	 * @param mixed $register The configured register id.
-	 * @param mixed $schema The configured case schema id.
+	 * @param array<string, mixed> $entry The entry: the case id, and the configured register and case schema ids.
 	 *
 	 * @return array<string, mixed> The case data.
 	 *
 	 * @throws \RuntimeException When the case cannot be loaded or does not exist.
 	 */
-	private function loadCase(object $objectService, string $caseId, mixed $register, mixed $schema): array {
+	private function loadCase(object $objectService, array $entry): array {
+		$caseId = $entry['caseId'];
 		try {
-			$obj = $objectService->find(id: $caseId, register: $register, schema: $schema);
+			$obj = $objectService->find(id: $caseId, options: new ObjectFindOptions(register: $entry['register'], schema: $entry['schema']));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'PublicationService::publish find failed',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 			throw new RuntimeException('Case not found: ' . $caseId);
 		}
@@ -365,32 +365,28 @@ class PublicationService {
 	 * channel has its timestamp and notes replaced rather than being duplicated.
 	 *
 	 * @param array<int, array<string, mixed>> $publications The existing publications list.
-	 * @param string $channel The publication channel.
-	 * @param string $publishedAt The publication timestamp.
-	 * @param string|null $notes Optional publication notes.
+	 * @param array<string, mixed> $entry The entry: the channel, the publication timestamp and the optional notes.
 	 *
 	 * @return array<int, array<string, mixed>> The updated publications list.
 	 */
-	private function upsertPublication(array $publications, string $channel, string $publishedAt, ?string $notes): array {
+	private function upsertPublication(array $publications, array $entry): array {
+		$record = [
+			'channel' => $entry['channel'],
+			'publishedAt' => $entry['publishedAt'],
+			'notes' => $entry['notes'],
+		];
+
 		$upserted = false;
 		foreach ($publications as $i => $pub) {
-			if ((string)($pub['channel'] ?? '') === $channel) {
-				$publications[$i] = [
-					'channel' => $channel,
-					'publishedAt' => $publishedAt,
-					'notes' => $notes,
-				];
+			if ((string)($pub['channel'] ?? '') === $record['channel']) {
+				$publications[$i] = $record;
 				$upserted = true;
 				break;
 			}
 		}
 
 		if ($upserted === false) {
-			$publications[] = [
-				'channel' => $channel,
-				'publishedAt' => $publishedAt,
-				'notes' => $notes,
-			];
+			$publications[] = $record;
 		}
 
 		return $publications;

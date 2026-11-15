@@ -39,24 +39,25 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\IntakeRoleGate;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseTypeResolver;
-use OCA\Dossiq\Service\Email\IntakeLog;
-use OCA\Dossiq\Service\Email\IntakePolicy;
-use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
-use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
-use OCA\Dossiq\Service\Intake\CaseMatchSuggestion;
-use OCA\Dossiq\Service\Intake\CaseClassification;
-use OCA\Dossiq\Service\Intake\ClassificationSchemes;
-use OCA\Dossiq\Service\Intake\DuplicatePolicy;
-use OCA\Dossiq\Service\Intake\IntakeFanOut;
-use OCA\Dossiq\Service\Intake\IntakeRequirements;
-use OCA\Dossiq\Service\Intake\TriageChannel;
-use OCA\Dossiq\Service\Intake\TriageSleep;
-use OCA\Dossiq\Service\Routing\RefusalOutcome;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AdmissibilityJudgementInterface;
+use OCA\Dossiq\Kernel\Contracts\AssigneeNarrowingInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseClassificationInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseMatchSuggestionInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\ClassificationSchemesInterface;
+use OCA\Dossiq\Kernel\Contracts\DuplicatePolicyInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeFanOutInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeLogInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
+use OCA\Dossiq\Kernel\Contracts\IntakeRequirementsInterface;
+use OCA\Dossiq\Kernel\Contracts\RefusalOutcomeInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageChannelInterface;
+use OCA\Dossiq\Kernel\Contracts\TriageSleepInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -97,45 +98,45 @@ class IntakeTriageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request          Inbound request.
-	 * @param CaseTypeResolver      $caseTypeResolver The effective case type.
-	 * @param IntakeRequirements    $requirements     What must be answered, and when.
-	 * @param CaseClassification    $classification   The facets and the access rule.
-	 * @param ClassificationSchemes $schemes          The schemes this instance knows.
-	 * @param AssigneeNarrowing     $narrowing        Who may hold the case.
-	 * @param DuplicatePolicy       $duplicates       What this case type does about a case that already exists.
-	 * @param RefusalOutcome        $refusal          Refusal as an outcome of routing.
-	 * @param AdmissibilityJudgement $admissibility   The ontvankelijkheid verdict at intake.
-	 * @param TriageSleep           $sleep            The triage sleep.
-	 * @param IntakeFanOut          $fanOut           One submission, several cases.
-	 * @param IntakeLog             $log              The triage queue.
-	 * @param IntakePolicy          $policy           Who may run intake.
-	 * @param CaseAccessGuard       $caseAccessGuard  Per-case authorization.
+	 * @param CaseTypeResolverInterface      $caseTypeResolver The effective case type.
+	 * @param IntakeRequirementsInterface    $requirements     What must be answered, and when.
+	 * @param CaseClassificationInterface    $classification   The facets and the access rule.
+	 * @param ClassificationSchemesInterface $schemes          The schemes this instance knows.
+	 * @param AssigneeNarrowingInterface     $narrowing        Who may hold the case.
+	 * @param DuplicatePolicyInterface       $duplicates       What this case type does about a case that already exists.
+	 * @param RefusalOutcomeInterface        $refusal          Refusal as an outcome of routing.
+	 * @param AdmissibilityJudgementInterface $admissibility   The ontvankelijkheid verdict at intake.
+	 * @param TriageSleepInterface           $sleep            The triage sleep.
+	 * @param IntakeFanOutInterface          $fanOut           One submission, several cases.
+	 * @param IntakeLogInterface             $log              The triage queue.
+	 * @param IntakePolicyInterface          $policy           Who may run intake.
+	 * @param CaseAccessGuardInterface       $caseAccessGuard  Per-case authorization.
 	 * @param IUserSession          $userSession      The caller.
 	 * @param LoggerInterface       $logger           Logger.
-	 * @param CaseMatchSuggestion   $suggestions      The case each queued message probably belongs to.
-	 * @param TriageChannel         $channels         The channel each queued message came in on.
+	 * @param CaseMatchSuggestionInterface   $suggestions      The case each queued message probably belongs to.
+	 * @param TriageChannelInterface         $channels         The channel each queued message came in on.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly CaseTypeResolver $caseTypeResolver,
-		private readonly IntakeRequirements $requirements,
-		private readonly CaseClassification $classification,
-		private readonly ClassificationSchemes $schemes,
-		private readonly AssigneeNarrowing $narrowing,
-		private readonly DuplicatePolicy $duplicates,
-		private readonly RefusalOutcome $refusal,
-		private readonly AdmissibilityJudgement $admissibility,
-		private readonly TriageSleep $sleep,
-		private readonly IntakeFanOut $fanOut,
-		private readonly IntakeLog $log,
-		private readonly IntakePolicy $policy,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseTypeResolverInterface $caseTypeResolver,
+		private readonly IntakeRequirementsInterface $requirements,
+		private readonly CaseClassificationInterface $classification,
+		private readonly ClassificationSchemesInterface $schemes,
+		private readonly AssigneeNarrowingInterface $narrowing,
+		private readonly DuplicatePolicyInterface $duplicates,
+		private readonly RefusalOutcomeInterface $refusal,
+		private readonly AdmissibilityJudgementInterface $admissibility,
+		private readonly TriageSleepInterface $sleep,
+		private readonly IntakeFanOutInterface $fanOut,
+		private readonly IntakeLogInterface $log,
+		private readonly IntakePolicyInterface $policy,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseMatchSuggestion $suggestions,
-		private readonly TriageChannel $channels,
+		private readonly CaseMatchSuggestionInterface $suggestions,
+		private readonly TriageChannelInterface $channels,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -252,28 +253,52 @@ class IntakeTriageController extends Controller {
 			return $user;
 		}
 
+		return $this->recordAdmissibility(caseId: $caseId, judgement: ['verdict' => $verdict, 'reason' => $reason, 'user' => $user]);
+	}//end judgeAdmissibility()
+
+	/**
+	 * Record the verdict; a refusal or a failure is answered as such.
+	 *
+	 * @param string                                              $caseId    The case.
+	 * @param array{verdict: string, reason: string, user: IUser} $judgement The verdict, why, and the handler judging.
+	 *
+	 * @return JSONResponse What was recorded, or the refusal.
+	 */
+	private function recordAdmissibility(string $caseId, array $judgement): JSONResponse {
 		try {
 			$recorded = $this->admissibility->judge(
 				caseId: $caseId,
-				verdict: $verdict,
-				reason: $reason,
-				judgedBy: $user->getUID(),
+				verdict: $judgement['verdict'],
+				reason: $judgement['reason'],
+				judgedBy: $judgement['user']->getUID(),
 			);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'judge admissibility of case ' . $caseId, e: $e);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: judging admissibility of case ' . $caseId . ' failed: ' . $e->getMessage()
-			);
-
-			return new JSONResponse(
-				['message' => 'The verdict was not recorded.', 'error' => 'admissibility-failed'],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->admissibilityFailed(caseId: $caseId, e: $e);
 		}//end try
 
 		return new JSONResponse($recorded);
-	}//end judgeAdmissibility()
+	}//end recordAdmissibility()
+
+	/**
+	 * Log a verdict that could not be recorded, and answer it.
+	 *
+	 * @param string    $caseId The case.
+	 * @param Throwable $e      What went wrong.
+	 *
+	 * @return JSONResponse The 500.
+	 */
+	private function admissibilityFailed(string $caseId, Throwable $e): JSONResponse {
+		$this->logger->error(
+			'Dossiq: judging admissibility of case ' . $caseId . ' failed: ' . $e->getMessage()
+		);
+
+		return new JSONResponse(
+			['message' => 'The verdict was not recorded.', 'error' => 'admissibility-failed'],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end admissibilityFailed()
 
 	/**
 	 * The triage queue, with its sleeping items taken out and each item's likely case suggested.
@@ -350,7 +375,7 @@ class IntakeTriageController extends Controller {
 	 */
 	private function sleepableItems(): array {
 		$items = [];
-		foreach (TriageSleep::SLEEPABLE_OUTCOMES as $outcome) {
+		foreach (TriageSleepInterface::SLEEPABLE_OUTCOMES as $outcome) {
 			$items = array_merge(
 				$items,
 				$this->log->search(filters: ['outcome' => $outcome, '_limit' => self::PAGE_SIZE])
@@ -378,11 +403,23 @@ class IntakeTriageController extends Controller {
 			return $refusal;
 		}
 
+		return $this->sleepUntil(entryId: $entryId, sleep: ['until' => $until, 'reason' => $reason]);
+	}//end sleepItem()
+
+	/**
+	 * Put the triage item to sleep as the caller; a refusal is answered as such.
+	 *
+	 * @param string                               $entryId The triage item.
+	 * @param array{until: string, reason: string} $sleep   Until when, and why.
+	 *
+	 * @return JSONResponse The sleeping item, or the refusal.
+	 */
+	private function sleepUntil(string $entryId, array $sleep): JSONResponse {
 		try {
 			$record = $this->sleep->sleep(
 				entryId: $entryId,
-				until: $until,
-				reason: $reason,
+				until: $sleep['until'],
+				reason: $sleep['reason'],
 				actorId: $this->callerId()
 			);
 		} catch (RefusedException $e) {
@@ -390,7 +427,7 @@ class IntakeTriageController extends Controller {
 		}
 
 		return new JSONResponse($record);
-	}//end sleepItem()
+	}//end sleepUntil()
 
 	/**
 	 * Open one case per destination an intake form declares.
@@ -414,18 +451,30 @@ class IntakeTriageController extends Controller {
 			return $refusal;
 		}
 
+		return $this->submitFanOut(caseTypeId: $caseTypeId, form: ['submission' => $submission, 'submissionId' => $submissionId]);
+	}//end fanOut()
+
+	/**
+	 * Fan the submission out over the case types its form names; a refusal is answered as such.
+	 *
+	 * @param string                                                        $caseTypeId The form's case type.
+	 * @param array{submission: array<string, mixed>, submissionId: string} $form       The submission, and its id.
+	 *
+	 * @return JSONResponse What was opened, or the refusal.
+	 */
+	private function submitFanOut(string $caseTypeId, array $form): JSONResponse {
 		try {
 			$result = $this->fanOut->submit(
 				formCaseTypeId: $caseTypeId,
-				submission: $submission,
-				submissionId: $submissionId
+				submission: $form['submission'],
+				submissionId: $form['submissionId']
 			);
 		} catch (RefusedException $e) {
-			return $this->refused(op: 'fan out submission ' . $submissionId, e: $e);
+			return $this->refused(op: 'fan out submission ' . $form['submissionId'], e: $e);
 		}
 
 		return new JSONResponse($result);
-	}//end fanOut()
+	}//end submitFanOut()
 
 	/**
 	 * Refuse a caller who may not mutate this case.
@@ -454,16 +503,7 @@ class IntakeTriageController extends Controller {
 	 * @return JSONResponse|null A refusal, or null when the caller may proceed.
 	 */
 	private function requireIntakeRole(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->policy->mayRunIntake(userId: $user->getUID()) === false) {
-			return new JSONResponse(['message' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->refusal();
 	}//end requireIntakeRole()
 
 	/**
@@ -475,11 +515,6 @@ class IntakeTriageController extends Controller {
 	 * @return string The uid, or '' when there is no session.
 	 */
 	private function callerId(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->callerId();
 	}//end callerId()
 }//end class

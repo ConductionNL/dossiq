@@ -669,14 +669,36 @@ class CaseTeamAccessProjectorTest extends TestCase {
 		$flattener = new $parts();
 		$engine = new $merge(parts: $flattener, comparator: new $comparator(parts: $flattener));
 
-		$aligned = $engine->merge(baseline: $this->baselines->baseline['definition'], live: $live, incoming: $incoming);
+		$aligned = self::mergeWith(engine: $engine, baseline: $this->baselines->baseline['definition'], live: $live, incoming: $incoming);
 		self::assertSame(expected: [], actual: $aligned['conflicts']);
 		self::assertEqualsCanonicalizing(expected: ['admin', 'dossiq-beheerders'], actual: $aligned['merged']['authorization']['delete']);
 
-		$unaligned = $engine->merge(baseline: $asShipped['definition'], live: $live, incoming: $incoming);
+		$unaligned = self::mergeWith(engine: $engine, baseline: $asShipped['definition'], live: $live, incoming: $incoming);
 		self::assertNotSame(expected: [], actual: $unaligned['conflicts']);
 		self::assertEqualsCanonicalizing(expected: ['admin'], actual: $unaligned['merged']['authorization']['delete']);
 	}//end testAShippedChangeAfterARewriteMergesWithoutAConflict()
+
+	/**
+	 * Merge three revisions with whichever API the OpenRegister checkout has.
+	 *
+	 * OpenRegister main takes the three as one DescriptorRevisions; an older
+	 * checkout takes them as three arguments.
+	 *
+	 * @param object               $engine   The GuardedDescriptorMerge.
+	 * @param array<string, mixed> $baseline What the app shipped.
+	 * @param array<string, mixed> $live     What the instance runs.
+	 * @param array<string, mixed> $incoming What the app now ships.
+	 *
+	 * @return array<string, mixed> The merge result.
+	 */
+	private static function mergeWith(object $engine, array $baseline, array $live, array $incoming): array {
+		if (method_exists($engine, 'mergeRevisions') === true) {
+			$revisions = 'OCA\\OpenRegister\\Service\\ShippedBaseline\\DescriptorRevisions';
+			return $engine->mergeRevisions(revisions: new $revisions(baseline: $baseline, live: $live, incoming: $incoming));
+		}
+
+		return $engine->merge(baseline: $baseline, live: $live, incoming: $incoming);
+	}//end mergeWith()
 
 	/**
 	 * Without OpenRegister nothing is written and nothing throws.

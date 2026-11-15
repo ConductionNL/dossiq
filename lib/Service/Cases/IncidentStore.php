@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\IncidentStoreInterface;
 use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Custody\StoredInstant;
 use OCA\Dossiq\Service\SettingsService;
@@ -51,7 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class IncidentStore {
+class IncidentStore implements IncidentStoreInterface {
 
 	use SearchesObjects;
 
@@ -121,11 +122,30 @@ class IncidentStore {
 		string $reporter = '',
 		string $assignee = '',
 	): array {
-		$caseId = trim($caseId);
-		$description = trim($description);
-		$happened = (new StoredInstant())->parse(value: $eventDate);
+		$report = [
+			'case' => trim($caseId),
+			'description' => trim($description),
+			'happened' => (new StoredInstant())->parse(value: $eventDate),
+			'reporter' => $reporter,
+			'assignee' => $assignee,
+		];
 
-		if ($caseId === '' || $description === '' || $happened === null) {
+		return $this->recordComplete(report: $report);
+	}//end record()
+
+	/**
+	 * Record a report that names a case, a parseable date and a description.
+	 *
+	 * @param array<string, mixed> $report The trimmed case and description, the parsed date as `happened`
+	 *                                     (null when it did not parse) and the untrimmed reporter and assignee.
+	 *
+	 * @return array<string, mixed> The stored incident.
+	 *
+	 * @throws RefusedException When the report is incomplete or cannot be written.
+	 */
+	private function recordComplete(array $report): array {
+		$happened = $report['happened'];
+		if ($report['case'] === '' || $report['description'] === '' || $happened === null) {
 			throw new RefusedException(
 				rule: self::INCOMPLETE,
 				sentence: 'A report needs a case, a date and a description, so nothing was recorded.',
@@ -135,18 +155,18 @@ class IncidentStore {
 
 		return $this->write(
 			incident: [
-				'case' => $caseId,
+				'case' => $report['case'],
 				'eventDate' => $happened->format('c'),
 				'recordedAt' => (new DateTimeImmutable())->format('c'),
-				'reporter' => trim($reporter),
-				'description' => $description,
-				'assignee' => trim($assignee),
+				'reporter' => trim($report['reporter']),
+				'description' => $report['description'],
+				'assignee' => trim($report['assignee']),
 				'state' => 'open',
 				'outcome' => '',
 			],
 			uuid: null,
 		);
-	}//end record()
+	}//end recordComplete()
 
 	/**
 	 * The incidents on a case, in the order the record puts them.
@@ -216,6 +236,27 @@ class IncidentStore {
 	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function openCountsFor(array $caseIds): array {
+		$wanted = $this->trimmedIds(caseIds: $caseIds);
+
+		if ($wanted === []) {
+			return [];
+		}
+
+		$byCase = $this->incidentsByCase(wanted: $wanted);
+
+		return $this->openCounts(byCase: $byCase);
+	}//end openCountsFor()
+
+	/**
+	 * The non-empty case ids, trimmed.
+	 *
+	 * @param array<int, string> $caseIds The cases.
+	 *
+	 * @return array<int, string> The case ids asked about.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 */
+	private function trimmedIds(array $caseIds): array {
 		$wanted = [];
 		foreach ($caseIds as $caseId) {
 			$caseId = trim((string)$caseId);
@@ -224,10 +265,19 @@ class IncidentStore {
 			}
 		}
 
-		if ($wanted === []) {
-			return [];
-		}
+		return $wanted;
+	}//end trimmedIds()
 
+	/**
+	 * The incidents of the wanted cases, grouped by case.
+	 *
+	 * @param array<int, string> $wanted The case ids asked about.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>> The incidents, keyed by case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 */
+	private function incidentsByCase(array $wanted): array {
 		$byCase = [];
 		foreach ($this->rows(filters: ['_limit' => self::PAGE_SIZE]) as $row) {
 			$caseId = trim((string)($row['case'] ?? ''));
@@ -236,6 +286,19 @@ class IncidentStore {
 			}
 		}
 
+		return $byCase;
+	}//end incidentsByCase()
+
+	/**
+	 * The open count per case, leaving out cases with none open.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $byCase The incidents, keyed by case.
+	 *
+	 * @return array<string, int> The counts, keyed by case.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 */
+	private function openCounts(array $byCase): array {
 		$counts = [];
 		foreach ($byCase as $caseId => $incidents) {
 			$open = $this->record->openCount(incidents: $incidents);
@@ -245,7 +308,7 @@ class IncidentStore {
 		}
 
 		return $counts;
-	}//end openCountsFor()
+	}//end openCounts()
 
 	/**
 	 * Hand one incident to somebody, leaving the case where it is.
@@ -400,33 +463,55 @@ class IncidentStore {
 		unset($incident['@self'], $incident['id'], $incident['uuid']);
 
 		try {
-			[$objectService, $register] = $this->dossierRegister()->context();
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->dossierRegister()->schema(key: 'case_incident_schema'),
-				object: $incident,
-				uuid: $uuid,
-			);
+			$saved = $this->store(record: $incident, uuid: $uuid);
 		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::UNWRITABLE,
-				sentence: 'The report could not be recorded.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->unrecorded(previous: $e);
 		}
 
 		if ($saved === null) {
-			throw new RefusedException(
-				rule: self::UNWRITABLE,
-				sentence: 'The report could not be recorded.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
+			throw $this->unrecorded(previous: null);
 		}
 
 		return $saved;
 	}//end write()
+
+	/**
+	 * Save the incident in the register.
+	 *
+	 * @param array<string, mixed> $record The incident, without its metadata.
+	 * @param string|null          $uuid   The uuid to update, or null to create.
+	 *
+	 * @return array<string, mixed>|null The stored row, or null when it could not be read back.
+	 *
+	 * @throws Throwable When the register is not available or refuses the write.
+	 */
+	private function store(array $record, ?string $uuid): ?array {
+		[$objectService, $register] = $this->dossierRegister()->context();
+
+		return $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->dossierRegister()->schema(key: 'case_incident_schema'),
+			object: $record,
+			uuid: $uuid,
+		);
+	}//end store()
+
+	/**
+	 * The refusal when the incident could not be recorded.
+	 *
+	 * @param Throwable|null $previous The cause, if any.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function unrecorded(?Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: self::UNWRITABLE,
+			sentence: 'The report could not be recorded.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unrecorded()
 
 	/**
 	 * The uuid of a stored row, however the register spelled it.

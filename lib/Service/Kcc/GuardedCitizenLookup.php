@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Kcc;
 
+use OCA\Dossiq\Kernel\Contracts\GuardedCitizenLookupInterface;
 use OCA\Dossiq\Service\CitizenLookupGuard;
 use OCP\IUser;
 
@@ -39,7 +40,7 @@ use OCP\IUser;
  *
  * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
  */
-class GuardedCitizenLookup {
+class GuardedCitizenLookup implements GuardedCitizenLookupInterface {
 	/**
 	 * Constructor.
 	 *

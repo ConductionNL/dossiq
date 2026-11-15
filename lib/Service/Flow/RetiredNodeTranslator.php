@@ -389,7 +389,30 @@ class RetiredNodeTranslator {
 		}
 
 		[$storedKey, $table] = $this->decisionTable(key: $key);
-		$outputMapping = (array)($config['outputMapping'] ?? []);
+		$fields = $this->decisionOutputFields(table: $table, step: ['config' => $config, 'key' => $key]);
+
+		$step = $this->decisionStep(storedKey: $storedKey, config: $config);
+
+		return [
+			['type' => self::DECISION_TABLE, 'config' => $step],
+			$this->caseWrite(fields: $fields, output: (string)($config['output'] ?? '')),
+		];
+	}//end decision()
+
+	/**
+	 * The case fields the decision table's outputs are written to.
+	 *
+	 * @param array<string, mixed> $table The stored table definition.
+	 * @param array<string, mixed> $step  The retired configuration (`config`) and the table's dossiq key (`key`).
+	 *
+	 * @return array<int, string> The fields.
+	 *
+	 * @throws UnmappableStep When the table declares no outputs.
+	 *
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
+	 */
+	private function decisionOutputFields(array $table, array $step): array {
+		$outputMapping = (array)($step['config']['outputMapping'] ?? []);
 		$fields = [];
 		foreach ((array)($table['outputs'] ?? []) as $output) {
 			$name = trim((string)(((array)$output)['name'] ?? ''));
@@ -399,9 +422,23 @@ class RetiredNodeTranslator {
 		}
 
 		if ($fields === []) {
-			throw new UnmappableStep(message: 'the decision table "' . $key . '" declares no outputs to write');
+			throw new UnmappableStep(message: 'the decision table "' . $step['key'] . '" declares no outputs to write');
 		}
 
+		return $fields;
+	}//end decisionOutputFields()
+
+	/**
+	 * The decision-table step's configuration: the stored table and the mappings the step declared.
+	 *
+	 * @param string $storedKey The stored table's key.
+	 * @param array<string, mixed> $config The retired configuration.
+	 *
+	 * @return array<string, mixed> The step configuration.
+	 *
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
+	 */
+	private function decisionStep(string $storedKey, array $config): array {
 		$step = ['tableRef' => $storedKey];
 		foreach (['inputMapping', 'outputMapping'] as $mapping) {
 			if (is_array($config[$mapping] ?? null) === true && $config[$mapping] !== []) {
@@ -409,11 +446,8 @@ class RetiredNodeTranslator {
 			}
 		}
 
-		return [
-			['type' => self::DECISION_TABLE, 'config' => $step],
-			$this->caseWrite(fields: $fields, output: (string)($config['output'] ?? '')),
-		];
-	}//end decision()
+		return $step;
+	}//end decisionStep()
 
 	/**
 	 * Read a stored decision table from OpenRegister's register by its dossiq key.

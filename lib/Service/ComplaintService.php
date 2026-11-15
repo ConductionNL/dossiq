@@ -23,11 +23,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Term\TermResolution;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -35,9 +38,11 @@ use RuntimeException;
 /**
  * Service for complaint (klacht) management per Awb chapter 9.
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ *
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
-class ComplaintService {
+class ComplaintService implements ComplaintServiceInterface {
 
 	use SearchesObjects;
 
@@ -160,6 +165,38 @@ class ComplaintService {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$this->validateRequired(data: $data, required: ['subject', 'description', 'receiptDate']);
 
+		[$objectService, $register, $schema] = $this->complaintStore();
+
+		$data = $this->received(data: $data);
+
+		$complaint = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+		);
+
+		$saved = $this->savedComplaint(data: $data, complaint: $complaint);
+
+		// The number is read off the SAVED complaint, never off `$data`: `$data`
+		// never held one, and a log line that invented its own would name a
+		// number no complaint carries.
+		$this->logger->info(
+			'Complaint created: ' . (string)($saved['complaintNumber'] ?? 'number pending'),
+			['app' => AppIdentity::APP_ID],
+		);
+
+		return $saved;
+	}//end createComplaint()
+
+	/**
+	 * The object service, register and complaint schema a complaint is written to.
+	 *
+	 * @return array{0: object, 1: string, 2: string} The object service, register and schema.
+	 *
+	 * @throws \RuntimeException If OpenRegister is unavailable or the schema is not configured
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	private function complaintStore(): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -172,6 +209,19 @@ class ComplaintService {
 			throw new RuntimeException('Complaint schema not configured');
 		}
 
+		return [$objectService, $register, $schema];
+	}//end complaintStore()
+
+	/**
+	 * The complaint data as received: its status and its Awb deadlines set.
+	 *
+	 * @param array<string, mixed> $data Complaint data
+	 *
+	 * @return array<string, mixed> The complaint data to save.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	private function received(array $data): array {
 		$receiptDate = $data['receiptDate'];
 
 		// The klachtnummer is NOT set here. `complaintNumber` declares
@@ -190,23 +240,27 @@ class ComplaintService {
 		);
 		$data['afhandelDeadline'] = $this->addCalendarWeeks(startDate: $receiptDate, weeks: self::AWB_RESOLUTION_WEEKS);
 
-		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		return $data;
+	}//end received()
 
+	/**
+	 * The saved complaint as an array, whatever shape the save answered.
+	 *
+	 * @param array<string, mixed> $data The complaint data that was saved.
+	 * @param mixed $complaint What the save answered.
+	 *
+	 * @return array<string, mixed> The saved complaint.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	private function savedComplaint(array $data, mixed $complaint): array {
 		$saved = $complaint;
 		if (is_array($complaint) === false) {
 			$saved = array_merge($data, (array)$complaint->getObject(), ['id' => $complaint->getUuid()]);
 		}
 
-		// The number is read off the SAVED complaint, never off `$data`: `$data`
-		// never held one, and a log line that invented its own would name a
-		// number no complaint carries.
-		$this->logger->info(
-			'Complaint created: ' . (string)($saved['complaintNumber'] ?? 'number pending'),
-			['app' => Application::APP_ID],
-		);
-
 		return $saved;
-	}//end createComplaint()
+	}//end savedComplaint()
 
 	/**
 	 * Get a single complaint by ID.
@@ -291,7 +345,10 @@ class ComplaintService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('complaint_schema');
 
-		$result = $objectService->saveObject(object: $data, register: $register, schema: $schema, uuid: (string)$id);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
+		);
 
 		if (is_array($result) === true) {
 			return $result;
@@ -372,7 +429,7 @@ class ComplaintService {
 
 		$this->logger->info(
 			'Verdaging requested for complaint ' . $id . '; new deadline: ' . $newDeadline,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return $this->updateComplaint(id: $id, data: $updateData);

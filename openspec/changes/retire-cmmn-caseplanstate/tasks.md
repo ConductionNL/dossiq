@@ -53,7 +53,7 @@ Written 12 Oct 2026 (lane L7), not run (live pass, decision 139): `tests/e2e/cmm
 ## 7. CaseModelEngine (decision 400)
 
 - [x] 7.1 Remove dossiq's `lib/Service/Cmmn/CaseModelEngine.php`. Done with the whole of `lib/Service/Cmmn` in 96a5cc44c ("retire the local CMMN runtime"). REQ-CMMN-008, which made it the write path for `casePlanState`, is REMOVED by this change's `specs/cmmn-adaptive-case` delta.
-- [ ] 7.2 Drop the remaining "loadable by CaseModelEngine" wording from the `caseType` description in `lib/Settings/register.d/70-cmmn-case-model.json`, `lib/Settings/dossiq_mock_register.json` and the l10n catalogues, so nothing names the removed engine.
+- [x] 7.2 Drop the remaining "loadable by CaseModelEngine" wording from the `caseType` description in `lib/Settings/register.d/70-cmmn-case-model.json`, `lib/Settings/dossiq_mock_register.json` and the l10n catalogues, so nothing names the removed engine.
 
 ## Re-verified 2026-10-12
 

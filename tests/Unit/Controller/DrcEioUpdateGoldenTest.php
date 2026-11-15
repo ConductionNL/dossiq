@@ -38,6 +38,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * An object service that also answers the lock system.
@@ -79,6 +80,7 @@ interface DrcEioUpdateObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Controller\ZgwController
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Controller\EioUpdateRun
  */
 class DrcEioUpdateGoldenTest extends TestCase {
 
@@ -161,6 +163,7 @@ class DrcEioUpdateGoldenTest extends TestCase {
 		);
 		$this->objectService->method('saveObject')->willReturnCallback(
 			function (...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->calls[] = ['save', $args];
 				return $args['object'] + ['id' => 'doc-1'];
 			}
@@ -354,7 +357,7 @@ class DrcEioUpdateGoldenTest extends TestCase {
 		[$validate, $save, $storeSave, $notify] = $this->calls;
 		$this->assertSame(['validate', 'documenten', self::EIO, 'partial_update', ['lock' => 'L-1', 'titel' => 'Nota', 'inhoud' => 'aGFsbG8=']], array_slice($validate, 0, 5));
 		$this->assertSame([null, $this->objectService, self::MAPPING], array_slice($validate[5], 0, 3));
-		$this->assertSame(['register' => 'zgw', 'schema' => 'eio', 'object' => ['title' => 'Nota', 'locked' => true, 'lockId' => 'L-1'], 'uuid' => 'doc-1'], $save[1]);
+		$this->assertSame(['object' => ['title' => 'Nota', 'locked' => true, 'lockId' => 'L-1'], 'register' => 'zgw', 'schema' => 'eio', 'uuid' => 'doc-1'], $save[1]);
 		$this->assertSame(['title' => 'Nota', 'locked' => true, 'lockId' => 'L-1', 'id' => 'doc-1', 'fileSize' => 5, 'fileId' => 77, 'uuid' => 'doc-1'], $storeSave[1]['object']);
 		$this->assertSame(['notify', 'documenten', self::EIO, 'https://zgw.test/documenten/api/v1/' . self::EIO . '/doc-1', 'update'], $notify);
 	}//end testAMatchingUpdateIsSavedStoredAndNotified()

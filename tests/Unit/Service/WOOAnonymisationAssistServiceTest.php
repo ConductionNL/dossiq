@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WOOAnonymisationAssistService
  *
  * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\OversightDecision
  */
 class WOOAnonymisationAssistServiceTest extends TestCase {
 	/**

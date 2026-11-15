@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\SubstitutionAuditServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -43,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-class SubstitutionAuditService {
+class SubstitutionAuditService implements SubstitutionAuditServiceInterface {
 	use SearchesObjects;
 
 	/**
@@ -80,25 +81,34 @@ class SubstitutionAuditService {
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function stampIfSubstituted(string $caseId, string $actorId, string $action): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$hasBlank = in_array('', [$register, $caseSchema, $caseId, $actorId], true);
-		if ($objectService === null || $hasBlank === true) {
-			return null;
-		}
-
-		$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
-		if ($case === null) {
-			return null;
-		}
-
 		$stamp = new CapacityStamp();
 		$stamp->caseId = $caseId;
 		$stamp->actorId = $actorId;
 		$stamp->action = $action;
-		$stamp->absentee = (string)($case['assignee'] ?? '');
-		$entry = $this->capacityEntry(stamp: $stamp, case: $case);
+
+		return $this->stamp(stamp: $stamp);
+	}//end stampIfSubstituted()
+
+	/**
+	 * Append the capacity entry of an action to its case when it was taken in a covered absentee's name.
+	 *
+	 * @param CapacityStamp $stamp The case, the acting user and the action label.
+	 *
+	 * @return array<string, mixed>|null The stamped entry, or null when own work, unconfigured or not written.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function stamp(CapacityStamp $stamp): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		$hasBlank = in_array('', [$register, $caseSchema, $stamp->caseId, $stamp->actorId], true);
+		if ($objectService === null || $hasBlank === true) {
+			return null;
+		}
+
+		$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $stamp->caseId);
+		$entry = $this->entryFor(stamp: $stamp, case: $case);
 		if ($entry === null) {
 			return null;
 		}
@@ -106,14 +116,34 @@ class SubstitutionAuditService {
 		$case['activity'] = $this->appendedActivity(case: $case, entry: $entry);
 
 		try {
-			$objectService->updateObject(objectId: $caseId, data: $case);
+			$objectService->updateObject(objectId: $stamp->caseId, data: $case);
 		} catch (\Throwable $e) {
-			$this->logger->error('Substitution capacity stamp failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
+			$this->logger->error('Substitution capacity stamp failed', ['caseId' => $stamp->caseId, 'error' => $e->getMessage()]);
 			return null;
 		}
 
 		return $entry;
-	}//end stampIfSubstituted()
+	}//end stamp()
+
+	/**
+	 * The capacity entry of an action on a stored case, or null for a missing case or own work.
+	 *
+	 * @param CapacityStamp             $stamp The case, the acting user and the action label.
+	 * @param array<string, mixed>|null $case  The stored case, or null.
+	 *
+	 * @return array<string, string>|null
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function entryFor(CapacityStamp $stamp, ?array $case): ?array {
+		if ($case === null) {
+			return null;
+		}
+
+		$stamp->absentee = (string)($case['assignee'] ?? '');
+
+		return $this->capacityEntry(stamp: $stamp, case: $case);
+	}//end entryFor()
 
 	/**
 	 * The activity entry of an action taken in a covered absentee's name, or null for own work.
@@ -199,34 +229,79 @@ class SubstitutionAuditService {
 			return [];
 		}
 
+		$store = $this->substitutionStore();
+		if ($store === null) {
+			return [];
+		}
+
+		$absentee = $this->absenteeOf(store: $store, substitutionId: $substitutionId);
+		if ($absentee === '') {
+			return [];
+		}
+
+		return $this->actionsOn(cases: $this->absenteeCases(store: $store, absentee: $absentee), substitutionId: $substitutionId);
+	}//end getActionsForSubstitution()
+
+	/**
+	 * The object service, register, substitution schema and case schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string, 3: string}|null The store.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function substitutionStore(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$subSchema = (string)$this->settingsService->getConfigValue('substitution_schema');
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
 		$hasBlank = in_array('', [$register, $subSchema, $caseSchema], true);
 		if ($objectService === null || $hasBlank === true) {
-			return [];
+			return null;
 		}
 
+		return [$objectService, $register, $subSchema, $caseSchema];
+	}//end substitutionStore()
+
+	/**
+	 * The absentee of a substitution, or an empty string when it has none or does not resolve.
+	 *
+	 * @param array{0: object, 1: string, 2: string, 3: string} $store          The store.
+	 * @param string                                            $substitutionId The substitution UUID.
+	 *
+	 * @return string The absentee.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function absenteeOf(array $store, string $substitutionId): string {
+		[$objectService, $register, $subSchema] = $store;
 		$sub = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $subSchema, id: $substitutionId);
 		if ($sub === null) {
-			return [];
+			return '';
 		}
 
-		$absentee = (string)($sub['absentee'] ?? '');
-		if ($absentee === '') {
-			return [];
-		}
+		return (string)($sub['absentee'] ?? '');
+	}//end absenteeOf()
 
-		$cases = $this->searchObjectsAsArrays(
+	/**
+	 * The cases assigned to the absentee.
+	 *
+	 * @param array{0: object, 1: string, 2: string, 3: string} $store    The store.
+	 * @param string                                            $absentee The absentee.
+	 *
+	 * @return array<int, array<string, mixed>> The cases.
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function absenteeCases(array $store, string $absentee): array {
+		[$objectService, $register, , $caseSchema] = $store;
+
+		return $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
 			filters: ['assignee' => $absentee]
 		);
-
-		return $this->actionsOn(cases: $cases, substitutionId: $substitutionId);
-	}//end getActionsForSubstitution()
+	}//end absenteeCases()
 
 	/**
 	 * The substitution's actions recorded on the cases, oldest first.

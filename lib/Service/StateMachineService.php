@@ -35,6 +35,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\StateMachineServiceInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -43,7 +47,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
  */
-class StateMachineService {
+class StateMachineService implements StateMachineServiceInterface {
 	/**
 	 * Allowed forward transitions and the single permitted back-edge.
 	 *
@@ -71,44 +75,6 @@ class StateMachineService {
 	];
 
 	/**
-	 * Fields that may NOT be edited once a beschikking is frozen.
-	 *
-	 * Lives beside IMMUTABLE_STATUSES because the two halves of the same rule
-	 * drift when they live apart, and the drift is silent.
-	 *
-	 * @var array<int, string>
-	 */
-	public const CONTENT_FIELDS = [
-		'rationale',
-		'decision',
-		'addressee',
-		'decisionType',
-		'legalRemediesClause',
-		'feeAmount',
-		'templateId',
-		// The number and the backward pointer are what a bezwaar cites: a
-		// signed beschikking that could be renumbered, or re-pointed at a
-		// different predecessor, is not the one that was served (REQ-BES-012).
-		'reference',
-		'supersedes',
-	];
-
-	/**
-	 * Fields written once, after signing, and never again.
-	 *
-	 * `supersededBy` is the forward pointer a correction writes on the
-	 * beschikking it replaces: the ONLY field the freeze lets a successor
-	 * write (REQ-BES-012). Empty to a value is allowed at every status; a
-	 * value to anything else is refused, so a replaced beschikking can never
-	 * be replaced a second time and the chain stays linear.
-	 *
-	 * @var array<int, string>
-	 */
-	public const WRITE_ONCE_FIELDS = [
-		'supersededBy',
-	];
-
-	/**
 	 * The exception message a refused mutation carries.
 	 *
 	 * `BeschikkingController` maps it to HTTP 409.
@@ -116,17 +82,6 @@ class StateMachineService {
 	 * @var string
 	 */
 	public const IMMUTABLE_ERROR = 'immutable';
-
-	/**
-	 * What a handler is told when a frozen beschikking refuses a write.
-	 *
-	 * REQ-BES-008 requires the refusal to name the way forward, so a handler
-	 * who is told no is also told what to do instead.
-	 *
-	 * @var string
-	 */
-	public const IMMUTABLE_MESSAGE = 'This beschikking has been signed and cannot be edited. '
-		. 'Issue a wijzigingsbeschikking or an intrekkingsbeschikking instead.';
 
 	/**
 	 * Constructor.
@@ -185,24 +140,67 @@ class StateMachineService {
 	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
 	 */
 	public function logTransition(string $decisionId, string $from, string $to, array $metadata = []): array {
+		$target = $this->logTarget();
+		if ($target === null) {
+			return [];
+		}
+
+		[$objectService, $register, $logSchema] = $target;
+		$record = $this->transitionRecord(transition: ['decisionId' => $decisionId, 'from' => $from, 'to' => $to], metadata: $metadata);
+
+		try {
+			$saved = $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $logSchema))
+			);
+			return $this->toArray(value: $saved);
+		} catch (\Throwable $e) {
+			$this->logger->error('StateMachineService: failed to persist transition log', ['exception' => $e->getMessage(), 'decisionId' => $decisionId]);
+			return [];
+		}
+	}//end logTransition()
+
+	/**
+	 * Where the transition log is stored, or null (with a warning) when it cannot be.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The object service, register and log schema.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
+	 */
+	private function logTarget(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$this->logger->warning('StateMachineService: storage unavailable, transition not logged');
-			return [];
+			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$logSchema = $this->settingsService->getConfigValue(key: 'state_machine_log_schema');
 		if ($register === '' || $logSchema === '') {
 			$this->logger->warning('StateMachineService: log schema not configured');
-			return [];
+			return null;
 		}
 
-		$record = [
-			'decisionId' => $decisionId,
+		return [$objectService, $register, $logSchema];
+	}//end logTarget()
+
+	/**
+	 * The stateMachineLog record of a transition.
+	 *
+	 * @param array{decisionId: string, from: string, to: string} $transition The beschikking UUID, the source status
+	 *                                                                       and the target status.
+	 * @param array<string, mixed>                                $metadata   Actor/trigger/evidence metadata.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T16
+	 */
+	private function transitionRecord(array $transition, array $metadata): array {
+		return [
+			'decisionId' => $transition['decisionId'],
 			'overgang' => [
-				'van' => $from,
-				'to' => $to,
+				'van' => $transition['from'],
+				'to' => $transition['to'],
 				'moment' => (new DateTimeImmutable())->format('c'),
 				'actor' => (string)($metadata['actor'] ?? 'systeem'),
 				'actorType' => (string)($metadata['actorType'] ?? 'systeem'),
@@ -210,18 +208,7 @@ class StateMachineService {
 				'evidenceMaterial' => ($metadata['evidenceMaterial'] ?? null),
 			],
 		];
-
-		try {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
-			return $this->toArray(value: $saved);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'StateMachineService: failed to persist transition log',
-				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
-			);
-			return [];
-		}
-	}//end logTransition()
+	}//end transitionRecord()
 
 	/**
 	 * Refuse a content edit on a beschikking that has been signed.
@@ -292,17 +279,6 @@ class StateMachineService {
 	 * @return array<string, mixed>
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

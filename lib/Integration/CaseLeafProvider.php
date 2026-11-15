@@ -29,7 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Integration;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseLeafProviderInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
@@ -43,14 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-leaf/spec.md
  */
-class CaseLeafProvider {
-
-	/**
-	 * The party schemas a master entity can resolve to.
-	 *
-	 * @var array<int, string>
-	 */
-	public const PARTY_SCHEMAS = ['brpPerson', 'kvkCompany'];
+class CaseLeafProvider implements CaseLeafProviderInterface {
 
 	/**
 	 * The status filters a read may ask for.
@@ -69,14 +63,14 @@ class CaseLeafProvider {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The register and the object service.
+	 * @param SettingsServiceInterface $settingsService The register and the object service.
 	 * @param IUserManager    $userManager     Names the handler.
 	 * @param IURLGenerator   $urlGenerator    Links a case to its page.
 	 * @param LoggerInterface $logger          PSR logger.
 	 * @param LanguageMapText $text            A translatable title or name as one string.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IUserManager $userManager,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly LoggerInterface $logger,
@@ -148,8 +142,10 @@ class CaseLeafProvider {
 		$rows = array_map(
 			fn (array $case): array => $this->present(
 				case: $case,
-				caseType: ($types[(string)($case['caseType'] ?? '')] ?? []),
-				statusType: ($statuses[(string)($case['status'] ?? '')] ?? [])
+				linked: [
+					'caseType' => ($types[(string)($case['caseType'] ?? '')] ?? []),
+					'statusType' => ($statuses[(string)($case['status'] ?? '')] ?? []),
+				]
 			),
 			array_values($cases)
 		);
@@ -196,13 +192,15 @@ class CaseLeafProvider {
 	/**
 	 * The fields of a case a host app shows.
 	 *
-	 * @param array<string, mixed> $case       The stored case.
-	 * @param array<string, mixed> $caseType   Its case type, or none.
-	 * @param array<string, mixed> $statusType Its status, or none.
+	 * @param array<string, mixed>                                                   $case   The stored case.
+	 * @param array{caseType: array<string, mixed>, statusType: array<string, mixed>} $linked Its case type and its status, each
+	 *                                                                                       or none.
 	 *
 	 * @return array<string, mixed> The leaf row.
 	 */
-	private function present(array $case, array $caseType, array $statusType): array {
+	private function present(array $case, array $linked): array {
+		$caseType = $linked['caseType'];
+		$statusType = $linked['statusType'];
 		$id = (string)$case['id'];
 		$assignee = (string)($case['assignee'] ?? '');
 

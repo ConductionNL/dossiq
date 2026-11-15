@@ -38,8 +38,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Custody\CaseTakeoverRequest;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTakeoverRequestInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -62,8 +62,8 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @param string              $appName     The app name.
 	 * @param IRequest            $request     The request.
-	 * @param CaseTakeoverRequest $takeovers   The pull and its answers.
-	 * @param CaseAccessGuard     $accessGuard Per-case authorization, failing closed.
+	 * @param CaseTakeoverRequestInterface $takeovers   The pull and its answers.
+	 * @param CaseAccessGuardInterface     $accessGuard Per-case authorization, failing closed.
 	 * @param IUserSession        $userSession The session.
 	 * @param LoggerInterface     $logger      The logger.
 	 *
@@ -74,8 +74,8 @@ class CaseTakeoverController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTakeoverRequest $takeovers,
-		private readonly CaseAccessGuard $accessGuard,
+		private readonly CaseTakeoverRequestInterface $takeovers,
+		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

@@ -115,22 +115,7 @@ final class WozResponseMapper {
 		}
 
 		$sorted = $waarden;
-		usort(
-			$sorted,
-			static function (mixed $a, mixed $b): int {
-				$dateA = '';
-				if (is_array($a) === true) {
-					$dateA = (string)($a['waardepeildatum'] ?? '');
-				}
-
-				$dateB = '';
-				if (is_array($b) === true) {
-					$dateB = (string)($b['waardepeildatum'] ?? '');
-				}
-
-				return $dateB <=> $dateA;
-			}
-		);
+		usort($sorted, static fn (mixed $a, mixed $b): int => self::newerFirst(a: $a, b: $b));
 
 		$first = ($sorted[0] ?? []);
 		if (is_array($first) === true) {
@@ -139,4 +124,26 @@ final class WozResponseMapper {
 
 		return [];
 	}//end mostRecentWaarde()
+
+	/**
+	 * Order two `vastgesteldeWaarden[]` entries newest `waardepeildatum` first.
+	 *
+	 * @param mixed $a One entry.
+	 * @param mixed $b The other entry.
+	 *
+	 * @return int
+	 */
+	private static function newerFirst(mixed $a, mixed $b): int {
+		$dateA = '';
+		if (is_array($a) === true) {
+			$dateA = (string)($a['waardepeildatum'] ?? '');
+		}
+
+		$dateB = '';
+		if (is_array($b) === true) {
+			$dateB = (string)($b['waardepeildatum'] ?? '');
+		}
+
+		return $dateB <=> $dateA;
+	}//end newerFirst()
 }//end class

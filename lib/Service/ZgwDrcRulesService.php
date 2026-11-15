@@ -60,6 +60,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\ChecksIdentificatieUnique;
 use OCA\Dossiq\Service\Zgw\DrcDocumentRelations;
 use OCA\Dossiq\Service\Zgw\DrcObjectLinkRules;
 use Psr\Log\LoggerInterface;
@@ -76,6 +77,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwDrcRulesService extends ZgwRulesBase {
+	use ChecksIdentificatieUnique;
+
 	/**
 	 * The stored relations of a document.
 	 *
@@ -196,27 +199,6 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	}//end checkCreateGebruiksrecht()
 
 	/**
-	 * Drc-008: a given identificatie is unique together with the bronorganisatie.
-	 *
-	 * @param array $body The request body
-	 *
-	 * @return array|null The refusal, or null when unique or not given
-	 */
-	private function checkIdentificatieUnique(array $body): ?array {
-		if (empty($body['identificatie']) === true) {
-			return null;
-		}
-
-		return $this->checkFieldUniqueness(
-			field1Value: $body['identificatie'],
-			field1Search: 'identifier',
-			field2Value: $body['bronorganisatie'] ?? '',
-			field2Search: 'sourceOrganisation',
-			errorField: 'identificatie'
-		);
-	}//end checkIdentificatieUnique()
-
-	/**
 	 * Drc-008: the body with a generated identificatie when it has none.
 	 *
 	 * @param array $body The request body
@@ -320,13 +302,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		array $body,
 		?array $existingObject = null,
 	): array {
-		// Drc-006: Check lock requirement.
-		$lockError = $this->validateLock(body: $body, existingObject: $existingObject);
-		if ($lockError !== null) {
-			return $lockError;
-		}
-
-		return $this->isValid(body: $body);
+		return $this->rulesEnkelvoudiginformatieobjectenUpdate(body: $body, existingObject: $existingObject);
 	}//end rulesEnkelvoudiginformatieobjectenPatch()
 
 	/**

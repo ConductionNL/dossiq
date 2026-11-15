@@ -36,11 +36,13 @@ namespace OCA\Dossiq\Service;
 
 use DateTime;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseReassignmentServiceInterface;
 use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
-use OCA\Dossiq\Service\Support\WritesReassignments;
+use OCA\Dossiq\Service\Support\ReadsFinalStatusIds;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\WritesReassignments;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\Notification\IManager;
@@ -55,10 +57,11 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-class CaseReassignmentService {
+class CaseReassignmentService implements CaseReassignmentServiceInterface {
 
 	use WritesReassignments;
 	use SearchesObjects;
+	use ReadsFinalStatusIds;
 
 	/**
 	 * Constructor.
@@ -94,44 +97,98 @@ class CaseReassignmentService {
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function preview(string $fromUser, ?array $filter = null): array {
+		$fromUser = $this->requiredUser(fromUser: $fromUser);
+
+		[$objectService, $register] = $this->context();
+		$caseType = $this->caseTypeFilter(filter: $filter);
+
+		$finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
+
+		$caseResults = $this->assignedCases(objectService: $objectService, register: $register, fromUser: $fromUser);
+		$cases = $this->filterOpenCases(caseResults: $caseResults, finalIds: $finalIds, caseType: $caseType);
+
+		$tasks = $this->openTasksOf(fromUser: $fromUser, cases: $cases, caseType: $caseType);
+
+		return ['cases' => $cases, 'tasks' => $tasks];
+	}//end preview()
+
+	/**
+	 * The departing handler's user id, trimmed.
+	 *
+	 * @param string $fromUser The departing handler user id.
+	 *
+	 * @return string The trimmed user id.
+	 *
+	 * @throws InvalidArgumentException When the user id is blank.
+	 */
+	private function requiredUser(string $fromUser): string {
 		$fromUser = trim($fromUser);
 		if ($fromUser === '') {
 			throw new InvalidArgumentException('fromUser is required');
 		}
 
-		[$objectService, $register] = $this->context();
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		return $fromUser;
+	}//end requiredUser()
+
+	/**
+	 * The case type the preview is narrowed to, or '' for all.
+	 *
+	 * @param array<string, mixed>|null $filter Optional filter, e.g. ['caseType' => 'uuid'].
+	 *
+	 * @return string The case type uuid, or ''.
+	 */
+	private function caseTypeFilter(?array $filter): string {
 		$caseType = '';
 		if (isset($filter['caseType']) === true) {
 			$caseType = (string)$filter['caseType'];
 		}
 
-		$finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
+		return $caseType;
+	}//end caseTypeFilter()
 
-		$cases = [];
-		if ($caseSchema !== '') {
-			$caseResults = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['assignee' => $fromUser]
-			);
-
-			$cases = $this->filterOpenCases(caseResults: $caseResults, finalIds: $finalIds, caseType: $caseType);
+	/**
+	 * The cases assigned to the departing handler, unfiltered; none when no case schema is configured.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register      The register id.
+	 * @param string $fromUser      The departing handler user id.
+	 *
+	 * @return array<int, array<string, mixed>> The raw case search results.
+	 */
+	private function assignedCases(object $objectService, string $register, string $fromUser): array {
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($caseSchema === '') {
+			return [];
 		}
 
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $caseSchema,
+			filters: ['assignee' => $fromUser]
+		);
+	}//end assignedCases()
+
+	/**
+	 * The departing handler's open tasks, narrowed like the cases.
+	 *
+	 * @param string $fromUser The departing handler user id.
+	 * @param array<int, array<string, mixed>> $cases The open cases.
+	 * @param string $caseType Optional caseType uuid to narrow by ('' = all).
+	 *
+	 * @return array<int, array<string, mixed>> The open tasks.
+	 */
+	private function openTasksOf(string $fromUser, array $cases, string $caseType): array {
 		// The ENGINE holds the tasks, and it holds the open/closed split too:
 		// `openForAssignee` asks for `isTerminal: false` rather than reading
 		// a page and dropping the closed rows from it, which would have lost
 		// every open task past the page boundary.
-		$tasks = $this->filterOpenTasks(
+		return $this->filterOpenTasks(
 			taskResults: $this->engineTasks->openForAssignee(actor: $fromUser),
 			cases: $cases,
 			caseType: $caseType
 		);
-
-		return ['cases' => $cases, 'tasks' => $tasks];
-	}//end preview()
+	}//end openTasksOf()
 
 	/**
 	 * Keep only the non-final cases, optionally narrowed to one case type.
@@ -426,10 +483,6 @@ class CaseReassignmentService {
 		return $results;
 	}//end releaseTasks()
 
-
-
-
-
 	/**
 	 * Send a single digest notification to the receiving handler.
 	 *
@@ -459,7 +512,7 @@ class CaseReassignmentService {
 	 */
 	private function sendDigest(CaseloadReleaseRun $run, int $count): void {
 		$notification = $this->notificationManager->createNotification();
-		$notification->setApp(Application::APP_ID)
+		$notification->setApp(AppIdentity::APP_ID)
 			->setUser($run->toUser)
 			->setDateTime(new DateTime())
 			->setObject('reassignment', $run->batchId)
@@ -469,37 +522,5 @@ class CaseReassignmentService {
 			);
 		$this->notificationManager->notify($notification);
 	}//end sendDigest()
-
-	/**
-	 * Resolve the set of final statusType ids (closed/archived cases).
-	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register Register id.
-	 *
-	 * @return array<int, string>
-	 */
-	private function finalStatusIds(object $objectService, string $register): array {
-		$statusTypeSchema = (string)$this->settingsService->getConfigValue('status_type_schema');
-		if ($statusTypeSchema === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $statusTypeSchema);
-		} catch (\Throwable $e) {
-			return [];
-		}
-
-		$ids = [];
-		foreach ($rows as $row) {
-			$isFinal = ($row['isFinal'] ?? false);
-			if (in_array($isFinal, [true, 'true', 1], true) === true) {
-				$ids[] = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			}
-		}
-
-		return array_values(array_filter($ids));
-	}//end finalStatusIds()
-
 
 }//end class

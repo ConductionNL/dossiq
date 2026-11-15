@@ -129,8 +129,22 @@ class EngineRunMigration {
 			return ['asked' => false, 'migrated' => false, 'reason' => self::RUN_NOT_MOVED];
 		}
 
+		return $this->migratedOn(service: $service, move: ['caseId' => $caseId, 'target' => $targetCaseTypeId, 'actor' => $actorUid]);
+	}//end migrate()
+
+	/**
+	 * Ask the engine to move the case's run onto the target version, carrying the engine's refusal as it is.
+	 *
+	 * @param object                                            $service The engine's run migration service.
+	 * @param array{caseId: string, target: string, actor: string} $move    The case, the version it moves onto, and who moves it.
+	 *
+	 * @return array<string, mixed> The answer.
+	 *
+	 * @throws RefusedException When the engine refuses the migration.
+	 */
+	private function migratedOn(object $service, array $move): array {
 		try {
-			$outcome = $service->{self::MIGRATION_METHOD}($caseId, $targetCaseTypeId, $actorUid);
+			$outcome = $service->{self::MIGRATION_METHOD}($move['caseId'], $move['target'], $move['actor']);
 		} catch (Throwable $e) {
 			// THE ENGINE'S OWN SENTENCE TRAVELS. A rebind refused by the run is
 			// refused for a reason the coordinator can act on, and replacing it
@@ -144,6 +158,19 @@ class EngineRunMigration {
 			);
 		}
 
+		return $this->migratedAnswer(outcome: $outcome);
+	}//end migratedOn()
+
+	/**
+	 * The answer for a run the engine was asked to move, or its refusal.
+	 *
+	 * @param mixed $outcome What the engine answered.
+	 *
+	 * @return array{asked: bool, migrated: bool, reason: string} The run moved.
+	 *
+	 * @throws RefusedException When the engine did not move the run.
+	 */
+	private function migratedAnswer(mixed $outcome): array {
 		if ($this->migrated(outcome: $outcome) === false) {
 			throw new RefusedException(
 				rule: 'engine-refused-the-run-migration',
@@ -153,7 +180,7 @@ class EngineRunMigration {
 		}
 
 		return ['asked' => true, 'migrated' => true, 'reason' => $this->reasonOf(outcome: $outcome)];
-	}//end migrate()
+	}//end migratedAnswer()
 
 	/**
 	 * Why the engine was not asked, or '' when it was reachable.
@@ -190,11 +217,7 @@ class EngineRunMigration {
 	 * @return object|null The service.
 	 */
 	private function resolve(): ?object {
-		if ($this->settings->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		if (class_exists(self::MIGRATION_SERVICE) === false) {
+		if ($this->migrationClassAvailable() === false) {
 			return null;
 		}
 
@@ -202,14 +225,41 @@ class EngineRunMigration {
 			$service = $this->container->get(self::MIGRATION_SERVICE);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'EngineRunMigration: openregister has ' . self::MIGRATION_SERVICE
-					. ' but the container could not construct it, so no run is being migrated',
+				'EngineRunMigration: openregister has ' . self::MIGRATION_SERVICE . ' but the container could not construct it, so no run is being migrated',
 				['exception' => $e->getMessage()]
 			);
 
 			return null;
 		}
 
+		return $this->withMigrationVerb(service: $service);
+	}//end resolve()
+
+	/**
+	 * Whether OpenRegister is available and ships the migration service class.
+	 *
+	 * @return bool
+	 */
+	private function migrationClassAvailable(): bool {
+		if ($this->settings->isOpenRegisterAvailable() === false) {
+			return false;
+		}
+
+		if (class_exists(self::MIGRATION_SERVICE) === false) {
+			return false;
+		}
+
+		return true;
+	}//end migrationClassAvailable()
+
+	/**
+	 * The service when it has the migration verb, null and an error when the verb moved.
+	 *
+	 * @param mixed $service The constructed migration service.
+	 *
+	 * @return object|null The service.
+	 */
+	private function withMigrationVerb(mixed $service): object|null {
 		if (method_exists($service, self::MIGRATION_METHOD) === false) {
 			// A RENAME, NOT A CONFIGURATION. The class is there and the verb is
 			// not, which means the capability moved and every rebind from here
@@ -223,7 +273,7 @@ class EngineRunMigration {
 		}
 
 		return $service;
-	}//end resolve()
+	}//end withMigrationVerb()
 
 	/**
 	 * Whether the engine says it moved the run.

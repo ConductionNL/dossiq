@@ -32,11 +32,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Starter\CaseTypeRetirementService;
-use OCA\Dossiq\Service\Starter\DomainCopyService;
-use OCA\Dossiq\Service\Starter\ReusableProcessStepService;
-use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
+use OCA\Dossiq\Controller\Support\AnswersRegisterUnavailable;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeRetirementServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DomainCopyServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ReusableProcessStepServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\ShippedConfigurationServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -58,6 +59,7 @@ use Throwable;
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 class StarterContentController extends Controller {
+	use AnswersRegisterUnavailable;
 
 	/**
 	 * The schema slugs this controller will report provenance for, and the app
@@ -80,21 +82,21 @@ class StarterContentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request    The HTTP request.
-	 * @param ShippedConfigurationService $shipped    What shipped and what changed.
-	 * @param CaseTypeRetirementService   $retirement Retire and restore.
-	 * @param DomainCopyService           $domains    The domain copy.
-	 * @param ReusableProcessStepService  $steps      The shared process steps.
+	 * @param ShippedConfigurationServiceInterface $shipped    What shipped and what changed.
+	 * @param CaseTypeRetirementServiceInterface   $retirement Retire and restore.
+	 * @param DomainCopyServiceInterface           $domains    The domain copy.
+	 * @param ReusableProcessStepServiceInterface  $steps      The shared process steps.
 	 * @param LoggerInterface             $logger     Logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ShippedConfigurationService $shipped,
-		private readonly CaseTypeRetirementService $retirement,
-		private readonly DomainCopyService $domains,
-		private readonly ReusableProcessStepService $steps,
+		private readonly ShippedConfigurationServiceInterface $shipped,
+		private readonly CaseTypeRetirementServiceInterface $retirement,
+		private readonly DomainCopyServiceInterface $domains,
+		private readonly ReusableProcessStepServiceInterface $steps,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -120,10 +122,7 @@ class StarterContentController extends Controller {
 					// ADR-102: the register being unreachable is not an empty
 					// list, and reporting it as one would tell an administrator
 					// that nothing shipped.
-					return new JSONResponse(
-						['error' => 'The register is not available'],
-						Http::STATUS_SERVICE_UNAVAILABLE
-					);
+					return $this->registerUnavailable();
 				}
 
 				return new JSONResponse(['items' => $overview, 'total' => count($overview)]);
@@ -230,15 +229,7 @@ class StarterContentController extends Controller {
 	 * @return int
 	 */
 	private function adoptStatus(array $result): int {
-		if ($result['adopted'] !== false) {
-			return Http::STATUS_OK;
-		}
-
-		if ($result['reason'] === 'not_found') {
-			return Http::STATUS_NOT_FOUND;
-		}
-
-		return Http::STATUS_CONFLICT;
+		return $this->foundOrConflict(result: ['ok' => $result['adopted'] !== false, 'reason' => ($result['reason'] ?? '')]);
 	}//end adoptStatus()
 
 	/**
@@ -331,10 +322,7 @@ class StarterContentController extends Controller {
 			run: function () use ($stepId): JSONResponse {
 				$users = $this->steps->usedBy(stepId: $stepId);
 				if ($users === null) {
-					return new JSONResponse(
-						['error' => 'The register is not available'],
-						Http::STATUS_SERVICE_UNAVAILABLE
-					);
+					return $this->registerUnavailable();
 				}
 
 				return new JSONResponse(['items' => $users, 'total' => count($users)]);

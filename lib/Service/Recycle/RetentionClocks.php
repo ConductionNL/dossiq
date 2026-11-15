@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Service\Recycle;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\RetentionClocksInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
@@ -53,7 +54,7 @@ use Throwable;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class RetentionClocks {
+class RetentionClocks implements RetentionClocksInterface {
 
 	/**
 	 * The case-type property that states the lawful-purpose retention.

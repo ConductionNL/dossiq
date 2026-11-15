@@ -42,6 +42,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Task\TaskEffects
  * @covers \OCA\Dossiq\Service\Task\CaseTaskActions
  * @uses \OCA\Dossiq\Service\Transitions\ActionResult
+ * @uses \OCA\Dossiq\Service\Task\EffectRun
  */
 class TaskEffectsTest extends TestCase {
 
@@ -80,6 +81,18 @@ class TaskEffectsTest extends TestCase {
 	public function testATaskWithNoDeclarationDeclaresNothing(): void {
 		$this->assertSame(expected: [], actual: $this->effects()->declaredOn(task: ['id' => 'task-1']));
 		$this->assertSame(expected: [], actual: $this->effects()->declaredOn(task: ['metadata' => 'nonsense']));
+	}
+
+	/**
+	 * A dossiq block or an effects list that is not an array declares nothing.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedDeclarationDeclaresNothing(): void {
+		$key = TaskEffects::METADATA_KEY;
+
+		$this->assertSame(expected: [], actual: $this->effects()->declaredOn(task: ['metadata' => [$key => 'nonsense']]));
+		$this->assertSame(expected: [], actual: $this->effects()->declaredOn(task: ['metadata' => [$key => ['effects' => 'nonsense']]]));
 	}
 
 	/**

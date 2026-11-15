@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\OpenRegister\Service\Flow\FlowNodeCall;
+use OCA\OpenRegister\Service\Flow\FlowNodeInvoker;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -73,6 +74,7 @@ class SideEffectDispatcher {
 	 */
 	public function dispatch(array $actions, array $case, array $transitionContext): array {
 		$nodes = $this->nodes();
+		$transitioned = new TransitionedCase(case: $case, transitionContext: $transitionContext);
 		$results = [];
 		foreach ($actions as $action) {
 			$type = (string)($action['type'] ?? '');
@@ -80,46 +82,52 @@ class SideEffectDispatcher {
 				continue;
 			}
 
-			// A type dossiq no longer answers itself (mail, notification,
-			// field, decision, webhook) runs as the node that replaced it,
-			// translated the same way a stored flow step is. A case type
-			// declared before the change keeps doing what it declared.
-			if ($this->retired !== null && $this->retired->handles(type: $type) === true) {
-				$results[] = $this->retired->run(type: $type, action: $action, case: $case, context: $transitionContext);
-				continue;
-			}
-
-			// ADR-065: OpenRegister owns the engine, so a transition side effect
-			// runs the SAME node a flow would — dossiq contributes those nodes
-			// (lib/Flow) and this is the second caller of identical code, not a
-			// parallel implementation. The local-handler path is the fallback for
-			// an instance without OpenRegister, so a transition never silently
-			// skips its side effects because a neighbouring app is absent.
-			// Early-continue rather than if/else: phpcs rejects the inline
-			// ternary this started as, and phpmd's ElseExpression rejects the
-			// else that replaced it. Guard-and-continue satisfies both without
-			// pretending either rule is wrong.
-			if ($nodes !== null) {
-				$results[] = $this->viaNode(
-					nodes: $nodes,
-					type: $type,
-					action: $action,
-					case: $case,
-					transitionContext: $transitionContext
-				);
-				continue;
-			}
-
-			$results[] = $this->viaHandler(
-				type: $type,
-				action: $action,
-				case: $case,
-				transitionContext: $transitionContext
-			);
+			$results[] = $this->dispatchOne(action: $action, route: ['nodes' => $nodes, 'transitioned' => $transitioned]);
 		}//end foreach
 
 		return $results;
 	}//end dispatch()
+
+	/**
+	 * Run one action: as its replacing node when retired, else as an OpenRegister node, else locally.
+	 *
+	 * @param array<string, mixed>                                                $action Action config, with a non-empty type.
+	 * @param array{nodes: FlowNodeRegistry|null, transitioned: TransitionedCase} $route  OpenRegister's node
+	 *                                                                                    catalogue (or null), and the
+	 *                                                                                    case and the transition context.
+	 *
+	 * @return array<string, mixed> The result row.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dispatchOne(array $action, array $route): array {
+		['nodes' => $nodes, 'transitioned' => $transitioned] = $route;
+		$type = (string)($action['type'] ?? '');
+
+		// A type dossiq no longer answers itself (mail, notification,
+		// field, decision, webhook) runs as the node that replaced it,
+		// translated the same way a stored flow step is. A case type
+		// declared before the change keeps doing what it declared.
+		if ($this->retired !== null && $this->retired->handles(type: $type) === true) {
+			return $this->retired->run(type: $type, action: $action, case: $transitioned->case, context: $transitioned->transitionContext);
+		}
+
+		// ADR-065: OpenRegister owns the engine, so a transition side effect
+		// runs the SAME node a flow would — dossiq contributes those nodes
+		// (lib/Flow) and this is the second caller of identical code, not a
+		// parallel implementation. The local-handler path is the fallback for
+		// an instance without OpenRegister, so a transition never silently
+		// skips its side effects because a neighbouring app is absent.
+		// Early-return rather than if/else: phpcs rejects the inline
+		// ternary this started as, and phpmd's ElseExpression rejects the
+		// else that replaced it. Guard-and-return satisfies both without
+		// pretending either rule is wrong.
+		if ($nodes !== null) {
+			return $this->viaNode(action: $action, route: $route);
+		}
+
+		return $this->viaHandler(action: $action, transitioned: $transitioned);
+	}//end dispatchOne()
 
 	/**
 	 * OpenRegister's node catalogue, or null when OpenRegister is absent.
@@ -162,35 +170,32 @@ class SideEffectDispatcher {
 	 * ones or roll back the status change. So the throw is caught here and
 	 * turned back into a result row.
 	 *
-	 * @param FlowNodeRegistry $nodes The node catalogue.
-	 * @param string $type The action type.
-	 * @param array<string, mixed> $action The action config.
-	 * @param array<string, mixed> $case The case.
-	 * @param array<string, mixed> $transitionContext The transition context.
+	 * @param array<string, mixed>                                           $action The action config, with its type.
+	 * @param array{nodes: FlowNodeRegistry, transitioned: TransitionedCase} $route  The node catalogue, and the case
+	 *                                                                               and the transition context.
 	 *
 	 * @return array<string, mixed> The result row.
 	 *
 	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
 	 */
-	private function viaNode(
-		FlowNodeRegistry $nodes,
-		string $type,
-		array $action,
-		array $case,
-		array $transitionContext,
-	): array {
+	private function viaNode(array $action, array $route): array {
+		['nodes' => $nodes, 'transitioned' => $transitioned] = $route;
+		$type = (string)($action['type'] ?? '');
 		try {
 			$node = $nodes->get(type: 'dossiq.' . $type);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'SideEffectDispatcher: unknown action type',
-				['type' => $type, 'context' => $transitionContext],
+				['type' => $type, 'context' => $transitioned->transitionContext],
 			);
 			return ['type' => $type, 'ok' => false, 'error' => 'unknown_action_type'];
 		}
 
 		try {
-			$node->execute(call: new FlowNodeCall(items: [['json' => $case]], config: $action, context: $transitionContext));
+			(new FlowNodeInvoker())->execute(
+				node: $node,
+				call: new FlowNodeCall(items: [['json' => $transitioned->case]], config: $action, context: $transitioned->transitionContext)
+			);
 		} catch (Throwable $e) {
 			// An exception with an empty message still has to report SOMETHING —
 			// 'ok' => false with a blank error reads downstream as "failed, cause
@@ -211,31 +216,25 @@ class SideEffectDispatcher {
 	 *
 	 * The fallback for an instance without OpenRegister.
 	 *
-	 * @param string $type The action type.
-	 * @param array<string, mixed> $action The action config.
-	 * @param array<string, mixed> $case The case.
-	 * @param array<string, mixed> $transitionContext The transition context.
+	 * @param array<string, mixed> $action       The action config, with its type.
+	 * @param TransitionedCase     $transitioned The case and the transition context.
 	 *
 	 * @return array<string, mixed> The result row.
 	 *
 	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
 	 */
-	private function viaHandler(
-		string $type,
-		array $action,
-		array $case,
-		array $transitionContext,
-	): array {
+	private function viaHandler(array $action, TransitionedCase $transitioned): array {
+		$type = (string)($action['type'] ?? '');
 		$handler = $this->registry->getHandler(type: $type);
 		if ($handler === null) {
 			$this->logger->warning(
 				'SideEffectDispatcher: unknown action type',
-				['type' => $type, 'context' => $transitionContext],
+				['type' => $type, 'context' => $transitioned->transitionContext],
 			);
 			return ['type' => $type, 'ok' => false, 'error' => 'unknown_action_type'];
 		}
 
-		$result = $handler->handle(actionConfig: $action, case: $case, transitionContext: $transitionContext);
+		$result = $handler->handle(actionConfig: $action, case: $transitioned->case, transitionContext: $transitioned->transitionContext);
 		$entry = ['type' => $type, 'ok' => $result->succeeded];
 		if ($result->succeeded === false) {
 			$entry['error'] = (string)($result->error ?? 'action_failed');

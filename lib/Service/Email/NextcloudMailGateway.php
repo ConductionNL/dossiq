@@ -285,14 +285,27 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return false;
 		}
 
-		$account = $this->account(accountId: $accountId);
-		$manager = $this->service(name: self::MAIL_MANAGER);
-		if ($account === null || $manager === null || method_exists($manager, 'getByMessageId') === false) {
+		$found = $this->messagesWithId(accountId: $accountId, messageId: $bare);
+
+		return (is_array($found) === true && $found !== []);
+	}//end holdsMessageId()
+
+	/**
+	 * Ask Mail which messages of the account carry the id.
+	 *
+	 * @param integer $accountId The account.
+	 * @param string  $messageId The bare message id.
+	 *
+	 * @return mixed Mail's answer, or false when the lookup could not run.
+	 */
+	private function messagesWithId(int $accountId, string $messageId): mixed {
+		$lookup = $this->threadingLookup(accountId: $accountId);
+		if ($lookup === null) {
 			return false;
 		}
 
 		try {
-			$found = $manager->getByMessageId($account, $bare);
+			return $lookup->manager->getByMessageId($lookup->account, $messageId);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the threading lookup failed, so the claim stays unproven',
@@ -300,9 +313,24 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			);
 			return false;
 		}
+	}//end messagesWithId()
 
-		return (is_array($found) === true && $found !== []);
-	}//end holdsMessageId()
+	/**
+	 * The account and the manager a threading lookup asks, or null when either is missing.
+	 *
+	 * @param integer $accountId The account.
+	 *
+	 * @return ThreadingLookup|null The lookup.
+	 */
+	private function threadingLookup(int $accountId): ?ThreadingLookup {
+		$account = $this->account(accountId: $accountId);
+		$manager = $this->service(name: self::MAIL_MANAGER);
+		if ($account === null || $manager === null || method_exists($manager, 'getByMessageId') === false) {
+			return null;
+		}
+
+		return new ThreadingLookup(account: $account, manager: $manager);
+	}//end threadingLookup()
 
 	/**
 	 * File a message in another folder of the same account.
@@ -516,13 +544,24 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		try {
 			$found = $manager->getMailAttachments($account, $mailbox, $uid);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: reading attachments failed',
-				['account' => $accountId, 'uid' => $uid, 'error' => $e->getMessage()]
-			);
+			$context = ['account' => $accountId, 'uid' => $uid, 'error' => $e->getMessage()];
+			$this->logger->warning('Dossiq: reading attachments failed', $context);
 			return [];
 		}
 
+		return self::attachmentRows(found: $found);
+	}//end attachments()
+
+	/**
+	 * The attachments Mail answered, as rows; anything that is not a list of arrays reads as none.
+	 *
+	 * @param mixed $found What Mail answered.
+	 *
+	 * @return array<int, array{name: string, mimeType: string, size: int}> The attachments.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private static function attachmentRows(mixed $found): array {
 		if (is_array($found) === false) {
 			return [];
 		}
@@ -533,15 +572,28 @@ class NextcloudMailGateway implements MailGatewayInterface {
 				continue;
 			}
 
-			$attachments[] = [
-				'name' => (string)($attachment['fileName'] ?? ($attachment['name'] ?? '')),
-				'mimeType' => (string)($attachment['mime'] ?? ($attachment['mimeType'] ?? '')),
-				'size' => (int)($attachment['size'] ?? 0),
-			];
-		}//end foreach
+			$attachments[] = self::attachmentRow(attachment: $attachment);
+		}
 
 		return $attachments;
-	}//end attachments()
+	}//end attachmentRows()
+
+	/**
+	 * One attachment, as a row.
+	 *
+	 * @param array<string, mixed> $attachment The attachment as Mail answered it.
+	 *
+	 * @return array{name: string, mimeType: string, size: int} The row.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private static function attachmentRow(array $attachment): array {
+		return [
+			'name' => (string)($attachment['fileName'] ?? ($attachment['name'] ?? '')),
+			'mimeType' => (string)($attachment['mime'] ?? ($attachment['mimeType'] ?? '')),
+			'size' => (int)($attachment['size'] ?? 0),
+		];
+	}//end attachmentRow()
 
 	/**
 	 * Unpack a Mail synchronisation event into normalised message rows.
@@ -570,9 +622,9 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		// the same indirection the account, mailbox and message entities
 		// already go through further down, and it brings the `method_exists`
 		// guard and the throw handling with it.
-		$account = $this->call(entity: $event, method: 'getAccount', fallback: null);
-		$mailbox = $this->call(entity: $event, method: 'getMailbox', fallback: null);
-		$rows = $this->call(entity: $event, method: 'getMessages', fallback: []);
+		$account = $this->call(entity: $event, getter: ['getAccount', null]);
+		$mailbox = $this->call(entity: $event, getter: ['getMailbox', null]);
+		$rows = $this->call(entity: $event, getter: ['getMessages', []]);
 
 		if (is_object($account) === false || is_object($mailbox) === false) {
 			// A Mail release that moved the event's shape arrives here, and so
@@ -706,7 +758,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @return int|null
 	 */
 	private function outboxIdOf(object $saved): ?int {
-		$outboxId = (int)$this->call(entity: $saved, method: 'getId', fallback: 0);
+		$outboxId = (int)$this->call(entity: $saved, getter: ['getId', 0]);
 		if ($outboxId <= 0) {
 			return null;
 		}
@@ -742,14 +794,25 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 */
 	private function outbox(): ?object {
 		$outbox = $this->service(name: self::OUTBOX_SERVICE);
-		if ($outbox === null || class_exists(self::LOCAL_MESSAGE) === false
-			|| method_exists($outbox, 'saveMessage') === false || method_exists($outbox, 'sendMessage') === false
-		) {
+		if ($outbox === null || $this->canQueue(outbox: $outbox) === false) {
 			return null;
 		}
 
 		return $outbox;
 	}//end outbox()
+
+	/**
+	 * Whether Mail's outbox can take a message: its row class exists and it offers both verbs.
+	 *
+	 * @param object $outbox Mail's outbox service.
+	 *
+	 * @return bool True when a message can be saved to it and sent from it.
+	 */
+	private function canQueue(object $outbox): bool {
+		return class_exists(self::LOCAL_MESSAGE) === true
+			&& method_exists($outbox, 'saveMessage') === true
+			&& method_exists($outbox, 'sendMessage') === true;
+	}//end canQueue()
 
 	/**
 	 * Build Mail's outbox row for one message.
@@ -788,7 +851,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @return string SENT, SENT_NOT_FILED or QUEUED.
 	 */
 	private function stateOf(object $sent): string {
-		$status = (int)$this->call(entity: $sent, method: 'getStatus', fallback: -1);
+		$status = (int)$this->call(entity: $sent, getter: ['getStatus', -1]);
 		if ($status === self::STATUS_PROCESSED) {
 			return OutboundState::SENT;
 		}
@@ -822,10 +885,10 @@ class NextcloudMailGateway implements MailGatewayInterface {
 
 			$messages[] = [
 				'id' => $this->identifierOf(entity: $row),
-				'uid' => (int)$this->call(entity: $row, method: 'getUid', fallback: 0),
-				'messageId' => (string)$this->call(entity: $row, method: 'getMessageId', fallback: ''),
-				'subject' => (string)$this->call(entity: $row, method: 'getSubject', fallback: ''),
-				'sentAt' => (string)$this->call(entity: $row, method: 'getSentAt', fallback: ''),
+				'uid' => (int)$this->call(entity: $row, getter: ['getUid', 0]),
+				'messageId' => (string)$this->call(entity: $row, getter: ['getMessageId', '']),
+				'subject' => (string)$this->call(entity: $row, getter: ['getSubject', '']),
+				'sentAt' => (string)$this->call(entity: $row, getter: ['getSentAt', '']),
 			];
 		}//end foreach
 
@@ -842,7 +905,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function identifierOf(object $entity): int {
-		return (int)$this->call(entity: $entity, method: 'getId', fallback: 0);
+		return (int)$this->call(entity: $entity, getter: ['getId', 0]);
 	}//end identifierOf()
 
 	/**
@@ -855,7 +918,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function nameOf(object $entity): string {
-		return (string)$this->call(entity: $entity, method: 'getName', fallback: '');
+		return (string)$this->call(entity: $entity, getter: ['getName', '']);
 	}//end nameOf()
 
 	/**
@@ -867,15 +930,15 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * getter that is really there. An unknown property throws from
 	 * `__call()` and lands in the catch below.
 	 *
-	 * @param object $entity   The entity.
-	 * @param string $method   The getter.
-	 * @param mixed  $fallback What to answer when the getter is not there.
+	 * @param object                     $entity The entity.
+	 * @param array{0: string, 1: mixed} $getter The getter, and what to answer when it is not there.
 	 *
 	 * @return mixed The value.
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function call(object $entity, string $method, mixed $fallback): mixed {
+	private function call(object $entity, array $getter): mixed {
+		[$method, $fallback] = $getter;
 		if (is_callable([$entity, $method]) === false) {
 			return $fallback;
 		}

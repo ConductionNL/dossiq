@@ -40,7 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -130,7 +130,7 @@ class DashboardController extends Controller {
 		private readonly IAppConfig $appConfig,
 		private readonly IEventDispatcher $eventDispatcher,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -184,7 +184,7 @@ class DashboardController extends Controller {
 		$this->initialState->provideInitialState('features_roadmap_app_version', $this->installedVersion());
 		$this->initialState->provideInitialState(
 			'staff_app_name',
-			$this->appConfig->getValueString(app: Application::APP_ID, key: 'staff_app_name', default: '')
+			$this->appConfig->getValueString(app: AppIdentity::APP_ID, key: 'staff_app_name', default: '')
 		);
 		$this->initialState->provideInitialState('config', $this->listConfig());
 
@@ -208,7 +208,7 @@ class DashboardController extends Controller {
 	private function listConfig(): array {
 		return [
 			'municipalityCity' => trim(
-				$this->appConfig->getValueString(app: Application::APP_ID, key: 'municipality_city', default: '')
+				$this->appConfig->getValueString(app: AppIdentity::APP_ID, key: 'municipality_city', default: '')
 			),
 			'portalName'       => trim(
 				$this->appConfig->getValueString(app: 'portaliq', key: 'portalName', default: '')
@@ -230,7 +230,7 @@ class DashboardController extends Controller {
 	 */
 	private function installedVersion(): string {
 		return $this->appConfig->getValueString(
-			app: Application::APP_ID,
+			app: AppIdentity::APP_ID,
 			key: 'installed_version',
 			default: ''
 		);
@@ -313,7 +313,7 @@ class DashboardController extends Controller {
 	 */
 	protected function menuStructure(): string {
 		return (new MenuStructure())->normalise(
-			stored: $this->appConfig->getValueString(Application::APP_ID, MenuStructure::KEY, '')
+			stored: $this->appConfig->getValueString(AppIdentity::APP_ID, MenuStructure::KEY, '')
 		);
 	}//end menuStructure()
 

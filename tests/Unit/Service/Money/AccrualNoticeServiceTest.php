@@ -52,6 +52,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
  */
 class AccrualNoticeServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -420,5 +422,79 @@ class AccrualNoticeServiceTest extends TestCase {
 		self::assertSame(['ingebrekestelling-received', 'penaltypayment-gestart'], array_column($events, 'type'));
 		self::assertSame('Ingebrekestelling ontvangen via email', $events[0]['rationale']);
 		self::assertSame('Dwangsom-berekening gestart na grace period', $events[1]['rationale']);
+	}
+
+	/**
+	 * Seed an exceeded term on the given definition.
+	 *
+	 * @param string $id           The instance id.
+	 * @param string $definitionId The definition it points at, '' for none.
+	 *
+	 * @return void
+	 */
+	private function seedExceeded(string $id, string $definitionId): void {
+		$this->objects->seed('deadlineInstance', [
+			'id' => $id,
+			'case' => 'Z/2026/310',
+			'deadlineDefinition' => $definitionId,
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-02-25',
+			'endDateCurrent' => '2026-02-25',
+			'status' => 'exceeded',
+			'notificatiesVerstuurd' => [],
+		]);
+	}
+
+	/**
+	 * A notice on a term that does not exist is refused, naming the term.
+	 *
+	 * @return void
+	 */
+	public function testANoticeOnAnUnknownTermIsRefused(): void {
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('TermijnInstance not found: ti-missing');
+
+		$this->service->registerNotice('ti-missing', new DateTimeImmutable('2026-03-15'), 'post');
+	}
+
+	/**
+	 * A term without a definition, or with one that cannot be read, gets the Awb default regime.
+	 *
+	 * @return void
+	 */
+	public function testATermWithoutAReadableDefinitionGetsTheAwbRegime(): void {
+		$this->seedExceeded(id: 'ti-nodef', definitionId: '');
+		$this->seedExceeded(id: 'ti-gone', definitionId: 'td-gone');
+
+		foreach (['ti-nodef', 'ti-gone'] as $id) {
+			$b = $this->service->registerNotice($id, new DateTimeImmutable('2026-03-15'), 'post')['penaltyPaymentCalculation'];
+
+			self::assertSame('awb-default', $b['regime'], $id);
+			self::assertSame(144200, $b['plafondCalculated'], $id);
+			self::assertSame([], $b['rateBands'], $id);
+		}
+	}
+
+	/**
+	 * A deviating regime naming no daily tariff charges the Awb first-band rate as one flat band.
+	 *
+	 * @return void
+	 */
+	public function testADeviatingRegimeWithoutATariffUsesTheAwbFirstBand(): void {
+		$this->objects->seed('deadlineDefinition', [
+			'id' => 'td-flat',
+			'caseType' => 'woo-verzoek',
+			'standardDurationDays' => 28,
+			'countExtensions' => 1,
+			'deviatingPenaltyPaymentRegime' => ['plafond' => 40000],
+			'validFrom' => '2026-01-01',
+		]);
+		$this->seedExceeded(id: 'ti-flat', definitionId: 'td-flat');
+
+		$b = $this->service->registerNotice('ti-flat', new DateTimeImmutable('2026-03-15'), 'post')['penaltyPaymentCalculation'];
+
+		self::assertSame('afwijkend', $b['regime']);
+		self::assertSame(40000, $b['plafondCalculated']);
+		self::assertSame([['rate' => AccrualNoticeService::TARIFF_AWB_FIRST_BAND]], $b['rateBands']);
 	}
 }

@@ -85,7 +85,7 @@ class InspectionTemplateMapper {
 		$items = [];
 		foreach ($this->listOf(value: ($checklist['items'] ?? [])) as $index => $item) {
 			$label = (string)($item['label'] ?? '');
-			$items[] = $this->item(item: $item, id: $label, label: $label, type: (string)($item['type'] ?? ''), order: $index);
+			$items[] = $this->item(item: $item, placement: ['id' => $label, 'label' => $label, 'order' => $index]);
 		}
 
 		$status = (string)($checklist['status'] ?? 'draft');
@@ -94,12 +94,13 @@ class InspectionTemplateMapper {
 		}
 
 		return $this->template(
-			source: $checklist,
-			name: (string)($checklist['name'] ?? ''),
-			caseType: (string)($checklist['caseType'] ?? ''),
-			status: $status,
-			items: $items,
-			legacyRef: 'inspectieChecklist/' . $this->idOf(object: $checklist)
+			identity: new TemplateIdentity(
+				name: (string)($checklist['name'] ?? ''),
+				caseType: (string)($checklist['caseType'] ?? ''),
+				status: $status,
+				legacyRef: 'inspectieChecklist/' . $this->idOf(object: $checklist)
+			),
+			body: ['version' => ($checklist['version'] ?? 1), 'items' => $items]
 		);
 	}//end fromStackA()
 
@@ -166,10 +167,7 @@ class InspectionTemplateMapper {
 
 		return $this->item(
 			item: $item,
-			id: $id,
-			label: (string)($item['question'] ?? $item['label'] ?? ''),
-			type: (string)($item['type'] ?? ''),
-			order: $index
+			placement: ['id' => $id, 'label' => (string)($item['question'] ?? $item['label'] ?? ''), 'order' => $index]
 		);
 	}//end stackCItem()
 
@@ -188,12 +186,13 @@ class InspectionTemplateMapper {
 		}
 
 		return $this->template(
-			source: $checklist,
-			name: (string)($checklist['name'] ?? ''),
-			caseType: (string)($checklist['caseTypeRef'] ?? $checklist['caseType'] ?? ''),
-			status: $status,
-			items: $items,
-			legacyRef: 'inspectionChecklist/' . $this->idOf(object: $checklist)
+			identity: new TemplateIdentity(
+				name: (string)($checklist['name'] ?? ''),
+				caseType: (string)($checklist['caseTypeRef'] ?? $checklist['caseType'] ?? ''),
+				status: $status,
+				legacyRef: 'inspectionChecklist/' . $this->idOf(object: $checklist)
+			),
+			body: ['version' => ($checklist['version'] ?? 1), 'items' => $items]
 		);
 	}//end stackCTemplate()
 
@@ -265,28 +264,37 @@ class InspectionTemplateMapper {
 	/**
 	 * One template item.
 	 *
-	 * @param array<string, mixed> $item  The source item.
-	 * @param string               $id    Its answer key.
-	 * @param string               $label Its question.
-	 * @param string               $type  Its older type.
-	 * @param integer              $order Its position.
+	 * The response type is read from the source item's older `type`.
+	 *
+	 * @param array<string, mixed>                          $item      The source item.
+	 * @param array{id: string, label: string, order: int} $placement Its answer key, its question and its position.
 	 *
 	 * @return array<string, mixed> The item.
 	 */
-	private function item(array $item, string $id, string $label, string $type, int $order): array {
+	private function item(array $item, array $placement): array {
+		$type = (string)($item['type'] ?? '');
 		$out = [
-			'id' => $id,
-			'order' => (int)($item['order'] ?? ($order + 1)),
-			'label' => $label,
+			'id' => $placement['id'],
+			'order' => (int)($item['order'] ?? ($placement['order'] + 1)),
+			'label' => $placement['label'],
 			'responseType' => $this->responseType(type: $type),
 			'required' => (($item['required'] ?? false) === true),
 			'photoRequired' => $this->photoGate(value: ($item['photoRequired'] ?? $item['fotoRequired'] ?? false)),
 		];
 
-		$choices = ($item['choices'] ?? $item['options'] ?? null);
-		if (is_array($choices) === true && $choices !== []) {
-			$out['choices'] = array_values(array_map(static fn ($choice): string => (string)$choice, $choices));
-		}
+		return $this->withOptionalFields(item: $item, out: $out);
+	}//end item()
+
+	/**
+	 * The template item with the source item's choices, help text, parent and weight, when it has them.
+	 *
+	 * @param array<string, mixed> $item The source item.
+	 * @param array<string, mixed> $out  The template item so far.
+	 *
+	 * @return array<string, mixed> The item.
+	 */
+	private function withOptionalFields(array $item, array $out): array {
+		$out = $this->withChoices(item: $item, out: $out);
 
 		foreach (['helpText', 'parent'] as $key) {
 			if (trim((string)($item[$key] ?? '')) !== '') {
@@ -299,7 +307,24 @@ class InspectionTemplateMapper {
 		}
 
 		return $out;
-	}//end item()
+	}//end withOptionalFields()
+
+	/**
+	 * The template item with the source item's choices, when it has any.
+	 *
+	 * @param array<string, mixed> $item The source item.
+	 * @param array<string, mixed> $out  The template item so far.
+	 *
+	 * @return array<string, mixed> The item.
+	 */
+	private function withChoices(array $item, array $out): array {
+		$choices = ($item['choices'] ?? $item['options'] ?? null);
+		if (is_array($choices) === true && $choices !== []) {
+			$out['choices'] = array_values(array_map(static fn ($choice): string => (string)$choice, $choices));
+		}
+
+		return $out;
+	}//end withChoices()
 
 	/**
 	 * The photo gate from an older boolean or a template value.
@@ -328,19 +353,20 @@ class InspectionTemplateMapper {
 	/**
 	 * A template around one section of items.
 	 *
-	 * @param array<string, mixed>             $source    The source object.
-	 * @param string                           $name      Its name.
-	 * @param string                           $caseType  Its case type uuid, or empty.
-	 * @param string                           $status    draft, active or retired.
-	 * @param array<int, array<string, mixed>> $items     The items.
-	 * @param string                           $legacyRef The source reference.
+	 * @param TemplateIdentity                                   $identity Its name, case type, status and source reference.
+	 * @param array{version: mixed, items: array<int, array<string, mixed>>} $body     The source object's version, and the items.
 	 *
 	 * @return array<string, mixed> The template.
 	 */
-	private function template(array $source, string $name, string $caseType, string $status, array $items, string $legacyRef): array {
+	private function template(TemplateIdentity $identity, array $body): array {
+		$items = $body['items'];
+		$name = $identity->name;
+		$status = $identity->status;
+		$caseType = $identity->caseType;
+		$legacyRef = $identity->legacyRef;
 		$template = [
 			'name' => $name,
-			'version' => max(1, (int)($source['version'] ?? 1)),
+			'version' => max(1, (int)$body['version']),
 			'status' => $status,
 			'active' => ($status === 'active'),
 			'sections' => [['order' => 1, 'name' => $name, 'items' => $items]],

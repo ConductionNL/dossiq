@@ -56,6 +56,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\AssigneeResolverInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\OpenRegister\Service\Flow\FlowValueTemplate;
 use Psr\Log\LoggerInterface;
@@ -67,7 +68,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/email-case-matching/spec.md
  */
-class AssigneeResolver {
+class AssigneeResolver implements AssigneeResolverInterface {
 
 	/**
 	 * The authored value that means "leave this task unclaimed".
@@ -135,20 +136,55 @@ class AssigneeResolver {
 			return $resolved;
 		}
 
-		$fallback = trim($fallback);
-		if ($fallback !== '') {
-			$resolved = $this->renderPrincipal(raw: $fallback, json: $json);
+		$resolved = $this->fallbackPrincipal(primary: $primary, fallback: ['raw' => $fallback, 'json' => $json, 'case' => $case]);
+		if ($resolved !== '') {
+			return $resolved;
+		}
+
+		return $this->caseHandler(case: $case);
+	}//end resolve()
+
+	/**
+	 * The declared fallback, rendered, when it names anybody on this case.
+	 *
+	 * @param string                                                                     $primary  The authored assignee, for the log.
+	 * @param array{raw: string, json: array<string, mixed>, case: array<string, mixed>} $fallback The declared second choice or '',
+	 *                                                                                           the rendering context and the case.
+	 *
+	 * @return string The rendered principal, or ''.
+	 *
+	 * @spec openspec/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function fallbackPrincipal(string $primary, array $fallback): string {
+		$raw = trim($fallback['raw']);
+		if ($raw !== '') {
+			$resolved = $this->renderPrincipal(raw: $raw, json: $fallback['json']);
 			if ($resolved !== '') {
 				$this->logger->info(
 					'Dossiq assignee: "' . $primary . '" named nobody on this case, so the work goes to its '
 						. 'declared fallback "' . $resolved . '"',
-					['case' => $this->caseId(case: $case)]
+					['case' => $this->caseId(case: $fallback['case'])]
 				);
 
 				return $resolved;
 			}
 		}
 
+		return '';
+	}//end fallbackPrincipal()
+
+	/**
+	 * The case's own handler, when it has one.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return string The handler, or ''.
+	 *
+	 * @spec openspec/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/task-management/spec.md
+	 */
+	private function caseHandler(array $case): string {
 		$handler = $this->referenceId(value: ($case['assignee'] ?? ''));
 		if ($handler !== '') {
 			$this->logger->info(
@@ -161,7 +197,7 @@ class AssigneeResolver {
 		}
 
 		return '';
-	}//end resolve()
+	}//end caseHandler()
 
 	/**
 	 * The team a piece of work falls to when no person resolves.

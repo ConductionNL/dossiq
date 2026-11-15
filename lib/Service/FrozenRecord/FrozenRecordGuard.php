@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\FrozenRecord;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\FrozenRecordGuardInterface;
 
 /**
  * The freeze rule, with no knowledge of which record it guards.
@@ -43,7 +44,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/specs/frozen-record/spec.md
  */
-class FrozenRecordGuard {
+class FrozenRecordGuard implements FrozenRecordGuardInterface {
 
 	/**
 	 * Whether the stored record is frozen.
@@ -73,26 +74,40 @@ class FrozenRecordGuard {
 	 * @spec openspec/specs/frozen-record/spec.md
 	 */
 	public function assertUpdatable(FreezeDefinition $definition, array $stored, array $incoming): void {
-		$this->assertWriteOnceHeld(definition: $definition, stored: $stored, incoming: $incoming);
+		$write = ['stored' => $stored, 'incoming' => $incoming];
+		$this->assertWriteOnceHeld(definition: $definition, write: $write);
 
 		if ($this->isFrozen(definition: $definition, stored: $stored) === false) {
 			return;
 		}
 
-		if ($this->isMarkedDeleted(record: $incoming) === true && $this->isMarkedDeleted(record: $stored) === false) {
+		if ($this->movesFrozenRecord(definition: $definition, write: $write) === true) {
 			throw $this->refusal(definition: $definition);
+		}
+	}//end assertUpdatable()
+
+	/**
+	 * Whether a write to a frozen record deletes it, moves its status out of the freeze, or moves a frozen field.
+	 *
+	 * @param FreezeDefinition                                                     $definition The freeze entry.
+	 * @param array{stored: array<string, mixed>, incoming: array<string, mixed>} $write      The record as stored, and as it would be written.
+	 *
+	 * @return bool True when the freeze does not allow the write.
+	 */
+	private function movesFrozenRecord(FreezeDefinition $definition, array $write): bool {
+		$incoming = $write['incoming'];
+		if ($this->isMarkedDeleted(record: $incoming) === true && $this->isMarkedDeleted(record: $write['stored']) === false) {
+			return true;
 		}
 
 		if (array_key_exists($definition->statusField, $incoming) === true
 			&& $definition->freezesAt(status: (string)$incoming[$definition->statusField]) === false
 		) {
-			throw $this->refusal(definition: $definition);
+			return true;
 		}
 
-		if ($this->changedFrozenFields(definition: $definition, stored: $stored, incoming: $incoming) !== []) {
-			throw $this->refusal(definition: $definition);
-		}
-	}//end assertUpdatable()
+		return $this->changedFrozenFields(definition: $definition, write: $write) !== [];
+	}//end movesFrozenRecord()
 
 	/**
 	 * Refuse the delete of a frozen record.
@@ -148,15 +163,15 @@ class FrozenRecordGuard {
 	/**
 	 * Refuse a write that rewrites a write-once field that already holds a value.
 	 *
-	 * @param FreezeDefinition $definition The freeze entry.
-	 * @param array<string, mixed> $stored The record as stored.
-	 * @param array<string, mixed> $incoming The record as it would be written.
+	 * @param FreezeDefinition                                                     $definition The freeze entry.
+	 * @param array{stored: array<string, mixed>, incoming: array<string, mixed>} $write      The record as stored, and as it would be written.
 	 *
 	 * @return void
 	 *
 	 * @throws RefusedException 409 when a written value would change.
 	 */
-	private function assertWriteOnceHeld(FreezeDefinition $definition, array $stored, array $incoming): void {
+	private function assertWriteOnceHeld(FreezeDefinition $definition, array $write): void {
+		[$stored, $incoming] = [$write['stored'], $write['incoming']];
 		foreach ($definition->writeOnceFields() as $field) {
 			$was = ($stored[$field] ?? null);
 			if ($this->isEmpty(value: $was) === true || array_key_exists($field, $incoming) === false) {
@@ -175,15 +190,15 @@ class FrozenRecordGuard {
 	 * A payload that repeats a stored value changes nothing: the generic
 	 * object API sends the whole object on every write.
 	 *
-	 * @param FreezeDefinition $definition The freeze entry.
-	 * @param array<string, mixed> $stored The record as stored.
-	 * @param array<string, mixed> $incoming The record as it would be written.
+	 * @param FreezeDefinition                                                     $definition The freeze entry.
+	 * @param array{stored: array<string, mixed>, incoming: array<string, mixed>} $write      The record as stored, and as it would be written.
 	 *
 	 * @return array<int, string> The moved frozen fields.
 	 */
-	private function changedFrozenFields(FreezeDefinition $definition, array $stored, array $incoming): array {
+	private function changedFrozenFields(FreezeDefinition $definition, array $write): array {
+		$stored = $write['stored'];
 		$changed = [];
-		foreach ($incoming as $field => $value) {
+		foreach ($write['incoming'] as $field => $value) {
 			$field = (string)$field;
 			if ($definition->isFrozenField(field: $field) === false) {
 				continue;

@@ -29,9 +29,9 @@ namespace OCA\Dossiq\Controller;
 use Closure;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseEmailService;
-use OCA\Dossiq\Service\Email\OutboundState;
-use OCA\Dossiq\Service\OptOutGate;
+use OCA\Dossiq\Kernel\Contracts\CaseEmailServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\OptOutGateInterface;
+use OCA\Dossiq\Kernel\Contracts\OutboundStateInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -48,19 +48,19 @@ class EmailController extends Controller {
 	/**
 	 * The categories a handler may pick in the case mail dialog.
 	 */
-	private const HANDLER_CATEGORIES = [OptOutGate::CATEGORY_CASE_UPDATE, OptOutGate::CATEGORY_BESLUIT];
+	private const HANDLER_CATEGORIES = [OptOutGateInterface::CATEGORY_CASE_UPDATE, OptOutGateInterface::CATEGORY_BESLUIT];
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param CaseEmailService $emailService The email service
+	 * @param CaseEmailServiceInterface $emailService The email service
 	 * @param IUserSession $userSession The user session
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseEmailService $emailService,
+		private readonly CaseEmailServiceInterface $emailService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -99,7 +99,7 @@ class EmailController extends Controller {
 
 		// A handler sends a case update or a besluit, nothing else.
 		// statutory is for templates; marketing never comes from here.
-		$category = (string)($data['category'] ?? OptOutGate::CATEGORY_CASE_UPDATE);
+		$category = (string)($data['category'] ?? OptOutGateInterface::CATEGORY_CASE_UPDATE);
 		if (in_array($category, self::HANDLER_CATEGORIES, true) === false) {
 			return new JSONResponse(['error' => 'invalid-category'], Http::STATUS_BAD_REQUEST);
 		}
@@ -263,7 +263,7 @@ class EmailController extends Controller {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	private function answer(array $result): JSONResponse {
-		if (($result['state'] ?? OutboundState::SENT) === OutboundState::QUEUED) {
+		if (($result['state'] ?? OutboundStateInterface::SENT) === OutboundStateInterface::QUEUED) {
 			return new JSONResponse(
 				['error' => 'mail-account-unavailable', 'sent' => false] + $result,
 				Http::STATUS_SERVICE_UNAVAILABLE

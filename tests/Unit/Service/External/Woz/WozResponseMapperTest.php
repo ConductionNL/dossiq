@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\External\Woz\WozResponseMapper
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  */
 class WozResponseMapperTest extends TestCase {
 	/**
@@ -166,4 +167,36 @@ class WozResponseMapperTest extends TestCase {
 
 		$this->assertSame('0518010000999999', $mapped['addressDesignationId']);
 	}//end testAdresseerbaarObjectIdentificatieFallsBackToNummeraanduidingId()
+
+	/**
+	 * A non-array entry in the valuation history never wins over a dated
+	 * entry, and a history holding only non-array entries falls back to
+	 * the flat valuation fields.
+	 *
+	 * @return void
+	 */
+	public function testNonArrayValuationEntriesAreIgnored(): void {
+		$mapper = new WozResponseMapper();
+
+		$mixed = $mapper->map(
+			[
+				'vastgesteldeWaarden' => [
+					'garbage',
+					['vastgesteldeWaarde' => 310000, 'waardepeildatum' => '2024-01-01'],
+				],
+			]
+		);
+		$this->assertSame(310000, $mixed['value']);
+		$this->assertSame('2024-01-01', $mixed['waardepeildatum']);
+
+		$onlyGarbage = $mapper->map(
+			[
+				'vastgesteldeWaarden' => ['garbage'],
+				'value' => 200000,
+				'waardepeildatum' => '2022-01-01',
+			]
+		);
+		$this->assertSame(200000, $onlyGarbage['value']);
+		$this->assertSame('2022-01-01', $onlyGarbage['waardepeildatum']);
+	}//end testNonArrayValuationEntriesAreIgnored()
 }//end class

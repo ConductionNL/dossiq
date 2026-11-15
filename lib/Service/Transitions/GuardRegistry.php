@@ -74,6 +74,13 @@ class GuardRegistry {
 	public const DOCUMENT_ASSESSMENT = 'documentAssessment';
 
 	/**
+	 * Whether a date on the case, plus any days of waiting, has been reached.
+	 *
+	 * @spec openspec/changes/tenders-run-on-the-tender-case-type
+	 */
+	public const DATE_REACHED = 'dateReached';
+
+	/**
 	 * Registered evaluators keyed by guard type.
 	 *
 	 * @var array<string, GuardEvaluatorInterface>
@@ -120,6 +127,7 @@ class GuardRegistry {
 			self::APPROVAL_GATE => $statusEntry->approvalGuard,
 			self::DOCUMENT_ASSESSMENT => $statusEntry->documentAssessment,
 			self::STATUS_ENTRY_REQUIREMENTS => $statusEntry->entryRequirements,
+			self::DATE_REACHED => $caseContent->dateReached,
 		];
 		$this->evaluators += array_filter($optional, static fn (?GuardEvaluatorInterface $guard): bool => $guard !== null);
 	}//end __construct()

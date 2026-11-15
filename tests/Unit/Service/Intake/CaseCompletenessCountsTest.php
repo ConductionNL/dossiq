@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
  * The counts and the verdict, and which documents count as readable.
  *
  * @covers \OCA\Dossiq\Service\Intake\CaseCompleteness
+ * @uses \OCA\Dossiq\Service\Support\FilledValue
  */
 class CaseCompletenessCountsTest extends TestCase {
 

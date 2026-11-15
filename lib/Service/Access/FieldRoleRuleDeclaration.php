@@ -58,12 +58,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Service\Support\CollectsUniqueNames;
+use OCA\Dossiq\Service\Support\OrdersRuleBlocks;
+
 /**
  * Reads a case type's per-role field rules and writes them in OpenRegister's shapes.
  *
  * @spec openspec/specs/security-hardening/spec.md
  */
 class FieldRoleRuleDeclaration {
+	use OrdersRuleBlocks;
+	use CollectsUniqueNames;
 
 	/**
 	 * The property the rules are declared under, on the case type.
@@ -336,28 +341,59 @@ class FieldRoleRuleDeclaration {
 
 		$rules = [];
 		foreach ($declared as $rule) {
-			if (is_array($rule) === false) {
-				continue;
+			$normalised = $this->normalisedRule(rule: $rule);
+			if ($normalised !== null) {
+				$rules[] = $normalised;
 			}
-
-			$kind = (string)($rule['rule'] ?? '');
-			$field = trim((string)($rule['field'] ?? ''));
-			if (in_array($kind, self::RULES, true) === false || $field === '') {
-				continue;
-			}
-
-			$rules[] = [
-				'field' => $field,
-				'rule' => $kind,
-				'reason' => trim((string)($rule['reason'] ?? '')),
-				'groups' => ($rule['groups'] ?? null),
-				'heldBy' => ($rule['heldBy'] ?? null),
-				'statuses' => $this->names(value: ($rule['statuses'] ?? null)),
-			];
 		}
 
 		return $rules;
 	}//end rulesOf()
+
+	/**
+	 * One declared rule normalised, or null when it is dropped.
+	 *
+	 * @param mixed $rule One declared rule.
+	 *
+	 * @return array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed, statuses: array<int, string>}|null The rule, or null.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function normalisedRule(mixed $rule): ?array {
+		if (is_array($rule) === false) {
+			return null;
+		}
+
+		$kind = (string)($rule['rule'] ?? '');
+		$field = trim((string)($rule['field'] ?? ''));
+		if (in_array($kind, self::RULES, true) === false || $field === '') {
+			return null;
+		}
+
+		return $this->ruleEntry(rule: $rule, kind: $kind, field: $field);
+	}//end normalisedRule()
+
+	/**
+	 * The normalised form of a known rule naming a field.
+	 *
+	 * @param array<string, mixed> $rule  One declared rule.
+	 * @param string               $kind  The rule's kind.
+	 * @param string               $field The field it names.
+	 *
+	 * @return array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed, statuses: array<int, string>} The rule.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	private function ruleEntry(array $rule, string $kind, string $field): array {
+		return [
+			'field' => $field,
+			'rule' => $kind,
+			'reason' => trim((string)($rule['reason'] ?? '')),
+			'groups' => ($rule['groups'] ?? null),
+			'heldBy' => ($rule['heldBy'] ?? null),
+			'statuses' => $this->names(value: ($rule['statuses'] ?? null)),
+		];
+	}//end ruleEntry()
 
 	/**
 	 * The groups one rule takes the field away from.
@@ -409,42 +445,8 @@ class FieldRoleRuleDeclaration {
 			return [];
 		}
 
-		$names = [];
-		foreach ($value as $entry) {
-			if (is_array($entry) === true || is_object($entry) === true) {
-				continue;
-			}
-
-			$name = trim((string)$entry);
-			if ($name !== '' && in_array($name, $names, true) === false) {
-				$names[] = $name;
-			}
-		}
-
-		return $names;
+		return $this->uniqueNames(
+			entries: array_filter($value, static fn (mixed $entry): bool => is_array($entry) === false && is_object($entry) === false)
+		);
 	}//end names()
-
-	/**
-	 * The block with its kinds in the order OpenRegister lists them.
-	 *
-	 * Order changes nothing about what is enforced. It makes the block
-	 * DIFFABLE, which is what keeps the projector from rewriting the schema on
-	 * every publish over a difference that is not one.
-	 *
-	 * @param array<string, array<int, array<string, mixed>>> $block The gathered block.
-	 *
-	 * @return array<string, array<int, array<string, mixed>>> The block, ordered.
-	 *
-	 * @spec openspec/specs/security-hardening/spec.md
-	 */
-	private function inPublishedOrder(array $block): array {
-		$ordered = [];
-		foreach (self::RULES as $kind) {
-			if (($block[$kind] ?? []) !== []) {
-				$ordered[$kind] = $block[$kind];
-			}
-		}
-
-		return $ordered;
-	}//end inPublishedOrder()
 }//end class

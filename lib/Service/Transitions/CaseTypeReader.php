@@ -29,15 +29,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeReaderInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 /**
  * Reads a case type's lifecycle rules and its statuses.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class CaseTypeReader {
+class CaseTypeReader implements CaseTypeReaderInterface {
 
 	/**
 	 * Constructor.
@@ -215,7 +218,7 @@ class CaseTypeReader {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($id, register: $register, schema: $schema));
+			return $this->toArray(value: $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema)));
 		} catch (\Throwable $e) {
 			return [];
 		}
@@ -231,17 +234,6 @@ class CaseTypeReader {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $value);
 	}//end toArray()
 }//end class

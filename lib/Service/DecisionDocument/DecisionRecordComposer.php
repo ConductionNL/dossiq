@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\DecisionDocument;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -67,15 +67,11 @@ class DecisionRecordComposer {
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 */
 	public function compose(object $objectService, string $register, string $caseId): array {
-		$assessments = $this->collectAssessments(
-			objectService: $objectService,
-			register: $register,
-			assessmentSchema: $this->settingsService->getConfigValue('woo_assessment_schema'),
-			caseId: $caseId,
-		);
+		$store = ['objectService' => $objectService, 'register' => $register];
+		$assessments = $this->collectAssessments(store: $store, caseId: $caseId);
 
 		return [
-			'caseTitle' => $this->readCaseTitle(objectService: $objectService, register: $register, caseId: $caseId),
+			'caseTitle' => $this->readCaseTitle(store: $store, caseId: $caseId),
 			'assessmentCount' => count($assessments),
 		] + $this->summariseAssessments(assessments: $assessments);
 	}//end compose()
@@ -85,15 +81,14 @@ class DecisionRecordComposer {
 	 *
 	 * A case that cannot be read costs the summary its title, not the decision.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The dossiq register.
-	 * @param string $caseId The case UUID.
+	 * @param array{objectService: object, register: string} $store  The OpenRegister ObjectService and the dossiq register.
+	 * @param string                                         $caseId The case UUID.
 	 *
 	 * @return string The title.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
-	private function readCaseTitle(object $objectService, string $register, string $caseId): string {
+	private function readCaseTitle(array $store, string $caseId): string {
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 		if ($caseSchema === '') {
 			return '';
@@ -101,15 +96,15 @@ class DecisionRecordComposer {
 
 		try {
 			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
+				objectService: $store['objectService'],
+				register: $store['register'],
 				schema: $caseSchema,
 				id: $caseId,
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'DecisionRecordComposer: the case title could not be read for the decision summary',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 			return '';
 		}
@@ -125,14 +120,13 @@ class DecisionRecordComposer {
 	/**
 	 * Fetch all assessment objects belonging to a case.
 	 *
-	 * @param object $objectService OpenRegister object service
-	 * @param mixed $register Configured register identifier
-	 * @param mixed $assessmentSchema Configured assessment schema identifier
-	 * @param string $caseId The case UUID
+	 * @param array{objectService: object, register: string} $store  OpenRegister object service and the configured register
+	 * @param string                                         $caseId The case UUID
 	 *
 	 * @return array<int, array<string, mixed>> Assessment rows, empty when the schema is not configured
 	 */
-	private function collectAssessments(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array {
+	private function collectAssessments(array $store, string $caseId): array {
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 		if (empty($assessmentSchema) === true) {
 			return [];
 		}
@@ -141,8 +135,8 @@ class DecisionRecordComposer {
 		// searchObjectsAsArrays() is declared `: array`. Dropped rather than
 		// inverted, because phpstan rejects it in either direction.
 		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
+			objectService: $store['objectService'],
+			register: $store['register'],
 			schema: $assessmentSchema,
 			filters: ['caseRef' => $caseId, '_limit' => 500],
 		);

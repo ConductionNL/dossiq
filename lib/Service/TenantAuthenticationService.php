@@ -29,10 +29,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantAuthenticationServiceInterface;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
+use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,8 +52,9 @@ use Throwable;
  *
  * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
  */
-class TenantAuthenticationService {
+class TenantAuthenticationService implements TenantAuthenticationServiceInterface {
 	use RefusesWhenIndeterminate;
+	use ResolvesInstalledObjectService;
 
 	/**
 	 * Default deny-everything matrix (fail-closed fallback).
@@ -102,23 +105,22 @@ class TenantAuthenticationService {
 	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
+		return $this->failClosedDecision(tenantId: $tenantId, request: ['userId' => $userId, 'action' => $action]);
+	}//end validateMandateMatrix()
+
+	/**
+	 * The mandate matrix decision; a failure other than a refusal is logged and answered as not allowed.
+	 *
+	 * @param string                               $tenantId The tenant.
+	 * @param array{userId: string, action: string} $request  The user, and the action asked for.
+	 *
+	 * @return array<string, mixed> The decision.
+	 *
+	 * @throws RefusedException When the matrix refuses.
+	 */
+	private function failClosedDecision(string $tenantId, array $request): array {
 		try {
-			$matrix = $this->loadActiveMatrix(tenantId: $tenantId);
-			if ($matrix === null) {
-				return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
-			}
-
-			$role = $this->resolveUserRole(tenantId: $tenantId, userId: $userId);
-			if ($role === null) {
-				return ['allowed' => false, 'reason' => 'User has no role inside tenant'];
-			}
-
-			$allowed = $this->isAllowed(matrix: $matrix, role: $role, action: $action);
-			if ($allowed === true) {
-				return ['allowed' => true, 'reason' => 'Authorised by mandate matrix'];
-			}
-
-			return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
+			return $this->matrixDecision(tenantId: $tenantId, request: $request);
 		} catch (RefusedException $e) {
 			// A refusal already says what happened and with which status.
 			// Folding it into the fail-closed branch below is what made an
@@ -127,11 +129,43 @@ class TenantAuthenticationService {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: mandate matrix validation failed (fail-closed)',
-				['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
+				['tenantId' => $tenantId, 'userId' => $request['userId'], 'exception' => $e->getMessage()]
 			);
 			return ['allowed' => false, 'reason' => 'Mandate validation error'];
 		}//end try
-	}//end validateMandateMatrix()
+	}//end failClosedDecision()
+
+	/**
+	 * Decide one action from the active matrix and the user's role inside the tenant.
+	 *
+	 * @param string                                $tenantId Tenant UUID.
+	 * @param array{userId: string, action: string} $request  NC user ID and the requested action.
+	 *
+	 * @return array{allowed: bool, reason: string} Decision payload.
+	 *
+	 * @throws Throwable When the matrix or the role cannot be read.
+	 *
+	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
+	 */
+	private function matrixDecision(string $tenantId, array $request): array {
+		['userId' => $userId, 'action' => $action] = $request;
+		$matrix = $this->loadActiveMatrix(tenantId: $tenantId);
+		if ($matrix === null) {
+			return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
+		}
+
+		$role = $this->resolveUserRole(tenantId: $tenantId, userId: $userId);
+		if ($role === null) {
+			return ['allowed' => false, 'reason' => 'User has no role inside tenant'];
+		}
+
+		$allowed = $this->isAllowed(matrix: $matrix, role: $role, action: $action);
+		if ($allowed === true) {
+			return ['allowed' => true, 'reason' => 'Authorised by mandate matrix'];
+		}
+
+		return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
+	}//end matrixDecision()
 
 	/**
 	 * Check whether the matrix authorises (role, action).
@@ -148,6 +182,18 @@ class TenantAuthenticationService {
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
 	 */
 	public function isAllowed(array $matrix, string $role, string $action): bool {
+		return self::anyGrants(candidates: self::entriesFor(matrix: $matrix, role: $role), action: $action);
+	}//end isAllowed()
+
+	/**
+	 * The matrix entries that apply to a role: its own, then the wildcard role's.
+	 *
+	 * @param array<string, array<string, bool>> $matrix Active mandate matrix.
+	 * @param string                             $role   Resolved user role.
+	 *
+	 * @return array<int, array<string, bool>> The entries.
+	 */
+	private static function entriesFor(array $matrix, string $role): array {
 		$roleEntry = ($matrix[$role] ?? null);
 		$wildcardEntry = ($matrix['*'] ?? null);
 
@@ -160,6 +206,18 @@ class TenantAuthenticationService {
 			$candidates[] = $wildcardEntry;
 		}
 
+		return $candidates;
+	}//end entriesFor()
+
+	/**
+	 * Whether any entry grants the action, by name or by wildcard.
+	 *
+	 * @param array<int, array<string, bool>> $candidates The entries that apply.
+	 * @param string                          $action     Requested action.
+	 *
+	 * @return bool True when one grants it.
+	 */
+	private static function anyGrants(array $candidates, string $action): bool {
 		foreach ($candidates as $entry) {
 			if (($entry[$action] ?? false) === true) {
 				return true;
@@ -171,7 +229,7 @@ class TenantAuthenticationService {
 		}
 
 		return false;
-	}//end isAllowed()
+	}//end anyGrants()
 
 	/**
 	 * Load the active mandate matrix for the tenant.
@@ -248,7 +306,7 @@ class TenantAuthenticationService {
 		// `filters`; limit/offset are top-level config keys.
 		return [
 			'filters' => [
-				'register' => Application::REGISTER_SLUG,
+				'register' => AppIdentity::REGISTER_SLUG,
 				'schema' => 'tenantMandate',
 				'tenantRef' => $tenantId,
 			],
@@ -366,7 +424,7 @@ class TenantAuthenticationService {
 		// above; register/schema live inside `filters`.
 		return [
 			'filters' => [
-				'register' => Application::REGISTER_SLUG,
+				'register' => AppIdentity::REGISTER_SLUG,
 				'schema' => 'tenantUser',
 				'tenantRef' => $tenantId,
 				'userRef' => $userId,
@@ -468,7 +526,7 @@ class TenantAuthenticationService {
 	private function membershipQuery(string $userId): array {
 		return [
 			'filters' => [
-				'register' => Application::REGISTER_SLUG,
+				'register' => AppIdentity::REGISTER_SLUG,
 				'schema' => 'tenantUser',
 				'userRef' => $userId,
 			],
@@ -543,24 +601,4 @@ class TenantAuthenticationService {
 
 		return array_values(array_filter($arrays, static fn (array $data): bool => $data !== []));
 	}//end rowsAsArrays()
-
-	/**
-	 * Resolve OR's ObjectService when installed.
-	 *
-	 * @return mixed|null
-	 */
-	private function getObjectService() {
-		// IAppManager::getInstalledApps() declares its array return in PHPDoc
-		// only, so normalise defensively before the membership test.
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end getObjectService()
 }//end class

@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Kernel\Contracts\DomainCopyServiceInterface;
 use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use Psr\Log\LoggerInterface;
@@ -55,7 +56,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-class DomainCopyService {
+class DomainCopyService implements DomainCopyServiceInterface {
 	/**
 	 * The answer of a copy that did not happen; its reason is filled in.
 	 *
@@ -68,7 +69,6 @@ class DomainCopyService {
 		'notCarried' => [],
 		'reason' => '',
 	];
-
 
 	/**
 	 * The app config key naming the domain (case type group) schema.
@@ -143,14 +143,29 @@ class DomainCopyService {
 	 */
 	private function copyContent(DomainCopy $copy): array {
 		$notCarried = [];
-		$map = $this->copyCaseTypes(
-			sourceDomainId: $copy->sourceId,
-			newDomainId: $copy->newId,
-			notCarried: $notCarried,
-		);
+		$map = $this->copyCaseTypes(domain: $copy, notCarried: $notCarried);
 
 		$templates = $this->copyTemplates(map: $map, notCarried: $notCarried);
 
+		$this->saveDomain(copy: $copy, map: $map);
+
+		$this->logger->info(
+			'Dossiq starter: a domain was copied',
+			['source' => $copy->sourceId, 'created' => $copy->newId, 'notCarried' => $notCarried]
+		);
+
+		return $this->copyAnswer(copy: $copy, carried: ['map' => $map, 'templates' => $templates, 'notCarried' => $notCarried]);
+	}//end copyContent()
+
+	/**
+	 * Store the new domain with its copied case types linked.
+	 *
+	 * @param DomainCopy            $copy The copy, with its new domain.
+	 * @param array<string, string> $map  Old case type id to new case type id.
+	 *
+	 * @return void
+	 */
+	private function saveDomain(DomainCopy $copy, array $map): void {
 		$this->store->save(
 			configKey: self::DOMAINS,
 			payload: array_merge(
@@ -159,12 +174,19 @@ class DomainCopyService {
 			),
 			id: $copy->newId,
 		);
+	}//end saveDomain()
 
-		$this->logger->info(
-			'Dossiq starter: a domain was copied',
-			['source' => $copy->sourceId, 'created' => $copy->newId, 'notCarried' => $notCarried]
-		);
-
+	/**
+	 * The answer of a copy that wrote its domain.
+	 *
+	 * @param DomainCopy           $copy    The copy, with its new domain.
+	 * @param array<string, mixed> $carried Old case type id to new case type id (`map`), how many templates came
+	 *                                      along (`templates`) and the collected reasons (`notCarried`).
+	 *
+	 * @return array{complete: bool, domain: string, carried: array<string, int>, notCarried: array<int, string>, reason: string}
+	 */
+	private function copyAnswer(DomainCopy $copy, array $carried): array {
+		['map' => $map, 'templates' => $templates, 'notCarried' => $notCarried] = $carried;
 		return [
 			'complete' => ($notCarried === []),
 			'domain' => $copy->newId,
@@ -172,7 +194,7 @@ class DomainCopyService {
 			'notCarried' => $notCarried,
 			'reason' => '',
 		];
-	}//end copyContent()
+	}//end copyAnswer()
 
 	/**
 	 * The new domain as stored, before its case types are linked.
@@ -194,16 +216,16 @@ class DomainCopyService {
 	/**
 	 * Copy every case type of the source domain.
 	 *
-	 * @param string             $sourceDomainId The domain being copied.
-	 * @param string             $newDomainId    The new domain.
-	 * @param array<int, string> $notCarried     Collected reasons, by reference.
+	 * @param DomainCopy         $domain     The domain being copied and the new domain.
+	 * @param array<int, string> $notCarried Collected reasons, by reference.
 	 *
 	 * @return array<string, string> Old case type id to new case type id.
 	 */
-	private function copyCaseTypes(string $sourceDomainId, string $newDomainId, array &$notCarried): array {
+	private function copyCaseTypes(DomainCopy $domain, array &$notCarried): array {
+		$newDomainId = $domain->newId;
 		$sources = $this->store->rows(
 			configKey: self::CASE_TYPES,
-			filters: ['caseTypeGroup' => $sourceDomainId],
+			filters: ['caseTypeGroup' => $domain->sourceId],
 		);
 
 		if ($sources === null) {
@@ -256,17 +278,30 @@ class DomainCopyService {
 			return 0;
 		}
 
+		$each = $this->copyEachTemplate(templates: $templates, map: $map);
+		array_push($notCarried, ...$each['notCarried']);
+
+		return $each['copied'];
+	}//end copyTemplates()
+
+	/**
+	 * Copy each template scoped to one of the copied case types.
+	 *
+	 * @param array<int, array<string, mixed>> $templates The stored templates.
+	 * @param array<string, string>            $map       Old case type id to new case type id.
+	 *
+	 * @return array{copied: int, notCarried: array<int, string>} How many templates came along, and why the rest did not.
+	 */
+	private function copyEachTemplate(array $templates, array $map): array {
 		$copied = 0;
+		$notCarried = [];
 		foreach ($templates as $template) {
 			$repointed = $this->repointedScope(template: $template, map: $map);
 			if ($repointed === []) {
 				continue;
 			}
 
-			unset($template['id'], $template['@self']);
-			$template['caseTypes'] = $repointed;
-
-			if ($this->store->save(configKey: self::TEMPLATES, payload: $template) !== null) {
+			if ($this->saveTemplateCopy(template: $template, repointed: $repointed) === true) {
 				$copied++;
 				continue;
 			}
@@ -274,8 +309,23 @@ class DomainCopyService {
 			$notCarried[] = ('contentTemplate:' . $this->text->textOf(value: ($template['name'] ?? '')));
 		}//end foreach
 
-		return $copied;
-	}//end copyTemplates()
+		return ['copied' => $copied, 'notCarried' => $notCarried];
+	}//end copyEachTemplate()
+
+	/**
+	 * Save a copy of one template with its scope repointed.
+	 *
+	 * @param array<string, mixed> $template  The stored template.
+	 * @param array<int, string>   $repointed The scope, on the copied case types.
+	 *
+	 * @return bool Whether the copy was saved.
+	 */
+	private function saveTemplateCopy(array $template, array $repointed): bool {
+		unset($template['id'], $template['@self']);
+		$template['caseTypes'] = $repointed;
+
+		return $this->store->save(configKey: self::TEMPLATES, payload: $template) !== null;
+	}//end saveTemplateCopy()
 
 	/**
 	 * One template's scope, rewritten onto the copied case types.

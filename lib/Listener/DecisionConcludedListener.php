@@ -44,13 +44,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\BesluitMaterialisationService;
-use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Kernel\Contracts\AdvisoryCommitteeServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\BesluitMaterialisationServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseOutcomeProductIssuerInterface;
+use OCA\Dossiq\Kernel\Contracts\FlowDecisionSubjectInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\DecisionDocument\ConcludedDecisionRecord;
 use OCA\Dossiq\Service\Flow\WaitingRunResumer;
-use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\FlowDecisionSubject;
 use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCP\EventDispatcher\Event;
@@ -102,9 +102,9 @@ class DecisionConcludedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema/register/ObjectService bridge.
-	 * @param BesluitMaterialisationService $decisionMaterialiser ZGW Besluit projection from the outcome.
-	 * @param AdvisoryCommitteeService $bacService BAC advice-request audit writer (Awb art. 7:13 lid 7).
+	 * @param SettingsServiceInterface $settingsService Schema/register/ObjectService bridge.
+	 * @param BesluitMaterialisationServiceInterface $decisionMaterialiser ZGW Besluit projection from the outcome.
+	 * @param AdvisoryCommitteeServiceInterface $bacService BAC advice-request audit writer (Awb art. 7:13 lid 7).
 	 * @param LoggerInterface $logger Logger.
 	 * @param FlowRunMapper|null $runs Finds the run suspended on this decision. Nullable
 	 *                                 so adding it breaks no existing construction site;
@@ -112,21 +112,21 @@ class DecisionConcludedListener implements IEventListener {
 	 *                                 waiting rather than advancing it wrongly.
 	 * @param FlowRunService|null $runner Delivers the resume signal. Nullable for the
 	 *                                    same reason and with the same safe direction.
-	 * @param FlowDecisionSubject|null $flowDecisions Recognises a flow decision about a dossiq case;
+	 * @param FlowDecisionSubjectInterface|null $flowDecisions Recognises a flow decision about a dossiq case;
 	 *                                        subject. Nullable so no construction site breaks;
 	 *                                        absent, no flow decision is projected.
-	 * @param CaseOutcomeProductIssuer|null $products Issues the product a case type declares for this outcome
+	 * @param CaseOutcomeProductIssuerInterface|null $products Issues the product a case type declares for this outcome
 	 *                                                (decision 172); absent, no product is written.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly BesluitMaterialisationService $decisionMaterialiser,
-		AdvisoryCommitteeService $bacService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly BesluitMaterialisationServiceInterface $decisionMaterialiser,
+		AdvisoryCommitteeServiceInterface $bacService,
 		private readonly LoggerInterface $logger,
 		?FlowRunMapper $runs = null,
 		?FlowRunService $runner = null,
-		private readonly ?FlowDecisionSubject $flowDecisions = null,
-		private readonly ?CaseOutcomeProductIssuer $products = null,
+		private readonly ?FlowDecisionSubjectInterface $flowDecisions = null,
+		private readonly ?CaseOutcomeProductIssuerInterface $products = null,
 	) {
 		$this->records = new ConcludedDecisionRecord(bacService: $bacService, logger: $logger);
 		$this->resumer = new WaitingRunResumer(logger: $logger, runs: $runs, runner: $runner);

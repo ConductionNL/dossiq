@@ -35,11 +35,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
-use OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate;
-use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
-use OCA\Dossiq\Service\ZaakdossierService;
+use OCA\Dossiq\Kernel\Contracts\DocumentApprovalClearanceInterface;
+use OCA\Dossiq\Kernel\Contracts\DocumentWriteGateInterface;
+use OCA\Dossiq\Kernel\Contracts\DossierUploadHandlerInterface;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
+use OCA\Dossiq\Kernel\Contracts\ZaakdossierServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,25 +57,25 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param ZaakdossierService $fileService The dossier orchestrator.
-	 * @param InformatieobjectReader $reader The clearance-gated document reader.
-	 * @param DossierUploadHandler $uploadHandler The upload decoding/screening collaborator.
+	 * @param ZaakdossierServiceInterface $fileService The dossier orchestrator.
+	 * @param InformatieobjectReaderInterface $reader The clearance-gated document reader.
+	 * @param DossierUploadHandlerInterface $uploadHandler The upload decoding/screening collaborator.
 	 * @param IUserSession $userSession The user session.
-	 * @param DocumentApprovalClearance $approvals Reads decidiq's approval chain for a document,
+	 * @param DocumentApprovalClearanceInterface $approvals Reads decidiq's approval chain for a document,
 	 *        so a document in an unfinished route cannot be made final.
-	 * @param DocumentWriteGate $writes What a document write passes before it runs: the change right
+	 * @param DocumentWriteGateInterface $writes What a document write passes before it runs: the change right
 	 *        on every case the document belongs to, the clearance over a bulk selection, and the bulk
 	 *        metadata run behind them.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZaakdossierService $fileService,
-		private readonly InformatieobjectReader $reader,
-		private readonly DossierUploadHandler $uploadHandler,
+		private readonly ZaakdossierServiceInterface $fileService,
+		private readonly InformatieobjectReaderInterface $reader,
+		private readonly DossierUploadHandlerInterface $uploadHandler,
 		private readonly IUserSession $userSession,
-		private readonly DocumentApprovalClearance $approvals,
-		private readonly DocumentWriteGate $writes,
+		private readonly DocumentApprovalClearanceInterface $approvals,
+		private readonly DocumentWriteGateInterface $writes,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -109,12 +109,27 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
+		return new JSONResponse($this->visibleDossier(user: $user, caseId: $caseId, file: $file));
+	}//end listDossier()
+
+	/**
+	 * The dossier as this user may see it, with its verdicts and rights, grouped by type.
+	 *
+	 * @param \OCP\IUser           $user   The signed-in user.
+	 * @param string               $caseId The case (zaak) UUID.
+	 * @param array<string, mixed> $file   The case's dossier.
+	 *
+	 * @return array<string, mixed> The grouped dossier.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
+	 */
+	private function visibleDossier($user, string $caseId, array $file): array {
 		$filtered = $this->reader->filterForUser(
 			user: $user,
 			informatieobjecten: ($file['informatieobjecten'] ?? []),
 		);
 
-		$regrouped = $this->fileService->groupByType(
+		return $this->fileService->groupByType(
 			documents: $this->writes->withChangeRight(
 				user: $user,
 				documents: $this->reader->withAccessExceptionNames(
@@ -122,9 +137,7 @@ class ZaakdossierController extends Controller {
 				)
 			)
 		);
-
-		return new JSONResponse($regrouped);
-	}//end listDossier()
+	}//end visibleDossier()
 
 	/**
 	 * Upload one or more documents to a case dossier.
@@ -155,16 +168,42 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$metadata = $this->uploadHandler->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));
-		if (($metadata['auteur'] ?? '') === '') {
-			$metadata['auteur'] = $user->getDisplayName();
-		}
+		$metadata = $this->uploadMetadataFor(fallbackAuthor: static fn (): string => $user->getDisplayName());
 
 		$files = $this->uploadHandler->normaliseUploadedFiles(uploaded: $this->request->getUploadedFile('files'));
 		if (empty($files) === true) {
 			return new JSONResponse(['error' => 'No files uploaded'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->uploadEach(caseId: $caseId, files: $files, metadata: $metadata);
+	}//end uploadDocument()
+
+	/**
+	 * The metadata sent with an upload, with the user as auteur when it names none.
+	 *
+	 * @param callable(): string $fallbackAuthor Reads the current user's display name.
+	 *
+	 * @return array The metadata.
+	 */
+	private function uploadMetadataFor(callable $fallbackAuthor): array {
+		$metadata = $this->uploadHandler->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));
+		if (($metadata['auteur'] ?? '') === '') {
+			$metadata['auteur'] = $fallbackAuthor();
+		}
+
+		return $metadata;
+	}//end uploadMetadataFor()
+
+	/**
+	 * Upload each file into the case and answer the per-file results.
+	 *
+	 * @param string $caseId The case.
+	 * @param array $files The normalised uploaded files.
+	 * @param array $metadata The metadata for every file.
+	 *
+	 * @return JSONResponse 201 when at least one file was created, else 422.
+	 */
+	private function uploadEach(string $caseId, array $files, array $metadata): JSONResponse {
 		$results = [];
 		foreach ($files as $file) {
 			$results[] = $this->uploadHandler->uploadOne(
@@ -189,7 +228,7 @@ class ZaakdossierController extends Controller {
 		}
 
 		return new JSONResponse(['results' => $results], Http::STATUS_CREATED);
-	}//end uploadDocument()
+	}//end uploadEach()
 
 	/**
 	 * Link an existing informatieobject to a case.
@@ -204,20 +243,9 @@ class ZaakdossierController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function linkExisting(string $caseId, string $infoObjectId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// The CASE first, before the document is read: the document guard below
-		// says nothing about whether this caller may change the case it links into.
-		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-		if ($authError !== null) {
-			return $authError;
+		$refusal = $this->linkRefusal(caseId: $caseId, infoObjectId: $infoObjectId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -242,20 +270,9 @@ class ZaakdossierController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function unlinkDocument(string $caseId, string $infoObjectId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// The CASE first, before the document is read: the document guard below
-		// says nothing about whether this caller may change the case it links into.
-		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-		if ($authError !== null) {
-			return $authError;
+		$refusal = $this->linkRefusal(caseId: $caseId, infoObjectId: $infoObjectId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -266,6 +283,55 @@ class ZaakdossierController extends Controller {
 
 		return new JSONResponse(['unlinked' => $removed]);
 	}//end unlinkDocument()
+
+	/**
+	 * Why the caller may not change this document, or null when they may.
+	 *
+	 * Not signed in, not allowed to write the document, or not allowed to read it.
+	 *
+	 * @param string $infoObjectId The document.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the change may go ahead.
+	 */
+	private function requireDocumentWrite(string $infoObjectId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$refusal = $this->writes->refusedWrite(user: $user, documentId: $infoObjectId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
+	}//end requireDocumentWrite()
+
+	/**
+	 * The refusal for linking a document into, or unlinking it from, a case file; null when the caller may.
+	 *
+	 * No session user is 401. The CASE is checked first, before the document
+	 * is read: the document guard says nothing about whether this caller may
+	 * change the case it links into. Then a document the caller may not read
+	 * answers the reader's refusal.
+	 *
+	 * @param string $caseId       The case.
+	 * @param string $infoObjectId The document.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the change may go ahead.
+	 */
+	private function linkRefusal(string $caseId, string $infoObjectId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
+	}//end linkRefusal()
 
 	/**
 	 * Update editable metadata on an informatieobject.
@@ -279,21 +345,20 @@ class ZaakdossierController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function updateMetadata(string $infoObjectId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$refusal = $this->writes->refusedWrite(user: $user, documentId: $infoObjectId);
+		$refusal = $this->requireDocumentWrite(infoObjectId: $infoObjectId);
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
-		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-		if ($authError !== null) {
-			return $authError;
-		}
+		return $this->saveMetadata(infoObjectId: $infoObjectId, metadata: $this->metadataFromRequest());
+	}//end updateMetadata()
 
+	/**
+	 * The metadata fields a request sets, leaving out the ones it does not send.
+	 *
+	 * @return array The metadata.
+	 */
+	private function metadataFromRequest(): array {
 		$metadata = [
 			'title' => $this->request->getParam('title'),
 			// Key = schema property (renamed). The request param keeps both
@@ -313,6 +378,18 @@ class ZaakdossierController extends Controller {
 		];
 		$metadata = array_filter($metadata, static fn ($value) => $value !== null);
 
+		return $metadata;
+	}//end metadataFromRequest()
+
+	/**
+	 * Save a document's metadata, answering a conflict as 409 and an unavailable store as 503.
+	 *
+	 * @param string $infoObjectId The document.
+	 * @param array $metadata The metadata.
+	 *
+	 * @return JSONResponse
+	 */
+	private function saveMetadata(string $infoObjectId, array $metadata): JSONResponse {
 		try {
 			$result = $this->fileService->updateMetadata(infoObjectId: $infoObjectId, metadata: $metadata);
 		} catch (\DomainException $e) {
@@ -322,7 +399,7 @@ class ZaakdossierController extends Controller {
 		}
 
 		return new JSONResponse($result);
-	}//end updateMetadata()
+	}//end saveMetadata()
 
 	/**
 	 * Which of these documents are in an approval route, and at which step.
@@ -393,19 +470,9 @@ class ZaakdossierController extends Controller {
 	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function transitionStatus(string $infoObjectId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$refusal = $this->writes->refusedWrite(user: $user, documentId: $infoObjectId);
+		$refusal = $this->requireDocumentWrite(infoObjectId: $infoObjectId);
 		if ($refusal !== null) {
 			return $refusal;
-		}
-
-		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-		if ($authError !== null) {
-			return $authError;
 		}
 
 		$newStatus = (string)$this->request->getParam('status', '');

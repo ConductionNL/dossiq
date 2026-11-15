@@ -32,11 +32,18 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Golden tests for CaseFlowSeedDataRepairStep::run().
  *
  * @covers \OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep
+ * @uses \OCA\Dossiq\Repair\CaseFlowSeedFile
+ * @uses \OCA\Dossiq\Repair\CaseFlowSeedIndex
+ * @uses \OCA\Dossiq\Repair\CaseFlowSeedPhaseBackfill
+ * @uses \OCA\Dossiq\Repair\CaseFlowSeedRun
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class CaseFlowSeedRunGoldenTest extends TestCase {
 
@@ -75,11 +82,17 @@ class CaseFlowSeedRunGoldenTest extends TestCase {
 			public function __construct(public array &$saves, private ?string $failsOnSchema) {
 			}
 
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				return $data + ['id' => $objectId];
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				if ($schema === $this->failsOnSchema) {
 					throw new RuntimeException('schema rejected the object');
 				}

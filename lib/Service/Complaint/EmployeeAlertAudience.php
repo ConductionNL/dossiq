@@ -33,7 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Complaint;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\EmployeeAlertAudienceInterface;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use Throwable;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
  */
-class EmployeeAlertAudience {
+class EmployeeAlertAudience implements EmployeeAlertAudienceInterface {
 
 	/**
 	 * App config key holding the comma-separated audience groups.
@@ -79,7 +80,7 @@ class EmployeeAlertAudience {
 	 * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
 	 */
 	public function groups(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, implode(',', self::DEFAULT_GROUPS));
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, implode(',', self::DEFAULT_GROUPS));
 
 		return array_values(array_filter(array_map('trim', explode(',', $raw)), static fn (string $group): bool => $group !== ''));
 	}//end groups()

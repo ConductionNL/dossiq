@@ -71,6 +71,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CitizenLookupGuardInterface;
+use OCA\Dossiq\Service\Support\ReadsGroupMembership;
 use OCP\IGroupManager;
 use OCP\IUser;
 use Throwable;
@@ -80,7 +82,9 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class CitizenLookupGuard {
+class CitizenLookupGuard implements CitizenLookupGuardInterface {
+
+	use ReadsGroupMembership;
 
 	/**
 	 * Groups whose members may resolve a citizen identifier.
@@ -171,23 +175,7 @@ class CitizenLookupGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function isCitizenLookupAllowed(IUser $user): bool {
-		$uid = $user->getUID();
-		if ($uid === '') {
-			return false;
-		}
-
-		try {
-			foreach (self::ALLOWED_GROUPS as $group) {
-				if ($this->groupManager->isInGroup($uid, $group) === true) {
-					return true;
-				}
-			}
-
-			return $this->groupManager->isAdmin($uid);
-		} catch (Throwable $e) {
-			// An unresolvable group check is not an authorization.
-			return false;
-		}
+		return $this->inGroupsOrAdmin(uid: $user->getUID(), groups: self::ALLOWED_GROUPS);
 	}//end isCitizenLookupAllowed()
 
 	/**

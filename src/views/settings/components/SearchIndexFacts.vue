@@ -38,6 +38,7 @@
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import SettingsFactsList from './SettingsFactsList.vue'
+import { loadOnMount } from '../../../mixins/loadOnMount.js'
 import { queueSearchIndexRun, searchIndexStatus } from '../../../services/searchIndexApi.js'
 import { indexRowFacts, runFacts } from '../../../utils/searchIndexFacts.js'
 
@@ -45,6 +46,8 @@ export default {
 	name: 'SearchIndexFacts',
 
 	components: { NcButton, NcLoadingIcon, NcNoteCard, SettingsFactsList },
+
+	mixins: [loadOnMount],
 
 	props: {
 		/** `run` (Integrations) or `rows` (Advanced). */
@@ -77,16 +80,6 @@ export default {
 			}
 			return this.variant === 'run' ? runFacts(this.status) : indexRowFacts(this.status)
 		},
-	},
-
-	/**
-	 * Read the status once the section is on the page.
-	 *
-	 * @return {Promise<void>}
-	 * @spec openspec/specs/admin-settings/spec.md
-	 */
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {

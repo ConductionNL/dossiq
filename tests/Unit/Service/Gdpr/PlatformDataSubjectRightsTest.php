@@ -285,7 +285,6 @@ class PlatformDataSubjectRightsTest extends TestCase {
 				throw new ErasureRefusedException(
 					rule: 'erasure-preview-stale',
 					reason: 'The world moved since this preview was taken.',
-					statusCode: 409,
 				);
 			}
 		};
@@ -310,6 +309,61 @@ class PlatformDataSubjectRightsTest extends TestCase {
 			self::assertSame('The world moved since this preview was taken.', $e->getSentence());
 		}
 	}//end testThePlatformsRuleAndStatusAreCarriedAcross()
+
+	/**
+	 * Approving asks the platform's store to approve that preview and answers the approved row.
+	 *
+	 * @return void
+	 */
+	public function testApprovingAPreviewApprovesItOnThePlatform(): void {
+		$store = $this->store(row: ['uuid' => 'p1', 'status' => 'approved', 'approvedBy' => 'bea']);
+
+		$rights = new PlatformDataSubjectRights(
+			container: $this->container(['OCA\OpenRegister\Service\Gdpr\Erasure\ErasurePreviewStore' => $store]),
+			logger: new NullLogger(),
+		);
+
+		self::assertSame(
+			['uuid' => 'p1', 'status' => 'approved', 'approvedBy' => 'bea'],
+			$rights->approvePreview(previewId: 'p1')
+		);
+		self::assertSame(['approve:p1'], $store->acts);
+	}//end testApprovingAPreviewApprovesItOnThePlatform()
+
+	/**
+	 * A refused approval reaches the caller with the platform's rule and status.
+	 *
+	 * @return void
+	 */
+	public function testARefusedApprovalCarriesThePlatformsRule(): void {
+		$store = new class {
+			/**
+			 * @param string $uuid The uuid.
+			 *
+			 * @return object
+			 */
+			public function approve(string $uuid): object {
+				throw new ErasureRefusedException(
+					rule: 'erasure-preview-spent',
+					reason: 'This preview has already been run.',
+				);
+			}
+		};
+
+		$rights = new PlatformDataSubjectRights(
+			container: $this->container(['OCA\OpenRegister\Service\Gdpr\Erasure\ErasurePreviewStore' => $store]),
+			logger: new NullLogger(),
+		);
+
+		try {
+			$rights->approvePreview(previewId: 'p1');
+			self::fail('the refusal did not reach the caller');
+		} catch (RefusedException $e) {
+			self::assertSame('erasure-preview-spent', $e->getRule());
+			self::assertSame(409, $e->getStatus());
+			self::assertSame('This preview has already been run.', $e->getSentence());
+		}
+	}//end testARefusedApprovalCarriesThePlatformsRule()
 
 	/**
 	 * Something the platform did not name becomes indeterminate, not a refusal.

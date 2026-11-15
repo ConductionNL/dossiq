@@ -82,6 +82,7 @@ class ZrcCaseListsStore {
 
 /**
  * @covers \OCA\Dossiq\Controller\ZrcController
+ * @uses \OCA\Dossiq\Service\BeschikkingGenerationService
  */
 class ZrcCaseListsTest extends TestCase {
 

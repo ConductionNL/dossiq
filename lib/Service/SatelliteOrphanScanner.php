@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\SatelliteOrphanScannerInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
  */
-class SatelliteOrphanScanner {
+class SatelliteOrphanScanner implements SatelliteOrphanScannerInterface {
 
 	use SearchesObjects;
 
@@ -127,13 +128,7 @@ class SatelliteOrphanScanner {
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
 	 */
 	public function reportOrphans(): array {
-		$report = [
-			'scanned' => 0,
-			'orphans' => 0,
-			'templates' => 0,
-			'bySchema' => [],
-			'rows' => [],
-		];
+		$report = $this->emptyReport();
 
 		$objectService = $this->settingsService->getObjectService();
 		$mapper = $this->getOrganisationMapper();
@@ -142,39 +137,56 @@ class SatelliteOrphanScanner {
 			return $report;
 		}
 
+		$report = $this->scanAll(objectService: $objectService, mapper: $mapper);
+
+		$this->logScan(report: $report);
+
+		return $report;
+	}//end reportOrphans()
+
+	/**
+	 * The report of a scan that read nothing.
+	 *
+	 * @return array{scanned:int, orphans:int, templates:int,
+	 *               bySchema:array<string, array{scanned:int, orphans:int, templates:int}>,
+	 *               rows:array<int, array{schema:string, row:string, tenantRef:string}>}
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function emptyReport(): array {
+		return [
+			'scanned' => 0,
+			'orphans' => 0,
+			'templates' => 0,
+			'bySchema' => [],
+			'rows' => [],
+		];
+	}//end emptyReport()
+
+	/**
+	 * Scan every satellite schema into the report.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param object $mapper        The organisation mapper.
+	 *
+	 * @return array{scanned:int, orphans:int, templates:int,
+	 *               bySchema:array<string, array{scanned:int, orphans:int, templates:int}>,
+	 *               rows:array<int, array{schema:string, row:string, tenantRef:string}>}
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function scanAll(object $objectService, object $mapper): array {
+		$report = $this->emptyReport();
+
 		// Resolution is cached per tenantRef: a register with thousands of
 		// satellite rows holds only a handful of distinct tenants, and the
 		// uncached form is one mapper read per row.
-		$resolves = [];
+		$tenants = ['mapper' => $mapper, 'resolves' => []];
 
 		foreach (self::SATELLITE_SCHEMAS as $schema) {
-			$perSchema = ['scanned' => 0, 'orphans' => 0, 'templates' => 0];
-
-			foreach ($this->readSatelliteRows(objectService: $objectService, schema: $schema) as $row) {
-				$perSchema['scanned']++;
-				$tenantRef = trim((string)($row['tenantRef'] ?? ''));
-
-				if (in_array($tenantRef, self::TIER_TEMPLATE_REFS, true) === true) {
-					$perSchema['templates']++;
-					continue;
-				}
-
-				if (array_key_exists($tenantRef, $resolves) === false) {
-					$resolves[$tenantRef] = ($tenantRef !== ''
-						&& OrganisationLookup::byUuid(mapper: $mapper, uuid: $tenantRef) !== null);
-				}
-
-				if ($resolves[$tenantRef] === true) {
-					continue;
-				}
-
-				$perSchema['orphans']++;
-				$report['rows'][] = [
-					'schema' => $schema,
-					'row' => (string)($row['id'] ?? ($row['uuid'] ?? '')),
-					'tenantRef' => $tenantRef,
-				];
-			}
+			$scan = $this->scanSchema(source: [$objectService, $schema], tenants: $tenants);
+			$perSchema = $scan['counts'];
+			array_push($report['rows'], ...$scan['rows']);
 
 			$report['bySchema'][$schema] = $perSchema;
 			$report['scanned'] += $perSchema['scanned'];
@@ -182,6 +194,19 @@ class SatelliteOrphanScanner {
 			$report['templates'] += $perSchema['templates'];
 		}
 
+		return $report;
+	}//end scanAll()
+
+	/**
+	 * Log the totals of a completed scan.
+	 *
+	 * @param array<string, mixed> $report The report.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function logScan(array $report): void {
 		$this->logger->info(
 			'Dossiq: satellite orphan scan complete',
 			[
@@ -190,9 +215,68 @@ class SatelliteOrphanScanner {
 				'templates' => $report['templates'],
 			],
 		);
+	}//end logScan()
 
-		return $report;
-	}//end reportOrphans()
+	/**
+	 * Count one satellite schema's rows and collect the ones that resolve to nothing.
+	 *
+	 * @param array{0: object, 1: string}                               $source  OpenRegister's ObjectService and the satellite schema slug.
+	 * @param array{mapper: object, resolves: array<string, bool>} $tenants The organisation mapper, and the per-tenantRef
+	 *                                                                     resolution cache shared across schemas.
+	 *
+	 * @return array{counts: array{scanned:int, orphans:int, templates:int},
+	 *               rows: array<int, array{schema:string, row:string, tenantRef:string}>}
+	 *               The counts and orphan rows of this schema.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function scanSchema(array $source, array &$tenants): array {
+		[$objectService, $schema] = $source;
+		$perSchema = ['scanned' => 0, 'orphans' => 0, 'templates' => 0];
+		$rows = [];
+
+		foreach ($this->readSatelliteRows(objectService: $objectService, schema: $schema) as $row) {
+			$perSchema['scanned']++;
+			$tenantRef = trim((string)($row['tenantRef'] ?? ''));
+
+			if (in_array($tenantRef, self::TIER_TEMPLATE_REFS, true) === true) {
+				$perSchema['templates']++;
+				continue;
+			}
+
+			if ($this->tenantResolves(tenants: $tenants, tenantRef: $tenantRef) === true) {
+				continue;
+			}
+
+			$perSchema['orphans']++;
+			$rows[] = [
+				'schema' => $schema,
+				'row' => (string)($row['id'] ?? ($row['uuid'] ?? '')),
+				'tenantRef' => $tenantRef,
+			];
+		}
+
+		return ['counts' => $perSchema, 'rows' => $rows];
+	}//end scanSchema()
+
+	/**
+	 * Whether a tenantRef names an existing organisation, cached per tenantRef.
+	 *
+	 * @param array{mapper: object, resolves: array<string, bool>} $tenants   The organisation mapper, and the per-tenantRef resolution cache.
+	 * @param string                                               $tenantRef The row's tenantRef.
+	 *
+	 * @return bool True when the organisation exists.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function tenantResolves(array &$tenants, string $tenantRef): bool {
+		if (array_key_exists($tenantRef, $tenants['resolves']) === false) {
+			$tenants['resolves'][$tenantRef] = ($tenantRef !== ''
+				&& OrganisationLookup::byUuid(mapper: $tenants['mapper'], uuid: $tenantRef) !== null);
+		}
+
+		return $tenants['resolves'][$tenantRef];
+	}//end tenantResolves()
 
 	/**
 	 * Read one satellite schema's rows, or none when the schema is absent.
@@ -218,7 +302,6 @@ class SatelliteOrphanScanner {
 			return [];
 		}
 	}//end readSatelliteRows()
-
 
 	/**
 	 * Resolve OpenRegister's OrganisationMapper from the DI container.

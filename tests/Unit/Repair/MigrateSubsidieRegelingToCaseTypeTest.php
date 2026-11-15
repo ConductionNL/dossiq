@@ -35,6 +35,7 @@ use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType
@@ -120,7 +121,10 @@ class MigrateSubsidieRegelingToCaseTypeTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored object.
 			 */
-			public function saveObject(array $payload, array $extend, string $register, string $schema): array {
+			public function saveObject(array $payload, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$extend = $options->extend;
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->test->record(payload: $payload, schema: $schema);
 
 				return ($payload + ['id' => 'new-' . count($payload)]);

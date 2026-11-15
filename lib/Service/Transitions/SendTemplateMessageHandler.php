@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\SendTemplateMessageHandlerInterface;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\RoleResolverService;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
-class SendTemplateMessageHandler implements ActionHandlerInterface {
+class SendTemplateMessageHandler implements ActionHandlerInterface, SendTemplateMessageHandlerInterface {
 
 	/**
 	 * Constructor.
@@ -89,43 +90,58 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'no_recipient');
 		}
 
-		$claim = $this->claimOf(actionConfig: $actionConfig, case: $case, caseId: $caseId);
+		return $this->sendOnce(
+			recipients: $recipients,
+			message: ['actionConfig' => $actionConfig, 'case' => $case, 'caseId' => $caseId, 'template' => $template]
+		);
+	}//end handle()
+
+	/**
+	 * Send the message, unless its once-claim says it already went out.
+	 *
+	 * @param array<int, string>   $recipients The addresses.
+	 * @param array<string, mixed> $message    The `actionConfig`, the `case`, its `caseId` and the `template`.
+	 *
+	 * @return ActionResult The send, or the skip.
+	 */
+	private function sendOnce(array $recipients, array $message): ActionResult {
+		$caseId = $message['caseId'];
+		$template = $message['template'];
+		$claim = $this->claimOf(actionConfig: $message['actionConfig'], subject: ['case' => $message['case'], 'caseId' => $caseId]);
 		if ($claim !== '' && $this->ledger->claim(key: $claim, template: $template, instance: $caseId, now: time()) === false) {
 			return new ActionResult(succeeded: true, data: ['skipped' => 'already sent']);
 		}
 
-		return $this->send(recipients: $recipients, template: $template, caseId: $caseId, claim: $claim);
-	}//end handle()
+		return $this->send(recipients: $recipients, message: ['caseId' => $caseId, 'template' => $template, 'claim' => $claim]);
+	}//end sendOnce()
 
 	/**
 	 * Send to every recipient, settling the claim, or giving it back on a failure.
 	 *
-	 * @param array<int, string> $recipients The addresses.
-	 * @param string             $template   The template id.
-	 * @param string             $caseId     The case id.
-	 * @param string             $claim      The ledger key, or ''.
+	 * @param array<int, string>                                   $recipients The addresses.
+	 * @param array{caseId: string, template: string, claim: string} $message    The case id, the template id and the ledger key (or '').
 	 *
 	 * @return ActionResult The result.
 	 */
-	private function send(array $recipients, string $template, string $caseId, string $claim): ActionResult {
+	private function send(array $recipients, array $message): ActionResult {
 		try {
 			foreach ($recipients as $recipient) {
-				$this->mail->sendFromTemplate(caseId: $caseId, templateId: $template, to: $recipient);
+				$this->mail->sendFromTemplate(caseId: $message['caseId'], templateId: $message['template'], to: $recipient);
 			}
 		} catch (Throwable $e) {
-			$this->logger->error('SendTemplateMessageHandler: the message was not sent', ['case' => $caseId, 'exception' => $e->getMessage()]);
-			if ($claim !== '') {
-				$this->ledger->release(key: $claim);
+			$this->logger->error('SendTemplateMessageHandler: the message was not sent', ['case' => $message['caseId'], 'exception' => $e->getMessage()]);
+			if ($message['claim'] !== '') {
+				$this->ledger->release(key: $message['claim']);
 			}
 
 			return new ActionResult(succeeded: false, error: 'send_message_failed');
 		}
 
-		if ($claim !== '') {
-			$this->ledger->settle(key: $claim, outcome: 'sent', now: time());
+		if ($message['claim'] !== '') {
+			$this->ledger->settle(key: $message['claim'], outcome: 'sent', now: time());
 		}
 
-		return new ActionResult(succeeded: true, data: ['sentTo' => $recipients, 'template' => $template]);
+		return new ActionResult(succeeded: true, data: ['sentTo' => $recipients, 'template' => $message['template']]);
 	}//end send()
 
 	/**
@@ -174,13 +190,13 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 	/**
 	 * The ledger key of a send-once message, or '' when it may repeat.
 	 *
-	 * @param array<string, mixed> $actionConfig `onceKey` and optionally `oncePer`.
-	 * @param array<string, mixed> $case         The case.
-	 * @param string               $caseId       The case id.
+	 * @param array<string, mixed>                              $actionConfig `onceKey` and optionally `oncePer`.
+	 * @param array{case: array<string, mixed>, caseId: string} $subject      The case, and its id.
 	 *
 	 * @return string The 64-character key.
 	 */
-	private function claimOf(array $actionConfig, array $case, string $caseId): string {
+	private function claimOf(array $actionConfig, array $subject): string {
+		['case' => $case, 'caseId' => $caseId] = $subject;
 		$once = trim((string)($actionConfig['onceKey'] ?? ''));
 		if ($once === '') {
 			return '';

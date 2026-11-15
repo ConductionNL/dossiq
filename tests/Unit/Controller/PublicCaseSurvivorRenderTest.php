@@ -19,9 +19,12 @@ use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * @covers \OCA\Dossiq\Controller\PublicCaseSurvivorController
+ * @uses \OCA\Dossiq\Service\Intake\CaseMatchSuggestion
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class PublicCaseSurvivorRenderTest extends TestCase {
 
@@ -48,6 +51,7 @@ class PublicCaseSurvivorRenderTest extends TestCase {
 			 * @return ObjectEntity The case.
 			 */
 			public function find(mixed ...$args): ObjectEntity {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$entity = new ObjectEntity();
 				$entity->setUuid('case-a');
 

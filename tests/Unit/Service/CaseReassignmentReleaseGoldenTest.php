@@ -40,6 +40,7 @@ use RuntimeException;
  * Golden tests for CaseReassignmentService::releaseCaseload().
  *
  * @covers \OCA\Dossiq\Service\CaseReassignmentService
+ * @uses \OCA\Dossiq\Service\CaseloadReleaseRun
  */
 class CaseReassignmentReleaseGoldenTest extends TestCase {
 

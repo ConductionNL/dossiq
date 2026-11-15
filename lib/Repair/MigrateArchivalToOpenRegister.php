@@ -43,9 +43,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\OpenRegister\Service\HoldOrder;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -57,6 +59,8 @@ use Psr\Log\LoggerInterface;
  * Migrates the retired app-local archival state onto OpenRegister.
  *
  * @spec openspec/specs/archief-edepot-handover/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MigrateArchivalToOpenRegister implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -104,13 +108,13 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settings Shared OR/settings resolver.
+	 * @param SettingsServiceInterface $settings Shared OR/settings resolver.
 	 * @param ContainerInterface $container DI container (OR collaborators resolved lazily).
 	 * @param IAppConfig $appConfig App config for the completion marker.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settings,
+		private readonly SettingsServiceInterface $settings,
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
@@ -315,7 +319,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 		$placed = 0;
 		foreach ($rows as $row) {
 			$caseId = (string)($row['caseId'] ?? '');
-			if ($caseId !== '' && $this->placeHoldOnCase(legalHold: $tools['legalHold'], objectMapper: $tools['objectMapper'], caseId: $caseId) === true) {
+			if ($caseId !== '' && $this->placeHoldOnCase(tools: $tools, caseId: $caseId) === true) {
 				$placed++;
 			}
 		}
@@ -326,15 +330,15 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	/**
 	 * Place an OR legal hold on a single case (idempotent, fail-safe).
 	 *
-	 * @param object $legalHold OpenRegister LegalHoldService.
-	 * @param object $objectMapper OpenRegister object mapper.
+	 * @param array<string, mixed> $tools OpenRegister's LegalHoldService (`legalHold`) and object mapper (`objectMapper`).
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return bool True when a new hold was placed.
 	 */
-	private function placeHoldOnCase(object $legalHold, object $objectMapper, string $caseId): bool {
+	private function placeHoldOnCase(array $tools, string $caseId): bool {
+		$legalHold = $tools['legalHold'];
 		try {
-			$caseObject = $objectMapper->findByUuid($caseId);
+			$caseObject = $tools['objectMapper']->findByUuid($caseId);
 			if ($caseObject === null || (bool)$legalHold->hasActiveHold($caseObject) === true) {
 				return false;
 			}
@@ -367,50 +371,118 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			return 0;
 		}
 
-		try {
-			$proofs = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $proofSchema
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning('Archival migration: could not read proof records', ['error' => $e->getMessage()]);
+		$proofs = $this->readProofs(objectService: $objectService, where: ['register' => $register, 'schema' => $proofSchema]);
+		if ($proofs === null) {
 			return 0;
 		}
 
+		return $this->exportProofs(
+			target: new ProofDocumentTarget(objectService: $objectService, register: $register, docSchema: $docSchema),
+			proofs: $proofs
+		);
+	}//end exportProofRecords()
+
+	/**
+	 * Read the proof-of-transfer records.
+	 *
+	 * @param object                                 $objectService OpenRegister's object service.
+	 * @param array{register: string, schema: string} $where         Register slug or id, and the proof schema.
+	 *
+	 * @return array<int, array<string, mixed>>|null The records, or null when they could not be read.
+	 */
+	private function readProofs(object $objectService, array $where): ?array {
+		try {
+			$proofs = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $where['register'],
+				schema: $where['schema']
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Archival migration: could not read proof records', ['error' => $e->getMessage()]);
+			return null;
+		}
+
+		return $proofs;
+	}//end readProofs()
+
+	/**
+	 * Export every proof record as a caseDocument.
+	 *
+	 * @param ProofDocumentTarget              $target The object service, register and case document schema.
+	 * @param array<int, array<string, mixed>> $proofs The proof records.
+	 *
+	 * @return int Number of proof records exported.
+	 */
+	private function exportProofs(ProofDocumentTarget $target, array $proofs): int {
 		$exported = 0;
 		foreach ($proofs as $proof) {
-			$caseId = (string)($proof['caseId'] ?? '');
-			if ($caseId === '') {
-				continue;
-			}
-
-			$payload = [
-				'case' => $caseId,
-				'title' => 'Bewijs van overbrenging (e-Depot)',
-				'description' => 'Gemigreerd proof-of-transfer; OpenRegister beheert voortaan overbrenging en bewijs.',
-				'document' => (string)($proof['archivId'] ?? ($proof['id'] ?? 'proof')),
-				'source' => 'archief-migration',
-				'proofOfTransfer' => $proof,
-			];
-
-			try {
-				$objectService->saveObject(
-					object: $payload,
-					register: $register,
-					schema: $docSchema
-				);
-				$exported++;
-			} catch (\Throwable $e) {
-				$this->logger->error(
-					'Archival migration: proof export failed — source record preserved in place',
-					['caseId' => $caseId, 'error' => $e->getMessage()]
-				);
-			}
-		}//end foreach
+			$exported += $this->exportProof(target: $target, proof: $proof);
+		}
 
 		return $exported;
-	}//end exportProofRecords()
+	}//end exportProofs()
+
+	/**
+	 * Export one proof record as a caseDocument.
+	 *
+	 * @param ProofDocumentTarget  $target The object service, register and case document schema.
+	 * @param array<string, mixed> $proof  The proof record.
+	 *
+	 * @return int 1 when exported, 0 otherwise.
+	 */
+	private function exportProof(ProofDocumentTarget $target, array $proof): int {
+		$caseId = (string)($proof['caseId'] ?? '');
+		if ($caseId === '') {
+			return 0;
+		}
+
+		$payload = $this->proofDocument(caseId: $caseId, proof: $proof);
+
+		return $this->saveProofDocument(target: $target, payload: $payload);
+	}//end exportProof()
+
+	/**
+	 * The caseDocument a proof record becomes.
+	 *
+	 * @param string               $caseId The case the proof belongs to.
+	 * @param array<string, mixed> $proof  The proof record.
+	 *
+	 * @return array<string, mixed> The caseDocument payload.
+	 */
+	private function proofDocument(string $caseId, array $proof): array {
+		return [
+			'case' => $caseId,
+			'title' => 'Bewijs van overbrenging (e-Depot)',
+			'description' => 'Gemigreerd proof-of-transfer; OpenRegister beheert voortaan overbrenging en bewijs.',
+			'document' => (string)($proof['archivId'] ?? ($proof['id'] ?? 'proof')),
+			'source' => 'archief-migration',
+			'proofOfTransfer' => $proof,
+		];
+	}//end proofDocument()
+
+	/**
+	 * Save a proof's caseDocument, logging a failure and leaving the source in place.
+	 *
+	 * @param ProofDocumentTarget  $target  The object service, register and case document schema.
+	 * @param array<string, mixed> $payload The caseDocument payload, with its `case`.
+	 *
+	 * @return int 1 when exported, 0 otherwise.
+	 */
+	private function saveProofDocument(ProofDocumentTarget $target, array $payload): int {
+		try {
+			$target->objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $target->docSchema))
+			);
+			return 1;
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Archival migration: proof export failed — source record preserved in place',
+				['caseId' => $payload['case'], 'error' => $e->getMessage()]
+			);
+			return 0;
+		}
+	}//end saveProofDocument()
 
 	/**
 	 * Resolve an OpenRegister collaborator by FQN, or null when unavailable.

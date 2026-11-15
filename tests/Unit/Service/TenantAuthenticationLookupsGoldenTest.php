@@ -38,6 +38,7 @@ use RuntimeException;
  * Golden tests for TenantAuthenticationService's lookups.
  *
  * @covers \OCA\Dossiq\Service\TenantAuthenticationService
+ * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  */
 class TenantAuthenticationLookupsGoldenTest extends TestCase {
 

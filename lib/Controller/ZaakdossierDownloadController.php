@@ -39,9 +39,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Http\RangeStreamResponse;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Zaakdossier\DossierZipExporter;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\DossierZipExporterInterface;
+use OCA\Dossiq\Kernel\Contracts\InformatieobjectReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -64,22 +64,22 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param InformatieobjectReader $reader The clearance-gated document reader.
-	 * @param DossierZipExporter $zipExporter The ZIP export collaborator.
+	 * @param InformatieobjectReaderInterface $reader The clearance-gated document reader.
+	 * @param DossierZipExporterInterface $zipExporter The ZIP export collaborator.
 	 * @param IUserSession $userSession The user session.
 	 * @param LoggerInterface $logger The logger.
-	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly InformatieobjectReader $reader,
-		private readonly DossierZipExporter $zipExporter,
+		private readonly InformatieobjectReaderInterface $reader,
+		private readonly DossierZipExporterInterface $zipExporter,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -189,6 +189,18 @@ class ZaakdossierDownloadController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		return $this->readableDownload(user: $user, objectId: $objectId);
+	}//end downloadFile()
+
+	/**
+	 * The document's file for a user cleared to read it.
+	 *
+	 * @param IUser  $user     The signed-in user.
+	 * @param string $objectId The informatieobject UUID.
+	 *
+	 * @return DataDownloadResponse|JSONResponse
+	 */
+	private function readableDownload(IUser $user, string $objectId): DataDownloadResponse|JSONResponse {
 		// Per-object clearance gate before any content is read (OWASP A01:2021).
 		$doc = $this->reader->loadReadable(user: $user, infoObjectId: $objectId);
 		if ($doc instanceof JSONResponse) {
@@ -203,7 +215,7 @@ class ZaakdossierDownloadController extends Controller {
 
 		$mime = (string)($doc['format'] ?? 'application/octet-stream');
 		return new DataDownloadResponse($content, $fileName, $mime);
-	}//end downloadFile()
+	}//end readableDownload()
 
 	/**
 	 * ZGW DRC-compatible download with HTTP Range support.

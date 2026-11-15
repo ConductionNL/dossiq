@@ -117,35 +117,43 @@ class ConsultationSource extends RegisterBackedSource {
 	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function itemsFor(string $userId): array {
-		$rows = $this->rows(schema: 'consultation', filters: ['assignee' => $userId]);
-
+		$rows = new WaitingRequestRows(closedStatuses: self::CLOSED_STATUSES);
 		$items = [];
-		foreach ($rows as $row) {
+		foreach ($this->rows(schema: 'consultation', filters: ['assignee' => $userId]) as $row) {
 			$id = $this->idOf(row: $row);
-			$status = strtolower(trim((string)($row['status'] ?? '')));
-			if ($id === '' || in_array($status, self::CLOSED_STATUSES, true) === true) {
-				continue;
+			if ($rows->isWaiting(id: $id, row: $row) === true) {
+				$items[] = $this->itemOf(row: $row, id: $id);
 			}
-
-			$case = trim((string)($row['parentCase'] ?? ''));
-			$route = ['name' => 'Cases'];
-			if ($case !== '') {
-				// The case has no consultations tab, so the row opens the case itself.
-				$route = ['name' => 'CaseDetail', 'params' => ['id' => $case]];
-			}
-
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'consultation',
-				subjectId: $id,
-				title: (string)($row['subject'] ?? $id),
-				priority: (string)($row['priority'] ?? ''),
-				dueAt: $this->dateOf(row: $row, key: 'latestResponseDate'),
-				coveredFor: null,
-				route: $route
-			);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * The queue item for one waiting consultation.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 * @param string               $id  The row's id.
+	 *
+	 * @return QueueItem
+	 */
+	private function itemOf(array $row, string $id): QueueItem {
+		$case = trim((string)($row['parentCase'] ?? ''));
+		// The case has no consultations tab, so the row opens the case itself.
+		$route = WaitingRequestRows::routeOf(
+			case: $case,
+			caseRoute: ['name' => 'CaseDetail', 'params' => ['id' => $case]]
+		);
+
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'consultation',
+			subjectId: $id,
+			title: (string)($row['subject'] ?? $id),
+			priority: (string)($row['priority'] ?? ''),
+			dueAt: $this->dateOf(row: $row, key: 'latestResponseDate'),
+			coveredFor: null,
+			route: $route
+		);
+	}//end itemOf()
 }//end class

@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\AccrualNoticeServiceInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -49,7 +50,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
  */
-class AccrualNoticeService {
+class AccrualNoticeService implements AccrualNoticeServiceInterface {
 	use SearchesObjects;
 
 	public const TARIFF_AWB_PLAFOND = 144200;
@@ -183,19 +184,44 @@ class AccrualNoticeService {
 		string $documentLink = '',
 		string $sender = '',
 	): array {
-		$instance = $this->termService->getTermijnInstance($termInstanceId);
-		if ($instance === null) {
-			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
-		}
-
 		$notice = new NoticeRegistration();
 		$notice->termInstanceId = $termInstanceId;
-		$notice->instance = $instance;
 		$notice->receiptDate = $receiptDate;
 		$notice->channel = $channel;
 		$notice->documentLink = $documentLink;
 		$notice->sender = $sender;
 
+		return $this->storeOnInstance(notice: $notice);
+	}//end registerNotice()
+
+	/**
+	 * Store the notice on its term instance, refused when the instance is not found.
+	 *
+	 * @param NoticeRegistration $notice The notice, without its instance yet.
+	 *
+	 * @return array<string, mixed> What storeNotice() answers.
+	 *
+	 * @throws RuntimeException When the instance is not found.
+	 */
+	private function storeOnInstance(NoticeRegistration $notice): array {
+		$instance = $this->termService->getTermijnInstance($notice->termInstanceId);
+		if ($instance === null) {
+			throw new RuntimeException('TermijnInstance not found: ' . $notice->termInstanceId);
+		}
+
+		$notice->instance = $instance;
+
+		return $this->storeNotice(notice: $notice);
+	}//end storeOnInstance()
+
+	/**
+	 * Store the notice, and start the penalty payment the first valid one starts.
+	 *
+	 * @param NoticeRegistration $notice The notice, its term instance and how it came in.
+	 *
+	 * @return array<string, mixed> The stored notice row.
+	 */
+	private function storeNotice(NoticeRegistration $notice): array {
 		$row = $this->noticeRow(notice: $notice);
 		$saved = $this->saveSchema(schemaConfigKey: MoneyConfigKeys::NOTICE_OF_DEFAULT_SCHEMA, object: $row);
 		$row['id'] = (string)($saved['id'] ?? '');
@@ -208,7 +234,7 @@ class AccrualNoticeService {
 		$row['penaltyPaymentCalculation'] = $this->startPenaltyPaymentCalculation(notice: $notice, noticeId: (string)$row['id']);
 
 		return $row;
-	}//end registerNotice()
+	}//end storeNotice()
 
 	/**
 	 * The stored notice: valid when the term had passed on receipt, premature otherwise.
@@ -393,12 +419,12 @@ class AccrualNoticeService {
 			return self::AWB_DEFAULT_REGIME;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->definitionStore();
+		if ($store === null) {
 			return self::AWB_DEFAULT_REGIME;
 		}
+
+		[$objectService, $register, $schema] = $store;
 
 		try {
 			$def = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $defId);
@@ -410,7 +436,34 @@ class AccrualNoticeService {
 			return self::AWB_DEFAULT_REGIME;
 		}
 
-		$regime = $def['deviatingPenaltyPaymentRegime'] ?? null;
+		return $this->regimeOf(definition: $def);
+	}//end resolveRegime()
+
+	/**
+	 * The object service, register and deadline-definition schema, or null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The store.
+	 */
+	private function definitionStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end definitionStore()
+
+	/**
+	 * The definition's deviating regime, or the AWB default when it declares none.
+	 *
+	 * @param array<string, mixed> $definition The deadline definition.
+	 *
+	 * @return array{plafond:int,grace:int,custom:bool,dailyTariff?:int}
+	 */
+	private function regimeOf(array $definition): array {
+		$regime = $definition['deviatingPenaltyPaymentRegime'] ?? null;
 		if (is_array($regime) === false) {
 			return self::AWB_DEFAULT_REGIME;
 		}
@@ -421,7 +474,7 @@ class AccrualNoticeService {
 			'dailyTariff' => (int)($regime['dailyTariff'] ?? 0),
 			'custom' => true,
 		];
-	}//end resolveRegime()
+	}//end regimeOf()
 
 	/**
 	 * Save to a configured schema.

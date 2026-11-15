@@ -29,8 +29,11 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\TenantQuotaServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -41,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
-class TenantQuotaService {
+class TenantQuotaService implements TenantQuotaServiceInterface {
 	/**
 	 * Tier defaults: tier => quotaType => [limit, enforcement].
 	 *
@@ -50,23 +53,33 @@ class TenantQuotaService {
 	public const TIER_DEFAULTS = [
 		'basic' => [
 			'cases_per_month' => ['limit' => 100,  'enforcement' => 'warn'],
-			'storage_gb' => ['limit' => 10,   'enforcement' => 'warn'],
+			'storage_mb' => ['limit' => 10240, 'enforcement' => 'warn'],
 			'active_users' => ['limit' => 5,    'enforcement' => 'block'],
 			'api_calls_per_hour' => ['limit' => 1000, 'enforcement' => 'throttle'],
 		],
 		'standard' => [
 			'cases_per_month' => ['limit' => 1000,  'enforcement' => 'warn'],
-			'storage_gb' => ['limit' => 100,   'enforcement' => 'warn'],
+			'storage_mb' => ['limit' => 102400, 'enforcement' => 'warn'],
 			'active_users' => ['limit' => 50,    'enforcement' => 'block'],
 			'api_calls_per_hour' => ['limit' => 10000, 'enforcement' => 'throttle'],
 		],
 		'enterprise' => [
 			'cases_per_month' => ['limit' => null, 'enforcement' => 'warn'],
-			'storage_gb' => ['limit' => null, 'enforcement' => 'warn'],
+			'storage_mb' => ['limit' => null, 'enforcement' => 'warn'],
 			'active_users' => ['limit' => null, 'enforcement' => 'warn'],
 			'api_calls_per_hour' => ['limit' => null, 'enforcement' => 'warn'],
 		],
 	];
+
+	/**
+	 * Quotas that measure a standing total rather than a count per window.
+	 *
+	 * Storage held and users present do not start again at zero on the first
+	 * of the month, so the reset leaves these rows alone.
+	 *
+	 * @var array<int, string>
+	 */
+	public const STANDING_QUOTAS = ['storage_mb', 'active_users'];
 
 	/**
 	 * Enforcement decisions.
@@ -129,47 +142,81 @@ class TenantQuotaService {
 
 		$rows = [];
 		foreach (self::TIER_DEFAULTS[$tier] as $quotaType => $cfg) {
-			$object = [
-				'tenantRef' => $tenantId,
-				'quotaType' => $quotaType,
-				'currentUsage' => 0,
-				'softLimitWarningPercent' => 80,
-				'enforcement' => $cfg['enforcement'],
-				'resetAt' => $this->nextResetAt(quotaType: $quotaType),
-			];
+			$object = $this->initialQuotaRow(tenantId: $tenantId, quota: ['quotaType' => $quotaType] + $cfg);
 
-			// The mapped two carry no `limit` on the row. The tier default goes
-			// onto the Organisation instead, so there is exactly one copy of it.
-			$isMapped = $this->organisationLimits->owns(quotaType: $quotaType);
-			if ($isMapped === true) {
-				$this->organisationLimits->write(
-					tenantId: $tenantId,
-					quotaType: $quotaType,
-					limit: $cfg['limit']
-				);
+			$row = $this->persistQuotaRow(objectService: $objectService, object: $object);
+			if ($row !== null) {
+				$rows[] = $row;
 			}
-
-			if ($isMapped === false) {
-				$object['limit'] = $cfg['limit'];
-			}
-
-			try {
-				$row = $objectService->saveObject(
-					object: $object,
-					register: Application::REGISTER_SLUG,
-					schema: 'tenantQuota',
-					uuid: null,
-				);
-				if (is_array($row) === true) {
-					$rows[] = $row;
-				}
-			} catch (Throwable $e) {
-				$this->logger->error('Dossiq: quota initialise write failed', ['exception' => $e->getMessage()]);
-			}//end try
-		}//end foreach
+		}
 
 		return $rows;
 	}//end initialize()
+
+	/**
+	 * The quota row a tier default starts a tenant on.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param array<string, mixed> $quota The type (quotaType) and its tier default (limit, enforcement).
+	 *
+	 * @return array<string, mixed> The row to persist.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 */
+	private function initialQuotaRow(string $tenantId, array $quota): array {
+		$quotaType = $quota['quotaType'];
+		$object = [
+			'tenantRef' => $tenantId,
+			'quotaType' => $quotaType,
+			'currentUsage' => 0,
+			'softLimitWarningPercent' => 80,
+			'enforcement' => $quota['enforcement'],
+			'resetAt' => $this->nextResetAt(quotaType: $quotaType),
+		];
+
+		// The mapped two carry no `limit` on the row. The tier default goes
+		// onto the Organisation instead, so there is exactly one copy of it.
+		$isMapped = $this->organisationLimits->owns(quotaType: $quotaType);
+		if ($isMapped === true) {
+			$this->organisationLimits->write(
+				tenantId: $tenantId,
+				quotaType: $quotaType,
+				limit: $quota['limit']
+			);
+		}
+
+		if ($isMapped === false) {
+			$object['limit'] = $quota['limit'];
+		}
+
+		return $object;
+	}//end initialQuotaRow()
+
+	/**
+	 * Persist one initial quota row.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $object The row to persist.
+	 *
+	 * @return array<string, mixed>|null The persisted row, or null when the write failed.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 */
+	private function persistQuotaRow(object $objectService, array $object): ?array {
+		try {
+			$row = $objectService->saveObject(
+				object: $object,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: AppIdentity::REGISTER_SLUG, schema: 'tenantQuota'))
+			);
+			if (is_array($row) === true) {
+				return $row;
+			}
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq: quota initialise write failed', ['exception' => $e->getMessage()]);
+		}//end try
+
+		return null;
+	}//end persistQuotaRow()
 
 	/**
 	 * Get the quota row for (tenant, type).
@@ -199,7 +246,7 @@ class TenantQuotaService {
 				return null;
 			}
 
-			return $this->withOrganisationLimit(quota: $quota, tenantId: $tenantId, quotaType: $quotaType);
+			return $this->withOrganisationLimit(quota: $quota, key: ['tenantId' => $tenantId, 'quotaType' => $quotaType]);
 		} catch (Throwable $e) {
 			return null;
 		}//end try
@@ -220,7 +267,7 @@ class TenantQuotaService {
 		// `filters`; limit/offset are top-level config keys.
 		return [
 			'filters' => [
-				'register' => Application::REGISTER_SLUG,
+				'register' => AppIdentity::REGISTER_SLUG,
 				'schema' => 'tenantQuota',
 				'tenantRef' => $tenantId,
 				'quotaType' => $quotaType,
@@ -248,21 +295,22 @@ class TenantQuotaService {
 	/**
 	 * Overlay the limit the Organisation carries, for the two types that map.
 	 *
-	 * For `storage_gb` and `api_calls_per_hour` the Organisation is the ONLY
+	 * For `storage_mb`, `api_calls_per_hour` and `active_users` the Organisation is the ONLY
 	 * place a limit lives, so whatever the row says about `limit` is replaced
 	 * rather than merged. A stale `limit` left on a row by an install
 	 * predating the move would otherwise win over the one an operator set, and
 	 * no response would say which number was being enforced.
 	 *
 	 * @param array<string,mixed> $quota     The quota row.
-	 * @param string              $tenantId  Tenant uuid, which is the Organisation uuid.
-	 * @param string              $quotaType The quota dimension.
+	 * @param array{tenantId: string, quotaType: string} $key Tenant uuid, which is the Organisation uuid, and the
+	 *                                                       quota dimension.
 	 *
 	 * @return array<string,mixed> The row with its limit resolved.
 	 *
 	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
-	private function withOrganisationLimit(array $quota, string $tenantId, string $quotaType): array {
+	private function withOrganisationLimit(array $quota, array $key): array {
+		['tenantId' => $tenantId, 'quotaType' => $quotaType] = $key;
 		if ($this->organisationLimits->owns(quotaType: $quotaType) === false) {
 			return $quota;
 		}
@@ -417,8 +465,13 @@ class TenantQuotaService {
 	 * @return array<string,mixed> Updated row.
 	 *
 	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-the-quota-card-and-the-refusal-read-the-same-limits-req-tq-enf-02
 	 */
 	public function resetIfDue(array $quota): array {
+		if (in_array((string)($quota['quotaType'] ?? ''), self::STANDING_QUOTAS, true) === true) {
+			return $quota;
+		}
+
 		$resetAt = strtotime((string)($quota['resetAt'] ?? ''));
 		$now = time();
 		if ($resetAt === false || $resetAt > $now) {
@@ -482,9 +535,10 @@ class TenantQuotaService {
 
 			$objectService->saveObject(
 				object: $quota,
-				register: Application::REGISTER_SLUG,
-				schema: 'tenantQuota',
-				uuid: $uuidArg
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: AppIdentity::REGISTER_SLUG, schema: 'tenantQuota'),
+					uuid: $uuidArg
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: persistQuota failed', ['exception' => $e->getMessage()]);

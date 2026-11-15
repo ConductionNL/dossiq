@@ -29,7 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Controller\Support\GuardsZgwRequests;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -46,6 +47,8 @@ use OCP\IRequest;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class NrcController extends ZgwController {
+	use GuardsZgwRequests;
+
 	/**
 	 * The ZGW API identifier for the Notificaties register.
 	 *
@@ -58,12 +61,12 @@ class NrcController extends ZgwController {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The incoming request.
-	 * @param ZgwService $zgwService The shared ZGW service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -81,14 +84,9 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
+		return $this->requireValidJwt() ?? $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 	}//end index()
 
 	/**
@@ -104,19 +102,9 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate creates on notificaties.publiceren scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
-			return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
-		}
-
-		return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
+		return $this->requireWriteScope() ?? $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
 	}//end create()
 
 	/**
@@ -133,14 +121,9 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->requireValidJwt() ?? $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 	}//end show()
 
 	/**
@@ -157,19 +140,9 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate updates on notificaties.publiceren scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
-			return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
-		}
-
-		return $this->zgwService->handleUpdate(
+		return $this->requireWriteScope() ?? $this->zgwService->handleUpdate(
 			$this->request,
 			self::ZGW_API,
 			$resource,
@@ -192,19 +165,9 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate patches on notificaties.publiceren scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
-			return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
-		}
-
-		return $this->zgwService->handleUpdate(
+		return $this->requireWriteScope() ?? $this->zgwService->handleUpdate(
 			$this->request,
 			self::ZGW_API,
 			$resource,
@@ -227,19 +190,9 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate destroys on notificaties.publiceren scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
-			return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
-		}
-
-		return $this->zgwService->handleDestroy(
+		return $this->requireWriteScope() ?? $this->zgwService->handleDestroy(
 			$this->request,
 			self::ZGW_API,
 			$resource,
@@ -264,9 +217,9 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function notificatieCreate(): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
+		$authError = $this->requireValidJwt();
 		if ($authError !== null) {
 			return $authError;
 		}
@@ -291,14 +244,9 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+		return $this->audittrailList(resource: $resource, uuid: $uuid);
 	}//end audittrailIndex()
 
 	/**
@@ -316,19 +264,20 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		return $this->zgwService->handleAudittrailShow(
-			$this->request,
-			self::ZGW_API,
-			$resource,
-			$uuid,
-			$auditUuid
-		);
+		return $this->audittrailEntry(resource: $resource, uuid: $uuid, auditUuid: $auditUuid);
 	}//end audittrailShow()
+
+	/**
+	 * The JWT refusal, else the scope refusal for a consumer that may not publish notifications, else null.
+	 *
+	 * The JWT is checked first and the scope only for a valid token, so a
+	 * write is refused before anything is read or written.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
+	 */
+	private function requireWriteScope(): ?JSONResponse {
+		return $this->scopedWriteRefusal(component: 'nrc', scope: 'notificaties.publiceren');
+	}//end requireWriteScope()
 }//end class

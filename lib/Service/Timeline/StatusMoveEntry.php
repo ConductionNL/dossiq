@@ -40,7 +40,6 @@ namespace OCA\Dossiq\Service\Timeline;
 
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCP\IUserSession;
-use Throwable;
 
 /**
  * Writes one `statuswijziging` entry per recorded status move.
@@ -48,6 +47,13 @@ use Throwable;
  * @spec openspec/specs/case-history-surface/spec.md
  */
 class StatusMoveEntry {
+
+	/**
+	 * The name a status is shown under.
+	 *
+	 * @var StatusDisplayName
+	 */
+	private readonly StatusDisplayName $statusNames;
 
 	/**
 	 * Constructor.
@@ -61,6 +67,7 @@ class StatusMoveEntry {
 		private readonly StatusTypeLookup $statuses,
 		private readonly IUserSession $userSession,
 	) {
+		$this->statusNames = new StatusDisplayName(statuses: $statuses);
 	}//end __construct()
 
 	/**
@@ -97,23 +104,42 @@ class StatusMoveEntry {
 			return;
 		}
 
-		$publicLabel = $this->statuses->announcedLabelOf(statusTypeId: $toStatus);
+		$this->recordMove(
+			caseId: $caseId,
+			move: ['to' => $toStatus, 'from' => $fromStatus, 'label' => $label, 'comment' => $comment, 'record' => $record, 'actor' => $actor]
+		);
+	}//end record()
+
+	/**
+	 * Write the timeline entry for one status move.
+	 *
+	 * @param string               $caseId The case that moved.
+	 * @param array<string, mixed> $move   The `to` and `from` statusTypes, the transition's `label`, the mover's `comment`,
+	 *                                     the statusRecord just written as `record` and the `actor` the caller named.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	private function recordMove(string $caseId, array $move): void {
+		$publicLabel = $this->statuses->announcedLabelOf(statusTypeId: $move['to']);
+		$record = $move['record'];
 
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::STATUS_CHANGE,
-			message: $this->sentence(toStatus: $toStatus, fromStatus: $fromStatus, publicLabel: $publicLabel),
+			message: $this->sentence(move: $move, publicLabel: $publicLabel),
 			fields: [
-				'from' => $fromStatus,
-				'to' => $toStatus,
-				'actor' => $this->actor(named: $actor),
-				'explanation' => (string)($comment ?? ''),
-				'label' => $label,
+				'from' => $move['from'],
+				'to' => $move['to'],
+				'actor' => $this->actor(named: $move['actor']),
+				'explanation' => (string)($move['comment'] ?? ''),
+				'label' => $move['label'],
 				'statusRecordId' => (string)($record['id'] ?? ($record['@self']['id'] ?? '')),
 			],
 			visibility: $this->visibility(publicLabel: $publicLabel),
 		);
-	}//end record()
+	}//end recordMove()
 
 	/**
 	 * Which side of the counter a status move belongs on.
@@ -146,19 +172,18 @@ class StatusMoveEntry {
 	 * public words is announced in them: "Status: In behandeling". Every other
 	 * move keeps the handler's sentence, because nobody outside reads it.
 	 *
-	 * @param string $toStatus    The statusType entered.
-	 * @param string $fromStatus  The statusType left, '' on a first status.
-	 * @param string $publicLabel The status's public label, '' when it has none.
+	 * @param array<string, mixed> $move        The statusType entered as `to`, the one left as `from` ('' on a first status).
+	 * @param string               $publicLabel The status's public label, '' when it has none.
 	 *
 	 * @return string The sentence.
 	 */
-	private function sentence(string $toStatus, string $fromStatus, string $publicLabel = ''): string {
+	private function sentence(array $move, string $publicLabel): string {
 		if ($publicLabel !== '') {
 			return 'Status: ' . $publicLabel;
 		}
 
-		$to = $this->statusName(statusTypeId: $toStatus);
-		$from = $this->statusName(statusTypeId: $fromStatus);
+		$to = $this->statusName(statusTypeId: (string)$move['to']);
+		$from = $this->statusName(statusTypeId: (string)$move['from']);
 
 		if ($from === '') {
 			return 'Status gezet op ' . $to;
@@ -179,21 +204,7 @@ class StatusMoveEntry {
 	 * @return string The name, the id, or '' when nothing was asked for.
 	 */
 	private function statusName(string $statusTypeId): string {
-		if ($statusTypeId === '') {
-			return '';
-		}
-
-		try {
-			$name = trim($this->statuses->nameFor(statusTypeId: $statusTypeId));
-		} catch (Throwable $e) {
-			$name = '';
-		}
-
-		if ($name === '') {
-			return $statusTypeId;
-		}
-
-		return $name;
+		return $this->statusNames->of(statusTypeId: $statusTypeId);
 	}//end statusName()
 
 	/**
