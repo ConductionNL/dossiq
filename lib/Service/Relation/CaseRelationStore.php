@@ -51,6 +51,16 @@ use Psr\Log\LoggerInterface;
  */
 class CaseRelationStore {
 	/**
+	 * What the object of each schema setting is, for the log line.
+	 *
+	 * @var array<string, string>
+	 */
+	private const OBJECT_NAMES = [
+		'case_schema' => 'case',
+		'case_type_schema' => 'case type',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Shared OR/settings resolver.
@@ -75,7 +85,7 @@ class CaseRelationStore {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function fetchCase(string $caseUuid): ?array {
-		return $this->findObject(uuid: $caseUuid, schemaKey: 'case_schema', what: 'case');
+		return $this->findObject(uuid: $caseUuid, schemaKey: 'case_schema');
 	}//end fetchCase()
 
 	/**
@@ -88,7 +98,7 @@ class CaseRelationStore {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function fetchCaseType(string $caseTypeUuid): ?array {
-		return $this->findObject(uuid: $caseTypeUuid, schemaKey: 'case_type_schema', what: 'case type');
+		return $this->findObject(uuid: $caseTypeUuid, schemaKey: 'case_type_schema');
 	}//end fetchCaseType()
 
 	/**
@@ -96,14 +106,13 @@ class CaseRelationStore {
 	 * read it; null when it is absent, unreadable or the read fails.
 	 *
 	 * @param string $uuid      The object UUID.
-	 * @param string $schemaKey The setting naming its schema.
-	 * @param string $what      What the object is, for the log line.
+	 * @param string $schemaKey The setting naming its schema, one of OBJECT_NAMES' keys.
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
-	private function findObject(string $uuid, string $schemaKey, string $what): ?array {
+	private function findObject(string $uuid, string $schemaKey): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register      = $this->settingsService->getConfigValue('register');
 		$schema        = $this->settingsService->getConfigValue($schemaKey);
@@ -115,7 +124,7 @@ class CaseRelationStore {
 			$obj = $objectService->find($uuid, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
-				'CaseRelationService: ' . $what . ' lookup failed',
+				'CaseRelationService: ' . self::OBJECT_NAMES[$schemaKey] . ' lookup failed',
 				['uuid' => $uuid, 'error' => $e->getMessage()]
 			);
 			return null;

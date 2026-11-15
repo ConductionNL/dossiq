@@ -54,6 +54,15 @@ class SettlementOverview {
 	public const SETTLEMENT_SCHEMA = 'subsidieVaststelling';
 
 	/**
+	 * The field each schema names its parent by.
+	 */
+	private const REFERENCE_FIELD = [
+		self::APPLICATION_SCHEMA => 'case',
+		self::EXECUTION_SCHEMA => 'subsidieaanvraag',
+		self::SETTLEMENT_SCHEMA => 'subsidieuitvoering',
+	];
+
+	/**
 	 * Rows read per step.
 	 */
 	private const LIMIT = 50;
@@ -84,9 +93,9 @@ class SettlementOverview {
 	 */
 	public function forCase(string $caseId): array {
 		$settlements = [];
-		foreach ($this->idsOf(rows: $this->rows(schema: self::APPLICATION_SCHEMA, field: 'case', value: $caseId)) as $applicationId) {
-			foreach ($this->idsOf(rows: $this->rows(schema: self::EXECUTION_SCHEMA, field: 'subsidieaanvraag', value: $applicationId)) as $executionId) {
-				foreach ($this->rows(schema: self::SETTLEMENT_SCHEMA, field: 'subsidieuitvoering', value: $executionId) as $settlement) {
+		foreach ($this->idsOf(rows: $this->rows(schema: self::APPLICATION_SCHEMA, value: $caseId)) as $applicationId) {
+			foreach ($this->idsOf(rows: $this->rows(schema: self::EXECUTION_SCHEMA, value: $applicationId)) as $executionId) {
+				foreach ($this->rows(schema: self::SETTLEMENT_SCHEMA, value: $executionId) as $settlement) {
 					$settlements[] = $this->rowOf(settlement: $settlement, applicationId: $applicationId, executionId: $executionId);
 				}
 			}
@@ -206,15 +215,14 @@ class SettlementOverview {
 	}//end idOf()
 
 	/**
-	 * The rows of a schema whose field holds the value.
+	 * The rows of a schema whose reference field holds the value.
 	 *
-	 * @param string $schema The schema slug.
-	 * @param string $field  The reference field.
-	 * @param string $value  The id it must hold.
+	 * @param string $schema The schema slug, one of REFERENCE_FIELD's keys.
+	 * @param string $value  The id its reference field must hold.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
-	private function rows(string $schema, string $field, string $value): array {
+	private function rows(string $schema, string $value): array {
 		$objectService = $this->settings->getObjectService();
 		if ($objectService === null || $value === '') {
 			return [];
@@ -225,7 +233,7 @@ class SettlementOverview {
 				'filters' => [
 					'register' => AppIdentity::REGISTER_SLUG,
 					'schema' => $schema,
-					$field => $value,
+					self::REFERENCE_FIELD[$schema] => $value,
 				],
 				'limit' => self::LIMIT,
 			]

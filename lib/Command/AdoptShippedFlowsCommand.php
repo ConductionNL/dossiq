@@ -134,7 +134,7 @@ class AdoptShippedFlowsCommand extends Command {
 			dryRun: $dryRun
 		);
 
-		return $this->report(summary: $summary, dryRun: $dryRun, output: $output);
+		return $this->report(summary: [...$summary, 'dryRun' => $dryRun], output: $output);
 	}//end execute()
 
 	/**
@@ -144,19 +144,18 @@ class AdoptShippedFlowsCommand extends Command {
 	 * how an administrator ends up believing the shipped flows are armed when
 	 * one of them still is not.
 	 *
-	 * @param array{note: string, rows: array<int, array{name: string, uuid: string, outcome: string, detail: string}>} $summary The service summary.
-	 * @param bool $dryRun Whether this was a dry run.
+	 * @param array{note: string, rows: array<int, array<string, string>>, dryRun: bool} $summary The service summary, and whether it was a dry run.
 	 * @param OutputInterface $output Console output.
 	 *
 	 * @return int Symfony command exit code.
 	 */
-	private function report(array $summary, bool $dryRun, OutputInterface $output): int {
+	private function report(array $summary, OutputInterface $output): int {
 		if ($summary['note'] !== '') {
 			$output->writeln('<comment>' . $summary['note'] . '</comment>');
 			return Command::SUCCESS;
 		}
 
-		$prefix = $this->reportPrefix(dryRun: $dryRun);
+		$prefix = $this->reportPrefix(dryRun: $summary['dryRun']);
 		$failed = $this->printRows(rows: $summary['rows'], output: $output);
 
 		$output->writeln(
