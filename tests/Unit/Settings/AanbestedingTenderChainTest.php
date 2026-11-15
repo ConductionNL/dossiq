@@ -27,8 +27,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Listener\SubmissionClosingDateGuard;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @uses \OCA\Dossiq\Listener\SubmissionClosingDateGuard
+ */
 class AanbestedingTenderChainTest extends TestCase {
 
 	/**
@@ -205,4 +209,43 @@ class AanbestedingTenderChainTest extends TestCase {
 		);
 		$this->assertContains('case-tender-panel', array_column((array)$config['layout'], 'widgetId'));
 	}//end testTheFullProfileShowsOnePanelBehindTheFlag()
+
+	/**
+	 * Registering a bid writes a received bid on this tender, behind the flag.
+	 *
+	 * @return void
+	 */
+	public function testRegisteringABidWritesAReceivedBidOnThisTender(): void {
+		$actions = array_column((array)self::caseDetail(path: 'manifest.json')['config']['headerActions'], null, 'id');
+		$action = $actions['bid-register'];
+
+		$this->assertSame('open-form', $action['type']);
+		$this->assertSame('bid', $action['schema']);
+		$this->assertSame(['tender' => '@objectId', 'case' => '@objectId', 'state' => 'received', 'responses' => []], $action['props']);
+		$this->assertSame(['all' => [self::GATE, ['field' => '@self.archived', 'op' => 'empty']]], $action['visibleWhen']);
+
+		$bid = (array)self::json(path: 'lib/Settings/register.d/88-tender-records.json')['components']['schemas']['bid'];
+		foreach (array_merge($action['includeFields'], array_keys($action['props'])) as $field) {
+			$this->assertArrayHasKey($field, $bid['properties'], $field . ' is a field of the bid schema');
+		}
+
+		foreach ($bid['required'] as $required) {
+			$this->assertContains($required, array_merge($action['includeFields'], array_keys($action['props'])), $required . ' is required on a bid');
+		}
+	}//end testRegisteringABidWritesAReceivedBidOnThisTender()
+
+	/**
+	 * The closing date guard reads fields the bid and the tender case type have.
+	 *
+	 * @return void
+	 */
+	public function testTheClosingDateGuardReadsFieldsTheBidAndTheTenderHave(): void {
+		$fields = SubmissionClosingDateGuard::SUBMISSIONS['bid_schema'];
+		$bid = (array)self::json(path: 'lib/Settings/register.d/88-tender-records.json')['components']['schemas']['bid'];
+		$names = array_column((array)self::json(path: 'lib/Settings/packages/aanbesteding/case-type.json')['propertyDefinitions'], 'name');
+
+		$this->assertArrayHasKey($fields['case'], $bid['properties']);
+		$this->assertArrayHasKey($fields['receivedAt'], $bid['properties']);
+		$this->assertContains($fields['closesOn'], $names, 'the closing day is a date the tender case type declares');
+	}//end testTheClosingDateGuardReadsFieldsTheBidAndTheTenderHave()
 }//end class

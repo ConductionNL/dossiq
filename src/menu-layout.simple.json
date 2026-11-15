@@ -2139,6 +2139,9 @@
 					"link-object": {
 						"group": "Case"
 					},
+					"bid-register": {
+						"group": "Case"
+					},
 					"case-acknowledgement-met": {
 						"group": "Case"
 					},
@@ -7099,6 +7102,7 @@
 					"share-with-organisation",
 					"add-party",
 					"link-object",
+					"bid-register",
 					"add-location",
 					"case-acknowledgement-met",
 					"plan-follow-up",
